@@ -103,6 +103,10 @@ size_t dimension_5()const{return dim5;}
 size_t dimension_6()const{return dim6;}
 size_t dimension_7()const{return dim7;}
 
+void initialize(Scalar initValue){
+Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+}
+
 };
 
 template <class Scalar,class ScalarPointer>

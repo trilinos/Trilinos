@@ -137,13 +137,13 @@ FAD_FUNC_MACRO(FadFuncLog10,
 FAD_FUNC_MACRO(FadFuncAbs,
 	       abs,
 	       std::abs,
-	       expr_.val() >= 0 ? expr_.dx(i) : -expr_.dx(i),
-	       expr_.val() >= 0 ? expr_.fastAccessDx(i) : -expr_.fastAccessDx(i))
+	       expr_.val() >= 0 ? expr_.dx(i) : value_type(-expr_.dx(i)),
+	       expr_.val() >= 0 ? expr_.fastAccessDx(i) : value_type(-expr_.fastAccessDx(i)))
 FAD_FUNC_MACRO(FadFuncFabs,
 	       fabs,
 	       std::fabs,
-	       expr_.val() >= 0 ? expr_.dx(i) : -expr_.dx(i),
-	       expr_.val() >= 0 ? expr_.fastAccessDx(i) : -expr_.fastAccessDx(i))
+	       expr_.val() >= 0 ? expr_.dx(i) : value_type(-expr_.dx(i)),
+	       expr_.val() >= 0 ? expr_.fastAccessDx(i) : value_type(-expr_.fastAccessDx(i)))
 
 
 #undef FAD_FUNC_MACRO

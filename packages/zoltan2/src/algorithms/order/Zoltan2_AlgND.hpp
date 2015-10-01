@@ -91,7 +91,7 @@ private:
   typedef typename Adapter::part_t part_t;
 
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::zgid_t zgid_t;
+  typedef typename Adapter::gno_t gno_t;
 
 
   const RCP<const Environment> mEnv;
@@ -135,7 +135,7 @@ public:
   }
 
   // Ordering method
-  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution_);
+  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-int AlgND<Adapter>::order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution_)
+int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
 {
     // typedef typename Adapter::lno_t lno_t;     // local ids
     // typedef typename Adapter::gno_t gno_t;     // global ids
@@ -281,13 +281,12 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
   ArrayView< const lno_t > vOffsets;
-  ArrayView< const lno_t > procIDs;
   ArrayView< input_t > wgts;
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
 
-  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, procIDs, vOffsets, wgts);
+  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
 //   size_t Zoltan2::GraphModel< Adapter >::getEdgeList(ArrayView< const gno_t > & edgeIds,
 // 						     ArrayView< const int > & procIds,

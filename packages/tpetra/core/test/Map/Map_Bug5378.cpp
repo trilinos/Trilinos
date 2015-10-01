@@ -42,16 +42,12 @@
 */
 
 #include <Tpetra_ConfigDefs.hpp>
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Tpetra_Map.hpp>
-
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_Map_def.hpp"
-#include "Tpetra_Directory_def.hpp"
-#endif
 
 using Teuchos::RCP;
 using Teuchos::Array;
@@ -60,7 +56,7 @@ using Teuchos::tuple;
 ////
 TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDs )
 {
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD));
+  RCP<const Teuchos::Comm<int> > comm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
   /**********************************************************************************/
   // Map in question:
   // -----------------------------

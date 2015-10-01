@@ -197,7 +197,7 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
  */
 
 template <typename scalar_t>
-  class graphMetricValues{
+  class GraphMetricValues{
 
 private:
   void resetValues(){
@@ -226,12 +226,12 @@ static void printHeader(std::ostream &os);
 void printLine(std::ostream &os) const;
 
 /*! \brief Constructor */
-graphMetricValues(std::string mname) :
+GraphMetricValues(std::string mname) :
   values_(), metricName_(mname) {
   resetValues();}
 
 /*! \brief Constructor */
-graphMetricValues() : 
+GraphMetricValues() : 
   values_(), metricName_("unset") { 
     resetValues();}
 
@@ -308,7 +308,7 @@ template <typename scalar_t>
 }
 
 template <typename scalar_t>
-  void graphMetricValues<scalar_t>::printLine(std::ostream &os) const
+  void GraphMetricValues<scalar_t>::printLine(std::ostream &os) const
 {
   std::string label(metricName_);
 
@@ -319,7 +319,7 @@ template <typename scalar_t>
 }
 
 template <typename scalar_t>
-  void graphMetricValues<scalar_t>::printHeader(std::ostream &os)
+  void GraphMetricValues<scalar_t>::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
   os << std::setw(24) << "----------SUM----------";
@@ -721,7 +721,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  *   \param graph Graph model
  *   \param part   \c part[i] is the part ID for local object \c i
  *   \param numParts  on return this is the global number of parts.
- *   \param metrics on return points to a list of named graphMetricValues cuts 
+ *   \param metrics on return points to a list of named GraphMetricValues cuts 
  *     that each contains the global max and sum over parts of 
  *     the item being measured. The list may contain "cut count", or
  *     "weight 1", "weight 2" and so on in that order.
@@ -750,7 +750,7 @@ template <typename Adapter, typename pnum_t>
     const RCP<const GraphModel<Adapter> > &graph,
     const ArrayView<const pnum_t> &part, 
     typename Adapter::part_t &numParts, 
-    ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
+    ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
   env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
@@ -765,12 +765,22 @@ template <typename Adapter, typename pnum_t>
   if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::node_t node_t;
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
-  typedef graphMetricValues<scalar_t> mv_t;
+
+  typedef GraphMetricValues<scalar_t> mv_t;
+  typedef Tpetra::CrsMatrix<pnum_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
+  typedef Tpetra::global_size_t GST;
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+  using Teuchos::as;
+
   mv_t *newMetrics = new mv_t [numMetrics];
-  env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
+  env->localMemoryAssertion(__FILE__,__LINE__,numMetrics,newMetrics); 
   ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
 
   metrics = metricArray;
@@ -808,20 +818,111 @@ template <typename Adapter, typename pnum_t>
   // Calculate the local totals by part.
 
   scalar_t *localBuf = new scalar_t [globalSumSize];
-  env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, localBuf);
+  env->localMemoryAssertion(__FILE__,__LINE__,globalSumSize,localBuf);
   memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
 
   scalar_t *cut = localBuf;              // # of cuts
 
-  ArrayView<const lno_t> localEdgeIds, *localOffsets;
-  ArrayView<input_t> localWgts;
-  size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
-						localWgts);
+  ArrayView<const gno_t> *Ids;
+  ArrayView<input_t> *vwgts;
+  /*size_t nv =*/ graph->getVertexList(Ids, vwgts);
+
+  ArrayView<const gno_t> *edgeIds;
+  ArrayView<const lno_t> *offsets;
+  ArrayView<input_t> *wgts;
+  /*size_t numLocalEdges =*/ getEdgeList(edgeIds, offsets, wgts);
+  /**************************************************************************/
+  /*************************** BUILD MAP FOR ADJS ***************************/
+  /**************************************************************************/
+
+  Array<gno_t> vertexGIDs;
+  RCP<const map_type> vertexMapG;
+
+  // Build a list of the global vertex ids...
+  vertexGIDs.resize(localNumObj);
+  gno_t min;
+  min = as<gno_t> (Ids[0]);
+  for (size_t i = 0; i < localNumObj; ++i) {
+    vertexGIDs[i] = as<gno_t> (Ids[i]);
+
+    if (vertexGIDs[i] < min) {
+      min = vertexGIDs[i];
+    }
+  }
+
+  gno_t gmin;
+  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,min,gmin);
+
+  //Generate Map for vertex
+  vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
+
+  /**************************************************************************/
+  /************************** BUILD GRAPH FOR ADJS **************************/
+  /**************************************************************************/
+
+  RCP<sparse_matrix_type> adjsMatrix;
+
+  // Construct Tpetra::CrsGraph objects.
+  adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
+
+  pnum_t justOne = 1;
+  ArrayView<pnum_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+
+  for (lno_t localElement=0; localElement<localNumObj; ++localElement){
+
+    //globalRow for Tpetra Graph
+    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+
+    for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
+      gno_t globalCol = as<gno_t> (edgeIds[j]);
+      //create ArrayView globalCol object for Tpetra
+      ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+      //Update Tpetra adjs Graph
+      adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
+    }// *** edge loop ***
+  }// *** vertex loop ***
+
+  //Fill-complete adjs Graph
+  adjsMatrix->fillComplete (adjsMatrix->getRowMap());
+
+  /**************************************************************************/
+  /************************ BUILD IDENTITY FOR PARTS ************************/
+  /**************************************************************************/
+
+  RCP<sparse_matrix_type> Ipart;
+
+  // Ipart: Identity matrix for part numbers
+  Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
+
+  for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
+    pnum_t justPart = part[localElement];
+    ArrayView<pnum_t> justPartAV = Teuchos::arrayView (&justPart, 1);
+
+    // globalRow for Tpetra Matrix
+    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+
+    gno_t globalCol = as<gno_t> (Ids[localElement]);
+    //create ArrayView globalCol object for Tpetra
+    ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+    //Update Tpetra Ipart matrix
+    Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
+  }// *** vertex loop ***
+
+  //Fill-complete parts Matrix
+  Ipart->fillComplete (Ipart->getRowMap());
+
+  // Create matrix to store adjs part
+  RCP<sparse_matrix_type> adjsPart = 
+    rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+  Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
+				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++)
-      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-	if (part[i] != part[localEdgeIds[j]])
+      for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
 	  cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
@@ -830,9 +931,9 @@ template <typename Adapter, typename pnum_t>
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-	  if (part[i] != part[localEdgeIds[j]])
-	    wgt[part[i]] += localWgts[j];
+	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	  if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
+	    wgt[part[i]] += wgts[j];
       wgt += nparts;         // individual weights
     }
   }

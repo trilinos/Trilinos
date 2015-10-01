@@ -202,13 +202,13 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     BCType bc_type = bc->bcType();
 
     if (bc_type == BCT_Interface) {
-      // Build one FieldManager for each local side workset for each dirichlet bc
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
-        bc_field_managers_[*bc];
-
       // Loop over local face indices and setup each field manager
       for (std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
            wkst != currentWkst->end(); ++wkst) {
+        // Build one FieldManager for each local side workset for each bc
+        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
+          bc_field_managers_[*bc];
+
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
 
         int gid_count = 0;
@@ -226,7 +226,9 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           const Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
           
           // register evaluators from strategy      
-          const panzer::CellData side_cell_data(wkst->second.num_cells, wkst->first, volume_cell_topology);
+          const panzer::CellData side_cell_data(wkst->second.num_cells,
+                                                wkst->second.details(block_id_index).subcell_index,
+                                                volume_cell_topology);
 
           // Copy the physics block for side integrations
           Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);

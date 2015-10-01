@@ -91,7 +91,7 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
 
   size_t mynObj = adp->getLocalNumIDs();
    
-  const typename Adapter::zgid_t *myids = NULL;
+  const typename Adapter::gno_t *myids = NULL;
   adp->getIDsView(myids);
   for (size_t i = 0; i < mynObj; i++) {
     gids[i] = ZOLTAN_ID_TYPE(myids[i]); // TODO TRAITS CONVERSION MAY BE NEEDED
@@ -226,8 +226,7 @@ static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt,
   *ierr = ZOLTAN_OK;
   ArrayView<const gno_t> Ids;
   ArrayView<input_t> model_wgts;
-  ArrayView<input_t> xyz;
-  size_t num_verts = mdl->getVertexList(Ids,xyz,model_wgts);
+  size_t num_verts = mdl->getVertexList(Ids,model_wgts);
   ArrayView<bool> isOwner;
   mdl->getOwnedList(isOwner);
   int j=0;
@@ -343,14 +342,14 @@ static void zoltanHGCSForMeshAdapter(
 )
 {
   *ierr = ZOLTAN_OK;
-  typedef typename Adapter::zgid_t      zgid_t;
+  typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;  
   typedef typename Adapter::user_t      user_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
-  const zgid_t *Ids;
+  const gno_t *Ids;
   madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
   const lno_t* offsets;
-  const zgid_t* adjIds;
+  const gno_t* adjIds;
   madp->getAdjsView(madp->getAdjacencyEntityType(), madp->getPrimaryEntityType(),
                     offsets, adjIds);
   for (int i=0;i<nEdges;i++) {

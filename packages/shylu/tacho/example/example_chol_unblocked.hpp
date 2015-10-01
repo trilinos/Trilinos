@@ -33,10 +33,11 @@ namespace Tacho {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleCholUnblocked(const string file_input,
-                            const int max_task_dependence,
-                            const int team_size,
-                            const int variant,
-                            const bool verbose) {
+                           const int max_task_dependence,
+                           const int team_size,
+                           const int algo,
+                           const int variant,
+                           const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
@@ -94,15 +95,17 @@ namespace Tacho {
       timer.reset();
     
       typename TaskFactoryType::future_type future;
-      switch (variant) {
-      case AlgoChol::UnblockedOpt1: {
-        future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
-                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-        break;
-      }
-      case AlgoChol::UnblockedOpt2: {
-        future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt2>
-                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+      switch (algo) {
+      case AlgoChol::UnblockedOpt: {
+        if (variant == Variant::One)
+          future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
+                                                         ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        else if (variant == Variant::Two)
+          future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::Two>
+                                                         ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        else {
+          ERROR(">> Not supported algorithm variant");          
+        }
         break;
       }
       case AlgoChol::Dummy: {
@@ -111,7 +114,7 @@ namespace Tacho {
         break;
       }
       default:
-        ERROR(">> Not supported algorithm variant");
+        ERROR(">> Not supported algorithm");
         break;
       }
       TaskFactoryType::Policy().spawn(future);

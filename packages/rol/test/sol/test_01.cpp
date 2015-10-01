@@ -49,10 +49,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "ROL_CVaRVector.hpp"
 #include "ROL_CVaRBoundConstraint.hpp"
@@ -71,6 +70,7 @@
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
+#include "ROL_DistributionFactory.hpp"
 
 
 template<class Real> 
@@ -148,10 +148,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Build ROL algorithm
-    double gtol = parlist->get("Gradient Tolerance",1.e-6);
-    double stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit   = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<double> status(gtol,stol,maxit);
+    ROL::StatusTest<double> status(*parlist);
     //ROL::LineSearchStep<double> step(*parlist);
     Teuchos::RCP<ROL::Step<double> > step;
     Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
@@ -361,7 +358,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> data2(2,0.0);
     data2[0] = 0.0; data2[1] = 1.0;
     Teuchos::RCP<ROL::Distribution<double> > dist2 =
-      Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_PARABOLIC,data2));
+      Teuchos::rcp(new ROL::Parabolic<double>(data2[0],data2[1]));
     Teuchos::RCP<ROL::PlusFunction<double> > plusf =
       Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));
     pf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));

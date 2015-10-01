@@ -64,6 +64,15 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
+/*!
+  @class BrickAggregationFactory
+  @brief Aggregation method for generating "brick" aggregates.
+  
+  This factory can generate:
+    - In 2D, 2x2 and 3x3 aggregates
+    - In 3D, 2x2x2 or 3x3x3 aggregates
+*/
+
 namespace MueLu {
 
   template <class Scalar = double,

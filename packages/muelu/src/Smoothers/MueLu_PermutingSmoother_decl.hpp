@@ -73,6 +73,7 @@ namespace MueLu {
 
   /*!
     @class PermutingSmoother
+    @ingroup MueLuSmootherClasses 
     @brief This class first calculates row- and column permutation operators and applies a smoother to the permuted linear system.
 
   */

@@ -198,20 +198,18 @@ void AlgPTScotch<Adapter>::partition(
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
-  ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx, env);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const int>   procIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
-  size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);
@@ -364,9 +362,8 @@ void AlgPTScotch<Adapter>::partition(
   // TODO
   // TODO:  Actual logic should call Scotch when number of processes == 1.
   ArrayView<const gno_t> vtxID;
-  ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
 
   ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;

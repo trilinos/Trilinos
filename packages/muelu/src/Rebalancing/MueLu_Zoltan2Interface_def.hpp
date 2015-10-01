@@ -52,7 +52,7 @@
 #include "MueLu_Zoltan2Interface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
-#include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
 #include <Teuchos_Utils.hpp>
@@ -77,9 +77,10 @@ namespace MueLu {
  RCP<const ParameterList> Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+    validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
+
     validParamList->set< RCP<const FactoryBase> >   ("A",                      Teuchos::null, "Factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",            Teuchos::null, "Factory of the coordinates");
-    validParamList->set< int >                      ("rowWeight",                          0, "Default weight to rows (total weight = nnz + rowWeight");
     validParamList->set< RCP<const ParameterList> > ("ParameterList",          Teuchos::null, "Zoltan2 parameters");
 
     return validParamList;
@@ -96,16 +97,15 @@ namespace MueLu {
   void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
-    RCP<const Map>   rowMap   = A->getRowMap();
+    RCP<Matrix>    A      = Get<RCP<Matrix> >(level, "A");
+    RCP<const Map> rowMap = A->getRowMap();
 
-    RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords   = Get< RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(level, "Coordinates");
-    RCP<const Map>   map      = coords->getMap();
+    typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> dMultiVector;
+    RCP<dMultiVector> coords      = Get<RCP<dMultiVector> >(level, "Coordinates");
+    RCP<const Map>    map         = coords->getMap();
+    GO                numElements = map->getNodeNumElements();
 
-    GO               numParts = level.Get<GO>("number of partitions");
-
-    size_t dim       = coords->getNumVectors();
-    LO     blkSize   = A->GetFixedBlockSize();
+    LO blkSize  = A->GetFixedBlockSize();
 
     // Check that the number of local coordinates is consistent with the #rows in A
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getNodeNumElements()/blkSize != coords->getLocalLength(), Exceptions::Incompatible,
@@ -117,12 +117,13 @@ namespace MueLu {
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getNodeElementList();
     ArrayView<const GO> coordsElements = map   ->getNodeElementList();
-    for (LO i = 0; i < Teuchos::as<LO>(map->getNodeNumElements()); i++)
+    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
       TEUCHOS_TEST_FOR_EXCEPTION((coordsElements[i]-indexBase)*blkSize + indexBase != rowElements[i*blkSize],
                                  Exceptions::RuntimeError, "i = " << i << ", coords GID = " << coordsElements[i]
                                  << ", row GID = " << rowElements[i*blkSize] << ", blkSize = " << blkSize << std::endl);
 #endif
 
+    GO numParts = level.Get<GO>("number of partitions");
     if (numParts == 1) {
       // Single processor, decomposition is trivial: all zeros
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
@@ -130,31 +131,7 @@ namespace MueLu {
       return;
     }
 
-    GO numElements = map->getNodeNumElements();
-    std::vector<const double*> values(dim), weights(1);
-    std::vector<int>       strides;
-
-    for (size_t k = 0; k < dim; k++)
-      values[k] = coords->getData(k).get();
-
     const ParameterList& pL = GetParameterList();
-    int rowWeight = pL.get<int>("rowWeight");
-    GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
-
-    Array<double> weightsPerRow(numElements);
-    for (LO i = 0; i < numElements; i++) {
-      weightsPerRow[i] = 0.0;
-      for (LO j = 0; j < blkSize; j++) {
-        weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
-        // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
-        // but Zoltan also gets a good partioning in rows, which sometimes does not
-        // happen for Zoltan2. So here is an attempt to get a better row partitioning
-        // without significantly screwing up nnz partitioning
-        // NOTE: no good heuristic here, the value was chosen almost randomly
-        weightsPerRow[i] += rowWeight;
-      }
-    }
-    weights[0] = weightsPerRow.getRawPtr();
 
     RCP<const ParameterList> providedList = pL.get<RCP<const ParameterList> >("ParameterList");
     ParameterList Zoltan2Params;
@@ -170,21 +147,40 @@ namespace MueLu {
     }
     Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
-    GetOStream(Runtime0) << "Zoltan2 parameters:" << std::endl << "----------" << std::endl << Zoltan2Params << "----------" << std::endl;
+    GetOStream(Runtime0) << "Zoltan2 parameters:\n----------\n" << Zoltan2Params << "----------" << std::endl;
 
     const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
-    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" &&
-                               algo != "rcb",
-                               Exceptions::RuntimeError, "Unknown partitioning algorithm: \"" << algo << "\"");
+    TEUCHOS_TEST_FOR_EXCEPTION(algo != "multijagged" && algo != "rcb", Exceptions::RuntimeError,
+                               "Unknown partitioning algorithm: \"" << algo << "\"");
 
-    typedef Zoltan2::BasicVectorAdapter<Zoltan2::BasicUserTypes<double,GO,LO,GO> > InputAdapterType;
-    typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
+    typedef Zoltan2::XpetraMultiVectorAdapter<dMultiVector>  InputAdapterType;
+    typedef Zoltan2::PartitioningProblem<InputAdapterType>   ProblemType;
 
-    InputAdapterType adapter(numElements, map->getNodeElementList().getRawPtr(), values, strides, weights, strides);
+    int rowWeight = pL.get<int>("rowWeight");
+    GetOStream(Runtime0) << "Using weights formula: nnz + " << rowWeight << std::endl;
+
+    Array<double> weightsPerRow(numElements);
+    for (LO i = 0; i < numElements; i++) {
+      weightsPerRow[i] = 0.0;
+
+      for (LO j = 0; j < blkSize; j++) {
+        weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
+        // Zoltan2 pqJagged gets as good partitioning as Zoltan RCB in terms of nnz
+        // but Zoltan also gets a good partioning in rows, which sometimes does not
+        // happen for Zoltan2. So here is an attempt to get a better row partitioning
+        // without significantly screwing up nnz partitioning
+        // NOTE: no good heuristic here, the value was chosen almost randomly
+        weightsPerRow[i] += rowWeight;
+      }
+    }
+
+    std::vector<int>           strides;
+    std::vector<const double*> weights(1, weightsPerRow.getRawPtr());
 
     RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
 
+    InputAdapterType adapter(coords, weights, strides);
     RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
 
     {
@@ -205,8 +201,7 @@ namespace MueLu {
     }
 
     Set(level, "Partition", decomposition);
-
-  } //Build()
+  }
 
 } //namespace MueLu
 

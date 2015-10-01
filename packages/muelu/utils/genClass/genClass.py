@@ -46,11 +46,11 @@ def main(argv=None):
   baseClass = "SingleLevelFactoryBase"  # or "TwoLevelFactoryBase"
 
   # the template type can be
-  # LO-GO-NO-LMO
-  # SC-LO-GO-NO-LMO
+  # LO-GO-NO
+  # SC-LO-GO-NO
   # SC-LO-GO
   # SC-LO
-  templateType = "SC-LO-GO-NO-LMO"
+  templateType = "SC-LO-GO-NO"
 
   # process input data
   classNameUpper = className.upper()
@@ -62,7 +62,7 @@ def main(argv=None):
     DeclareInputName = "DeclareInput(Level &fineLevel, Level &coarseLevel)"
     BuildName        = "Build(Level &fineLevel, Level &coarseLevel)"
 
-  if templateType == "SC-LO-GO-NO-LMO":
+  if templateType == "SC-LO-GO-NO":
     templateDefinition = "template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
     templateDefShort   = "template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>"
     templateParameters = "<Scalar, LocalOrdinal, GlobalOrdinal, Node>"
@@ -74,12 +74,12 @@ def main(argv=None):
     templateDefinition = "template <class Scalar = double, class LocalOrdinal = int>"
     templateDefShort   = "template <class Scalar, class LocalOrdinal>"
     templateParameters = "<Scalar, LocalOrdinal>"
-  elif templateType == "LO-GO-NO-LMO":
+  elif templateType == "LO-GO-NO":
     templateDefinition = "template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>"
     templateDefShort   = "template <class LocalOrdinal, class GlobalOrdinal, class Node>"
     templateParameters = "<LocalOrdinal, GlobalOrdinal, Node>"
   else:
-    print "unknown templateType. Must be either LO-GO-NO-LMO, SC-LO-GO-NO-LMO, SC-LO-GO or SC-LO"
+    print "unknown templateType. Must be either LO-GO-NO, SC-LO-GO-NO, SC-LO-GO or SC-LO"
     exit(-1)
 
   # define filenames

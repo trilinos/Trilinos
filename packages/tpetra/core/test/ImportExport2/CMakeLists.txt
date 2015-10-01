@@ -1,11 +1,14 @@
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ImportExport2_UnitTests
-  SOURCES
+# FIXME (mfh 26 Sep 2015) It's not hard to fix this test to build when
+# GO = int is disabled. 
+IF (Tpetra_INST_INT_INT)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ImportExport2_UnitTests
+    SOURCES
     ImportExport2_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
-  STANDARD_PASS_OUTPUT
-  )
-
+    COMM serial mpi
+    ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()

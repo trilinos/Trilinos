@@ -164,24 +164,30 @@ namespace ZOO {
 
 template<class Real>
 void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
+  
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+ 
+    typedef std::vector<Real> vector;
+    typedef Vector<Real>      V;
+    typedef StdVector<Real>   SV;  
+ 
     // Cast Initial Guess and Solution Vectors
-    Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
-    Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
+    RCP<vector> x0p = x0.getVector();
+    RCP<vector> xp  = x.getVector();
     int n = xp->size();
     // Resize Vectors
     n = 10;
 
-    Teuchos::RCP<std::vector<Real> > k_rcp = Teuchos::rcp(new std::vector<Real>(n,0));
+    RCP<vector> k_rcp = rcp(new vector(n,0));
     for(int i=0;i<n;++i) {
         (*k_rcp)[i] = i+1.0;    
     }    
-    Teuchos::RCP<Vector<Real> > k = Teuchos::rcp(new StdVector<Real>(k_rcp));
+    RCP<V> k = rcp(new SV(k_rcp));
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_Zakharov<Real>(k) );
+    obj = rcp( new Objective_Zakharov<Real>(k) );
     // Get Initial Guess
     (*x0p)[0] =  3.0;
     (*x0p)[1] =  3.0;

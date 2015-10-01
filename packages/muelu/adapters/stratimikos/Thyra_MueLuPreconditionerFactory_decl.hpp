@@ -61,11 +61,11 @@
 
 namespace Thyra {
 
-  /** \brief Concrete preconditioner factory subclass for Thyra based on MueLu.
-   *
-   * Add support for MueLu preconditioners in Thyra. This class provides an interface both
-   * for Epetra and Tpetra
-   */
+  /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
+      @ingroup MueLuAdapters
+      Add support for MueLu preconditioners in Thyra. This class provides an interface both
+      for Epetra and Tpetra.
+  */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
@@ -124,7 +124,7 @@ namespace Thyra {
 
   private:
 
-    Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op, const Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const;
+    Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op, const Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const;
 
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 

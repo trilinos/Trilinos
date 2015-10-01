@@ -86,11 +86,11 @@ operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < num_rows; ++i) {
 
-    os << A(i,0);
+    os << std::setw(24) << A(i,0);
 
     for (Index j = 1; j < num_cols; ++j) {
       os << "," << std::setw(24) << A(i,j);

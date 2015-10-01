@@ -54,6 +54,7 @@
 
 
 #include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer_Kokkos.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"

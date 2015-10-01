@@ -139,7 +139,7 @@ int main(int narg, char *arg[]) {
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
-  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
+  inputAdapter_t::gno_t const *adjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
   ia.print(me);
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
@@ -156,7 +156,7 @@ int main(int narg, char *arg[]) {
   int *element_num_map = new int [num_elem];
   error += im_ex_get_elem_num_map(exoid, element_num_map);
 
-  inputAdapter_t::zgid_t *node_num_map = new int [num_nodes];
+  inputAdapter_t::gno_t *node_num_map = new int [num_nodes];
   error += im_ex_get_node_num_map(exoid, node_num_map);
 
   int *elem_blk_ids = new int [num_elem_blk];

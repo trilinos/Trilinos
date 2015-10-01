@@ -3242,7 +3242,7 @@ namespace {
   {
     out << "Tpetra::MultiVector::getDualView test" << endl;
     Teuchos::OSTab tab0 (out);
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3406,14 +3406,6 @@ namespace {
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
-
-#else // NOT TPETRA_HAVE_KOKKOS_REFACTOR
-    out << "Test disabled, because it only works if the Kokkos refactor "
-      "version of Tpetra is enabled.  If you wish to exercise this feature of "
-      "Tpetra::MultiVector, please check your Trilinos configuration and make "
-      "sure that the CMake option Tpetra_ENABLE_Kokkos_Refactor is either not "
-      "set at all, or set to OFF." << endl;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
 
@@ -3431,7 +3423,7 @@ namespace {
   {
     out << "Tpetra::MultiVector DualView constructor test" << endl;
     Teuchos::OSTab tab0 (out);
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3528,14 +3520,6 @@ namespace {
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
-
-#else // NOT TPETRA_HAVE_KOKKOS_REFACTOR
-    out << "Test disabled, because it only works if the Kokkos refactor "
-      "version of Tpetra is enabled.  If you wish to exercise this feature of "
-      "Tpetra::MultiVector, please check your Trilinos configuration and make "
-      "sure that the CMake option Tpetra_ENABLE_Kokkos_Refactor is either not "
-      "set at all, or set to OFF." << endl;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
 
@@ -3557,7 +3541,7 @@ namespace {
   {
     out << "Tpetra::MultiVector View constructor test" << endl;
     Teuchos::OSTab tab0 (out);
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3667,14 +3651,6 @@ namespace {
       out << "We modified X_gbl in host memory, and sync'd to device memory, "
         "but X_lcl did not change!" << endl;
     }
-
-#else // NOT TPETRA_HAVE_KOKKOS_REFACTOR
-    out << "Test disabled, because it only works if the Kokkos refactor "
-      "version of Tpetra is enabled.  If you wish to exercise this feature of "
-      "Tpetra::MultiVector, please check your Trilinos configuration and make "
-      "sure that the CMake option Tpetra_ENABLE_Kokkos_Refactor is either not "
-      "set at all, or set to OFF." << endl;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
   }
 
 // Macro used inside the SubViewSomeZeroRows test below.  It tests for
@@ -4312,17 +4288,19 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE )
 
 
+  typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
+  typedef Tpetra::Map<>::global_ordinal_type default_global_ordinal_type;
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 #  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, int, int, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, float, default_local_ordinal_type, default_global_ordinal_type, NODE )
 #else
 #  define TPETRA_MULTIVECTOR_COMPLEX_FLOAT_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
 #  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, int, int, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ComplexDotOneColumn, double, default_local_ordinal_type, default_global_ordinal_type, NODE )
 #else
 #  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)

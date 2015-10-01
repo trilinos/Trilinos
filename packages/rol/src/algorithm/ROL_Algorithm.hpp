@@ -255,6 +255,19 @@ public:
              constraint vector spaces, where the user does not define the dual() method.
   */
   virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        Vector<Real>             &l, 
+                                        Objective<Real>          &obj,
+                                        EqualityConstraint<Real> &con,
+                                        BoundConstraint<Real>    &bnd,
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
+    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream);
+  }
+  /** \brief Run algorithm on equality constrained problems (Type-E).
+             This general interface supports the use of dual optimization and
+             constraint vector spaces, where the user does not define the dual() method.
+  */
+  virtual std::vector<std::string> run( Vector<Real>             &x,
                                         const Vector<Real>       &g, 
                                         Vector<Real>             &l, 
                                         const Vector<Real>       &c, 

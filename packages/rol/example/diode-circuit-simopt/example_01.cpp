@@ -46,13 +46,16 @@
 */
 
 #include "example_01.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
+#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StatusTestSQP.hpp"
+#include "ROL_BoundConstraint.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "ROL_BoundConstraint.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "ROL_TrustRegionStep.hpp"
 
 #include <iostream>
 #include <fstream>

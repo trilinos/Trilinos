@@ -68,7 +68,10 @@
 namespace MueLu {
 
 
-  /*! @class TemplatedAMGXOperator
+  /*! @class AMGXOperator
+      @ingroup MueLuAdapters
+      @brief Adapter for AmgX library from Nvidia.
+
       This templated version of the class throws errors in all methods as AmgX is not implemented for datatypes where scalar!=double/float and ordinal !=int
  */
   template <class Scalar,
@@ -131,7 +134,10 @@ namespace MueLu {
   };
 
   /*! @class AMGXOperator
-      Creates and AmgX Solver object with a Tpetra Matrix. Partial specialization of the template for data types supported by AmgX.
+      @ingroup MueLuAdapters
+      @brief Adapter for AmgX library from Nvidia.
+
+      Creates an AmgX Solver object with a Tpetra Matrix. Partial specialization of the template for data types supported by AmgX.
   */
   template<class Node>
   class AMGXOperator<double, int, int, Node> : public TpetraOperator<double, int, int, Node> {

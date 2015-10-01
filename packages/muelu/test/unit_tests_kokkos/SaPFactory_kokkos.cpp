@@ -46,12 +46,15 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_Utilities_kokkos.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -70,25 +73,75 @@ namespace MueLuTests {
 
   }
 
-#if 0
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
   {
-    MueLu::Level level;
-    level.SetLevelID(1);
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
-    level.Set("A",     A);
-    level.Set("P",     P);
-    level.Set("Graph", filteredGraph);
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    SC damping = 1.1;
+    // construct two levels
+    Level fineLevel, coarseLevel;
+    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+
+    // construct matrices
+    const SC lambdaMax = 5;
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
+    A->SetMaxEigenvalueEstimate(lambdaMax);
+    RCP<Matrix> Ptent = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
+
+    // set level matrices
+    fineLevel  .Set("A", A);
+    coarseLevel.Set("P", Ptent);
+
+    // construct the factory to be tested
+    const double dampingFactor = 0.5;
+    RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+    ParameterList Pparams;
+    Pparams.set("sa: damping factor", dampingFactor);
+    sapFactory->SetParameterList(Pparams);
+    sapFactory->SetFactory("A", MueLu::NoFactory::getRCP());
+    sapFactory->SetFactory("P", MueLu::NoFactory::getRCP());
+
+    // build the data
+    coarseLevel.Request("P", sapFactory.get());
+    sapFactory->Build(fineLevel, coarseLevel);
+
+    // fetch the data
+    RCP<Matrix> Pfact = coarseLevel.Get<RCP<Matrix>>("P", sapFactory.get());
+
+    // construct the data to compare
+    SC omega = dampingFactor / lambdaMax;
+    RCP<Vector> invDiag = Utils_kokkos::GetMatrixDiagonalInverse(*A);
+    RCP<Matrix> Ptest   = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out);
+
+    // compare matrices by multiplying them by a random vector
+    RCP<MultiVector> X = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    X->setSeed(846930886);
+    X->randomize();
+
+    RCP<MultiVector> Bfact = MultiVectorFactory::Build(A->getRangeMap(),  1);
+    RCP<MultiVector> Btest = MultiVectorFactory::Build(A->getRangeMap(),  1);
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC zero = STS::zero(), one = STS::one();
+
+    Pfact->apply(*X, *Bfact, Teuchos::NO_TRANS, one, zero);
+    Ptest->apply(*X, *Btest, Teuchos::NO_TRANS, one, zero);
+    Btest->update(-one, *Bfact, one);
+
+    Array<STS::magnitudeType> norms(1);
+    Btest->norm2(norms);
+    out << "|| B_factory - B_test || = " << norms[0] << std::endl;
+    TEST_EQUALITY(norms[0] < 1e-12, true);
   }
-#endif
 
+  // FIXME: uncomment the test when we get all corresponding factories ported to kokkos
 #if 0
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
-  TEUCHOS_UNIT_TEST(SaPFactory, EpetraVsTpetra)
+  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, EpetraVsTpetra)
   {
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
     out << "Compare results of Epetra and Tpetra" << std::endl;
     out << "for 3 level AMG solver using smoothed aggregation with" << std::endl;
@@ -96,26 +149,27 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC zero = STS::zero(), one = STS::one();
+
+    Array<STS::magnitudeType> results(2);
 
     // run test only on 1 proc
-    if(comm->getSize() == 1)
-    {
+    if(comm->getSize() == 1) {
       Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 
       // run Epetra and Tpetra test
-      for (int run = 0; run < 2; run++) //TODO: create a subfunction instead or Tuple of UnderlyingLib
-      {
+      for (int run = 0; run < 2; run++) { //TODO: create a subfunction instead or Tuple of UnderlyingLib
         if (run == 0) lib = Xpetra::UseEpetra;
-        else lib = Xpetra::UseTpetra;
+        else          lib = Xpetra::UseTpetra;
 
         // generate problem
         LO maxLevels = 3;
-        LO its=10;
-        LO nEle = 63;
+        LO its       = 10;
+        LO nEle      = 63;
         const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
         Teuchos::ParameterList matrixParameters;
-        matrixParameters.set("nx",nEle);
+        matrixParameters.set("nx", nEle);
 
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
           Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
@@ -123,8 +177,8 @@ namespace MueLuTests {
 
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-        nullSpace->putScalar( (SC) 1.0);
-        Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+        nullSpace->putScalar(one);
+        Array<STS::magnitudeType> norms(1);
         nullSpace->norm1(norms);
         if (comm->getRank() == 0)
           out << "||NS|| = " << norms[0] << std::endl;

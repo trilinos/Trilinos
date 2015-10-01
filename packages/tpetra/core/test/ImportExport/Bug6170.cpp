@@ -48,8 +48,8 @@
 #include <Tpetra_Map.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
-typedef int LO; // Local Ordinal
-typedef int GO; // Global Ordinal
+typedef Tpetra::Map<>::local_ordinal_type LO; // Local Ordinal
+typedef Tpetra::Map<>::global_ordinal_type GO; // Global Ordinal
 
 namespace { // anonymous
   const GO sourceMap0[] = {91, 68, 90, 56, 77, 54, 75, 51};

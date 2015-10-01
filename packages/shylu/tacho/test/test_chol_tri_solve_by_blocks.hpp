@@ -140,16 +140,16 @@ namespace Tacho {
       
       auto future_forward_solve 
         = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
-                             ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                             (Diag::NonUnit, TU, TB), 1);
+                                                ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+                                                (Diag::NonUnit, TU, TB), 1);
 
       TaskFactoryType::Policy().add_dependence(future_forward_solve, future_factor);      
       TaskFactoryType::Policy().spawn(future_forward_solve);
       
       auto future_backward_solve 
         = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-                             ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
-                             (Diag::NonUnit, TU, TB), 1);
+                                                ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+                                                (Diag::NonUnit, TU, TB), 1);
 
       TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);            
       TaskFactoryType::Policy().spawn(future_backward_solve);
@@ -165,22 +165,22 @@ namespace Tacho {
       r_val += tmg.fill(BB_Unblocked);
       
       {
-        auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>::
-                                         TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
+                                                            ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
         auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                         ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                         (Diag::NonUnit, U, B), 0);
+                                                            ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                                            (Diag::NonUnit, U, B), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
         auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                         ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
-                                         (Diag::NonUnit, U, B), 0);
+                                                            ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                                            (Diag::NonUnit, U, B), 0);
         
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());

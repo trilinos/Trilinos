@@ -48,6 +48,7 @@
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StatusTestSQP.hpp"
 
 // Minimize (1/2)*||u-utarget||^2+(gamma/2)||z||^2
 // 

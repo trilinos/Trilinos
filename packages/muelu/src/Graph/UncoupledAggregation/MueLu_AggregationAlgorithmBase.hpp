@@ -89,8 +89,8 @@ namespace MueLu {
   };
 
   /*!
-       @class pure virtual base class for all aggregation algorithms.
-       @brief Base class for MueLu aggregation algorithms
+       @class AggregationAlgorithmBase
+       @brief Pure virtual base class for all MueLu aggregation algorithms
 
        @ingroup MueLuBaseClasses
    */

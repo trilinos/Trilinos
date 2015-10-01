@@ -6,24 +6,38 @@
 /// \brief Incomplete Cholesky factorization front interface.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+// basic utils
+#include "util.hpp"
+#include "control.hpp"
+#include "partition.hpp"
+
 namespace Tacho { 
 
   using namespace std;
 
-  template<int ArgUplo, int ArgAlgo>
+  // tasking interface
+  // * default behavior is for non-by-blocks tasks
+  // * control is only used for by-blocks algorithms
+  // ===============================================
+  template<int ArgUplo, int ArgAlgo, 
+           int ArgVariant = Variant::One,                  
+           template<int,int> class ControlType = Control>  
   class Chol {
   public:
-    static int blocksize;
-
-    // data-parallel interface
-    // =======================
+    
+    // function interface
+    // ==================
     template<typename ParallelForType,
              typename ExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(typename ExecViewType::policy_type &policy, 
                       const typename ExecViewType::policy_type::member_type &member, 
-                      ExecViewType &A);
-
+                      ExecViewType &A) {
+      // each algorithm and its variants should be specialized
+      ERROR(MSG_INVALID_TEMPLATE_ARGS);
+      return -1;
+    } 
+    
     // task-data parallel interface
     // ============================
     template<typename ParallelForType,
@@ -33,42 +47,37 @@ namespace Tacho {
       typedef typename ExecViewType::policy_type policy_type;
       typedef typename policy_type::member_type member_type;
       typedef int value_type;
-
+      
     private:
       ExecViewType _A;
       
       policy_type &_policy;
-
+      
     public:
       TaskFunctor(const ExecViewType A)
         : _A(A),
           _policy(ExecViewType::task_factory_type::Policy())
       { } 
-
+      
       string Label() const { return "Chol"; }
       
       // task execution
       void apply(value_type &r_val) {
         r_val = Chol::invoke<ParallelForType>(_policy, _policy.member_single(), 
-                                               _A);
+                                              _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
         r_val = Chol::invoke<ParallelForType>(_policy, member, 
-                                               _A);
+                                              _A);
       }
 
     };
 
   };
-
-  template<int ArgUplo, int ArgAlgo> int Chol<ArgUplo,ArgAlgo>::blocksize = 32;
 }
 
-// basic utils
-#include "util.hpp"
-#include "partition.hpp"
 
 // unblocked version blas operations
 #include "scale.hpp"
@@ -78,12 +87,7 @@ namespace Tacho {
 #include "trsm.hpp"
 #include "herk.hpp"
 
-// right looking algorithm with upper triangular
-#include "chol_unblocked_dummy.hpp"
-//#include "chol_unblocked.hpp"
-#include "chol_unblocked_opt1.hpp"
-#include "chol_unblocked_opt2.hpp"
-#include "chol_blocked.hpp"
-#include "chol_by_blocks.hpp"
+// cholesky
+#include "chol_u.hpp"
 
 #endif

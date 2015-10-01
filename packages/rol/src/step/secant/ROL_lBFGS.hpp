@@ -48,6 +48,8 @@
     \brief Provides definitions for limited-memory BFGS operators.
 */
 
+#include "ROL_Secant.hpp"
+
 namespace ROL {
 
 template<class Real>

@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   typedef int globalId_t;
 #endif
 
-  typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
+  typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
 
   // TODO explain
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;

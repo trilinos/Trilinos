@@ -48,6 +48,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Zakharov.hpp"

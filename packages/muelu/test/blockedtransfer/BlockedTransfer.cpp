@@ -108,11 +108,11 @@
 //
 typedef double Scalar;
 typedef int    LocalOrdinal;
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-typedef long long int GlobalOrdinal;
-#else
+// #ifdef HAVE_XPETRA_INT_LONG_LONG
+// typedef long long int GlobalOrdinal;
+// #else
 typedef int GlobalOrdinal;
-#endif
+// #endif
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 

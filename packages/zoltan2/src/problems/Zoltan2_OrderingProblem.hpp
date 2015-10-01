@@ -92,7 +92,6 @@ class OrderingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -148,7 +147,7 @@ public:
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  OrderingSolution<zgid_t, lno_t> *getSolution() {
+  OrderingSolution<lno_t, gno_t> *getSolution() {
     // std::cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << std::endl;
     // Compute Perm or InvPerm, if one is missing.
     if (!(solution_->havePerm()))
@@ -161,7 +160,7 @@ public:
 private:
   void createOrderingProblem();
 
-  RCP<OrderingSolution<zgid_t, lno_t> > solution_;
+  RCP<OrderingSolution<lno_t, gno_t> > solution_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
@@ -182,7 +181,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new OrderingSolution<zgid_t, lno_t>(nVtx));
+      this->solution_ = rcp(new OrderingSolution<lno_t, gno_t>(nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -243,21 +242,8 @@ void OrderingProblem<Adapter>::solve(bool newData)
   }
 #endif
 
-
-
   }
   Z2_FORWARD_EXCEPTIONS;
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -335,7 +321,8 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   switch (modelType) {
 
   case GraphModelType:
-    graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
+    graphFlags.set(REMOVE_SELF_EDGES);
+    graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 

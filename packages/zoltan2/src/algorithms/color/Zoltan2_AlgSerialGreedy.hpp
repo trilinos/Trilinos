@@ -87,12 +87,12 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   
     // Color local graph. Global coloring is supported in Zoltan (not Zoltan2).
     // Get local graph.
-    ArrayView<const lno_t> edgeIds;
+    ArrayView<const gno_t> edgeIds;
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const lno_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
-    model_->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
+    const size_t nVtx = model_->getLocalNumVertices(); // Assume (0,nvtx-1)
+    model_->getEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
     // Debug
@@ -105,7 +105,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
     ArrayRCP<int> colors = solution->getColorsRCP();
-    for (lno_t i=0; i<nVtx; i++){
+    for (size_t i=0; i<nVtx; i++){
       colors[i] = 0;
     }
 
@@ -118,8 +118,8 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   
   // Color graph given by two arrays. API may change. Expert users only!
   void colorCrsGraph(
-    const lno_t nVtx,
-    ArrayView<const lno_t> edgeIds,
+    const size_t nVtx,
+    ArrayView<const gno_t> edgeIds,
     ArrayView<const lno_t> offsets,
     ArrayRCP<int> colors
   )
@@ -128,7 +128,7 @@ class AlgSerialGreedy : public Algorithm<Adapter>
   
     // Find max degree, since (max degree)+1 is an upper bound.
     lno_t maxDegree = 0; 
-    for (lno_t i=0; i<nVtx; i++){
+    for (size_t i=0; i<nVtx; i++){
       if (offsets[i+1]-offsets[i] > maxDegree)
         maxDegree = offsets[i+1]-offsets[i];
     }
@@ -148,11 +148,11 @@ class AlgSerialGreedy : public Algorithm<Adapter>
     Teuchos::ParameterList &pl = env_->getParametersNonConst();
     std::string colorChoice = pl.get<std::string>("color_choice", "FirstFit");
 
-    for (lno_t i=0; i<nVtx; i++){
+    for (size_t i=0; i<nVtx; i++){
       //std::cout << "Debug: i= " << i << std::endl;
       lno_t v=i; // TODO: Use ordering here.
       for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
-        lno_t nbor = edgeIds[j];
+        gno_t nbor = edgeIds[j];
         //std::cout << "Debug: nbor= " << nbor << ", color= " << colors[nbor] << std::endl;
         if (colors[nbor] > 0){
           // Neighbors' colors are forbidden

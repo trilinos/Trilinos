@@ -60,7 +60,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> myTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> myTypes_t;
 // Need to use zgno_t as zzgid_t in basic types, since zzgid_t=zgno_t in MultiVector
 
 

@@ -316,6 +316,7 @@ protected:
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
                                 const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
   void fillAssociatedElements(const ElementBlockAccess& access);
+  void buildLocalIdsFromOwnedAndSharedElements();
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;

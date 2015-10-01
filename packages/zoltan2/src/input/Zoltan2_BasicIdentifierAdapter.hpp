@@ -87,7 +87,6 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef IdentifierAdapter<User> base_adapter_t;
@@ -108,7 +107,7 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicIdentifierAdapter( lno_t numIds, const zgid_t *idPtr, 
+  BasicIdentifierAdapter( lno_t numIds, const gno_t *idPtr, 
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
@@ -117,7 +116,7 @@ public:
 
   size_t getLocalNumIDs() const { return numIds_;}
 
-  void getIDsView(const zgid_t *&Ids) const { Ids = idList_; }
+  void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
 
   int getNumWeightsPerID() const { return weights_.size(); }
 
@@ -136,7 +135,7 @@ public:
 private:
 
   lno_t numIds_;
-  const zgid_t *idList_;
+  const gno_t *idList_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 };
 
@@ -146,7 +145,7 @@ private:
 
 template <typename User>
   BasicIdentifierAdapter<User>::BasicIdentifierAdapter(
-    lno_t numIds, const zgid_t *idPtr,
+    lno_t numIds, const gno_t *idPtr,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_()
 {

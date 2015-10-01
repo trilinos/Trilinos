@@ -203,7 +203,7 @@ namespace Tacho {
         }
         timer.reset();          
         {
-          Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
+          Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
             ::invoke<ForType>(TaskFactoryType::Policy(),
                               TaskFactoryType::Policy().member_single(),
                               U);

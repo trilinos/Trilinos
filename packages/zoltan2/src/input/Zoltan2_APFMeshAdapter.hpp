@@ -123,7 +123,6 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -223,7 +222,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const gno_t *&Ids) const
   {
     int dim = entityZ2toAPF(etype);
     if (dim<=m_dimension&&dim>=0)
@@ -301,7 +300,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const gno_t *& adjacencyIds) const
   {
     int dim_source = entityZ2toAPF(source);
     int dim_target = entityZ2toAPF(target);
@@ -344,7 +343,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const zgid_t *&adjacencyIds) const
+		      const lno_t *&offsets, const gno_t *&adjacencyIds) const
   {
     int dim_source = entityZ2toAPF(sourcetarget);
     int dim_target = entityZ2toAPF(through);
@@ -429,13 +428,13 @@ private:
   int entity_needs;
   apf::Numbering** lids; //[dimension] numbering of local id numbers
   apf::GlobalNumbering** gids;//[dimension] numbering of global id numbers
-  zgid_t** gid_mapping; //[dimension][lid] corresponding global id numbers
+  gno_t** gid_mapping; //[dimension][lid] corresponding global id numbers
   size_t* num_local; //[dimension] number of local entities
   EntityTopologyType** topologies; //[dimension] topologies for each entity
   lno_t*** adj_offsets; //[first_dimension][second_dimension] array of offsets
-  std::vector<zgid_t>** adj_gids; //[first_dimension][second_dimension] global_ids of first adjacencies
+  std::vector<gno_t>** adj_gids; //[first_dimension][second_dimension] global_ids of first adjacencies
   lno_t*** adj2_offsets; //[first_dimension][second_dimension] array of offsets for second adjacencies
-  std::vector<zgid_t>** adj2_gids; //[first_dimension][second_dimension] global_ids of second adjacencies
+  std::vector<gno_t>** adj2_gids; //[first_dimension][second_dimension] global_ids of second adjacencies
   int coord_dimension; //dimension of coordinates (always 3 for APF)
   scalar_t** ent_coords; //[dimension] array of coordinates [xs ys zs]
 
@@ -496,8 +495,8 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
   //count the local and global numbers as well as assign ids and map local to global
   lids = new apf::Numbering*[m_dimension+1];
   gids = new apf::GlobalNumbering*[m_dimension+1];
-  gid_mapping = new zgid_t*[m_dimension+1];
-  std::unordered_map<zgid_t,lno_t>* lid_mapping = new std::unordered_map<zgid_t,lno_t>[m_dimension+1];
+  gid_mapping = new gno_t*[m_dimension+1];
+  std::unordered_map<gno_t,lno_t>* lid_mapping = new std::unordered_map<gno_t,lno_t>[m_dimension+1];
   num_local = new size_t[m_dimension+1];
   topologies = new EntityTopologyType*[m_dimension+1];
   
@@ -537,13 +536,13 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     
     //Make a mapping from local to global
     //While we are at it take the topology types
-    gid_mapping[i] = new zgid_t[num_local[i]];
+    gid_mapping[i] = new gno_t[num_local[i]];
     topologies[i] = new EntityTopologyType[num_local[i]];
     apf::DynamicArray<apf::Node> nodes;
     itr = m->begin(i);
     num=0;
     while((ent=m->iterate(itr)))  {
-      zgid_t gid = apf::getNumber(gids[i],apf::Node(ent,0));
+      gno_t gid = apf::getNumber(gids[i],apf::Node(ent,0));
       gid_mapping[i][ apf::getNumber(lids[i],ent,0,0)] = gid;
       topologies[i][num] = topologyAPFtoZ2(m->getType(ent));
       num++;
@@ -553,10 +552,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     
   }
   //First Adjacency and Second Adjacency data
-  adj_gids = new std::vector<zgid_t>*[m_dimension+1];
+  adj_gids = new std::vector<gno_t>*[m_dimension+1];
   adj_offsets = new lno_t**[m_dimension+1];
   if (needSecondAdj) {
-    adj2_gids = new std::vector<zgid_t>*[m_dimension+1];
+    adj2_gids = new std::vector<gno_t>*[m_dimension+1];
     adj2_offsets = new lno_t**[m_dimension+1];
   }
   else {
@@ -572,10 +571,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     }
     if (!has(i))
       continue;
-    adj_gids[i] = new std::vector<zgid_t>[m_dimension+1];
+    adj_gids[i] = new std::vector<gno_t>[m_dimension+1];
     adj_offsets[i] = new lno_t*[m_dimension+1];
     if (needSecondAdj) {
-      adj2_gids[i] = new std::vector<zgid_t>[m_dimension+1];
+      adj2_gids[i] = new std::vector<gno_t>[m_dimension+1];
       adj2_offsets[i] = new lno_t*[m_dimension+1];
     }
     for (int j=0;j<=m_dimension;j++) {
@@ -602,10 +601,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
       //We need communication for second adjacency
       if (needSecondAdj)
         PCU_Comm_Begin();
-      std::unordered_map<zgid_t,apf::MeshEntity*> part_boundary_mapping;
+      std::unordered_map<gno_t,apf::MeshEntity*> part_boundary_mapping;
       
       while ((ent=m->iterate(itr))) {
-        std::set<zgid_t> temp_adjs; //temp storage for second adjacency
+        std::set<gno_t> temp_adjs; //temp storage for second adjacency
         //Get First Adjacency
         apf::Adjacent adj;
         m->getAdjacent(ent,j,adj);
@@ -623,11 +622,11 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
               
               part_boundary_mapping[apf::getNumber(gids[j],apf::Node(adj[l],0))] = adj[l];
               for (apf::Parts::iterator it=res.begin();it!=res.end();it++) {
-                zgid_t send_vals[2];
+                gno_t send_vals[2];
                 send_vals[1]=apf::getNumber(gids[i],apf::Node(ent,0));
                 send_vals[0]=apf::getNumber(gids[j],apf::Node(adj[l],0));
                 
-                PCU_Comm_Pack(*it,send_vals,2*sizeof(zgid_t));
+                PCU_Comm_Pack(*it,send_vals,2*sizeof(gno_t));
               }
             }
           }
@@ -638,14 +637,14 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
 	if (needSecondAdj && i!=m_dimension) {
 	  apf::Parts res;
 	  m->getResidence(ent,res);
-	  typename std::set<zgid_t>::iterator adj_itr;
+	  typename std::set<gno_t>::iterator adj_itr;
 	  for (adj_itr=temp_adjs.begin();adj_itr!=temp_adjs.end();adj_itr++) {
 	    for (apf::Parts::iterator it=res.begin();it!=res.end();it++) {
-	      zgid_t send_vals[2];
+	      gno_t send_vals[2];
 	      send_vals[0]=apf::getNumber(gids[i],apf::Node(ent,0));
 	      send_vals[1] = *adj_itr;
 	      if (send_vals[0]!=send_vals[1])
-		PCU_Comm_Pack(*it,send_vals,2*sizeof(zgid_t));
+		PCU_Comm_Pack(*it,send_vals,2*sizeof(gno_t));
 	    }
           }
         }
@@ -654,10 +653,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
       if (needSecondAdj) {
         //Now capture mesh wide second adjacency locally
         PCU_Comm_Send();
-        std::set<zgid_t>* adjs2 = new std::set<zgid_t>[num_local[i]];
+        std::set<gno_t>* adjs2 = new std::set<gno_t>[num_local[i]];
         while (PCU_Comm_Receive()) {
-          zgid_t adj2[2];
-          PCU_Comm_Unpack(adj2,2*sizeof(zgid_t));
+          gno_t adj2[2];
+          PCU_Comm_Unpack(adj2,2*sizeof(gno_t));
           
           if (i==m_dimension) {
             apf::MeshEntity* through = part_boundary_mapping[adj2[0]];
@@ -675,7 +674,7 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
         }      
         //And finally convert the second adjacency to a vector to be returned to user
         for (size_t l=0;l<num_local[i];l++) {
-          for (typename std::set<zgid_t>::iterator sitr = adjs2[l].begin();sitr!=adjs2[l].end();sitr++) {
+          for (typename std::set<gno_t>::iterator sitr = adjs2[l].begin();sitr!=adjs2[l].end();sitr++) {
             adj2_gids[i][j].push_back(*sitr);
           }
           adj2_offsets[i][j][l+1]=adj2_gids[i][j].size();

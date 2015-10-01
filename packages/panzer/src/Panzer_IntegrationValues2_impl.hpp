@@ -80,8 +80,18 @@ namespace panzer {
 
     if (ir->isSide())
       side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_ip,ir->side_topology->getDimension());
+
+    if (ir->cv_type != "none") {
+       dyn_phys_cub_points = af.template buildArray<Scalar,Cell,IP,Dim>("phys_cub_points",num_cells, num_ip, num_space_dim);
+       dyn_phys_cub_weights = af.template buildArray<Scalar,Cell,IP>("phys_cub_weights",num_cells, num_ip);
+       if (ir->cv_type == "side") {
+           dyn_phys_cub_norms = af.template buildArray<Scalar,Cell,IP,Dim>("phys_cub_norms",num_cells, num_ip, num_space_dim);
+       }
+     }
     
     cub_weights = af.template buildStaticArray<Scalar,IP>("cub_weights",num_ip);
+
+    dyn_node_coordinates = af.template buildArray<Scalar,Cell,IP,Dim>("node_coordinates",num_cells, num_ip, num_space_dim);
     
     node_coordinates = af.template buildStaticArray<Scalar,Cell,BASIS,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
     
@@ -100,6 +110,11 @@ namespace panzer {
     norm_contravarient = af.template buildStaticArray<Scalar,Cell,IP>("norm_contravarient",num_cells, num_ip);
 
     ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ip_coordiantes",num_cells, num_ip,num_space_dim);
+
+    ref_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ref_ip_coordinates",num_cells, num_ip,num_space_dim);
+
+    weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted normal",num_cells, num_ip,num_space_dim);
+
   }
   
   template <typename Scalar,
@@ -126,8 +141,16 @@ namespace panzer {
 
     Intrepid::DefaultCubatureFactory<Scalar,Array<Scalar,void,void,void,void,void,void,void,void> >
       cubature_factory;
+
+    if (ir->cv_type == "side")
+      intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolumeSide<Scalar,Array<Scalar,void,void,void,void,void,void,void,void>,
+                                        Array<Scalar,void,void,void,void,void,void,void,void> > (ir->topology));
     
-    if (ir->isSide())
+    if (ir->cv_type == "volume")
+       intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolume<Scalar,Array<Scalar,void,void,void,void,void,void,void,void>,
+                                        Array<Scalar,void,void,void,void,void,void,void,void> > (ir->topology));
+
+    else if (ir->cv_type == "none" && ir->isSide())
       intrepid_cubature = cubature_factory.create(*(ir->side_topology), 
 						  ir->cubature_degree);
     else
@@ -145,6 +168,16 @@ namespace panzer {
       side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_ip,ir->side_topology->getDimension());
     
     cub_weights = af.template buildStaticArray<Scalar,IP>("cub_weights",num_ip);
+
+    if (ir->cv_type != "none") {
+       dyn_phys_cub_points = af.template buildArray<Scalar,Cell,IP,Dim>("phys_cub_points",num_cells, num_ip, num_space_dim);
+       dyn_phys_cub_weights = af.template buildArray<Scalar,Cell,IP>("phys_cub_weights",num_cells, num_ip);
+       if (ir->cv_type == "side") {
+           dyn_phys_cub_norms = af.template buildArray<Scalar,Cell,IP,Dim>("phys_cub_norms",num_cells, num_ip, num_space_dim);
+       }
+    }
+
+    dyn_node_coordinates = af.template buildArray<Scalar,Cell,IP,Dim>("node_coordinates",num_cells, num_ip, num_space_dim);
     
     node_coordinates = af.template buildStaticArray<Scalar,Cell,BASIS,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
     
@@ -163,6 +196,11 @@ namespace panzer {
     norm_contravarient = af.template buildStaticArray<Scalar,Cell,IP>("norm_contravarient",num_cells, num_ip);
 
     ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ip_coordiantes",num_cells, num_ip,num_space_dim);
+
+    ref_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ref_ip_coordinates",num_cells, num_ip,num_space_dim);
+
+    weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted_normal",num_cells,num_ip,num_space_dim);
+
   }
 
 // ***********************************************************
@@ -188,6 +226,8 @@ namespace panzer {
     
     Intrepid::CellTools<Scalar> cell_tools;
     
+    if (cv_type == "none"){
+
     if (!int_rule->isSide())
       intrepid_cubature->getCubature(dyn_cub_points, dyn_cub_weights);
     else {
@@ -294,6 +334,80 @@ namespace panzer {
       cell_tools.mapToPhysicalFrameTemp(ip_coordinates, cub_points, node_coordinates, *(int_rule->topology));
     }
 
+   }
+
+  // evaluate values for control volume points
+   else {
+
+   {
+      size_type num_cells = in_node_coordinates.dimension(0);
+      size_type num_nodes = in_node_coordinates.dimension(1);
+      size_type num_dims = in_node_coordinates.dimension(2);
+
+      for (size_type cell = 0; cell < num_cells;  ++cell) {
+        for (size_type node = 0; node < num_nodes; ++node) {
+          for (size_type dim = 0; dim < num_dims; ++dim) {
+            node_coordinates(cell,node,dim) =
+                in_node_coordinates(cell,node,dim);
+            dyn_node_coordinates(cell,node,dim) =
+                in_node_coordinates(cell,node,dim);
+          }
+        }
+      }
+    }
+
+    if (int_rule->cv_type == "volume")
+      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_weights,dyn_node_coordinates);
+
+    else if (int_rule->cv_type == "side")
+      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_norms,dyn_node_coordinates);
+
+    if (int_rule->cv_type == "volume")
+    {
+        size_type num_cells = dyn_phys_cub_points.dimension(0);
+        size_type num_ip = dyn_phys_cub_points.dimension(1);
+        size_type num_dims = dyn_phys_cub_points.dimension(2);
+
+        for (size_type cell = 0; cell < num_cells;  ++cell) {
+          for (size_type ip = 0; ip < num_ip;  ++ip) {
+             weighted_measure(cell,ip) = dyn_phys_cub_weights(cell,ip);
+             for (size_type dim = 0; dim < num_dims; ++dim)
+               ip_coordinates(cell,ip,dim) = dyn_phys_cub_points(cell,ip,dim);
+           }
+        }
+        cell_tools.mapToReferenceFrame(ref_ip_coordinates, ip_coordinates, node_coordinates,
+                                    *(int_rule->topology),-1);
+
+        cell_tools.setJacobianTemp(jac, ref_ip_coordinates, node_coordinates,
+                           *(int_rule->topology));
+
+    }
+    else if (int_rule->cv_type == "side")
+    {
+        size_type num_cells = dyn_phys_cub_points.dimension(0);
+        size_type num_ip = dyn_phys_cub_points.dimension(1);
+        size_type num_dims = dyn_phys_cub_points.dimension(2);
+
+        for (size_type cell = 0; cell < num_cells;  ++cell) {
+          for (size_type ip = 0; ip < num_ip;  ++ip) {
+             for (size_type dim = 0; dim < num_dims; ++dim) {
+               ip_coordinates(cell,ip,dim) = dyn_phys_cub_points(cell,ip,dim);
+               weighted_normals(cell,ip,dim) = dyn_phys_cub_norms(cell,ip,dim);
+             }
+           }
+        }
+
+        cell_tools.mapToReferenceFrame(ref_ip_coordinates, ip_coordinates, node_coordinates,
+                                       *(int_rule->topology),-1);
+        cell_tools.setJacobianTemp(jac, ref_ip_coordinates, node_coordinates,
+                               *(int_rule->topology));
+     }
+
+     cell_tools.setJacobianInvTemp(jac_inv, jac);
+
+     cell_tools.setJacobianDetTemp(jac_det, jac);
+
+    }
   }
 }
 

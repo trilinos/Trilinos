@@ -48,6 +48,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_DualView.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
@@ -954,6 +955,10 @@ namespace Tpetra {
     /// mutually exclusive terms.
     bool distributed_;
 
+    //! The Kokkos device type over which to allocate Views and perform work.
+    typedef typename Kokkos::Device<typename Node::execution_space,
+                                    typename Node::memory_space> device_type;
+
     /// \brief A mapping from local IDs to global IDs.
     ///
     /// By definition, this mapping is local; it only contains global
@@ -970,11 +975,7 @@ namespace Tpetra {
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
     /// describe(), may invoke getNodeElementList().
-    mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
-
-    //! The Kokkos device type over which to allocate Views and perform work.
-    typedef typename Kokkos::Device<typename Node::execution_space,
-                                    typename Node::memory_space> device_type;
+    mutable Kokkos::DualView<GlobalOrdinal*, device_type> lgMap_;
 
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal,

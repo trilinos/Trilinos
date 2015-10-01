@@ -49,6 +49,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -63,8 +64,9 @@ int main(int argc, char *argv[]) {
 
   using namespace Teuchos;
 
-  typedef ROL::StdVector<RealT>       V;
-  typedef std::vector<RealT>          Vec;
+  typedef std::vector<RealT>          vector;  
+  typedef ROL::Vector<RealT>          V;      // Abstract vector
+  typedef ROL::StdVector<RealT>       SV;     // Concrete vector containing std::vector data
 
   GlobalMPISession mpiSession(&argc, &argv);
 
@@ -104,17 +106,17 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
     // Iteration Vector 
-    RCP<Vec> x_rcp = rcp( new Vec(dim, 0.0) );
+    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
 
     // Vector of natural numbers
-    RCP<Vec> k_rcp = rcp( new Vec(dim, 0.0) );
+    RCP<vector> k_rcp = rcp( new vector(dim, 0.0) );
 
     // For gradient and Hessian checks 
-    RCP<Vec> xtest_rcp = rcp( new Vec(dim, 0.0) );
-    RCP<Vec> d_rcp     = rcp( new Vec(dim, 0.0) );
-    RCP<Vec> v_rcp     = rcp( new Vec(dim, 0.0) );
-    RCP<Vec> hv_rcp    = rcp( new Vec(dim, 0.0) );
-    RCP<Vec> ihhv_rcp  = rcp( new Vec(dim, 0.0) );
+    RCP<vector> xtest_rcp = rcp( new vector(dim, 0.0) );
+    RCP<vector> d_rcp     = rcp( new vector(dim, 0.0) );
+    RCP<vector> v_rcp     = rcp( new vector(dim, 0.0) );
+    RCP<vector> hv_rcp    = rcp( new vector(dim, 0.0) );
+    RCP<vector> ihhv_rcp  = rcp( new vector(dim, 0.0) );
   
     RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
@@ -126,15 +128,15 @@ int main(int argc, char *argv[]) {
       (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
-    Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
-    ROL::StdVector<RealT> x(x_rcp);
+    RCP<V> k = rcp(new SV(k_rcp) );
+    SV x(x_rcp);
 
     // Check gradient and Hessian
-    V xtest(xtest_rcp);
-    V d(d_rcp);
-    V v(v_rcp);
-    V hv(hv_rcp);
-    V ihhv(ihhv_rcp);
+    SV xtest(xtest_rcp);
+    SV d(d_rcp);
+    SV v(v_rcp);
+    SV hv(hv_rcp);
+    SV ihhv(ihhv_rcp);
 
     ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
@@ -147,19 +149,19 @@ int main(int argc, char *argv[]) {
     obj.hessVec(hv,v,xtest,tol);
     obj.invHessVec(ihhv,hv,xtest,tol);
     ihhv.axpy(-1,v);
-    std::cout << "Checking inverse Hessian" << std::endl;
-    std::cout << "||H^{-1}Hv-v|| = " << ihhv.norm() << std::endl;
+    *outStream << "Checking inverse Hessian" << std::endl;
+    *outStream << "||H^{-1}Hv-v|| = " << ihhv.norm() << std::endl;
      
 
     // Run Algorithm
     std::vector<std::string> output = algo.run(x, obj, false);
     for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
+      *outStream << output[i];
     }
 
     // Get True Solution
-    RCP<Vec> xtrue_rcp = rcp( new Vec(dim, 0.0) );
-    V xtrue(xtrue_rcp);
+    RCP<vector> xtrue_rcp = rcp( new vector(dim, 0.0) );
+    SV xtrue(xtrue_rcp);
 
         
     // Compute Error

@@ -48,11 +48,12 @@
 
 #define USE_HESSVEC 1
 
+#include "ROL_Types.hpp"
 #include "ROL_PoissonInversion.hpp"
+#include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_Types.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 

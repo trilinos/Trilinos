@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UTILITIESK_FWD_HPP
-#define MUELU_UTILITIESK_FWD_HPP
+#ifndef MUELU_UTILITIES_KOKKOS_FWD_HPP
+#define MUELU_UTILITIES_KOKKOS_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
@@ -54,13 +54,13 @@ namespace MueLu {
   class Utils_kokkos;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Utils2K;
+  class Utils2_kokkos;
 }
 
-#ifndef MUELU_UTILITIESK_SHORT
-#define MUELU_UTILITIESK_SHORT
+#ifndef MUELU_UTILITIES_KOKKOS_SHORT
+#define MUELU_UTILITIES_KOKKOS_SHORT
 #endif
 
 #endif
 
-#endif // MUELU_UTILITIESK_FWD_HPP
+#endif // MUELU_UTILITIES_KOKKOS_FWD_HPP

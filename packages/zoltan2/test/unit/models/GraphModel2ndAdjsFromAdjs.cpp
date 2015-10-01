@@ -142,8 +142,8 @@ int main(int narg, char *arg[]) {
 
   inputAdapter_t ia(*CommT, "region");
   inputAdapter_t ia2(*CommT, "vertex");
-  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
-  inputAdapter_t::zgid_t const *madjacencyIds=NULL;
+  inputAdapter_t::gno_t const *adjacencyIds=NULL;
+  inputAdapter_t::gno_t const *madjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
   inputAdapter_t::lno_t const *moffsets=NULL;
   ia.print(me);

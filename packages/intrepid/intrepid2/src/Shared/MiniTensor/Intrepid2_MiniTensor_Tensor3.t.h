@@ -381,13 +381,13 @@ operator<<(std::ostream & os, Tensor3<T, N, ES> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < dimension; ++i) {
 
     for (Index j = 0; j < dimension; ++j) {
 
-      os << A(i,j,0);
+      os << std::setw(24) << A(i,j,0);
 
       for (Index k = 1; k < dimension; ++k) {
         os << "," << std::setw(24) << A(i,j,k);
