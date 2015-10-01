@@ -46,6 +46,7 @@
 /// \brief Traits class for local multivector operations.
 
 #include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_NodeHelpers.hpp" // ReadyBufferHelper
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_MultiVectorKernelOps.hpp"
 
