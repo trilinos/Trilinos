@@ -86,6 +86,7 @@
 #include "ROL_Objective.hpp"
 #include "ROL_StdVector.hpp"
 
+
 namespace ROL {
 namespace ZOO {
 
@@ -167,14 +168,16 @@ void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<
   
     using Teuchos::RCP;
     using Teuchos::rcp;
- 
+    using Teuchos::dyn_cast; 
+
     typedef std::vector<Real> vector;
     typedef Vector<Real>      V;
     typedef StdVector<Real>   SV;  
  
     // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = x0.getVector();
-    RCP<vector> xp  = x.getVector();
+    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
+    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
+
     int n = xp->size();
     // Resize Vectors
     n = 10;

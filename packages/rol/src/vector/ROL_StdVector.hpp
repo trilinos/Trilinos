@@ -170,8 +170,6 @@ public:
 
 
 
-} // namespace StdVector_Helper
-
 } // namespace ROL
 
 #endif

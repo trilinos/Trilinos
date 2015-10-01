@@ -548,12 +548,14 @@ namespace ZOO {
   void getPoissonInversion( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
 
     typedef std::vector<Real> vector;
+    typedef StdVector<Real>   SV;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::dyn_cast;
 
     // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = getVector(x0);
-    RCP<vector>  xp = getVector(x);
+    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
+    RCP<vector>  xp = dyn_cast<SV>(x).getVector();
 
     int n = xp->size();
     // Resize Vectors
