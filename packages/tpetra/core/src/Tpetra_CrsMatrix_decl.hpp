@@ -44,6 +44,11 @@
 
 /// \file Tpetra_CrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::CrsMatrix class
+///
+/// If you want to use Tpetra::CrsMatrix, include
+/// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
+/// for you).  If you only want the declaration of Tpetra::CrsMatrix,
+/// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"

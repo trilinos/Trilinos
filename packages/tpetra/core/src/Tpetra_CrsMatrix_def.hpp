@@ -42,19 +42,29 @@
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
 #define TPETRA_CRSMATRIX_DEF_HPP
 
-#include <typeinfo>
-#include "Tpetra_RowMatrix.hpp"
+/// \file Tpetra_MultiVector_def.hpp
+/// \brief Definition of the Tpetra::MultiVector class
+///
+/// If you want to use Tpetra::CrsMatrix, include
+/// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
+/// for you).  If you only want the declaration of Tpetra::CrsMatrix,
+/// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include <Tpetra_Util.hpp>
-#include <Tpetra_Import_Util.hpp>
-#include <Tpetra_Import_Util2.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include "Tpetra_CrsMatrix_decl.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_Import_Util.hpp"
+#include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Util.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include <typeinfo>
 
 // CrsMatrix relies on template methods implemented in Tpetra_CrsGraph_def.hpp
-#include <Tpetra_CrsGraph_def.hpp>
+//
+// FIXME (mfh 01 Oct 2015) If I comment this out, I get link errors
+// for CrsGraph's templated methods, even though supposedly the ETI
+// for CrsGraph instantiates them.
+#include "Tpetra_CrsGraph_def.hpp"
 
 namespace Tpetra {
   //

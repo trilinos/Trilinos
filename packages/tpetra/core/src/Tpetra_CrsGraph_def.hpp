@@ -5482,6 +5482,7 @@ namespace Tpetra {
   TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE)  \
   TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) \
   TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)         \
-  TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)
+  TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE)         \
+  template void CrsGraph< LO , GO , NODE >::insertIndicesAndValues< S > (const RowInfo&, const SLocalGlobalViews&, const Teuchos::ArrayView< S >&, const Teuchos::ArrayView<const S >&, const ELocalGlobal, const ELocalGlobal);
 
 #endif // TPETRA_CRSGRAPH_DEF_HPP
