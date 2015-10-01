@@ -68,8 +68,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_MultiVector.hpp"
 
-#include "Kokkos_DefaultArithmetic.hpp"
-
 #include <boost/unordered_set.hpp> // a hash table
 
 /*
@@ -108,7 +106,6 @@ using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
-using KokkosClassic::DefaultArithmetic;
 
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager()
@@ -118,7 +115,7 @@ DOFManager<LO,GO>::DOFManager()
 template <typename LO, typename GO>
 DOFManager<LO,GO>::DOFManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,MPI_Comm mpiComm)
   : numFields_(0),buildConnectivityRun_(false),requireOrientations_(false), useTieBreak_(false), buildGhosted_(false)
-{ 
+{
   setConnManager(connMngr,mpiComm);
 }
 
@@ -127,7 +124,7 @@ void DOFManager<LO,GO>::setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > &
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::setConnManager: setConnManager cannot be called after "
-                      "buildGlobalUnknowns has been called"); 
+                      "buildGlobalUnknowns has been called");
   connMngr_ = connMngr;
   //We acquire the block ordering from the connmanager.
   connMngr_->getElementBlockIds(blockOrder_);
@@ -147,7 +144,7 @@ int DOFManager<LO,GO>::addField(const std::string & str, const Teuchos::RCP<cons
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::addField: addField cannot be called after "
-                      "buildGlobalUnknowns has been called"); 
+                      "buildGlobalUnknowns has been called");
 
   fieldPatterns_.push_back(pattern);
   fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
@@ -169,7 +166,7 @@ int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string &
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::addField: addField cannot be called after "
-                      "buildGlobalUnknowns has been called"); 
+                      "buildGlobalUnknowns has been called");
   TEUCHOS_TEST_FOR_EXCEPTION((connMngr_==Teuchos::null),std::logic_error,
                              "DOFManager::addField: you must add a ConnManager before"
                              "you can associate a FP with a given block.")
@@ -190,7 +187,7 @@ int DOFManager<LO,GO>::addField(const std::string & blockID, const std::string &
   std::map<std::string,int>::const_iterator fpIter = fieldNameToAID_.find(str);
   if(fpIter!=fieldNameToAID_.end())
     found=true;
-  
+
   if(!found){
     fieldPatterns_.push_back(pattern);
     fieldNameToAID_.insert(std::map<std::string,int>::value_type(str, numFields_));
@@ -218,7 +215,7 @@ Teuchos::RCP<const FieldPattern> DOFManager<LO,GO>::getFieldPattern(const std::s
   std::map<std::string,int>::const_iterator fitr = fieldNameToAID_.find(name);
   if(fitr==fieldNameToAID_.end())
     return Teuchos::null;
-  
+
   if(fitr->second<int(fieldPatterns_.size()))
     return fieldPatterns_[fitr->second];
 
@@ -273,7 +270,7 @@ void DOFManager<LO,GO>::getOwnedAndSharedIndices(std::vector<GO> & indicies) con
     indicies[i]=owned_and_ghosted_[i];
   }
 }
-  
+
   //gets the number of fields
 template <typename LO, typename GO>
 int DOFManager<LO,GO>::getNumFields() const
@@ -297,7 +294,7 @@ const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const 
+void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const
 {
   gids = elementGIDs_[localElementID];
 }
@@ -335,7 +332,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::buildGlobalUnknowns: buildGlobalUnknowns cannot be called again "
-                      "after buildGlobalUnknowns has been called"); 
+                      "after buildGlobalUnknowns has been called");
   //Some stuff for the Map.
   typedef panzer::TpetraNodeType Node;
   typedef Tpetra::Map<LO, GO, Node> Map;
@@ -350,12 +347,12 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // in the geometric field pattern when orientations are required
   if(getOrientationsRequired()) {
     std::size_t sz = geomPattern->getSubcellIndices(0,0).size();
-     
+
     TEUCHOS_TEST_FOR_EXCEPTION(sz==0,std::logic_error,
                                "DOFManager::buildGlobalUnknowns requires a geometric pattern including "
                                  "the nodes when orientations are needed!");
   }
-  
+
   RCP<const Teuchos::Comm<int> > comm = communicator_;
 
   /* STEPS.
@@ -384,7 +381,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
     if(faConstruct.size()>0) {
       fa_fps_.push_back(rcp(new FieldAggPattern(faConstruct, ga_fp_)));
-    
+
       // how many global IDs are in this element block?
       int gidsInBlock = fa_fps_[fa_fps_.size()-1]->numberIds();
       elementBlockGIDCount_.push_back(gidsInBlock);
@@ -400,7 +397,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // set of elements requested.
   ElementBlockAccess ownedAccess(true,connMngr_);
 
-  /* Steps 2. and 3. 
+  /* Steps 2. and 3.
    */
   RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
 
@@ -439,17 +436,17 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       }
     }
   }
-  
+
  /* 6.  Create a OneToOne map from the overlap map.
    */
-  
+
   RCP<const Map> non_overlap_map;
   if(!useTieBreak_) {
     non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap);
   }
   else {
     // use a hash tie break to get better load balancing from create one to one
-    HashTieBreak<LO,GO> tie_break; 
+    HashTieBreak<LO,GO> tie_break;
     non_overlap_map = Tpetra::createOneToOne<LO,GO,Node>(overlapmap,tie_break);
   }
 
@@ -466,10 +463,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    */
   non_overlap_mv->doExport(*overlap_mv,e,Tpetra::ABSMAX);
 
- /* 10. Use KokkosClassic::DefaultArithmetic to locally sum.
+ /* 10. Compute the local sum using Kokkos.
    */
   GO localsum=0;
-  {  
+  {
     typedef typename Tpetra::MultiVector<GO,Node> MV;
     typedef typename MV::dual_view_type::t_dev KV;
     typedef typename MV::dual_view_type::t_dev::memory_space DMS;
@@ -480,16 +477,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 11. Create a map using local sums to generate final GIDs.
    */
-  RCP<const Map> gid_map = 
-    rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (), 
-		  static_cast<size_t> (localsum), static_cast<GO> (0), comm));
+  RCP<const Map> gid_map =
+    rcp (new Map (Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid (),
+                  static_cast<size_t> (localsum), static_cast<GO> (0), comm));
   // mfh 28 Apr 2015: This doesn't work because createContigMap
   // assumes the default Node type, but Panzer might use a different
   // Node type.  Just call the Map constructor; don't call those
   // nonmember "constructors."
   //RCP<const Map> gid_map = Tpetra::createContigMap<LO,GO>(-1,localsum, comm);
 
- /* 12. Iterate through the non-overlapping MV and assign GIDs to 
+ /* 12. Iterate through the non-overlapping MV and assign GIDs to
    *     the necessary points. (Assign a -1 elsewhere.)
    */
   ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
@@ -504,7 +501,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       else{
         editnonoverlap[j][i]=-1;
       }
-      
+
     }
   }
 
@@ -523,14 +520,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   // if neighbor unknowns are required, then make sure they are included
   // in the elementGIDs_
-  if (buildGhosted_) { // enabling this turns on GID construction for 
+  if (buildGhosted_) { // enabling this turns on GID construction for
                        // neighbor processors
     ElementBlockAccess naborAccess(false,connMngr_);
     RCP<const Map> overlapmap_nabor = buildOverlapMapFromElements(naborAccess);
 
     Export e(overlapmap_nabor,non_overlap_map);
 
-    Teuchos::RCP<MultiVector> overlap_mv_nabor 
+    Teuchos::RCP<MultiVector> overlap_mv_nabor
         = Tpetra::createMultiVector<GO>(overlapmap_nabor,(size_t)numFields_);
 
     // get all neighbor information
@@ -558,7 +555,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     }
 
     Teuchos::ArrayRCP<GO> nvals = non_overlap_mv->get1dViewNonConst();
-    for (int j = 0; j < nvals.size(); ++j) 
+    for (int j = 0; j < nvals.size(); ++j)
       nvals[j] += offset;
   }
   #endif
@@ -566,7 +563,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // build owned vector
   {
     typedef boost::unordered_set<GO> HashTable;
-    HashTable isOwned, remainingOwned; 
+    HashTable isOwned, remainingOwned;
     //owned_ is made up of owned_ids.
     Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
     for (int j = 0; j < nvals.size(); ++j) {
@@ -581,14 +578,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
       if(fa_fps_[b]==Teuchos::null)
         continue;
- 
+
       const std::vector<LO> & myElements = connMngr_->getElementBlock(blockOrder_[b]);
 
       for (size_t l = 0; l < myElements.size(); ++l) {
         const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
 
         // add "novel" global ids that are also owned to owned array
-        for(std::size_t i=0;i<localOrdering.size();i++) { 
+        for(std::size_t i=0;i<localOrdering.size();i++) {
           // don't try to add if ID is not owned
           if(isOwned.find(localOrdering[i])==isOwned.end())
             continue;
@@ -607,10 +604,10 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     // these are ones that are owned locally but not required by any
     // element owned by this processor (uggh!)
     for(typename HashTable::const_iterator itr=remainingOwned.begin();itr!=remainingOwned.end();itr++)
-      owned_.push_back(*itr);       
+      owned_.push_back(*itr);
 
     if(owned_.size()!=isOwned.size()) {
-      out << "I'm about to hang because of unknown numbering failure ... sorry! (line = " << __LINE__ << ")" << std::endl; 
+      out << "I'm about to hang because of unknown numbering failure ... sorry! (line = " << __LINE__ << ")" << std::endl;
       TEUCHOS_TEST_FOR_EXCEPTION(owned_.size()!=isOwned.size(),std::logic_error,
                                  "DOFManager::buildGlobalUnkonwns: Failure because not all owned unknowns have been accounted for.");
     }
@@ -636,9 +633,9 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     std::vector<ElementBlockAccess> blockAccessVec;
     blockAccessVec.push_back(ElementBlockAccess(true,connMngr_));
     if(buildGhosted_)
-      blockAccessVec.push_back(ElementBlockAccess(false,connMngr_)); 
-    // all owned will be processed first followed by those that are 
-    // optionally ghosted 
+      blockAccessVec.push_back(ElementBlockAccess(false,connMngr_));
+    // all owned will be processed first followed by those that are
+    // optionally ghosted
 
     for(std::size_t a=0;a < blockAccessVec.size(); a++) {
       // get access type (owned or neighbor)
@@ -647,16 +644,16 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
       for (size_t b = 0; b < blockOrder_.size(); ++b) {
         if(fa_fps_[b]==Teuchos::null)
           continue;
-  
+
         const std::vector<LO> & myElements = access.getElementBlock(blockOrder_[b]);
-  
+
         for (size_t l = 0; l < myElements.size(); ++l) {
           const std::vector<GO> & localOrdering = elementGIDs_[myElements[l]];
-  
+
           // add "novel" global ids into owned_and_ghosted_ vector.
-          for(std::size_t i=0;i<localOrdering.size();i++) { 
+          for(std::size_t i=0;i<localOrdering.size();i++) {
             std::pair<typename HashTable::iterator,bool> insertResult = hashTable.insert(localOrdering[i]);
-  
+
             // if insertion succeeds, then this is "novel" to owned_and_ghosted_
             // vector so include it
             if(insertResult.second)
@@ -694,7 +691,7 @@ int DOFManager<LO,GO>::getFieldNum(const std::string & string) const
 
   if(found)
     return ind;
-  
+
   // didn't find anything...return -1
   return -1;
 }
@@ -706,7 +703,7 @@ void DOFManager<LO,GO>::getFieldOrder(std::vector<std::string> & fieldOrder) con
   for (size_t i = 0; i < fieldStringOrder_.size(); ++i)
     fieldOrder[i]=fieldStringOrder_[i];
 }
-  
+
 template <typename LO, typename GO>
 bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::string & block) const
 {
@@ -726,7 +723,7 @@ bool DOFManager<LO,GO>::fieldInBlock(const std::string & field, const std::strin
       break;
     }
   }
-  
+
   return found;
 }
 
@@ -750,7 +747,7 @@ const std::vector<int> & DOFManager<LO,GO>::getBlockFieldNumbers(const std::stri
 }
 
 template <typename LO, typename GO>
-const std::pair<std::vector<int>,std::vector<int> > & 
+const std::pair<std::vector<int>,std::vector<int> > &
 DOFManager<LO,GO>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error,"DOFManager::getGIDFieldOffsets_closure: BuildConnectivity must be run first.");
@@ -783,7 +780,7 @@ void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrde
 {
   TEUCHOS_TEST_FOR_EXCEPTION(buildConnectivityRun_,std::logic_error,
                       "DOFManager::setFieldOrder: setFieldOrder cannot be called after "
-                      "buildGlobalUnknowns has been called"); 
+                      "buildGlobalUnknowns has been called");
   if(validFieldOrder(fieldOrder)){
     fieldStringOrder_=fieldOrder;
     //We also need to reassign the fieldAIDOrder_.
@@ -793,7 +790,7 @@ void DOFManager<LO,GO>::setFieldOrder(const std::vector<std::string> & fieldOrde
   }
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::setFieldOrder: Invalid Field Ordering!");
-    
+
 }
 
 
@@ -845,11 +842,11 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
 
   // allocate for each block
   orientation_.resize(myElementCount);
-  
+
   // loop over all element blocks
   for(std::vector<std::string>::const_iterator blockItr=elementBlockIds.begin();
     blockItr!=elementBlockIds.end();++blockItr) {
-      const std::string & blockName = *blockItr; 
+      const std::string & blockName = *blockItr;
 
      // this block has no unknowns (or elements)
     std::map<std::string,int>::const_iterator fap = blockNameToID_.find(blockName);
@@ -880,16 +877,16 @@ void DOFManager<LO,GO>::buildUnknownsOrientation()
        // this is the vector of orientations to fill: initialize it correctly
       std::vector<char> & eOrientation = orientation_[elmts[e]];
 
-      // This resize seems to be the same as fieldPattern.numberIDs(). 
+      // This resize seems to be the same as fieldPattern.numberIDs().
       // When computer edge orientations is called, that is the assert.
       // There should be no reason to make it anymore complicated.
       eOrientation.resize(fieldPattern.numberIds());
       for(std::size_t s=0;s<eOrientation.size();s++)
-        eOrientation[s] = 1; // put in 1 by default 
+        eOrientation[s] = 1; // put in 1 by default
 
       // get geometry ids
       LO connSz = connMngr_->getConnectivitySize(elmts[e]);
-      const GO * connPtr = connMngr_->getConnectivity(elmts[e]); 
+      const GO * connPtr = connMngr_->getConnectivity(elmts[e]);
       const std::vector<GO> connectivity(connPtr,connPtr+connSz);
 
       orientation_helpers::computeCellEdgeOrientations(topEdgeIndices, connectivity, fieldPattern, eOrientation);
@@ -950,7 +947,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std::ostrea
   TEUCHOS_ASSERT(blockOrder_.size()==blockToAssociatedFP_.size());
 
   for(std::size_t i=0;i<blockOrder_.size();i++) {
-    os << "   Element Block = " << blockOrder_[i] << std::endl; 
+    os << "   Element Block = " << blockOrder_[i] << std::endl;
 
     // output field information
     const std::vector<int> & fieldIds = blockToAssociatedFP_[i];
@@ -1108,7 +1105,7 @@ void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndSharedElements()
 
   std::vector<GO> ownedAndShared;
   this->getOwnedAndSharedIndices(ownedAndShared);
-   
+
   // build global to local hash map (temporary and used only once)
   boost::unordered_map<GO,LO> hashMap;
   for(std::size_t i = 0; i < ownedAndShared.size(); ++i)
@@ -1121,7 +1118,7 @@ void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndSharedElements()
     for (std::size_t g = 0; g < gids.size(); ++g)
       lids[g] = hashMap[gids[g]];
   }
-    
+
   this->setLocalIds(elementLIDs);
 }
 
@@ -1154,7 +1151,7 @@ DOFManager<LO,GO>::runLocalRCMReordering(const Teuchos::RCP<const Tpetra::Map<LO
       }
     }
   }
- 
+
   graph->fillComplete();
 
   std::vector<GO> newOrder(map->getNodeNumElements());
