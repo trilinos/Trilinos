@@ -15,8 +15,7 @@ namespace Tacho {
 
     // data-parallel interface
     // =======================
-    template<typename ParallelForType,
-             typename ScalarType,
+    template<typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB,
              typename ExecViewTypeC>
@@ -31,8 +30,7 @@ namespace Tacho {
 
     // task-data parallel interface
     // ============================
-    template<typename ParallelForType,
-             typename ScalarType,
+    template<typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB,
              typename ExecViewTypeC>
@@ -68,14 +66,14 @@ namespace Tacho {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType>(_policy, _policy.member_single(), 
-                                              _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke(_policy, _policy.member_single(), 
+                             _alpha, _A, _B, _beta, _C);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Gemm::invoke<ParallelForType>(_policy, member, 
-                                              _alpha, _A, _B, _beta, _C);
+        r_val = Gemm::invoke(_policy, member, 
+                             _alpha, _A, _B, _beta, _C);
       }
 
     };

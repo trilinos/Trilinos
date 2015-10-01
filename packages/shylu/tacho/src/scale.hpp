@@ -20,8 +20,7 @@ namespace Tacho {
   template<typename T> T ScaleTraits<T>::one  = 1;
   template<typename T> T ScaleTraits<T>::zero = 0;
 
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
@@ -31,19 +30,18 @@ namespace Tacho {
     typedef typename CrsExecViewType::ordinal_type  ordinal_type;
     typedef typename CrsExecViewType::value_type    value_type;
     typedef typename CrsExecViewType::row_view_type row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     if (alpha == ScaleTraits<value_type>::one) {
       // do nothing
     } else {
       const ordinal_type mA = A.NumRows();
       if (mA > 0) {
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
-                        [&](const ordinal_type i) {
-                          row_view_type &row = A.RowView(i);
-                          for (ordinal_type j=0;j<row.NumNonZeros();++j)
-                            row.Value(j) *= alpha;
-                        });
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mA),
+                             [&](const ordinal_type i) {
+                               row_view_type &row = A.RowView(i);
+                               for (ordinal_type j=0;j<row.NumNonZeros();++j)
+                                 row.Value(j) *= alpha;
+                             });
         member.team_barrier();
       }
     }
@@ -51,8 +49,7 @@ namespace Tacho {
     return 0;
   }
 
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename DenseExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
@@ -61,7 +58,6 @@ namespace Tacho {
                    DenseExecViewType &A) {
     typedef typename DenseExecViewType::ordinal_type  ordinal_type;
     typedef typename DenseExecViewType::value_type    value_type;
-    typedef typename DenseExecViewType::team_factory_type team_factory_type;
 
     if (alpha == ScaleTraits<value_type>::one) {
       // do nothing
@@ -69,21 +65,21 @@ namespace Tacho {
       if (A.BaseObject()->ColStride() > A.BaseObject()->RowStride()) {
         const ordinal_type nA = A.NumCols();
         if (nA > 0) {
-          ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nA),
-                          [&](const ordinal_type j) {
-                            for (ordinal_type i=0;i<A.NumRows();++i)
-                              A.Value(i, j) *= alpha;
-                          });
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nA),
+                               [&](const ordinal_type j) {
+                                 for (ordinal_type i=0;i<A.NumRows();++i)
+                                   A.Value(i, j) *= alpha;
+                               });
           member.team_barrier();
         }
       } else {
         const ordinal_type mA = A.NumRows();
         if (mA > 0) {
-          ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, mA),
-                          [&](const ordinal_type i) {
-                            for (ordinal_type j=0;j<A.NumCols();++j)
-                              A.Value(i, j) *= alpha;
-                          });
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mA),
+                               [&](const ordinal_type i) {
+                                 for (ordinal_type j=0;j<A.NumCols();++j)
+                                   A.Value(i, j) *= alpha;
+                               });
           member.team_barrier();
         }
       }

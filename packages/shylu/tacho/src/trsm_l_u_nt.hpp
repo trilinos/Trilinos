@@ -14,8 +14,7 @@ namespace Tacho {
   // Trsm used in the tri-solve phase
   // ================================
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewTypeA,
            typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
@@ -31,10 +30,9 @@ namespace Tacho {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
-    typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
     // scale the matrix B with alpha
-    scaleDenseMatrix<ParallelForType>(member, alpha, B);
+    scaleDenseMatrix(member, alpha, B);
 
     // Solve a system: AX = B -> B := inv(A) B
     const ordinal_type mA = A.NumRows();
@@ -49,24 +47,24 @@ namespace Tacho {
         const ordinal_type nnz_a = a.NumNonZeros();
         if (nnz_a > 0) {
           // b1t = b1t - a12t B2 
-          ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nB),
-                          [&](const ordinal_type j) {
-                            for (ordinal_type i=1;i<nnz_a;++i) {
-                              const ordinal_type row_at_i = a.Col(i);   // grab B2 row
-                              const value_type   val_at_i = a.Value(i); // grab a12t value
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nB),
+                               [&](const ordinal_type j) {
+                                 for (ordinal_type i=1;i<nnz_a;++i) {
+                                   const ordinal_type row_at_i = a.Col(i);   // grab B2 row
+                                   const value_type   val_at_i = a.Value(i); // grab a12t value
                               
-                              // update b1t
-                              B.Value(k, j) -= val_at_i*B.Value(row_at_i, j);
-                            }
-                          });
+                                   // update b1t
+                                   B.Value(k, j) -= val_at_i*B.Value(row_at_i, j);
+                                 }
+                               });
           
           // invert
           if (diagA != Diag::Unit) {
             // b1t = b1t / diag
-            ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nB),
-                            [&](const ordinal_type j) {
-                              B.Value(k, j) /= diag;
-                            });
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nB),
+                                 [&](const ordinal_type j) {
+                                   B.Value(k, j) /= diag;
+                                 });
 
           }
           member.team_barrier();

@@ -17,7 +17,6 @@ namespace Tacho {
     typedef typename MatrixViewType::value_type   value_type;
     typedef typename MatrixViewType::ordinal_type ordinal_type;
 
-    typedef TaskFactoryType team_factory_type;
     typedef TaskFactoryType task_factory_type;
     typedef typename task_factory_type::policy_type policy_type;
     typedef typename task_factory_type::future_type future_type;

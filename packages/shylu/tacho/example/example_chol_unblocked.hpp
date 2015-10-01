@@ -11,14 +11,9 @@
 #include "crs_matrix_view.hpp"
 #include "crs_row_view.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "chol.hpp"
 
@@ -45,12 +40,9 @@ namespace Tacho {
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
 
-    typedef ParallelFor ForType;
-    
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
     
     int r_val = 0;
@@ -99,10 +91,10 @@ namespace Tacho {
       case AlgoChol::UnblockedOpt: {
         if (variant == Variant::One)
           future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
-                                                         ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+                                                         ::TaskFunctor<CrsTaskViewType>(U), 0);
         else if (variant == Variant::Two)
           future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::Two>
-                                                         ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+                                                         ::TaskFunctor<CrsTaskViewType>(U), 0);
         else {
           ERROR(">> Not supported algorithm variant");          
         }
@@ -110,7 +102,7 @@ namespace Tacho {
       }
       case AlgoChol::Dummy: {
         future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::Dummy>
-                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+                                                       ::TaskFunctor<CrsTaskViewType>(U), 0);
         break;
       }
       default:

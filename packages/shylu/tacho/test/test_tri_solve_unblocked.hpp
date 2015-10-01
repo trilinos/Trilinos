@@ -11,14 +11,9 @@
 #include "dense_matrix_base.hpp"
 #include "dense_matrix_view.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "tri_solve.hpp"
 
@@ -46,11 +41,8 @@ namespace Tacho {
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> DenseMatrixBaseType;
     typedef DenseMatrixView<DenseMatrixBaseType> DenseMatrixViewType;
     
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-
-    typedef ParallelFor ForType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
     
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
     typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
@@ -95,7 +87,7 @@ namespace Tacho {
       r_val += tmg.fill(BB);
 
       auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                       ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
                                        (Diag::NonUnit, U, B), 0);
       
       TaskFactoryType::Policy().spawn(future);
@@ -105,7 +97,7 @@ namespace Tacho {
     }
     {
       auto future = TaskFactoryType::Policy().create_team(Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-                                       ::TaskFunctor<ForType,double,
+                                       ::TaskFunctor<double,
                                        CrsTaskViewType,DenseTaskViewType,DenseTaskViewType>
                                        (1.0, U, B, 0.0, C), 0);
       
@@ -118,7 +110,7 @@ namespace Tacho {
       r_val += tmg.fill(BB);
 
       auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                       ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                       ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
                                        (Diag::NonUnit, U, B), 0);
 
       TaskFactoryType::Policy().spawn(future);
@@ -128,7 +120,7 @@ namespace Tacho {
     }
     {
       auto future = TaskFactoryType::Policy().create_team(Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-                                       ::TaskFunctor<ForType,double,
+                                       ::TaskFunctor<double,
                                        CrsTaskViewType,DenseTaskViewType,DenseTaskViewType>
                                        (1.0, U, B, 0.0, C), 0);
       
