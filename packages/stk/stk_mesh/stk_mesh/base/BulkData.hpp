@@ -1017,6 +1017,11 @@ protected: //functions
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
 
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
+
+  void set_modification_summary_proc_id(int proc_id) {
+      m_modSummary.set_proc_id(proc_id);
+  }
+
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -1227,7 +1232,7 @@ private:
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
   friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-          const stk::mesh::PartVector& side_parts, const stk::mesh::PartVector* boundary_mesh_parts);
+          const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector* boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
@@ -1340,7 +1345,7 @@ private: // data
   ModificationNotifier notifier;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  // stk::ModificationSummary m_modSummary;
+//  stk::ModificationSummary m_modSummary;
 };
 
 

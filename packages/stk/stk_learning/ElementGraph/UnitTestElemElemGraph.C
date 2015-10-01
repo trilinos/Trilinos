@@ -1361,12 +1361,6 @@ skin_mesh(const SidesForElementGraph &via_side, const std::vector<stk::topology>
     return element_side_pairs;
 }
 
-std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim, const std::string &options)
-{
-    std::ostringstream os;
-    os << "generated:" << xdim << "x" << ydim << "x" << zdim << options;
-    return os.str();
-}
 
 stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData, const int killValue, const stk::mesh::Part& active)
 {
@@ -1391,20 +1385,6 @@ stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData, const
     return killedElements;
 }
 
-void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
-                                  const stk::mesh::EntityVector& killedElements,
-                                  const stk::mesh::PartVector& removeParts)
-{
-    std::vector<stk::mesh::PartVector> add_parts(killedElements.size());
-    std::vector<stk::mesh::PartVector> rm_parts(killedElements.size());
-
-    for (size_t j=0;j<killedElements.size();++j)
-    {
-        rm_parts[j] = removeParts;
-    }
-
-    bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
-}
 
 TEST(ElementGraph, check_graph_connectivity)
 {
@@ -2910,7 +2890,7 @@ TEST(ElementGraph, compare_performance_skin_mesh)
     int ydim = xdim;
     int zdim = xdim * stk::parallel_machine_size(comm);
 
-    std::string filename = get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
+    std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
 
     {
         unsigned spatialDim = 3;
@@ -3005,7 +2985,7 @@ TEST(ElementGraph, compare_performance_create_faces)
     int ydim = xdim;
     int zdim = xdim * stk::parallel_machine_size(comm);
 
-    std::string filename = get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
+    std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
 
     {
         unsigned spatialDim = 3;
@@ -3155,7 +3135,7 @@ TEST(ElementGraph, test_element_death)
         int ydim = xdim;
         int zdim = xdim; //  * stk::parallel_machine_size(comm);
 
-        std::string filename = get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
+        std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
 
         {
             unsigned spatialDim = 3;
@@ -3195,7 +3175,7 @@ TEST(ElementGraph, test_element_death)
             for(int i = 0; i < num_time_steps; ++i)
             {
                 stk::mesh::EntityVector killedElements = get_killed_elements(bulkData, i, active);
-                move_killed_elements_out_of_parts(bulkData, killedElements, {&block_1, &active});
+                stk::unit_test_util::move_killed_elements_out_of_parts(bulkData, killedElements, {&block_1, &active});
                 double start_time = stk::wall_time();
                 process_killed_elements(bulkData, elementGraph, killedElements, active, boundary_mesh_parts, &boundary_mesh_parts);
                 elapsed_death_time += (stk::wall_time() - start_time);
@@ -3228,6 +3208,7 @@ TEST(ElementGraph, test_element_death)
     }
 }
 
+
 class ElementDeathRestartTest
 {
 public:
@@ -3245,7 +3226,7 @@ public:
     void load_without_restart()
     {
         initializeObjects();
-        std::string filename = get_name_of_generated_mesh(1, 1, 2, "|sideset:zZ");
+        std::string filename = stk::unit_test_util::get_name_of_generated_mesh(1, 1, 2, "|sideset:zZ");
         stk::unit_test_util::fill_mesh_using_stk_io(filename, *bulkData, bulkData->parallel());
         stk::unit_test_util::put_mesh_into_part(*bulkData, *activePart);
         createElemElemGraph();
@@ -3258,7 +3239,7 @@ public:
         stkIo.add_mesh_database(filename, stk::io::READ_RESTART);
         stkIo.create_input_mesh();
         stkIo.populate_bulk_data();
-        stk::io::MeshField ioActiveField(*activeStatusField);
+        stk::io::MeshField ioActiveField(*deathStatusField);
         stkIo.add_input_field(ioActiveField);
         stkIo.read_defined_input_fields(restartTime);
     }
@@ -3271,7 +3252,7 @@ public:
         stk::mesh::EntityVector deactivatedElements = set_active_part_from_field();
         createElemElemGraph();
 
-        stk::mesh::process_killed_elements(*bulkData, *elementGraph, deactivatedElements, *activePart, boundaryMeshParts);
+        stk::mesh::process_killed_elements(*bulkData, *elementGraph, deactivatedElements, *activePart, partsForCreatingSides, NULL);
     }
 
     void initializeObjects()
@@ -3280,13 +3261,21 @@ public:
         unsigned spatialDim = 3;
         metaData = new stk::mesh::MetaData(spatialDim);
         stk::io::put_io_part_attribute(metaData->universal_part());
-        activeStatusField = &metaData->declare_field<ActiveFieldType>(stk::topology::ELEM_RANK,activeStatusFieldName);
+        deathStatusField = &metaData->declare_field<ActiveFieldType>(stk::topology::ELEM_RANK,deathStatusFieldName);
         int zeroInitialValue = 0;
-        stk::mesh::put_field(*activeStatusField,metaData->universal_part(),&zeroInitialValue);
-        sidesCreatedDuringDeath = &metaData->declare_part_with_topology("sides created during death", stk::topology::QUAD_4);
-        boundaryMeshParts.push_back(sidesCreatedDuringDeath);
-        activePart = &metaData->declare_part("active", stk::topology::ELEMENT_RANK);
+        stk::mesh::put_field(*deathStatusField,metaData->universal_part(),&zeroInitialValue);
+
+        activePart = &metaData->declare_part("active");
+        deathPart = &metaData->declare_part("death_1", metaData->side_rank());
+        const bool forceNoInduce = true;
+        sidesCreatedDuringDeath = &metaData->declare_part("sides_created_during_death", metaData->side_rank(),forceNoInduce);
+
+        partsForCreatingSides.push_back(activePart);
+        partsForCreatingSides.push_back(sidesCreatedDuringDeath);
+        partsForCreatingSides.push_back(deathPart);
+        boundaryMeshParts.push_back(deathPart);
         activePartVector.push_back(activePart);
+
         bulkData = new stk::mesh::BulkData(*metaData, comm, stk::mesh::BulkData::NO_AUTO_AURA);
     }
 
@@ -3303,8 +3292,8 @@ public:
         {
             elementsToKill.push_back(element);
         }
-        move_killed_elements_out_of_parts(*bulkData, elementsToKill, activePartVector);
-        process_killed_elements(*bulkData, *elementGraph, elementsToKill, *activePart, boundaryMeshParts);
+        stk::unit_test_util::move_killed_elements_out_of_parts(*bulkData, elementsToKill, activePartVector);
+        process_killed_elements(*bulkData, *elementGraph, elementsToKill, *activePart, partsForCreatingSides, &boundaryMeshParts);
     }
 
     void verify_mesh_before_death() const
@@ -3376,20 +3365,21 @@ public:
         std::vector<stk::mesh::PartVector> addParts;
         std::vector<stk::mesh::PartVector> removeParts;
         const stk::mesh::BucketVector& elements = bulkData->buckets(stk::topology::ELEM_RANK);
+        const int deadElementStatus = 1;
         for (size_t bucketI=0 ; bucketI<elements.size() ; ++bucketI) {
             stk::mesh::Bucket& bucket = *(elements[bucketI]);
             for (size_t elementI=0 ; elementI<bucket.size() ; ++elementI) {
                 stk::mesh::Entity element = bucket[elementI];
-                double* activeData = stk::mesh::field_data(*activeStatusField,element);
-                if (std::abs(activeData[0] - 1.0) < 0.001) {
-                    entities.push_back(element);
-                    addParts.push_back({activePart});
-                    removeParts.push_back({});
-                } else {
+                double* deathStatus = stk::mesh::field_data(*deathStatusField,element);
+                if (static_cast<int>(deathStatus[0]) == deadElementStatus) {
                     entities.push_back(element);
                     addParts.push_back({});
                     removeParts.push_back({activePart});
                     deactivatedElements.push_back(element);
+                } else {
+                    entities.push_back(element);
+                    addParts.push_back({activePart});
+                    removeParts.push_back({});
                 }
             }
         }
@@ -3404,39 +3394,42 @@ public:
             stk::mesh::Bucket& bucket = *(elements[bucketI]);
             for (size_t elementI=0 ; elementI<bucket.size() ; ++elementI) {
                 stk::mesh::Entity element = bucket[elementI];
-                double* activeData = stk::mesh::field_data(*activeStatusField,element);
-                activeData[0] = bulkData->bucket(element).member(*activePart);
+                double* deathStatus = stk::mesh::field_data(*deathStatusField,element);
+                deathStatus[0] = !bulkData->bucket(element).member(*activePart);
             }
         }
     }
 
     void write_restart_file(std::string restartFileName)
     {
-        stk::mesh::FieldBase* activeStatusFieldBase = activeStatusField;
+        stk::mesh::FieldBase* deathStatusFieldBase = deathStatusField;
         set_active_field_from_part();
 
         stk::io::StkMeshIoBroker stkIo(bulkData->parallel());
         stkIo.set_bulk_data(*bulkData);
         size_t fileHandle = stkIo.create_output_mesh(restartFileName, stk::io::WRITE_RESTART);
         stkIo.write_output_mesh(fileHandle);
-        stkIo.add_field(fileHandle, *activeStatusFieldBase);
+        stkIo.add_field(fileHandle, *deathStatusFieldBase);
         stkIo.begin_output_step(fileHandle, restartTime);
         stkIo.write_defined_output_fields(fileHandle);
         stkIo.end_output_step(fileHandle);
     }
-private:
+public:
     stk::mesh::MetaData* metaData;
     stk::mesh::BulkData* bulkData;
     stk::mesh::ElemElemGraph* elementGraph;
     stk::mesh::Part* activePart;
     stk::mesh::PartVector activePartVector;
+    stk::mesh::PartVector partsForCreatingSides;
     stk::mesh::PartVector boundaryMeshParts;
+    stk::mesh::Part* deathPart;
     stk::mesh::Part* sidesCreatedDuringDeath;
-    ActiveFieldType* activeStatusField;
-    std::string activeStatusFieldName = "active_status";
+    ActiveFieldType* deathStatusField;
+    std::string deathStatusFieldName = "death_status";
     double restartTime = 1.0;
 
 };
+
 
 TEST(ElementDeath, test_element_death_without_restart)
 {

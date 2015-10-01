@@ -4061,9 +4061,9 @@ void BulkData::internal_modification_end_for_change_ghosting()
 
     m_bucket_repository.internal_sort_bucket_entities();
 
+    m_modSummary.write_summary(m_meshModification.synchronized_count());
     if(parallel_size() > 1)
     {
-        m_modSummary.write_summary(m_meshModification.synchronized_count());
         check_mesh_consistency();
     }
 
@@ -4111,16 +4111,18 @@ bool BulkData::internal_modification_end_for_change_entity_owner( impl::MeshModi
 
   if (parallel_size() > 1)
   {
-    if ( m_autoAuraOption == AUTO_AURA )
-    {
-      internal_regenerate_aura();
-    }
-    m_modSummary.write_summary(m_meshModification.synchronized_count());
-    check_mesh_consistency();
+      if ( m_autoAuraOption == AUTO_AURA )
+      {
+          internal_regenerate_aura();
+      }
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
+      check_mesh_consistency();
   }
-  else {
+  else
+  {
       std::vector<Entity> shared_modified ;
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities( shared_modified );
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
   }
 
   this->internal_finish_modification_end(opt);
@@ -4428,7 +4430,10 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
           this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, selectedToSkin);
       }
 
-      m_modSummary.write_summary(m_meshModification.synchronized_count());
+  }
+  m_modSummary.write_summary(m_meshModification.synchronized_count());
+  if (parallel_size() > 1)
+  {
       check_mesh_consistency();
   }
 
@@ -4497,6 +4502,7 @@ bool BulkData::internal_modification_end_for_entity_creation( const std::vector<
       else {
           std::vector<Entity> shared_modified ;
           internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
+          m_modSummary.write_summary(m_meshModification.synchronized_count());
       }
   }
 
@@ -6664,6 +6670,7 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
             this->de_induce_parts_from_nodes(killedElements, *activePart);
             this->remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
         }
+        m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
     }
 
     // -----------------------

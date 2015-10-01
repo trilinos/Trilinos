@@ -303,7 +303,8 @@ stk::mesh::Part* get_sides_created_during_death_part(const stk::mesh::MetaData &
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData)
 {
     stk::mesh::EntityRank side_rank = metaData.side_rank();
-    metaData.declare_part("sides_created_during_death", side_rank, true);
+    const bool forceNoInduce = true;
+    metaData.declare_part("sides_created_during_death", side_rank, forceNoInduce);
 }
 
 void add_parts_from_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::PartVector& side_parts)
