@@ -58,21 +58,21 @@ namespace Zoltan2 {
   /*!  \brief VectorAdapter defines the interface for vector input.
 
     Adapter objects provide access for Zoltan2 to the user's data.
-    Many built-in adapters are already defined for common data structures, 
+    Many built-in adapters are already defined for common data structures,
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
     Data types:
     \li \c scalar_t weights and vector element values
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
+    \li \c node_t is a Kokkos Node type
 
     The Kokkos node type can be safely ignored.
- 
-    The template parameter \c User is a user-defined data type 
-    which, through a traits mechanism, provides the actual data types 
+
+    The template parameter \c User is a user-defined data type
+    which, through a traits mechanism, provides the actual data types
     with which the Zoltan2 library will be compiled.
-    \c User may be the actual class or structure used by application to 
+    \c User may be the actual class or structure used by application to
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
@@ -87,11 +87,11 @@ namespace Zoltan2 {
 
 
     VectorAdapter may be a single vector or a set of corresponding vectors
-    which have with the same global identifiers and the same distribution 
+    which have with the same global identifiers and the same distribution
     across processes.
 
   \todo We can make global Ids optional.  We don't need them.
- 
+
 */
 
 template <typename User>
