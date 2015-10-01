@@ -1,10 +1,21 @@
-/*! @defgroup MueLuBaseClasses The main MueLu base classes
+/*! @defgroup MueLuBaseClasses
+    @brief The main MueLu base classes
 */
 
-/*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
+/*! @defgroup MueLuTransferClasses
+    @brief The main MueLu prolongator classes
+
+  See the MueLu User's manual in muelu/doc/UsersGuide for grid transfer options.
 */
 
-/*! @defgroup MueLuAdapters The main MueLu adapters (interfaces)
+/*! @defgroup MueLuSmootherClasses
+  @brief The main MueLu smoother classes
+
+  See the MueLu User's manual in muelu/doc/UsersGuide for smoother options.
+*/
+
+/*! @defgroup MueLuAdapters
+  @brief The main MueLu adapters (interfaces)
 
   Most applications will use these interfaces to create preconditioners with MueLu.  Options are passed to the adapters via
   Teuchos::ParameterLists or XML input files.  Applications can optionally provide nullspace vectors (if known)
@@ -12,12 +23,15 @@
   Adapters are available for Epetra and Tpetra, and return Epetra_Operators and Tpetra::Operators, respectively.
 */
 
-/*! @defgroup MueLuTimerClasses The MueLu timing classes
-
+/*! @defgroup MueLuTimerClasses
+  @brief The MueLu timing classes
 
   You should use FactoryMonitor and SubFactoryMonitor within factories.
   Use Monitor and SubMonitor in non-factory objects.
 */
 
-/*! @defgroup MueLuManagingDataDependencies Handling data dependencies between factories
+/*! @defgroup MueMexClasses
+  @brief MueLu classes that support the Matlab interface.
+
+  See the MueLu User's manual in muelu/doc/UsersGuide for information how to build and use MueLu's interface to Matlab.
 */

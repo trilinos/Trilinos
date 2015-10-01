@@ -1461,9 +1461,7 @@ namespace MueLu {
 
     std::srand(mySeed);
 
-    // Tpetra:
-    //   MultiVector::randomize() -> Kokkos::DefaultArithmetic::Random() -> ScalarTraits<Scalar>::random() -> std::rand()
-    // So, theoretically, we could skip this call
+    // For Tpetra, we could use Kokkos' random number generator here.
     Teuchos::ScalarTraits<SC>::seedrandom(mySeed);
 
     // Epetra

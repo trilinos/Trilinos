@@ -58,13 +58,13 @@ namespace Kokkos {
 template<typename T, class RangeVector,class CrsMatrix,class DomainVector>
 bool
 MV_Multiply_DoMKL (typename Kokkos::Impl::enable_if<
-		     ! Kokkos::Impl::is_same<T,double>::value && 
-		     ! Kokkos::Impl::is_same<T,float>::value, 
-		     typename RangeVector::value_type>::type s_b,
-		   const RangeVector& y, 
-		   typename DomainVector::value_type s_a,
-		   const CrsMatrix& A, 
-		   const DomainVector& x) 
+                     ! Kokkos::Impl::is_same<T,double>::value &&
+                     ! Kokkos::Impl::is_same<T,float>::value,
+                     typename RangeVector::value_type>::type s_b,
+                   const RangeVector& y,
+                   typename DomainVector::value_type s_a,
+                   const CrsMatrix& A,
+                   const DomainVector& x)
 {
   return false;
 }
@@ -91,8 +91,7 @@ bool MV_Multiply_DoMKL(typename Kokkos::Impl::enable_if<Kokkos::Impl::is_same<T,
     // FIXME (mfh 09 Aug 2013) Doesn't this interface only work with
     // row-major multivectors?  I recall that only the "Fortran"
     // version works with column-major multivectors, and it requires
-    // that the column indices be one-based.  See
-    // KokkosClassic::MklSparseOps for an example.
+    // that the column indices be one-based.
     mkl_dcsrmm(&transa,
                &m, &n, &k,
                &s_a,

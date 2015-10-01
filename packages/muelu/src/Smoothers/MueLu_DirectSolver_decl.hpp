@@ -67,6 +67,7 @@ namespace MueLu {
 
   /*!
     @class DirectSolver
+    @ingroup MueLuSmootherClasses 
     @brief Class that encapsulates direct solvers. Autoselection of AmesosSmoother or Amesos2Smoother according to the compile time configuration of Trilinos
   */
 

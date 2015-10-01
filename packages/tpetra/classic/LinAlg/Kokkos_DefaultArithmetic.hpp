@@ -45,18 +45,18 @@
 /// \file Kokkos_DefaultArithmetic.hpp
 /// \brief Traits class for local multivector operations.
 
-#include <Teuchos_BLAS_types.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <stdexcept>
-
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_MultiVectorKernelOps.hpp"
-#include "Kokkos_NodeHelpers.hpp"
-#include <Teuchos_BLAS.hpp>
+
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_BLAS_types.hpp"
+#include "Teuchos_Tuple.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+
+#include <stdexcept>
 
 
 namespace KokkosClassic {

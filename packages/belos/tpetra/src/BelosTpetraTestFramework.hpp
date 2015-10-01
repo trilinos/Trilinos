@@ -45,19 +45,15 @@
 /// \file BelosTpetraTestFramework.hpp
 /// \brief A common test framework for Tpetra instantiations of Belos solvers.
 /// \author Mark Hoemmen
-///
-#include <BelosTpetraAdapter.hpp>
-#include <MatrixMarket_Tpetra.hpp>
 
-#include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
-
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Galeri_iohb.h>
+#include "BelosTpetraAdapter.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Galeri_iohb.h"
 
 namespace Belos {
   namespace Tpetra {

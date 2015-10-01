@@ -56,6 +56,7 @@ namespace MueLu {
 
   /*!
     @class Smoother factory base class.
+    @ingroup MueLuSmootherClasses 
     @brief Base class for smoother factories.
 
     This interface inherits from SingleLevelFactoryBase and defines an additional Build method (BuildSmoother)

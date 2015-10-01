@@ -4164,7 +4164,7 @@ namespace Tpetra {
     }
   }
 
-  template <class Scalar, class LO, class GO, class NT, const bool classic = NT::classic>
+  template <class Scalar, class LO, class GO, class NT, const bool classic>
   Teuchos::RCP<MultiVector<Scalar, LO, GO, NT, classic> >
   createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
                      size_t numVectors)
@@ -4173,7 +4173,7 @@ namespace Tpetra {
     return Teuchos::rcp (new MV (map, numVectors));
   }
 
-  template <class ST, class LO, class GO, class NT, const bool classic = NT::classic>
+  template <class ST, class LO, class GO, class NT, const bool classic>
   MultiVector<ST, LO, GO, NT, classic>
   createCopy (const MultiVector<ST, LO, GO, NT, classic>& src)
   {
