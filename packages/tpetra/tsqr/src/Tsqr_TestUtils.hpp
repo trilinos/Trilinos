@@ -41,18 +41,12 @@
 
 #ifndef __TSQR_TestUtils_hpp
 #define __TSQR_TestUtils_hpp
-///
+
 /// \file Tsqr_TestUtils.hpp
 /// \brief Utilities for testing various TSQR components.
 /// \author Mark Hoemmen
-///
 
-// The header file included below includes Kokkos_ConfigDefs.hpp, so
-// this file doesn't have to.  Avoiding unnecessary includes can save
-// build time, since the file doesn't have to be opened and the
-// preprocessor doesn't have to look for the ifndef and define
-// directives.
-#include <Kokkos_DefaultNode.hpp>
+#include "TpetraTSQR_config.h"
 
 namespace Teuchos {
   // Forward declaration of Teuchos::Comm, so that we can use
