@@ -35,13 +35,11 @@ ASSERT_DEFINED(KokkosClassic_DefaultNode)
 ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
 
 # Set variables which were implicitly set when the Kokkos packages were optional dependencies
-IF(Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
-  GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM ON)
-  GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCORE ON)
-  GLOBAL_SET(HAVE_TPETRACORE_KOKKOSALGORITHMS ON)
-  GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCONTAINERS ON)
-ENDIF()
+GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
+GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM ON)
+GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCORE ON)
+GLOBAL_SET(HAVE_TPETRACORE_KOKKOSALGORITHMS ON)
+GLOBAL_SET(HAVE_TPETRACORE_KOKKOSCONTAINERS ON)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
@@ -131,63 +129,51 @@ SET(TpetraCore_ETI_NODES   "")
 # We enable exactly one Node type by default, whether ETI is ON or
 # OFF.  This keeps build times for tests down in the non-ETI case, and
 # library sizes small in the ETI case.
-IF (Tpetra_ENABLE_Kokkos_Refactor)
 
-  GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
-  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
+GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
+GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
 
-  IF (Kokkos_ENABLE_Cuda) 
-    # If you bothered to build with CUDA enabled, then we assume you
-    # only want CUDA.
-    GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
+IF (Kokkos_ENABLE_Cuda) 
+  # If you bothered to build with CUDA enabled, then we assume you
+  # only want CUDA.
+  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
+ELSE()
+  IF (Kokkos_ENABLE_OpenMP) 
+    # It takes effort (setting a nondefault compiler flag) to turn
+    # on OpenMP, so we assume that if OpenMP is ON, then you must
+    # want it as the Node type.
+    GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
   ELSE()
-    IF (Kokkos_ENABLE_OpenMP) 
-      # It takes effort (setting a nondefault compiler flag) to turn
-      # on OpenMP, so we assume that if OpenMP is ON, then you must
-      # want it as the Node type.
-      GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT ON)  
+    IF (Kokkos_ENABLE_Serial)
+      GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
     ELSE()
-      IF (Kokkos_ENABLE_Serial)
-        GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT ON)
+      IF (Kokkos_ENABLE_Pthread)
+        GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
       ELSE()
-        IF (Kokkos_ENABLE_Pthread)
-          GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT ON)
-        ELSE()
-          MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_Serial=ON.")
-        ENDIF()  # Kokkos_ENABLE_Pthread
-      ENDIF() # Kokkos_ENABLE_Serial
-    ENDIF() # Kokkos_ENABLE_OpenMP
-  ENDIF() # Kokkos_ENABLE_Cuda
+        MESSAGE(FATAL_ERROR "Tpetra: No Kokkos execution space is enabled.  This message should only come up if you explicitly disabled all the Kokkos execution spaces.  If you don't want Tpetra to use threads, try setting Kokkos_ENABLE_Serial=ON.")
+      ENDIF()  # Kokkos_ENABLE_Pthread
+    ENDIF() # Kokkos_ENABLE_Serial
+  ENDIF() # Kokkos_ENABLE_OpenMP
+ENDIF() # Kokkos_ENABLE_Cuda
 
-  # Don't turn on both Serial and Threads by default.  Prefer Serial,
-  # because Threads is a last resort.  Of course, users may still
-  # enable Threads explicitly, by setting TPETRA_INST_PTHREAD=ON.
-  IF (HAVE_TPETRA_INST_SERIAL_DEFAULT AND HAVE_TPETRA_INST_PTHREAD_DEFAULT)
-    GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-  ENDIF ()
-
-  # The Kokkos refactor version of Tpetra is ON, so the "classic" Node
-  # type must be OFF.  (We will enforce this below.)
-  GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT OFF)
-
-ELSE() # NOT Tpetra_ENABLE_Kokkos_Refactor (DEPRECATED)
-
-  GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
+# Don't turn on both Serial and Threads by default.  Prefer Serial,
+# because Threads is a last resort.  Of course, users may still
+# enable Threads explicitly, by setting TPETRA_INST_PTHREAD=ON.
+IF (HAVE_TPETRA_INST_SERIAL_DEFAULT AND HAVE_TPETRA_INST_PTHREAD_DEFAULT)
   GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
-  GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT ON)
+ENDIF ()
 
-ENDIF() # Tpetra_ENABLE_Kokkos_Refactor
+# The Kokkos refactor version of Tpetra is ON, so the "classic" Node
+# type must be OFF.  (We will enforce this below.)
+GLOBAL_SET(HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT OFF)
 
 # MESSAGE(STATUS "Tpetra: Default Node enables:")
 # MESSAGE(STATUS "   KokkosSerialWrapperNode:  ${HAVE_TPETRA_INST_SERIAL_DEFAULT}")
 # MESSAGE(STATUS "   KokkosThreadsWrapperNode: ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}")
 # MESSAGE(STATUS "   KokkosOpenMPWrapperNode:  ${HAVE_TPETRA_INST_OPENMP_DEFAULT}")
 # MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_INST_CUDA_DEFAULT}")
-# MESSAGE(STATUS "   SerialNode (DEPRECATED):  ${HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT}")
 
 # Set up all the public "Tpetra_INST_*" CMake options for enabling
 # Node types.  Each enables both instantations and tests in the ETI ON
@@ -290,27 +276,16 @@ ENDIF () # Tpetra_INST_CUDA
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SERIALCLASSIC
   HAVE_TPETRA_INST_SERIALCLASSIC
-  "Instantiate and/or test Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  If ETI is OFF, enable tests for that Node type.  This option is OFF by default."
-  ${HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT}
+  "Instantiate and/or test Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  DO NOT SET THIS!  This option is no longer available."
+  OFF
   )
+IF (Tpetra_INST_SERIALCLASSIC)
+  MESSAGE (FATAL_ERROR "Tpetra: KokkosClassic::DoNotUse::SerialNode is no longer available as a Node type.")
+ENDIF ()
 GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ${Tpetra_INST_SERIALCLASSIC})
 IF (NOT Tpetra_INST_SERIALCLASSIC AND HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but that Node type is disabled (Tpetra_INST_SERIALCLASSIC=OFF).  If you insist on using this deprecated Node, please set Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF and Tpetra_INST_SERIALCLASSIC=ON.  Please note that this option is deprecated and no longer supported.")
+    MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but that Node type is no longer available.")
 ENDIF ()
-
-# Check the set of enabled Node types for compatibility with the
-# Tpetra_ENABLE_Kokkos_Refactor option.
-IF (Tpetra_ENABLE_Kokkos_Refactor)
-  # You may not enable the "classic" Node type if Kokkos refactor is ON.
-  IF (Tpetra_INST_SERIALCLASSIC)
-    MESSAGE(FATAL_ERROR "Tpetra: You attempted to enable explicit instantiation for Node = KokkosClassic::DoNotUse::SerialNode (by setting Tpetra_INST_SERIALCLASSIC:BOOL=ON), but Tpetra_ENABLE_Kokkos_Refactor is ON.  You are not allowed to use that Node type when Tpetra_ENABLE_Kokkos_Refactor is ON (which is its default setting).  If you insist on using this deprecated Node, please set Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that this option is deprecated and no longer supported.")
-  ENDIF()
-ELSE () # NOT Tpetra_ENABLE_Kokkos_Refactor
-  # You may not enable any of the "new" Node types if Kokkos refactor is OFF.
-  IF (Tpetra_INST_CUDA OR Tpetra_INST_OPENMP OR Tpetra_INST_PTHREAD OR Tpetra_INST_SERIAL)
-    MESSAGE (FATAL_ERROR "Tpetra: You set Tpetra_ENABLE_Kokkos_Refactor=OFF (which is NOT the default, and is DEPRECATED), yet you enabled one of the Kokkos refactor Node types (by setting Tpetra_INST_CUDA, Tpetra_INST_OPENMP, Tpetra_INST_PTHREAD, or Tpetra_INST_SERIAL to ON).  This is not allowed.  If you really don't want to use threads, just do the following:\n\n1. Stop setting Tpetra_ENABLE_Kokkos_Refactor; the default setting is fine!\n\n2. Set Kokkos_ENABLE_Serial=ON (it should be ON by default)\n\n3. Set Tpetra_INST_SERIAL=ON\n\nThis will make Kokkos::Serial Tpetra's default execution space, meaning that Tpetra won't use threads.")
-  ENDIF ()
-ENDIF () # Tpetra_ENABLE_Kokkos_Refactor
 
 #
 # We've survived the gauntlet of tests above, so it's now safe to
@@ -328,9 +303,6 @@ ENDIF()
 IF(Tpetra_INST_CUDA) 
   LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
 ENDIF()
-IF(Tpetra_INST_SERIALCLASSIC) 
-  LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::DoNotUse::SerialNode")
-ENDIF()
 
 # Tell users what Nodes are enabled.
 MESSAGE(STATUS "Tpetra Node availability (ON means available): ")
@@ -338,7 +310,6 @@ MESSAGE(STATUS "   KokkosSerialWrapperNode:  ${HAVE_TPETRA_SERIAL}")
 MESSAGE(STATUS "   KokkosThreadsWrapperNode: ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "   KokkosOpenMPWrapperNode:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_CUDA}")
-MESSAGE(STATUS "   SerialNode (DEPRECATED):  ${HAVE_TPETRA_SERIALCLASSIC}")
 
 # ============================================================
 # GlobalOrdinal types

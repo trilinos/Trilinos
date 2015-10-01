@@ -109,9 +109,18 @@ namespace Tacho {
   /// \class Loop
   /// \brief outer/innner parameters
   class Loop {
+  public:
     static const int Outer = 901;
     static const int Inner = 902;
     static const int Fused = 903;
+  };
+
+  class Variant {
+  public:
+    static const int One   = 1;
+    static const int Two   = 2;
+    static const int Three = 3;
+    static const int Four  = 4;
   };
 
   /// \class AlgoChol
@@ -119,16 +128,15 @@ namespace Tacho {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
-    static const int Dummy          = 1000;
-    static const int Unblocked      = 1001;
-    static const int UnblockedOpt1  = 1002;
-    static const int UnblockedOpt2  = 1003;
-    static const int Blocked        = 1101; // testing only
+    static const int Dummy             = 1000;
+    static const int Unblocked         = 1001;
+    static const int UnblockedOpt      = 1002;
+    static const int Blocked           = 1101; // testing only
 
-    static const int ByBlocksVar1   = 1201;
-    static const int ByBlocks       = ByBlocksVar1;
+    static const int RightLookByBlocks = 1201; // backbone structure is right looking
+    static const int ByBlocks          = RightLookByBlocks;
 
-    static const int ExternalLapack = 1211;
+    static const int ExternalLapack    = 1211;
   };
 
   // aliasing name space

@@ -121,7 +121,7 @@ void setParameter( Teuchos::ParameterList &parlist,
     Teuchos::ParameterList &sublist = parlist.sublist(*iter);
     setParameter(sublist,location,iter+1,value);
   }
-
+ 
 
 }
 
@@ -220,33 +220,31 @@ inline void tierParameterList( Teuchos::ParameterList &outList,
     Vec location = dict[removeStringFormat(key)];
     
     // Skip if not found in map
-    if(location.size() == 0) {
-      break;
-    }
+    if(location.size() != 0) {
 
-    IterVec itvec = location.begin();
+      IterVec itvec = location.begin();
 
-    if( inList.isType<bool>(key) ) {
-      bool value = inList.get<bool>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<int>(key) ) {
-      int value = inList.get<int>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<double>(key) ) {
-      double value = inList.get<double>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<std::string>(key) ) {
-      std::string value = inList.get<std::string>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                  ">>>Error: Unhandled parameter type." );  
-    }
- 
+      if( inList.isType<bool>(key) ) {
+        bool value = inList.get<bool>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<int>(key) ) {
+        int value = inList.get<int>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<double>(key) ) {
+        double value = inList.get<double>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<std::string>(key) ) {
+        std::string value = inList.get<std::string>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>>Error: Unhandled parameter type." );  
+      }
+    } 
    
   }
 }

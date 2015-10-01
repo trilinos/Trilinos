@@ -52,11 +52,7 @@
 
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#else
-#  include "Kokkos_SerialNode.hpp"
-#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 #include "Tpetra_@CLASS_NAME@_decl.hpp"
 #include "Tpetra_@CLASS_NAME@_def.hpp"
