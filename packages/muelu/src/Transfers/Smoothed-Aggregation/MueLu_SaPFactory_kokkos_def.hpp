@@ -187,6 +187,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.
