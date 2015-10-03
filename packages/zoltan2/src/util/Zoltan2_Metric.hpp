@@ -823,17 +823,19 @@ template <typename Adapter, typename pnum_t>
 
   scalar_t *cut = localBuf;              // # of cuts
 
-  ArrayView<const gno_t> *Ids;
-  ArrayView<input_t> *vwgts;
-  /*size_t nv =*/ graph->getVertexList(Ids, vwgts);
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> vwgts;
+  //size_t nv =
+  graph->getVertexList(Ids, vwgts);
 
-  ArrayView<const gno_t> *edgeIds;
-  ArrayView<const lno_t> *offsets;
-  ArrayView<input_t> *wgts;
-  /*size_t numLocalEdges =*/ getEdgeList(edgeIds, offsets, wgts);
-  /**************************************************************************/
-  /*************************** BUILD MAP FOR ADJS ***************************/
-  /**************************************************************************/
+  ArrayView<const gno_t> edgeIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<input_t> wgts;
+  //size_t numLocalEdges =
+  graph->getEdgeList(edgeIds, offsets, wgts);
+  // **************************************************************************
+  // *************************** BUILD MAP FOR ADJS ***************************
+  // **************************************************************************
 
   Array<gno_t> vertexGIDs;
   RCP<const map_type> vertexMapG;
@@ -842,7 +844,7 @@ template <typename Adapter, typename pnum_t>
   vertexGIDs.resize(localNumObj);
   gno_t min;
   min = as<gno_t> (Ids[0]);
-  for (size_t i = 0; i < localNumObj; ++i) {
+  for (lno_t i = 0; i < localNumObj; ++i) {
     vertexGIDs[i] = as<gno_t> (Ids[i]);
 
     if (vertexGIDs[i] < min) {
@@ -851,14 +853,14 @@ template <typename Adapter, typename pnum_t>
   }
 
   gno_t gmin;
-  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,min,gmin);
+  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,&min,&gmin);
 
   //Generate Map for vertex
   vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
 
-  /**************************************************************************/
-  /************************** BUILD GRAPH FOR ADJS **************************/
-  /**************************************************************************/
+  // **************************************************************************
+  // ************************** BUILD GRAPH FOR ADJS **************************
+  // **************************************************************************
 
   RCP<sparse_matrix_type> adjsMatrix;
 
@@ -886,9 +888,9 @@ template <typename Adapter, typename pnum_t>
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
-  /**************************************************************************/
-  /************************ BUILD IDENTITY FOR PARTS ************************/
-  /**************************************************************************/
+  // **************************************************************************
+  // ************************ BUILD IDENTITY FOR PARTS ************************
+  // **************************************************************************
 
   RCP<sparse_matrix_type> Ipart;
 
@@ -922,8 +924,8 @@ template <typename Adapter, typename pnum_t>
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++)
       for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
-	  cut[part[i]]++;
+	;//if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
+	   //cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
@@ -932,8 +934,8 @@ template <typename Adapter, typename pnum_t>
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
 	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	  if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
-	    wgt[part[i]] += wgts[j];
+	  ;//if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
+	     //wgt[part[i]] += wgts[j];
       wgt += nparts;         // individual weights
     }
   }

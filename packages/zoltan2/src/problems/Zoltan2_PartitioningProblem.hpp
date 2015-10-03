@@ -638,22 +638,23 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     metrics_ = rcp(quality);
   }
 
-  /*if (graphMetricsRequested_){
+  if (graphMetricsRequested_ && (algName_ == std::string("scotch") ||
+				 algName_ == std::string("parmetis"))){
     typedef PartitioningSolution<Adapter> ps_t;
     typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
     gpsq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
 
-    try{
+    /*try{
       quality = new gpsq_t(this->envConst_, problemCommConst_,
                           this->graphModel_, this->inputAdapter_,
                           solutionConst);
     }
-    Z2_FORWARD_EXCEPTIONS
+    Z2_FORWARD_EXCEPTIONS*/
 
     graphMetrics_ = rcp(quality);
-    }*/
+  }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
