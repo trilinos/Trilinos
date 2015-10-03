@@ -196,8 +196,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 identity_2(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_iljk(I);
   return I;
@@ -229,8 +227,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 identity_3(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ijkl(I);
   return I;
@@ -267,8 +263,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 levi_civita_4(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, DYNAMIC>
   A(dimension, ZEROS);
 

@@ -407,8 +407,6 @@ inline
 Tensor3<T, N> const
 levi_civita_3(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor3<T, DYNAMIC>
   A(dimension, ZEROS);
 
