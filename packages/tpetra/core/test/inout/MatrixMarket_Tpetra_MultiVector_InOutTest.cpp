@@ -39,15 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Kokkos_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
+#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
 #include <algorithm>
 
 namespace {

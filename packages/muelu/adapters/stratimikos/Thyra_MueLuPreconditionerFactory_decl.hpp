@@ -61,11 +61,11 @@
 
 namespace Thyra {
 
-  /** \brief Concrete preconditioner factory subclass for Thyra based on MueLu.
-   *
-   * Add support for MueLu preconditioners in Thyra. This class provides an interface both
-   * for Epetra and Tpetra
-   */
+  /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
+      @ingroup MueLuAdapters
+      Add support for MueLu preconditioners in Thyra. This class provides an interface both
+      for Epetra and Tpetra.
+  */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:

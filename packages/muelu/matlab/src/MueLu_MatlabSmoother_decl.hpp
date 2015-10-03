@@ -59,6 +59,7 @@ namespace MueLu {
 
   /*!
     @class MatlabSmoother
+    @ingroup MueMexClasses 
     @brief Class that encapsulates Matlab smoothers.
 
     //   This class creates an Matlab preconditioner factory. The factory creates a smoother based on the

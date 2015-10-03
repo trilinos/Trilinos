@@ -47,10 +47,23 @@
 // made.  Furthermore, it would be unwise to assume anything about
 // this file: it may disappear at any time, and its name, location, or
 // contents may change at any time.
+//
+// CMake takes each expression in the original .tmpl file enclosed by
+// "at" symbols ("a" with a circle around it), and replaces it in the
+// generated .cpp file with a string defined by Tpetra's CMake logic
+// (see CMakeLists.txt in this directory).  Thus, the original .tmpl
+// file is NOT syntactically correct C++, but the .cpp file generated
+// by running CMake on it IS a syntactically correct C++ file.
 
 #include "TpetraCore_config.h"
 
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
+
+// We protect the contents of this file with macros, to assist
+// applications that circumvent Trilinos' build system.  (We do NOT
+// recommend this.)  That way, they can still build this file, but as
+// long as the macros have correct definitions, they won't build
+// anything that's not enabled.
 
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
@@ -66,6 +79,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#else
-#  error "BADNESS"
 #endif // Whether we should build this specialization

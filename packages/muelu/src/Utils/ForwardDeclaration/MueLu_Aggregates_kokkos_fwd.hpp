@@ -1,9 +1,9 @@
-/*
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,28 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
-*/
+#ifndef MUELU_AGGREGATES_KOKKOS_FWD_HPP
+#define MUELU_AGGREGATES_KOKKOS_FWD_HPP
 
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+namespace MueLu {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Aggregates_kokkos;
+}
 
-#include "Tpetra_Experimental_BlockCrsMatrix_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
+#ifndef MUELU_AGGREGATES_KOKKOS_SHORT
+#define MUELU_AGGREGATES_KOKKOS_SHORT
+#endif
 
-namespace Tpetra {
+#endif
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  // NOTE (mfh 24 Sep 2015) It only makes sense to instantiate over
-  // Scalar types which have a Teuchos::LAPACK implementation.
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT)
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // MUELU_AGGREGATES_KOKKOS_FWD_HPP

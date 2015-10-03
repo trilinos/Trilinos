@@ -59,7 +59,7 @@ namespace Zoltan2 {
 
 /*!  \brief IdentifierAdapter defines the interface for identifiers.
 
-    Zoltan2 can partition a simple list of weighted identifiers 
+    Zoltan2 can partition a simple list of weighted identifiers
     with no geometry or topology provided.  IdentifierAdapter defines
     the interface for adapters of this type.
 
@@ -71,7 +71,7 @@ namespace Zoltan2 {
     \li \c scalar_t object weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
+    \li \c node_t   is a Kokkos Node type
 
     The Kokkos node type can be safely ignored.
 
@@ -108,14 +108,14 @@ public:
   typedef User userCoord_t;
 #endif
 
-  /*! \brief Destructor 
+  /*! \brief Destructor
    */
   virtual ~IdentifierAdapter() {};
 
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 };
-  
-  
+
+
 }  //namespace Zoltan2
-  
+
 #endif

@@ -49,6 +49,17 @@ namespace Tacho {
 #define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
+
+#undef  Ctrl
+#define Ctrl(name,algo,variant) name<algo,variant>
+
+#undef CtrlComponent
+#define CtrlComponent(name,algo,variant,component,id)                  \
+  Ctrl(name,algo,variant)::component[id]
+
+#undef CtrlDetail
+#define CtrlDetail(name,algo,variant,component) \
+  CtrlComponent(name,algo,variant,component,0),CtrlComponent(name,algo,variant,component,1),name
   
   /// \class GraphHelper
   class GraphHelper {
@@ -136,7 +147,9 @@ namespace Tacho {
     static const int RightLookByBlocks = 1201; // backbone structure is right looking
     static const int ByBlocks          = RightLookByBlocks;
 
-    static const int ExternalLapack    = 1211;
+    static const int HierByBlocks      = 1211;
+
+    static const int ExternalLapack    = 1221;
   };
 
   // aliasing name space

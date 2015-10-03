@@ -167,19 +167,8 @@ public:
 
 }; // class StdVector
 
-namespace StdVector_Helper {
 
-template<class Real>
-Teuchos::RCP<const std::vector<Real> > constDownCast( const Vector<Real> &x ) {
-  return (Teuchos::dyn_cast<const StdVector<Real> >(x)).getVector();
-}
 
-template<class Real>
-Teuchos::RCP<std::vector<Real> > downCast( Vector<Real> &x ) {
-  return (Teuchos::dyn_cast<StdVector<Real> >(x)).getVector();
-}
-
-} // namespace StdVector_Helper
 
 } // namespace ROL
 

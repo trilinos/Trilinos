@@ -1,4 +1,5 @@
 Aggregates
+Aggregates_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 AggregationPhase1Algorithm
 AggregationPhase2aAlgorithm
 AggregationPhase2bAlgorithm

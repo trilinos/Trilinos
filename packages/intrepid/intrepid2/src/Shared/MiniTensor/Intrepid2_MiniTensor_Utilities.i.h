@@ -50,7 +50,7 @@ namespace Intrepid2 {
 //
 // Sign function
 //
-template <typename T>
+template<typename T>
 inline
 int
 sgn(T const & s)

@@ -1,8 +1,9 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
 //
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,21 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+//
+// @HEADER
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#ifndef KOKKOS_NODETRACE_HPP
-#define KOKKOS_NODETRACE_HPP
+#include "MueLu_RefMaxwell_def.hpp"
 
-#include <sstream>
-#include <iostream>
+#include "TpetraCore_ETIHelperMacros.h"
 
-// FIXME (mfh 11 Feb 2015) This exists for backwards compatibility
-// ONLY and will be removed soon.
-#ifdef KOKKOS_NODE_TRACE
-#  define KOKKOS_NODE_TRACE(lbl)
-#endif // KOKKOS_NODE_TRACE
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::RefMaxwell<S,LO,GO,N>;
 
-#endif // KOKKOS_NODETRACE_HPP
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
+
+#endif

@@ -71,7 +71,7 @@ enum MatrixEntityType {
     \li \c scalar_t row, column or non-zero weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
+    \li \c node_t   is a Kokkos Node type
 
     The Kokkos node type can be safely ignored.
 
@@ -214,7 +214,7 @@ public:
 
   /*! \brief  Provide a pointer to the row weights, if any.
       \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  
+           the rows returned in getRowIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
    */

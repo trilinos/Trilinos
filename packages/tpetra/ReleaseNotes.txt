@@ -5,6 +5,41 @@ Release Notes for Trilinos Package Tpetra
 Development version (12.3)
 --------------------------
 
+* Completely removed the "classic" version of Tpetra
+
+You might recall that a while back, we split Tpetra into "classic"
+(old) and "Kokkos refactor" (new) versions.  As of Trilinos 12.0, the
+classic version was no longer supported, but we kept it in place for a
+few users.  As of this release, we have removed the classic version
+completely.
+
+You no longer need to set Tpetra_ENABLE_Kokkos_Refactor to get the new
+verson of Tpetra.  It is ON (TRUE).  If you attempt to set it to OFF
+(FALSE), Tpetra's CMake raises an error at configure time.  Just
+enable Tpetra -- that's all you need to do!
+
+This change affects both the Classic and Core subpackages of Tpetra.
+All the "classic" Node types are gone now, along with their associated
+computational kernels.  Use the Kernels subpackage of Tpetra for local
+kernels.  (We left KokkosClassic::DefaultArithmetic in place for
+Stokhos, but ONLY for Stokhos.)  The "classic" versions of Tpetra
+classes are also now gone.  We have replaced them completely with
+their "Kokkos refactor" versions.
+
+You might have noticed that Doxygen had a hard time generating
+documentation for the classes which had "classic" and "refactor"
+versions.  These changes should fix that.  Furthermore, it's easier to
+find header files for classes.  In particular, most of the header
+files in the tpetra/core/src/kokkos_refactor directory now just have
+trivial definitions and only remain for backwards compatibility.
+
+* Improved build times and fewer .cpp files in source directory
+
+Tpetra does a better job now of splitting up explicit instantiations
+into separate .cpp files.  In some cases, it uses CMake to generate
+those .cpp files automatically.  This means fewer .cpp files in
+tpetra/core/src, so it's easier to find what you want.
+
 * 128-bit floating-point arithmetic through Scalar = __float128
 
 __float128 is a GCC language extension to C(++) that implements

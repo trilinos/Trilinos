@@ -17,14 +17,9 @@
 #include "symbolic_factor_helper.hpp"
 #include "crs_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "chol.hpp"
 
@@ -61,10 +56,8 @@ namespace Tacho {
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-    typedef ParallelFor ForType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -204,7 +197,7 @@ namespace Tacho {
         timer.reset();          
         {
           Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
-            ::invoke<ForType>(TaskFactoryType::Policy(),
+            ::invoke(TaskFactoryType::Policy(),
                               TaskFactoryType::Policy().member_single(),
                               U);
         }
@@ -242,7 +235,7 @@ namespace Tacho {
         timer.reset();
         {
           auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks>::
-                                                              TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
+                                                              TaskFunctor<CrsHierTaskViewType>(H), 0);
           TaskFactoryType::Policy().spawn(future);
           Kokkos::Experimental::wait(TaskFactoryType::Policy());
         }

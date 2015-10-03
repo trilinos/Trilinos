@@ -46,9 +46,10 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#include <Xpetra_Matrix.hpp>
-
+#include <Xpetra_Matrix.hpp> //FIXME this should be moved below the _decl.hpp include, i.e.,
+                             //FIXME into the KOKKOS_REFACTOR guard.  Is it outside for a reason?
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -187,6 +188,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

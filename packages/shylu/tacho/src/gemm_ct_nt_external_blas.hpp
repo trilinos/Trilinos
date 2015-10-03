@@ -15,8 +15,7 @@ namespace Tacho {
   // BLAS Gemm interface
   // ===================
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename DenseExecViewTypeA,
            typename DenseExecViewTypeB,
            typename DenseExecViewTypeC>

@@ -78,10 +78,12 @@ namespace MueLu {
 
   /*!
     @class Ifpack2Smoother
+    @ingroup MueLuSmootherClasses 
     @brief Class that encapsulates Ifpack2 smoothers.
 
-    //   This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based on the
-    //   type and ParameterList passed into the constructor. See the constructor for more information.
+    This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based
+    on the type and ParameterList passed into the constructor. See the constructor for more
+    information.
     */
 
   template <class Scalar = SmootherPrototype<>::scalar_type,

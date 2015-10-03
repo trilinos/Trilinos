@@ -108,6 +108,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # requirements are fulfilled.
 
 SET(TpetraCore_ETI_SCALARS "")
+SET(TpetraCore_ETI_SCALARS_NO_ORDS "") # exclude all ordinal types (GlobalOrdinal and int)
 SET(TpetraCore_ETI_GORDS   "")
 SET(TpetraCore_ETI_LORDS   "int")
 SET(TpetraCore_ETI_NODES   "")
@@ -710,30 +711,37 @@ ENDIF ()
 #
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "float")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DOUBLE) 
   LIST(APPEND TpetraCore_ETI_SCALARS "double")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "std::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "std::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_FLOAT128) 
   LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "dd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 
@@ -849,12 +857,11 @@ GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor_Map
   TPETRA_USE_KOKKOS_REFACTOR_MAP
-  "Enable Tpetra::Map specialization for refactor to new Kokkos interface.  If this option is OFF, you may still use the other Kokkos refactor classes with the old Map implementation."
+  "This option has been DEPRECATED and its value will be IGNORED.  We keep it only for backwards compatibility."
   OFF
   )
-
-IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
-  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the following subpackages to be enabled: KokkosCore, KokkosContainers, KokkosAlgorithms, TeuchosKokkosCompat, TeuchosKokkosComm, and TpetraKernels." )
+IF (Tpetra_ENABLE_Kokkos_Refactor_Map)
+  MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_Refactor_Map option has been DEPRECATED and must no longer be set.  It turns out that we took a different path with the refactor of Tpetra::Map, that didn't require two separate versions of the class.  Thus, there is no need to ask for the Kokkos refactor version of Map; there was only ever one version of Map.")
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -888,6 +895,7 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 GLOBAL_SET(TpetraCore_ETI_SCALARS ${TpetraCore_ETI_SCALARS})
+GLOBAL_SET(TpetraCore_ETI_SCALARS_NO_ORDS ${TpetraCore_ETI_SCALARS_NO_ORDS})
 GLOBAL_SET(TpetraCore_ETI_GORDS   ${TpetraCore_ETI_GORDS})
 GLOBAL_SET(TpetraCore_ETI_LORDS   ${TpetraCore_ETI_LORDS})
 GLOBAL_SET(TpetraCore_ETI_NODES   ${TpetraCore_ETI_NODES})

@@ -63,43 +63,39 @@ enum ComponentOrder {
 };
 
 template<typename T, Index N>
-struct tensor_store
-{
-  typedef Storage<T, dimension_power<N, 2>::value> type;
-};
+using tensor_store = Storage<T, dimension_power<N, 2>::value>;
 
 ///
 /// Second order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor: public TensorBase<T, typename tensor_store<T, N>::type>
+class Tensor: public TensorBase<T, tensor_store<T, N>>
 {
 public:
 
   ///
   /// Order
   ///
-  static
-  Index const
+  static constexpr
+  Index
   ORDER = 2;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef typename tensor_store<T, N>::type
-  Store;
+  using Store = tensor_store<T, N>;
 
   ///
   /// Tensor order
   ///
-  static
+  static constexpr
   Index
   get_order()
   {

@@ -68,7 +68,7 @@ enum MeshEntityType {
   MESH_REGION
 };
 
-  /*!  \brief Enumerate entity topology types for meshes: 
+  /*!  \brief Enumerate entity topology types for meshes:
    *          points,lines,polygons,triangles,quadrilaterals,
    *          polyhedrons, tetrahedrons, hexhedrons, prisms, or pyramids
    */
@@ -99,7 +99,7 @@ enum EntityTopologyType {
     \li \c scalar_t entity and adjacency weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
+    \li \c node_t   is a Kokkos CPU node
 
     The Kokkos node type can be safely ignored.
 
@@ -161,7 +161,7 @@ public:
   {
     return etype==this->getPrimaryEntityType();
   }
-  
+
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
   //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
@@ -183,7 +183,7 @@ public:
       \param Types will on return point to the list of entity topology types
       for this process.
   */
-  virtual void getTopologyViewOf(MeshEntityType etype, 
+  virtual void getTopologyViewOf(MeshEntityType etype,
                                  enum EntityTopologyType const *&Types) const
   {
     Types = NULL;
@@ -281,7 +281,7 @@ public:
 
 
   /*! \brief Returns whether a second adjacency combination is available.
-   *   If combination is not available in the MeshAdapter, Zoltan2 will 
+   *   If combination is not available in the MeshAdapter, Zoltan2 will
    *   compute them, using A^T A, where A is matrix of first adjacencies.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget,
@@ -290,7 +290,7 @@ public:
     return false;
   }
 
-  /*! \brief if avail2ndAdjs(), returns the number of second adjacencies 
+  /*! \brief if avail2ndAdjs(), returns the number of second adjacencies
    *   on this process.
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,

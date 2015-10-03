@@ -15,15 +15,11 @@
 #include "graph_helper_scotch.hpp"
 #include "crs_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "sequential_for.hpp"
 #include "task_policy_graphviz.hpp"
 
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "chol.hpp"
 
@@ -48,8 +44,7 @@ typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
 // scotch reordering
 typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
 
-typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
-typedef SequentialFor ForType;
+typedef TaskFactory<TaskPolicy,Future> TaskFactoryType;
 
 // block representation for CrsMatrix
 typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
@@ -157,7 +152,7 @@ int main (int argc, char *argv[]) {
     int r_val = 0;
     CrsHierTaskType H(&HH);
     Chol<Uplo::Upper,AlgoChol::ByBlocks>::
-      TaskFunctor<ForType,CrsHierTaskType>(H).apply(r_val);
+      TaskFunctor<CrsHierTaskType>(H).apply(r_val);
 
     ofstream out;
     out.open(file_output);

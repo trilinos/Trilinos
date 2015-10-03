@@ -1,31 +1,27 @@
 #pragma once
-#ifndef __CHOL_U_BY_BLOCKS_HPP__
-#define __CHOL_U_BY_BLOCKS_HPP__
+#ifndef __CHOL_U_RIGHT_LOOK_BY_BLOCKS_HPP__
+#define __CHOL_U_RIGHT_LOOK_BY_BLOCKS_HPP__
 
-/// \file chol.hpp
-/// \brief Incomplete Cholesky factorization front interface.
+/// \file chol_u_right_look_by_blocks.hpp
+/// \brief Cholesky factorization by-blocks
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+
+/// The Partitioned-Block Matrix (PBM) is sparse and a block itself is a view of a sparse matrix. 
+/// The algorithm generates tasks with a given sparse block matrix structure.
 
 // basic utils
 #include "util.hpp"
 #include "control.hpp"
 #include "partition.hpp"
 
-#undef  Ctrl
-#define Ctrl ControlType<AlgoChol::RightLookByBlocks,ArgVariant>
-
-#undef CtrlAlgoVariant
-#define CtrlAlgoVariant(name) Ctrl::name[0],Ctrl::name[1]
-
 namespace Tacho { 
-
+  
   using namespace std;
-
+  
   // detailed workflow of by-blocks algorithm
   // ========================================
   template<int ArgVariant, 
            template<int,int> class ControlType,
-           typename ParallelForType,
            typename CrsTaskViewType>
   class CholUpperRightLookByBlocks {
   public:
@@ -43,8 +39,9 @@ namespace Tacho {
       
       // construct a task
       future_type f = task_factory_type::create(policy,
-                                                typename Chol<Uplo::Upper,CtrlAlgoVariant(Chol)>
-                                                ::template TaskFunctor<ParallelForType,value_type>(aa));
+                                                typename Chol<Uplo::Upper,
+                                                CtrlDetail(ControlType,AlgoChol::ByBlocks,ArgVariant,Chol)>
+                                                ::template TaskFunctor<value_type>(aa));
       
       // manage dependence
       task_factory_type::addDependence(policy, f, aa.Future());
@@ -76,9 +73,9 @@ namespace Tacho {
         
         future_type f = task_factory_type
           ::create(policy, 
-                   typename Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Ctrl::Trsm[0]>
-                   ::template TaskFunctor<ParallelForType,double,
-                   value_type,value_type>(Diag::NonUnit, 1.0, aa, bb));
+                   typename Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
+                   CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Trsm,0)>
+                   ::template TaskFunctor<double,value_type,value_type>(Diag::NonUnit, 1.0, aa, bb));
         
         // trsm dependence
         task_factory_type::addDependence(policy, f, aa.Future());
@@ -131,9 +128,9 @@ namespace Tacho {
               value_type &cc = c.Value(idx);
               future_type f = task_factory_type
                 ::create(policy, 
-                         typename Herk<Uplo::Upper,Trans::ConjTranspose,Ctrl::Herk[0]>
-                         ::template TaskFunctor<ParallelForType,double,
-                         value_type,value_type>(-1.0, aa, 1.0, cc));
+                         typename Herk<Uplo::Upper,Trans::ConjTranspose,
+                         CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Herk,0)>
+                         ::template TaskFunctor<double,value_type,value_type>(-1.0, aa, 1.0, cc));
             
               // dependence
               task_factory_type::addDependence(policy, f, aa.Future());              
@@ -153,9 +150,9 @@ namespace Tacho {
               value_type &cc = c.Value(idx);
               future_type f = task_factory_type
                 ::create(policy, 
-                         typename Gemm<Trans::ConjTranspose,Trans::NoTranspose,Ctrl::Gemm[0]>
-                         ::template TaskFunctor<ParallelForType,double,
-                         value_type,value_type,value_type>(-1.0, aa, bb, 1.0, cc));
+                         typename Gemm<Trans::ConjTranspose,Trans::NoTranspose,
+                         CtrlComponent(ControlType,AlgoChol::ByBlocks,ArgVariant,Gemm,0)>
+                         ::template TaskFunctor<double,value_type,value_type,value_type>(-1.0, aa, bb, 1.0, cc));
             
               // dependence
               task_factory_type::addDependence(policy, f, aa.Future());
@@ -176,9 +173,9 @@ namespace Tacho {
     
       return 0;
     }
-  
+    
   };
-
+  
   // specialization for different task generation in right looking by-blocks algorithm
   // =================================================================================
   template<int ArgVariant, template<int,int> class ControlType>
@@ -187,8 +184,7 @@ namespace Tacho {
 
     // function interface
     // ==================
-    template<typename ParallelForType,
-             typename ExecViewType>
+    template<typename ExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(typename ExecViewType::policy_type &policy, 
                       const typename ExecViewType::policy_type::member_type &member, 
@@ -210,15 +206,15 @@ namespace Tacho {
           // -----------------------------------------------------
 
           // A11 = chol(A11)
-          CholUpperRightLookByBlocks<ArgVariant,ControlType,ParallelForType,ExecViewType>
+          CholUpperRightLookByBlocks<ArgVariant,ControlType,ExecViewType>
             ::genScalarTask(policy, A11);
           
           // A12 = inv(triu(A11)') * A12
-          CholUpperRightLookByBlocks<ArgVariant,ControlType,ParallelForType,ExecViewType>
+          CholUpperRightLookByBlocks<ArgVariant,ControlType,ExecViewType>
             ::genTrsmTasks(policy, A11, A12);
 
           // A22 = A22 - A12' * A12
-          CholUpperRightLookByBlocks<ArgVariant,ControlType,ParallelForType,ExecViewType>
+          CholUpperRightLookByBlocks<ArgVariant,ControlType,ExecViewType>
             ::genHerkTasks(policy, A12, A22);
           
           // -----------------------------------------------------
@@ -234,8 +230,7 @@ namespace Tacho {
     
     // task-data parallel interface
     // ============================
-    template<typename ParallelForType,
-             typename ExecViewType>
+    template<typename ExecViewType>
     class TaskFunctor {
     public:
       typedef typename ExecViewType::policy_type policy_type;
@@ -257,65 +252,17 @@ namespace Tacho {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = Chol::invoke<ParallelForType>(_policy, _policy.member_single(), 
-                                              _A);
+        r_val = Chol::invoke(_policy, _policy.member_single(), _A);
       }
       
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Chol::invoke<ParallelForType>(_policy, member, 
-                                              _A);
-
-        // work scenario of nested task generation
-        // if (is_final) {
-        //   r_val = Chol::invoke<ParallelForType>(_policy, member, 
-        //                                         _A);
-        // } else {
-        //   switch (nested_sequence) {
-        //   case 0: {
-        //     task_factory_type::clearDependence(this);
-            
-        //     // spawn nested tasks and respawn
-        //     future_type f = task_factory_type(create(policy,
-        //                                              Chol<ArgUplo,ControlType<ArgAlgo>::Chol,ControlType>
-        //                                              ::TaskFunctor<ParallelForType,NestedViewType>
-        //                                              (_A.NestedMatrixView())));
-            
-        //     // at this moment, we do not identify nested tasks
-        //     task_factory_type::addDependence(policy, this, f);
-
-        //     nested_sequence = 1;
-        //     task_factory_type::respawn(policy, this);
-
-        //     _A.setFuture(this);
-        //     break;
-        //   }
-        //   case 1: {
-        //     future_type f = task_factory_type::getDependence(policy, this, 0);
-        //     if (f.get() == 0) { // no error in task generation
-        //       _A.setFuture(_A.NestedMatrixView().FutureEnd());
-        //     }
-        //     break;
-        //   }
-        //   }
-        // }
+        r_val = Chol::invoke(_policy, member, _A);
       }
 
     };
 
   };
 }
-
-
-// unblocked version blas operations
-#include "scale.hpp"
-
-// blocked version blas operations
-#include "gemm.hpp"
-#include "trsm.hpp"
-#include "herk.hpp"
-
-// cholesky
-#include "chol_u.hpp"
 
 #endif

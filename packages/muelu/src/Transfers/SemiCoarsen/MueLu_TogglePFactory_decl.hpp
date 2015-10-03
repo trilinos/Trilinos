@@ -57,9 +57,9 @@
 namespace MueLu {
 
   /*!
-    @class TogglePFactory class.
-    @brief Prolongator factory which allows to switch forth and back between two different prolongator strategies.
+    @class TogglePFactory
     @ingroup MueLuTransferClasses
+    @brief Prolongator factory which allows switching between two different prolongator strategies.
 
     ## Input/output of TogglePFactory ##
 

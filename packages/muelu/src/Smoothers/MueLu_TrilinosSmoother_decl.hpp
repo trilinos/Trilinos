@@ -70,6 +70,7 @@ namespace MueLu {
 
   /*!
     @class TrilinosSmoother
+    @ingroup MueLuSmootherClasses 
     @brief Class that encapsulates external library smoothers.
 
     Autoselection of Ifpack or Ifpack2 according to the underlying linear algebra library.

@@ -11,15 +11,11 @@
 #include "graph_helper_scotch.hpp"
 #include "crs_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "sequential_for.hpp"
 #include "task_policy_graphviz.hpp"
 
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "chol.hpp"
 
@@ -39,8 +35,7 @@ namespace Tacho {
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
-    typedef SequentialFor ForType;
+    typedef TaskFactory<TaskPolicy,Future> TaskFactoryType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -103,7 +98,7 @@ namespace Tacho {
       int r_val_chol = 0;
 
       Chol<Uplo::Upper,AlgoChol::ByBlocks>::
-        TaskFunctor<ForType,CrsHierTaskViewType>(H).apply(r_val_chol);
+        TaskFunctor<CrsHierTaskViewType>(H).apply(r_val_chol);
     }  
     
     {
