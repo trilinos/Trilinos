@@ -47,6 +47,9 @@ typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node> IsorropiaInte
 #ifdef MUELU_LWGRAPH_SHORT
 typedef MueLu::LWGraph<LocalOrdinal,GlobalOrdinal,Node> LWGraph;
 #endif
+#ifdef MUELU_LWGRAPH_KOKKOS_SHORT
+typedef MueLu::LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Node> LWGraph_kokkos;
+#endif
 #ifdef MUELU_LEFTOVERAGGREGATIONALGORITHM_SHORT
 typedef MueLu::LeftoverAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> LeftoverAggregationAlgorithm;
 #endif
