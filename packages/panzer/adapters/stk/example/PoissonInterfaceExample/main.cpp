@@ -385,6 +385,7 @@ int main (int argc,char * argv[])
     po.test_Jacobian = false;
     clp.setOption("test-jacobian", "dont-test-jacobian", &po.test_Jacobian,
                   "Test Jacobian using finite differences.");
+    po.generate_mesh_only = false;
     clp.setOption("generate-mesh-only", "dont-generate-mesh-only", &po.generate_mesh_only,
                   "Generate mesh, save, and quit.");
     try {
