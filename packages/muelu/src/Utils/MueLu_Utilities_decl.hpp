@@ -195,14 +195,6 @@ namespace MueLu {
 
 
 
-    static RCP<Matrix> Jacobi(Scalar omega,
-                              const Vector& D,
-                              const Matrix& A,
-                              const Matrix& B,
-                              RCP<Matrix> C_in,
-                              Teuchos::FancyOStream &fos,
-                              const std::string & label     = std::string());
-
 
       /*! @brief Extract Matrix Diagonal
 

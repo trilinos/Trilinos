@@ -360,30 +360,6 @@ namespace MueLu {
 
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(Scalar omega,
-                                                           const Vector& Dinv,
-                                                           const Matrix& A,
-                                                           const Matrix& B,
-                                                           RCP<Matrix> C_in,
-                                                           Teuchos::FancyOStream &fos,
-                                                           const std::string & label) {
-    // Sanity checks
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
-
-    // Default case: Xpetra Jacobi
-    RCP<Matrix> C = C_in;
-    if (C == Teuchos::null)
-      C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
-
-    Xpetra::Jacobi::Jacobi(omega, Dinv, A, B, *C, true,true,label);
-    C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
-    return C;
-  } //Jacobi
 
 #if 0
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
