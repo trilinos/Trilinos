@@ -185,9 +185,6 @@ typedef MueLu::RebalanceBlockRestrictionFactory<Scalar,LocalOrdinal,GlobalOrdina
 #ifdef MUELU_REBALANCETRANSFERFACTORY_SHORT
 typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RebalanceTransferFactory;
 #endif
-#ifdef MUELU_REFMAXWELL_SHORT
-typedef MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node> RefMaxwell;
-#endif
 #ifdef MUELU_REPARTITIONFACTORY_SHORT
 typedef MueLu::RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RepartitionFactory;
 #endif
