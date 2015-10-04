@@ -48,6 +48,8 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Xpetra_MatrixMatrix.hpp"
+
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "MueLu_RefMaxwell_decl.hpp"
@@ -121,8 +123,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   // Form TMT_Matrix
   Teuchos::RCP<XMat> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
   TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
-  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
   TMT_Matrix_->resumeFill();
   Utils::Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
@@ -150,9 +152,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
   // build fine grid operator for (2,2)-block, D0* M1 D0
   Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
-  Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
   A22_->resumeFill();
   Utils::Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
@@ -233,7 +235,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   Utils::Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
-  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
 
   // put in entries to P11
   size_t dim = Nullspace_->getNumVectors();
@@ -297,10 +299,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
   Teuchos::RCP<XMat> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
 
   // construct (M1 + D1* M2 D1) P11
-  Xpetra::MatrixMatrix::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
 
   // construct P11* (M1 + D1* M2 D1) P11
-  Xpetra::MatrixMatrix::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
 
   if(disable_addon_==true) {
     // if add-on is not chosen
@@ -317,17 +319,17 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
     Teuchos::RCP<XMat> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
     Teuchos::RCP<XMat> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
     // construct M1 P11
-    Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
     // construct Z = D0* M1 P11
-    Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*Zaux,false,*Z,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*Zaux,false,*Z,true,true);
     // construct M0inv Z
-    Xpetra::MatrixMatrix::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
     // construct Z* M0inv Z
     Teuchos::RCP<XMat> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
-    Xpetra::MatrixMatrix::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Utils2::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,A11_,*out);
+    Xpetra::MatrixMatrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,A11_,*out);
     A11_->fillComplete();
   }
 

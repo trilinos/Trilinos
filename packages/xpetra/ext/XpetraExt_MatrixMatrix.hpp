@@ -86,11 +86,11 @@
 
 namespace Xpetra {
 
-namespace MatrixMatrix {
+namespace Jacobi {
 
   // TODO: code factorization with MueLu_Utilities for conversion functions.
   // TODO: _decl and _def
-
+#if 0 // DELETE ME
 #ifdef HAVE_XPETRA_EPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op) {
@@ -334,6 +334,8 @@ void Multiply(
     C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB); // TODO use references instead of RCPs
 } // end Multiply
 
+#endif // end DELETE ME
+
 #if TO_BE_FIXED
 /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
  * Currently not functional.
@@ -478,7 +480,7 @@ void Jacobi(
   bool call_FillComplete_on_result = true,
   bool doOptimizeStorage = true,
   const std::string & label = std::string()) {
-
+# if 0 // TODO move this too!
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
     throw(Xpetra::Exceptions::RuntimeError(msg));
@@ -503,9 +505,9 @@ void Jacobi(
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
@@ -523,6 +525,8 @@ void Jacobi(
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(A));
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
+
+#endif // remove me
 } // end Jacobi
 
 
@@ -536,7 +540,7 @@ inline void JacobiT(
   bool call_FillComplete_on_result,
   bool doOptimizeStorage,
   const std::string & label) {
-
+# if 0 // TODO move this too!
   typedef double        SC;
   typedef int           LO;
   typedef GlobalOrdinal GO;
@@ -598,6 +602,7 @@ inline void JacobiT(
     RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
     RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
     C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
+#endif
 } // end Jacobi
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
