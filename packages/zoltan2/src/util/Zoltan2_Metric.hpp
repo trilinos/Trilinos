@@ -920,22 +920,38 @@ template <typename Adapter, typename pnum_t>
     rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
   Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
 				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
+  Array<gno_t> Indices;
+  Array<pnum_t> Values;
 
   if (!ewgtDim) {
-    for (lno_t i=0; i < localNumObj; i++)
-      for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	;//if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
-	   //cut[part[i]]++;
+    for (lno_t i=0; i < localNumObj; i++) {
+      const gno_t globalRow = Ids[i];
+      size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+      Indices.resize (NumEntries);
+      Values.resize (NumEntries);
+      adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+      for (size_t j=0; j < NumEntries; j++)
+	if (part[i] != Values[j])
+	  cut[part[i]]++;
+    }
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
   } else {
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
-      for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	  ;//if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
-	     //wgt[part[i]] += wgts[j];
+      for (lno_t i=0; i < localNumObj; i++) {
+	const gno_t globalRow = Ids[i];
+	size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+	Indices.resize (NumEntries);
+	Values.resize (NumEntries);
+	adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+	for (size_t j=0; j < NumEntries; j++)
+	  if (part[i] != Values[j])
+	    wgt[part[i]] += wgts[offsets[i] + j];
+      }
       wgt += nparts;         // individual weights
     }
   }
