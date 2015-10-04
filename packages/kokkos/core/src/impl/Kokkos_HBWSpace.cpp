@@ -44,47 +44,6 @@
 
 #include <Kokkos_Macros.hpp>
 
-/*--------------------------------------------------------------------------*/
-
-#if defined( __INTEL_COMPILER ) && ! defined ( KOKKOS_HAVE_CUDA )
-
-// Intel specialized allocator does not interoperate with CUDA memory allocation
-
-#define KOKKOS_INTEL_MM_ALLOC_AVAILABLE
-
-#endif
-
-/*--------------------------------------------------------------------------*/
-
-#if ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
-    ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
-
-#define KOKKOS_POSIX_MEMALIGN_AVAILABLE
-
-#include <unistd.h>
-#include <sys/mman.h>
-
-/* mmap flags for private anonymous memory allocation */
-
-#if defined( MAP_ANONYMOUS ) && defined( MAP_PRIVATE )
-  #define KOKKOS_POSIX_MMAP_FLAGS (MAP_PRIVATE | MAP_ANONYMOUS)
-#elif defined( MAP_ANON ) && defined( MAP_PRIVATE )
-  #define KOKKOS_POSIX_MMAP_FLAGS (MAP_PRIVATE | MAP_ANON)
-#endif
-
-// mmap flags for huge page tables
-// the Cuda driver does not interoperate with MAP_HUGETLB
-#if defined( KOKKOS_POSIX_MMAP_FLAGS )
-  #if defined( MAP_HUGETLB ) && ! defined( KOKKOS_HAVE_CUDA )
-    #define KOKKOS_POSIX_MMAP_FLAGS_HUGE (KOKKOS_POSIX_MMAP_FLAGS | MAP_HUGETLB )
-  #else
-    #define KOKKOS_POSIX_MMAP_FLAGS_HUGE KOKKOS_POSIX_MMAP_FLAGS
-  #endif
-#endif
-
-#endif
-
-/*--------------------------------------------------------------------------*/
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -95,15 +54,21 @@
 #include <sstream>
 #include <cstring>
 
-#include <Kokkos_HostSpace.hpp>
+#include <Kokkos_HBWSpace.hpp>
 #include <impl/Kokkos_BasicAllocators.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <Kokkos_Atomic.hpp>
+#ifdef KOKKOS_HAVE_HBWSPACE
+#include <memkind.h>
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+#ifdef KOKKOS_HAVE_HBWSPACE
+#define MEMKIND_TYPE MEMKIND_HBW //hbw_get_kind(HBW_PAGESIZE_4KB)
 
 namespace Kokkos {
+namespace Experimental {
 namespace {
 
 static const int QUERY_SPACE_IN_PARALLEL_MAX = 16 ;
@@ -115,10 +80,10 @@ int s_in_parallel_query_count = 0 ;
 
 } // namespace <empty>
 
-void HostSpace::register_in_parallel( int (*device_in_parallel)() )
+void HBWSpace::register_in_parallel( int (*device_in_parallel)() )
 {
   if ( 0 == device_in_parallel ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel ERROR : given NULL" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::HBWSpace::register_in_parallel ERROR : given NULL" ) );
   }
 
   int i = -1 ;
@@ -128,12 +93,12 @@ void HostSpace::register_in_parallel( int (*device_in_parallel)() )
   }
 
   if ( i < s_in_parallel_query_count ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel_query ERROR : called in_parallel" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::HBWSpace::register_in_parallel_query ERROR : called in_parallel" ) );
 
   }
 
   if ( QUERY_SPACE_IN_PARALLEL_MAX <= i ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::HostSpace::register_in_parallel_query ERROR : exceeded maximum" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::HBWSpace::register_in_parallel_query ERROR : exceeded maximum" ) );
 
   }
 
@@ -144,7 +109,7 @@ void HostSpace::register_in_parallel( int (*device_in_parallel)() )
   }
 }
 
-int HostSpace::in_parallel()
+int HBWSpace::in_parallel()
 {
   const int n = s_in_parallel_query_count ;
 
@@ -155,6 +120,7 @@ int HostSpace::in_parallel()
   return i < n ;
 }
 
+} // namespace Experiemtal
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -162,12 +128,14 @@ int HostSpace::in_parallel()
 #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 namespace Kokkos {
+namespace Experimental {
 
-Impl::AllocationTracker HostSpace::allocate_and_track( const std::string & label, const size_t size )
+Kokkos::Impl::AllocationTracker HBWSpace::allocate_and_track( const std::string & label, const size_t size )
 {
-  return Impl::AllocationTracker( allocator(), size, label );
+  return Kokkos::Impl::AllocationTracker( allocator(), size, label );
 }
 
+} // namespace Experimental
 } // namespace Kokkos
 
 #endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
@@ -175,62 +143,35 @@ Impl::AllocationTracker HostSpace::allocate_and_track( const std::string & label
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Experimental {
 
 /* Default allocation mechanism */
-HostSpace::HostSpace()
+HBWSpace::HBWSpace()
   : m_alloc_mech(
-#if defined( KOKKOS_INTEL_MM_ALLOC_AVAILABLE )
-      HostSpace::INTEL_MM_ALLOC
-#elif defined( KOKKOS_POSIX_MMAP_FLAGS )
-      HostSpace::POSIX_MMAP
-#elif defined( KOKKOS_POSIX_MEMALIGN_AVAILABLE )
-      HostSpace::POSIX_MEMALIGN
-#else
-      HostSpace::STD_MALLOC
-#endif
+     HBWSpace::STD_MALLOC
     )
-{}
+{
+printf("Init\n");
+setenv("MEMKIND_HBW_NODES", "1", 0);
+}
 
 /* Default allocation mechanism */
-HostSpace::HostSpace( const HostSpace::AllocationMechanism & arg_alloc_mech )
-  : m_alloc_mech( HostSpace::STD_MALLOC )
+HBWSpace::HBWSpace( const HBWSpace::AllocationMechanism & arg_alloc_mech )
+  : m_alloc_mech( HBWSpace::STD_MALLOC )
 {
+printf("Init2\n");
+setenv("MEMKIND_HBW_NODES", "1", 0);
   if ( arg_alloc_mech == STD_MALLOC ) {
-    m_alloc_mech = HostSpace::STD_MALLOC ;
-  }
-#if defined( KOKKOS_INTEL_MM_ALLOC_AVAILABLE )
-  else if ( arg_alloc_mech == HostSpace::INTEL_MM_ALLOC ) {
-    m_alloc_mech = HostSpace::INTEL_MM_ALLOC ;
-  }
-#elif defined( KOKKOS_POSIX_MEMALIGN_AVAILABLE )
-  else if ( arg_alloc_mech == HostSpace::POSIX_MEMALIGN ) {
-    m_alloc_mech = HostSpace::POSIX_MEMALIGN ;
-  }
-#elif defined( KOKKOS_POSIX_MMAP_FLAGS )
-  else if ( arg_alloc_mech == HostSpace::POSIX_MMAP ) {
-    m_alloc_mech = HostSpace::POSIX_MMAP ;
-  }
-#endif
-  else {
-    const char * const mech =
-      ( arg_alloc_mech == HostSpace::INTEL_MM_ALLOC ) ? "INTEL_MM_ALLOC" : (
-      ( arg_alloc_mech == HostSpace::POSIX_MEMALIGN ) ? "POSIX_MEMALIGN" : (
-      ( arg_alloc_mech == HostSpace::POSIX_MMAP     ) ? "POSIX_MMAP" : "" ));
-
-    std::string msg ;
-    msg.append("Kokkos::HostSpace ");
-    msg.append(mech);
-    msg.append(" is not available" );
-    Kokkos::Impl::throw_runtime_exception( msg );
+    m_alloc_mech = HBWSpace::STD_MALLOC ;
   }
 }
 
-void * HostSpace::allocate( const size_t arg_alloc_size ) const
+void * HBWSpace::allocate( const size_t arg_alloc_size ) const
 {
   static_assert( sizeof(void*) == sizeof(uintptr_t)
                , "Error sizeof(void*) != sizeof(uintptr_t)" );
 
-  static_assert( Kokkos::Impl::is_integral_power_of_two( Kokkos::Impl::MEMORY_ALIGNMENT )
+  static_assert( Kokkos::Impl::power_of_two< Kokkos::Impl::MEMORY_ALIGNMENT >::value
                , "Memory alignment must be power of two" );
 
   constexpr uintptr_t alignment = Kokkos::Impl::MEMORY_ALIGNMENT ;
@@ -244,7 +185,7 @@ void * HostSpace::allocate( const size_t arg_alloc_size ) const
       // Over-allocate to and round up to guarantee proper alignment.
       size_t size_padded = arg_alloc_size + sizeof(void*) + alignment ;
 
-      void * alloc_ptr = malloc( size_padded );
+      void * alloc_ptr = memkind_malloc(MEMKIND_TYPE, size_padded );
 
       if (alloc_ptr) {
         uintptr_t address = reinterpret_cast<uintptr_t>(alloc_ptr);
@@ -260,53 +201,14 @@ void * HostSpace::allocate( const size_t arg_alloc_size ) const
         *reinterpret_cast<void **>(address) = alloc_ptr;
       }
     }
-
-#if defined( KOKKOS_INTEL_MM_ALLOC_AVAILABLE )
-    else if ( m_alloc_mech == INTEL_MM_ALLOC ) {
-      ptr = _mm_malloc( arg_alloc_size , alignment );
-    }
-#endif
-
-#if defined( KOKKOS_POSIX_MEMALIGN_AVAILABLE )
-    else if ( m_alloc_mech == POSIX_MEMALIGN ) {
-      posix_memalign( & ptr, alignment , arg_alloc_size );
-    }
-#endif
-
-#if defined( KOKKOS_POSIX_MMAP_FLAGS )
-    else if ( m_alloc_mech == POSIX_MMAP ) {
-      constexpr size_t use_huge_pages = (1u << 27);
-      constexpr int    prot  = PROT_READ | PROT_WRITE ;
-      const int flags = arg_alloc_size < use_huge_pages
-                      ? KOKKOS_POSIX_MMAP_FLAGS
-                      : KOKKOS_POSIX_MMAP_FLAGS_HUGE ;
-
-      // read write access to private memory
-
-      ptr = mmap( NULL /* address hint, if NULL OS kernel chooses address */
-                , arg_alloc_size /* size in bytes */
-                , prot           /* memory protection */
-                , flags          /* visibility of updates */
-                , -1             /* file descriptor */
-                ,  0             /* offset */
-                );
-
-/* Associated reallocation:
-       ptr = mremap( old_ptr , old_size , new_size , MREMAP_MAYMOVE );
-*/
-    }
-#endif
   }
 
   if ( ( ptr == 0 ) || ( reinterpret_cast<uintptr_t>(ptr) == ~uintptr_t(0) )
        || ( reinterpret_cast<uintptr_t>(ptr) & alignment_mask ) ) {
     std::ostringstream msg ;
-    msg << "Kokkos::HostSpace::allocate[ " ;
+    msg << "Kokkos::Experimental::HBWSpace::allocate[ " ;
     switch( m_alloc_mech ) {
     case STD_MALLOC: msg << "STD_MALLOC" ; break ;
-    case POSIX_MEMALIGN: msg << "POSIX_MEMALIGN" ; break ;
-    case POSIX_MMAP: msg << "POSIX_MMAP" ; break ;
-    case INTEL_MM_ALLOC: msg << "INTEL_MM_ALLOC" ; break ;
     }
     msg << " ]( " << arg_alloc_size << " ) FAILED" ;
     if ( ptr == NULL ) { msg << " NULL" ; } 
@@ -322,36 +224,19 @@ void * HostSpace::allocate( const size_t arg_alloc_size ) const
 }
 
 
-void HostSpace::deallocate( void * const arg_alloc_ptr , const size_t arg_alloc_size ) const
+void HBWSpace::deallocate( void * const arg_alloc_ptr , const size_t arg_alloc_size ) const
 {
   if ( arg_alloc_ptr ) {
 
     if ( m_alloc_mech == STD_MALLOC ) {
       void * alloc_ptr = *(reinterpret_cast<void **>(arg_alloc_ptr) -1);
-      free( alloc_ptr );
+      memkind_free(MEMKIND_TYPE, alloc_ptr );
     }    
-
-#if defined( KOKKOS_INTEL_MM_ALLOC_AVAILABLE )
-    else if ( m_alloc_mech == INTEL_MM_ALLOC ) {
-      _mm_free( arg_alloc_ptr );
-    }
-#endif
-
-#if defined( KOKKOS_POSIX_MEMALIGN_AVAILABLE )
-    else if ( m_alloc_mech == POSIX_MEMALIGN ) {
-      free( arg_alloc_ptr );
-    }
-#endif
-
-#if defined( KOKKOS_POSIX_MMAP_FLAGS )
-    else if ( m_alloc_mech == POSIX_MMAP ) {
-      munmap( arg_alloc_ptr , arg_alloc_size );
-    }
-#endif
 
   }
 }
 
+} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -362,16 +247,16 @@ namespace Experimental {
 namespace Impl {
 
 SharedAllocationRecord< void , void >
-SharedAllocationRecord< Kokkos::HostSpace , void >::s_root_record ;
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::s_root_record ;
 
 void
-SharedAllocationRecord< Kokkos::HostSpace , void >::
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
 deallocate( SharedAllocationRecord< void , void > * arg_rec )
 {
   delete static_cast<SharedAllocationRecord*>(arg_rec);
 }
 
-SharedAllocationRecord< Kokkos::HostSpace , void >::
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
 ~SharedAllocationRecord()
 {
   m_space.deallocate( SharedAllocationRecord< void , void >::m_alloc_ptr
@@ -379,8 +264,8 @@ SharedAllocationRecord< Kokkos::HostSpace , void >::
                     );
 }
 
-SharedAllocationRecord< Kokkos::HostSpace , void >::
-SharedAllocationRecord( const Kokkos::HostSpace & arg_space
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
+SharedAllocationRecord( const Kokkos::Experimental::HBWSpace & arg_space
                       , const std::string       & arg_label
                       , const size_t              arg_alloc_size
                       , const SharedAllocationRecord< void , void >::function_type arg_dealloc
@@ -388,7 +273,7 @@ SharedAllocationRecord( const Kokkos::HostSpace & arg_space
   // Pass through allocated [ SharedAllocationHeader , user_memory ]
   // Pass through deallocation function
   : SharedAllocationRecord< void , void >
-      ( & SharedAllocationRecord< Kokkos::HostSpace , void >::s_root_record
+      ( & SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::s_root_record
       , reinterpret_cast<SharedAllocationHeader*>( arg_space.allocate( sizeof(SharedAllocationHeader) + arg_alloc_size ) )
       , sizeof(SharedAllocationHeader) + arg_alloc_size
       , arg_dealloc
@@ -406,8 +291,8 @@ SharedAllocationRecord( const Kokkos::HostSpace & arg_space
 
 //----------------------------------------------------------------------------
 
-void * SharedAllocationRecord< Kokkos::HostSpace , void >::
-allocate_tracked( const Kokkos::HostSpace & arg_space
+void * SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
+allocate_tracked( const Kokkos::Experimental::HBWSpace & arg_space
                 , const std::string & arg_alloc_label 
                 , const size_t arg_alloc_size )
 {
@@ -421,7 +306,7 @@ allocate_tracked( const Kokkos::HostSpace & arg_space
   return r->data();
 }
 
-void SharedAllocationRecord< Kokkos::HostSpace , void >::
+void SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
 deallocate_tracked( void * const arg_alloc_ptr )
 {
   if ( arg_alloc_ptr != 0 ) {
@@ -431,14 +316,14 @@ deallocate_tracked( void * const arg_alloc_ptr )
   }
 }
 
-void * SharedAllocationRecord< Kokkos::HostSpace , void >::
+void * SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
 reallocate_tracked( void * const arg_alloc_ptr
                   , const size_t arg_alloc_size )
 {
   SharedAllocationRecord * const r_old = get_record( arg_alloc_ptr );
   SharedAllocationRecord * const r_new = allocate( r_old->m_space , r_old->get_label() , arg_alloc_size );
 
-  Kokkos::Impl::DeepCopy<HostSpace,HostSpace>( r_new->data() , r_old->data()
+  Kokkos::Impl::DeepCopy<HBWSpace,HBWSpace>( r_new->data() , r_old->data()
                                              , std::min( r_old->size() , r_new->size() ) );
 
   RecordBase::increment( r_new );
@@ -447,27 +332,27 @@ reallocate_tracked( void * const arg_alloc_ptr
   return r_new->data();
 }
 
-SharedAllocationRecord< Kokkos::HostSpace , void > *
-SharedAllocationRecord< Kokkos::HostSpace , void >::get_record( void * alloc_ptr )
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void > *
+SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::get_record( void * alloc_ptr )
 {
   typedef SharedAllocationHeader  Header ;
-  typedef SharedAllocationRecord< Kokkos::HostSpace , void >  RecordHost ;
+  typedef SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >  RecordHost ;
 
   SharedAllocationHeader const * const head   = alloc_ptr ? Header::get_header( alloc_ptr ) : (SharedAllocationHeader *)0 ;
   RecordHost                   * const record = head ? static_cast< RecordHost * >( head->m_record ) : (RecordHost *) 0 ;
 
   if ( ! alloc_ptr || record->m_alloc_ptr != head ) {
-    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::HostSpace , void >::get_record ERROR" ) );
+    Kokkos::Impl::throw_runtime_exception( std::string("Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::get_record ERROR" ) );
   }
 
   return record ;
 }
 
 // Iterate records to print orphaned memory ...
-void SharedAllocationRecord< Kokkos::HostSpace , void >::
-print_records( std::ostream & s , const Kokkos::HostSpace & space , bool detail )
+void SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >::
+print_records( std::ostream & s , const Kokkos::Experimental::HBWSpace & space , bool detail )
 {
-  SharedAllocationRecord< void , void >::print_host_accessible_records( s , "HostSpace" , & s_root_record , detail );
+  SharedAllocationRecord< void , void >::print_host_accessible_records( s , "HBWSpace" , & s_root_record , detail );
 }
 
 } // namespace Impl
@@ -478,31 +363,34 @@ print_records( std::ostream & s , const Kokkos::HostSpace & space , bool detail 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+namespace Experimental {
 namespace {
-  const unsigned HOST_SPACE_ATOMIC_MASK = 0xFFFF;
-  const unsigned HOST_SPACE_ATOMIC_XOR_MASK = 0x5A39;
-  static int HOST_SPACE_ATOMIC_LOCKS[HOST_SPACE_ATOMIC_MASK+1];
+  const unsigned HBW_SPACE_ATOMIC_MASK = 0xFFFF;
+  const unsigned HBW_SPACE_ATOMIC_XOR_MASK = 0x5A39;
+  static int HBW_SPACE_ATOMIC_LOCKS[HBW_SPACE_ATOMIC_MASK+1];
 }
 
 namespace Impl {
-void init_lock_array_host_space() {
+void init_lock_array_hbw_space() {
   static int is_initialized = 0;
   if(! is_initialized)
-    for(int i = 0; i < static_cast<int> (HOST_SPACE_ATOMIC_MASK+1); i++)
-      HOST_SPACE_ATOMIC_LOCKS[i] = 0;
+    for(int i = 0; i < static_cast<int> (HBW_SPACE_ATOMIC_MASK+1); i++)
+      HBW_SPACE_ATOMIC_LOCKS[i] = 0;
 }
 
-bool lock_address_host_space(void* ptr) {
-  return 0 == atomic_compare_exchange( &HOST_SPACE_ATOMIC_LOCKS[
-      (( size_t(ptr) >> 2 ) & HOST_SPACE_ATOMIC_MASK) ^ HOST_SPACE_ATOMIC_XOR_MASK] ,
+bool lock_address_hbw_space(void* ptr) {
+  return 0 == atomic_compare_exchange( &HBW_SPACE_ATOMIC_LOCKS[
+      (( size_t(ptr) >> 2 ) & HBW_SPACE_ATOMIC_MASK) ^ HBW_SPACE_ATOMIC_XOR_MASK] ,
                                   0 , 1);
 }
 
-void unlock_address_host_space(void* ptr) {
-   atomic_exchange( &HOST_SPACE_ATOMIC_LOCKS[
-      (( size_t(ptr) >> 2 ) & HOST_SPACE_ATOMIC_MASK) ^ HOST_SPACE_ATOMIC_XOR_MASK] ,
+void unlock_address_hbw_space(void* ptr) {
+   atomic_exchange( &HBW_SPACE_ATOMIC_LOCKS[
+      (( size_t(ptr) >> 2 ) & HBW_SPACE_ATOMIC_MASK) ^ HBW_SPACE_ATOMIC_XOR_MASK] ,
                     0);
 }
 
 }
 }
+}
+#endif

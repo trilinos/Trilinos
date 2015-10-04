@@ -41,76 +41,65 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_MEMORYTRAITS_HPP
-#define KOKKOS_MEMORYTRAITS_HPP
+#include <Kokkos_HostSpace.hpp>
 
-#include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Tags.hpp>
+#include <impl/Kokkos_HBWAllocators.hpp>
+#include <impl/Kokkos_Error.hpp>
 
-//----------------------------------------------------------------------------
 
-namespace Kokkos {
+#include <stdint.h>    // uintptr_t
+#include <cstdlib>     // for malloc, realloc, and free
+#include <cstring>     // for memcpy
+#include <sys/mman.h>  // for mmap, munmap, MAP_ANON, etc
+#include <unistd.h>    // for sysconf, _SC_PAGE_SIZE, _SC_PHYS_PAGES
 
-/** \brief  Memory access traits for views, an extension point.
- *
- *  These traits should be orthogonal.  If there are dependencies then
- *  the MemoryTraits template must detect and enforce dependencies.
- *
- *  A zero value is the default for a View, indicating that none of
- *  these traits are present.
- */
-enum MemoryTraitsFlags
-  { Unmanaged  = 0x01
-  , RandomAccess = 0x02
-  , Atomic = 0x04
-  };
+#include <sstream>
+#include <iostream>
 
-template < unsigned T >
-struct MemoryTraits {
-  //! Tag this class as a kokkos memory traits:
-  typedef MemoryTraits memory_traits ;
-
-  enum { Unmanaged    = T & unsigned(Kokkos::Unmanaged) };
-  enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
-  enum { Atomic       = T & unsigned(Kokkos::Atomic) };
-
-};
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
+#ifdef KOKKOS_HAVE_HBWSPACE
+#include <memkind.h>
 
 namespace Kokkos {
-
-typedef Kokkos::MemoryTraits<0> MemoryManaged ;
-typedef Kokkos::MemoryTraits< Kokkos::Unmanaged > MemoryUnmanaged ;
-typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomAccess > MemoryRandomAccess ;
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
+namespace Experimental {
 namespace Impl {
+#define MEMKIND_TYPE MEMKIND_HBW //hbw_get_kind(HBW_PAGESIZE_4KB)
+/*--------------------------------------------------------------------------*/
 
-/** \brief Memory alignment settings
- *
- *  Sets global value for memory alignment.  Must be a power of two!
- *  Enable compatibility of views from different devices with static stride.
- *  Use compiler flag to enable overwrites.
- */
-enum { MEMORY_ALIGNMENT =
-#if defined( KOKKOS_MEMORY_ALIGNMENT )
-    ( 1 << Kokkos::Impl::integral_power_of_two( KOKKOS_MEMORY_ALIGNMENT ) )
-#else
-    ( 1 << Kokkos::Impl::integral_power_of_two( 128 ) )
-#endif
-  , MEMORY_ALIGNMENT_THRESHOLD = 4 
-  };
+void* HBWMallocAllocator::allocate( size_t size )
+{
+  std::cout<< "Allocate HBW: " << 1.0e-6*size << "MB" << std::endl;
+  void * ptr = NULL;
+  if (size) {
+    ptr = memkind_malloc(MEMKIND_TYPE,size);
 
+    if (!ptr)
+    {
+      std::ostringstream msg ;
+      msg << name() << ": allocate(" << size << ") FAILED";
+      Kokkos::Impl::throw_runtime_exception( msg.str() );
+    }
+  }
+  return ptr;
+}
 
-} //namespace Impl
+void HBWMallocAllocator::deallocate( void * ptr, size_t /*size*/ )
+{
+  if (ptr) {
+    memkind_free(MEMKIND_TYPE,ptr);
+  }
+}
+
+void * HBWMallocAllocator::reallocate(void * old_ptr, size_t /*old_size*/, size_t new_size)
+{
+  void * ptr = memkind_realloc(MEMKIND_TYPE, old_ptr, new_size);
+
+  if (new_size > 0u && ptr == NULL) {
+    Kokkos::Impl::throw_runtime_exception("Error: Malloc Allocator could not reallocate memory");
+  }
+  return ptr;
+}
+
+} // namespace Impl
+} // namespace Experimental
 } // namespace Kokkos
-
-#endif /* #ifndef KOKKOS_MEMORYTRAITS_HPP */
-
+#endif

@@ -41,28 +41,18 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOSTSPACE_HPP
-#define KOKKOS_HOSTSPACE_HPP
+#ifndef KOKKOS_HBWSPACE_HPP
+#define KOKKOS_HBWSPACE_HPP
 
-#include <cstring>
-#include <string>
-#include <iosfwd>
-#include <typeinfo>
 
-#include <Kokkos_Core_fwd.hpp>
-#include <Kokkos_MemoryTraits.hpp>
-
-#include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Error.hpp>
-
-#include <impl/Kokkos_AllocationTracker.hpp>
-#include <impl/Kokkos_BasicAllocators.hpp>
-
-#include <impl/KokkosExp_SharedAlloc.hpp>
+#include <Kokkos_HostSpace.hpp>
+#include <impl/Kokkos_HBWAllocators.hpp>
 
 /*--------------------------------------------------------------------------*/
+#ifdef KOKKOS_HAVE_HBWSPACE
 
 namespace Kokkos {
+namespace Experimental {
 namespace Impl {
 
 /// \brief Initialize lock array for arbitrary size atomics.
@@ -71,14 +61,14 @@ namespace Impl {
 /// where the hash value is derived from the address of the
 /// object for which an atomic operation is performed.
 /// This function initializes the locks to zero (unset).
-void init_lock_array_host_space();
+void init_lock_array_hbw_space();
 
 /// \brief Aquire a lock for the address
 ///
 /// This function tries to aquire the lock for the hash value derived
 /// from the provided ptr. If the lock is successfully aquired the
 /// function returns true. Otherwise it returns false.
-bool lock_address_host_space(void* ptr);
+bool lock_address_hbw_space(void* ptr);
 
 /// \brief Release lock for the address
 ///
@@ -86,23 +76,25 @@ bool lock_address_host_space(void* ptr);
 /// from the provided ptr. This function should only be called
 /// after previously successfully aquiring a lock with
 /// lock_address.
-void unlock_address_host_space(void* ptr);
+void unlock_address_hbw_space(void* ptr);
 
 } // namespace Impl
+} // neamspace Experimental
 } // namespace Kokkos
 
 namespace Kokkos {
+namespace Experimental {
 
-/// \class HostSpace
+/// \class HBWSpace
 /// \brief Memory management for host memory.
 ///
-/// HostSpace is a memory space that governs host memory.  "Host"
+/// HBWSpace is a memory space that governs host memory.  "Host"
 /// memory means the usual CPU-accessible memory.
-class HostSpace {
+class HBWSpace {
 public:
 
   //! Tag this class as a kokkos memory space
-  typedef HostSpace  memory_space ;
+  typedef HBWSpace  memory_space ;
   typedef size_t     size_type ;
 
   /// \typedef execution_space
@@ -131,11 +123,7 @@ public:
   /*--------------------------------*/
 #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
-#if defined( KOKKOS_USE_PAGE_ALIGNED_HOST_MEMORY )
-  typedef Impl::PageAlignedAllocator allocator ;
-#else
-  typedef Impl::AlignedAllocator allocator ;
-#endif
+  typedef Impl::HBWMallocAllocator allocator ;
 
   /** \brief  Allocate a contiguous block of memory.
    *
@@ -143,12 +131,12 @@ public:
    *  The block of memory is tracked via reference counting where
    *  allocation gives it a reference count of one.
    */
-  static Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
+  static Kokkos::Impl::AllocationTracker allocate_and_track( const std::string & label, const size_t size );
 
 #endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
 
   /*--------------------------------*/
-  /* Functions unique to the HostSpace */
+  /* Functions unique to the HBWSpace */
   static int in_parallel();
 
   static void register_in_parallel( int (*)() );
@@ -156,17 +144,17 @@ public:
   /*--------------------------------*/
 
   /**\brief  Default memory space instance */
-  HostSpace();
-  HostSpace( const HostSpace & rhs ) = default ;
-  HostSpace & operator = ( const HostSpace & ) = default ;
-  ~HostSpace() = default ;
+  HBWSpace();
+  HBWSpace( const HBWSpace & rhs ) = default ;
+  HBWSpace & operator = ( const HBWSpace & ) = default ;
+  ~HBWSpace() = default ;
 
   /**\brief  Non-default memory space instance to choose allocation mechansim, if available */
 
   enum AllocationMechanism { STD_MALLOC , POSIX_MEMALIGN , POSIX_MMAP , INTEL_MM_ALLOC };
 
   explicit
-  HostSpace( const AllocationMechanism & );
+  HBWSpace( const AllocationMechanism & );
 
   /**\brief  Allocate untracked memory in the space */
   void * allocate( const size_t arg_alloc_size ) const ;
@@ -179,9 +167,10 @@ private:
 
   AllocationMechanism  m_alloc_mech ;
 
-  friend class Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::HostSpace , void > ;
+  friend class Kokkos::Experimental::Impl::SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void > ;
 };
 
+} // namespace Experimental
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -192,12 +181,12 @@ namespace Experimental {
 namespace Impl {
 
 template<>
-class SharedAllocationRecord< Kokkos::HostSpace , void >
+class SharedAllocationRecord< Kokkos::Experimental::HBWSpace , void >
   : public SharedAllocationRecord< void , void >
 {
 private:
 
-  friend Kokkos::HostSpace ;
+  friend Kokkos::Experimental::HBWSpace ;
 
   typedef SharedAllocationRecord< void , void >  RecordBase ;
 
@@ -206,17 +195,17 @@ private:
 
   static void deallocate( RecordBase * );
 
-  /**\brief  Root record for tracked allocations from this HostSpace instance */
+  /**\brief  Root record for tracked allocations from this HBWSpace instance */
   static RecordBase s_root_record ;
 
-  const Kokkos::HostSpace m_space ;
+  const Kokkos::Experimental::HBWSpace m_space ;
 
 protected:
 
   ~SharedAllocationRecord();
   SharedAllocationRecord() = default ;
 
-  SharedAllocationRecord( const Kokkos::HostSpace        & arg_space
+  SharedAllocationRecord( const Kokkos::Experimental::HBWSpace        & arg_space
                         , const std::string              & arg_label
                         , const size_t                     arg_alloc_size
                         , const RecordBase::function_type  arg_dealloc = & deallocate
@@ -231,7 +220,7 @@ public:
     }
 
   KOKKOS_INLINE_FUNCTION static
-  SharedAllocationRecord * allocate( const Kokkos::HostSpace &  arg_space
+  SharedAllocationRecord * allocate( const Kokkos::Experimental::HBWSpace &  arg_space
                                    , const std::string       &  arg_label
                                    , const size_t               arg_alloc_size
                                    )
@@ -245,7 +234,7 @@ public:
 
   /**\brief  Allocate tracked memory in the space */
   static
-  void * allocate_tracked( const Kokkos::HostSpace & arg_space
+  void * allocate_tracked( const Kokkos::Experimental::HBWSpace & arg_space
                          , const std::string & arg_label
                          , const size_t arg_alloc_size );
 
@@ -261,7 +250,7 @@ public:
 
   static SharedAllocationRecord * get_record( void * arg_alloc_ptr );
 
-  static void print_records( std::ostream & , const Kokkos::HostSpace & , bool detail = false );
+  static void print_records( std::ostream & , const Kokkos::Experimental::HBWSpace & , bool detail = false );
 };
 
 } // namespace Impl
@@ -274,10 +263,31 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class DstSpace, class SrcSpace, class ExecutionSpace = typename DstSpace::execution_space> struct DeepCopy ;
 
 template<class ExecutionSpace>
-struct DeepCopy<HostSpace,HostSpace,ExecutionSpace> {
+struct DeepCopy<Experimental::HBWSpace,Experimental::HBWSpace,ExecutionSpace> {
+  DeepCopy( void * dst , const void * src , size_t n ) {
+    memcpy( dst , src , n );
+  }
+  DeepCopy( const ExecutionSpace& exec, void * dst , const void * src , size_t n ) {
+    exec.fence();
+    memcpy( dst , src , n );
+  }
+};
+
+template<class ExecutionSpace>
+struct DeepCopy<HostSpace,Experimental::HBWSpace,ExecutionSpace> {
+  DeepCopy( void * dst , const void * src , size_t n ) {
+    memcpy( dst , src , n );
+  }
+  DeepCopy( const ExecutionSpace& exec, void * dst , const void * src , size_t n ) {
+    exec.fence();
+    memcpy( dst , src , n );
+  }
+};
+
+template<class ExecutionSpace>
+struct DeepCopy<Experimental::HBWSpace,HostSpace,ExecutionSpace> {
   DeepCopy( void * dst , const void * src , size_t n ) {
     memcpy( dst , src , n );
   }
@@ -290,6 +300,28 @@ struct DeepCopy<HostSpace,HostSpace,ExecutionSpace> {
 } // namespace Impl
 } // namespace Kokkos
 
+namespace Kokkos {
+namespace Impl {
 
-#endif /* #define KOKKOS_HOSTSPACE_HPP */
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace , Kokkos::Experimental::HBWSpace >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+template<>
+struct VerifyExecutionCanAccessMemorySpace< Kokkos::Experimental::HBWSpace , Kokkos::HostSpace >
+{
+  enum { value = true };
+  inline static void verify( void ) { }
+  inline static void verify( const void * ) { }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif
+#endif /* #define KOKKOS_HBWSPACE_HPP */
 

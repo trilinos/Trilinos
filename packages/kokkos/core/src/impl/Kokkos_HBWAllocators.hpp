@@ -41,76 +41,35 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_MEMORYTRAITS_HPP
-#define KOKKOS_MEMORYTRAITS_HPP
+#ifndef KOKKOS_HBW_ALLOCATORS_HPP
+#define KOKKOS_HBW_ALLOCATORS_HPP
 
-#include <impl/Kokkos_Traits.hpp>
-#include <impl/Kokkos_Tags.hpp>
-
-//----------------------------------------------------------------------------
+#ifdef KOKKOS_HAVE_HBWSPACE
 
 namespace Kokkos {
-
-/** \brief  Memory access traits for views, an extension point.
- *
- *  These traits should be orthogonal.  If there are dependencies then
- *  the MemoryTraits template must detect and enforce dependencies.
- *
- *  A zero value is the default for a View, indicating that none of
- *  these traits are present.
- */
-enum MemoryTraitsFlags
-  { Unmanaged  = 0x01
-  , RandomAccess = 0x02
-  , Atomic = 0x04
-  };
-
-template < unsigned T >
-struct MemoryTraits {
-  //! Tag this class as a kokkos memory traits:
-  typedef MemoryTraits memory_traits ;
-
-  enum { Unmanaged    = T & unsigned(Kokkos::Unmanaged) };
-  enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
-  enum { Atomic       = T & unsigned(Kokkos::Atomic) };
-
-};
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-
-typedef Kokkos::MemoryTraits<0> MemoryManaged ;
-typedef Kokkos::MemoryTraits< Kokkos::Unmanaged > MemoryUnmanaged ;
-typedef Kokkos::MemoryTraits< Kokkos::Unmanaged | Kokkos::RandomAccess > MemoryRandomAccess ;
-
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
+namespace Experimental {
 namespace Impl {
 
-/** \brief Memory alignment settings
- *
- *  Sets global value for memory alignment.  Must be a power of two!
- *  Enable compatibility of views from different devices with static stride.
- *  Use compiler flag to enable overwrites.
- */
-enum { MEMORY_ALIGNMENT =
-#if defined( KOKKOS_MEMORY_ALIGNMENT )
-    ( 1 << Kokkos::Impl::integral_power_of_two( KOKKOS_MEMORY_ALIGNMENT ) )
-#else
-    ( 1 << Kokkos::Impl::integral_power_of_two( 128 ) )
-#endif
-  , MEMORY_ALIGNMENT_THRESHOLD = 4 
-  };
+/// class MallocAllocator
+class HBWMallocAllocator
+{
+public:
+  static const char * name()
+  {
+    return "HBW Malloc Allocator";
+  }
 
+  static void* allocate(size_t size);
 
-} //namespace Impl
-} // namespace Kokkos
+  static void deallocate(void * ptr, size_t size);
 
-#endif /* #ifndef KOKKOS_MEMORYTRAITS_HPP */
+  static void * reallocate(void * old_ptr, size_t old_size, size_t new_size);
+};
+
+}
+}
+} // namespace Kokkos::Impl
+#endif //KOKKOS_HAVE_HBWSPACE
+#endif //KOKKOS_HBW_ALLOCATORS_HPP
+
 
