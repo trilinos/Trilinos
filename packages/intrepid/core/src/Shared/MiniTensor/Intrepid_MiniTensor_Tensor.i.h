@@ -1557,7 +1557,6 @@ inline
 Tensor<T, N> const
 zero(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
   return Tensor<T, N>(dimension, ZEROS);
 }
 
@@ -1647,8 +1646,6 @@ inline
 Tensor<T, N> const
 identity(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor<T, N>
   A(dimension, ZEROS);
 
@@ -1718,8 +1715,6 @@ inline
 Tensor<T, N> const
 levi_civita_2(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor<T, DYNAMIC>
   A(dimension, ZEROS);
 

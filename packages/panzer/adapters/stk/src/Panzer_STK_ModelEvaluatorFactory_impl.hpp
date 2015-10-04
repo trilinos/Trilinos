@@ -212,6 +212,17 @@ namespace panzer_stk_classic {
     return validPL;
   }
 
+  namespace {
+    bool hasInterfaceCondition(const std::vector<panzer::BC>& bcs)
+    {
+      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit) {
+        if (bcit->bcType() == panzer::BCT_Interface)
+          return true;
+      }
+      return false;
+    }
+  } // namespace
+
   template<typename ScalarT>
   void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                                      const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -373,6 +384,11 @@ namespace panzer_stk_classic {
     Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
+    // handle boundary and interface conditions
+    ////////////////////////////////////////////////////////////////////////////////////////
+    std::vector<panzer::BC> bcs;
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
+
     // build the connection manager
     ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -504,9 +520,23 @@ namespace panzer_stk_classic {
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
+       const bool has_interface_condition = hasInterfaceCondition(bcs);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
+                                                         field_order, ! has_interface_condition);
        globalIndexer = dofManager;
+       if (has_interface_condition) {
+         Teuchos::RCP<panzer::DOFManager<int,int> > nativeDofMngr =
+           Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager);
+         TEUCHOS_TEST_FOR_EXCEPTION(nativeDofMngr.is_null(), std::logic_error,
+                                    "There are interface conditions, but the non-native DOF manager"
+                                    " does not support the necessary ghosting.");
+         nativeDofMngr->enableGhosting(true);
+         {
+           PANZER_FUNC_TIME_MONITOR("panzer_stk_classic::ModelEvaluatorFactory::buildObjects::buildGlobalUnknowns");
+           nativeDofMngr->buildGlobalUnknowns();
+         }
+       }
 
        linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
 
@@ -611,9 +641,6 @@ namespace panzer_stk_classic {
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
-
-    std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
