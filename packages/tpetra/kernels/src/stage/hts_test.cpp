@@ -271,8 +271,9 @@ int test (const TestOptions& to, const bool print_options=false) {
       hts::print_options(impl, std::cout);
     if (to.reprocess) {
       // This isn't necessary since we aren't changing the numbers, but pretend
-      // we are to test the numerical phase.
-      hts::reprocess_numeric(impl, T);
+      // we are to test the numerical phase. Do it 3 times to test idempotency.
+      for (int rep = 0; rep < 3; ++rep)
+        hts::reprocess_numeric(impl, T);
     }
     if (hts::is_lower_tri(impl) && to.upper && to.n > 1)
       ++nerr;

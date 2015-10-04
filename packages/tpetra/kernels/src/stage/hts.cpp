@@ -37,9 +37,6 @@ inline void compress (std::vector<T>& v) { std::vector<T>(v).swap(v); }
 
 typedef int blas_int;
 #ifndef NO_BLAS
-// In contrast to the MKL sparse routines (below), BLAS-3 beats BLAS-2 even on 1
-// rhs. I hide this define from the user.
-#define USE_BLAS_3
 extern "C" {
   void dgemv_(
     const char*, const blas_int*, const blas_int*, const double*, const double*,
@@ -71,30 +68,14 @@ gemm<double> (
   const blas_int ldc)
 {
 #ifndef NO_BLAS
-# ifdef USE_BLAS_3
   dgemm_(&transa, &transb, &m, &nrhs, &n, &alpha, a, &lda, b, &ldb, &beta, c,
          &ldc);
-# else
-  const blas_int one = 1;
-  // gemm and gemv have opposite conventions for providing rows(A) vs
-  // rows(op(A)).
-  if (transa == 't' || transa == 'T') std::swap(m, n);
-  for (int k = 0; k < nrhs; ++k)
-    dgemv_(&transa, &m, &n, &alpha, a, &lda, b + k*ldb, &one, &beta, c + k*ldc,
-           &one);
-# endif
 #else
   assert(0);
 #endif
 }
 
 #ifdef USE_MKL
-// In each of these two functions, I try level-2 and -3 MKL functions. The
-// problem with the level-3 ones is that the dense 2D array ordering is C rather
-// than Fortran, but I use Fortran ordering, so I end up having to treat the mm
-// as mv. For one rhs, m is measurably slower than v. So, generally, there is no
-// reason to turn this define on, and I hide it from the user:
-//#define USE_MKL_3
 // sparse A * dense x
 inline void hts_mkl_dcsrmm (
   const bool transp, const MKL_INT m, const MKL_INT n, const double* d,
@@ -104,19 +85,6 @@ inline void hts_mkl_dcsrmm (
   char transa = transp ? 'T' : 'N';
   static const char A_descr[6] = {'G', '*', '*', 'C', '*', '*'};
   double alpha = -1, beta = 1;
-#ifdef USE_MKL_3
-  MKL_INT ldxy_mkl = 1;
-  // MKL assumes the opposite of Fortran ordering for dense matrices when using
-  // 0-based indexing, so I have to do the call one rhs at a time.
-  for (int k = 0; k < nrhs; ++k)
-    mkl_dcsrmm(
-      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&nrhs),
-      const_cast<MKL_INT*>(&n), &alpha, const_cast<char*>(A_descr),
-      const_cast<double*>(d), const_cast<MKL_INT*>(jc),
-      const_cast<MKL_INT*>(ir), const_cast<MKL_INT*>(ir+1),
-      const_cast<double*>(x + k*ldx), const_cast<MKL_INT*>(&ldxy_mkl), &beta,
-      y + k*ldy, const_cast<MKL_INT*>(&ldxy_mkl));
-#else
   for (int k = 0; k < nrhs; ++k)
     mkl_dcsrmv(
       &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&n),
@@ -124,7 +92,6 @@ inline void hts_mkl_dcsrmm (
       const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
       const_cast<MKL_INT*>(ir+1), const_cast<double*>(x + k*ldx), &beta,
       y + k*ldy);
-#endif
 }
 
 // sparse T \ dense x
@@ -134,20 +101,6 @@ inline void hts_mkl_dcsrsm (
   const MKL_INT ldx, int nrhs)
 {
   char transa = 'N';
-#ifdef USE_MKL_3
-  char A_descr[6] = {'T', '*', 'N', 'C', '*', '*'};
-  A_descr[1] = is_lower ? 'L' : 'U';
-  double alpha = 1;
-  MKL_INT ldbx_mkl = 1;
-  for (int k = 0; k < nrhs; ++k)
-    mkl_dcsrsm(
-      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&nrhs),
-      &alpha, A_descr, const_cast<double*>(d),
-      const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
-      const_cast<MKL_INT*>(ir+1), const_cast<double*>(b + k*ldb),
-      const_cast<MKL_INT*>(&ldbx_mkl), x + k*ldx,
-      const_cast<MKL_INT*>(&ldbx_mkl));
-#else
   char
     uplo = is_lower ? 'L' : 'U',
     diag = 'N';
@@ -157,7 +110,6 @@ inline void hts_mkl_dcsrsm (
       const_cast<double*>(d), const_cast<MKL_INT*>(ir),
       const_cast<MKL_INT*>(jc), const_cast<double*>(b + ldb*k),
       x + ldx*k);
-#endif
 }
 #endif
 
@@ -447,23 +399,6 @@ typedef std::vector<Int> VI;
 // Decide how many level sets to keep.
 Int decide_level_set_max_index (const std::vector<Int>& N, const Int size_thr,
                                 const Options& o) {
-#if 0
-  const Int max_lset_bn = 20;
-  const Int max_level = N.size() - 1;
-  Int bn = 0, streak = 0;
-  Int lsmi = -1; // level sets max index
-  for (;;) {
-    ++lsmi;
-    if (N[lsmi] < size_thr) {
-      ++bn;
-      ++streak;
-      if (bn == max_lset_bn || N[lsmi] == 0) break;
-    } else streak = 0;
-    if (lsmi == max_level) break;
-  }
-  lsmi -= streak;
-  return lsmi;
-#else
   Int N_end = (Int) N.size();
   while (N_end > 0 && N[N_end-1] < size_thr) --N_end;
   Int nrows_total = 0, nrows_under = 0;
@@ -481,7 +416,6 @@ Int decide_level_set_max_index (const std::vector<Int>& N, const Int size_thr,
     nrows_under -= Ni;
   }
   return i;
-#endif
 }
 
 // Allocate lsets.
@@ -502,9 +436,7 @@ void alloc_lsets (const Int lsmi, const Int sns, const std::vector<Int>& level,
 }
 
 namespace locrsrow {
-//todo || impl that uses p2p on the rows of the serial tri.
-
-// Serial impls for reference.
+// Serial impl for reference.
 Int schedule_serial (const ConstCrsMatrix& L, const Int sns,
                      std::vector<Int>& w) {
   // Eq. 18 in Y. Saad's 1989 SIAM J Sci Stat Comput paper.
@@ -774,7 +706,7 @@ void LevelSetter::reverse_variable_order (Int n) {
     VI& ls = lsets_[i];
     for (size_t j = 0; j < ls.size(); ++j)
       ls[j] = n - ls[j];
-    std::sort(ls.begin(), ls.end());
+    std::reverse(ls.begin(), ls.end());
   }
 }
 
@@ -1065,12 +997,12 @@ inline void copy_partition (const ConstCrsMatrix& A, Partition& p,
                             const bool is_lo) {
   const Int ilim = (Int) p.A_idxs.size();
   if (is_lo) {
-#pragma omp parallel for schedule(static)
+#   pragma omp parallel for schedule(static)
     for (Int i = 0; i < ilim; ++i)
       p.cm->d[i] = A.d[p.A_idxs[i]];
   } else {
     const Int nnz = A.ir[A.m];
-#pragma omp parallel for schedule(static)
+#   pragma omp parallel for schedule(static)
     for (Int i = 0; i < ilim; ++i)
       p.cm->d[i] = A.d[nnz - p.A_idxs[i] - 1];
   }
@@ -1238,29 +1170,6 @@ void CrsSegmenter::segment () {
 
   init_nnz(rcnt);
   if (ls_blk_sz_ == 1) smooth_spikes(rcnt, p_, nnz_, tid_empty);
-
-#ifdef ANALYZE
-  bool early0 = false, fnd0 = false;
-  for (size_t i = 0; i < p_.size() - 1; ++i) {
-    if (p_[i+1] == p_[i] && ! (block_0_nnz_os_ && i == 0))
-      fnd0 = true;
-    else if (fnd0) {
-      prvec("p", p_);
-      early0 = true;
-    }
-  }
-  if (nnz_.size() >= 3) {
-    Int min_nnz = nnz_[1], max_nnz = nnz_[1];
-    for (size_t i = 2; i < nnz_.size(); ++i) {
-      min_nnz = std::min(min_nnz, nnz_[i]);
-      max_nnz = std::max(max_nnz, nnz_[i]);
-    }
-    if (block_0_nnz_os_ && ! tid_empty &&
-        (nnz_[0] < min_nnz || nnz_[0] > max_nnz) &&
-        nnz_[0] - nnz_[1] >= rcnt[0])
-      prvec("nnz", nnz_);
-  }
-#endif
 }
 
 void TMatrix::clear () {
@@ -1783,18 +1692,10 @@ void OnDiagTri::inv_reinit_numeric (const CrsMatrix& T) {
 namespace rt {
 inline Int split (const Int n, const Int nthreads) {
   const Int s = n/2;
-#ifdef SPLIT_NTHREADS
   if (n <= nthreads) return s;
   const Int smod = s % nthreads;
   if ( ! smod) return s;
   return s + (nthreads - smod);
-#else
-  // Split based on memory alignment to favor the dense serial tri.
-  if (n <= MEM_ALIGN) return s;
-  const Int smod = s % MEM_ALIGN;
-  if ( ! smod) return s;
-  return s + (MEM_ALIGN - smod);
-#endif
 }
 
 void build_recursive_tri_r (const CrsMatrix& T, const Int r, const Int c,
@@ -1812,7 +1713,8 @@ void build_recursive_tri_r (const CrsMatrix& T, const Int r, const Int c,
   b.push_back(Box(r1, c, n2, n1));
   build_recursive_tri_r(T, r1, c + n1, n2, in, b);
 }
-static void
+
+void
 build_recursive_tri (const CrsMatrix& T, const Int r, const Int c, const Int n,
                      const Int mvp_block_nc, const InitInfo& in,
                      std::vector<Box>& bv) {
@@ -1893,7 +1795,7 @@ void RecursiveTri::clear () {
 
 void RecursiveTri::init_numeric (const CrsMatrix& T) {
   Int n = (Int) nd_.t.size();
-#pragma omp parallel for schedule(dynamic)
+# pragma omp parallel for schedule(dynamic)
   for (Int i = 0; i < n; ++i)
     nd_.t[i].reinit_numeric(T);
   n = (Int) nd_.s.size();
@@ -1960,9 +1862,7 @@ void LevelSetTri::init (const CrsMatrix& T, const Int r0, const Int c0,
 // The result matrix is in fact only psychologically triangular, but by then we
 // already have fully analyzed it. Moreover, this reordering only requires two
 // data changes: lsis is permuted, and t.m->jc is renumbered accordingly. In
-// particular, t.m->d and t.m->ir are unchanged. A cool thing in my
-// implementation is that the diagonal element remains the last element in the
-// row, which favors the streaming of data through memory.
+// particular, t.m->d and t.m->ir are unchanged.
 void LevelSetTri::update_permutation (std::vector<Int>& lsis,
                                       const Partition& p) {
   const std::vector<Int> old_lsis = lsis;
@@ -2502,6 +2402,7 @@ void TriSolver::init_numeric (const ConstCrsMatrix* T) {
     // reinit_numeric like for lst.
     t_.init_numeric(*p_[1].cm);
   }
+  for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear_d();
   restore_num_threads(nthreads_state);
 }
 
@@ -2915,7 +2816,7 @@ void RecursiveTri::p2p_init () {
   }
 
   compress(nd_.t_ids);
-#pragma omp parallel
+# pragma omp parallel
   { const int tid = omp_get_thread_num();
     compress(nd_.s_ids[tid]);
     compress(nd_.s_idx[tid]); }

@@ -425,13 +425,7 @@ class TriSolver {
 
   Permuter perm_;
   LevelSetTri lst_;
-#if defined(USE_STRIPCOL)
-  StripColTri t_;
-#elif defined(USE_TILED_TRI)
-  RecursiveTiledTri t_;
-#else
   RecursiveTri t_;
-#endif
 
   void clear();
 
