@@ -96,8 +96,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-#include <XpetraExt_MatrixMatrix.hpp>
-
 #include <MueLu_Utilities_kokkos_decl.hpp>
 
 namespace MueLu {
