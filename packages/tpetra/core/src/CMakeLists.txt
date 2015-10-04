@@ -77,10 +77,9 @@ ENDFUNCTION()
 # NAME_IN [in] The type to mangle.
 FUNCTION(TPETRA_NODE_MACRO_NAME NAME_OUT NAME_IN)
   STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
-  STRING(COMPARE EQUAL "${TMP0}" "" IS_CLASSIC)
-  IF(IS_CLASSIC)
-    # Special case: KokkosClassic::DoNotUse::SerialNode
-    SET(${NAME_OUT} "SERIALCLASSIC" PARENT_SCOPE)
+  STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
+  IF(DOES_NOT_MATCH)
+    MESSAGE(FATAL_ERROR "Tpetra: Node $NAME_IN is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
     STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")

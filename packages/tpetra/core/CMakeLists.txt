@@ -273,21 +273,6 @@ ELSE () # NOT Tpetra_INST_CUDA
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
 
-# KokkosClassic::DoNotUse::SerialNode
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_SERIALCLASSIC
-  HAVE_TPETRA_INST_SERIALCLASSIC
-  "Instantiate and/or test Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  DO NOT SET THIS!  This option is no longer available."
-  OFF
-  )
-IF (Tpetra_INST_SERIALCLASSIC)
-  MESSAGE (FATAL_ERROR "Tpetra: KokkosClassic::DoNotUse::SerialNode is no longer available as a Node type.")
-ENDIF ()
-GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ${Tpetra_INST_SERIALCLASSIC})
-IF (NOT Tpetra_INST_SERIALCLASSIC AND HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but that Node type is no longer available.")
-ENDIF ()
-
 #
 # We've survived the gauntlet of tests above, so it's now safe to
 # construct the list of enabled Node types.
