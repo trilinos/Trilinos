@@ -313,27 +313,39 @@ MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_CUDA}")
 #
 # Currently, we always enable int, because MueLu requires it for
 # examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (which it now does by default with C++11),
-# we also enable long long (which C++11 / C99 guarantees to be >= 64
-# bits).  We currently only enable other types if the user asks for
-# them.
+# enables long long support (which it now does by default with C++11)
+# and CUDA is OFF (CUDA doesn't seem to like GO=long long), we also
+# enable long long (which C++11 / C99 guarantees to be >= 64 bits).
+# We currently only enable other types if the user asks for them.
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
 # C++11 / C99 guarantees to be at least 64 bits long.
 #
-# Tpetra has the option to set GlobalOrdinal = unsigned int, because
-# it helps catch potential errors when GlobalOrdinal is unsigned and
-# smaller than global_size_t (e.g., using the wrong
-# Teuchos::OrdinalTraits<>::invalid().  This option is OFF by default.
+# Tpetra has support for GlobalOrdial = unsigned and unsigned long,
+# but only reluctantly.  Both are OFF by default.  GO = unsigned helps
+# catch potential errors when GlobalOrdinal is unsigned and smaller
+# than global_size_t (e.g., using the wrong
+# Teuchos::OrdinalTraits<>::invalid().
 
 # GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
 
-# GO = long long is enabled by default.  However, if the user enabled
-# GO = long EXPLICITLY, we disable GO = long long by default, because
-# we don't want to enable multiple "long" GO types by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+# GO = long long is enabled by default if and only if CUDA is OFF.
+# However, if the user enabled GO = long EXPLICITLY, we disable GO =
+# long long by default, because we don't want to enable multiple
+# "long" GO types by default.
+IF (Kokkos_ENABLE_Cuda)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+ELSE ()
+  # Tpetra currently needs Teuchos to support long long.
+  # This may change in the future, though.
+  IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+  ELSE ()
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+  ENDIF ()
+ENDIF ()
 IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
   IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
     # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
@@ -349,8 +361,17 @@ IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or 
   ENDIF ()
 ENDIF ()
 
-# GO = long is NOT enabled by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+# If GO = long long is OFF by default, turn ON GO = long by default.
+# If GO = long long is ON by default, turn OFF GO = long by default.
+# The point is to have EXACTLY one potentially 64-bit GO type enabled
+# by default.  I say "potentially" because the C++ standard only
+# guarantees long to be at least 32 bits.
+IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+ELSE ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+ENDIF ()
+
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
 # GO = unsigned long is NOT enabled by default.
@@ -391,9 +412,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
   )
 
-IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
-ENDIF()
+IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+  IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
+  ENDIF ()
+ENDIF ()
 
 # Warn on use of options that we don't like.
 IF (Tpetra_INST_INT_UNSIGNED)
