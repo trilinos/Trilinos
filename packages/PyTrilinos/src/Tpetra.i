@@ -1055,9 +1055,6 @@ public:
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
-  // KokkosClassic::MultiVector<Scalar, Node > getLocalMV() const;
-  // TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, Node>
-  // getLocalMVNonConst();
   // dual_view_type getDualView() const;
   template<class TargetDeviceType>
   void sync();
