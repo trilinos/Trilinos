@@ -91,7 +91,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags):
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), gidsConst_(), 
+                  coordinateDim_(), gids_(), 
                   xyz_(), userNumWeights_(0), weights_()
   {
     typedef VectorAdapter<user_t> adapterWithCoords_t;
@@ -104,7 +104,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), gidsConst_(),
+                  coordinateDim_(), gids_(), 
                   xyz_(), userNumWeights_(0), weights_()
   {
     if (!(ia->coordinatesAvailable()))
@@ -122,7 +122,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), gidsConst_(), 
+                  coordinateDim_(), gids_(), 
                   xyz_(), userNumWeights_(0), weights_()
   {
     if (!(ia->coordinatesAvailable()))
@@ -140,7 +140,7 @@ public:
 		  const RCP<const Comm<int> > &comm,
 		  modelFlag_t &flags) :
                   numGlobalCoordinates_(), env_(env), comm_(comm),
-                  coordinateDim_(), gids_(), gidsConst_(), 
+                  coordinateDim_(), gids_(), 
                   xyz_(), userNumWeights_(0), weights_()
   {
     typedef MeshAdapter<user_t> adapterWithCoords_t;
@@ -237,7 +237,6 @@ private:
   const RCP<const Comm<int> > comm_;
   int coordinateDim_;
   ArrayRCP<const gno_t> gids_;
-  ArrayRCP<const gno_t> gidsConst_;
   ArrayRCP<input_t> xyz_;
   int userNumWeights_;
   ArrayRCP<input_t> weights_;
