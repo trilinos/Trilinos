@@ -162,6 +162,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -179,10 +180,6 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (*newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -202,6 +199,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -316,6 +314,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -333,10 +332,6 @@ convertPythonToTpetraVector(PyObject * pyobj,
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (*newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -356,6 +351,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
