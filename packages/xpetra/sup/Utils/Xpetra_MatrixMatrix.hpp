@@ -224,9 +224,6 @@ public:
 
 };
 
-// forward declaration
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class MatrixMatrix2;
-
 template <class Scalar,
 class LocalOrdinal  = int,
 class GlobalOrdinal = LocalOrdinal,
@@ -378,30 +375,6 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
     TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
-    // Optimization using ML Multiply when available and requested
-    // This feature is currently not supported. We would have to introduce the HAVE_XPETRA_ML_MMM flag
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT) && defined(HAVE_XPETRA_ML_MMM)
-    if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
-      RCP<const Epetra_CrsMatrix> epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(rcpFromRef(A));
-      RCP<const Epetra_CrsMatrix> epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(rcpFromRef(B));
-      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
-
-      RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> (epC);
-      if (doFillComplete) {
-        RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-        params->set("Optimize Storage", doOptimizeStorage);
-        C->fillComplete(B.getDomainMap(), A.getRangeMap(), params);
-      }
-
-      // Fill strided maps information
-      // This is necessary since the ML matrix matrix multiplication routine has no handling for this
-      // TODO: move this call to MLMultiply...
-      C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
-
-      return C;
-    }
-#endif // EPETRA + EPETRAEXT + ML
-
     // Default case: Xpetra Multiply
     RCP<Matrix> C = C_in;
 
@@ -448,6 +421,448 @@ public:
   @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
    */
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Multiply(const Matrix & A,
+      bool transposeA,
+      const Matrix & B,
+      bool transposeB,
+      Teuchos::FancyOStream &fos,
+      bool callFillCompleteOnResult = true,
+      bool doOptimizeStorage        = true,
+      const std::string & label     = std::string()){
+    return Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
+  }
+
+#ifdef HAVE_XPETRA_EPETRAEXT
+  // Michael Gee's MLMultiply
+  static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
+      const Epetra_CrsMatrix& epB,
+      Teuchos::FancyOStream& fos) {
+    throw(Xpetra::Exceptions::RuntimeError("MLTwoMatrixMultiply only available for SC=double and GO=LO=int."));
+    return Teuchos::null;
+  }
+#endif //ifdef HAVE_XPETRA_EPETRAEXT
+
+  /*! @brief Helper function to do matrix-matrix multiply "in-place"
+
+    Returns RCP to non-constant Xpetra::BlockedCrsMatrix.
+
+    @param A left matrix
+    @param transposeA if true, use the transpose of A
+    @param B right matrix
+    @param transposeB if true, use the transpose of B
+    @param doOptimizeStorage if true, the resulting matrix should be fillComplete'd
+   */
+  static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
+      BlockedCrsMatrix& B, bool transposeB,
+      Teuchos::FancyOStream& fos,
+      bool doFillComplete    = true,
+      bool doOptimizeStorage = true) {
+    if (transposeA || transposeB)
+      throw Exceptions::RuntimeError("TwoMatrixMultiply for BlockedCrsMatrix not implemented for transposeA==true or transposeB==true");
+
+    // Preconditions
+    if (!A.isFillComplete())
+      throw Exceptions::RuntimeError("A is not fill-completed");
+    if (!B.isFillComplete())
+      throw Exceptions::RuntimeError("B is not fill-completed");
+
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A.getRangeMapExtractor();
+    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B.getDomainMapExtractor();
+
+    RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor, domapextractor, 33 /* TODO fix me */));
+
+    for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
+      for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
+        RCP<Matrix> Cij;
+
+        for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
+          RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
+          RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+
+          if (crmat1.is_null() || crmat2.is_null()) {
+            continue;
+          }
+
+          RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
+          RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
+
+          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
+
+          if (Cij.is_null ())
+            Cij = temp;
+          else
+            Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
+        }
+
+        if (!Cij.is_null())  {
+          if (Cij->isFillComplete())
+            Cij->resumeFill();
+          Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
+
+          RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
+          TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
+              "MatrixFactory failed in generating a CrsMatrixWrap." );
+
+          RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+          C->setMatrix(i, j, crsMatCij);
+
+        } else {
+          C->setMatrix(i, j, Teuchos::null);
+        }
+      }
+    }
+
+    if (doFillComplete)
+      C->fillComplete();  // call default fillComplete for BlockCrsMatrixWrap objects
+
+    return C;
+  } // TwoMatrixMultiplyBlock
+
+  /*! @brief Helper function to calculate B = alpha*A + beta*B.
+
+  @param A      left matrix operand
+  @param transposeA indicate whether to use transpose of A
+  @param alpha  scalar multiplier for A
+  @param B      right matrix operand
+  @param beta   scalar multiplier for B
+
+  @return sum in B.
+
+  Note that B does not have to be fill-completed.
+   */
+  static void TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
+    if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
+      throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
+
+    if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
+      throw Exceptions::RuntimeError("TwoMatrixAdd for Epetra matrices needs <double,int,int> for Scalar, LocalOrdinal and GlobalOrdinal.");
+    } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
+      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(B);
+
+      Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
+#else
+      throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
+#endif
+    }
+  } //MatrixMatrix::TwoMatrixAdd()
+
+
+  /*! @brief Helper function to calculate C = alpha*A + beta*B.
+
+  @param A          left matrix operand
+  @param transposeA indicate whether to use transpose of A
+  @param alpha      scalar multiplier for A, defaults to 1.0
+  @param B          right matrix operand
+  @param transposeB indicate whether to use transpose of B
+  @param beta       scalar multiplier for B, defaults to 1.0
+  @param C          resulting sum
+
+  It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
+   */
+  static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
+      const Matrix& B, bool transposeB, const SC& beta,
+      RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false) {
+    if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
+      throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
+
+    if (C == Teuchos::null) {
+      if (!A.isFillComplete() || !B.isFillComplete())
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Global statistics are not available for estimates.");
+
+      size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
+      size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
+      size_t numLocalRows = A.getNodeNumRows();
+
+      if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
+        // first check if either A or B has at most 1 nonzero per row
+        // the case of both having at most 1 nz per row is handled by the ``else''
+        Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
+
+        if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
+          for (size_t i = 0; i < numLocalRows; ++i)
+            exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
+
+        } else {
+          for (size_t i = 0; i < numLocalRows; ++i)
+            exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
+        }
+
+        fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+            << ", using static profiling" << std::endl;
+        C = rcp(new CrsMatrixWrap(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+
+      } else {
+        // general case
+        double nnzPerRowInA = Teuchos::as<double>(A.getGlobalNumEntries()) / A.getGlobalNumRows();
+        double nnzPerRowInB = Teuchos::as<double>(B.getGlobalNumEntries()) / B.getGlobalNumRows();
+        LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
+
+        LO maxPossible = A.getGlobalMaxNumRowEntries() + B.getGlobalMaxNumRowEntries();
+        //Use static profiling (more efficient) if the estimate is at least as big as the max
+        //possible nnz's in any single row of the result.
+        Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
+
+        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
+        fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+            << ", max possible nnz per row in sum = " << maxPossible
+            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
+            << std::endl;
+        C = rcp(new CrsMatrixWrap(A.getRowMap(), nnzToAllocate, pft));
+      }
+      if (transposeB)
+        fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+    }
+
+    if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
+      throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
+    } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA =
+          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB =
+          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  tpC =
+          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
+
+      Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+#else
+      throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
+#endif
+    }
+
+    ///////////////////////// EXPERIMENTAL
+    if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));
+    if (B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(B));
+    ///////////////////////// EXPERIMENTAL
+
+  } //MatrixMatrix::TwoMatrixAdd()
+
+
+}; // class MatrixMatrix
+
+
+// specialization MatrixMatrix for SC=double, LO=GO=int
+template<>
+class MatrixMatrix<double,int,int> {
+  typedef double                                                     SC;
+  typedef int                                                        LO;
+  typedef int                                                        GO;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
+  typedef Xpetra::Map<int,int,NO>                                    Map;
+  typedef Xpetra::Matrix<double,int,int,NO>                          Matrix;
+  typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;
+
+public:
+
+  /** Given CrsMatrix objects A, B and C, form the product C = A*B.
+  In a parallel setting, A and B need not have matching distributions,
+  but C needs to have the same row-map as A (if transposeA is false).
+  At this time C=AT*B and C=A*BT are known to not work. However,
+  C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
+
+    @param A Input, must already have had 'FillComplete()' called.
+    @param transposeA Input, whether to use transpose of matrix A.
+    @param B Input, must already have had 'FillComplete()' called.
+    @param transposeB Input, whether to use transpose of matrix B.
+    @param C Result. On entry to this method, it doesn't matter whether
+             FillComplete() has already been called on C or not. If it has,
+       then C's graph must already contain all nonzero locations that
+       will be produced when forming the product A*B. On exit,
+       C.FillComplete() will have been called, unless the last argument
+             to this function is specified to be false.
+    @param call_FillComplete_on_result Optional argument, defaults to true.
+           Power users may specify this argument to be false if they *DON'T*
+           want this function to call C.FillComplete. (It is often useful
+           to allow this function to call C.FillComplete, in cases where
+           one or both of the input matrices are rectangular and it is not
+           trivial to know which maps to use for the domain- and range-maps.)
+
+   */
+  static void Multiply(
+      const Xpetra::Matrix<SC, LO, GO, NO>& A,
+      bool transposeA,
+      const Xpetra::Matrix<SC, LO, GO, NO>& B,
+      bool transposeB,
+      Xpetra::Matrix<SC, LO, GO, NO>& C,
+      bool call_FillComplete_on_result = true,
+      bool doOptimizeStorage = true,
+      const std::string & label = std::string()) {
+    if(transposeA == false && C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
+      std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as row map of A";
+      throw(Xpetra::Exceptions::RuntimeError(msg));
+    }
+    else if(transposeA == true && C.getRowMap()->isSameAs(*A.getDomainMap()) == false) {
+      std::string msg = "XpetraExt::MatrixMatrix::Multiply: row map of C is not same as domain map of A";
+      throw(Xpetra::Exceptions::RuntimeError(msg));
+    }
+
+
+    if (!A.isFillComplete())
+      throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
+    if (!B.isFillComplete())
+      throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
+
+    bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
+    if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
+#       ifndef HAVE_XPETRA_EPETRAEXT
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
+#else
+      Epetra_CrsMatrix & epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
+      Epetra_CrsMatrix & epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
+      Epetra_CrsMatrix & epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
+
+      int i = EpetraExt::MatrixMatrix::Multiply(epA,transposeA,epB,transposeB,epC,haveMultiplyDoFillComplete);
+      if (haveMultiplyDoFillComplete) {
+        // Due to Epetra wrapper intricacies, we need to explicitly call
+        // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+        // only keeps an internal variable to check whether we are in resumed
+        // state or not, but never touches the underlying Epetra object. As
+        // such, we need to explicitly update the state of Xpetra matrix to
+        // that of Epetra one afterwords
+        C.fillComplete();
+      }
+
+      if (i != 0) {
+        std::ostringstream buf;
+        buf << i;
+        std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+
+#endif
+    } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+      const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+      Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
+
+      //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+      //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+      Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete,label);
+#else
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+#endif
+    }
+
+    if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+      params->set("Optimize Storage",doOptimizeStorage);
+      C.fillComplete((transposeB) ? B.getRangeMap() : B.getDomainMap(),
+          (transposeA) ? A.getDomainMap() : A.getRangeMap(),
+              params);
+    }
+
+    // transfer striding information
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(A));
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(B));
+    C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB); // TODO use references instead of RCPs
+  } // end Multiply
+
+  /**
+   @brief Helper function to do matrix-matrix multiply
+
+   Given CrsMatrix objects A, B and C, form the product C = A*B.
+   In a parallel setting, A and B need not have matching distributions,
+   but C needs to have the same row-map as A (if transposeA is false).
+   At this time C=AT*B and C=A*BT are known to not work. However,
+   C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
+
+    @param A Input, must already have had 'FillComplete()' called.
+    @param transposeA Input, whether to use transpose of matrix A.
+    @param B Input, must already have had 'FillComplete()' called.
+    @param transposeB Input, whether to use transpose of matrix B.
+    @param C Result. If Teuchos::null, a new CrsMatrix is created with optimal number of nnz per row.
+    @param call_FillComplete_on_result Optional argument, defaults to true.
+           Power users may specify this argument to be false if they *DON'T*
+           want this function to call C.FillComplete. (It is often useful
+           to allow this function to call C.FillComplete, in cases where
+           one or both of the input matrices are rectangular and it is not
+           trivial to know which maps to use for the domain- and range-maps.)
+
+   */
+  static RCP<Xpetra::Matrix<SC,LO,GO,NO> > Multiply(const Matrix& A, bool transposeA,
+      const Matrix& B, bool transposeB,
+      RCP<Matrix> C_in,
+      Teuchos::FancyOStream& fos,
+      bool doFillComplete           = true,
+      bool doOptimizeStorage        = true,
+      const std::string & label     = std::string()) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
+
+    // Optimization using ML Multiply when available and requested
+    // This feature is currently not supported. We would have to introduce the HAVE_XPETRA_ML_MMM flag
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT) && defined(HAVE_XPETRA_ML_MMM)
+    if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
+      RCP<const Epetra_CrsMatrix> epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(rcpFromRef(A));
+      RCP<const Epetra_CrsMatrix> epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(rcpFromRef(B));
+      RCP<Epetra_CrsMatrix>       epC = MLTwoMatrixMultiply(*epA, *epB, fos);
+
+      RCP<Matrix> C = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<SC,LO,GO,NO> (epC);
+      if (doFillComplete) {
+        RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+        params->set("Optimize Storage", doOptimizeStorage);
+        C->fillComplete(B.getDomainMap(), A.getRangeMap(), params);
+      }
+
+      // Fill strided maps information
+      // This is necessary since the ML matrix matrix multiplication routine has no handling for this
+      // TODO: move this call to MLMultiply...
+      C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
+
+      return C;
+    }
+#endif // EPETRA + EPETRAEXT + ML
+
+    // Default case: Xpetra Multiply
+    RCP<Matrix> C = C_in;
+
+    if (C == Teuchos::null) {
+      double nnzPerRow = Teuchos::as<double>(0);
+
+      if (A.getDomainMap()->lib() == Xpetra::UseTpetra) {
+        // For now, follow what ML and Epetra do.
+        GO numRowsA = A.getGlobalNumRows();
+        GO numRowsB = B.getGlobalNumRows();
+        nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
+            sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
+        nnzPerRow *=  nnzPerRow;
+        double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
+        double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
+        if (totalNnz < minNnz)
+          totalNnz = minNnz;
+        nnzPerRow = totalNnz / A.getGlobalNumRows();
+
+        fos << "Matrix product nnz per row estimate = " << Teuchos::as<LO>(nnzPerRow) << std::endl;
+      }
+
+      if (transposeA) C = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A.getDomainMap(), Teuchos::as<LO>(nnzPerRow));
+      else            C = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A.getRowMap(),    Teuchos::as<LO>(nnzPerRow));
+
+    } else {
+      C->resumeFill(); // why this is not done inside of Tpetra MxM?
+      fos << "Reuse C pattern" << std::endl;
+    }
+
+    Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage,label); // call Multiply routine from above
+
+    return C;
+  }
+
+  /*! @brief Helper function to do matrix-matrix multiply
+
+  Returns C = AB.
+
+  @param A left matrix
+  @param transposeA if true, use the transpose of A
+  @param B right matrix
+  @param transposeB if true, use the transpose of B
+  @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
+   */
+  static RCP<Xpetra::Matrix<SC,LO,GO,NO> > Multiply(const Matrix & A,
       bool transposeA,
       const Matrix & B,
       bool transposeB,
@@ -605,8 +1020,8 @@ public:
     @param transposeB if true, use the transpose of B
     @param doOptimizeStorage if true, the resulting matrix should be fillComplete'd
    */
-  static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
-      BlockedCrsMatrix& B, bool transposeB,
+  static RCP<Xpetra::BlockedCrsMatrix<SC,LO,GO,NO> > TwoMatrixMultiplyBlock(Xpetra::BlockedCrsMatrix<SC,LO,GO,NO>& A, bool transposeA,
+      Xpetra::BlockedCrsMatrix<SC,LO,GO,NO>& B, bool transposeB,
       Teuchos::FancyOStream& fos,
       bool doFillComplete    = true,
       bool doOptimizeStorage = true) {
@@ -619,32 +1034,33 @@ public:
     if (!B.isFillComplete())
       throw Exceptions::RuntimeError("B is not fill-completed");
 
-    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgmapextractor = A.getRangeMapExtractor();
-    RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > domapextractor = B.getDomainMapExtractor();
+    RCP<const Xpetra::MapExtractor<SC,LO,GO,NO> > rgmapextractor = A.getRangeMapExtractor();
+    RCP<const Xpetra::MapExtractor<SC,LO,GO,NO> > domapextractor = B.getDomainMapExtractor();
 
-    RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor, domapextractor, 33 /* TODO fix me */));
+    RCP<Xpetra::BlockedCrsMatrix<SC,LO,GO,NO> > C =
+        rcp(new Xpetra::BlockedCrsMatrix<SC,LO,GO,NO>(rgmapextractor, domapextractor, 33 /* TODO fix me */));
 
     for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
       for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
         RCP<Matrix> Cij;
 
         for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
-          RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
-          RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+          RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > crmat1 = A.getMatrix(i,l);
+          RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > crmat2 = B.getMatrix(l,j);
 
           if (crmat1.is_null() || crmat2.is_null()) {
             continue;
           }
 
-          RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
-          RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crop1 = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(crmat1));
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crop2 = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(crmat2));
 
-          RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
+          RCP<Xpetra::Matrix<SC,LO,GO,NO> > temp = Multiply (*crop1, false, *crop2, false, fos);
 
           if (Cij.is_null ())
             Cij = temp;
           else
-            Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
+            Xpetra::MatrixMatrix<SC,LO,GO,NO>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
         }
 
         if (!Cij.is_null())  {
@@ -652,11 +1068,11 @@ public:
             Cij->resumeFill();
           Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
 
-          RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
+          RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsCij = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(Cij);
           TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
               "MatrixFactory failed in generating a CrsMatrixWrap." );
 
-          RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+          RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > crsMatCij = crsCij->getCrsMatrix();
           C->setMatrix(i, j, crsMatCij);
 
         } else {
@@ -671,25 +1087,6 @@ public:
     return C;
   } // TwoMatrixMultiplyBlock
 
-
-//}; // end MatrixMatrix class
-
-/*!
-  @class MatrixMatrix2
-  @brief Xpetra utility class for matrix-matrix operations that need a specialization for Epetra
-
-  Separate class for matrix-matrix utilities that need a specialization for Epetra.
- */
-//template <class Scalar,
-//class LocalOrdinal,
-//class GlobalOrdinal = LocalOrdinal,
-//class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
-//class MatrixMatrix2 {
-
-//#include "Xpetra_UseShortNames.hpp"
-
-//public:
-
   /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
   @param A      left matrix operand
@@ -702,40 +1099,35 @@ public:
 
   Note that B does not have to be fill-completed.
    */
-  static void TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
+  static void TwoMatrixAdd(const Xpetra::Matrix<SC,LO,GO,NO>& A, bool transposeA, SC alpha, Xpetra::Matrix<SC,LO,GO,NO>& B, SC beta) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
     if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-      if(std::is_same<SC,double>::value == true &&
-          std::is_same<LO,int>::value == true &&
-          std::is_same<GO,int>::value == true) {
-            const Epetra_CrsMatrix& epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(A);
-            Epetra_CrsMatrix&       epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(B);
+      const Epetra_CrsMatrix& epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(A);
+      Epetra_CrsMatrix&       epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
 
-            //FIXME is there a bug if beta=0?
-            int rv = EpetraExt::MatrixMatrix::Add(epA, transposeA, alpha, epB, beta);
+      //FIXME is there a bug if beta=0?
+      int rv = EpetraExt::MatrixMatrix::Add(epA, transposeA, alpha, epB, beta);
 
-            if (rv != 0)
-              throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value " + Teuchos::toString(rv));
-            std::ostringstream buf;
-      } else
-        throw Exceptions::RuntimeError("TwoMatrixAdd for Epetra matrices needs <double,int,int> for Scalar, LocalOrdinal and GlobalOrdinal.");
+      if (rv != 0)
+        throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value " + Teuchos::toString(rv));
+      std::ostringstream buf;
 #else
-            throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
+      throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
 #endif
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(B);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+      Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(B);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
 #else
       throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
 #endif
     }
-  } //MatrixMatrix2::TwoMatrixAdd()
+  } //MatrixMatrix::TwoMatrixAdd()
 
 
   /*! @brief Helper function to calculate C = alpha*A + beta*B.
@@ -750,9 +1142,9 @@ public:
 
   It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
    */
-  static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
-      const Matrix& B, bool transposeB, const SC& beta,
-      RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false) {
+  static void TwoMatrixAdd(const Xpetra::Matrix<SC,LO,GO,NO>& A, bool transposeA, const SC& alpha,
+      const Xpetra::Matrix<SC,LO,GO,NO>& B, bool transposeB, const SC& beta,
+      RCP<Xpetra::Matrix<SC,LO,GO,NO> >& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
@@ -778,9 +1170,9 @@ public:
             exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
         }
 
-        fos << "MatrixMatrix2::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
+        fos << "MatrixMatrix::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
             << ", using static profiling" << std::endl;
-        C = rcp(new CrsMatrixWrap(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
+        C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
 
       } else {
         // general case
@@ -794,24 +1186,21 @@ public:
         Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
 
         fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        fos << "MatrixMatrix2::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
+        fos << "MatrixMatrix::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
             << ", max possible nnz per row in sum = " << maxPossible
             << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
             << std::endl;
-        C = rcp(new CrsMatrixWrap(A.getRowMap(), nnzToAllocate, pft));
+        C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), nnzToAllocate, pft));
       }
       if (transposeB)
-        fos << "MatrixMatrix2::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
+        fos << "MatrixMatrix::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-      if(std::is_same<SC,double>::value == true &&
-          std::is_same<LO,int>::value == true &&
-          std::is_same<GO,int>::value == true) {
-      const Epetra_CrsMatrix& epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(A);
-      const Epetra_CrsMatrix& epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(B);
-      RCP<Epetra_CrsMatrix>   epC = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(C);
+      const Epetra_CrsMatrix& epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(A);
+      const Epetra_CrsMatrix& epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2EpetraCrs(B);
+      RCP<Epetra_CrsMatrix>   epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
       Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
 
       //FIXME is there a bug if beta=0?
@@ -819,19 +1208,17 @@ public:
 
       if (rv != 0)
         throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value of " + Teuchos::toString(rv));
-      } else
-        throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
 #else
       throw Exceptions::RuntimeError("MueLu must be compile with EpetraExt.");
 #endif
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  tpC =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA =
+          Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB =
+          Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >  tpC =
+          Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
 #else
@@ -844,10 +1231,8 @@ public:
     if (B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(B));
     ///////////////////////// EXPERIMENTAL
 
-  } //MatrixMatrix2::TwoMatrixAdd()
-
-
-}; // class MatrixMatrix
+  } //MatrixMatrix::TwoMatrixAdd()
+};
 
 } // end namespace Xpetra
 
