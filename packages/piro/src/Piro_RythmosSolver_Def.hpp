@@ -349,9 +349,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
      if (stepperType == "Explicit RK") {
       if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        rythmosSolverPL->get("Lump Mass Matrix", false);
+        rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-              sublist(rythmosSolverPL,"Stratimikos", true), origModel));
+              sublist(rythmosSolverPL,"Stratimikos", true), origModel,
+              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
       }
      }
      // C.2) Create the Thyra-wrapped ModelEvaluator
