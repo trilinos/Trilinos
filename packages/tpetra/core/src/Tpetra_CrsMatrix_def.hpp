@@ -4709,17 +4709,6 @@ namespace Tpetra {
         << X_domainMap->getNumVectors ()
         << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
         "is broken.  Please report this bug to the Tpetra developers.");
-
-      // TEUCHOS_TEST_FOR_EXCEPTION(
-      //   X_colMap->getLocalMV ().getStride () !=
-      //   X_domainMap->getLocalMV ().getStride (),
-      //   std::logic_error,
-      //   "Tpetra::CrsMatrix::gaussSeidelCopy: "
-      //   "X_colMap has local stride " << X_colMap->getLocalMV ().getStride ()
-      //   << ", which does not equal the local stride "
-      //   << X_domainMap->getLocalMV ().getStride () << " of X_domainMap.  "
-      //   "This means that Tpetra::MultiVector::offsetViewNonConst is broken.  "
-      //   "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
       if (zeroInitialGuess) {
