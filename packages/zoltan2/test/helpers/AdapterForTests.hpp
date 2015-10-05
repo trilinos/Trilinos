@@ -593,7 +593,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   
   if(adapter == nullptr)
   {
-    std::cerr << "Input data chosen not compatible with xpetra multi-vector adapter." << std::endl;
+    std::cerr << "Input data chosen not compatible with "
+              << "XpetraCrsGraph adapter." << std::endl;
     return adapter;
   }else{
     // make the coordinate adapter
@@ -607,7 +608,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     
     if(ca == nullptr)
     {
-      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      std::cerr << "Failed to create coordinate vector adapter for "
+                << "XpetraCrsMatrix adapter." << std::endl;
       return ca;
     }
     
@@ -726,7 +728,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   if(adapter == nullptr)
   {
-    std::cerr << "Input data chosen not compatible with xpetra crs-matrix adapter." << std::endl;
+    std::cerr << "Input data chosen not compatible with "
+              << "XpetraCrsMatrix adapter." << std::endl;
     return adapter;
   }else{
     
@@ -740,7 +743,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
     
     if(ca == nullptr){
-      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      std::cerr << "Failed to create coordinate vector adapter for "
+                << "XpetraCrsMatrix adapter." << std::endl;
       return ca;
     }
     
