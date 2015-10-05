@@ -51,12 +51,13 @@
 #include <limits> // std::numeric_limits
 #include <type_traits>
 
-
+namespace Tpetra {
+namespace Details {
 //
-// This anonymous namespace stores utility functions and Kokkos
+// This namespace stores utility functions and Kokkos
 // functors for use in FixedHashTable construction.
 //
-namespace { // (anonymous)
+namespace FHT {
 
 // Is it worth actually using building the FixedHashTable using
 // parallel threads, instead of just counting in a sequential loop?
@@ -656,14 +657,11 @@ private:
   size_type size_;
 };
 
-} // namespace (anonymous)
+} // namespace FHT
 
 //
 // Here begins the actual implementation of FixedHashTable.
 //
-
-namespace Tpetra {
-namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
 bool
@@ -1094,7 +1092,7 @@ init (const keys_type& keys,
      ", please talk to the Tpetra developers.");
 
   const bool buildInParallel =
-    worthBuildingFixedHashTableInParallel<execution_space> ();
+    FHT::worthBuildingFixedHashTableInParallel<execution_space> ();
 
   // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
   // could change that by setting up ptr and val as Kokkos::DualView
@@ -1180,7 +1178,7 @@ init (const keys_type& keys,
   // kernel is still correct in that case, but I would rather not
   // incur overhead then.
   if (buildInParallel) {
-    CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
+    FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
     Kokkos::parallel_for (theNumKeys, functor);
   }
   else {
@@ -1208,7 +1206,7 @@ init (const keys_type& keys,
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
   if (buildInParallel) {
-    typedef ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
+    typedef FHT::ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
     functor_type functor (ptr, counts);
     Kokkos::parallel_scan (size+1, functor);
   }
@@ -1228,8 +1226,8 @@ init (const keys_type& keys,
                          theNumKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
-  typedef FillPairs<typename val_type::non_const_type, keys_type,
-                    typename ptr_type::non_const_type> functor_type;
+  typedef FHT::FillPairs<typename val_type::non_const_type, keys_type,
+    typename ptr_type::non_const_type> functor_type;
   typename functor_type::value_type result (initMinKey, initMaxKey);
 
   const ValueType newStartingValue = startingValue + static_cast<ValueType> (startIndex);
@@ -1365,7 +1363,7 @@ init (const host_input_keys_type& keys,
   typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
-  FillPairsResult<KeyType> result (initMinKey, initMaxKey);
+  FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);
   for (offset_type k = 0; k < numKeys; ++k) {
     typedef typename hash_type::result_type hash_value_type;
     const KeyType key = keys[k];
@@ -1435,7 +1433,7 @@ checkForDuplicateKeys () const
     return false;
   }
   else {
-    typedef CheckForDuplicateKeys<ptr_type, val_type> functor_type;
+    typedef FHT::CheckForDuplicateKeys<ptr_type, val_type> functor_type;
     functor_type functor (val_, ptr_);
     bool hasDupKeys = false;
     Kokkos::parallel_reduce (size, functor, hasDupKeys);
