@@ -313,7 +313,7 @@ NEM_SPREAD=${ACCESSBIN}/nem_spread
 LAUNCH=`command -v launch`
 if [ ! -z "$LAUNCH" ]
 then
-    if [ -z "$PBS_JOBID" && -z "$LSB_JOBID" && -z "$SLURM_JOB_ID" ]
+    if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
     then
         LAUNCH="$LAUNCH -n 1"
         # If the launch script doesn't work to run something simple, don't use it.
