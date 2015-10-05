@@ -30,8 +30,6 @@ APPEND_SET(SOURCES
     Kokkos_NodeAPIVersion.cpp
   )
 
-SET(kokkos_enabled_nodes "")
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SerialNode)
 IF (${PACKAGE_NAME}_ENABLE_SerialNode)
   MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::SerialNode class was deprecated long ago and is no longer supported.")
@@ -122,8 +120,6 @@ ENDIF()
 SET(Tpetra_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
 # mfh 04 Oct 2015: Set this for backwards compatibility ONLY.
 SET(KokkosClassic_DefaultNode "${Tpetra_DefaultNode}" CACHE STRING "" FORCE)
-
-SET(KokkosClassic_ENABLED_NODES ${kokkos_enabled_nodes} CACHE STRING "List of nodes enabled in KokkosClassic.")
 
 CONFIGURE_FILE(cmake/KokkosClassic_DefaultNode_config.h.in  KokkosClassic_DefaultNode_config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
