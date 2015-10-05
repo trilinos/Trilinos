@@ -64,13 +64,14 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Constructor)
   {
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
     TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
     out << *sapFactory << std::endl;
-
   }
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)

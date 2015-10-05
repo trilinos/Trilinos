@@ -1,12 +1,12 @@
-/*
-//@HEADER
+// @HEADER
+//
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,32 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER
-*/
+//
+// @HEADER
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#include "Ifpack2_ConfigDefs.hpp"
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "MueLu_LWGraph_kokkos_def.hpp"
 
 #include "TpetraCore_ETIHelperMacros.h"
-#include "Ifpack2_ETIHelperMacros.h"
-#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
-#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
-#include "Tpetra_CrsGraph.hpp"
 
-#if defined(HAVE_TPETRA_SERIALCLASSIC) 
-// Because Tpetra's ETI system doesn't work right for TpetraClassic
+#define MUELU_LOCAL_INSTANT(LO,GO,N) \
+        template class MueLu::LWGraph_kokkos<LO,GO,N>;
 
-// Need this for the mangling of the Node typedef.
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#define LCLINST(LO, GO) \
-  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO, GO, KokkosClassic_DoNotUse_SerialNode)
-
-IFPACK2_INSTANTIATE_LG(LCLINST)
+TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
 
 #endif
-
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

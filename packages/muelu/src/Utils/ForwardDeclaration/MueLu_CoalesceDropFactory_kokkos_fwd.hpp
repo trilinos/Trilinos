@@ -1,12 +1,12 @@
-/*
-//@HEADER
+// @HEADER
+//
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,32 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER
-*/
+//
+// @HEADER
+#ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP
+#define MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Ifpack2_ETIHelperMacros.h"
-#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
-#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class CoalesceDropFactory_kokkos;
+}
 
-#if defined(HAVE_TPETRA_SERIALCLASSIC)
-// Because Tpetra's ETI system doesn't work right for TpetraClassic
-
-// Need this for the mangling of the Node typedef.
-IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-#define LCLINST(SC, LO, GO) \
-  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(SC, LO, GO, KokkosClassic_DoNotUse_SerialNode)
-
-IFPACK2_INSTANTIATE_SLG(LCLINST)
+#ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
+#define MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
+#endif
 
 #endif
 
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#endif // MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP

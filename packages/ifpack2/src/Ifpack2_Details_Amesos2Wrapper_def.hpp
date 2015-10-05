@@ -460,10 +460,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // auxiliary vector, X_temp, so that we don't clobber the input
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
-    if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (X, Teuchos::Copy));
-    } else {
-      X_temp = rcpFromRef (X);
+    {
+      auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
+      auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+      if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+        X_temp = rcp (new MV (X, Teuchos::Copy));
+      } else {
+        X_temp = rcpFromRef (X);
+      }
     }
 
     // Set up "local" views of X and Y.

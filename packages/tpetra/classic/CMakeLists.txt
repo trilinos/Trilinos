@@ -50,7 +50,6 @@ IF (${PACKAGE_NAME}_ENABLE_TPINode)
   MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TPINode was deprecated long ago and has since been removed.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead.")
 ENDIF()
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBB)
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_TBBNode
   HAVE_TPETRACLASSIC_TBB

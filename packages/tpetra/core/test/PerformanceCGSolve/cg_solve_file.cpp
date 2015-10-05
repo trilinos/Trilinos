@@ -54,9 +54,6 @@
 #ifdef HAVE_TPETRA_INST_SERIAL
   int run_serialwrapper(int& argc, char* argv[]);
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  int run_serialclassic(int& argc, char* argv[]);
-#endif
 
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
@@ -81,10 +78,6 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_TPETRA_INST_SERIAL
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_serialwrapper(argc,argv);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_serialclassic(argc,argv);
 #endif
 
   return 0;

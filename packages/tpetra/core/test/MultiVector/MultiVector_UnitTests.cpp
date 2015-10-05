@@ -1663,30 +1663,25 @@ namespace {
       TEST_EQUALITY( X2->getNumVectors (), numVecs );
 
       // Make sure the pointers are the same, by extracting the
-      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
-      // constructor does a shallow (pointer) copy.
-      //
-      // FIXME (mfh 24 Oct 2013) This interface (to get the
-      // KokkosClassic::MultiVector) will change at some point, due to
-      // the port of Tpetra to use the new Kokkos.
-      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-      const KMV X_local = X.getLocalMV ();
-      const KMV X1_local = X1->getLocalMV ();
-      const KMV X2_local = X2->getLocalMV ();
+      // Kokkos::DualView objects.  Get the host pointer, just in case
+      // MV allocation favors host space for initial allocations and
+      // defers device allocations.
+
+      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X1_local = X1->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
 
       // Make sure the pointers match.  It doesn't really matter to
-      // what X2_val points, as long as X2_local has zero rows.
-      ArrayRCP<const Scalar> X_val = X_local.getValues ();
-      ArrayRCP<const Scalar> X1_val = X1_local.getValues ();
-      TEST_EQUALITY( X1_val.getRawPtr (), X_val.getRawPtr () );
+      // what X2_local points, as long as it has zero rows.
+      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.getNumRows (), X_local.getNumRows () );
-      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
+      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.getNumRows (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1721,30 +1716,25 @@ namespace {
       TEST_EQUALITY( X2_nonconst->getNumVectors (), numVecs );
 
       // Make sure the pointers are the same, by extracting the
-      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
-      // constructor does a shallow (pointer) copy.
-      //
-      // FIXME (mfh 24 Oct 2013) This interface (to get the
-      // KokkosClassic::MultiVector) will change at some point, due to
-      // the port of Tpetra to use the new Kokkos.
-      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-      const KMV X_local = X.getLocalMV ();
-      KMV X1_local = X1_nonconst->getLocalMV ();
-      KMV X2_local = X2_nonconst->getLocalMV ();
+      // Kokkos::DualView objects.  Get the host pointer, just in case
+      // MV allocation favors host space for initial allocations and
+      // defers device allocations.
+
+      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X1_local = X1_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X2_local = X2_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
 
       // Make sure the pointers match.  It doesn't really matter to
-      // what X2_val points, as long as X2_local has zero rows.
-      ArrayRCP<const Scalar> X_val = X_local.getValues ();
-      ArrayRCP<const Scalar> X1_val = X1_local.getValues ();
-      TEST_EQUALITY( X1_val.getRawPtr (), X_val.getRawPtr () );
+      // what X2_local points, as long as it has zero rows.
+      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.getNumRows (), X_local.getNumRows () );
-      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
+      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.getNumRows (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1781,30 +1771,24 @@ namespace {
       TEST_EQUALITY( X2->getNumVectors (), numVecs );
 
       // Make sure the pointers are the same, by extracting the
-      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
-      // constructor does a shallow (pointer) copy.
-      //
-      // FIXME (mfh 24 Oct 2013) This interface (to get the
-      // KokkosClassic::MultiVector) will change at some point, due to
-      // the port of Tpetra to use the new Kokkos.
-      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-      const KMV X_local = X.getLocalMV ();
-      const KMV X1_local = X1->getLocalMV ();
-      const KMV X2_local = X2->getLocalMV ();
+      // Kokkos::DualView objects.  Get the host pointer, just in case
+      // MV allocation favors host space for initial allocations and
+      // defers device allocations.
 
+      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X1_local = X1->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
       // Make sure the pointers match.  It doesn't really matter to
-      // what X1_val points, as long as X1_local has zero rows.
-      ArrayRCP<const Scalar> X_val = X_local.getValues ();
-      ArrayRCP<const Scalar> X2_val = X2_local.getValues ();
-      TEST_EQUALITY( X2_val.getRawPtr (), X_val.getRawPtr () );
+      // what X1_local points, as long as it has zero rows.
+      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.getNumRows (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.getNumRows (), X_local.getNumRows () );
-      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
+      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1839,30 +1823,25 @@ namespace {
       TEST_EQUALITY( X2_nonconst->getNumVectors (), numVecs );
 
       // Make sure the pointers are the same, by extracting the
-      // KokkosClassic::MultiVector (KMV) objects.  KMV's copy
-      // constructor does a shallow (pointer) copy.
-      //
-      // FIXME (mfh 24 Oct 2013) This interface (to get the
-      // KokkosClassic::MultiVector) will change at some point, due to
-      // the port of Tpetra to use the new Kokkos.
-      typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-      const KMV X_local = X.getLocalMV ();
-      KMV X1_local = X1_nonconst->getLocalMV ();
-      KMV X2_local = X2_nonconst->getLocalMV ();
+      // Kokkos::DualView objects.  Get the host pointer, just in case
+      // MV allocation favors host space for initial allocations and
+      // defers device allocations.
+
+      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X1_local = X1_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X2_local = X2_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
 
       // Make sure the pointers match.  It doesn't really matter to
-      // what X1_val points, as long as X1_local has zero rows.
-      ArrayRCP<const Scalar> X_val = X_local.getValues ();
-      ArrayRCP<const Scalar> X2_val = X2_local.getValues ();
-      TEST_EQUALITY( X2_val.getRawPtr (), X_val.getRawPtr () );
+      // what X1_local points, as long as it has zero rows.
+      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.getNumRows (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.getNumRows (), X_local.getNumRows () );
-      TEST_EQUALITY( X2_local.getNumCols (), X_local.getNumCols () );
+      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
+      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
 
       // Make sure that nothing bad happens on deallocation.
       try {
