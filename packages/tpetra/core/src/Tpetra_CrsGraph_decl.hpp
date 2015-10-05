@@ -1151,13 +1151,6 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<T> allocateValues1D () const {
-      // FIXME (mfh 05 Aug 2014) This method only exists here to
-      // placate the ETI macros for Kokkos classic.
-      return Teuchos::null;
-    }
-
-    template <class T>
     Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
 
     template <class T>
