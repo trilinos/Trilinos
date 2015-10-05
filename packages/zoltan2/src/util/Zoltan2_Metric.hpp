@@ -747,7 +747,7 @@ template <typename Adapter, typename pnum_t>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
-    const RCP<const GraphModel<Adapter> > &graph,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const ArrayView<const pnum_t> &part, 
     typename Adapter::part_t &numParts, 
     ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
@@ -886,7 +886,7 @@ template <typename Adapter, typename pnum_t>
   }// *** vertex loop ***
 
   //Fill-complete adjs Graph
-  adjsMatrix->fillComplete (adjsMatrix->getRowMap());
+  /*adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
   // **************************************************************************
   // ************************ BUILD IDENTITY FOR PARTS ************************
@@ -950,11 +950,11 @@ template <typename Adapter, typename pnum_t>
 
 	for (size_t j=0; j < NumEntries; j++)
 	  if (part[i] != Values[j])
-	    wgt[part[i]] += wgts[offsets[i] + j];
+	    wgt[part[i]] = wgt[part[i]] + wgts[offsets[i] + j];
       }
       wgt += nparts;         // individual weights
     }
-  }
+    }*/
 
   //////////////////////////////////////////////////////////
   // Obtain global totals by part.

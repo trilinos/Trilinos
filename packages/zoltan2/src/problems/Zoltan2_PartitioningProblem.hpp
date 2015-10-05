@@ -646,12 +646,12 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     gpsq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
 
-    /*try{
+    try{
       quality = new gpsq_t(this->envConst_, problemCommConst_,
                           this->graphModel_, this->inputAdapter_,
                           solutionConst);
     }
-    Z2_FORWARD_EXCEPTIONS*/
+    Z2_FORWARD_EXCEPTIONS
 
     graphMetrics_ = rcp(quality);
   }

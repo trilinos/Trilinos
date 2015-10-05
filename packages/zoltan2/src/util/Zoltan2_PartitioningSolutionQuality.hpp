@@ -179,7 +179,7 @@ public:
    */
   GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const GraphModel<Adapter> > &graph,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const RCP<const Adapter> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
 
@@ -253,7 +253,7 @@ template <typename Adapter>
   GraphPartitioningSolutionQuality<Adapter>::GraphPartitioningSolutionQuality(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const GraphModel<Adapter> > &graph,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
   const RCP<const Adapter> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
