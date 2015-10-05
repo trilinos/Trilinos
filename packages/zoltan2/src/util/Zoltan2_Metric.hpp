@@ -53,6 +53,8 @@
 
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_GraphModel.hpp>
 
 #include <Epetra_SerialDenseVector.h>
@@ -396,11 +398,11 @@ template <typename scalar_t>
  * \todo - Zoltan_norm() in Zoltan may scale the weight. Do we ever need this?
  */
 
-template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
+template <typename scalar_t, typename lno_t, typename part_t>
   void normedPartWeights(
     const RCP<const Environment> &env,
     part_t numberOfParts,
-    const ArrayView<const pnum_t> &parts,
+    const ArrayView<const part_t> &parts,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     scalar_t *weights)
@@ -504,11 +506,11 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * because they require part size information.
  */
 
-template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
+template <typename scalar_t, typename lno_t, typename part_t>
   void globalSumsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
-    const ArrayView<const pnum_t> &part, 
+    const ArrayView<const part_t> &part, 
     int vwgtDim,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
@@ -579,7 +581,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
 
     scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
     try{
-      normedPartWeights<scalar_t, pnum_t, lno_t, part_t>(env, nparts, 
+      normedPartWeights<scalar_t, lno_t, part_t>(env, nparts, 
         part, vwgts, mcNorm, wgt);
     }
     Z2_FORWARD_EXCEPTIONS
@@ -743,12 +745,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-template <typename Adapter, typename pnum_t>
+template <typename Adapter>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
-    const ArrayView<const pnum_t> &part, 
+    const ArrayView<const typename Adapter::part_t> &part, 
     typename Adapter::part_t &numParts, 
     ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
@@ -772,7 +774,7 @@ template <typename Adapter, typename pnum_t>
   typedef StridedData<lno_t, scalar_t> input_t;
 
   typedef GraphMetricValues<scalar_t> mv_t;
-  typedef Tpetra::CrsMatrix<pnum_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -867,8 +869,8 @@ template <typename Adapter, typename pnum_t>
   // Construct Tpetra::CrsGraph objects.
   adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  pnum_t justOne = 1;
-  ArrayView<pnum_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+  part_t justOne = 1;
+  ArrayView<part_t> justOneAV = Teuchos::arrayView (&justOne, 1);
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
 
@@ -898,8 +900,8 @@ template <typename Adapter, typename pnum_t>
   Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    pnum_t justPart = part[localElement];
-    ArrayView<pnum_t> justPartAV = Teuchos::arrayView (&justPart, 1);
+    part_t justPart = part[localElement];
+    ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
 
     // globalRow for Tpetra Matrix
     gno_t globalRowT = as<gno_t> (Ids[localElement]);
@@ -921,7 +923,7 @@ template <typename Adapter, typename pnum_t>
   Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
 				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
   Array<gno_t> Indices;
-  Array<pnum_t> Values;
+  Array<part_t> Values;
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++) {
@@ -1331,7 +1333,7 @@ template <typename Adapter>
   ArrayRCP<scalar_t> globalSums;
 
   try{
-    globalSumsByPart<scalar_t, part_t, lno_t, part_t>(env, comm, 
+    globalSumsByPart<scalar_t, lno_t, part_t>(env, comm, 
       partArray, nWeights, weights.view(0, numCriteria), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }

@@ -283,7 +283,7 @@ template <typename Adapter>
   ArrayRCP<scalar_t> globalSums;
 
   try{
-    globalWeightedCutsByPart<Adapter, typename Adapter::part_t>(env,
+    globalWeightedCutsByPart<Adapter>(env,
       problemComm, graph, partArray, numGlobalParts_, metrics_, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS;
