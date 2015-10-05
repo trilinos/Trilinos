@@ -106,6 +106,7 @@ the following classes:
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NOX includes
 #include "NOX.H"
