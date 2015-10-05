@@ -159,11 +159,11 @@ namespace MueLu {
       // X_{k+1} = X_k + alpha*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newX = Teuchos::null;
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX, mmfancy);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, alpha, *X, false, Teuchos::ScalarTraits<Scalar>::one(), newX, mmfancy);
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
 #else
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, alpha, *X, one);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, alpha, *X, one);
 #endif
 
       if (k == nIts_ - 1)
@@ -172,11 +172,11 @@ namespace MueLu {
       // R_{k+1} = R_k - alpha*A*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newR = Teuchos::null;
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR, mmfancy);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*AP, false, -alpha, *R, false, Teuchos::ScalarTraits<Scalar>::one(), newR, mmfancy);
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 #else
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*AP, false, -alpha, *R, one);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*AP, false, -alpha, *R, one);
 #endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
@@ -190,11 +190,11 @@ namespace MueLu {
       // P_{k+1} = Z_{k+1} + beta*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newP = Teuchos::null;
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       P.swap(newP);
 #else
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Z, false, one, *P, beta);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Z, false, one, *P, beta);
 #endif
 
       oldRZ = newRZ;

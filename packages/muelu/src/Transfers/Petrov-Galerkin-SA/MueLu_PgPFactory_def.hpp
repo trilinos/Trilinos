@@ -198,7 +198,7 @@ namespace MueLu {
     RCP<Matrix> P_smoothed = Teuchos::null;
     Utils::MyOldScaleMatrix(*DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
-    Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
+    Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
                          *DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
                          P_smoothed,GetOStream(Statistics2));
     P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());

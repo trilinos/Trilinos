@@ -284,7 +284,7 @@ namespace MueLu {
         if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
         Ac->fillComplete(p);
       }
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
       if (Ac->IsView("stridedMaps"))
         fixDiagMatrix->CreateView("stridedMaps", Ac);
 

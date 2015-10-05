@@ -133,7 +133,7 @@ namespace MueLu {
       // recombine to get K+shift*M
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = shifts_[level];
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
       Ac->fillComplete();
 
       if (checkAc_)

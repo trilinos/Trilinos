@@ -142,7 +142,7 @@ namespace MueLu {
 
     if (!A11.is_null()) {
       T = Teuchos::null;
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
       T->fillComplete();
       S.swap(T);
     }

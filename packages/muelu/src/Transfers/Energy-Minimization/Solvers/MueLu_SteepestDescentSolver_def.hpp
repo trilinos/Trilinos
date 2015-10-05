@@ -98,7 +98,7 @@ namespace MueLu {
 #endif
 
       RCP<Matrix> newP;
-      Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P->getDomainMap(), P->getRangeMap() );
       P = newP;
     }

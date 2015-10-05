@@ -1291,7 +1291,7 @@ namespace MueLu {
     A->fillComplete();
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Xpetra::MatrixMatrix2<SC,LO,GO,NO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
+    Xpetra::MatrixMatrix<SC,LO,GO,NO>::TwoMatrixAdd(*DiagMatrix,false,(SC)1.0,*A,false,(SC)1.0,NewMatrix,*out);
     NewMatrix->fillComplete();
     A=NewMatrix;
 

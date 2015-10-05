@@ -644,7 +644,7 @@ public:
           if (Cij.is_null ())
             Cij = temp;
           else
-            Xpetra::MatrixMatrix2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
+            Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
         }
 
         if (!Cij.is_null())  {
@@ -672,7 +672,7 @@ public:
   } // TwoMatrixMultiplyBlock
 
 
-}; // end MatrixMatrix class
+//}; // end MatrixMatrix class
 
 /*!
   @class MatrixMatrix2
@@ -680,15 +680,15 @@ public:
 
   Separate class for matrix-matrix utilities that need a specialization for Epetra.
  */
-template <class Scalar,
-class LocalOrdinal  = int,
-class GlobalOrdinal = LocalOrdinal,
-class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
-class MatrixMatrix2 {
+//template <class Scalar,
+//class LocalOrdinal,
+//class GlobalOrdinal = LocalOrdinal,
+//class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+//class MatrixMatrix2 {
 
-#include "Xpetra_UseShortNames.hpp"
+//#include "Xpetra_UseShortNames.hpp"
 
-public:
+//public:
 
   /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
@@ -707,8 +707,24 @@ public:
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
     if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
-      throw Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int");
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
+      if(std::is_same<SC,double>::value == true &&
+          std::is_same<LO,int>::value == true &&
+          std::is_same<GO,int>::value == true) {
+            const Epetra_CrsMatrix& epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(A);
+            Epetra_CrsMatrix&       epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(B);
 
+            //FIXME is there a bug if beta=0?
+            int rv = EpetraExt::MatrixMatrix::Add(epA, transposeA, alpha, epB, beta);
+
+            if (rv != 0)
+              throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value " + Teuchos::toString(rv));
+            std::ostringstream buf;
+      } else
+        throw Exceptions::RuntimeError("TwoMatrixAdd for Epetra matrices needs <double,int,int> for Scalar, LocalOrdinal and GlobalOrdinal.");
+#else
+            throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
+#endif
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
@@ -789,140 +805,25 @@ public:
     }
 
     if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-      throw Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int");
-
-    } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpB =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  tpC =
-          Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
-
-      Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
-#else
-      throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
-#endif
-    }
-
-    ///////////////////////// EXPERIMENTAL
-    if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));
-    if (B.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(B));
-    ///////////////////////// EXPERIMENTAL
-
-  } //MatrixMatrix2::TwoMatrixAdd()
-
-
-}; // class MatrixMatrix2
-
-// specialization MatrixMatrix2 for SC=double, LO=GO=int
-template<>
-class MatrixMatrix2<double,int,int> {
-  typedef double                                                     SC;
-  typedef int                                                        LO;
-  typedef int                                                        GO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
-  typedef Xpetra::Map<int,int,NO>                                    Map;
-  typedef Xpetra::Matrix<double,int,int,NO>                          Matrix;
-  typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;
-
-public:
-
-  static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
-
-    if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
-      throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
-
-    if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-      const Epetra_CrsMatrix& epA = Xpetra::Helpers<double,int,int>::Op2EpetraCrs(A);
-      Epetra_CrsMatrix&       epB = Xpetra::Helpers<double,int,int>::Op2NonConstEpetraCrs(B);
+      if(std::is_same<SC,double>::value == true &&
+          std::is_same<LO,int>::value == true &&
+          std::is_same<GO,int>::value == true) {
+      const Epetra_CrsMatrix& epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(A);
+      const Epetra_CrsMatrix& epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2EpetraCrs(B);
+      RCP<Epetra_CrsMatrix>   epC = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(C);
+      Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
 
       //FIXME is there a bug if beta=0?
-      int rv = EpetraExt::MatrixMatrix::Add(epA, transposeA, alpha, epB, beta);
+      int rv = EpetraExt::MatrixMatrix::Add(epA, transposeA, alpha, epB, transposeB, beta, ref2epC);
 
       if (rv != 0)
-        throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value " + Teuchos::toString(rv));
-      std::ostringstream buf;
+        throw Exceptions::RuntimeError("EpetraExt::MatrixMatrix::Add return value of " + Teuchos::toString(rv));
+      } else
+        throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
 #else
-      throw Exceptions::RuntimeError("Xpetra must be compiled with EpetraExt.");
+      throw Exceptions::RuntimeError("MueLu must be compile with EpetraExt.");
 #endif
-
-    } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
-      const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
-      Tpetra::CrsMatrix<SC, LO, GO, NO>&       tpB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(B);
-
-      Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
-#else
-      throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
-    }
-  }
-  static void             TwoMatrixAdd            (const Matrix& A, bool transposeA, SC alpha,
-      const Matrix& B, bool transposeB, SC beta,
-      RCP<Matrix>& C,  Teuchos::FancyOStream & fos, bool AHasFixedNnzPerRow = false) {
-
-    typedef double                                           Scalar;
-    typedef int                                              LocalOrdinal;
-    typedef int                                              GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType      Node;
-
-    if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
-      throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
-
-    if (C == Teuchos::null) {
-      if (!A.isFillComplete() || !B.isFillComplete())
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Global statistics are not available for estimates.");
-
-      size_t maxNzInA     = A.getGlobalMaxNumRowEntries();
-      size_t maxNzInB     = B.getGlobalMaxNumRowEntries();
-      size_t numLocalRows = A.getNodeNumRows();
-
-      if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
-        // first check if either A or B has at most 1 nonzero per row
-        // the case of both having at most 1 nz per row is handled by the ``else''
-        Teuchos::ArrayRCP<size_t> exactNnzPerRow(numLocalRows);
-
-        if ((maxNzInA == 1 && maxNzInB > 1) || AHasFixedNnzPerRow) {
-          for (size_t i = 0; i < numLocalRows; ++i)
-            exactNnzPerRow[i] = B.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInA;
-
-        } else {
-          for (size_t i = 0; i < numLocalRows; ++i)
-            exactNnzPerRow[i] = A.getNumEntriesInLocalRow(Teuchos::as<LO>(i)) + maxNzInB;
-        }
-
-        fos << "MatrixMatrix2::TwoMatrixAdd : special case detected (one matrix has a fixed nnz per row)"
-            << ", using static profiling" << std::endl;
-        C = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A.getRowMap(), exactNnzPerRow, Xpetra::StaticProfile));
-
-      } else {
-        // general case
-        double nnzPerRowInA = Teuchos::as<double>(A.getGlobalNumEntries()) / A.getGlobalNumRows();
-        double nnzPerRowInB = Teuchos::as<double>(B.getGlobalNumEntries()) / B.getGlobalNumRows();
-        LO    nnzToAllocate = Teuchos::as<LO>( (nnzPerRowInA + nnzPerRowInB) * 1.5) + Teuchos::as<LO>(1);
-
-        LO maxPossible = A.getGlobalMaxNumRowEntries() + B.getGlobalMaxNumRowEntries();
-        //Use static profiling (more efficient) if the estimate is at least as big as the max
-        //possible nnz's in any single row of the result.
-        Xpetra::ProfileType pft = (maxPossible) > nnzToAllocate ? Xpetra::DynamicProfile : Xpetra::StaticProfile;
-
-        fos << "nnzPerRowInA = " << nnzPerRowInA << ", nnzPerRowInB = " << nnzPerRowInB << std::endl;
-        fos << "MatrixMatrix2::TwoMatrixAdd : space allocated per row = " << nnzToAllocate
-            << ", max possible nnz per row in sum = " << maxPossible
-            << ", using " << (pft == Xpetra::DynamicProfile ? "dynamic" : "static" ) << " profiling"
-            << std::endl;
-        C = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A.getRowMap(), nnzToAllocate, pft));
-      }
-      if (transposeB)
-        fos << "MatrixMatrix2::TwoMatrixAdd : ** WARNING ** estimate could be badly wrong because second summand is transposed" << std::endl;
-    }
-
-    if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-      throw Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int");
-
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
       const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpA =
@@ -946,7 +847,7 @@ public:
   } //MatrixMatrix2::TwoMatrixAdd()
 
 
-};  // end specialization of MatrixMatrix2
+}; // class MatrixMatrix
 
 } // end namespace Xpetra
 
