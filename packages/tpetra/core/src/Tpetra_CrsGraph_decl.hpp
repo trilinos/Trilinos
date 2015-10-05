@@ -1839,13 +1839,6 @@ namespace Tpetra {
     ///   - The graph is globally indexed
     t_GlobalOrdinal_1D k_gblInds1D_;
 
-    /// \brief Legacy Kokkos classic version of k_gblInds1D_.
-    ///
-    /// This is just a view of k_gblInds1D_.  We create views using
-    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
-    /// deallocated until the ArrayRCP's reference count goes to zero.
-    Teuchos::ArrayRCP<GlobalOrdinal> gblInds1D_;
-
     /// \brief Row offsets for "1-D" storage.
     ///
     /// This is only allocated if "1-D" (StaticProfile) storage is
