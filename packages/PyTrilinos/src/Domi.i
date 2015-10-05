@@ -117,6 +117,7 @@ other Trilinos solver technologies.
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
+#include "PyTrilinos_LinearProblem.hpp"
 #endif
 
 // Domi includes

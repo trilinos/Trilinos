@@ -124,10 +124,12 @@ exAmesos_Factory.py.
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDistributor.h"
+#include "PyTrilinos_LinearProblem.hpp"
 #endif
 
 // Teuchos includes
-#include "Teuchos_RefCountPtrDecl.hpp"
+//#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI

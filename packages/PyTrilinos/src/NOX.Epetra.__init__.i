@@ -118,6 +118,7 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_SerialDistributor.h"
 #include "Epetra_DLLExportMacro.h"
 #include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // EpetraExt includes
 #ifdef HAVE_NOX_EPETRAEXT
