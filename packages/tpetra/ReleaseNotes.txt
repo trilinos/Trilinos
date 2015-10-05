@@ -5,6 +5,53 @@ Release Notes for Trilinos Package Tpetra
 Development version (12.3)
 --------------------------
 
+* Changed CMake option for setting default Node type
+
+To set the default Node type, use the Tpetra_DefaultNode CMake option.
+We support the old KokkosClassic_DefaultNode CMake option for
+backwards compatibility.
+
+Tpetra will eventually change from using Node types to using
+Kokkos::Device types directly.  For now, though, if you wish to set
+the default Node type explicitly, you must use one of the following:
+
+  - Kokkos::Compat::KokkosCudaWrapperNode    (CUDA)
+  - Kokkos::Compat::KokkosOpenMPWrapperNode  (OpenMP)
+  - Kokkos::Compat::KokkosSerialWrapperNode  (Serial (no threads))
+  - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+Tpetra normally only enables one Node type, so you only need to set
+the default Node type if you have enabled more than one Node type.
+
+* Rules for which Node type gets enabled by default
+
+Tpetra only enables one Node type by default, whether or not ETI
+(explicit template instantiation) is enabled.  Here are the rules for
+which Node type gets enabled by default:
+
+  1. If you're building with CUDA, Tpetra uses CUDA by default.
+  2. Otherwise, if you're building with OpenMP, Tpetra uses OpenMP by
+     default.
+  3. Otherwise, if Kokkos enables the Serial execution space (if
+     Kokkos_ENABLE_Serial is ON), Tpetra uses Serial by default.
+  4. Otherwise, if Kokkos enables the Threads execution space (if
+     Kokkos_ENABLE_Pthread is ON), Tpetra uses Threads by default.
+
+If you wish to enable other Node types, you may set the following
+CMake options.  You do NOT need to set any of these options explicitly
+if the Node type would be enabled by default anyway.
+
+  - Tpetra_INST_CUDA (Kokkos_ENABLE_Cuda must be ON, and Trilinos must
+    be built with CUDA; ON by default if building with CUDA)
+  - Tpetra_INST_OPENMP (Kokkos_ENABLE_OpenMP must be ON, and Trilinos
+    must be built with OpenMP support)
+  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_Pthread must be ON)
+  - Tpetra_INST_SERIAL (Kokkos_ENABLE_Serial must be ON)
+
+While it is legal to enable both the OpenMP and Pthreads back-ends in
+the same executable, it is a bad idea.  Both back-ends spawn their own
+worker threads, and those threads will fight over cores.
+
 * Completely removed the "classic" version of Tpetra
 
 You might recall that a while back, we split Tpetra into "classic"
