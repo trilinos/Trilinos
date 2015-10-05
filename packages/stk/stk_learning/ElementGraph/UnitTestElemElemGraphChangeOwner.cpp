@@ -26,6 +26,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+#include <stk_unit_test_utils/MeshFixture.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 namespace {
@@ -57,6 +59,13 @@ void expect_connected_to_remote_elem_id(stk::mesh::BulkData &bulkData,
     EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
             << "elem " << elemId;
 }
+
+class ElemGraphChangeOwner : public stk::unit_test_util::MeshFixture
+{
+protected:
+    ElemGraphChangeOwner()
+    : MeshFixture() {}
+};
 
 void change_entity_owner_hex_test_2_procs_move_from_1_to_0(bool aura_on)
 {

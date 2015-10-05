@@ -5,6 +5,11 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
+namespace stk
+{
+namespace unit_test_util
+{
+
 class MeshFixture : public ::testing::Test
 {
 protected:
@@ -46,3 +51,5 @@ private:
     stk::mesh::MetaData metaData;
     stk::mesh::BulkData *bulkData;
 };
+
+}}
