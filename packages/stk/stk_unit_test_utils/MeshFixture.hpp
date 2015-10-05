@@ -9,29 +9,40 @@ class MeshFixture : public ::testing::Test
 {
 protected:
     MeshFixture()
-    : comm(MPI_COMM_WORLD), meta(), bulk(nullptr)
+    : communicator(MPI_COMM_WORLD), metaData(), bulkData(nullptr)
     {
 
     }
 
     virtual ~MeshFixture()
     {
-        delete bulk;
+        delete bulkData;
     }
 
     void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        bulk = new stk::mesh::BulkData(meta, comm, auraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulk, comm);
+        bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
+        stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
     }
 
-    stk::mesh::BulkData& bulkData()
+    MPI_Comm comm()
     {
-        ThrowRequireMsg(bulk!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
-        return *bulk;
+        return communicator;
     }
 
-    MPI_Comm comm;
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData *bulk;
+    stk::mesh::MetaData& meta()
+    {
+        return metaData;
+    }
+
+    stk::mesh::BulkData& bulk()
+    {
+        ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
+        return *bulkData;
+    }
+
+private:
+    MPI_Comm communicator;
+    stk::mesh::MetaData metaData;
+    stk::mesh::BulkData *bulkData;
 };
