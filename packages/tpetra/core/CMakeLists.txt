@@ -31,9 +31,6 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/machine_files
     CACHE INTERNAL "")
 
-ASSERT_DEFINED(KokkosClassic_DefaultNode)
-ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
-
 # Set variables which were implicitly set when the Kokkos packages were optional dependencies
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM ON)
