@@ -463,10 +463,14 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
-    if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      Xcopy = rcp (new MV (X, Teuchos::Copy));
-    } else {
-      Xcopy = rcpFromRef (X);
+    {
+      auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
+      auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+      if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+        Xcopy = rcp (new MV (X, Teuchos::Copy));
+      } else {
+        Xcopy = rcpFromRef (X);
+      }
     }
 
     RCP<MV> Ycopy = rcpFromRef (Y);

@@ -473,12 +473,15 @@ applyImpl (const MV& X,
   // optimize for it by caching X_copy.
   RCP<const MV> X_copy;
   bool copiedInput = false;
-  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-    X_copy = rcp (new MV (X, Teuchos::Copy));
-    copiedInput = true;
-  }
-  else {
-    X_copy = rcpFromRef (X);
+  {
+    auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
+    auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+      X_copy = rcp (new MV (X, Teuchos::Copy));
+      copiedInput = true;
+    } else {
+      X_copy = rcpFromRef (X);
+    }
   }
 
   // If alpha != 1, fold alpha into (a deep copy of) X.
