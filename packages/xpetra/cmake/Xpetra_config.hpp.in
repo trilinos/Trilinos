@@ -23,6 +23,9 @@
 
 #cmakedefine XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 
+/* Whether Xpetra enables LocalOrdinal = int and GlobalOrdinal = int */
+#cmakedefine HAVE_XPETRA_INT_INT
+
 /* Whether Xpetra enables LocalOrdinal = int and GlobalOrdinal = long long */
 #cmakedefine HAVE_XPETRA_INT_LONG_LONG
 
