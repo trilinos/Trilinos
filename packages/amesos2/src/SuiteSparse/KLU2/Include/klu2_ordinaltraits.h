@@ -37,28 +37,39 @@
 template <typename T>
 struct KLU_OrdinalTraits
 {
+    /* None of this methods should technically return anything.
+     * If the OrdinalType is no supported and there is no
+     * specialization available, we will error out. These 
+     * returns are just to keep the compiler happy and stop
+     * spewing warnings.
+     * */
     static inline T btf_order (T n, T *Ap, T *Ai, double maxwork,
         double *work, T *P, T *Q, T *R, T *nmatch, T *Work)
     {
+        return n;
     }
 
     static inline T btf_strongcomp (T n, T *Ap, T *Ai, T *Q, T *P, 
         T *R, T *Work) 
     {
+        return n;
     }
     
     static inline T amd_order (T n, T *Ap, T *Ai, T *P, double *Control,
         double *Info)
     {
+        return n;
     }
 
     static inline T colamd (T n_row, T n_col, T Alen, T *A, T *p,
         double *knobs, T *stats)
     {
+        return n_row;
     }
 
     static inline T colamd_recommended (T nnz, T n_row, T n_col)
     {
+        return nnz;
     }
 };
 

@@ -110,6 +110,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Local Epetra includes
 #include "PyTrilinos_Epetra_Util.hpp"

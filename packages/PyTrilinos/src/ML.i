@@ -142,6 +142,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY

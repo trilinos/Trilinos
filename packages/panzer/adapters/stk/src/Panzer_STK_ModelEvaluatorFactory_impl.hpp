@@ -380,9 +380,14 @@ namespace panzer_stk_classic {
 
     // build a workset factory that depends on STK
     ////////////////////////////////////////////////////////////////////////////////////////
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory;
+    if(m_user_wkst_factory==Teuchos::null)
+       wkstFactory = Teuchos::rcp(new panzer_stk_classic::WorksetFactory()); // build STK workset factory
+    else
+       wkstFactory = m_user_wkst_factory;
 
-    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+     // set workset factory mesh
+     wkstFactory->setMesh(mesh);
 
     // handle boundary and interface conditions
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1084,6 +1089,12 @@ namespace panzer_stk_classic {
   void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory>& rythmos_observer_factory)
   {
     m_rythmos_observer_factory = rythmos_observer_factory;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::setUserWorksetFactory(Teuchos::RCP<panzer_stk_classic::WorksetFactory>& user_wkst_factory)
+  {
+    m_user_wkst_factory = user_wkst_factory;
   }
 
   template<typename ScalarT>
