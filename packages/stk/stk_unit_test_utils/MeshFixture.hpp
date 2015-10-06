@@ -26,8 +26,13 @@ protected:
 
     void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
+        allocate_bulk(auraOption);
         stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
+    }
+    void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        allocate_bulk(auraOption);
+        stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
     MPI_Comm get_comm()
@@ -47,6 +52,11 @@ protected:
     }
 
 private:
+    void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
+    }
+
     MPI_Comm communicator;
     stk::mesh::MetaData metaData;
     stk::mesh::BulkData *bulkData;
