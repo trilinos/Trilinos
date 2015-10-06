@@ -548,6 +548,23 @@ struct FortranBLAS<float>
 
 };
 
+inline int fix_omp_threads()
+{
+  int orig_thread_count = 0;
+#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
+    orig_thread_count = omp_get_max_threads();
+    if(omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(omp_get_num_procs());}
+#endif
+    return orig_thread_count;
+}
+
+inline void unfix_omp_threads(int orig_thread_count)
+{
+#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
+    omp_set_num_threads(orig_thread_count);
+#endif
+}
+
 template<class Scalar>
 inline
 void field_axpy(
@@ -563,8 +580,8 @@ void field_axpy(
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -579,6 +596,7 @@ void field_axpy(
 
         FortranBLAS<Scalar>::axpy(kmax,alpha,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -605,8 +623,8 @@ void field_axpy(
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);} //CR mention in manual?
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -621,6 +639,7 @@ void field_axpy(
 
         FortranBLAS<Scalar>::axpy(kmax,alpha,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -644,8 +663,8 @@ void INTERNAL_field_product(
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -661,6 +680,7 @@ void INTERNAL_field_product(
 
         FortranBLAS<Scalar>::product(kmax,x,y,z);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 inline
@@ -719,8 +739,8 @@ void field_product(
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -737,6 +757,7 @@ void field_product(
 
         FortranBLAS<Scalar>::product(kmax,x,y,z);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -760,8 +781,8 @@ void INTERNAL_field_copy(
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -784,6 +805,7 @@ void INTERNAL_field_copy(
 
         FortranBLAS<Scalar>::copy(kmax,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 inline
@@ -835,8 +857,8 @@ void field_copy(
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -850,6 +872,7 @@ void field_copy(
 
         FortranBLAS<Scalar>::copy(kmax,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -879,8 +902,8 @@ Scalar field_dot(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(+:local_result)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -896,6 +919,7 @@ Scalar field_dot(
 
     Scalar glob_result = local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -917,8 +941,8 @@ std::complex<Scalar>  field_dot(
     Scalar local_result_i = Scalar(0.0);
     std::complex<Scalar> priv_tmp;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -937,6 +961,7 @@ std::complex<Scalar>  field_dot(
     Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
+    unfix_omp_threads(orig_thread_count);
     return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
 }
 
@@ -982,8 +1007,8 @@ void field_dot(
     Scalar local_result_i = Scalar(0.0);
     std::complex<Scalar> priv_tmp;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1003,6 +1028,7 @@ void field_dot(
     Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
     stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
     global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1024,8 +1050,8 @@ void field_dot(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1042,6 +1068,7 @@ void field_dot(
 
     glob_result = local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1076,8 +1103,8 @@ void field_scale(
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1089,6 +1116,7 @@ void field_scale(
 
         FortranBLAS<Scalar>::scal(kmax,alpha,x);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1112,8 +1140,8 @@ void field_scale(
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1125,6 +1153,7 @@ void field_scale(
 
         FortranBLAS<Scalar>::scal(kmax,alpha,x);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1146,8 +1175,8 @@ void field_fill(
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1159,6 +1188,7 @@ void field_fill(
 
         FortranBLAS<Scalar>::fill(kmax,alpha,x);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1180,8 +1210,8 @@ void field_fill_component(
 {
     BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1194,6 +1224,7 @@ void field_fill_component(
             FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
         }
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1217,8 +1248,8 @@ void field_fill_component(
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i = 0; i < buckets.size(); i++) {
@@ -1231,6 +1262,7 @@ void field_fill_component(
             FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
         }
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1254,8 +1286,8 @@ void field_fill(
 
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets(xFieldBase.entity_rank(),selector);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i = 0; i < buckets.size(); i++) {
@@ -1267,6 +1299,7 @@ void field_fill(
 
         FortranBLAS<Scalar>::fill(kmax,alpha,x);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1291,8 +1324,8 @@ void field_swap(
 
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1306,6 +1339,7 @@ void field_swap(
 
         FortranBLAS<Scalar>::swap(kmax,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
@@ -1327,8 +1361,8 @@ void INTERNAL_field_swap(
 {
     BucketVector const& buckets = xFieldBase.get_mesh().get_buckets( xFieldBase.entity_rank(), selector );
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1342,6 +1376,7 @@ void INTERNAL_field_swap(
 
         FortranBLAS<Scalar>::swap(kmax,x,y);
     }
+    unfix_omp_threads(orig_thread_count);
 }
 
 inline
@@ -1392,8 +1427,8 @@ Scalar field_nrm2(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1408,6 +1443,7 @@ Scalar field_nrm2(
 
     Scalar glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
     return sqrt(glob_result);
 }
 
@@ -1423,8 +1459,8 @@ std::complex<Scalar> field_nrm2(
 
     Scalar local_result_r = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result_r) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1439,6 +1475,7 @@ std::complex<Scalar> field_nrm2(
 
     Scalar glob_result=local_result_r;
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
     return std::complex<Scalar>(sqrt(glob_result),0.0);
 }
 
@@ -1477,8 +1514,8 @@ void field_nrm2(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1494,6 +1531,7 @@ void field_nrm2(
     glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
     glob_result=sqrt(glob_result);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1511,8 +1549,8 @@ void field_nrm2(
 
     Scalar local_result_r = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result_r) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1528,6 +1566,7 @@ void field_nrm2(
     Scalar glob_result=local_result_r;
     stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
     result=std::complex<Scalar>(sqrt(glob_result),0.0);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1563,8 +1602,8 @@ Scalar field_asum(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1579,6 +1618,7 @@ Scalar field_asum(
 
     Scalar glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -1594,8 +1634,8 @@ std::complex<Scalar> field_asum(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1610,6 +1650,7 @@ std::complex<Scalar> field_asum(
 
     Scalar glob_result = local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
     return std::complex<Scalar>(glob_result,0.0);
 }
 
@@ -1647,8 +1688,8 @@ void field_asum(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1663,6 +1704,7 @@ void field_asum(
 
     glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1680,8 +1722,8 @@ void field_asum(
 
     Scalar local_result = Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for reduction(+:local_result) schedule(static)
 #endif
     for(size_t i=0; i < buckets.size(); i++) {
@@ -1697,6 +1739,7 @@ void field_asum(
     Scalar glob_result=local_result;
     stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
     result=std::complex<Scalar>(glob_result,0.0);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -1735,8 +1778,8 @@ Entity field_eamax(
     Scalar local_amax=Scalar(-2.0);
     Entity local_result=Entity();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
@@ -1780,6 +1823,7 @@ Entity field_eamax(
     } else {
         local_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return local_result;
 }
 
@@ -1798,8 +1842,8 @@ Entity field_eamax(
     Scalar local_amax=Scalar(-2.0);
     Entity local_result=Entity();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
@@ -1843,6 +1887,7 @@ Entity field_eamax(
     } else {
         local_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return local_result;
 }
 
@@ -1868,8 +1913,8 @@ Scalar field_amax(
     Scalar priv_tmp;
     Scalar local_amax=Scalar(-1.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -1888,6 +1933,7 @@ Scalar field_amax(
 
     Scalar global_amax = local_amax;
     stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
+    unfix_omp_threads(orig_thread_count);
     return global_amax;
 }
 
@@ -1904,8 +1950,8 @@ std::complex<Scalar> field_amax(
     Scalar priv_tmp;
     Scalar local_amax=Scalar(0.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -1924,6 +1970,7 @@ std::complex<Scalar> field_amax(
 
     Scalar glob_amax = local_amax;
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
+    unfix_omp_threads(orig_thread_count);
     return std::complex<Scalar>(glob_amax,0.0);
 }
 
@@ -1961,8 +2008,8 @@ Entity INTERNAL_field_eamax_complex(
     Scalar local_amax=Scalar(-2.0);
     Entity local_result=Entity();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
@@ -2004,6 +2051,7 @@ Entity INTERNAL_field_eamax_complex(
     } else {
         local_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return local_result;
 }
 
@@ -2022,8 +2070,8 @@ Entity INTERNAL_field_eamax(
     Scalar local_amax = Scalar(-2.0);
     Entity local_result = Entity();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamax,priv_amax,priv_result)
     {
 #endif
@@ -2067,6 +2115,7 @@ Entity INTERNAL_field_eamax(
     } else {
         local_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return local_result;
 }
 
@@ -2117,8 +2166,8 @@ void field_amax(
     Scalar priv_tmp;
     Scalar local_amax=Scalar(-1.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2138,6 +2187,7 @@ void field_amax(
     Scalar glob_amax = local_amax;
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
     result = std::complex<Scalar>(glob_amax,0.0);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -2156,8 +2206,8 @@ void field_amax(
     Scalar priv_tmp;
     Scalar local_amax=Scalar(-1.0);
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2177,6 +2227,7 @@ void field_amax(
     Scalar glob_amax = local_amax;
     stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
     result = glob_amax;
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -2216,8 +2267,8 @@ Entity field_eamin(
     Entity local_result;
     Entity glob_result;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
@@ -2259,6 +2310,7 @@ Entity field_eamin(
     } else {
         glob_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -2278,8 +2330,8 @@ Entity field_eamin(
     Entity local_result;
     Entity glob_result;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
@@ -2321,6 +2373,7 @@ Entity field_eamin(
     } else {
         glob_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -2345,8 +2398,8 @@ std::complex<Scalar> field_amin(
     Scalar priv_tmp;
     Scalar local_amin= std::numeric_limits<Scalar>::max();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2366,6 +2419,7 @@ std::complex<Scalar> field_amin(
 
     Scalar glob_amin = local_amin;
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
+    unfix_omp_threads(orig_thread_count);
     return sqrt(glob_amin);
 }
 
@@ -2382,8 +2436,8 @@ Scalar field_amin(
     Scalar priv_tmp;
     Scalar local_amin= std::numeric_limits<Scalar>::max();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2402,6 +2456,7 @@ Scalar field_amin(
 
     Scalar glob_amin = local_amin;
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
+    unfix_omp_threads(orig_thread_count);
     return glob_amin;
 }
 
@@ -2439,8 +2494,8 @@ Entity INTERNAL_field_eamin_complex(
     Entity local_result;
     Entity glob_result;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
@@ -2482,6 +2537,7 @@ Entity INTERNAL_field_eamin_complex(
     } else {
         glob_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -2500,8 +2556,8 @@ Entity INTERNAL_field_eamin(
     Entity local_result;
     Entity glob_result;
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel private(priv_iamin,priv_amin,priv_result)
     {
 #endif
@@ -2544,6 +2600,7 @@ Entity INTERNAL_field_eamin(
     } else {
         glob_result = Entity();
     }
+    unfix_omp_threads(orig_thread_count);
     return glob_result;
 }
 
@@ -2594,8 +2651,8 @@ void field_amin(
     Scalar priv_tmp;
     Scalar local_amin= std::numeric_limits<Scalar>::max();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2616,6 +2673,7 @@ void field_amin(
     Scalar glob_amin = local_amin;
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
     result=std::complex<Scalar>(glob_amin,0.0);
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
@@ -2634,8 +2692,8 @@ void field_amin(
     Scalar priv_tmp;
     Scalar local_amin= std::numeric_limits<Scalar>::max();
 
+    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    if (omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(1);}
 #pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
 #endif
     for(size_t i=0; i < buckets.size(); i++)
@@ -2655,6 +2713,7 @@ void field_amin(
     Scalar glob_amin = local_amin;
     stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
     result=glob_amin;
+    unfix_omp_threads(orig_thread_count);
 }
 
 template<class Scalar>
