@@ -59,12 +59,12 @@
 # for release mode and set the version.
 #
 
-SET(Trilinos_VERSION 12.3)
+SET(Trilinos_VERSION 12.4)
 SET(Trilinos_MAJOR_VERSION 12)
-SET(Trilinos_MAJOR_MINOR_VERSION 120300)
-SET(Trilinos_VERSION_STRING "12.3 (Dev)")
-SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT ON) # Change to 'OFF' for a release
+SET(Trilinos_MAJOR_MINOR_VERSION 120400)
+SET(Trilinos_VERSION_STRING "12.4")
+SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT OFF) # Change to 'OFF' for a release
 
 # Used by testing scripts and should not be used elsewhere
-SET(Trilinos_REPOSITORY_BRANCH "master" CACHE INTERNAL "")
-SET(Trilinos_TESTING_TRACK "" CACHE INTERNAL "")
+SET(Trilinos_REPOSITORY_BRANCH "trilinos-release-12-4-branch" CACHE INTERNAL "")
+SET(Trilinos_TESTING_TRACK "Nightly Release 12.4" CACHE INTERNAL "")
