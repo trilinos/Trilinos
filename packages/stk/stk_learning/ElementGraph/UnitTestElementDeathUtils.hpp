@@ -1,6 +1,7 @@
 #ifndef Stk_UnitTest_ElemDeath_Utils
 #define Stk_UnitTest_ElemDeath_Utils
 
+#include <gtest/gtest.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>

@@ -50,6 +50,7 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
@@ -241,7 +242,7 @@ namespace MueLuTests {
         TEST_EQUALITY(R2->getGlobalNumRows(), 7);
         TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
+        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
         TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
         TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
         TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

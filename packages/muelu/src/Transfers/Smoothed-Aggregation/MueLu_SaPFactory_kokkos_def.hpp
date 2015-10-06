@@ -46,10 +46,12 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#include <Xpetra_Matrix.hpp> //FIXME this should be moved below the _decl.hpp include, i.e.,
-                             //FIXME into the KOKKOS_REFACTOR guard.  Is it outside for a reason?
-#include "MueLu_SaPFactory_kokkos_decl.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include "MueLu_SaPFactory_kokkos_decl.hpp"
+
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -151,7 +153,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
+        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
       }
 
     } else {

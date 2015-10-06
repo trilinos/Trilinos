@@ -185,6 +185,7 @@ typedef Ordinal RelationIdentifier;
 typedef Ordinal FieldArrayRank;
 
 typedef uint64_t EntityId ;
+static const EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>::max();
 
 typedef std::vector<EntityId> EntityIdVector;
 

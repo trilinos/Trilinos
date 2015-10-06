@@ -1151,13 +1151,6 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<T> allocateValues1D () const {
-      // FIXME (mfh 05 Aug 2014) This method only exists here to
-      // placate the ETI macros for Kokkos classic.
-      return Teuchos::null;
-    }
-
-    template <class T>
     Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
 
     template <class T>
@@ -1845,13 +1838,6 @@ namespace Tpetra {
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is globally indexed
     t_GlobalOrdinal_1D k_gblInds1D_;
-
-    /// \brief Legacy Kokkos classic version of k_gblInds1D_.
-    ///
-    /// This is just a view of k_gblInds1D_.  We create views using
-    /// Kokkos::Compat::persistingView, so the Kokkos::View won't get
-    /// deallocated until the ArrayRCP's reference count goes to zero.
-    Teuchos::ArrayRCP<GlobalOrdinal> gblInds1D_;
 
     /// \brief Row offsets for "1-D" storage.
     ///

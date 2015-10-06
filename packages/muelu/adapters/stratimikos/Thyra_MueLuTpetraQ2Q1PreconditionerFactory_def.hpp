@@ -64,6 +64,7 @@
 #include <Teko_Utilities.hpp>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
@@ -419,8 +420,8 @@ namespace Thyra {
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
     out.setOutputToRootOnly(0);
-    RCP<Matrix> BBt     = Utils::Multiply(*A_21,     false, *A_12,     false, out);
-    RCP<Matrix> BBt_abs = Utils::Multiply(*A_21_abs, false, *A_12_abs, false, out);
+    RCP<Matrix> BBt     = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21,     false, *A_12,     false, out);
+    RCP<Matrix> BBt_abs = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
     SC dropTol = (paramList.get<int>("useFilters") ? 0.06 : 0.00);
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);

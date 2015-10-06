@@ -1,8 +1,19 @@
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 
 #include <DiffingToolLib/DiffingTool.hpp>
-#include <stk_util/diag/StringUtil.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
+#include "stk_util/environment/EnvData.hpp"  // for EnvData
+#include "stk_util/parallel/CommSparse.hpp"  // for CommSparse
+#include "stk_util/parallel/DebugTool.hpp"  // for getDestinationProc
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/parallel/ParallelReduce.hpp"  // for all_reduce_sum
 
 namespace stk {
 namespace diff {

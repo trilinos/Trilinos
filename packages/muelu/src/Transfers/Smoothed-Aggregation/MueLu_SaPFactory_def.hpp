@@ -47,6 +47,7 @@
 #define MUELU_SAPFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_IteratorOps.hpp> // containing routines to generate Jacobi iterator
 #include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
@@ -148,7 +149,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {
