@@ -44,12 +44,30 @@ protected:
         }
     }
 
+    void move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == 2)
+        {
+            setup_mesh("generated:1x1x4", auraOption);
+            expect_graph_correct_after_moving_everything_to_proc0();
+        }
+    }
+
     void test_graph_updated_with_elem_3_moving_to_proc_0()
     {
         ElemElemGraphTester elemGraph(get_bulk());
         expect_initial_graph_correct(elemGraph);
         move_elem_3_to_proc_0(elemGraph);
         expect_graph_updated_after_elem_3_moved_to_0(elemGraph);
+    }
+
+    void expect_graph_correct_after_moving_everything_to_proc0()
+    {
+        ElemElemGraphTester elemGraph(get_bulk());
+        expect_initial_graph_correct(elemGraph);
+        move_elem3_and_elem4_to_proc_0(elemGraph);
+
+        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
     }
 
     void check_element2_connected_to_element1_locally_and_element3_remotely(ElemElemGraphTester &elemGraph)
@@ -99,6 +117,17 @@ protected:
         stk::mesh::EntityProcVec elem_proc_pairs_to_move;
         if(get_bulk().parallel_rank() == 1)
             elem_proc_pairs_to_move.push_back(stk::mesh::EntityProc(get_bulk().get_entity(stk::topology::ELEM_RANK, 3), 0));
+        change_entity_owner(get_bulk(), elemGraph, elem_proc_pairs_to_move);
+    }
+
+    void move_elem3_and_elem4_to_proc_0(ElemElemGraphTester &elemGraph)
+    {
+        stk::mesh::EntityProcVec elem_proc_pairs_to_move;
+        if(get_bulk().parallel_rank() == 1)
+        {
+            elem_proc_pairs_to_move.push_back(stk::mesh::EntityProc(get_bulk().get_entity(stk::topology::ELEM_RANK, 3), 0));
+            elem_proc_pairs_to_move.push_back(stk::mesh::EntityProc(get_bulk().get_entity(stk::topology::ELEM_RANK, 4), 0));
+        }
         change_entity_owner(get_bulk(), elemGraph, elem_proc_pairs_to_move);
     }
 
@@ -189,6 +218,16 @@ TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_h
 TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_without_aura)
 {
     change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST_F(ElemGraphChangeOwner, DISABLED_moveEverythingFromProc1ToProc0WithoutAura)
+{
+    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST_F(ElemGraphChangeOwner, DISABLED_moveEverythingFromProc1ToProc0WithAura)
+{
+    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AUTO_AURA);
 }
 
 void change_entity_owner_hex_test_2_procs(bool aura_on)
