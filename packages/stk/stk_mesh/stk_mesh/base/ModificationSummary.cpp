@@ -1,5 +1,6 @@
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <iomanip>
 
 namespace stk
@@ -8,7 +9,7 @@ namespace stk
 static int modificationSummaryNumber = 0;
 
 ModificationSummary::ModificationSummary(stk::mesh::BulkData& bulkData) :
-m_bulkData(bulkData), m_stringTracker(), m_lastModCycle(-1), m_modCounter(0)
+m_bulkData(bulkData), m_stringTracker(), m_lastModCycle(-1), m_modCounter(0), m_proc_id(-1)
 {
     m_modificationSummaryNumber = modificationSummaryNumber++;
 }
@@ -85,8 +86,9 @@ void ModificationSummary::track_declare_entity(stk::mesh::EntityRank rank, stk::
 {
     std::ostringstream os;
     stk::mesh::EntityKey key(rank, newId);
-    os << "Declaring new entity with entity key " << key << " on parts: " << std::endl;
+    os << "Declaring new entity with entity key " << key << " on parts: ";
     writeParts(os, "adding parts:", addParts);
+    os << std::endl;
     addEntityKeyAndStringToTracker(key, os.str());
 }
 
@@ -94,10 +96,13 @@ void ModificationSummary::track_set_global_id(stk::mesh::Entity entity, stk::mes
 {
     if (isValid(entity)) {
         stk::mesh::EntityKey oldKey = getEntityKey(entity);
-        stk::mesh::EntityId oldId = oldKey.id();
         std::ostringstream os;
-        os << "Changing Fmwk global id for entity " << oldKey << " from " << oldId << " to " << newId << std::endl;
+        os << "Changing Fmwk global id for entity " << oldKey << " to " << "(" << oldKey.rank() << "," << newId << ")" << std::endl;
         addEntityKeyAndStringToTracker(oldKey, os.str());
+        if (newId < stk::mesh::EntityKey::MAX_ID && oldKey.id() != newId) {
+            stk::mesh::EntityKey newKey(oldKey.rank(),newId);
+            addEntityKeyAndStringToTracker(newKey, os.str());
+        }
     }
 }
 
@@ -126,6 +131,10 @@ void ModificationSummary::track_change_entity_id(stk::mesh::EntityId newId, stk:
         std::ostringstream os;
         os << "Changing id of entity key " << getEntityKey(entity) << " to " << newId << std::endl;
         addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
+        if (newId < stk::mesh::EntityKey::MAX_ID && getEntityKey(entity).id() != newId) {
+            stk::mesh::EntityKey newKey(getEntityKey(entity).rank(),newId);
+            addEntityKeyAndStringToTracker(newKey, os.str());
+        }
     }
 }
 
@@ -134,8 +143,9 @@ void ModificationSummary::track_destroy_entity(stk::mesh::Entity entity)
     if(isValid(entity))
     {
         std::ostringstream os;
-        os << "Destroying entity with key " << getEntityKey(entity) << std::endl;
-        addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
+        stk::mesh::EntityKey key = getEntityKey(entity);
+        os << "Destroying entity with key " << key << std::endl;
+        addEntityKeyAndStringToTracker(key, os.str());
     }
 }
 
@@ -144,11 +154,10 @@ void ModificationSummary::track_change_entity_parts(stk::mesh::Entity entity, co
     if(isValid(entity))
     {
         std::ostringstream os;
-        os << "Part change for entity_key " << getEntityKey(entity) << ":\n";
-
+        os << "Part change for entity_key " << getEntityKey(entity) << ":";
         writeParts(os, "adding parts:", addParts);
         writeParts(os, "removing parts:", rmParts);
-
+        os << std::endl;
         addEntityKeyAndStringToTracker(getEntityKey(entity), os.str());
     }
 }
@@ -297,9 +306,18 @@ std::string ModificationSummary::get_filename(int mod_cycle_count) const
     return os.str();
 }
 
+void ModificationSummary::set_proc_id(int proc_id)
+{
+    m_proc_id = proc_id;
+}
+
 int ModificationSummary::my_proc_id() const
 {
-    return m_bulkData.parallel_rank();
+    if (-1 == m_proc_id) {
+        return m_bulkData.parallel_rank();
+    } else {
+        return m_proc_id;
+    }
 }
 
 void ModificationSummary::writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::PartVector& parts)
@@ -313,11 +331,12 @@ void ModificationSummary::writeParts(std::ostringstream& os, const std::string &
         }
         std::sort(names.begin(), names.end());
 
-        os << "\t" << label << "\n";
+        os << "\t" << label << "  (";
         for(size_t i = 0; i < names.size(); ++i)
         {
-            os << "\t\t" << names[i] << std::endl;
+            os << " " << names[i];
         }
+        os << " )";
     }
 }
 

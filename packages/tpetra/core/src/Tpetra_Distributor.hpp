@@ -61,11 +61,9 @@
 #  undef TPETRA_DISTRIBUTOR_TIMERS
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
-#endif
 
 
 namespace Tpetra {
@@ -589,8 +587,6 @@ namespace Tpetra {
     /// instead.
     void doReverseWaits ();
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
     /// \brief Execute the (forward) communication plan.
     ///
     /// Call this version of the method when you have the same number
@@ -742,7 +738,6 @@ namespace Tpetra {
                     const ArrayView<size_t> &numExportPacketsPerLID,
                     const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
                     const ArrayView<size_t> &numImportPacketsPerLID);
-#endif
 
     /// \brief Information on the last call to do/doReverse
     ///
@@ -1960,8 +1955,6 @@ namespace Tpetra {
                                   imports, numImportPacketsPerLID);
   }
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT || defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
   template <class Packet, class Layout, class Device, class Mem>
   void Distributor::
   doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
@@ -2868,8 +2861,6 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
                                   imports, numImportPacketsPerLID);
   }
-
-#endif
 
   template <class OrdinalType>
   void Distributor::

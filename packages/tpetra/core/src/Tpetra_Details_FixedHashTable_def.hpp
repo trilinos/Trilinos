@@ -681,26 +681,13 @@ void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
 {
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  const char prefix[] = "Tpetra::Details::FixedHashTable: ";
-  const char suffix[] = "  Please report this bug to the Tpetra developers.";
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
-     prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (val_.ptr_on_device () != rawVal_, std::logic_error,
-     prefix << "val_.ptr_on_device () != rawVal_." << suffix);
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  // const char prefix[] = "Tpetra::Details::FixedHashTable: ";
+  // const char suffix[] = "  Please report this bug to the Tpetra developers.";
 }
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable () :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -726,10 +713,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys) :
   keys_ (keys),
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -761,10 +744,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -820,10 +799,6 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const ValueType startingValue,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -895,10 +870,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const KeyType lastContigKey,
                 const ValueType startingValue,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -966,10 +937,6 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys,
                 const ValueType startingValue) :
   keys_ (keys),
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -1014,10 +981,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const Teuchos::ArrayView<const ValueType>& vals) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -1277,10 +1240,6 @@ init (const keys_type& keys,
   // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ = ptr.ptr_on_device ();
-  rawVal_ = val.ptr_on_device ();
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
   // We've already set firstContigKey_ and lastContigKey_ above.
@@ -1402,10 +1361,6 @@ init (const host_input_keys_type& keys,
   // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ = ptr.ptr_on_device ();
-  rawVal_ = val.ptr_on_device ();
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
   // We've already assigned to minVal_ and maxVal_ above.

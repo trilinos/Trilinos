@@ -1,34 +1,34 @@
-/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
+// A Bison parser, made by GNU Bison 3.0.4.
 
-/* Positions for Bison parsers in C++
-   
-      Copyright (C) 2002-2007, 2009-2013 Free Software Foundation, Inc.
-   
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+// Positions for Bison parsers in C++
 
-/* As a special exception, you may create a larger work that contains
-   part or all of the Bison parser skeleton and distribute that work
-   under terms of your choice, so long as that work isn't itself a
-   parser generator using the skeleton or a modified version thereof
-   as a parser skeleton.  Alternatively, if you modify or redistribute
-   the parser skeleton itself, you may (at your option) remove this
-   special exception, which will cause the skeleton and the resulting
-   Bison output files to be licensed under the GNU General Public
-   License without this special exception.
-   
-   This special exception was added by the Free Software Foundation in
-   version 2.2 of Bison.  */
+// Copyright (C) 2002-2015 Free Software Foundation, Inc.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// As a special exception, you may create a larger work that contains
+// part or all of the Bison parser skeleton and distribute that work
+// under terms of your choice, so long as that work isn't itself a
+// parser generator using the skeleton or a modified version thereof
+// as a parser skeleton.  Alternatively, if you modify or redistribute
+// the parser skeleton itself, you may (at your option) remove this
+// special exception, which will cause the skeleton and the resulting
+// Bison output files to be licensed under the GNU General Public
+// License without this special exception.
+
+// This special exception was added by the Free Software Foundation in
+// version 2.2 of Bison.
 
 /**
  ** \file position.hh
@@ -42,25 +42,23 @@
 # include <iostream>
 # include <string>
 
-# ifndef YY_NULL
+# ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
-#   define YY_NULL nullptr
+#   define YY_NULLPTR nullptr
 #  else
-#   define YY_NULL 0
+#   define YY_NULLPTR 0
 #  endif
 # endif
 
 
 namespace SEAMS {
-/* Line 36 of location.cc  */
-#line 57 "position.hh"
+#line 56 "position.hh" // location.cc:296
   /// Abstract a position.
   class position
   {
   public:
-
     /// Construct a position.
-    explicit position (std::string* f = YY_NULL,
+    explicit position (std::string* f = YY_NULLPTR,
                        unsigned int l = 1u,
                        unsigned int c = 1u)
       : filename (f)
@@ -71,7 +69,7 @@ namespace SEAMS {
 
 
     /// Initialization.
-    void initialize (std::string* fn = YY_NULL,
+    void initialize (std::string* fn = YY_NULLPTR,
                      unsigned int l = 1u,
                      unsigned int c = 1u)
     {
@@ -85,14 +83,17 @@ namespace SEAMS {
     /// (line related) Advance to the COUNT next lines.
     void lines (int count = 1)
     {
-      column = 1u;
-      line += count;
+      if (count)
+        {
+          column = 1u;
+          line = add_ (line, count, 1);
+        }
     }
 
     /// (column related) Advance to the COUNT next columns.
     void columns (int count = 1)
     {
-      column = std::max (1u, column + count);
+      column = add_ (column, count, 1);
     }
     /** \} */
 
@@ -102,36 +103,44 @@ namespace SEAMS {
     unsigned int line;
     /// Current column number.
     unsigned int column;
+
+  private:
+    /// Compute max(min, lhs+rhs) (provided min <= lhs).
+    static unsigned int add_ (unsigned int lhs, int rhs, unsigned int min)
+    {
+      return (0 < rhs || -static_cast<unsigned int>(rhs) < lhs
+              ? rhs + lhs
+              : min);
+    }
   };
 
-  /// Add and assign a position.
+  /// Add \a width columns, in place.
   inline position&
-  operator+= (position& res, const int width)
+  operator+= (position& res, int width)
   {
     res.columns (width);
     return res;
   }
 
-  /// Add two position objects.
-  inline const position
-  operator+ (const position& begin, const int width)
+  /// Add \a width columns.
+  inline position
+  operator+ (position res, int width)
   {
-    position res = begin;
     return res += width;
   }
 
-  /// Add and assign a position.
+  /// Subtract \a width columns, in place.
   inline position&
-  operator-= (position& res, const int width)
+  operator-= (position& res, int width)
   {
     return res += -width;
   }
 
-  /// Add two position objects.
-  inline const position
-  operator- (const position& begin, const int width)
+  /// Subtract \a width columns.
+  inline position
+  operator- (position res, int width)
   {
-    return begin + -width;
+    return res -= width;
   }
 
   /// Compare two position objects.
@@ -167,6 +176,5 @@ namespace SEAMS {
 
 
 } // SEAMS
-/* Line 148 of location.cc  */
-#line 172 "position.hh"
-#endif /* !YY_SEAMS_POSITION_HH_INCLUDED  */
+#line 180 "position.hh" // location.cc:296
+#endif // !YY_SEAMS_POSITION_HH_INCLUDED

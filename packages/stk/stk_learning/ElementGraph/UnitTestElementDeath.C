@@ -1,38 +1,36 @@
-#include <gtest/gtest.h>
 
-#include <vector>
-#include <algorithm>
-#include <stdlib.h>
-
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelVectorConcat.hpp>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/environment/memory_util.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/util/SortAndUnique.hpp>
-
-#include <stk_io/IossBridge.hpp>
-
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/getOption.h>
-
-#include "UnitTestElementDeathUtils.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for find
+#include <iostream>                     // for operator<<, ostream, cerr, etc
+#include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io, etc
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <vector>                       // for vector
+#include "UnitTestElementDeathUtils.hpp"  // for deactivate_elements, etc
+#include "gtest/gtest-message.h"        // for Message
+#include "mpi.h"                        // for ompi_communicator_t, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+
+
+
+
+
+
 
 namespace
 {
