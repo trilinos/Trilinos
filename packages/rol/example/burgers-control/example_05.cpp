@@ -41,6 +41,8 @@
 // ************************************************************************
 // @HEADER
 
+#include "example_05.hpp"
+
 template<class Real>
 Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
@@ -80,7 +82,7 @@ int main(int argc, char* argv[]) {
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    Teuchos::RCP<ROL::DefaultAlgorithmFactory<double> > algoFactory;
+    Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
     /**********************************************************************************************/
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
@@ -162,10 +164,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
     ROL::CVaRVector<double> x1c(x1v,x1p);
     // Run ROL algorithm
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<double>("Trust Region",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
     x1c.zero();
     clock_t start = clock();
-    algoFactory->get()->run(x1c,*obj,true,*outStream);
+    algo->run(x1c,*obj,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* SMOOTHED CVAR 1.e-4 ************************************************/
@@ -181,10 +183,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
     ROL::CVaRVector<double> x2c(x2v,x2p);
     // Run ROL algorithm
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<double>("Trust Region",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
     x2c.set(x1c);
     start = clock();
-    algoFactory->get()->run(x2c,*obj,true,*outStream);
+    algo->run(x2c,*obj,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* SMOOTHED CVAR 1.e-6 ************************************************/
@@ -200,10 +202,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
     ROL::CVaRVector<double> x3c(x3v,x3p);
     // Run ROL algorithm
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<double>("Trust Region",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
     x3c.set(x2c);
     start = clock();
-    algoFactory->get()->run(x3c,*obj,true,*outStream);
+    algo->run(x3c,*obj,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* NONSMOOTH PROBLEM **************************************************/
@@ -223,10 +225,10 @@ int main(int argc, char* argv[]) {
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",10000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<double>("Bundle",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Bundle",*parlist,false));
     zc.set(x3c);
     start = clock();
-    algoFactory->get()->run(zc,*obj,true,*outStream);
+    algo->run(zc,*obj,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* COMPUTE ERROR ******************************************************/

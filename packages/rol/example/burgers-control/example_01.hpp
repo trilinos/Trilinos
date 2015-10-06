@@ -47,8 +47,6 @@
 */
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTestFactory.hpp"
-#include "ROL_StepFactory.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

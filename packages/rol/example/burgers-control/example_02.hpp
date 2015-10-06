@@ -46,7 +46,7 @@
            example_02.
 */
 
-#include "ROL_DefaultAlgorithmFactory.hpp"
+#include "ROL_Algorithm.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

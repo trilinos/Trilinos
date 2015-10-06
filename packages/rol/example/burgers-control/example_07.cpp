@@ -46,7 +46,7 @@
            full-space methods.
 */
 
-#include "ROL_DefaultAlgorithmFactory.hpp"
+#include "ROL_Algorithm.hpp"
 
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_BPOEObjective.hpp"
@@ -66,7 +66,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "example_09.hpp"
+#include "example_07.hpp"
 
 typedef double RealT;
 typedef H1VectorPrimal<RealT> PrimalStateVector;
@@ -243,9 +243,9 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // RUN OPTIMIZATION
-    ROL::DefaultAlgorithmFactory<RealT> algo("Trust Region",*parlist,false);
+    ROL::DefaultAlgorithm<RealT> algo("Trust Region",*parlist,false);
     zp->zero();
-    algo.get()->run(z, g, *obj, *bnd, print, *outStream);
+    algo.run(z, g, *obj, *bnd, print, *outStream);
     /*************************************************************************/
     /************* PRINT CONTROL AND STATE TO SCREEN *************************/
     /*************************************************************************/

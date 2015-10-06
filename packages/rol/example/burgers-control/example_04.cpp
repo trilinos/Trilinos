@@ -41,14 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
+/*! \file  example_04.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
            full-space methods.
 */
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTestSQP.hpp"
-#include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 
@@ -59,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "example_07.hpp"
+#include "example_04.hpp"
 
 typedef double RealT;
 typedef H1VectorPrimal<RealT> PrimalStateVector;
@@ -72,7 +70,6 @@ typedef H1VectorPrimal<RealT> DualConstraintVector;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
@@ -85,7 +82,6 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
 
   // *** Example body.
-
   try {
     /*************************************************************************/
     /************* INITIALIZE BURGERS FEM CLASS ******************************/
@@ -107,7 +103,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE SIMOPT OBJECTIVE FUNCTION **********************/
     /*************************************************************************/
     Teuchos::RCP<std::vector<RealT> > ud_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     Teuchos::RCP<ROL::Vector<RealT> > ud
       = Teuchos::rcp(new L2VectorPrimal<RealT>(ud_rcp,fem));
     Objective_BurgersControl<RealT> obj(fem,ud,alpha);
@@ -120,14 +116,14 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE BOUND CONSTRAINTS ******************************/
     /*************************************************************************/
     // INITIALIZE STATE CONSTRAINTS
-    std::vector<RealT> Ulo(nx, 0.0), Uhi(nx, 1.0);
+    std::vector<RealT> Ulo(nx, 0.), Uhi(nx, 1.);
     //std::vector<RealT> Ulo(nx, -1.e8), Uhi(nx, 1.e8);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Ubnd
        = Teuchos::rcp(new H1BoundConstraint<RealT>(Ulo,Uhi,fem));
     //Ubnd.deactivate();
     // INITIALIZE CONTROL CONSTRAINTS
     //std::vector<RealT> Zlo(nx+2, -1.e8), Zhi(nx+2, 1.e8);
-    std::vector<RealT> Zlo(nx+2,0.0), Zhi(nx+2,2.0);
+    std::vector<RealT> Zlo(nx+2,0.), Zhi(nx+2,2.);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
       = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
     //bnd2.deactivate();
@@ -138,31 +134,35 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // INITIALIZE CONTROL VECTORS
     Teuchos::RCP<std::vector<RealT> > z_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx+2, 0.) );
+    Teuchos::RCP<std::vector<RealT> > zrand_rcp
+      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.) );
     Teuchos::RCP<std::vector<RealT> > gz_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.) );
     Teuchos::RCP<std::vector<RealT> > yz_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.) );
     for (int i=0; i<nx+2; i++) {
-      (*z_rcp)[i]  = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
-      (*yz_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
+      (*zrand_rcp)[i] = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
+      (*yz_rcp)[i] = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
     }
     Teuchos::RCP<ROL::Vector<RealT> > zp
       = Teuchos::rcp(new PrimalControlVector(z_rcp,fem));
+    Teuchos::RCP<ROL::Vector<RealT> > zrandp
+      = Teuchos::rcp(new PrimalControlVector(zrand_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gzp
       = Teuchos::rcp(new DualControlVector(gz_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > yzp
       = Teuchos::rcp(new PrimalControlVector(yz_rcp,fem));
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     Teuchos::RCP<std::vector<RealT> > gu_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     Teuchos::RCP<std::vector<RealT> > yu_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     for (int i=0; i<nx; i++) {
-      (*u_rcp)[i]  = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
-      (*yu_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
+      (*u_rcp)[i]  = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
+      (*yu_rcp)[i] = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
     }
     Teuchos::RCP<ROL::Vector<RealT> > up
       = Teuchos::rcp(new PrimalStateVector(u_rcp,fem));
@@ -172,9 +172,9 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new PrimalStateVector(yu_rcp,fem));
     // INITIALIZE CONSTRAINT VECTORS
     Teuchos::RCP<std::vector<RealT> > c_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     Teuchos::RCP<std::vector<RealT> > l_rcp
-      = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
+      = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     for (int i=0; i<nx; i++) {
       (*l_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
@@ -187,6 +187,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
+    zp->set(*zrandp);
     // CHECK OBJECTIVE DERIVATIVES
     obj.checkGradient(x,g,y,true,*outStream);
     obj.checkHessVec(x,g,y,true,*outStream);
@@ -204,6 +205,10 @@ int main(int argc, char *argv[]) {
     ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,x,10.0);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
+    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c);
+    myAugLag.updateMultipliers(l,1.);
+    myAugLag.checkGradient(x, y, true, *outStream);
+    myAugLag.checkHessVec(x, g, y, true, *outStream);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
@@ -213,41 +218,31 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-    // DEFINE STATUS TEST
-    ROL::StatusTestSQP<RealT> status(*parlist);
-    // DEFINE STEP
-    ROL::MoreauYosidaPenaltyStep<RealT> step(*parlist);
-    // DEFINE ALGORITHM
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
-    // INITIALIZE STATE AND LAGRANGE MULTIPLIERS
+    // SOLVE USING MOREAU-YOSIDA PENALTY
+    ROL::DefaultAlgorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
+    zp->set(*zrandp);
     RealT zerotol = 0.0;
     con.solve(*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
-    gup->zero();
-    c.zero();
-    // RUN OPTIMIZATION
-    algo.run(x, g, l, c, obj, con, bnd, true, *outStream);
-    /*************************************************************************/
-    /************* PRINT CONTROL AND STATE TO SCREEN *************************/
-    /*************************************************************************/
-    *outStream << "\n";
-    for ( int i = 0; i < nx+2; i++ ) {
-      *outStream << std::scientific << std::setprecision(10);
-      *outStream << std::setw(20) << std::left << (RealT)i/((RealT)nx+1.0);
-      *outStream << std::setw(20) << std::left << (*z_rcp)[i];
-      if ( i == 0 ) {
-        *outStream << std::setw(20) << std::left << 1.0;
-      }
-      if ( i != 0 && i != nx+1 ) {
-        *outStream << std::setw(20) << std::left << (*u_rcp)[i-1];
-      }
-      if ( i == nx+1 ) {
-        *outStream << std::setw(20) << std::left << 0.0;
-      }
-      *outStream << "\n";
-    }
+    gup->zero(); c.zero();
+    algoMY.run(x, g, l, c, obj, con, bnd, true, *outStream);
+    Teuchos::RCP<ROL::Vector<RealT> > xMY = x.clone();
+    xMY->set(x);
+    // SOLVE USING AUGMENTED LAGRANGIAN
+    ROL::DefaultAlgorithm<RealT> algoAL("Augmented Lagrangian",*parlist,false);
+    zp->set(*zrandp);
+    con.solve(*up,*zp,zerotol);
+    obj.gradient_1(*gup,*up,*zp,zerotol);
+    gup->scale(-1.0);
+    con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
+    gup->zero(); c.zero();
+    algoAL.run(x, g, l, c, obj, con, bnd, true, *outStream);
+    // COMPARE SOLUTIONS
+    Teuchos::RCP<ROL::Vector<RealT> > err = x.clone();
+    err->set(x); err->axpy(-1.,*xMY);
+    errorFlag += ((err->norm() > 1.e-3*x.norm()) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

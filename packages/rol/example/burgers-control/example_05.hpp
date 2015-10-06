@@ -54,8 +54,6 @@
 #include "ROL_Types.hpp"
 // ROL algorithmic information
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTestFactory.hpp"
-#include "ROL_StepFactory.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
 #include "ROL_CVaRVector.hpp"

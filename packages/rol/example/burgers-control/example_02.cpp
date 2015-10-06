@@ -141,22 +141,22 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     // Define ROL algorithm factory.
-    Teuchos::RCP<ROL::DefaultAlgorithmFactory<RealT> > algoFactory;
+    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
 
     // Run optimization with Composite Step SQP.
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Composite Step SQP",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Composite Step SQP",*parlist,false));
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
     z.zero();
     con.solve(u,z,zerotol);
     c.zero(); l.zero();
-    algoFactory->get()->run(x, g, l, c, obj, con, true, *outStream);
+    algo->run(x, g, l, c, obj, con, true, *outStream);
     Teuchos::RCP<ROL::Vector<RealT> > zSQP = z.clone();
     zSQP->set(z);
 
     // Run Optimization with Trust-Region algorithm.
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Trust Region",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
     z.zero();
-    algoFactory->get()->run(z,robj,true,*outStream);
+    algo->run(z,robj,true,*outStream);
 
     // Check solutions.
     Teuchos::RCP<ROL::Vector<RealT> > err = z.clone();

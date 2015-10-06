@@ -88,8 +88,6 @@ int main(int argc, char *argv[]) {
     BoundConstraint_BurgersControl<RealT> icon(nx+2);
 
     // ROL components.
-    Teuchos::RCP<ROL::Step<RealT> > step;
-    Teuchos::RCP<ROL::StatusTest<RealT> > status;
     Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
 
     // Primal dual active set.
@@ -110,9 +108,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    step   = ROL::StepFactory<RealT>("Primal Dual Active Set",*parlist);
-    status = ROL::StatusTestFactory<RealT>("Primal Dual Active Set",*parlist);
-    algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -129,9 +125,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    step   = ROL::StepFactory<RealT>("Trust Region",*parlist);
-    status = ROL::StatusTestFactory<RealT>("Trust Region",*parlist);
-    algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);

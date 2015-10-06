@@ -46,7 +46,7 @@
            example_04.
 */
 
-#include "ROL_DefaultAlgorithmFactory.hpp"
+#include "ROL_Algorithm.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_StdVector.hpp"

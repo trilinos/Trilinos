@@ -41,12 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
+/*! \file  example_03.cpp
     \brief Shows how to solve an optimal control problem constrained by 
            unsteady Burgers' equation with the SimOpt interface.
 */
 
-#include "example_04.hpp"
+#include "example_03.hpp"
 
 typedef double RealT;
 
@@ -146,24 +146,24 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    // Build DefualtAlgorithmFactory.
-    Teuchos::RCP<ROL::DefaultAlgorithmFactory<RealT> > algoFactory;
+    // Build DefualtAlgorithm.
+    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
 
     // Solve using trust regions.
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Trust Region",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
     z.zero();
     std::clock_t timer_tr = std::clock();
-    algoFactory->get()->run(z,robj,true,*outStream);
+    algo->run(z,robj,true,*outStream);
     *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
     Teuchos::RCP<ROL::Vector<RealT> > zTR = z.clone();
     zTR->set(z);
 
     // Solve using composite step SQP.
-    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Composite Step SQP",*parlist));
+    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Composite Step SQP",*parlist,false));
     x.zero();
     std::clock_t timer_sqp = std::clock();
-    algoFactory->get()->run(x,g,l,c,obj,con,true,*outStream);
+    algo->run(x,g,l,c,obj,con,true,*outStream);
     *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
