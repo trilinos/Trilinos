@@ -71,11 +71,14 @@ protected:
         }
     }
 
+    typedef std::pair<stk::mesh::EntityId, int> EntityIdProc;
+    typedef std::vector<EntityIdProc> EntityIdProcVector;
+
     void test_graph_updated_with_elem_3_moving_to_proc_0()
     {
         ElemElemGraphTester elemGraph(get_bulk());
         expect_initial_graph_correct(elemGraph);
-        move_elements_from_proc1_to_proc0(elemGraph, {3});
+        move_elements(elemGraph, {EntityIdProc(3, 0)});
         expect_graph_updated_after_elem_3_moved_to_0(elemGraph);
     }
 
@@ -83,7 +86,7 @@ protected:
     {
         ElemElemGraphTester elemGraph(get_bulk());
         expect_initial_graph_correct(elemGraph);
-        move_elements_from_proc1_to_proc0(elemGraph, {3, 4});
+        move_elements(elemGraph, {EntityIdProc(3, 0), EntityIdProc(4, 0)});
 
         ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
     }
@@ -91,7 +94,7 @@ protected:
     void expect_graph_correct_after_leaps()
     {
         ElemElemGraphTester elemGraph(get_bulk());
-        move_elem2_to_proc1_and_move_elem3_to_proc2(elemGraph);
+        move_elements(elemGraph, {EntityIdProc(2, 1), EntityIdProc(3, 2)});
 
         ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
     }
@@ -99,7 +102,7 @@ protected:
     void expect_graph_correct_after_moving_neighbors_to_last_proc()
     {
         ElemElemGraphTester elemGraph(get_bulk());
-        move_elem2_and_elem3_to_proc2(elemGraph);
+        move_elements(elemGraph, {EntityIdProc(2, 2), EntityIdProc(3, 2)});
 
         ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
     }
@@ -146,43 +149,11 @@ protected:
             check_element3_conencted_to_element4_locally_and_element2_remotely(elemGraph);
     }
 
-    bool is_owned_on_this_proc(stk::mesh::Entity element)
-    {
-        return (get_bulk().is_valid(element) && get_bulk().bucket(element).owned());
-    }
-
-    void append_element_if_owned(stk::mesh::EntityId elementId, int destProc, stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-        stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elementId);
-        if(is_owned_on_this_proc(element))
-            elemProcPairsToMove.push_back(stk::mesh::EntityProc(element, destProc));
-    }
-
-    void fill_list_of_elements_to_move(const stk::mesh::EntityIdVector &elementIdsToMove, int destProc, stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-        for(stk::mesh::EntityId elementId : elementIdsToMove)
-            append_element_if_owned(elementId, destProc, elemProcPairsToMove);
-    }
-
-    void move_elements_from_proc1_to_proc0(ElemElemGraphTester &elemGraph, const stk::mesh::EntityIdVector &elementIdsToMove)
+    void move_elements(ElemElemGraphTester &elemGraph, const EntityIdProcVector &elementIdProcsToMove)
     {
         stk::mesh::EntityProcVec elemProcPairsToMove;
-        fill_list_of_elements_to_move(elementIdsToMove, 0, elemProcPairsToMove);
-        change_entity_owner(get_bulk(), elemGraph, elemProcPairsToMove);
-    }
-
-    void move_elem2_to_proc1_and_move_elem3_to_proc2(ElemElemGraphTester &elemGraph)
-    {
-        stk::mesh::EntityProcVec elemProcPairsToMove;
-        fill_list_of_elements_to_move({2}, 1, elemProcPairsToMove);
-        fill_list_of_elements_to_move({3}, 2, elemProcPairsToMove);
-        change_entity_owner(get_bulk(), elemGraph, elemProcPairsToMove);
-    }
-
-    void move_elem2_and_elem3_to_proc2(ElemElemGraphTester &elemGraph)
-    {
-        stk::mesh::EntityProcVec elemProcPairsToMove;
-        fill_list_of_elements_to_move({2, 3}, 2, elemProcPairsToMove);
+        for(const EntityIdProc &entityIdProc : elementIdProcsToMove)
+            append_element_if_owned(entityIdProc.first, entityIdProc.second, elemProcPairsToMove);
         change_entity_owner(get_bulk(), elemGraph, elemProcPairsToMove);
     }
 
@@ -262,6 +233,19 @@ protected:
                 << "elem " << elemId << " expected remote elem " << connectedId;
         EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
                 << "elem " << elemId;
+    }
+
+private:
+    void append_element_if_owned(stk::mesh::EntityId elementId, int destProc, stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+        stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elementId);
+        if(is_owned_on_this_proc(element))
+            elemProcPairsToMove.push_back(stk::mesh::EntityProc(element, destProc));
+    }
+
+    bool is_owned_on_this_proc(stk::mesh::Entity element)
+    {
+        return (get_bulk().is_valid(element) && get_bulk().bucket(element).owned());
     }
 };
 
