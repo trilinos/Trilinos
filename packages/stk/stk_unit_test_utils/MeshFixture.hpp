@@ -30,17 +30,17 @@ protected:
         stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
     }
 
-    MPI_Comm comm()
+    MPI_Comm get_comm()
     {
         return communicator;
     }
 
-    stk::mesh::MetaData& meta()
+    stk::mesh::MetaData& get_meta()
     {
         return metaData;
     }
 
-    stk::mesh::BulkData& bulk()
+    stk::mesh::BulkData& get_bulk()
     {
         ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
         return *bulkData;

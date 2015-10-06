@@ -40,8 +40,7 @@ void expect_connected_to_local_elem_id(stk::mesh::BulkData &bulkData,
 {
     stk::mesh::EntityId elemId = bulkData.identifier(elem);
     ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
-            << "elem " << elemId
-            << " expected local elem " << connectedId;
+            << "elem " << elemId << " expected local elem " << connectedId;
     EXPECT_EQ(connectedId, bulkData.identifier(elem_graph.get_connected_element(elem, connectedIndex)))
             << "elem " << elemId;
 }
@@ -54,8 +53,7 @@ void expect_connected_to_remote_elem_id(stk::mesh::BulkData &bulkData,
 {
     stk::mesh::EntityId elemId = bulkData.identifier(elem);
     ASSERT_TRUE(!elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
-            << "elem " << elemId
-            << " expected remote elem " << connectedId;
+            << "elem " << elemId << " expected remote elem " << connectedId;
     EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
             << "elem " << elemId;
 }
@@ -65,121 +63,108 @@ class ElemGraphChangeOwner : public stk::unit_test_util::MeshFixture
 protected:
     ElemGraphChangeOwner()
     : MeshFixture() {}
-};
 
-void change_entity_owner_hex_test_2_procs_move_from_1_to_0(bool aura_on)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int proc = stk::parallel_machine_rank(comm);
-
-    if(stk::parallel_machine_size(comm) == 2)
+    void change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData::AutomaticAuraOption aura_option = stk::mesh::BulkData::AUTO_AURA;
-        if (!aura_on)
+        if(stk::parallel_machine_size(get_comm()) == 2)
         {
-            aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
-        }
-        stk::mesh::BulkData bulkData(meta, comm, aura_option);
+            setup_mesh("generated:1x1x4", auraOption);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+            std::vector<unsigned> counts;
+            stk::mesh::count_entities(get_meta().locally_owned_part(), get_bulk(), counts);
+            int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
+            EXPECT_EQ(2, numLocallyOwnedElems);
 
-        std::vector<unsigned> counts;
-        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
-        int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
-        EXPECT_EQ(2, numLocallyOwnedElems);
+            ElemElemGraphTester elemGraph(get_bulk());
 
-        ElemElemGraphTester elemGraph(bulkData);
+            std::vector<std::pair<stk::mesh::Entity, int> > elem_proc_pairs_to_move;
+            int proc = stk::parallel_machine_rank(get_comm());
+            if(proc == 0)
+            {
+                stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+                ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
+                expect_connected_to_local_elem_id(get_bulk(), elemGraph, elem2, 0, 1);
+                expect_connected_to_remote_elem_id(get_bulk(), elemGraph, elem2, 1, 3);
+                EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem2, 3));
 
-        std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+                const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem2, 3);
+                EXPECT_EQ(1, parInfo.m_other_proc);
+                EXPECT_EQ(4, parInfo.m_other_side_ord);
+                EXPECT_EQ(4, parInfo.m_permutation);
+                EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+                EXPECT_FALSE(parInfo.m_is_air);
+                EXPECT_EQ(1u, parInfo.m_chosen_side_id);
+            }
+            else
+            {
+                stk::mesh::Entity elem3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
+                ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
+                expect_connected_to_local_elem_id(get_bulk(), elemGraph, elem3, 0, 4);
+                expect_connected_to_remote_elem_id(get_bulk(), elemGraph, elem3, 1, 2);
+                EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem3, 2));
 
-        if (proc == 0)
-        {
-            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
-            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
-            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 0, 1);
-            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem2, 1, 3);
-            EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem2, 3));
+                const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 2);
+                EXPECT_EQ(0, parInfo.m_other_proc);
+                EXPECT_EQ(5, parInfo.m_other_side_ord);
+                EXPECT_EQ(4, parInfo.m_permutation);
+                EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+                EXPECT_FALSE(parInfo.m_is_air);
+                EXPECT_EQ(1u, parInfo.m_chosen_side_id);
 
-            const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem2, 3);
-            EXPECT_EQ(1, parInfo.m_other_proc);
-            EXPECT_EQ(4, parInfo.m_other_side_ord);
-            EXPECT_EQ(4, parInfo.m_permutation);
-            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
-            EXPECT_FALSE(parInfo.m_is_air);
-            EXPECT_EQ(1u, parInfo.m_chosen_side_id);
-        }
-        else
-        {
-            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
-            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
-            expect_connected_to_local_elem_id(bulkData, elemGraph, elem3, 0, 4);
-            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem3, 1, 2);
-            EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem3, 2));
+                int other_proc = 0;
+                elem_proc_pairs_to_move.push_back(std::make_pair(elem3, other_proc));
+            }
 
-            const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 2);
-            EXPECT_EQ(0, parInfo.m_other_proc);
-            EXPECT_EQ(5, parInfo.m_other_side_ord);
-            EXPECT_EQ(4, parInfo.m_permutation);
-            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
-            EXPECT_FALSE(parInfo.m_is_air);
-            EXPECT_EQ(1u, parInfo.m_chosen_side_id);
+            change_entity_owner(get_bulk(), elemGraph, elem_proc_pairs_to_move);
 
-            int other_proc = 0;
-            elem_proc_pairs_to_move.push_back(std::make_pair(elem3, other_proc));
-        }
+            if(proc == 0)
+            {
+                stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+                ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
+                expect_connected_to_local_elem_id(get_bulk(), elemGraph, elem2, 0, 1);
+                expect_connected_to_local_elem_id(get_bulk(), elemGraph, elem2, 1, 3);
 
-        change_entity_owner(bulkData, elemGraph, elem_proc_pairs_to_move);
+                stk::mesh::Entity elem3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
+                ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
+                expect_connected_to_remote_elem_id(get_bulk(), elemGraph, elem3, 0, 4);
+                EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem3, 4));
+                expect_connected_to_local_elem_id(get_bulk(), elemGraph, elem3, 1, 2);
 
-        if (proc == 0)
-        {
-            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
-            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
-            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 0, 1);
-            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 1, 3);
+                const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 4);
+                EXPECT_EQ(1, parInfo.m_other_proc);
+                EXPECT_EQ(4, parInfo.m_other_side_ord);
+                EXPECT_EQ(4, parInfo.m_permutation);
+                EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+                EXPECT_FALSE(parInfo.m_is_air);
+                EXPECT_EQ(17u, parInfo.m_chosen_side_id);
+            }
+            else
+            {
+                stk::mesh::Entity elem4 = get_bulk().get_entity(stk::topology::ELEM_RANK, 4);
+                ASSERT_EQ(1u, elemGraph.get_num_connected_elems(elem4));
+                expect_connected_to_remote_elem_id(get_bulk(), elemGraph, elem4, 0, 3);
+                EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem4, 3));
 
-            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
-            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
-            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem3, 0, 4);
-            EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem3, 4));
-            expect_connected_to_local_elem_id(bulkData, elemGraph, elem3, 1, 2);
-
-            const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 4);
-            EXPECT_EQ(1, parInfo.m_other_proc);
-            EXPECT_EQ(4, parInfo.m_other_side_ord);
-            EXPECT_EQ(4, parInfo.m_permutation);
-            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
-            EXPECT_FALSE(parInfo.m_is_air);
-            EXPECT_EQ(17u, parInfo.m_chosen_side_id);
-        }
-        else
-        {
-            stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
-            ASSERT_EQ(1u, elemGraph.get_num_connected_elems(elem4));
-            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem4, 0, 3);
-            EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem4, 3));
-
-            const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem4, 3);
-            EXPECT_EQ(0, parInfo.m_other_proc);
-            EXPECT_EQ(5, parInfo.m_other_side_ord);
-            EXPECT_EQ(4, parInfo.m_permutation);
-            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
-            EXPECT_FALSE(parInfo.m_is_air);
-            EXPECT_EQ(17u, parInfo.m_chosen_side_id);
+                const stk::mesh::impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem4, 3);
+                EXPECT_EQ(0, parInfo.m_other_proc);
+                EXPECT_EQ(5, parInfo.m_other_side_ord);
+                EXPECT_EQ(4, parInfo.m_permutation);
+                EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+                EXPECT_FALSE(parInfo.m_is_air);
+                EXPECT_EQ(17u, parInfo.m_chosen_side_id);
+            }
         }
     }
+};
+
+TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_with_aura)
+{
+    change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST(ElementGraph, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_with_aura)
+TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_without_aura)
 {
-    bool aura_on = true;
-    change_entity_owner_hex_test_2_procs_move_from_1_to_0(aura_on);
-}
-
-TEST(ElementGraph, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_without_aura)
-{
-    bool aura_on = false;
-    change_entity_owner_hex_test_2_procs_move_from_1_to_0(aura_on);
+    change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 void change_entity_owner_hex_test_2_procs(bool aura_on)
