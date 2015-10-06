@@ -35,76 +35,15 @@ namespace {
 class ElemGraphChangeOwner : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) == 2)
-        {
-            setup_mesh("generated:1x1x4", auraOption);
-            test_graph_updated_with_elem_3_moving_to_proc_0();
-        }
-    }
-
-    void move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) == 2)
-        {
-            setup_mesh("generated:1x1x4", auraOption);
-            expect_graph_correct_after_moving_everything_to_proc0();
-        }
-    }
-
-    void leap_frog(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) == 3)
-        {
-            setup_mesh("generated:1x1x6", auraOption);
-            expect_graph_correct_after_leaps();
-        }
-    }
-
-    void move_neighbors_to_end(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) == 3)
-        {
-            setup_mesh("generated:1x1x6", auraOption);
-            expect_graph_correct_after_moving_neighbors_to_last_proc();
-        }
-    }
-
     typedef std::pair<stk::mesh::EntityId, int> EntityIdProc;
     typedef std::vector<EntityIdProc> EntityIdProcVector;
 
-    void test_graph_updated_with_elem_3_moving_to_proc_0()
+    void expect_initial_graph_correct(ElemElemGraphTester &elemGraph)
     {
-        ElemElemGraphTester elemGraph(get_bulk());
-        expect_initial_graph_correct(elemGraph);
-        move_elements(elemGraph, {EntityIdProc(3, 0)});
-        expect_graph_updated_after_elem_3_moved_to_0(elemGraph);
-    }
-
-    void expect_graph_correct_after_moving_everything_to_proc0()
-    {
-        ElemElemGraphTester elemGraph(get_bulk());
-        expect_initial_graph_correct(elemGraph);
-        move_elements(elemGraph, {EntityIdProc(3, 0), EntityIdProc(4, 0)});
-
-        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
-    }
-
-    void expect_graph_correct_after_leaps()
-    {
-        ElemElemGraphTester elemGraph(get_bulk());
-        move_elements(elemGraph, {EntityIdProc(2, 1), EntityIdProc(3, 2)});
-
-        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
-    }
-
-    void expect_graph_correct_after_moving_neighbors_to_last_proc()
-    {
-        ElemElemGraphTester elemGraph(get_bulk());
-        move_elements(elemGraph, {EntityIdProc(2, 2), EntityIdProc(3, 2)});
-
-        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations), if the code actually got this far.";
+        if(get_bulk().parallel_rank() == 0)
+            check_element2_connected_to_element1_locally_and_element3_remotely(elemGraph);
+        else
+            check_element3_conencted_to_element4_locally_and_element2_remotely(elemGraph);
     }
 
     void check_element2_connected_to_element1_locally_and_element3_remotely(ElemElemGraphTester &elemGraph)
@@ -141,12 +80,28 @@ protected:
         EXPECT_EQ(1u, parInfo.m_chosen_side_id);
     }
 
-    void expect_initial_graph_correct(ElemElemGraphTester &elemGraph)
+    void expect_connected_to_local_elem_id(const ElemElemGraphTester &elem_graph,
+                                           stk::mesh::Entity elem,
+                                           size_t connectedIndex,
+                                           stk::mesh::EntityId connectedId)
     {
-        if(get_bulk().parallel_rank() == 0)
-            check_element2_connected_to_element1_locally_and_element3_remotely(elemGraph);
-        else
-            check_element3_conencted_to_element4_locally_and_element2_remotely(elemGraph);
+        stk::mesh::EntityId elemId = get_bulk().identifier(elem);
+        ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
+                << "elem " << elemId << " expected local elem " << connectedId;
+        EXPECT_EQ(connectedId, get_bulk().identifier(elem_graph.get_connected_element(elem, connectedIndex)))
+                << "elem " << elemId;
+    }
+
+    void expect_connected_to_remote_elem_id(const ElemElemGraphTester &elem_graph,
+                                           stk::mesh::Entity elem,
+                                           size_t connectedIndex,
+                                           stk::mesh::EntityId connectedId)
+    {
+        stk::mesh::EntityId elemId = get_bulk().identifier(elem);
+        ASSERT_TRUE(!elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
+                << "elem " << elemId << " expected remote elem " << connectedId;
+        EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
+                << "elem " << elemId;
     }
 
     void move_elements(ElemElemGraphTester &elemGraph, const EntityIdProcVector &elementIdProcsToMove)
@@ -155,6 +110,54 @@ protected:
         for(const EntityIdProc &entityIdProc : elementIdProcsToMove)
             append_element_if_owned(entityIdProc.first, entityIdProc.second, elemProcPairsToMove);
         change_entity_owner(get_bulk(), elemGraph, elemProcPairsToMove);
+    }
+
+private:
+    void append_element_if_owned(stk::mesh::EntityId elementId, int destProc, stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+        stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elementId);
+        if(is_owned_on_this_proc(element))
+            elemProcPairsToMove.push_back(stk::mesh::EntityProc(element, destProc));
+    }
+
+    bool is_owned_on_this_proc(stk::mesh::Entity element)
+    {
+        return (get_bulk().is_valid(element) && get_bulk().bucket(element).owned());
+    }
+};
+
+
+class ElemGraphChangeOwnerMoveFrom1To0 : public ElemGraphChangeOwner
+{
+protected:
+    void change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == 2)
+        {
+            setup_mesh("generated:1x1x4", auraOption);
+            test_graph_updated_with_elem_3_moving_to_proc_0();
+        }
+    }
+
+    void test_graph_updated_with_elem_3_moving_to_proc_0()
+    {
+        ElemElemGraphTester elemGraph(get_bulk());
+        expect_initial_graph_correct(elemGraph);
+        move_elements(elemGraph, {EntityIdProc(3, 0)});
+        expect_graph_updated_after_elem_3_moved_to_0(elemGraph);
+    }
+
+    void expect_graph_updated_after_elem_3_moved_to_0(ElemElemGraphTester &elemGraph)
+    {
+        if(get_bulk().parallel_rank() == 0)
+        {
+            check_element2_connected_to_element1_and_element3_locally(elemGraph);
+            check_element3_connected_to_element2_locally_and_element4_remotely(elemGraph);
+        }
+        else
+        {
+            check_element4_connected_to_element3_remotely(elemGraph);
+        }
     }
 
     void check_element2_connected_to_element1_and_element3_locally(ElemElemGraphTester &elemGraph)
@@ -197,97 +200,105 @@ protected:
         EXPECT_FALSE(parInfo.m_is_air);
         EXPECT_EQ(17u, parInfo.m_chosen_side_id);
     }
-
-    void expect_graph_updated_after_elem_3_moved_to_0(ElemElemGraphTester &elemGraph)
-    {
-        if(get_bulk().parallel_rank() == 0)
-        {
-            check_element2_connected_to_element1_and_element3_locally(elemGraph);
-            check_element3_connected_to_element2_locally_and_element4_remotely(elemGraph);
-        }
-        else
-        {
-            check_element4_connected_to_element3_remotely(elemGraph);
-        }
-    }
-
-    void expect_connected_to_local_elem_id(const ElemElemGraphTester &elem_graph,
-                                           stk::mesh::Entity elem,
-                                           size_t connectedIndex,
-                                           stk::mesh::EntityId connectedId)
-    {
-        stk::mesh::EntityId elemId = get_bulk().identifier(elem);
-        ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
-                << "elem " << elemId << " expected local elem " << connectedId;
-        EXPECT_EQ(connectedId, get_bulk().identifier(elem_graph.get_connected_element(elem, connectedIndex)))
-                << "elem " << elemId;
-    }
-
-    void expect_connected_to_remote_elem_id(const ElemElemGraphTester &elem_graph,
-                                           stk::mesh::Entity elem,
-                                           size_t connectedIndex,
-                                           stk::mesh::EntityId connectedId)
-    {
-        stk::mesh::EntityId elemId = get_bulk().identifier(elem);
-        ASSERT_TRUE(!elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
-                << "elem " << elemId << " expected remote elem " << connectedId;
-        EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
-                << "elem " << elemId;
-    }
-
-private:
-    void append_element_if_owned(stk::mesh::EntityId elementId, int destProc, stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-        stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elementId);
-        if(is_owned_on_this_proc(element))
-            elemProcPairsToMove.push_back(stk::mesh::EntityProc(element, destProc));
-    }
-
-    bool is_owned_on_this_proc(stk::mesh::Entity element)
-    {
-        return (get_bulk().is_valid(element) && get_bulk().bucket(element).owned());
-    }
 };
-
-TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_with_aura)
+TEST_F(ElemGraphChangeOwnerMoveFrom1To0, withAura)
 {
     change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AUTO_AURA);
 }
-
-TEST_F(ElemGraphChangeOwner, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_without_aura)
+TEST_F(ElemGraphChangeOwnerMoveFrom1To0, withoutAura)
 {
     change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST_F(ElemGraphChangeOwner, DISABLED_moveEverythingFromProc1ToProc0WithoutAura)
+
+class ElemGraphChangeOwnerMoveEverythingFromProc1 : public ElemGraphChangeOwner
+{
+protected:
+    void move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == 2)
+        {
+            setup_mesh("generated:1x1x4", auraOption);
+            expect_graph_correct_after_moving_everything_to_proc0();
+        }
+    }
+    void expect_graph_correct_after_moving_everything_to_proc0()
+    {
+        ElemElemGraphTester elemGraph(get_bulk());
+        expect_initial_graph_correct(elemGraph);
+        move_elements(elemGraph, {EntityIdProc(3, 0), EntityIdProc(4, 0)});
+
+        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations) if the code actually got this far.";
+    }
+};
+TEST_F(ElemGraphChangeOwnerMoveEverythingFromProc1, DISABLED_withAura)
+{
+    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AUTO_AURA);
+}
+TEST_F(ElemGraphChangeOwnerMoveEverythingFromProc1, DISABLED_withoutAura)
 {
     move_everything_from_proc1_to_proc0(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST_F(ElemGraphChangeOwner, DISABLED_moveEverythingFromProc1ToProc0WithAura)
-{
-    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AUTO_AURA);
-}
 
-TEST_F(ElemGraphChangeOwner, DISABLED_leapFrogNoAura)
+class ElemGraphChangeOwnerLeapFrog : public ElemGraphChangeOwner
+{
+protected:
+    void leap_frog(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == 3)
+        {
+            setup_mesh("generated:1x1x6", auraOption);
+            expect_graph_correct_after_leaps();
+        }
+    }
+    void expect_graph_correct_after_leaps()
+    {
+        ElemElemGraphTester elemGraph(get_bulk());
+        move_elements(elemGraph, {EntityIdProc(2, 1), EntityIdProc(3, 2)});
+
+        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations) if the code actually got this far.";
+    }
+};
+TEST_F(ElemGraphChangeOwnerLeapFrog, DISABLED_withAura)
+{
+    leap_frog(stk::mesh::BulkData::AUTO_AURA);
+}
+TEST_F(ElemGraphChangeOwnerLeapFrog, DISABLED_withoutAura)
 {
     leap_frog(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST_F(ElemGraphChangeOwner, DISABLED_leapFrogWithAura)
-{
-    leap_frog(stk::mesh::BulkData::AUTO_AURA);
-}
 
-TEST_F(ElemGraphChangeOwner, DISABLED_moveNeighborsToEndNoAura)
+class ElemGraphChangeOwnerMoveNeighborsToEnd : public ElemGraphChangeOwner
+{
+protected:
+    void move_neighbors_to_end(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == 3)
+        {
+            setup_mesh("generated:1x1x6", auraOption);
+            expect_graph_correct_after_moving_neighbors_to_last_proc();
+        }
+    }
+    void expect_graph_correct_after_moving_neighbors_to_last_proc()
+    {
+        ElemElemGraphTester elemGraph(get_bulk());
+        move_elements(elemGraph, {EntityIdProc(2, 2), EntityIdProc(3, 2)});
+
+        ASSERT_TRUE(false) << "Need to add tests of graph data (expectations) if the code actually got this far.";
+    }
+};
+TEST_F(ElemGraphChangeOwnerMoveNeighborsToEnd, DISABLED_withAura)
+{
+    move_neighbors_to_end(stk::mesh::BulkData::AUTO_AURA);
+}
+TEST_F(ElemGraphChangeOwnerMoveNeighborsToEnd, DISABLED_withoutAura)
 {
     move_neighbors_to_end(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST_F(ElemGraphChangeOwner, DISABLED_moveNeighborsToEndWithAura)
-{
-    move_neighbors_to_end(stk::mesh::BulkData::AUTO_AURA);
-}
+
 
 void change_entity_owner_hex_test_2_procs(bool aura_on)
 {
