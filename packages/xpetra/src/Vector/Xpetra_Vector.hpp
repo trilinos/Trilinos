@@ -169,7 +169,6 @@ namespace Xpetra {
     //@}
 
   }; // Vector class
-
 } // Xpetra namespace
 
 #define XPETRA_VECTOR_SHORT

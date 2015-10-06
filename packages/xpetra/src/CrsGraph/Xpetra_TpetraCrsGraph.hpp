@@ -346,6 +346,220 @@ namespace Xpetra {
     return tpetraCrsGraph->getTpetra_CrsGraph ();
   }
 
+
+#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+  // specialization of TpetraCrsGraph for GO=LO=int
+  template <class Node>
+  class TpetraCrsGraph<int,int,Node>
+    : public CrsGraph<int,int,Node>
+  {
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+
+    // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
+    typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node> TpetraCrsGraphClass;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+  public:
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Constructor specifying fixed number of entries for each row.
+    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+
+    //! Constructor specifying (possibly different) number of entries in each row.
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+
+    //! Constructor specifying column Map and fixed number of entries for each row.
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+
+    //! Constructor specifying column Map and number of entries in each row.
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+
+    //! Destructor.
+    virtual ~TpetraCrsGraph() {  }
+
+    //@}
+
+    //! @name Insertion/Removal Methods
+    //@{
+
+    //! Insert global indices into the graph.
+    void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices) { }
+
+    //! Insert local indices into the graph.
+    void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices) { }
+
+    //! Remove all graph indices from the specified local row.
+    void removeLocalIndices(LocalOrdinal localRow) { }
+
+    //@}
+
+    //! @name Transformational Methods
+    //@{
+
+    //! Signal that data entry is complete, specifying domain and range maps.
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null) { }
+
+    //! Signal that data entry is complete.
+    void fillComplete(const RCP< ParameterList > &params=null) { }
+
+    //@}
+
+    //! @name Methods implementing RowGraph.
+    //@{
+
+    //! Returns the communicator.
+    RCP< const Comm< int > > getComm() const { return Teuchos::null; }
+
+    //! Returns the Map that describes the row distribution in this graph.
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { return Teuchos::null; }
+
+    //! Returns the Map that describes the column distribution in this graph.
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { return Teuchos::null; }
+
+    //! Returns the Map associated with the domain of this graph.
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
+
+    //! Returns the Map associated with the domain of this graph.
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return Teuchos::null; }
+
+    //! Returns the importer associated with this graph.
+    RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { return Teuchos::null; }
+
+    //! Returns the exporter associated with this graph.
+    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { return Teuchos::null; }
+
+    //! Returns the number of global rows in the graph.
+    global_size_t getGlobalNumRows() const { return 0; }
+
+    //! Returns the number of global columns in the graph.
+    global_size_t getGlobalNumCols() const { return 0; }
+
+    //! Returns the number of graph rows owned on the calling node.
+    size_t getNodeNumRows() const { return 0; }
+
+    //! Returns the number of columns connected to the locally owned rows of this graph.
+    size_t getNodeNumCols() const { return 0; }
+
+    //! Returns the index base for global indices for this graph.
+    GlobalOrdinal getIndexBase() const { return 0; }
+
+    //! Returns the global number of entries in the graph.
+    global_size_t getGlobalNumEntries() const { return 0; }
+
+    //! Returns the local number of entries in the graph.
+    size_t getNodeNumEntries() const { return 0; }
+
+    //! Returns the current number of entries on this node in the specified global row.
+    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
+    //! Returns the current number of entries on this node in the specified local row.
+    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+
+    //! Returns the current number of allocated entries for this node in the specified global row .
+    size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
+
+    //! Returns the current number of allocated entries on this node in the specified local row.
+    size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+
+    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
+    global_size_t getGlobalNumDiags() const { return 0; }
+
+    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
+    size_t getNodeNumDiags() const { return 0; }
+
+    //! Maximum number of entries in all rows over all processes.
+    size_t getGlobalMaxNumRowEntries() const { return 0; }
+
+    //! Maximum number of entries in all rows owned by the calling process.
+    size_t getNodeMaxNumRowEntries() const { return 0; }
+
+    //! Whether the graph has a column Map.
+    bool hasColMap() const { return false; }
+
+    //! Whether the graph is locally lower triangular.
+    bool isLowerTriangular() const { return false; }
+
+    //! Whether the graph is locally upper triangular.
+    bool isUpperTriangular() const { return false; }
+
+    //! Whether column indices are stored using local indices on the calling process.
+    bool isLocallyIndexed() const { return false; }
+
+    //! Whether column indices are stored using global indices on the calling process.
+    bool isGloballyIndexed() const { return false; }
+
+    //! Whether fillComplete() has been called and the graph is in compute mode.
+    bool isFillComplete() const { return false; }
+
+    //! Returns true if storage has been optimized.
+    bool isStorageOptimized() const { return false; }
+
+    //! Return a const, nonpersisting view of global indices in the given row.
+    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const {  }
+
+    //! Return a const, nonpersisting view of local indices in the given row.
+    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const {  }
+
+    //@}
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    //! Return a simple one-line description of this object.
+    std::string description() const { return std::string(""); }
+
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
+
+    //@}
+
+    //! @name Advanced methods, at increased risk of deprecation.
+    //@{
+
+    //! Get an ArrayRCP of the row-offsets.
+    ArrayRCP< const size_t > getNodeRowPtrs() const { return Teuchos::ArrayRCP< const size_t>(); }
+
+    //@}
+
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return Teuchos::null; }
+
+    //! Import.
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { }
+
+    //! Export.
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) { }
+
+    //! Import (using an Exporter).
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) { }
+
+    //! Export (using an Importer).
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) { }
+
+    // @}
+
+    //! @name Xpetra specific
+    //@{
+
+    //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  { }
+
+    //! Get the underlying Tpetra graph
+    RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const { return Teuchos::null; }
+
+    //@}
+  }; // TpetraCrsGraph class (specialization for LO=GO=int)
+#endif // #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
 } // Xpetra namespace
 
 #define XPETRA_TPETRACRSGRAPH_SHORT

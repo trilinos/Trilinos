@@ -140,6 +140,14 @@ ENDIF ()
 # Xpetra classes (which are not Epetra/Tpetra specific), such as Xpetra::Map.
 GLOBAL_SET (HAVE_XPETRA_INT_INT ${${PACKAGE_NAME}_INT_INT})
 
+# The HAVE_XPETRA_TPETRA_INST_INT_INT flag is enabled if Tpetra is enabled
+# with TPETRA_INST_INT_INT. This flag is used to control whether we need
+# special stub implementations for the Xpetra::Tpetra stack with GO=int.
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
+ENDIF()
+GLOBAL_SET (HAVE_XPETRA_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
 ##################################
 
 TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING

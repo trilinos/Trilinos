@@ -214,6 +214,15 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra)
   ENDIF()
 ENDIF()
 
+# The HAVE_MUELU_TPETRA_INST_INT_INT flag is enabled if Tpetra is enabled
+# with TPETRA_INST_INT_INT. This flag is used to control whether we need
+# special stub implementations for the MueLu::Tpetra stack with GO=int.
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
+ENDIF()
+GLOBAL_SET (HAVE_MUELU_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
+
 # ML's MMM
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
   HAVE_${PACKAGE_NAME_UC}_ML_MMM

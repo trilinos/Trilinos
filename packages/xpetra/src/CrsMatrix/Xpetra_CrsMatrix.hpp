@@ -290,4 +290,20 @@ namespace Xpetra {
 } // Xpetra namespace
 
 #define XPETRA_CRSMATRIX_SHORT
+
+
+/*#ifdef HAVE_XPETRA_INT_INT
+
+
+#include "TpetraCore_ETIHelperMacros.h"
+
+#define XPETRA_LOCAL_INSTANT(SC,LO,GO,N) \
+        template class Xpetra::CrsMatrix<SC,LO,GO,N>;
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_LOCAL_INSTANT)
+
+#endif*/
+
 #endif // XPETRA_CRSMATRIX_HPP

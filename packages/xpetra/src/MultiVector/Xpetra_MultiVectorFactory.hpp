@@ -126,8 +126,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, zeroOut) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MultiVectorFactory<int,int>", "TpetraMultiVector<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -145,8 +149,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MultiVectorFactory<int,int>", "TpetraMultiVector<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

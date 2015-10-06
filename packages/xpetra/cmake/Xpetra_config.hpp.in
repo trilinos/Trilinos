@@ -29,4 +29,7 @@
 /* Whether Xpetra enables LocalOrdinal = int and GlobalOrdinal = long long */
 #cmakedefine HAVE_XPETRA_INT_LONG_LONG
 
+/* Whether Tpetra is enabled with LocalOrdinal = int and GlobalOrdinal = int */
+#cmakedefine HAVE_XPETRA_TPETRA_INST_INT_INT
+
 #endif // XPETRA_CONFIG_HPP
