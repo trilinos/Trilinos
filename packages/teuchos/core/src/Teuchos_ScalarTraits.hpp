@@ -1170,16 +1170,9 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
 };
 
-
 #endif //  HAVE_TEUCHOS_COMPLEX
-
-
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 } // Teuchos namespace
 
-// #ifdef __CUDA_ARCH__
-// #include <Teuchos_ScalarTraitsCUDA.hpp>
-// #endif
 #endif // _TEUCHOS_SCALARTRAITS_HPP_
