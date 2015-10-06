@@ -888,7 +888,7 @@ template <typename Adapter>
   }// *** vertex loop ***
 
   //Fill-complete adjs Graph
-  /*adjsMatrix->fillComplete (adjsMatrix->getRowMap());
+  adjsMatrix->fillComplete ();
 
   // **************************************************************************
   // ************************ BUILD IDENTITY FOR PARTS ************************
@@ -915,7 +915,7 @@ template <typename Adapter>
   }// *** vertex loop ***
 
   //Fill-complete parts Matrix
-  Ipart->fillComplete (Ipart->getRowMap());
+  Ipart->fillComplete ();
 
   // Create matrix to store adjs part
   RCP<sparse_matrix_type> adjsPart = 
@@ -952,11 +952,11 @@ template <typename Adapter>
 
 	for (size_t j=0; j < NumEntries; j++)
 	  if (part[i] != Values[j])
-	    wgt[part[i]] = wgt[part[i]] + wgts[offsets[i] + j];
+	    wgt[part[i]] += wgts[edim][offsets[i] + j];
       }
       wgt += nparts;         // individual weights
     }
-    }*/
+  }
 
   //////////////////////////////////////////////////////////
   // Obtain global totals by part.

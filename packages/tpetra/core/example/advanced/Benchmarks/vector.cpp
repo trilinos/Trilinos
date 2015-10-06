@@ -70,19 +70,7 @@ using Teuchos::TimeMonitor;
 
 typedef Tpetra::Vector<>::scalar_type ST;
 typedef Tpetra::Map<>::local_ordinal_type LO;
-
-#ifdef HAVE_TPETRA_INST_INT_LONG
-typedef long GO;
-#elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-typedef long long GO;
-#elif defined(HAVE_TPETRA_INST_INT_INT)
-typedef int GO;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
-typedef unsigned GO;
-#else
 typedef Tpetra::Map<>::global_ordinal_type GO;
-#endif
-
 typedef Tpetra::Vector<>::node_type NT;
 
 // Create a new timer with the given name if it hasn't already been

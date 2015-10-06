@@ -42,8 +42,6 @@
 #ifndef STOKHOS_KOKKOS_CORE_KERNELS_UNIT_TEST_HPP
 #define STOKHOS_KOKKOS_CORE_KERNELS_UNIT_TEST_HPP
 
-#include "Teuchos_ScalarTraitsCUDA.hpp"
-
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Teuchos_TestForException.hpp"

@@ -86,6 +86,10 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
     /* ---------------------------------------------------------------------- */
     /* initializations */
     /* ---------------------------------------------------------------------- */
+    for (k = 0 ; k < AMD_INFO ; k++)
+    {
+        amd_Info[k] = 0;
+    }
 
     /* compute the inverse of Pbtf */
 #ifndef NDEBUG
@@ -386,6 +390,7 @@ static KLU_symbolic<Entry, Int> *order_and_analyze  /* returns NULL if error, or
     /* ---------------------------------------------------------------------- */
 
     Common->work = 0 ;
+    work = 0;
 
     if (do_btf)
     {
