@@ -1443,7 +1443,7 @@ createScalarParameter(const Teuchos::Array<std::string> & in_names,
   paramObj->is_distributed = false;
 
   // register all the scalar parameters, setting initial 
-  for(std::size_t i=0;i<in_names.size();i++)
+  for(int i=0;i<in_names.size();i++)
     registerScalarParameter(in_names[i],*global_data_->pl,in_values[i]);
 
   paramObj->scalar_value = panzer::ParamVec();

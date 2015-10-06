@@ -1068,7 +1068,7 @@ getElementAndAssociatedLIDs(LO localElmtId, std::vector<LO>& lids) const
     for (typename std::vector<LO>::const_iterator aei = aes.begin(); aei != aes.end(); ++aei) {
       const LO lid = *aei;
       //todo-ic Figure out parallel case.
-      if (lid >= elementGIDs_.size()) continue;
+      if (lid >= Teuchos::as<LO>(elementGIDs_.size())) continue;
       const std::vector<LO>& aelids = this->getElementLIDs(lid);
       lids.insert(lids.end(), aelids.begin(), aelids.end());
     }
@@ -1085,7 +1085,7 @@ getElementAndAssociatedGIDs(LO localElmtId, std::vector<GO>& gids) const
     for (typename std::vector<LO>::const_iterator aei = aes.begin(); aei != aes.end(); ++aei) {
       const LO lid = *aei;
       //todo-ic Figure out parallel case.
-      if (lid >= elementGIDs_.size()) continue;
+      if (lid >= Teuchos::as<LO>(elementGIDs_.size())) continue;
       std::vector<GO> aegids;
       getElementGIDs(lid, aegids);
       gids.insert(gids.end(), aegids.begin(), aegids.end());
