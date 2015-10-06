@@ -239,4 +239,100 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   }
 }
 
+TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef Thyra::VectorBase<double> Thyra_Vector;
+  typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
+  typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+  // This is required
+  TEST_ASSERT(comm.NumProc()==2);
+
+  std::vector<int> ghosted(4);
+  std::vector<int> unique(2);
+
+  // This is a line with 6 notes (numbered 0-5). The boundaries
+  // are removed at 0 and 5.
+  if(comm.MyPID()==0) {
+    unique[0] = 1;
+    unique[1] = 2;
+
+    ghosted[0] = 0;
+    ghosted[1] = 1;
+    ghosted[2] = 2;
+    ghosted[3] = 3;
+  }
+  else {
+    unique[0] = 3;
+    unique[1] = 4;
+
+    ghosted[0] = 2;
+    ghosted[1] = 3;
+    ghosted[2] = 4;
+    ghosted[3] = 5;
+  }
+
+  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
+  RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
+  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+
+  EpetraVector_ReadOnly_GlobalEvaluationData ged;
+ 
+  std::vector<int> constIndex(1);
+ 
+  // setup filtered values
+  constIndex[0] = 0;
+  ged.useConstantValues(constIndex,2.0);
+
+  constIndex[0] = 5;
+  ged.useConstantValues(constIndex,3.0);
+
+  ged.initialize(importer,ghostedMap,uniqueMap);
+
+  TEST_THROW(ged.useConstantValues(constIndex,4.0),std::logic_error);
+
+  {
+    RCP<Epetra_Vector> uniqueVec = rcp(new Epetra_Vector(*uniqueMap));
+
+    if(comm.MyPID()==0) {
+      (*uniqueVec)[0] = 3.14;
+      (*uniqueVec)[1] = 1.82;
+    }
+    else {
+      (*uniqueVec)[0] = 2.72;
+      (*uniqueVec)[1] = 6.23;
+    }
+
+    // set the unique vector, assure that const can be used
+    ged.setUniqueVector_Epetra(uniqueVec.getConst());
+  }
+
+  // actually do something...
+  ged.initializeData();
+  ged.globalToGhost(0);
+
+  // check values making sure that the constants are there
+  {
+    const Epetra_Vector & ghostedVecE = *ged.getGhostedVector_Epetra();
+
+    if(comm.MyPID()==0) {
+      TEST_EQUALITY(ghostedVecE[0],2.0);   // <= Replaced constant value
+      TEST_EQUALITY(ghostedVecE[1],3.14);
+      TEST_EQUALITY(ghostedVecE[2],1.82);
+      TEST_EQUALITY(ghostedVecE[3],2.72);
+    }
+    else {
+      TEST_EQUALITY(ghostedVecE[0],1.82);
+      TEST_EQUALITY(ghostedVecE[1],2.72);
+      TEST_EQUALITY(ghostedVecE[2],6.23);
+      TEST_EQUALITY(ghostedVecE[3],3.0);   // <= Replaced constant value
+    }
+  }
 }
+
+} // end namespace panzer
