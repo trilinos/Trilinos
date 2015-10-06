@@ -31,9 +31,6 @@ SET(Tpetra_MACHINE_XML_FILE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/machine_files
     CACHE INTERNAL "")
 
-ASSERT_DEFINED(KokkosClassic_DefaultNode)
-ASSERT_DEFINED(KokkosClassic_ENABLED_NODES)
-
 # Set variables which were implicitly set when the Kokkos packages were optional dependencies
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT ON)
 GLOBAL_SET(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM ON)
@@ -108,6 +105,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # requirements are fulfilled.
 
 SET(TpetraCore_ETI_SCALARS "")
+SET(TpetraCore_ETI_SCALARS_NO_ORDS "") # exclude all ordinal types (GlobalOrdinal and int)
 SET(TpetraCore_ETI_GORDS   "")
 SET(TpetraCore_ETI_LORDS   "int")
 SET(TpetraCore_ETI_NODES   "")
@@ -198,7 +196,7 @@ IF (Tpetra_INST_SERIAL)
     MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Serial execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SERIAL=ON.  If you want to enable instantiation and use of Kokkos::Serial in Tpetra, you must enable the Kokkos::Serial execution space by setting Kokkos_ENABLE_Serial=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_SERIAL
-  IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+  IF (HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSerialWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Serial:BOOL=ON and Tpetra_INST_SERIAL:BOOL=ON.")
   ENDIF ()
   IF (Kokkos_ENABLE_Serial)
@@ -219,7 +217,7 @@ IF (Tpetra_INST_OPENMP)
     MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::OpenMP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_OPENMP=ON.  If you want to enable instantiation and use of Kokkos::OpenMP in Tpetra, you must enable the Kokkos::OpenMP execution space by setting Kokkos_ENABLE_OpenMP=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_OPENMP
-  IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+  IF (HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosOpenMPWrapperNode is disabled (since Tpetra_INST_SERIAL=OFF), but you set it as the default Node type.  Try setting the CMake option Tpetra_INST_SERIAL:BOOL=ON.  If that does not work, also add Trilinos_ENABLE_OpenMP:BOOL=ON and possibly also Kokkos_ENABLE_OpenMP:BOOL=ON.")
   ENDIF()
   IF (Kokkos_ENABLE_OpenMP)
@@ -243,7 +241,7 @@ IF (Tpetra_INST_PTHREAD)
     MESSAGE(WARNING "We do NOT recommend enabling both the Kokkos::Serial and Kokkos::Threads Node types in Tpetra in the same build!  The threads that the Kokkos::Threads execution space creates will interfere with OpenMP's threads, causing performance problems.  You are seeing this warning because both CMake options Tpetra_INST_OPENMP and Tpetra_INST_PTHREAD are ON, which is not the default.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_PTHREAD
-  IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
+  IF (HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE) 
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosThreadsWrapperNode is disabled (since Tpetra_INST_PTHREAD=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Pthread:BOOL=ON and Tpetra_INST_PTHREAD:BOOL=ON.  (Yes, it is 'Pthread', not 'Pthreads'.  Sorry, that wasn't my idea.)")
   ENDIF()
   IF (Kokkos_ENABLE_Pthread)
@@ -264,28 +262,13 @@ IF (Tpetra_INST_CUDA)
     MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Cuda execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_CUDA=ON.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, you must enable the Kokkos::Cuda execution space by setting Kokkos_ENABLE_Cuda=ON.")
   ENDIF ()
 ELSE () # NOT Tpetra_INST_CUDA
-  IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) 
+  IF (HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE) 
     MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosCudaWrapperNode is disabled (since Tpetra_INST_CUDA=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_Cuda:BOOL=ON and Tpetra_INST_CUDA:BOOL=ON.  If you are building with a CUDA-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable CUDA support by default in that case.")
   ENDIF()
   IF (Kokkos_ENABLE_Cuda)
     MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
-
-# KokkosClassic::DoNotUse::SerialNode
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_SERIALCLASSIC
-  HAVE_TPETRA_INST_SERIALCLASSIC
-  "Instantiate and/or test Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  DO NOT SET THIS!  This option is no longer available."
-  OFF
-  )
-IF (Tpetra_INST_SERIALCLASSIC)
-  MESSAGE (FATAL_ERROR "Tpetra: KokkosClassic::DoNotUse::SerialNode is no longer available as a Node type.")
-ENDIF ()
-GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ${Tpetra_INST_SERIALCLASSIC})
-IF (NOT Tpetra_INST_SERIALCLASSIC AND HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE)
-    MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but that Node type is no longer available.")
-ENDIF ()
 
 #
 # We've survived the gauntlet of tests above, so it's now safe to
@@ -327,27 +310,39 @@ MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_CUDA}")
 #
 # Currently, we always enable int, because MueLu requires it for
 # examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (which it now does by default with C++11),
-# we also enable long long (which C++11 / C99 guarantees to be >= 64
-# bits).  We currently only enable other types if the user asks for
-# them.
+# enables long long support (which it now does by default with C++11)
+# and CUDA is OFF (CUDA doesn't seem to like GO=long long), we also
+# enable long long (which C++11 / C99 guarantees to be >= 64 bits).
+# We currently only enable other types if the user asks for them.
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
 # C++11 / C99 guarantees to be at least 64 bits long.
 #
-# Tpetra has the option to set GlobalOrdinal = unsigned int, because
-# it helps catch potential errors when GlobalOrdinal is unsigned and
-# smaller than global_size_t (e.g., using the wrong
-# Teuchos::OrdinalTraits<>::invalid().  This option is OFF by default.
+# Tpetra has support for GlobalOrdial = unsigned and unsigned long,
+# but only reluctantly.  Both are OFF by default.  GO = unsigned helps
+# catch potential errors when GlobalOrdinal is unsigned and smaller
+# than global_size_t (e.g., using the wrong
+# Teuchos::OrdinalTraits<>::invalid().
 
 # GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
 
-# GO = long long is enabled by default.  However, if the user enabled
-# GO = long EXPLICITLY, we disable GO = long long by default, because
-# we don't want to enable multiple "long" GO types by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+# GO = long long is enabled by default if and only if CUDA is OFF.
+# However, if the user enabled GO = long EXPLICITLY, we disable GO =
+# long long by default, because we don't want to enable multiple
+# "long" GO types by default.
+IF (Kokkos_ENABLE_Cuda)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+ELSE ()
+  # Tpetra currently needs Teuchos to support long long.
+  # This may change in the future, though.
+  IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+  ELSE ()
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+  ENDIF ()
+ENDIF ()
 IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
   IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
     # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
@@ -363,8 +358,17 @@ IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or 
   ENDIF ()
 ENDIF ()
 
-# GO = long is NOT enabled by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+# If GO = long long is OFF by default, turn ON GO = long by default.
+# If GO = long long is ON by default, turn OFF GO = long by default.
+# The point is to have EXACTLY one potentially 64-bit GO type enabled
+# by default.  I say "potentially" because the C++ standard only
+# guarantees long to be at least 32 bits.
+IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+ELSE ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+ENDIF ()
+
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
 # GO = unsigned long is NOT enabled by default.
@@ -405,9 +409,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
   )
 
-IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
-ENDIF()
+IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+  IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
+  ENDIF ()
+ENDIF ()
 
 # Warn on use of options that we don't like.
 IF (Tpetra_INST_INT_UNSIGNED)
@@ -710,30 +716,37 @@ ENDIF ()
 #
 IF(Tpetra_INST_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "float")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "float")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DOUBLE) 
   LIST(APPEND TpetraCore_ETI_SCALARS "double")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "std::complex<float>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_DOUBLE) 
   LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "std::complex<double>")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_FLOAT128) 
   LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "__float128")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_QD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "qd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_DD_REAL) 
   LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
+  LIST(APPEND TpetraCore_ETI_SCALARS_NO_ORDS "dd_real")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 
@@ -849,12 +862,11 @@ GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_Refactor_Map
   TPETRA_USE_KOKKOS_REFACTOR_MAP
-  "Enable Tpetra::Map specialization for refactor to new Kokkos interface.  If this option is OFF, you may still use the other Kokkos refactor classes with the old Map implementation."
+  "This option has been DEPRECATED and its value will be IGNORED.  We keep it only for backwards compatibility."
   OFF
   )
-
-IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
-  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the following subpackages to be enabled: KokkosCore, KokkosContainers, KokkosAlgorithms, TeuchosKokkosCompat, TeuchosKokkosComm, and TpetraKernels." )
+IF (Tpetra_ENABLE_Kokkos_Refactor_Map)
+  MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_Refactor_Map option has been DEPRECATED and must no longer be set.  It turns out that we took a different path with the refactor of Tpetra::Map, that didn't require two separate versions of the class.  Thus, there is no need to ask for the Kokkos refactor version of Map; there was only ever one version of Map.")
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -888,6 +900,7 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 GLOBAL_SET(TpetraCore_ETI_SCALARS ${TpetraCore_ETI_SCALARS})
+GLOBAL_SET(TpetraCore_ETI_SCALARS_NO_ORDS ${TpetraCore_ETI_SCALARS_NO_ORDS})
 GLOBAL_SET(TpetraCore_ETI_GORDS   ${TpetraCore_ETI_GORDS})
 GLOBAL_SET(TpetraCore_ETI_LORDS   ${TpetraCore_ETI_LORDS})
 GLOBAL_SET(TpetraCore_ETI_NODES   ${TpetraCore_ETI_NODES})

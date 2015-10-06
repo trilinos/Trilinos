@@ -638,7 +638,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     metrics_ = rcp(quality);
   }
 
-  /*if (graphMetricsRequested_){
+  if (graphMetricsRequested_ && (algName_ == std::string("scotch") ||
+				 algName_ == std::string("parmetis"))){
     typedef PartitioningSolution<Adapter> ps_t;
     typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
@@ -653,7 +654,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     Z2_FORWARD_EXCEPTIONS
 
     graphMetrics_ = rcp(quality);
-    }*/
+  }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }

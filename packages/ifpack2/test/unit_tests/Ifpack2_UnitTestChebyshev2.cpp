@@ -220,12 +220,6 @@ private:
     Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
     A.getLocalDiagCopy (*D);
 
-    // FIXME (mfh 02 Oct 2014) This is currently the only explicit
-    // dependence on KokkosClassic in Ifpack2 that is not protected by
-    // the HAVE_IFPACK2_KOKKOSCLASSIC macro.  See around line 100 of
-    // ifpack2/src/Ifpack2_Details_Chebyshev_def.hpp for a way to work
-    // around this.
-
     typedef typename V::scalar_type scalar_type;
     typedef typename V::mag_type mag_type;
     typedef Teuchos::ScalarTraits<scalar_type> STS;

@@ -43,7 +43,7 @@
 
 #include "cg-solve_file.hpp"
 
-#if defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_SERIAL)
 int run_serialwrapper(int& argc, char* argv[]) {
   typedef Kokkos::Compat::KokkosSerialWrapperNode                Node;
   std::cout << "Running: KokkosSerialWrapperNode" << std::endl;

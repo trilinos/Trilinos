@@ -151,87 +151,7 @@ namespace MueLu {
 
     static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utils::Crs2Op(Op); }
 
-    /*! @brief Helper function to do matrix-matrix multiply
-
-    Returns C = AB.
-
-    @param A left matrix
-    @param transposeA if true, use the transpose of A
-    @param B right matrix
-    @param transposeB if true, use the transpose of B
-    @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
-    */
-    static RCP<Matrix> Multiply(const Matrix & A,
-                                bool transposeA,
-                                const Matrix & B,
-                                bool transposeB,
-                                //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))),
-                                Teuchos::FancyOStream &fos,
-                                bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                const std::string & label     = std::string()){
-      return Utils::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
-    }
-
-    static RCP<Matrix> Jacobi(Scalar omega,
-                              const Vector& D,
-                              const Matrix& A,
-                              const Matrix& B,
-                              RCP<Matrix> C_in,
-                              Teuchos::FancyOStream &fos,
-                              const std::string & label     = std::string()) {
-      return Utils::Jacobi(omega, D, A, B, C_in, fos, label);
-    }
-
-
-    /*! @brief Helper function to do matrix-matrix multiply
-
-    Returns C = AB.
-
-    @param A left matrix
-    @param transposeA if true, use the transpose of A
-    @param B right matrix
-    @param transposeB if true, use the transpose of B
-
-    @param C_in advanced usage. Use Teuchos::null by default.
-           When C_in is available, its memory is reused to build
-           This is useful in the case of multiple solve: if the pattern of C does not change, we can keep the memory and pattern of previous C matrix (C_in)
-           C_in is modified in place and is not valid after the call.
-    @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
-    @param doOptimizedStorage if true, optimize storage
-    */
-    static RCP<Matrix> Multiply(const Matrix& A,
-                                bool transposeA,
-                                const Matrix& B,
-                                bool transposeB,
-                                RCP<Matrix> C_in,
-                                //Teuchos::FancyOStream &fos = *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)))
-                                Teuchos::FancyOStream &fos,
-                                bool callFillCompleteOnResult = true,
-                                bool doOptimizeStorage        = true,
-                                const std::string & label     = std::string()) {
-      return Utils::Multiply(A, transposeA, B, transposeB, C_in, fos, callFillCompleteOnResult, doOptimizeStorage, label);
-    }
-
-    /*! @brief Helper function to do matrix-matrix multiply "in-place"
-
-    Returns RCP to non-constant Xpetra::BlockedCrsMatrix.
-
-    @param A left matrix
-    @param transposeA if true, use the transpose of A
-    @param B right matrix
-    @param transposeB if true, use the transpose of B
-    @param doOptimizeStorage if true, the resulting matrix should be fillComplete'd
-    */
-    static RCP<BlockedCrsMatrix> TwoMatrixMultiplyBlock(BlockedCrsMatrix& A, bool transposeA,
-                                                        BlockedCrsMatrix& B, bool transposeB,
-                                                        Teuchos::FancyOStream& fos,
-                                                        bool doFillComplete    = true,
-                                                        bool doOptimizeStorage = true) {
-      return Utils::TwoMatrixMultiplyBlock(A, transposeA, B, transposeB, fos, doFillComplete, doOptimizeStorage);
-    }
-
-    /*! @brief Extract Matrix Diagonal
+     /*! @brief Extract Matrix Diagonal
 
     Returns Matrix diagonal in ArrayRCP.
 
@@ -418,41 +338,7 @@ namespace MueLu {
       return Utils2::Transpose(Op, optimizeTranspose, label);
     }
 
-    /*! @brief Helper function to calculate B = alpha*A + beta*B.
-
-    @param A      left matrix operand
-    @param transposeA indicate whether to use transpose of A
-    @param alpha  scalar multiplier for A
-    @param B      right matrix operand
-    @param beta   scalar multiplier for B
-
-    @return sum in B.
-
-    Note that B does not have to be fill-completed.
-    */
-    static void TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
-      Utils2::TwoMatrixAdd(A, transposeA, alpha, B, beta);
-    }
-
-    /*! @brief Helper function to calculate C = alpha*A + beta*B.
-
-    @param A          left matrix operand
-    @param transposeA indicate whether to use transpose of A
-    @param alpha      scalar multiplier for A, defaults to 1.0
-    @param B          right matrix operand
-    @param transposeB indicate whether to use transpose of B
-    @param beta       scalar multiplier for B, defaults to 1.0
-    @param C          resulting sum
-
-    It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
-    */
-    static void TwoMatrixAdd(const Matrix& A, bool transposeA, const SC& alpha,
-                             const Matrix& B, bool transposeB, const SC& beta,
-                             RCP<Matrix>& C,  Teuchos::FancyOStream &fos, bool AHasFixedNnzPerRow = false) {
-      Utils2::TwoMatrixAdd(A, transposeA, alpha, B, transposeB, beta, C, fos, AHasFixedNnzPerRow);
-    }
-
-    static RCP<MultiVector> ReadMultiVector (const std::string& fileName, const RCP<const Map>& map) {
+     static RCP<MultiVector> ReadMultiVector (const std::string& fileName, const RCP<const Map>& map) {
       return Utils2::ReadMultiVector(fileName, map);
     }
     static RCP<const Map>   ReadMap         (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {

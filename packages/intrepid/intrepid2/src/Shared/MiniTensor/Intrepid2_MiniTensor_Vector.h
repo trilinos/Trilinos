@@ -54,43 +54,39 @@
 namespace Intrepid2 {
 
 template<typename T, Index N>
-struct vector_store
-{
-  typedef Storage<T, dimension_power<N, 1>::value> type;
-};
+using vector_store = Storage<T, dimension_power<N, 1>::value>;
 
 ///
 /// Vector class.
 ///
 template<typename T, Index N = DYNAMIC>
-class Vector: public TensorBase<T, typename vector_store<T, N>::type>
+class Vector: public TensorBase<T, vector_store<T, N>>
 {
 public:
 
   ///
   /// Order
   ///
-  static
-  Index const
+  static constexpr
+  Index
   ORDER = 1;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef typename vector_store<T, N>::type
-  Store;
+  using Store = vector_store<T, N>;
 
   ///
   /// Vector order
   ///
-  static
+  static constexpr
   Index
   get_order()
   {

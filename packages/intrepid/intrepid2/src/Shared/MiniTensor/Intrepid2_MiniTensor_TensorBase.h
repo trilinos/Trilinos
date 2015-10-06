@@ -77,12 +77,12 @@ public:
   ///
   /// Component type
   ///
-  typedef T value_type;
+  using value_type = T;
 
   ///
   /// Storage type
   ///
-  typedef ST storage_type;
+  using storage_type = ST;
 
   ///
   /// Default constructor
@@ -350,7 +350,7 @@ protected:
   /// dimension
   ///
   Index
-  dimension_;
+  dimension_{0};
 
 };
 

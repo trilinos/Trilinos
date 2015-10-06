@@ -87,6 +87,7 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
+#include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #endif
 
 namespace MueLu {

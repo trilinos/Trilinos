@@ -13,8 +13,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename DenseExecViewType>
+  template<typename DenseExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Chol<Uplo::Upper,AlgoChol::ExternalLapack>

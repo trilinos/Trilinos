@@ -8,24 +8,25 @@
 #ifndef _MESHBUILDER_HPP_
 #define _MESHBUILDER_HPP_
 
-#include <iostream>
-#include <vector>
-#include <unordered_set>
-#include <unordered_map>
-#include <stdlib.h>
+#include <iostream>                     // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <string>                       // for string
+#include <unordered_map>                // for unordered_map
+#include <unordered_set>                // for unordered_set
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityIdVector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { struct Cartesian2d; } }
+namespace stk { namespace mesh { struct Cartesian3d; } }
+struct ElemCoordPair;
+struct ElemCoordTriple;
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_io/StkMeshIoBroker.hpp>
 
-#include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
 
 typedef stk::mesh::Field<int> ScalarIntField;
 

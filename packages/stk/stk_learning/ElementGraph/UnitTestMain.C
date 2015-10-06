@@ -31,9 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/parallel/Parallel.hpp>
+#include <gtest/gtest.h>                // for InitGoogleTest, etc
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include "mpi.h"                        // for MPI_COMM_WORLD
 
 int gl_argc;
 char** gl_argv;

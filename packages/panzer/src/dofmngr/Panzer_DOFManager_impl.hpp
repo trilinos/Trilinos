@@ -312,11 +312,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
   aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
 
   connMngr_->buildConnectivity(*aggFieldPattern);
-  {
-    int heai, my_heai = connMngr_->hasElementsAcrossInterface() ? 1 : 0;
-    Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MAX, 1, &my_heai, &heai);
-    if (heai > 0) this->enableGhosting(true);
-  }
 
   // using new geometric pattern, build global unknowns
   buildGlobalUnknowns(aggFieldPattern);

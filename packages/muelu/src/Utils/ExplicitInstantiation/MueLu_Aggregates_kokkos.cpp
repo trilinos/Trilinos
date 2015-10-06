@@ -1,9 +1,9 @@
-/*
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,25 +35,27 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
-*/
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#include "Tpetra_RowMatrix.hpp"
-
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "MueLu_Aggregates_kokkos_def.hpp"
 
 #include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_RowMatrix_def.hpp"
 
-namespace Tpetra {
+#define MUELU_LOCAL_INSTANT(LO,GO,N) \
+        template class MueLu::Aggregates_kokkos<LO,GO,N>;
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLGN(TPETRA_ROWMATRIX_INSTANT)
+TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
 
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif

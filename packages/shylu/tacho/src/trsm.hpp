@@ -15,8 +15,7 @@ namespace Tacho {
 
     // data-parallel interface
     // =======================
-    template<typename ParallelForType,
-             typename ScalarType,
+    template<typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
@@ -29,8 +28,7 @@ namespace Tacho {
 
     // task-data parallel interface
     // ============================
-    template<typename ParallelForType,
-             typename ScalarType,
+    template<typename ScalarType,
              typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
@@ -63,14 +61,14 @@ namespace Tacho {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType>(_policy, _policy.member_single(),
-                                              _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke(_policy, _policy.member_single(),
+                             _diagA, _alpha, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Trsm::invoke<ParallelForType>(_policy, member, 
-                                              _diagA, _alpha, _A, _B);
+        r_val = Trsm::invoke(_policy, member, 
+                             _diagA, _alpha, _A, _B);
       }
 
     };

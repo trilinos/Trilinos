@@ -1,11 +1,11 @@
 #ifndef _PNGPROCESSOR_HPP_
 #define _PNGPROCESSOR_HPP_
 
-#include <vector>
-#include <string>
+#include <stk_mesh/base/Types.hpp>      // for EntityIdVector
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
-#include <stk_mesh/base/Types.hpp>
-#include "LodePNG.hpp"
 
 /*
  * How to use:

@@ -53,6 +53,7 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -137,11 +138,11 @@ namespace MueLu {
       D[k] *= -omega;
     Utils::MyOldScaleMatrix(*T, D, true/*doInverse*/, true/*doFillComplete*/, false/*doOptimizeStorage*/);
 
-    RCP<Matrix> S = Utils::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
+    RCP<Matrix> S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
 
     if (!A11.is_null()) {
       T = Teuchos::null;
-      Utils2::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
       T->fillComplete();
       S.swap(T);
     }

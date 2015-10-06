@@ -43,6 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-// MacOs 'ar' utility doesn't work on empty library.
+#ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP
+#define MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP
 
-void libxpetra_ext() {}
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class CoalesceDropFactory_kokkos;
+}
+
+#ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
+#define MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
+#endif
+
+#endif
+
+#endif // MUELU_COALESCEDROPFACTORY_KOKKOS_FWD_HPP

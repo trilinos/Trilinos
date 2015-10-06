@@ -222,9 +222,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
   RCP<const MV> xrcp = y.subView (Teuchos::Range1D (0,1));
   const MV& x = *xrcp;
 
-  TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
-  TEST_EQUALITY(&(x.get2dView()[0][0]), &(y.get2dView()[0][0]));         // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
-  TEST_EQUALITY(x.getLocalMV().getValues(), y.getLocalMV().getValues()); // another way to test if x and y are pointing to the same memory location
+  TEST_INEQUALITY(&x, &y); // vector x and y are different
+  // Vectors x and y point to the same data.
+  TEST_EQUALITY(x.template getLocalView<Kokkos::HostSpace> ().ptr_on_device (),
+                y.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ());
 
   prec.apply(x, y);
 

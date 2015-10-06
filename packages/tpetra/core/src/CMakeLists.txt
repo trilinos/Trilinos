@@ -77,10 +77,9 @@ ENDFUNCTION()
 # NAME_IN [in] The type to mangle.
 FUNCTION(TPETRA_NODE_MACRO_NAME NAME_OUT NAME_IN)
   STRING(REGEX MATCH "Kokkos::Compat::Kokkos(.*)WrapperNode" TMP0 "${NAME_IN}")
-  STRING(COMPARE EQUAL "${TMP0}" "" IS_CLASSIC)
-  IF(IS_CLASSIC)
-    # Special case: KokkosClassic::DoNotUse::SerialNode
-    SET(${NAME_OUT} "SERIALCLASSIC" PARENT_SCOPE)
+  STRING(COMPARE EQUAL "${TMP0}" "" DOES_NOT_MATCH)
+  IF(DOES_NOT_MATCH)
+    MESSAGE(FATAL_ERROR "Tpetra: Node $NAME_IN is not a supported Node type.")
   ELSE()
     # Extract the Kokkos execution space (KOKKOS_EXEC_SPACE) from the Node name.
     STRING(REGEX REPLACE "Kokkos::Compat::Kokkos(.*)WrapperNode" "\\1" KOKKOS_EXEC_SPACE "${NAME_IN}")
@@ -299,13 +298,21 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(VECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Vector" "VECTOR" "${MultiVector_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${VECTOR_OUTPUT_FILES})
 
-  # We don't need to add Scalar = int to CrsMatrix explicitly,
-  # unlike with MultiVector and Vector.
+  # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
+  # indirectly for RowMatrix as well.
   SET (CrsMatrix_ETI_SCALARS ${TpetraCore_ETI_SCALARS})
 
   # Generate ETI .cpp files for Tpetra::CrsMatrix.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${CRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::RowMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(ROWMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "RowMatrix" "ROWMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${ROWMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockCrsMatrix" "EXPERIMENTAL_BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
 
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
@@ -331,5 +338,6 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'
 # subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.
+# CMake in order to regenerate Makefiles.  Here is another such
+# change.
 #

@@ -47,45 +47,44 @@
 namespace Intrepid2 {
 
 template<typename T, Index N>
-struct tensor3_store
-{
-  typedef Storage<T, dimension_power<N, 3>::value> type;
-};
+using tensor3_store = Storage<T, dimension_power<N, 3>::value>;
 
 ///
 /// Third-order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor3 : public TensorBase<T, typename tensor3_store<T, N>::type>
+class Tensor3 : public TensorBase<T, tensor3_store<T, N>>
 {
 public:
 
   ///
   /// Order
   ///
-  static
-  Index const
+  static constexpr
+  Index
   ORDER = 3;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef typename tensor3_store<T, N>::type
-  Store;
+  using Store = tensor3_store<T, N>;
 
   ///
   /// Tensor order
   ///
-  static
+  static constexpr
   Index
-  get_order() {return ORDER;}
+  get_order()
+  {
+    return ORDER;
+  }
 
   ///
   /// 3rd-order tensor constructor with NaNs

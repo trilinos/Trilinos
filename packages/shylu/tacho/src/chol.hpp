@@ -27,8 +27,7 @@ namespace Tacho {
     
     // function interface
     // ==================
-    template<typename ParallelForType,
-             typename ExecViewType>
+    template<typename ExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(typename ExecViewType::policy_type &policy, 
                       const typename ExecViewType::policy_type::member_type &member, 
@@ -40,8 +39,7 @@ namespace Tacho {
     
     // task-data parallel interface
     // ============================
-    template<typename ParallelForType,
-             typename ExecViewType>
+    template<typename ExecViewType>
     class TaskFunctor {
     public:
       typedef typename ExecViewType::policy_type policy_type;
@@ -63,14 +61,12 @@ namespace Tacho {
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = Chol::invoke<ParallelForType>(_policy, _policy.member_single(), 
-                                              _A);
+        r_val = Chol::invoke(_policy, _policy.member_single(), _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = Chol::invoke<ParallelForType>(_policy, member, 
-                                              _A);
+        r_val = Chol::invoke(_policy, member, _A);
       }
 
     };

@@ -120,7 +120,8 @@ Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,std::pair<int,GO> > >
 BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder) const
+                            const std::string & fieldOrder,
+                            const bool callBuildGlobalUnknowns) const
 {
    TEUCHOS_ASSERT(requiresBlocking(fieldOrder));
 
@@ -167,7 +168,8 @@ BlockedDOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<con
    buildBlocking(fieldOrder,blocks);
    dofManager->setFieldOrder(blocks);
 
-   dofManager->buildGlobalUnknowns();
+   if (callBuildGlobalUnknowns)
+     dofManager->buildGlobalUnknowns();
    // dofManager->printFieldInformation(*pout);
 
    return dofManager;

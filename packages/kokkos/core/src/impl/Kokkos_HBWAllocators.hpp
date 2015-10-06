@@ -1,13 +1,13 @@
 /*
-// @HEADER
-// ***********************************************************************
-//
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,28 +35,41 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
-// @HEADER
+//@HEADER
 */
 
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#ifndef KOKKOS_HBW_ALLOCATORS_HPP
+#define KOKKOS_HBW_ALLOCATORS_HPP
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#ifdef KOKKOS_HAVE_HBWSPACE
 
-#include "Tpetra_Experimental_BlockCrsMatrix_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
+namespace Kokkos {
+namespace Experimental {
+namespace Impl {
 
-namespace Tpetra {
+/// class MallocAllocator
+class HBWMallocAllocator
+{
+public:
+  static const char * name()
+  {
+    return "HBW Malloc Allocator";
+  }
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+  static void* allocate(size_t size);
 
-  // NOTE (mfh 24 Sep 2015) It only makes sense to instantiate over
-  // Scalar types which have a Teuchos::LAPACK implementation.
+  static void deallocate(void * ptr, size_t size);
 
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT)
+  static void * reallocate(void * old_ptr, size_t old_size, size_t new_size);
+};
 
-} // namespace Tpetra
+}
+}
+} // namespace Kokkos::Impl
+#endif //KOKKOS_HAVE_HBWSPACE
+#endif //KOKKOS_HBW_ALLOCATORS_HPP
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+

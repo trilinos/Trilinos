@@ -49,6 +49,7 @@
 #include <sstream>
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -101,8 +102,8 @@ namespace MueLu {
 
       {
         SubFactoryMonitor subM(*this, "MxM: K x P", coarseLevel);
-        KP = Utils::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2));
-        MP = Utils::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2));
+        KP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2));
+        MP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2));
         Set(coarseLevel, "AP Pattern", KP);
       }
 
@@ -119,20 +120,20 @@ namespace MueLu {
       bool doFillComplete=true;
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (KP) (implicit)", coarseLevel);
-        Kc = Utils::Multiply(*P, true, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
-        Mc = Utils::Multiply(*P, true, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Kc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P, true, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Mc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P, true, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
       else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
         SubFactoryMonitor m2(*this, "MxM: R x (KP) (explicit)", coarseLevel);
-        Kc = Utils::Multiply(*R, false, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
-        Mc = Utils::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Kc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, false, *KP, false, Kc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
+        Mc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
 
       // recombine to get K+shift*M
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = shifts_[level];
-      Utils2::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
       Ac->fillComplete();
 
       if (checkAc_)

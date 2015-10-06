@@ -14,8 +14,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewType>
+  template<typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
@@ -26,7 +25,6 @@ namespace Tacho {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     // row_view_type r1t, r2t;
 
@@ -53,33 +51,33 @@ namespace Tacho {
 
       if (nnz_r1t) {
         // inverse scale
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type j) {
-                          r1t.Value(j) /= alpha;
-                        });
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_r1t),
+                             [&](const ordinal_type j) {
+                               r1t.Value(j) /= alpha;
+                             });
 
         member.team_barrier();
 
         // hermitian rank update
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type i) {
-                          const ordinal_type row_at_i = r1t.Col(i);
-                          const value_type   val_at_i = conj(r1t.Value(i));
-
-                          //r2t.setView(A, row_at_i);
-                          row_view_type &r2t = A.RowView(row_at_i);
-                          ordinal_type idx = 0;
-
-                          for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
-                            const ordinal_type col_at_j = r1t.Col(j);
-                            idx = r2t.Index(col_at_j, idx);
-
-                            if (idx >= 0) {
-                              const value_type val_at_j = r1t.Value(j);
-                              r2t.Value(idx) -= val_at_i*val_at_j;
-                            }
-                          }
-                        });
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_r1t),
+                             [&](const ordinal_type i) {
+                               const ordinal_type row_at_i = r1t.Col(i);
+                               const value_type   val_at_i = conj(r1t.Value(i));
+                               
+                               //r2t.setView(A, row_at_i);
+                               row_view_type &r2t = A.RowView(row_at_i);
+                               ordinal_type idx = 0;
+                               
+                               for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
+                                 const ordinal_type col_at_j = r1t.Col(j);
+                                 idx = r2t.Index(col_at_j, idx);
+                                 
+                                 if (idx >= 0) {
+                                   const value_type val_at_j = r1t.Value(j);
+                                   r2t.Value(idx) -= val_at_i*val_at_j;
+                                 }
+                               }
+                             });
       }
     }
     return 0;

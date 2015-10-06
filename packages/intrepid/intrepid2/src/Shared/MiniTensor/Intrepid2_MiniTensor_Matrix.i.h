@@ -50,8 +50,9 @@ namespace Intrepid2 {
 template<typename T, Index M, Index N>
 inline
 Matrix<T, M, N>::Matrix() :
-    TensorBase<T, Store>::TensorBase(), rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase()
 {
+  set_dimensions(M, N);
   return;
 }
 
@@ -65,12 +66,12 @@ Matrix<T, M, N>::Matrix(Index const rows, Index const cols) :
 }
 
 ///
-/// Create tensor from a specified value
+/// Create matrix from a specified value
 ///
 template<typename T, Index M, Index N>
 inline
 Matrix<T, M, N>::Matrix(ComponentValue const value) :
-    TensorBase<T, Store>::TensorBase(M * N, ORDER, value), rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase(M * N, ORDER, value)
 {
   return;
 }
@@ -99,8 +100,7 @@ Matrix<T, M, N>::Matrix(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1) :
-    TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1),
-    rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1)
 {
   return;
 }
@@ -113,8 +113,7 @@ Matrix<T, M, N>::Matrix(
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
     iType index2) :
-    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2),
-    rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1, index2)
 {
   return;
 }
@@ -128,8 +127,7 @@ Matrix<T, M, N>::Matrix(
     iType index1,
     iType index2,
     iType index3) :
-    TensorBase<T, Store>::TensorBase(N, ORDER, data, index1, index2, index3),
-    rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1, index2, index3)
 {
   return;
 }
@@ -144,13 +142,13 @@ Matrix<T, M, N>::Matrix(
     iType index3,
     iType index4) :
     TensorBase<T, Store>::TensorBase(
-        N,
+        M * N,
         ORDER,
         data,
         index1,
         index2,
         index3,
-        index4), rows_(M), cols_(N)
+        index4)
 {
   return;
 }
@@ -166,14 +164,14 @@ Matrix<T, M, N>::Matrix(
     iType index4,
     iType index5) :
     TensorBase<T, Store>::TensorBase(
-        N,
+        M * N,
         ORDER,
         data,
         index1,
         index2,
         index3,
         index4,
-        index5), rows_(M), cols_(N)
+        index5)
 {
   return;
 }
@@ -190,7 +188,7 @@ Matrix<T, M, N>::Matrix(
     iType index5,
     iType index6) :
     TensorBase<T, Store>::TensorBase(
-        N,
+        M * N,
         ORDER,
         data,
         index1,
@@ -198,7 +196,7 @@ Matrix<T, M, N>::Matrix(
         index3,
         index4,
         index5,
-        index6), rows_(M), cols_(N)
+        index6)
 {
   return;
 }
@@ -338,7 +336,7 @@ Matrix<T, M, N>::Matrix(
 template<typename T, Index M, Index N>
 inline
 Matrix<T, M, N>::Matrix(T const * data_ptr) :
-    TensorBase<T, Store>::TensorBase(M * N, ORDER, data_ptr), rows_(M), cols_(N)
+    TensorBase<T, Store>::TensorBase(M * N, ORDER, data_ptr)
 {
   return;
 }
@@ -385,9 +383,7 @@ inline
 std::pair<Index, Index>
 Matrix<T, M, N>::get_dimensions() const
 {
-  return IS_DYNAMIC == true ?
-      std::make_pair(rows_, cols_) :
-      std::make_pair(M, N);
+  return std::make_pair(rows_, cols_);
 }
 
 //
@@ -398,7 +394,7 @@ inline
 Index
 Matrix<T, M, N>::get_num_rows() const
 {
-  return IS_DYNAMIC == true ? rows_ : M;
+  return rows_;
 }
 
 //
@@ -409,7 +405,7 @@ inline
 Index
 Matrix<T, M, N>::get_num_cols() const
 {
-  return IS_DYNAMIC == true ? cols_ : M;
+  return cols_;
 }
 
 //
@@ -420,21 +416,19 @@ inline
 void
 Matrix<T, M, N>::set_dimensions(Index const rows, Index const cols)
 {
-  if (IS_DYNAMIC == true) {
-    TensorBase<T, Store>::set_dimension(rows * cols, ORDER);
-    rows_ = rows;
-    cols_ = cols;
+  if (IS_DYNAMIC == false) {
+    assert(rows * cols <= M * N);
   }
-  else {
-    assert(rows == M);
-    assert(cols == N);
-  }
+
+  TensorBase<T, Store>::set_dimension(rows * cols, ORDER);
+  rows_ = rows;
+  cols_ = cols;
 
   return;
 }
 
 //
-// Indexing for constant tensor
+// Indexing for constant matrix
 //
 template<typename T, Index M, Index N>
 inline T const &
@@ -450,7 +444,7 @@ Matrix<T, M, N>::operator()(Index const i, Index const j) const
 }
 
 //
-//Matrix indexing
+// Matrix indexing
 //
 template<typename T, Index M, Index N>
 inline T &

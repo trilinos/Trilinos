@@ -293,7 +293,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(pA) == this->sources.end())
     {
       cout << "\nProblem: " + pA + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the probelm.";
+      cout << "\nThis typically indicates that an error occured while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       return;
     }
@@ -302,7 +302,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(pB) == this->sources.end())
     {
       cout << "\nProblem: " + pB + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the probelm.";
+      cout << "\nThis typically indicates that an error occured while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       
       return;
@@ -316,7 +316,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(prb) == this->sources.end())
     {
       cout << "\nProblem: " + prb + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the probelm.";
+      cout << "\nThis typically indicates that an error occured while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return;
     }
@@ -325,7 +325,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(ref) == this->sources.end())
     {
       cout << "\nReference: " + ref + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the probelm.";
+      cout << "\nThis typically indicates that an error occured while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return;
     }

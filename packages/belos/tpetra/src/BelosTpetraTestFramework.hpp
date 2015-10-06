@@ -81,7 +81,7 @@ namespace Belos {
     template<class NodeType>
     Teuchos::RCP<NodeType>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::null) {
-      return KokkosClassic::Details::getNode<NodeType> (params);
+      return Teuchos::rcp (new NodeType (params));
     }
 
     /// \class HarwellBoeingReader

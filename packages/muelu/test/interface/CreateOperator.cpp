@@ -56,7 +56,7 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
-#include <XpetraExt_MatrixMatrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
@@ -107,7 +107,7 @@ namespace MueLuExamples {
         oldbuffer = std::cout.rdbuf(&buffer);
       }
 
-      RCP<Tpetra_CrsMatrix> At = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra_CrsMatrix> At = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
       RCP<Tpetra_Operator>  Mt = MueLu::CreateTpetraPreconditioner(At, mueluList);
 
       if (myRank == 0) {
@@ -125,7 +125,7 @@ namespace MueLuExamples {
         oldbuffer = std::cout.rdbuf(&buffer);
       }
 
-      RCP<Epetra_CrsMatrix>   Ae = Xpetra::MatrixMatrix::Op2NonConstEpetraCrs(A);
+      RCP<Epetra_CrsMatrix>   Ae = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(A);
       RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae, mueluList);
 
       if (myRank == 0) {

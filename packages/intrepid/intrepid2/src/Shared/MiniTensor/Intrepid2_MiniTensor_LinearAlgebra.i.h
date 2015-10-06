@@ -448,7 +448,26 @@ cond(Tensor<T, N> const & A)
   S = boost::get<1>(svd(A));
 
   T const
-  k = S(0, 0) / S(dimension, dimension);
+  k = S(0, 0) / S(dimension - 1, dimension - 1);
+
+  return k;
+}
+
+//
+// Reciprocal condition number.
+//
+template<typename T, Index N>
+T
+inv_cond(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N> const
+  S = boost::get<1>(svd(A));
+
+  T const
+  k = S(dimension - 1, dimension - 1) / S(0, 0);
 
   return k;
 }

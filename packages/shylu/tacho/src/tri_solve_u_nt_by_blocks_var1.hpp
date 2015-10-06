@@ -12,8 +12,7 @@ namespace Tacho {
   
   using namespace std;
   
-  template<typename ParallelForType,
-           typename CrsTaskViewTypeA,
+  template<typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
   KOKKOS_INLINE_FUNCTION
@@ -46,8 +45,8 @@ namespace Tacho {
         future_type f = task_factory_type
           ::create(policy,
                    Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-                   ::TaskFunctor<ParallelForType,double,
-                   crs_value_type,dense_value_type,dense_value_type>(-1.0, aa, bb, 1.0, cc));
+                   ::TaskFunctor<double,crs_value_type,dense_value_type,dense_value_type>
+                   (-1.0, aa, bb, 1.0, cc));
 
         // dependence
         task_factory_type::addDependence(policy, f, aa.Future());
@@ -67,8 +66,7 @@ namespace Tacho {
     return 0;
   }
   
-  template<typename ParallelForType,
-           typename CrsTaskViewTypeA,
+  template<typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int genTrsmTasks_TriSolveUpperNoTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
@@ -93,8 +91,8 @@ namespace Tacho {
       future_type f = task_factory_type
         ::create(policy,
                  Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
-                 ::TaskFunctor<ParallelForType,double,
-                 crs_value_type,dense_value_type>(diagA, 1.0, aa, bb));
+                 ::TaskFunctor<double,crs_value_type,dense_value_type>
+                 (diagA, 1.0, aa, bb));
 
       // trsm dependence
       task_factory_type::addDependence(policy, f, aa.Future());

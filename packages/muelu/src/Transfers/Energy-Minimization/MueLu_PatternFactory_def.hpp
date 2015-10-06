@@ -47,12 +47,13 @@
 #define MUELU_PATTERNFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_PatternFactory_decl.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
+//#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -96,7 +97,7 @@ namespace MueLu {
       bool optimizeStorage = true;
 
       for (int i = 0; i < k; i++) {
-        AP = Utils::Multiply(*A, false, *P, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
+        AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         P.swap(AP);
       }
     }

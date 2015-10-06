@@ -13,8 +13,7 @@ namespace Tacho {
   // Gemm-By-Blocks
   // ==============
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename DenseTaskViewTypeA,
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
@@ -47,8 +46,8 @@ namespace Tacho {
             future_type f = task_factory_type::create(policy,
                                                       Gemm<Trans::NoTranspose,Trans::NoTranspose,
                                                       AlgoGemm::ExternalBlas>
-                                                      ::TaskFunctor<ParallelForType,double,
-                                                      value_type,value_type,value_type>(alpha, aa, bb, beta_select, cc));
+                                                      ::TaskFunctor<double,value_type,value_type,value_type>
+                                                      (alpha, aa, bb, beta_select, cc));
 
             // dependence
             task_factory_type::addDependence(policy, f, aa.Future());

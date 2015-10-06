@@ -53,6 +53,8 @@
 
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_GraphModel.hpp>
 
 #include <Epetra_SerialDenseVector.h>
@@ -396,11 +398,11 @@ template <typename scalar_t>
  * \todo - Zoltan_norm() in Zoltan may scale the weight. Do we ever need this?
  */
 
-template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
+template <typename scalar_t, typename lno_t, typename part_t>
   void normedPartWeights(
     const RCP<const Environment> &env,
     part_t numberOfParts,
-    const ArrayView<const pnum_t> &parts,
+    const ArrayView<const part_t> &parts,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     scalar_t *weights)
@@ -504,11 +506,11 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * because they require part size information.
  */
 
-template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
+template <typename scalar_t, typename lno_t, typename part_t>
   void globalSumsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
-    const ArrayView<const pnum_t> &part, 
+    const ArrayView<const part_t> &part, 
     int vwgtDim,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
@@ -579,7 +581,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
 
     scalar_t *wgt = localBuf + nparts; // single normed weight or weight 1
     try{
-      normedPartWeights<scalar_t, pnum_t, lno_t, part_t>(env, nparts, 
+      normedPartWeights<scalar_t, lno_t, part_t>(env, nparts, 
         part, vwgts, mcNorm, wgt);
     }
     Z2_FORWARD_EXCEPTIONS
@@ -743,12 +745,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-template <typename Adapter, typename pnum_t>
+template <typename Adapter>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
-    const RCP<const GraphModel<Adapter> > &graph,
-    const ArrayView<const pnum_t> &part, 
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
+    const ArrayView<const typename Adapter::part_t> &part, 
     typename Adapter::part_t &numParts, 
     ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
@@ -772,7 +774,7 @@ template <typename Adapter, typename pnum_t>
   typedef StridedData<lno_t, scalar_t> input_t;
 
   typedef GraphMetricValues<scalar_t> mv_t;
-  typedef Tpetra::CrsMatrix<pnum_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -823,17 +825,19 @@ template <typename Adapter, typename pnum_t>
 
   scalar_t *cut = localBuf;              // # of cuts
 
-  ArrayView<const gno_t> *Ids;
-  ArrayView<input_t> *vwgts;
-  /*size_t nv =*/ graph->getVertexList(Ids, vwgts);
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> vwgts;
+  //size_t nv =
+  graph->getVertexList(Ids, vwgts);
 
-  ArrayView<const gno_t> *edgeIds;
-  ArrayView<const lno_t> *offsets;
-  ArrayView<input_t> *wgts;
-  /*size_t numLocalEdges =*/ getEdgeList(edgeIds, offsets, wgts);
-  /**************************************************************************/
-  /*************************** BUILD MAP FOR ADJS ***************************/
-  /**************************************************************************/
+  ArrayView<const gno_t> edgeIds;
+  ArrayView<const lno_t> offsets;
+  ArrayView<input_t> wgts;
+  //size_t numLocalEdges =
+  graph->getEdgeList(edgeIds, offsets, wgts);
+  // **************************************************************************
+  // *************************** BUILD MAP FOR ADJS ***************************
+  // **************************************************************************
 
   Array<gno_t> vertexGIDs;
   RCP<const map_type> vertexMapG;
@@ -842,7 +846,7 @@ template <typename Adapter, typename pnum_t>
   vertexGIDs.resize(localNumObj);
   gno_t min;
   min = as<gno_t> (Ids[0]);
-  for (size_t i = 0; i < localNumObj; ++i) {
+  for (lno_t i = 0; i < localNumObj; ++i) {
     vertexGIDs[i] = as<gno_t> (Ids[i]);
 
     if (vertexGIDs[i] < min) {
@@ -851,22 +855,22 @@ template <typename Adapter, typename pnum_t>
   }
 
   gno_t gmin;
-  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,min,gmin);
+  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,&min,&gmin);
 
   //Generate Map for vertex
   vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
 
-  /**************************************************************************/
-  /************************** BUILD GRAPH FOR ADJS **************************/
-  /**************************************************************************/
+  // **************************************************************************
+  // ************************** BUILD GRAPH FOR ADJS **************************
+  // **************************************************************************
 
   RCP<sparse_matrix_type> adjsMatrix;
 
   // Construct Tpetra::CrsGraph objects.
   adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  pnum_t justOne = 1;
-  ArrayView<pnum_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+  part_t justOne = 1;
+  ArrayView<part_t> justOneAV = Teuchos::arrayView (&justOne, 1);
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
 
@@ -884,11 +888,11 @@ template <typename Adapter, typename pnum_t>
   }// *** vertex loop ***
 
   //Fill-complete adjs Graph
-  adjsMatrix->fillComplete (adjsMatrix->getRowMap());
+  /*adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
-  /**************************************************************************/
-  /************************ BUILD IDENTITY FOR PARTS ************************/
-  /**************************************************************************/
+  // **************************************************************************
+  // ************************ BUILD IDENTITY FOR PARTS ************************
+  // **************************************************************************
 
   RCP<sparse_matrix_type> Ipart;
 
@@ -896,8 +900,8 @@ template <typename Adapter, typename pnum_t>
   Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    pnum_t justPart = part[localElement];
-    ArrayView<pnum_t> justPartAV = Teuchos::arrayView (&justPart, 1);
+    part_t justPart = part[localElement];
+    ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
 
     // globalRow for Tpetra Matrix
     gno_t globalRowT = as<gno_t> (Ids[localElement]);
@@ -918,25 +922,41 @@ template <typename Adapter, typename pnum_t>
     rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
   Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
 				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
+  Array<gno_t> Indices;
+  Array<part_t> Values;
 
   if (!ewgtDim) {
-    for (lno_t i=0; i < localNumObj; i++)
-      for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
+    for (lno_t i=0; i < localNumObj; i++) {
+      const gno_t globalRow = Ids[i];
+      size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+      Indices.resize (NumEntries);
+      Values.resize (NumEntries);
+      adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+      for (size_t j=0; j < NumEntries; j++)
+	if (part[i] != Values[j])
 	  cut[part[i]]++;
+    }
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
   } else {
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
-      for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	  if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
-	    wgt[part[i]] += wgts[j];
+      for (lno_t i=0; i < localNumObj; i++) {
+	const gno_t globalRow = Ids[i];
+	size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+	Indices.resize (NumEntries);
+	Values.resize (NumEntries);
+	adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+
+	for (size_t j=0; j < NumEntries; j++)
+	  if (part[i] != Values[j])
+	    wgt[part[i]] = wgt[part[i]] + wgts[offsets[i] + j];
+      }
       wgt += nparts;         // individual weights
     }
-  }
+    }*/
 
   //////////////////////////////////////////////////////////
   // Obtain global totals by part.
@@ -1313,7 +1333,7 @@ template <typename Adapter>
   ArrayRCP<scalar_t> globalSums;
 
   try{
-    globalSumsByPart<scalar_t, part_t, lno_t, part_t>(env, comm, 
+    globalSumsByPart<scalar_t, lno_t, part_t>(env, comm, 
       partArray, nWeights, weights.view(0, numCriteria), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }

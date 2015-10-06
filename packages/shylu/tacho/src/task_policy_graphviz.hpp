@@ -76,6 +76,14 @@ namespace Tacho {
 
   };
 
+  class TeamThreadMember {
+  public:
+    TeamThreadMember() { }
+    int team_rank() const { return 0; }
+    int team_size() const { return 1; }
+    void team_barrier() const { }
+  };
+
   class TaskPolicy : public Disp {
   private:
     vector<Task*> _queue;
