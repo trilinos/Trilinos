@@ -50,7 +50,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
 
-#include "ROL_DefaultAlgorithmFactory.hpp"
+#include "ROL_Algorithm.hpp"
 
 #include "ROL_MomentObjective.hpp"
 #include "ROL_SROMBoundConstraint.hpp"
@@ -68,7 +68,7 @@ private:
   Teuchos::RCP<BoundConstraint<Real> > bnd_;
   Teuchos::RCP<EqualityConstraint<Real> > con_;
 
-  Teuchos::RCP<DefaultAlgorithmFactory<Real> > algo_;
+  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
 
   Teuchos::ParameterList parlist_;
 
@@ -89,7 +89,7 @@ private:
       parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
       parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithmFactory<Real>("Moreau-Yosida Penalty",parlist_,false));
+      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
     }
     else {
       parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",1.e1);
@@ -108,7 +108,7 @@ private:
       parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
       parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithmFactory<Real>("Augmented Lagrangian",parlist_,false));
+      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Augmented Lagrangian",parlist_,false));
     }
   }
 
@@ -162,7 +162,7 @@ public:
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
     bool useAugLag = false;
     buildOptimizer(useAugLag);
-    algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
@@ -186,7 +186,7 @@ public:
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
     bool useAugLag = false;
     buildOptimizer(useAugLag);
-    algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
@@ -209,7 +209,7 @@ public:
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
     bool useAugLag = true;
     buildOptimizer(useAugLag);
-    algo_->get()->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(*x);
     std::vector<std::vector<Real> > allPoints;

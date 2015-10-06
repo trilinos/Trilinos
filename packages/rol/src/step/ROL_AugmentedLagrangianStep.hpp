@@ -65,6 +65,9 @@
 
 namespace ROL {
 
+template<class Real>
+class DefaultAlgorithm;
+
 template <class Real>
 class AugmentedLagrangianStep : public Step<Real> {
 private:
