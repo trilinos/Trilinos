@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -53,6 +53,45 @@ namespace Tpetra {
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN(TPETRA_MATRIXMATRIX_INSTANT)
+
+  // Zoltan2 wants Scalar = int (Bug 6298).
+  // This is already covered above for the GO = int case.
+  //
+  // FIXME (mfh 07 Oct 2015) I'm hand-rolling this for now.
+  // It would be better to let CMake do the ETI generation,
+  // as with CrsMatrix.
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#define TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_LONG( NT ) \
+  TPETRA_MATRIXMATRIX_INSTANT( int, int, long, NT )
+
+  TPETRA_INSTANTIATE_N(TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_LONG)
+
+#endif // HAVE_TPETRA_INST_INT_LONG
+
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#define TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_LONG_LONG( NT ) \
+  TPETRA_MATRIXMATRIX_INSTANT( int, int, longlong, NT )
+
+  TPETRA_INSTANTIATE_N(TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_LONG_LONG)
+
+#endif // HAVE_TPETRA_INST_INT_LONG_LONG
+
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#define TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_UNSIGNED( NT ) \
+  TPETRA_MATRIXMATRIX_INSTANT( int, int, unsigned, NT )
+
+  TPETRA_INSTANTIATE_N(TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_UNSIGNED)
+
+#endif // HAVE_TPETRA_INST_INT_UNSIGNED
+
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#define TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_UNSIGNED_LONG( NT ) \
+  TPETRA_MATRIXMATRIX_INSTANT( int, int, unsignedlong, NT )
+
+  TPETRA_INSTANTIATE_N(TPETRA_MATRIXMATRIX_INSTANT_SC_INT_LO_INT_GO_UNSIGNED_LONG)
+
+#endif // HAVE_TPETRA_INST_INT_UNSIGNED_LONG
 
 } // namespace Tpetra
 
