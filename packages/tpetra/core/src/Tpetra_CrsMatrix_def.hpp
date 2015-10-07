@@ -42,8 +42,8 @@
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
 #define TPETRA_CRSMATRIX_DEF_HPP
 
-/// \file Tpetra_MultiVector_def.hpp
-/// \brief Definition of the Tpetra::MultiVector class
+/// \file Tpetra_CrsMatrix_def.hpp
+/// \brief Definition of the Tpetra::CrsMatrix class
 ///
 /// If you want to use Tpetra::CrsMatrix, include
 /// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
