@@ -2,6 +2,20 @@
 Release Notes for Trilinos Package MueLu
 -----------------------------------------
 
+Trilinos 12.4:
+---------------
+
+* New MatrixAnalysis Factory
+
+* Deprecated Create[TE]petraPreconditioner interfaces taking Tpetra::CrsMatrix
+types as input argument in favor of interfaces accepting Tpetra::Operator types.
+
+* Numerous improvements to MueMex (MueLu's interface to Matlab)
+
+* Mumps can now be used as a coarse grid solver through Amesos2
+
+* Unification of MueLu Epetra and Tpetra interfaces through Stratimikos.
+
 Trilinos 12.2:
 ---------------
 

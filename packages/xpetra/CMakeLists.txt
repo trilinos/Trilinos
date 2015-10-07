@@ -33,10 +33,6 @@ GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. Xpetra requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
-ENDIF()
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
 GLOBAL_SET(HAVE_XPETRA_THYRA ${${PACKAGE_NAME}_ENABLE_Thyra})
 

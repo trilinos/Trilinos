@@ -1184,6 +1184,9 @@ private:
 #ifdef HAVE_MPI
     // MPI data type (strided vector)
     Teuchos::RCP< MPI_Datatype > datatype;
+#else
+    // Teuchos ArrayView for periodic domains
+    MDArrayView< Scalar > dataview;
 #endif
     // Processor rank for communication partner
     int proc;
@@ -3068,6 +3071,28 @@ startUpdateCommPad(int axis)
       _requests.push_back(request);
     }
   }
+#else
+  // HAVE_MPI is not defined, so we are on a single processor.
+  // However, if the axis is periodic, we need to copy the appropriate
+  // data to the communication padding.
+  if (isPeriodic(axis))
+  {
+    for (int sendBndry = 0; sendBndry < 2; ++sendBndry)
+    {
+      int recvBndry = 1 - sendBndry;
+      // Get the receive and send data views
+      MDArrayView< Scalar > recvView = _recvMessages[axis][recvBndry].dataview;
+      MDArrayView< Scalar > sendView = _sendMessages[axis][sendBndry].dataview;
+
+      // Initialize the receive and send data view iterators
+      typename MDArrayView< Scalar >::iterator it_recv = recvView.begin();
+      typename MDArrayView< Scalar >::iterator it_send = sendView.begin();
+
+      // Copy the send buffer to the receive buffer
+      for ( ; it_recv != recvView.end(); ++it_recv, ++it_send)
+        *it_recv = *it_send;
+    }
+  }
 #endif
 }
 
@@ -3209,6 +3234,15 @@ initializeMessages()
         MPI_Type_commit(commPad.get());
         messageInfo.datatype = commPad;
       }
+#else
+      messageInfo.dataview = _mdArrayView;
+      for (int axis = 0; axis < numDims(); ++axis)
+      {
+        Slice slice(starts[axis], starts[axis] + subsizes[axis]);
+        messageInfo.dataview = MDArrayView< Scalar >(messageInfo.dataview,
+                                                     axis,
+                                                     slice);
+      }
 #endif
 
     }
@@ -3240,6 +3274,15 @@ initializeMessages()
                                  commPad.get());
         MPI_Type_commit(commPad.get());
         messageInfo.datatype = commPad;
+      }
+#else
+      messageInfo.dataview = _mdArrayView;
+      for (int axis = 0; axis < numDims(); ++axis)
+      {
+        Slice slice(starts[axis], starts[axis] + subsizes[axis]);
+        messageInfo.dataview = MDArrayView< Scalar >(messageInfo.dataview,
+                                                     axis,
+                                                     slice);
       }
 #endif
 
@@ -3285,6 +3328,15 @@ initializeMessages()
         MPI_Type_commit(commPad.get());
         messageInfo.datatype = commPad;
       }
+#else
+      messageInfo.dataview = _mdArrayView;
+      for (int axis = 0; axis < numDims(); ++axis)
+      {
+        Slice slice(starts[axis], starts[axis] + subsizes[axis]);
+        messageInfo.dataview = MDArrayView< Scalar >(messageInfo.dataview,
+                                                     axis,
+                                                     slice);
+      }
 #endif
 
     }
@@ -3316,6 +3368,15 @@ initializeMessages()
                                  commPad.get());
         MPI_Type_commit(commPad.get());
         messageInfo.datatype = commPad;
+      }
+#else
+      messageInfo.dataview = _mdArrayView;
+      for (int axis = 0; axis < numDims(); ++axis)
+      {
+        Slice slice(starts[axis], starts[axis] + subsizes[axis]);
+        messageInfo.dataview = MDArrayView< Scalar >(messageInfo.dataview,
+                                                     axis,
+                                                     slice);
       }
 #endif
 

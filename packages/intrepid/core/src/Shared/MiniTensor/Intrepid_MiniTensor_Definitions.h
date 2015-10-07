@@ -43,15 +43,12 @@
 #define Intrepid_MiniTensor_Definitions_h
 
 #include <complex>
+#include <type_traits>
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
 namespace Intrepid {
-
-/// Static assertion
-#define STATIC_ASSERT(condition, name)\
-  typedef char static_assertion_failed_ ## name [(condition) ? 1 : -1]
 
 /// Indexing type
 using Index = unsigned int;

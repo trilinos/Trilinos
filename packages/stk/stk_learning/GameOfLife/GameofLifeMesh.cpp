@@ -5,7 +5,6 @@
  *      Author: Jonathan Chu
  */
 #include "GameofLifeMesh.hpp"
-#include <ext/alloc_traits.h>
 #include <stddef.h>                     // for size_t
 #include "stk_io/IossBridge.hpp"        // for put_io_part_attribute
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc

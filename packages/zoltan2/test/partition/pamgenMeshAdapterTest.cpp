@@ -215,6 +215,7 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
+    params.set("compute_metrics","yes");
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;

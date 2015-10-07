@@ -106,6 +106,7 @@ following class:
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
 #include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
