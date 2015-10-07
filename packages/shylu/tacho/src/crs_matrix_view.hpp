@@ -48,7 +48,7 @@ namespace Tacho {
     void fillRowViewArray(const bool flag = true) {
       if (flag) {
         if (static_cast<ordinal_type>(_rows.dimension_0()) < _m)
-          _rows = row_view_type_array(_base->Label() + "::View::RowViewArray", _m);
+          _rows = row_view_type_array(Kokkos::ViewAllocateWithoutInitializing(_base->Label() + "::View::RowViewArray"), _m);
         
         for (ordinal_type i=0;i<_m;++i)
           _rows[i].setView(*this, i);
