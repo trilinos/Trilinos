@@ -355,6 +355,12 @@ void output_message(const std::string &message, int localProcId)
             massaged_output << "[" << localProcId << "] " << s << std::endl;
         }
         std::cerr << massaged_output.str();
+        {
+            std::ostringstream oss;
+            oss << "diffingOutput." << localProcId;
+            std::ofstream out(oss.str(), std::ios_base::app);
+            out << massaged_output.str();
+        }
     }
 }
 
