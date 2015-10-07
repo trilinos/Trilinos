@@ -46,7 +46,9 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
+#include "ROL_StepFactory.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_StatusTestFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
@@ -57,6 +59,12 @@
 
 
 namespace ROL {
+
+template<class Real>
+class StepFactory;
+
+template<class Real>
+class StatusTestFactory;
 
 template <class Real>
 class DefaultAlgorithm {
@@ -70,6 +78,16 @@ private:
 public:
 
   virtual ~DefaultAlgorithm() {}
+
+  DefaultAlgorithm(const std::string &name,
+                   Teuchos::ParameterList &parlist,
+                   const bool printHeader = false) : printHeader_(printHeader) {
+    StepFactory<Real> stepFactory;
+    StatusTestFactory<Real> statusTestFactory;
+    step_   = stepFactory.getStep(name,parlist);
+    status_ = statusTestFactory.getStatusTest(name,parlist);
+    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+  }
 
   DefaultAlgorithm(Step<Real> & step, StatusTest<Real> & status, bool printHeader = false ) {
     step_   = Teuchos::rcp(&step,   false);

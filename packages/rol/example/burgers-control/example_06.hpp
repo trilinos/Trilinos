@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
+/*! \file  example_06.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
            full-space methods.
 */

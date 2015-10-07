@@ -159,10 +159,12 @@ IF(PyTrilinos_ENABLE_Epetra)
 
   LIST(APPEND HEADERS
     PyTrilinos_Epetra_Util.hpp
+    PyTrilinos_LinearProblem.hpp
     )
 
   LIST(APPEND SOURCES
     PyTrilinos_Epetra_Util.cpp
+    PyTrilinos_LinearProblem.cpp
     )
 
 ENDIF(PyTrilinos_ENABLE_Epetra)
