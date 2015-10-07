@@ -240,7 +240,9 @@ namespace {
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 #ifndef XPETRA_TEST_USE_LONGLONG_GO
+#ifdef XPETRA_TPETRA_INST_INT_INT // todo refactor me
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
+#endif
 #else
   typedef long long LongLongInt;
   UNIT_TEST_GROUP_ORDINAL(double, int, LongLongInt, DefaultNodeType)

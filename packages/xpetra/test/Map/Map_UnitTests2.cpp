@@ -137,8 +137,16 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL_TPETRA( LO, GO ) \
   typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO;       \
     UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
-
+#ifdef HAVE_TPETRA_INT_INT
   UNIT_TEST_GROUP_ORDINAL_TPETRA(int , int)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG
+  UNIT_TEST_GROUP_ORDINAL_TPETRA(int , long)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+  typedef long long LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_TPETRA(int , LongLongInt)
+#endif
 
 #endif // HAVE_XPETRA_TPETRA
 

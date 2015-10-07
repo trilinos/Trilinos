@@ -911,7 +911,10 @@ namespace {
 
     std::vector<Xpetra::UnderlyingLib> libs;
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+    // only test LO=GO=int case here
     libs.push_back(Xpetra::UseTpetra);
+#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     libs.push_back(Xpetra::UseEpetra);
@@ -1022,7 +1025,10 @@ namespace {
 
     std::vector<Xpetra::UnderlyingLib> libs;
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+    // only test LO=GO=int case here
     libs.push_back(Xpetra::UseTpetra);
+#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     libs.push_back(Xpetra::UseEpetra);
@@ -1199,13 +1205,16 @@ namespace {
   // INSTANTIATIONS
   //
 
+// for common tests (Epetra and Tpetra...)
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node )
+// for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL1( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+// for Epetra tests only
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
 // for Kokkos-specific tests
 #define UNIT_TEST_GROUP_ORDINAL3( SC, LO, GO, Node )                     \
@@ -1214,9 +1223,35 @@ namespace {
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
+#ifdef HAVE_XPETRA_TPETRA
+
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+  // tests must not be redefined!!!
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
-  UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG // are these working??
+  // tests must not be redefined!!!
+  //UNIT_TEST_GROUP_ORDINAL(double, int, long, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL1(double, int, long, DefaultNodeType)
+  ////UNIT_TEST_GROUP_ORDINAL3(double, int, long, DefaultNodeType)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+  // TODO tests must not be redefined...
+  //typedef long long LongLongInt;
+  //UNIT_TEST_GROUP_ORDINAL(double, int, LongLongInt, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL1(double, int, LongLongInt, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL3(double, int, LongLongInt, DefaultNodeType)
+#endif
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+  // TODO tests must not be redefined!!
+  //UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
+  //// UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
+#endif
 }
 

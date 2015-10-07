@@ -50,6 +50,7 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_AmesosSmoother.hpp"
@@ -64,7 +65,7 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_Utilities.hpp"
+//#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -730,7 +731,7 @@ namespace MueLuTests {
     std::rand();
     std::string infile = "A_0.m";
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-    RCP<Matrix> Ain = Utils::Read(infile, lib, comm);
+    RCP<Matrix> Ain = Xpetra::IO<SC,LO,GO,NO>::Read(infile, lib, comm);
     RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
     randomVec->randomize();
     out << "randomVec norm: " << randomVec->norm2() << std::endl;
