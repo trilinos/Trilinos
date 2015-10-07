@@ -42,7 +42,7 @@ protected:
     {
         if(get_bulk().parallel_rank() == 0)
             check_element2_connected_to_element1_locally_and_element3_remotely(elemGraph);
-        else
+        else if(get_bulk().parallel_rank() == 1)
             check_element3_conencted_to_element4_locally_and_element2_remotely(elemGraph);
     }
 
@@ -299,6 +299,7 @@ protected:
     void expect_graph_correct_after_leaps()
     {
         ElemElemGraphTester elemGraph(get_bulk());
+        expect_initial_graph_correct(elemGraph);
         move_elements(elemGraph, {EntityIdProc(2, 1), EntityIdProc(3, 2)});
 
         ASSERT_TRUE(false) << "Need to add tests of graph data (expectations) if the code actually got this far.";
@@ -328,6 +329,7 @@ protected:
     void expect_graph_correct_after_moving_neighbors_to_last_proc()
     {
         ElemElemGraphTester elemGraph(get_bulk());
+        expect_initial_graph_correct(elemGraph);
         move_elements(elemGraph, {EntityIdProc(2, 2), EntityIdProc(3, 2)});
 
         ASSERT_TRUE(false) << "Need to add tests of graph data (expectations) if the code actually got this far.";
