@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // DEFINE ALGORITHM
-    ROL::DefaultAlgorithm<RealT> algo("Trust Region",*parlist,false);
+    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     // RUN OPTIMIZATION
     z.zero();
     algo.run(z, g, *obj, print, *outStream);

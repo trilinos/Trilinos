@@ -1,5 +1,9 @@
 INCLUDE(TribitsAddExecutable)
 
+string( TOLOWER ${CMAKE_BUILD_TYPE} lower_build_type )
+
+if( ${lower_build_type} STREQUAL release )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01
   SOURCES example_01.cpp
@@ -70,3 +74,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )
+
+endif()

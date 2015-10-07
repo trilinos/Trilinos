@@ -146,11 +146,11 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    // Build DefualtAlgorithm.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+    // Build Algorithm pointer.
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
 
     // Solve using trust regions.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     z.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(z,robj,true,*outStream);
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     zTR->set(z);
 
     // Solve using composite step SQP.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Composite Step SQP",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
     x.zero();
     std::clock_t timer_sqp = std::clock();
     algo->run(x,g,l,c,obj,con,true,*outStream);

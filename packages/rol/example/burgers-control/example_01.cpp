@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     BoundConstraint_BurgersControl<RealT> icon(nx+2);
 
     // ROL components.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -120,12 +120,12 @@ int main(int argc, char *argv[]) {
     }
     file_pdas.close();
 
-    // Projected Newtion.
+    // Projected Newton.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);
