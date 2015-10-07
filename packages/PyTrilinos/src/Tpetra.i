@@ -119,7 +119,8 @@ namespace PyTrilinos
 // Protocol, or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > *
-convertPythonToTpetraMultiVector(PyObject * pyobj)
+convertPythonToTpetraMultiVector(PyObject * pyobj,
+                                 int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TMV_ptr =
@@ -138,10 +139,10 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Tpetra::MultiVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TMV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TMV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -152,8 +153,8 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -161,6 +162,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -178,10 +180,6 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -201,6 +199,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -272,7 +271,8 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
 // or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
 Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > *
-convertPythonToTpetraVector(PyObject * pyobj)
+convertPythonToTpetraVector(PyObject * pyobj,
+                            int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TV_ptr =
@@ -291,10 +291,10 @@ convertPythonToTpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Tpetra::Vector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -305,8 +305,8 @@ convertPythonToTpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -314,6 +314,7 @@ convertPythonToTpetraVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -331,10 +332,6 @@ convertPythonToTpetraVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -354,6 +351,7 @@ convertPythonToTpetraVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {

@@ -101,6 +101,7 @@ namespace panzer_stk_classic {
   template <typename GO> class STKConnManager;
   class NOXObserverFactory;
   class RythmosObserverFactory;
+  class WorksetFactory;
   
   template<typename ScalarT>
   class ModelEvaluatorFactory : public Teuchos::ParameterListAcceptorDefaultBase {
@@ -154,6 +155,9 @@ namespace panzer_stk_classic {
                     const Teuchos::Ptr<const panzer_stk_classic::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
     //@}
+
+    //! Set user defined workset factory
+    void setUserWorksetFactory(Teuchos::RCP<panzer_stk_classic::WorksetFactory>& user_wkst_factory);
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
@@ -401,6 +405,7 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<const panzer_stk_classic::NOXObserverFactory> m_nox_observer_factory;
     Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory> m_rythmos_observer_factory;
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> m_user_wkst_factory;
     Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
  
     bool useDynamicCoordinates_;

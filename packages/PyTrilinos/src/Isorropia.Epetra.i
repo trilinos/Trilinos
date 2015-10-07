@@ -101,6 +101,7 @@ The purpose of Isorropia.Epetra is to ....
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_Time.h"
 #include "Epetra_MapColoring.h"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // Isorropia includes
 #include "Isorropia_EpetraOperator.hpp"

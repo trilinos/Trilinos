@@ -74,9 +74,11 @@
 // plain value
 %typemap(in) CONST CLASS
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(*smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out) CONST CLASS
@@ -90,9 +92,11 @@
 
 %typemap(varin) CONST CLASS
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(*smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(varout) CONST CLASS
@@ -109,9 +113,11 @@
 // memory leak of the RCP instance
 %typemap(in) CONST CLASS * (Teuchos::RCP< CLASS > * smartarg = 0)
 {
-  smartarg = CONVERTER($input);
+  int newmem = 0;
+  smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out, fragment="SWIG_null_deleter_python") CONST CLASS *
@@ -125,9 +131,11 @@
 
 %typemap(varin) CONST CLASS *
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(varout, fragment="SWIG_null_deleter_python") CONST CLASS *
@@ -142,9 +150,11 @@
 // plain reference
 %typemap(in) CONST CLASS & (Teuchos::RCP< CLASS > * smartarg = 0)
 {
-  smartarg = CONVERTER($input);
+  int newmem = 0;
+  smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out, fragment="SWIG_null_deleter_python") CONST CLASS &
@@ -158,9 +168,11 @@
 
 %typemap(varin) CONST CLASS &
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(varout, fragment="SWIG_null_deleter_python") CONST CLASS &
@@ -177,11 +189,13 @@
 %typemap(in) CLASS *CONST& ($*1_ltype temp = 0,
                            Teuchos::RCP< CONST CLASS > tempshared)
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   tempshared = *smartarg;
   temp = %const_cast(tempshared.get(), $*1_ltype);
   $1 = &temp;
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out, fragment="SWIG_null_deleter_python") CLASS *CONST&
@@ -204,9 +218,11 @@
 // RCP by value
 %typemap(in) Teuchos::RCP< CONST CLASS >
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out) Teuchos::RCP< CONST CLASS > {
@@ -219,9 +235,11 @@
 
 %typemap(varin) Teuchos::RCP< CONST CLASS >
 {
-  Teuchos::RCP< CLASS > smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(varout) Teuchos::RCP< CONST CLASS >
@@ -236,10 +254,12 @@
 // RCP by reference
 %typemap(in) Teuchos::RCP< CONST CLASS > & (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
   $1 = &tempshared;
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out) Teuchos::RCP< CONST CLASS > &
@@ -264,10 +284,12 @@
 // RCP by pointer
 %typemap(in) Teuchos::RCP< CONST CLASS > * (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   if (!smartarg) SWIG_fail;
   tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
   $1 = &tempshared;
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out) Teuchos::RCP< CONST CLASS > *
@@ -294,10 +316,12 @@
 %typemap(in) Teuchos::RCP< CONST CLASS > *& (Teuchos::RCP< CONST CLASS > tempshared,
                                             $*1_ltype temp = 0)
 {
-  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  int newmem = 0;
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input, &newmem);
   tempshared = %reinterpret_cast(*smartarg, Teuchos::RCP< CONST CLASS >);
   temp = &tempshared;
   $1 = &temp;
+  if (newmem & SWIG_CAST_NEW_MEMORY) delete smartarg;
 }
 
 %typemap(out) Teuchos::RCP< CONST CLASS > *&
