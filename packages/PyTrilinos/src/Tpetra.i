@@ -82,6 +82,7 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
+#include "Teuchos_DefaultComm.hpp"
 
 // Tpetra includes
 #include "Tpetra_ConfigDefs.hpp"
