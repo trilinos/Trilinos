@@ -57,21 +57,24 @@
 #include "Epetra_Util.h"
 
 #include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 %}
 
 /////////////////////////////////////////////////////////
 // Teuchos::RCP<> support for all classes in this file //
 /////////////////////////////////////////////////////////
-%teuchos_rcp(Epetra_Operator      )
-%teuchos_rcp(Epetra_InvOperator   )
-%teuchos_rcp(Epetra_RowMatrix     )
-%teuchos_rcp(Epetra_BasicRowMatrix)
-%teuchos_rcp(Epetra_CrsMatrix     )
-%teuchos_rcp(Epetra_FECrsMatrix   )
-%teuchos_rcp(Epetra_VbrMatrix     )
-%teuchos_rcp(Epetra_FEVbrMatrix   )
-%teuchos_rcp(Epetra_JadMatrix     )
+%teuchos_rcp(Epetra_Operator          )
+%teuchos_rcp(Epetra_InvOperator       )
+%teuchos_rcp(Epetra_RowMatrix         )
+%teuchos_rcp(Epetra_BasicRowMatrix    )
+%teuchos_rcp(Epetra_CrsMatrix         )
+%teuchos_rcp(Epetra_FECrsMatrix       )
+%teuchos_rcp(Epetra_VbrMatrix         )
+%teuchos_rcp(Epetra_FEVbrMatrix       )
+%teuchos_rcp(Epetra_JadMatrix         )
+%teuchos_rcp(Epetra_LinearProblem     )
+%teuchos_rcp(PyTrilinos::LinearProblem)
 %teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
 %teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
 
@@ -1391,8 +1394,24 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 //////////////////////////////////
 // Epetra_LinearProblem support //
 //////////////////////////////////
-%rename(LinearProblem) Epetra_LinearProblem;
+// %rename(LinearProblem) Epetra_LinearProblem;
 %include "Epetra_LinearProblem.h"
+%include "PyTrilinos_LinearProblem.hpp"
+%typemap(out) Epetra_LinearProblem *
+{
+  if ($1)
+  {
+    Teuchos::RCP< PyTrilinos::LinearProblem > * tempresult = new
+      Teuchos::RCP< PyTrilinos::LinearProblem >(new PyTrilinos::LinearProblem(*$1));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(tempresult),
+                                   $descriptor(Teuchos::RCP< PyTrilinos::LinearProblem > *),
+                                   SWIG_POINTER_OWN));
+  }
+  else
+  {
+    %set_output(Py_BuildValue(""));
+  }
+}
 
 /////////////////////////
 // Epetra_Util support //

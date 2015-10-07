@@ -109,7 +109,8 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
 // DistArray Protocol, or, if the environment is serial, a simple
 // NumPy array.
 Teuchos::RCP< Epetra_IntVector > *
-convertPythonToEpetraIntVector(PyObject * pyobj);
+convertPythonToEpetraIntVector(PyObject * pyobj,
+                               int * newmem);
 
 ////////////////////////////////////////////////////////////
 
@@ -119,7 +120,8 @@ convertPythonToEpetraIntVector(PyObject * pyobj);
 // DistArray Protocol, or, if the environment is serial, a simple
 // NumPy array.
 Teuchos::RCP< Epetra_MultiVector > *
-convertPythonToEpetraMultiVector(PyObject * pyobj);
+convertPythonToEpetraMultiVector(PyObject * pyobj,
+                                 int * newmem);
 
 ////////////////////////////////////////////////////////////
 
@@ -128,7 +130,8 @@ convertPythonToEpetraMultiVector(PyObject * pyobj);
 // Domi::MDVector<double>, or an object that supports the DistArray
 // Protocol, or, if the environment is serial, a simple NumPy array.
 Teuchos::RCP< Epetra_Vector > *
-convertPythonToEpetraVector(PyObject * pyobj);
+convertPythonToEpetraVector(PyObject * pyobj,
+                            int * newmem);
 
 ////////////////////////////////////////////////////////////
 

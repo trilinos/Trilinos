@@ -1,5 +1,3 @@
-// -*- c++ -*-
-
 // @HEADER
 // ***********************************************************************
 //
@@ -41,72 +39,70 @@
 //
 // ***********************************************************************
 // @HEADER
+#ifndef PYTRILINOS_LINEARPROBLEM_HPP
+#define PYTRILINOS_LINEARPROBLEM_HPP
 
-%define %loca_saveeigendata_docstring
-"
-PyTrilinos.LOCA.SaveEigenData is the python interface to namespace
-SaveEigenData of the Trilinos continuation algorithm package LOCA:
+#include "Epetra_LinearProblem.h"
+#include "Teuchos_RCP.hpp"
 
-    http://trilinos.sandia.gov/packages/nox
+namespace PyTrilinos
+{
+class LinearProblem : public Epetra_LinearProblem
+{
+private:
+  Teuchos::RCP< Epetra_RowMatrix   > _matrix;
+  Teuchos::RCP< Epetra_Operator    > _operator;
+  Teuchos::RCP< Epetra_MultiVector > _x;
+  Teuchos::RCP< Epetra_MultiVector > _b;
 
-The purpose of LOCA.SaveEigenData is to provide the capability to save
-eigenvectors and eigenvalues.  The python version of
-LOCA.SaveEigenData supports the following classes:
+public:
+  LinearProblem();
 
-    * Factory          - Factory for creating strategy objects to save
-                         eigenvectors/values
-    * AbstractStrategy - Abstract class for saving eigenvectors/values
-    * DefaultStrategy  - Default class for saving eigenvectors/values
-"
-%enddef
+  LinearProblem(const Teuchos::RCP< Epetra_RowMatrix > matrix,
+                const Teuchos::RCP< Epetra_MultiVector > x,
+                const Teuchos::RCP< Epetra_MultiVector > b);
 
-%module(package   = "PyTrilinos.LOCA",
-        docstring = %loca_saveeigendata_docstring) SaveEigenData
+  LinearProblem(const Teuchos::RCP< Epetra_Operator > op,
+                const Teuchos::RCP< Epetra_MultiVector > x,
+                const Teuchos::RCP< Epetra_MultiVector > b);
 
-%{
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
+  LinearProblem(const LinearProblem & source);
+
+  LinearProblem(const Epetra_LinearProblem & source);
+
+  virtual ~LinearProblem();
+
+  using Epetra_LinearProblem::CheckInput;
+
+  using Epetra_LinearProblem::AssertSymmetric;
+
+  using Epetra_LinearProblem::SetPDL;
+
+  void SetOperator(Teuchos::RCP< Epetra_RowMatrix > & matrix);
+
+  void SetOperator(Teuchos::RCP< Epetra_Operator > & op);
+
+  void SetLHS(Teuchos::RCP< Epetra_MultiVector > & x);
+
+  void SetRHS(Teuchos::RCP< Epetra_MultiVector > & b);
+
+  using Epetra_LinearProblem::LeftScale;
+
+  using Epetra_LinearProblem::RightScale;
+
+  Teuchos::RCP< Epetra_RowMatrix > GetMatrix() const;
+
+  Teuchos::RCP< Epetra_Operator > GetOperator() const;
+
+  Teuchos::RCP< Epetra_MultiVector > GetLHS() const;
+
+  Teuchos::RCP< Epetra_MultiVector > GetRHS() const;
+
+  using Epetra_LinearProblem::GetPDL;
+
+  using Epetra_LinearProblem::IsOperatorSymmetric;
+
+};
+}
+
 #endif
-#include "PyTrilinos_Teuchos_Util.hpp"
-
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_SaveEigenData_DefaultStrategy.H"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-
-// Namespace flattening
-using Teuchos::RCP;
-%}
-
-// Standard exception handling
-%include "exception.i"
-
-// Include LOCA documentation
-%feature("autodoc", "1");
-%include "LOCA_dox.i"
-
-// Ignore/renames
-%ignore *::operator=;
-
-// Trilinos module imports
-%import "Teuchos.i"
-
-// Teuchos::RCP support
-%teuchos_rcp(LOCA::SaveEigenData::Factory)
-%teuchos_rcp(LOCA::SaveEigenData::AbstractStrategy)
-%teuchos_rcp(LOCA::SaveEigenData::DefaultStrategy)
-
-// LOCA::SaveEigenData Factory class
-%include "LOCA_SaveEigenData_Factory.H"
-
-// LOCA::SaveEigenData AbstractStrategy class
-%include "LOCA_SaveEigenData_AbstractStrategy.H"
-
-// LOCA::SaveEigenData DefaultStrategy class
-%include "LOCA_SaveEigenData_DefaultStrategy.H"
