@@ -1132,6 +1132,152 @@ if(getrank(jacobian)==3){
     }//switch
   }
 
+
+  template<class Scalar>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
+                                      const Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                      const int &                  whichCell) 
+  {
+    //IKT, 10/7/15: OK to not validate arguments for this implementation? 
+    //INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+  
+    ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>jacobianWrap(jacobian);   
+    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
+    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
+    int spaceDim  = (size_t)HGRAD_Basis->getBaseCellTopology().getDimension();
+    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    //points can be rank-2 (P,D), or rank-3 (C,P,D)
+    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+
+    // Temp (F,P,D) array for the values of basis functions gradients at the reference points
+    int basisCardinality = HGRAD_Basis -> getCardinality();
+    FieldContainer<Scalar> basisGrads(basisCardinality, numPoints, spaceDim);
+    
+    
+if(getrank(jacobian)==4){
+    for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
+       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
+         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
+           for (size_t l=0; l< static_cast<size_t>(jacobian.dimension(3)); l++){
+            jacobianWrap(i,j,k,l)=0.0;
+		  }
+        } 
+	 }
+	}
+}
+
+if(getrank(jacobian)==3){
+    for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
+       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
+         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
+            jacobianWrap(i,j,k)=0.0;
+	    }
+	   }
+	 }
+}        
+    // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
+    switch(getrank(points)) {
+      
+      // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
+      case 2:
+        {
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+	      for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(0)); pt++){
+            for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
+            }//dm
+          }//pt
+          
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+          
+          // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
+          // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
+          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          
+          if(whichCell == -1) {
+            for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                    
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+            
+          //}  
+            
+          }
+          else {
+            for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+//		}
+          } // if whichcell
+        }// case 2
+        break;
+        
+        // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
+      case 3:
+        {
+          // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+          FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+          for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+            
+            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+            for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
+              for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
+                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
+              }//dm
+            }//pt
+            
+            // Compute gradients of basis functions at this set of ref. points
+            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+            
+            // Compute jacobians for the point set corresponding to the current cellordinal
+            for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                  
+                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
+                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                  } // bfOrd
+                } // col
+              } // row
+            } // pointOrd
+          }//cellOrd
+//	    }
+        }// case 3
+	
+        break;
+        
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) == 3) ), std::invalid_argument,
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
+    }//switch
+    
+  }
+
 template<class Scalar>
 template<class ArrayJacInv, class ArrayJac>
 void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
