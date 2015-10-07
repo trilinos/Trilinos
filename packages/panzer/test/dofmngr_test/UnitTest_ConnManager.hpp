@@ -182,6 +182,12 @@ public:
    virtual const std::vector<int> & getNeighborElementBlock(const std::string&) const
    { static std::vector<int> empty; return empty; }
 
+   //! Not used.
+   virtual const std::vector<int>& getAssociatedNeighbors(const LocalOrdinal& el) const
+   { static std::vector<int> empty; return empty; }
+   //! Not used.
+   virtual bool hasAssociatedNeighbors() const { return false; }
+
 private:
    int procRank_;
    

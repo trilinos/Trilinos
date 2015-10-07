@@ -101,8 +101,7 @@ public:
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder="",
-                            const bool callBuildGlobalUnknowns=true) const;
+                            const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
    { useDOFManagerFEI_ = flag; }
