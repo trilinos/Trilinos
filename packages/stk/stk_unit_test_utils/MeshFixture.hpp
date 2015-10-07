@@ -62,4 +62,18 @@ private:
     stk::mesh::BulkData *bulkData;
 };
 
+class MeshTestFixture : public MeshFixture
+{
+protected:
+    void run_test_on_num_procs(int numProcs, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        if(stk::parallel_machine_size(get_comm()) == numProcs)
+        {
+            run_test(auraOption);
+        }
+    }
+
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption) = 0;
+};
+
 }}

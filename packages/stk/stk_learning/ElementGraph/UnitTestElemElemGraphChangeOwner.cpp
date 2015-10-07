@@ -32,7 +32,7 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace {
 
-class ElemGraphChangeOwner : public stk::unit_test_util::MeshFixture
+class ElemGraphChangeOwner : public stk::unit_test_util::MeshTestFixture
 {
 protected:
     typedef std::pair<stk::mesh::EntityId, int> EntityIdProc;
@@ -161,13 +161,10 @@ protected:
 class ElemGraphChangeOwnerMoveFrom1To0 : public ElemGraphChangeOwner
 {
 protected:
-    void change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        if(stk::parallel_machine_size(get_comm()) == 2)
-        {
-            setup_mesh("generated:1x1x4", auraOption);
-            test_graph_updated_with_elem_3_moving_to_proc_0();
-        }
+        setup_mesh("generated:1x1x4", auraOption);
+        test_graph_updated_with_elem_3_moving_to_proc_0();
     }
 
     void test_graph_updated_with_elem_3_moving_to_proc_0()
@@ -247,24 +244,21 @@ protected:
 };
 TEST_F(ElemGraphChangeOwnerMoveFrom1To0, withAura)
 {
-    change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(ElemGraphChangeOwnerMoveFrom1To0, withoutAura)
 {
-    change_entity_owner_hex_test_2_procs_move_from_1_to_0(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
 class ElemGraphChangeOwnerMoveEverythingFromProc1 : public ElemGraphChangeOwner
 {
 protected:
-    void move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        if(stk::parallel_machine_size(get_comm()) == 2)
-        {
-            setup_mesh("generated:1x1x4", auraOption);
-            expect_graph_correct_after_moving_everything_to_proc0();
-        }
+        setup_mesh("generated:1x1x4", auraOption);
+        expect_graph_correct_after_moving_everything_to_proc0();
     }
     void expect_graph_correct_after_moving_everything_to_proc0()
     {
@@ -277,24 +271,21 @@ protected:
 };
 TEST_F(ElemGraphChangeOwnerMoveEverythingFromProc1, DISABLED_withAura)
 {
-    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(ElemGraphChangeOwnerMoveEverythingFromProc1, DISABLED_withoutAura)
 {
-    move_everything_from_proc1_to_proc0(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
 class ElemGraphChangeOwnerLeapFrog : public ElemGraphChangeOwner
 {
 protected:
-    void leap_frog(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        if(stk::parallel_machine_size(get_comm()) == 3)
-        {
-            setup_mesh("generated:1x1x6", auraOption);
-            expect_graph_correct_after_leaps();
-        }
+        setup_mesh("generated:1x1x6", auraOption);
+        expect_graph_correct_after_leaps();
     }
     void expect_graph_correct_after_leaps()
     {
@@ -307,24 +298,21 @@ protected:
 };
 TEST_F(ElemGraphChangeOwnerLeapFrog, DISABLED_withAura)
 {
-    leap_frog(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(3, stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(ElemGraphChangeOwnerLeapFrog, DISABLED_withoutAura)
 {
-    leap_frog(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(3, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
 class ElemGraphChangeOwnerMoveNeighborsToEnd : public ElemGraphChangeOwner
 {
 protected:
-    void move_neighbors_to_end(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        if(stk::parallel_machine_size(get_comm()) == 3)
-        {
-            setup_mesh("generated:1x1x6", auraOption);
-            expect_graph_correct_after_moving_neighbors_to_last_proc();
-        }
+        setup_mesh("generated:1x1x6", auraOption);
+        expect_graph_correct_after_moving_neighbors_to_last_proc();
     }
     void expect_graph_correct_after_moving_neighbors_to_last_proc()
     {
@@ -337,25 +325,22 @@ protected:
 };
 TEST_F(ElemGraphChangeOwnerMoveNeighborsToEnd, DISABLED_withAura)
 {
-    move_neighbors_to_end(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(3, stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(ElemGraphChangeOwnerMoveNeighborsToEnd, DISABLED_withoutAura)
 {
-    move_neighbors_to_end(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(3, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
 class ElemGraphChangeOwnerMoveNeighborsToDifferentProcs : public ElemGraphChangeOwner
 {
 protected:
-    void move_neighbors_to_different_procs(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        if(stk::parallel_machine_size(get_comm()) == 4)
-        {
-            setup_mesh_with_cyclic_decomp("1x2x2", auraOption);
-            expect_mesh_created_correctly();
-            expect_graph_correct_after_moving_neighbors_to_different_procs();
-        }
+        setup_mesh_with_cyclic_decomp("1x2x2", auraOption);
+        expect_mesh_created_correctly();
+        expect_graph_correct_after_moving_neighbors_to_different_procs();
     }
     void expect_mesh_created_correctly()
     {
@@ -424,11 +409,11 @@ protected:
 };
 TEST_F(ElemGraphChangeOwnerMoveNeighborsToDifferentProcs, DISABLED_withAura)
 {
-    move_neighbors_to_different_procs(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(4, stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(ElemGraphChangeOwnerMoveNeighborsToDifferentProcs, DISABLED_withoutAura)
 {
-    move_neighbors_to_different_procs(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(4, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 
