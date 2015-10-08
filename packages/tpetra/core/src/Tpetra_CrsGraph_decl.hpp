@@ -1693,6 +1693,22 @@ namespace Tpetra {
     Teuchos::ArrayView<LocalOrdinal>
     getLocalViewNonConst (const RowInfo rowinfo);
 
+  private:
+
+    /// \brief Get a const, nonowned, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
+    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+
+    /// \brief Get a nonconst, nonowned, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
+    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+
+  protected:
+
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
