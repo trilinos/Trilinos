@@ -2130,8 +2130,9 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
+        auto curVals = this->getRowViewNonConst (rowInfo);
+
         // Convert the given global indices to local indices.
         //
         // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
@@ -2147,13 +2148,13 @@ namespace Tpetra {
           // will filter out (but not count in its return value).
           lclInds[k] = colMap.getLocalElement (indices[k]);
         }
-        return graph.template transformLocalValues<ST, f_type> (rowInfo,
-                                                                curVals,
-                                                                lclInds (),
-                                                                valsIn,
-                                                                f_type ());
+        return graph.template replaceLocalValues<ST> (rowInfo,
+                                                      curVals,
+                                                      lclInds (),
+                                                      valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
         return graph.template transformGlobalValues<ST, f_type> (rowInfo,
                                                                  curVals,
                                                                  indices,
@@ -2223,8 +2224,9 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
+        auto curVals = this->getRowViewNonConst (rowInfo);
+
         // Convert the given global indices to local indices.
         //
         // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
@@ -2240,13 +2242,11 @@ namespace Tpetra {
           // will filter out (but not count in its return value).
           lclInds[k] = colMap.getLocalElement (indices[k]);
         }
-        return graph.template transformLocalValues<ST, f_type> (rowInfo,
-                                                                curVals,
-                                                                lclInds (),
-                                                                valsIn,
-                                                                f_type ());
+        return graph.template sumIntoLocalValues<ST> (rowInfo, curVals,
+                                                      lclInds (), valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
         return graph.template transformGlobalValues<ST, f_type> (rowInfo,
                                                                  curVals,
                                                                  indices,
