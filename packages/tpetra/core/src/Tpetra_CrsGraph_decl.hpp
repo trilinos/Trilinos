@@ -1490,6 +1490,62 @@ namespace Tpetra {
       return numValid;
     }
 
+  private:
+    template<class Scalar>
+    LocalOrdinal
+    sumIntoLocalValues (RowInfo rowInfo,
+                        const Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged>& rowVals,
+                        const Teuchos::ArrayView<const LocalOrdinal>& inds,
+                        const Teuchos::ArrayView<const Scalar>& newVals) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const LocalOrdinal numElts = static_cast<LocalOrdinal> (inds.size ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      Teuchos::ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (LocalOrdinal j = 0; j < numElts; ++j) {
+        const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+        if (k != STINV) {
+          rowVals(k) += newVals[j];
+          hint = k+1;
+          ++numValid;
+        }
+      }
+      return numValid;
+    }
+
+    template<class Scalar>
+    LocalOrdinal
+    replaceLocalValues (RowInfo rowInfo,
+                        const Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged>& rowVals,
+                        const Teuchos::ArrayView<const LocalOrdinal>& inds,
+                        const Teuchos::ArrayView<const Scalar>& newVals) const
+    {
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const LocalOrdinal numElts = static_cast<LocalOrdinal> (inds.size ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      Teuchos::ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (LocalOrdinal j = 0; j < numElts; ++j) {
+        const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+        if (k != STINV) {
+          rowVals(k) = newVals[j];
+          hint = k+1;
+          ++numValid;
+        }
+      }
+      return numValid;
+    }
+
+  protected:
     /// \brief Transform the given values using global indices.
     ///
     /// \param rowInfo [in] Information about a given row of the graph.
