@@ -925,6 +925,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
+    int64_t cns_save_num_to_get;
 
     if( num_to_get > 0 &&
        (field.get_name() == "ids" ||
@@ -934,7 +935,10 @@ namespace Iovs {
       int id = get_id(ns, EX_NODE_SET, &this->ids_);
 
       if(this->createNodeSets == 0)
+        {
+        cns_save_num_to_get = num_to_get;
         num_to_get = 0;
+        }
 
       if (field.get_type() == Ioss::Field::INTEGER)
         {
@@ -956,6 +960,12 @@ namespace Iovs {
                                      static_cast<int64_t*>(data),
                                      this->DBFilename.c_str());
         }
+
+      if(this->createNodeSets == 0)
+        {
+        num_to_get = cns_save_num_to_get;
+        }
+
       }
     return num_to_get;
   }
@@ -976,6 +986,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
+    int64_t css_save_num_to_get;
 
     if ( (field.get_name() == "element_side")||
          (field.get_name() == "element_side_raw") )
@@ -999,7 +1010,10 @@ namespace Iovs {
           }
 
         if(this->createSideSets == 0)
+          {
+          css_save_num_to_get = num_to_get;
           num_to_get = 0;
+          }
 
           //std::cerr << "Iovs_DatabaseIO::"
           //    "put_field_internal doing CreateSideSet (1)\n";
@@ -1041,6 +1055,12 @@ namespace Iovs {
             }
           //std::cerr << "Iovs_DatabaseIO::"
           //    "put_field_internal back from CreateSideSet (1) \n";
+          //
+          //
+        if(this->createSideSets == 0)
+          {
+          num_to_get = css_save_num_to_get;
+          }
         }
       else
         {
@@ -1055,7 +1075,10 @@ namespace Iovs {
           }
 
         if(this->createSideSets == 0)
-           num_to_get = 0;
+          {
+          css_save_num_to_get = num_to_get;
+          num_to_get = 0;
+          }
 
          //std::cerr << "Iovs_DatabaseIO::"
          //    "put_field_internal doing CreateSideSet (2)\n";
@@ -1097,6 +1120,11 @@ namespace Iovs {
             }
           //std::cerr << "Iovs_DatabaseIO::"
           //    "put_field_internal back from CreateSideSet (2) \n";
+          //
+        if(this->createSideSets == 0)
+          {
+          num_to_get = css_save_num_to_get;
+          }
         }
       }
     return num_to_get;
