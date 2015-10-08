@@ -1428,6 +1428,27 @@ template <typename scalar_t, typename part_t>
   os << std::endl;
 }
 
+/*! \brief Print out a header and the values for a list of graph metrics.
+ */
+
+template <typename scalar_t, typename part_t>
+  void printMetrics( std::ostream &os, part_t numParts, 
+    const ArrayView<GraphMetricValues<scalar_t> > &infoList)
+{
+  os << "NUMBER OF PARTS IS " << numParts;
+  os << std::endl;
+
+  std::string unset("unset");
+
+  GraphMetricValues<scalar_t>::printHeader(os);
+
+  for (int i=0; i < infoList.size(); i++)
+    if (infoList[i].getName() != unset)
+      infoList[i].printLine(os);
+
+  os << std::endl;
+}
+
 /*! \brief Print out a header and the values for a single metric.
  */
 
