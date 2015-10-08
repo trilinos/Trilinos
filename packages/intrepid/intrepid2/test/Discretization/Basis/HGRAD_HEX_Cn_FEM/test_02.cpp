@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
             int basis_order = max_order;
 
             // set test tolerance;
-            double zero = basis_order*basis_order*basis_order*100*INTREPID_TOL;
+            double zero = basis_order*basis_order*basis_order*100*INTREPID2_TOL;
 
 	    //create basis
 	    FieldContainer<double> pts(PointTools::getLatticeSize(line,basis_order),1);

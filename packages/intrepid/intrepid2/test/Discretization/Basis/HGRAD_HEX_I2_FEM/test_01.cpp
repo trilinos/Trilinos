@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
           int l =  i + j * numFields;
-           if (std::abs(vals(i,j) - basisValues[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j) - basisValues[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -426,7 +426,7 @@ int main(int argc, char *argv[]) {
           // basisGrads is (F,P,D), compute offset:
           int l = k + j * spaceDim + i * spaceDim * numPoints;
 
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -449,7 +449,7 @@ int main(int argc, char *argv[]) {
 
           // basisGrads is (F,P,D), compute offset:
           int l = k + j * spaceDim + i * spaceDim * numPoints;
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
 
           // basisD2 is (F,P,Dk), compute offset:
           int l = k + j * D2cardinality + i * D2cardinality * numPoints;
-           if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -501,7 +501,7 @@ int main(int argc, char *argv[]) {
 
           // basisD3 is (F,P,Dk), compute offset:
           int l = k + j * D3cardinality + i * D3cardinality * numPoints;
-          if (std::abs(vals(i,j,k) - basisD3[l]) > INTREPID_TOL) {
+          if (std::abs(vals(i,j,k) - basisD3[l]) > INTREPID2_TOL) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -560,12 +560,12 @@ int main(int argc, char *argv[]) {
     char buffer[120];
     for (int i=0; i<bvals.dimension(0); i++) {
       for (int j=0; j<bvals.dimension(1); j++) {
-        if ((i != j) && (std::abs(bvals(i,j) - 0.0) > INTREPID_TOL)) {
+        if ((i != j) && (std::abs(bvals(i,j) - 0.0) > INTREPID2_TOL)) {
           errorFlag++;
           sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), bvals(i,j), 0.0);
           *outStream << buffer;
         }
-        else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > INTREPID_TOL)) {
+        else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > INTREPID2_TOL)) {
           errorFlag++;
           sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), bvals(i,j), 1.0);
           *outStream << buffer;

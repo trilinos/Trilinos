@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<numPts;i++) {
       for (int j=0;j<2;j++) {
         int l = 2*i+j;
-        if (std::abs(warpBlendMappedPts(i,j) - points[l]) > INTREPID_TOL) {
+        if (std::abs(warpBlendMappedPts(i,j) - points[l]) > INTREPID2_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           
@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<numPts;i++) {
       for (int j=0;j<ptDim;j++) {
         int l = ptDim*i+j;
-        if (std::abs(warpBlendMappedPts(i,j) - points[l]) > INTREPID_TOL) {
+        if (std::abs(warpBlendMappedPts(i,j) - points[l]) > INTREPID2_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

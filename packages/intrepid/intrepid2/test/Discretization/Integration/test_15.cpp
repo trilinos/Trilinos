@@ -126,7 +126,7 @@ Kokkos::initialize();
 
   // internal variables:
   int         errorFlag   = 0;
-  long double abstol      = 1.0e+05*INTREPID_TOL;
+  long double abstol      = 1.0e+05*INTREPID2_TOL;
   int         maxDeg      = 0;    
   long double analyticInt = 0;
   long double testInt     = 0;

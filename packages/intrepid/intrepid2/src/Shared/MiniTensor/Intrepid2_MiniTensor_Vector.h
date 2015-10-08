@@ -54,13 +54,13 @@
 namespace Intrepid2 {
 
 template<typename T, Index N, class ES=NOKOKKOS>
-using vector_store = Storage<T, dimension_power<N, 1>::value>;
+using vector_store = Storage<T, dimension_power<N, 1>::value, ES>;
 
 ///
 /// Vector class.
 ///
 template<typename T, Index N = DYNAMIC, class ES>
-class Vector: public TensorBase<T, typename vector_store<T, N, ES>::type>
+class Vector: public TensorBase<T, vector_store<T, N, ES>>
 {
 public:
 

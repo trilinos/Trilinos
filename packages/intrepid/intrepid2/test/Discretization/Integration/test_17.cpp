@@ -228,7 +228,7 @@ Kokkos::initialize();
 
   // internal variables:
   int         errorFlag   = 0;
-  long double TOL         = INTREPID_TOL;
+  long double TOL         = INTREPID2_TOL;
   int dimension           = 8;
   std::vector<EIntrepidBurkardt> rule1D(dimension,BURK_PATTERSON);
   std::vector<EIntrepidGrowth>   growth1D(dimension,GROWTH_FULLEXP);
@@ -245,7 +245,7 @@ Kokkos::initialize();
   long double x = 0;
   long double gamma = 0.5;
   long double analyticInt = (1.0 - (1.0-gamma)*exp(gamma*(1.0-x)))/gamma;
-  long double abstol = std::sqrt(INTREPID_TOL);
+  long double abstol = std::sqrt(INTREPID2_TOL);
   long double absdiff = fabs(analyticInt-(*integralValue)[0]);
   try { 
     *outStream << "Adaptive Sparse Grid exited with global error " 

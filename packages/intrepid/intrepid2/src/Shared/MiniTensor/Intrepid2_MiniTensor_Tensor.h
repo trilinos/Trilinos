@@ -48,9 +48,7 @@
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
-#endif
 #include "Intrepid2_MiniTensor_Vector.h"
 
 namespace Intrepid2 {
@@ -63,7 +61,7 @@ enum ComponentOrder {
 };
 
 template<typename T, Index N, class ES=NOKOKKOS>
-using tensor_store = Storage<T, dimension_power<N, 2,ES>::value>;
+using tensor_store = Storage<T, dimension_power<N, 2>::value, ES>;
 
 ///
 /// Second order tensor.
@@ -454,7 +452,7 @@ operator+(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// Tensor subtraction
 /// \return \f$ A - B \f$
 ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator-(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -465,6 +463,7 @@ operator-(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
 operator-(Tensor<T, N, ES> const & A);
 
 ///
@@ -740,6 +739,7 @@ diag(Tensor<T, N, ES> const & A);
 ///
 template<typename T, Index N, class  ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION 
+Tensor<T, N, ES> const
 zero();
 
 template<typename T, class ES=NOKOKKOS>

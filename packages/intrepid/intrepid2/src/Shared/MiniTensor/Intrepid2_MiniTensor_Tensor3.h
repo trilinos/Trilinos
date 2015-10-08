@@ -53,7 +53,7 @@ using tensor3_store = Storage<T, dimension_power<N, 3>::value>;
 /// Third-order tensor.
 ///
 template<typename T, Index N = DYNAMIC, class ES>
-class Tensor3 : public TensorBase<T, typename tensor3_store<T, N, ES>::type>
+class Tensor3 : public TensorBase<T, tensor3_store<T, N, ES>>
 {
 public:
 

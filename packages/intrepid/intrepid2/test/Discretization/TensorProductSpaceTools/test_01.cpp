@@ -187,7 +187,7 @@ int main( int argc , char **argv )
 
   for (int i=0;i<fullVals.dimension(1);i++)
     {
-      if (std::abs( fullVals(0,i) - vals(0,0,i) ) > Intrepid2::INTREPID_TOL ) 
+      if (std::abs( fullVals(0,i) - vals(0,0,i) ) > Intrepid2::INTREPID2_TOL ) 
 	{
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -205,7 +205,7 @@ int main( int argc , char **argv )
     {
       for (int j=0;j<fullGrads.dimension(2);j++)
 	{
-	  if (std::abs( fullGrads(0,i,j) - grads(0,0,i,j) ) > Intrepid2::INTREPID_TOL ) 
+	  if (std::abs( fullGrads(0,i,j) - grads(0,0,i,j) ) > Intrepid2::INTREPID2_TOL ) 
 	    {
 	      errorFlag++;
 	      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -247,7 +247,7 @@ int main( int argc , char **argv )
 																		   wts );
   for (int j=0;j<momentsClever.dimension(0);j++)
     {
-      if (std::abs( momentsClever(0,0,j) - momentsNaive(0,j) ) > Intrepid2::INTREPID_TOL ) 
+      if (std::abs( momentsClever(0,0,j) - momentsNaive(0,j) ) > Intrepid2::INTREPID2_TOL ) 
 	{
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

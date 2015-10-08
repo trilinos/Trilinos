@@ -184,12 +184,12 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
-template<typename T, typename I, Index N>
-std::pair< Vector<T, N>, Vector<T, N>>
+template<typename T, typename I, Index N, class ES=NOKOKKOS>
+std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end);
 
-template<typename T, typename I>
-std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
+template<typename T, typename I, class ES=NOKOKKOS>
+std::pair< Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end);
 
 ///

@@ -74,9 +74,6 @@ struct check_static {
 
 template <typename Store>
 KOKKOS_INLINE_FUNCTION
-template<typename Store>
-inline
-#endif
 void
 check_dynamic(Index const dimension)
 {
@@ -238,11 +235,7 @@ struct dimension_product<DYNAMIC, DYNAMIC> {
 ///
 /// Base static storage class. Simple linear access memory model.
 ///
-#if defined (HAVE_INTREPID_KOKKOSCORE)
 template<typename T, Index N, class ES=NOKOKKOS>
-#else //intrepidKokkosCore
-template<typename T, Index N,  class ES>
-#endif
 class Storage
 {
 public:
@@ -267,9 +260,7 @@ public:
 KOKKOS_INLINE_FUNCTION
   Storage() {}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   explicit
   Storage(Index const number_entries)
   {
@@ -278,9 +269,6 @@ KOKKOS_INLINE_FUNCTION
 
 KOKKOS_INLINE_FUNCTION
   ~Storage() {}
-  ~Storage()
-  {
-  }
 
 KOKKOS_INLINE_FUNCTION
   T const &
@@ -304,7 +292,6 @@ KOKKOS_INLINE_FUNCTION
   {
     return size_;
   }
-
 KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries) {
@@ -339,6 +326,7 @@ KOKKOS_INLINE_FUNCTION
   }
 
   static constexpr
+  KOKKOS_INLINE_FUNCTION
   Index
   static_size()
   {
@@ -454,6 +442,15 @@ KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const {return storage_;}
 
+ static constexpr
+  KOKKOS_INLINE_FUNCTION
+  Index
+  static_size()
+  {
+    return 0;
+  }
+
+
 private:
   Storage(Storage<T, DYNAMIC,ES> const & s);
 KOKKOS_INLINE_FUNCTION
@@ -550,6 +547,7 @@ KOKKOS_INLINE_FUNCTION
   }
 
   static constexpr
+  KOKKOS_INLINE_FUNCTION
   Index
   static_size()
   {
@@ -571,7 +569,6 @@ KOKKOS_INLINE_FUNCTION
   Index
   size_{0};
 };
-
 #endif
 
 } // namespace Intrepid

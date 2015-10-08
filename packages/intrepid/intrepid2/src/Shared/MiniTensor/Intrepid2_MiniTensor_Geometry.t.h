@@ -260,11 +260,7 @@ in_normal_side(
 {
   Vector<T, N, ES> const v0 = p1 - p0;
   Vector<T, N, ES> const v1 = p2 - p0;
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-  T const h = min(norm(v0), norm(v1));
-#else
   T const h = std::min(norm(v0), norm(v1));
-#endif
   Vector<T, N, ES> const n = unit(cross(v0, v1));
   Vector<T, N, ES> const v = p - p0;
 
@@ -319,7 +315,7 @@ template<typename T, typename I, class ES>
 std::pair< Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES> >
 bounding_box(I start, I end)
 {
-  return bounding_box<T, I, DYNAMIC>(start, end);
+  return bounding_box<T, I, DYNAMIC,ES>(start, end);
 }
 
 //

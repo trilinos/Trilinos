@@ -56,16 +56,13 @@
 namespace Intrepid2 {
 
 template<typename T, Index M, Index N, class ES=NOKOKKOS>
-struct matrix_store
-{
-  typedef Storage<T, dimension_product<M, N>::value, ES> type;
-};
+using matrix_store = Storage<T, dimension_product<M, N>::value, ES>;
 
 ///
 /// General rectangular matrix.
 ///
 template<typename T, Index M = DYNAMIC, Index N = DYNAMIC, class ES>
-class Matrix: public TensorBase<T, typename matrix_store<T, M, N, ES>::type>
+class Matrix: public TensorBase<T, matrix_store<T, M, N, ES>>
 {
 public:
 

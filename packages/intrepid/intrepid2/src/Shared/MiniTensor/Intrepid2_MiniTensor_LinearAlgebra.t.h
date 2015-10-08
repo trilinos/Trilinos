@@ -197,6 +197,7 @@ Index const maximum_dimension = NPP_MAX_32U ;
 // \return \f$ A^{-1} \f$
 //
 template<typename T, Index N, class ES>
+KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 inverse_fast23(Tensor<T, N, ES> const & A)
 {

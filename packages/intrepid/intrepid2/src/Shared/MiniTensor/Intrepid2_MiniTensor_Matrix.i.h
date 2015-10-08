@@ -478,7 +478,8 @@ Matrix<T, M, N, ES>::set_dimensions(Index const rows, Index const cols)
 //
 // Indexing for constant matrix
 //
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index M, Index N, class ES>
+KOKKOS_INLINE_FUNCTION
 T const &
 Matrix<T, M, N, ES>::operator()(Index const i, Index const j) const
     {
@@ -512,11 +513,7 @@ Matrix<T, M, N, ES>::operator()(Index const i, Index const j)
 // Fill components with value specification
 //
 template<typename T, Index M, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 Matrix<T, M, N, ES>::fill(ComponentValue const value)
 {

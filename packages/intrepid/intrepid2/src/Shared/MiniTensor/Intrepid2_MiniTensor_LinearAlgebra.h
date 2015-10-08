@@ -96,18 +96,20 @@ inverse(Tensor<T, N, ES> const & A);
 /// \param A nonsingular tensor
 /// \return \f$ A^{-1} \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-inverse_fast23(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+inverse_fast23(Tensor<T, N, ES> const & A);
 
 ///
 /// 2nd-order tensor inverse using full pivoting, very accurate
 /// \param A nonsingular tensor
 /// \return \f$ A^{-1} \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-inverse_full_pivot(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+inverse_full_pivot(Tensor<T, N, ES> const & A);
 
 ///
 /// Subtensor

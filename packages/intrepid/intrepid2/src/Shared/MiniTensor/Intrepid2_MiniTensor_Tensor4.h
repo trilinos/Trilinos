@@ -53,7 +53,7 @@ using tensor4_store = Storage<T, dimension_power<N, 4>::value, ES>;
 /// Fourth-order tensor.
 ///
 template<typename T, Index N = DYNAMIC, class ES>
-class Tensor4 : public TensorBase<T, typename tensor4_store<T, N, ES>::type>
+class Tensor4 : public TensorBase<T, tensor4_store<T, N, ES>>
 {
 public:
 

@@ -292,7 +292,7 @@ void CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(
 } // end getAccuracy
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_LINESORTED";
+const char* CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_LINESORTED";
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::getCubature(
