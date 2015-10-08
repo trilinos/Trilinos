@@ -1389,7 +1389,8 @@ buildDistroParamDgDp_RL(
 
     // the user wants global sensitivities, hooray! Build and setup the response library 
     RCP<ResponseLibrary<Traits> > rLibrary
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(), param_lof));
+        //= Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(), param_lof));
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(), lof_));
 
 
     // build evaluators for all flexible responses

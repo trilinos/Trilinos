@@ -299,7 +299,8 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(con
    // do the global distribution
    RCP<Epetra_Import> importer = col ? getGhostedColImport() : getGhostedImport();
    out.PutScalar(0.0);
-   out.Import(in,*importer,Insert);
+   int retval = out.Import(in,*importer,Insert);
+   TEUCHOS_TEST_FOR_EXCEPTION(0!=retval,std::logic_error,"Something failed");
 }
 
 template <typename Traits,typename LocalOrdinalT>
