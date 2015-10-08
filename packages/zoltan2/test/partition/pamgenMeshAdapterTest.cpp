@@ -288,7 +288,12 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
-    if (me) problem.printMetrics(cout);
+    if (me) {
+      problem.printMetrics(cout);
+
+      if (action == "scotch")
+	problem.printGraphMetrics(cout);
+    }
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
