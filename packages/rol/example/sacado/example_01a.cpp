@@ -100,19 +100,10 @@ int main(int argc, char **argv)
         std::string paramfile = "parameters.xml";
         Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
 
-        // Define Step
-        LineSearchStep<RealT> step(*parlist);
+        // Define algorithm.
+        Algorithm<RealT> algo("Line Search",*parlist);
 
-        // Define Status Test
-        RealT gtol  = 1e-12;  // norm of gradient tolerance
-        RealT stol  = 1e-14;  // norm of step tolerance
-        int   maxit = 100;    // maximum number of iterations
-        StatusTest<RealT> status(gtol, stol, maxit);    
-
-        // Define Algorithm
-        DefaultAlgorithm<RealT> algo(step,status,false);
-
-        // Iteration Vector
+        // Iteration vector.
         Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
         // Set Initial Guess
         for (int i=0; i<dim; i++) {
@@ -121,21 +112,17 @@ int main(int argc, char **argv)
 
         StdVector<RealT> x(x_rcp);
 
-        // Run Algorithm
-        std::vector<std::string> output = algo.run(x, obj, false);
-        for ( unsigned i = 0; i < output.size(); i++ ) {
-            std::cout << output[i];
-        }
+        // Run algorithm.
+        algo.run(x, obj, true, *outStream);
 
-        // Get True Solution
+        // Get true solution.
         Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
         StdVector<RealT> xtrue(xtrue_rcp);
-
         
-        // Compute Error
+        // Compute error.
         x.axpy(-1.0, xtrue);
         RealT abserr = x.norm();
-        *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+        *outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
         if ( abserr > sqrt(ROL_EPSILON) ) {
             errorFlag += 1;
         }

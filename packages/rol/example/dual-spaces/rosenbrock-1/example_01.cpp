@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::DefaultAlgorithm<RealT> algo(stepname,parlist);
+    ROL::Algorithm<RealT> algo(stepname,parlist);
 
     // Iteration Vector
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );

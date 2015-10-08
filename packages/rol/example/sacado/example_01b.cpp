@@ -93,17 +93,8 @@ int main(int argc, char **argv)
         std::string paramfile = "parameters.xml";
         Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
 
-        // Define Step
-        LineSearchStep<RealT> step(*parlist);
-
-        // Define Status Test
-        RealT gtol  = 1e-12;  // norm of gradient tolerance
-        RealT stol  = 1e-14;  // norm of step tolerance
-        int   maxit = 100;    // maximum number of iterations
-        StatusTest<RealT> status(gtol, stol, maxit);    
-
-        // Define Algorithm
-        DefaultAlgorithm<RealT> algo(step,status,false);
+        // Define algorithm.
+        Algorithm<RealT> algo("Line Search",*parlist);
 
         // Iteration Vector
         Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -115,10 +106,7 @@ int main(int argc, char **argv)
         StdVector<RealT> x(x_rcp);
 
         // Run Algorithm
-        std::vector<std::string> output = algo.run(x, obj, false);
-        for ( unsigned i = 0; i < output.size(); i++ ) {
-            std::cout << output[i];
-        }
+        algo.run(x, obj, true, *outStream);
 
         // Get True Solution
         Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );

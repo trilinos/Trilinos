@@ -491,7 +491,7 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::DefaultAlgorithm<RealT> algo(stepname, parlist);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
     // Run Algorithm
     vl.zero();

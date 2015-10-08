@@ -567,37 +567,28 @@ int main(int argc, char *argv[]) {
     BoundConstraint_PoissonInversion<RealT> icon(lo,up);
 
     Teuchos::ParameterList parlist;
-    // Basic algorithm.
-    parlist.set("Trust-Region Subproblem Solver Type",    "Truncated CG");
-    parlist.set("Initial Trust-Region Radius",            100.0);
-    // Secant parameters.
-    parlist.set("Secant Type",                            "Limited-Memory BFGS");
-    parlist.set("Maximum Secant Storage",                 100);
-    // Krylov parameters.
-    parlist.set("Absolute Krylov Tolerance",              1.e-8);
-    parlist.set("Relative Krylov Tolerance",              1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",    dim);
-    // PDAS parameters.
-    parlist.set("PDAS Relative Step Tolerance",           1.e-8);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-6);
-    parlist.set("PDAS Maximum Number of Iterations",      10);
-    parlist.set("PDAS Dual Scaling",                      alpha);      
-    // Define step.
-    parlist.set("Use Secant Hessian-Times-A-Vector",      true);
-    ROL::PrimalDualActiveSetStep<RealT> step(parlist);
 
-    // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 20000;  // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+    // Krylov parameters.
+    parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
+    parlist.sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
+    parlist.sublist("General").sublist("Krylov").set("Iteration Limit",dim);
+    // PDAS parameters.
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-8);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-6);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 10);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",(alpha>0.0)?alpha:1.e-4);
+    parlist.sublist("General").sublist("Secant").set("Use as Hessian",true);
+    // Status test parameters.
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    ROL::Algorithm<RealT> algo("Primal Dual Active Set",parlist,false);
 
     x.zero();
     obj.deactivateInertia();
-    algo.run(x,obj,icon,true);
+    algo.run(x,obj,icon,true,*outStream);
 
     // Output control to file.
     std::ofstream file;
@@ -609,14 +600,13 @@ int main(int argc, char *argv[]) {
 
     // Projected Newtion.
     // Define step.
-    parlist.set("Use Secant Hessian-Times-A-Vector",      false);
-    ROL::TrustRegionStep<RealT> step_tr(parlist);
-    // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
+    parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
+    parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
+    ROL::Algorithm<RealT> algo_tr("Trust Region",parlist);
     // Run Algorithm
     y.zero();
     obj.deactivateInertia();
-    algo_tr.run(y,obj,icon,true);
+    algo_tr.run(y,obj,icon,true,*outStream);
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
