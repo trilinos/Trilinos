@@ -1461,6 +1461,16 @@ template <typename scalar_t, typename part_t>
   printMetrics( os, targetNumParts, numParts, numNonemptyParts, infoList);
 }
 
+/*! \brief Print out a header and the values for a single metric.
+ */
+
+template <typename scalar_t, typename part_t>
+  void printMetrics( std::ostream &os, part_t numParts, 
+    const GraphMetricValues<scalar_t> &info)
+{
+  ArrayView<GraphMetricValues<scalar_t> > infoList(&info, 1);
+  printMetrics( os, numParts, infoList);
+}
 
 /*! \brief Compute the norm of the vector of weights.
  */
