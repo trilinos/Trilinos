@@ -60,13 +60,13 @@ enum ComponentOrder {
   CANONICAL, SIERRA_FULL, SIERRA_SYMMETRIC
 };
 
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 using tensor_store = Storage<T, dimension_power<N, 2>::value, ES>;
 
 ///
 /// Second order tensor.
 ///
-template<typename T, Index N = DYNAMIC, class ES>
+template<typename T, Index N = DYNAMIC,  typename ES>
 class Tensor: public TensorBase<T, tensor_store<T, N,ES>>
 {
 public:
@@ -93,7 +93,7 @@ public:
   ///
   /// Tensor order
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   static constexpr
   Index
   get_order()
@@ -106,11 +106,11 @@ KOKKOS_INLINE_FUNCTION
   /// \param dimension the space dimension
   ///
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor();
 
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension);
 
   ///
@@ -119,11 +119,11 @@ KOKKOS_INLINE_FUNCTION
   /// \param value all components are set equal to this
   ///
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(ComponentValue const value);
 
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension, ComponentValue const value);
 
   ///
@@ -131,15 +131,12 @@ KOKKOS_INLINE_FUNCTION
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -147,9 +144,7 @@ KOKKOS_INLINE_FUNCTION
       iType index2);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -158,15 +153,11 @@ KOKKOS_INLINE_FUNCTION
       iType index3);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       ArrayT & data,
       iType index1,
@@ -176,9 +167,7 @@ KOKKOS_INLINE_FUNCTION
       iType index5);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       ArrayT & data,
       iType index1,
@@ -189,15 +178,11 @@ KOKKOS_INLINE_FUNCTION
       iType index6);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension, ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
@@ -206,9 +191,7 @@ KOKKOS_INLINE_FUNCTION
       iType index2);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
@@ -217,9 +200,7 @@ KOKKOS_INLINE_FUNCTION
       iType index3);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
@@ -229,9 +210,7 @@ KOKKOS_INLINE_FUNCTION
       iType index4);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
@@ -242,9 +221,7 @@ KOKKOS_INLINE_FUNCTION
       iType index5);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Tensor(
       Index const dimension,
       ArrayT & data,
@@ -254,26 +231,25 @@ KOKKOS_INLINE_FUNCTION
       iType index4,
       iType index5,
       iType index6);
-  #endif
 
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(T const * data_ptr);
 
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Tensor<T, N, ES> const & A);
 
   ///
   /// 2nd-order tensor from 4th-order tensor
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A);
 
   ///
@@ -300,18 +276,18 @@ KOKKOS_INLINE_FUNCTION
   /// \param component_order component convention (3D only)
   ///
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(T const * data_ptr, ComponentOrder const component_order);
 
   explicit
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension, T const * data_ptr,
       ComponentOrder const component_order);
 
   ///
   /// Simple destructor
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ~Tensor();
 
   ///
@@ -319,7 +295,7 @@ KOKKOS_INLINE_FUNCTION
   /// \param i index
   /// \param j index
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator()(Index const i, Index const j) const;
 
@@ -328,21 +304,21 @@ KOKKOS_INLINE_FUNCTION
   /// \param i index
   /// \param j index
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T &
   operator()(Index const i, Index const j);
 
   ///
   /// \return dimension
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Index
   get_dimension() const;
 
   ///
   /// \param dimension of vector
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   set_dimension(Index const dimension);
 
@@ -350,7 +326,7 @@ KOKKOS_INLINE_FUNCTION
   /// Fill components with value specification
   /// \param value all components are set equal to this specification
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   fill(ComponentValue const value);
 
@@ -358,7 +334,7 @@ KOKKOS_INLINE_FUNCTION
   /// Fill components with value as parameter
   /// \param value all components are set equal to this parameter
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   fill(T const & s);
 
@@ -366,40 +342,29 @@ KOKKOS_INLINE_FUNCTION
   /// Fill components from array defined by pointer.
   /// \param data_ptr pointer into array for filling components
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   typename Kokkos::Impl::enable_if<
   !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
   fill(ArrayT & data, iType index1);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   fill(ArrayT & data, iType index1, iType index2);
 
   template<class ArrayT, typename iType1, typename iType2, typename iType3>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   fill(ArrayT & data, iType index1, iType index2, iType index3, iType index4);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   fill(
       ArrayT & data,
@@ -410,9 +375,7 @@ KOKKOS_INLINE_FUNCTION
       iType index5);
 
   template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   fill(
       ArrayT & data,
@@ -422,9 +385,8 @@ KOKKOS_INLINE_FUNCTION
       iType index4,
       iType index5,
       iType index6);
-#endif
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   fill(T const * data_ptr);
 
@@ -433,7 +395,7 @@ KOKKOS_INLINE_FUNCTION
   /// \param data_ptr pointer into array for filling components
   /// \param component_order component convention (3D only)
   ///
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   fill(T const * data_ptr, ComponentOrder const component_order);
 
@@ -443,7 +405,7 @@ KOKKOS_INLINE_FUNCTION
 /// Tensor addition
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator+(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -452,7 +414,7 @@ operator+(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// Tensor subtraction
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator-(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -461,7 +423,7 @@ operator-(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// Tensor minus
 /// \return \f$ -A \f$
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 operator-(Tensor<T, N, ES> const & A);
@@ -471,7 +433,7 @@ operator-(Tensor<T, N, ES> const & A);
 /// Tested by components
 /// \return \f$ A \equiv B \f$
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 bool
 operator==(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -481,7 +443,7 @@ operator==(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// Tested by components
 /// \return \f$ A \neq B \f$
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 bool
 operator!=(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -492,7 +454,7 @@ operator!=(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator*(Tensor<T, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -503,7 +465,7 @@ operator*(Tensor<T, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \param u vector
 /// \return \f$ u A = A^T u \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 operator*(Vector<S, N, ES> const & u, Tensor<T, N, ES> const & A);
@@ -512,7 +474,7 @@ operator*(Vector<S, N, ES> const & u, Tensor<T, N, ES> const & A);
 /// Tensor dot product C = A B
 /// \return \f$ A \cdot B \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator*(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -545,7 +507,7 @@ operator*(Tensor<T, N, ES> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator/(Tensor<T, N, ES> const & A, S const & s);
@@ -556,7 +518,7 @@ operator/(Tensor<T, N, ES> const & A, S const & s);
 /// \param A tensor that divides scalar with each component
 /// \return \f$ s / A \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Tensor<T, N, ES> const & A);
@@ -577,7 +539,7 @@ operator>>(std::istream & is, Tensor<T, N, ES> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 std::ostream &
 operator<<(std::ostream & os, Tensor<T, N, ES> const & A);
 
@@ -587,7 +549,7 @@ operator<<(std::ostream & os, Tensor<T, N, ES> const & A);
 /// \param i index of row
 /// \return \f$ v = A(i,:) \f$
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 row(Tensor<T, N, ES> const & A, Index const i);
@@ -598,7 +560,7 @@ row(Tensor<T, N, ES> const & A, Index const i);
 /// \param j index of column
 /// \return \f$ v = A(:,j) \f$
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 col(Tensor<T, N, ES> const & A, Index const j);
@@ -609,7 +571,7 @@ col(Tensor<T, N, ES> const & A, Index const j);
 /// \param u vector
 /// \return \f$ A u \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Vector<typename Promote<S, T>::type, N, ES>
 dot(Tensor<T, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -642,7 +604,7 @@ dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B tensor
 /// \return a tensor \f$ A^T \cdot B \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 t_dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -653,7 +615,7 @@ t_dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B tensor
 /// \return a tensor \f$ A \cdot B^T \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 dot_t(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -675,7 +637,7 @@ t_dot_t(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B tensor
 /// \return a scalar \f$ A : B \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 typename Promote<S, T>::type
 dotdot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -697,7 +659,7 @@ dyad(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 /// \param v vector
 /// \return \f$ u \otimes v \f$
 ///
-template<typename S, typename T, Index N, class ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 bun(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
@@ -742,7 +704,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 zero();
 
-template<typename T, class ES=NOKOKKOS>
+template<typename T,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 zero(Index const dimension);
@@ -765,7 +727,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 identity(Index const dimension);
 
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 identity(Index const dimension);
@@ -778,12 +740,12 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 eye();
 
-template<typename T, class ES=NOKOKKOS>
+template<typename T,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 eye(Index const dimension);
 
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 eye(Index const dimension);
@@ -791,7 +753,7 @@ eye(Index const dimension);
 ///
 /// Levi-Civita symbol
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 levi_civita_2();
@@ -801,7 +763,7 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 levi_civita_2(Index const dimension);
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 levi_civita_2(Index const dimension);
@@ -809,17 +771,17 @@ levi_civita_2(Index const dimension);
 ///
 /// Permutation symbol
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 permutation_2();
 
-template<typename T, class ES>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 permutation_2(Index const dimension);
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 permutation_2(Index const dimension);
@@ -827,17 +789,17 @@ permutation_2(Index const dimension);
 ///
 /// Alternating symbol
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2();
 
-template<typename T, class ES>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 alternator_2(Index const dimension);
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2(Index const dimension);
@@ -845,7 +807,7 @@ alternator_2(Index const dimension);
 ///
 /// 2nd-order tensor transpose
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 transpose(Tensor<T, N, ES> const & A);
@@ -853,7 +815,7 @@ transpose(Tensor<T, N, ES> const & A);
 ///
 /// C^N 2nd-order tensor adjoint
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 adjoint(Tensor<T, N, ES> const & A);
@@ -862,7 +824,7 @@ adjoint(Tensor<T, N, ES> const & A);
 /// Symmetric part of 2nd-order tensor
 /// \return \f$ \frac{1}{2}(A + A^T) \f$
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 sym(Tensor<T, N, ES> const & A);
@@ -871,7 +833,7 @@ sym(Tensor<T, N, ES> const & A);
 /// Skew symmetric part of 2nd-order tensor
 /// \return \f$ \frac{1}{2}(A - A^T) \f$
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 skew(Tensor<T, N, ES> const & A);
@@ -882,7 +844,7 @@ skew(Tensor<T, N, ES> const & A);
 /// \param u vector
 /// \return \f$ {{0, -u_2, u_1}, {u_2, 0, -u_0}, {-u_1, u+0, 0}} \f$
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 skew(Vector<T, N, ES> const & u);

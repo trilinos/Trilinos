@@ -67,7 +67,7 @@ operator>>(std::istream & is, Tensor<T, N, ES> & A)
 //
 // tensor output
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 std::ostream &
 operator<<(std::ostream & os, Tensor<T, N, ES> const & A)
 {

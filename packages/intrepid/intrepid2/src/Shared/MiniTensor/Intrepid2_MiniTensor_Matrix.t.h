@@ -47,7 +47,7 @@ namespace Intrepid2 {
 //
 // Matrix input
 //
-template<typename T, Index M, Index N, class ES>
+template<typename T, Index M, Index N,  typename ES>
 std::istream &
 operator>>(std::istream & is, Matrix<T, M, N, ES> & A)
 {
@@ -69,7 +69,7 @@ operator>>(std::istream & is, Matrix<T, M, N, ES> & A)
 //
 // Matrix output
 //
-template<typename T, Index M, Index N, class ES>
+template<typename T, Index M, Index N,  typename ES>
 std::ostream &
 operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
 {

@@ -65,20 +65,16 @@ enum Type {
 ///
 /// Length of a segment
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 length(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1);
 
 ///
 /// Area of a triangle
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
      Vector<T, N, ES> const & p2);
@@ -87,10 +83,8 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Area of a quadrilateral, assummed planar. If not planar, returns
 /// the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
      Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3);
@@ -98,10 +92,8 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 ///
 /// Volume of tetrahedron
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
        Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3);
@@ -112,10 +104,8 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Base is p0,p1,p2,p3
 /// Apex is p4
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
        Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3,
@@ -126,10 +116,8 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Assumption: all faces are planar
 /// Decompose into 3 pyramids
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
        Vector<T, N, ES> const & p2, Vector<T, N, ES> const & p3,
@@ -142,7 +130,8 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// For these we can just take the average of the vertices.
 /// WARNING: This is not the center of mass.
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 centroid(std::vector<Vector<T, N, ES> > const & points);
 
@@ -151,10 +140,8 @@ centroid(std::vector<Vector<T, N, ES> > const & points);
 /// Input: 3 independent nodes on the face
 /// Output: normal vector
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 normal(Vector<T, N, ES> const & p0,
        Vector<T, N, ES> const & p1,
@@ -166,10 +153,8 @@ normal(Vector<T, N, ES> const & p0,
 /// to the plane as defined by the right hand rule.
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 in_normal_side(
     Vector<T, N, ES> const & p,
@@ -184,11 +169,13 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
-template<typename T, typename I, Index N, class ES=NOKOKKOS>
+template<typename T, typename I, Index N,  typename ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end);
 
-template<typename T, typename I, class ES=NOKOKKOS>
+template<typename T, typename I,  typename ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end);
 
@@ -198,10 +185,8 @@ bounding_box(I start, I end);
 /// \param min max points defining the box
 /// \return whether the point is inside
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 in_box(
     Vector<T, N, ES> const & p,
@@ -213,10 +198,8 @@ in_box(
 /// \param min max the bounding box
 /// \return p point inside box
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 random_in_box(
     Vector<T, N, ES> const & min,
@@ -227,10 +210,8 @@ random_in_box(
 /// determine if point p is inside it.
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 in_tetrahedron(
     Vector<T, N, ES> const & p,
@@ -246,10 +227,8 @@ in_tetrahedron(
 /// Assumption: faces are planar
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 in_hexahedron(
     Vector<T, N, ES> const & p,
@@ -269,7 +248,7 @@ in_hexahedron(
 /// \param n vector of points to test
 /// \return index to closest point
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 typename std::vector< Vector<T, N, ES> >::size_type
 closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const & n);
 
@@ -279,9 +258,7 @@ closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const 
 /// \return median of sequence
 ///
 template<typename T, typename Iterator>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 median(Iterator begin, Iterator end);
 
@@ -292,10 +269,8 @@ median(Iterator begin, Iterator end);
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 interpolate_quadrilateral(
     Vector<T, dimension_const<N, 2>::value, ES> & xi,
@@ -311,10 +286,8 @@ interpolate_quadrilateral(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 interpolate_triangle(
     Vector<T, dimension_const<N, 3>::value, ES> & xi,
@@ -329,10 +302,8 @@ interpolate_triangle(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 interpolate_hexahedron(
     Vector<T, dimension_const<N, 3>::value, ES> & xi,
@@ -352,10 +323,8 @@ interpolate_hexahedron(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 interpolate_tetrahedron(
     Vector<T, dimension_const<N, 4>::value> & xi,
@@ -372,7 +341,8 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index M, Index N, class ES=NOKOKKOS>
+template<typename T, Index M, Index N,  typename ES=NOKOKKOS>
+KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
@@ -385,7 +355,7 @@ interpolate_element(
 /// \param points vector of points
 /// \return distance matrix
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 std::vector< std::vector<T> >
 distance_matrix(std::vector< Vector<T, N, ES> > const & points);
 
@@ -395,7 +365,7 @@ distance_matrix(std::vector< Vector<T, N, ES> > const & points);
 /// \param distances distance matrix
 /// \return minimum distance
 ///
-template<typename T, class ES=NOKOKKOS>
+template<typename T,  typename ES=NOKOKKOS>
 std::vector<T>
 minimum_distances(std::vector< std::vector<T>> const & distances);
 
@@ -403,70 +373,50 @@ minimum_distances(std::vector< std::vector<T>> const & distances);
 /// Given space dimension and number of (vertex) nodes,
 /// determine the type of a finite element.
 ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 ELEMENT::Type
 find_type(Index const dimension, Index const number_nodes);
 
 ///
 /// Spherical parametrization functor
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class SphericalParametrization
 {
 public:
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   SphericalParametrization(Tensor4<T, N, ES> const & A);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
@@ -491,61 +441,43 @@ private:
 ///
 /// Stereographic parametrization functor
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class StereographicParametrization
 {
 public:
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   StereographicParametrization(Tensor4<T, N, ES> const & A);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
@@ -570,7 +502,7 @@ private:
 ///
 /// Projective parametrization functor
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class ProjectiveParametrization
 {
 public:
@@ -578,56 +510,38 @@ public:
   ///
   /// Constructor that takes material tangent
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   ProjectiveParametrization(Tensor4<T, N, ES> const & A);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 3>::value, ES> const & parameters);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal(Vector<T, dimension_const<N, 3>::value, ES> const & parameters) const;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 3, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 3, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
@@ -652,7 +566,7 @@ private:
 ///
 /// Tangent parametrization functor
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class TangentParametrization
 {
 public:
@@ -660,59 +574,41 @@ public:
   ///
   /// Constructor that takes material tangent
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   TangentParametrization(Tensor4<T, N, ES> const & A);
 
   ///
   ///
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
@@ -737,61 +633,43 @@ private:
 ///
 /// Cartesian parametrization functor
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class CartesianParametrization
 {
 public:
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   CartesianParametrization(Tensor4<T, N, ES> const & A);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 3>::value, ES> const & parameters);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal(Vector<T, dimension_const<N, 3>::value, ES> const & parameters) const;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 3, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, 3, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   Vector<T, N, ES>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
@@ -816,7 +694,7 @@ private:
 ///
 /// Parametric grid class
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class ParametricGrid
 {
 
@@ -825,9 +703,7 @@ public:
   ///
   /// Default constructor
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   ParametricGrid() {}
 
   ///
@@ -836,9 +712,7 @@ KOKKOS_INLINE_FUNCTION
   /// \param upper upper limit
   /// \param points_per_dimension number of points in each dimension
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   ParametricGrid(
       Vector<T, N, ES> const & lower,
       Vector<T, N, ES> const & upper,
@@ -847,9 +721,7 @@ KOKKOS_INLINE_FUNCTION
   ///
   ///
   template<typename Visitor>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
+  KOKKOS_INLINE_FUNCTION
   void
   traverse(Visitor & visitor) const;
 

@@ -50,7 +50,7 @@ namespace Intrepid2 {
 // \param is input stream
 // \return is input stream
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 std::istream &
 operator>>(std::istream & is, Vector<T, N, ES> & u)
 {
@@ -70,7 +70,7 @@ operator>>(std::istream & is, Vector<T, N, ES> & u)
 // \param os output stream
 // \return os output stream
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 std::ostream &
 operator<<(std::ostream & os, Vector<T, N, ES> const & u)
 {

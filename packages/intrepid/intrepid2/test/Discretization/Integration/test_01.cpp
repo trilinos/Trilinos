@@ -151,7 +151,6 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-std::cout << "1 " <<std::endl;
 Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
@@ -166,7 +165,7 @@ Kokkos::initialize();
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
- std::cout << "2 " <<std::endl;
+ 
   *outStream \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
@@ -188,13 +187,13 @@ Kokkos::initialize();
 
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 7;  
-std::cout << "3 " <<std::endl;
+
   try {
     /* Line cubature. */
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(-1) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub;
-                           std::string testName    = "INTREPID_CUBATURE_LINE_GAUSS";
+                           std::string testName    = "INTREPID2_CUBATURE_LINE_GAUSS";
                            std::string lineCubName = lineCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << lineCubName << "\n\n";
                            TEUCHOS_TEST_FOR_EXCEPTION( (testName != lineCubName), std::logic_error, "Name mismatch!" ) );
@@ -212,7 +211,7 @@ std::cout << "3 " <<std::endl;
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(-1) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(INTREPID2_CUBATURE_TRI_DEFAULT_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub;
-                           std::string testName    = "INTREPID_CUBATURE_TRI_DEFAULT";
+                           std::string testName    = "INTREPID2_CUBATURE_TRI_DEFAULT";
                            std::string triCubName = triCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << triCubName << "\n\n";
                            TEUCHOS_TEST_FOR_EXCEPTION( (testName != triCubName), std::logic_error, "Name mismatch!" ) );
@@ -230,7 +229,7 @@ std::cout << "3 " <<std::endl;
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(-1) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(INTREPID2_CUBATURE_TET_DEFAULT_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub;
-                           std::string testName    = "INTREPID_CUBATURE_TET_DEFAULT";
+                           std::string testName    = "INTREPID2_CUBATURE_TET_DEFAULT";
                            std::string tetCubName = tetCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << tetCubName << "\n\n";
         std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
@@ -283,7 +282,7 @@ std::cout << "3 " <<std::endl;
                            tensorCub.getCubature(points, weights)
                          )
                                                       
-               std::cout << "4 " <<std::endl;   
+                  
     INTREPID_TEST_COMMAND( Teuchos::RCP< CubatureDirect<double> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(15));
                            Teuchos::RCP< CubatureDirect<double> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<double>(12));
                            CubatureTensor<double> tensorCub(lineCub, triCub);
@@ -311,7 +310,6 @@ std::cout << "3 " <<std::endl;
                            TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 10) || (a != atest),
                                                std::logic_error,
                                                "Check constructor and members dimension and getAccuracy!" ) );
- std::cout << "5 " << "errorFlag= "<< errorFlag <<std::endl;
     if (Teuchos::TestForException_getThrowNumber() != endThrowNumber) {
       errorFlag = -1000;
     }
@@ -320,7 +318,6 @@ std::cout << "3 " <<std::endl;
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   };
- std::cout << "6 " << "errorFlag= "<< errorFlag <<std::endl;
  
   *outStream \
   << "===============================================================================\n"\
@@ -346,7 +343,7 @@ std::cout << "3 " <<std::endl;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
- std::cout << "7 " << "errorFlag= "<< errorFlag<< std::endl;
+
     *outStream << "\n\n";
     shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
     for (int deg=0; deg<=INTREPID2_CUBATURE_TRI_DEFAULT_MAX; deg++) {
@@ -358,7 +355,7 @@ std::cout << "3 " <<std::endl;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
- std::cout << "8 "<< "errorFlag= "<< errorFlag <<std::endl;
+
     *outStream << "\n\n";
     shards::CellTopology quad(shards::getCellTopologyData< shards::Quadrilateral<> >());
     for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
@@ -404,7 +401,6 @@ std::cout << "3 " <<std::endl;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
     }
- std::cout << "9 " << "errorFlag= "<< errorFlag<<std::endl;
     *outStream << "\n\n";
     shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
     for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
@@ -440,16 +436,14 @@ std::cout << "3 " <<std::endl;
     errorFlag = -1;
   };
 
- std::cout << "10 "<< "errorFlag= "<< errorFlag <<std::endl;
+
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-std::cout << "11 " <<std::endl;
+
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-std::cout << "12 " <<std::endl;
 Kokkos::finalize();
-std::cout << "13 " <<std::endl;
   return errorFlag;
 }

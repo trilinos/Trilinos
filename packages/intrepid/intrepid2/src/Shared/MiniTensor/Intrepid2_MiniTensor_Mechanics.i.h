@@ -48,12 +48,8 @@ namespace Intrepid2 {
 // R^N volumetric part of 2nd-order tensor
 // \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Tensor<T, N, ES>
 vol(Tensor<T, N, ES> const & A)
 {
@@ -70,12 +66,8 @@ vol(Tensor<T, N, ES> const & A)
 // R^N deviatoric part of 2nd-order tensor
 // \return \f$ A - vol(A) \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Tensor<T, N, ES>
 dev(Tensor<T, N, ES> const & A)
 {

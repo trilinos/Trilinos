@@ -48,9 +48,10 @@ namespace Intrepid2 {
 // Inverse defaults to fast inverse for 2 and 3 dimensions, otherwise
 // use full piviting version
 //
-template<typename T, Index N>
-Tensor<T, N>
-inverse(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+inverse(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -68,17 +69,15 @@ inverse(Tensor<T, N> const & A)
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 inverse_full_pivot(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
 Index const maximum_dimension = NPP_MAX_32U ;
   if (dimension> maximum_dimension)
    Kokkos::abort("ERROR (IntrepidMiniTensor:inverse): Requested dimension exceeds maximum allowed for inverse");
@@ -196,7 +195,7 @@ Index const maximum_dimension = NPP_MAX_32U ;
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 inverse_fast23(Tensor<T, N, ES> const & A)
@@ -250,7 +249,7 @@ inverse_fast23(Tensor<T, N, ES> const & A)
 // \param j index
 // \return Subtensor with i-row and j-col deleted.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, dimension_subtract<N, 1>::value >
 subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
@@ -282,7 +281,7 @@ subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 //
 // Exponential map
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 exp(Tensor<T, N, ES> const & A)
@@ -295,7 +294,7 @@ exp(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 exp_taylor(Tensor<T, N, ES> const & A)
@@ -370,7 +369,7 @@ polynomial_coefficient(Index const order, Index const index)
   switch (order) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR(polynomial_coefficient): Wrong order in Pade' polynomial coefficient ");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -439,8 +438,8 @@ polynomial_coefficient(Index const order, Index const index)
 //
 // Padé approximant polynomial odd and even terms.
 //
-template<typename T, Index N, class ES>
-//KOKKOS_INLINE_FUNCTION
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 {
@@ -483,7 +482,7 @@ pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 //
 // Compute a non-negative integer power of a tensor by binary manipulation.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
@@ -493,7 +492,7 @@ binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
   Index const
   rightmost_bit = 1;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   Index const
   number_digits =  NPP_MAX_32U;
 #else
@@ -555,7 +554,7 @@ binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 exp_pade(Tensor<T, N, ES> const & A)
@@ -674,7 +673,7 @@ exp_pade(Tensor<T, N, ES> const & A)
 //
 // Logarithmic map by Taylor series.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_taylor(Tensor<T, N, ES> const & A)
@@ -723,7 +722,7 @@ log_taylor(Tensor<T, N, ES> const & A)
 //
 // Logarithmic map.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log(Tensor<T, N, ES> const & A)
@@ -734,7 +733,7 @@ log(Tensor<T, N, ES> const & A)
 //
 // Logarithmic map by Gregory series.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_gregory(Tensor<T, N, ES> const & A)
@@ -791,7 +790,7 @@ log_gregory(Tensor<T, N, ES> const & A)
 //
 // Logarithmic map for symmetric tensor.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_sym(Tensor<T, N, ES> const & A)
@@ -802,7 +801,7 @@ log_sym(Tensor<T, N, ES> const & A)
 //
 // Logarithmic map for symmetric tensor using eigenvalue decomposition.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_eig_sym(Tensor<T, N, ES> const & A)
@@ -833,7 +832,7 @@ log_eig_sym(Tensor<T, N, ES> const & A)
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_rotation(Tensor<T, N, ES> const & R)
@@ -863,7 +862,7 @@ log_rotation(Tensor<T, N, ES> const & R)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+#if defined(KOKKOS_HAVE_CUDA) 
      Kokkos::abort("Logarithm of SO(N) N != 2,3 not implemented.");
 #else
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
@@ -907,7 +906,7 @@ log_rotation(Tensor<T, N, ES> const & R)
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 log_rotation_pi(Tensor<T, N, ES> const & R)
@@ -926,7 +925,7 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("Logarithm of SO(N) N != 2,3 not implemented.");
 #else
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
@@ -997,7 +996,7 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
 // \param matrix \f$ A \f$
 // \return \f$ U \f$ where \f$ A = LU \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 gaussian_elimination(Tensor<T, N, ES> const & A)
@@ -1051,7 +1050,7 @@ gaussian_elimination(Tensor<T, N, ES> const & A)
 //
 // Apply Givens-Jacobi rotation on the left in place.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
@@ -1071,7 +1070,7 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 //
 // Apply Givens-Jacobi rotation on the right in place.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
@@ -1091,7 +1090,7 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 ///
 /// Apply rank-one update on the left in place
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
@@ -1103,7 +1102,7 @@ rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 ///
 /// Apply rank-one update on the right in place
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
@@ -1115,7 +1114,7 @@ rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 //
 // R^N exponential map of a skew-symmetric tensor.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 exp_skew_symmetric(Tensor<T, N, ES> const & r)
@@ -1181,7 +1180,7 @@ exp_skew_symmetric(Tensor<T, N, ES> const & r)
 // \param A
 // \return \f$ \sqrt(\sum_i \sum_{j, j\neq i} a_{ij}^2) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 norm_off_diagonal(Tensor<T, N, ES> const & A)
@@ -1225,7 +1224,7 @@ norm_off_diagonal(Tensor<T, N, ES> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 //KOKKOS_INLINE_FUNCTION
 std::pair<Index, Index>
 arg_max_abs(Tensor<T, N, ES> const & A)
@@ -1259,8 +1258,8 @@ arg_max_abs(Tensor<T, N, ES> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 //
-template<typename T, Index N, class ES>
-//KOKKOS_INLINE_FUNCTION
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Index, Index>
 arg_max_off_diagonal(Tensor<T, N, ES> const & A)
 {
@@ -1295,7 +1294,7 @@ namespace {
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_bidiagonal(T f, T g, T h)
 {
@@ -1388,7 +1387,7 @@ svd_bidiagonal(T f, T g, T h)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_2x2(Tensor<T, N, ES> const & A)
 {
@@ -1423,7 +1422,7 @@ svd_2x2(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_NxN(Tensor<T, N, ES> const & A)
 {
@@ -1500,7 +1499,7 @@ svd_NxN(Tensor<T, N, ES> const & A)
   }
 
   if (num_iter == max_iter) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+#if defined(KOKKOS_HAVE_CUDA) 
     Kokkos::abort("WARNING: SVD iteration did not converge.");
 #else
     std::cerr << "WARNING: SVD iteration did not converge." << std::endl;
@@ -1536,7 +1535,7 @@ svd_NxN(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd(Tensor<T, N, ES> const & A)
 {
@@ -1570,7 +1569,7 @@ svd(Tensor<T, N, ES> const & A)
 // The rotation/reflection obtained through this projection is
 // the orthogonal component of the real polar decomposition
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 polar_rotation(Tensor<T, N, ES> const & A)
@@ -1642,7 +1641,7 @@ polar_rotation(Tensor<T, N, ES> const & A)
   }
 
   if (num_iter == max_iter) {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("WARNING: Polar iteration did not converge.");
 #else
     std::cerr << "WARNING: Polar iteration did not converge." << std::endl;
@@ -1657,7 +1656,8 @@ polar_rotation(Tensor<T, N, ES> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left(Tensor<T, N, ES> const & A)
 {
@@ -1675,7 +1675,8 @@ polar_left(Tensor<T, N, ES> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_right(Tensor<T, N, ES> const & A)
 {
@@ -1693,8 +1694,8 @@ polar_right(Tensor<T, N, ES> const & A)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
-template<typename T, Index N, class ES>
-//KOKKOS_INLINE_FUNCTION
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_eig(Tensor<T, N, ES> const & F)
 {
@@ -1742,11 +1743,6 @@ polar_left_eig(Tensor<T, N, ES> const & F)
   V    = eVec * x * transpose(eVec);
   Vinv = eVec * xi * transpose(eVec);
   R    = Vinv * F;
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-//Irina TOFIX
- //if (ES==Kokkos::CUDA)
-   Kokkos::abort("ERROR:: polar_left_eig function can't be used on CUDA ");
-#endif
   return std::make_pair(V, R);
 }
 
@@ -1755,15 +1751,11 @@ polar_left_eig(Tensor<T, N, ES> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = F \f$ with \f$ R \in SO(3) \f$ and U SPD(3)
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_right_eig(Tensor<T, N, ES> const & F)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-//Irina TOFIX
-// if (ES==Kokkos::CUDA)
-   Kokkos::abort("ERROR:: polar_right_eig function can't be used on CUDA ");
-#endif
   Index const
   dimension = F.get_dimension();
 
@@ -1820,7 +1812,7 @@ polar_right_eig(Tensor<T, N, ES> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV(Tensor<T, N, ES> const & F)
 {
@@ -1851,7 +1843,7 @@ polar_left_logV(Tensor<T, N, ES> const & F)
   return boost::make_tuple(V, R, v);
 }
 
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV_eig(Tensor<T, N, ES> const & F)
 {
@@ -1892,7 +1884,7 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV_lame(Tensor<T, N, ES> const & F)
 {
@@ -1938,10 +1930,8 @@ polar_left_logV_lame(Tensor<T, N, ES> const & F)
 // \param y tensor
 // \return Baker-Campbell-Hausdorff series up to 4 terms
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 bch(Tensor<T, N, ES> const & x, Tensor<T, N, ES> const & y)
 {
@@ -1967,6 +1957,7 @@ bch(Tensor<T, N, ES> const & x, Tensor<T, N, ES> const & y)
 // \return \f$ c, s \rightarrow [c, -s; s, c]\f diagonalizes A$
 //
 template<typename T>
+KOKKOS_INLINE_FUNCTION
 std::pair<T, T>
 schur_sym(T const f, T const g, T const h)
 {
@@ -1994,6 +1985,7 @@ schur_sym(T const f, T const g, T const h)
 // \return c, s
 //
 template<typename T>
+KOKKOS_INLINE_FUNCTION
 std::pair<T, T>
 givens(T const & a, T const & b)
 {
@@ -2023,7 +2015,8 @@ namespace {
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 // See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_sym_NxN(Tensor<T, N, ES> const & A)
 {
@@ -2105,7 +2098,8 @@ eig_sym_NxN(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_sym_2x2(Tensor<T, N, ES> const & A)
 {
@@ -2188,7 +2182,8 @@ eig_sym_2x2(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_sym(Tensor<T, N, ES> const & A)
 {
@@ -2218,7 +2213,8 @@ eig_sym(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_spd(Tensor<T, N, ES> const & A)
 {
@@ -2230,7 +2226,8 @@ eig_spd(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_spd_cos(Tensor<T, N, ES> const & A)
 {
@@ -2486,7 +2483,8 @@ eig_spd_cos(Tensor<T, N, ES> const & A)
 // \return G Cholesky factor A = GG^T
 // \return completed (bool) algorithm ran to completion
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, bool >
 cholesky(Tensor<T, N, ES> const & A)
 {
@@ -2537,20 +2535,16 @@ cholesky(Tensor<T, N, ES> const & A)
 // as it just uses the inverse function. It is intended to be used in
 // conjunction with Kokkos to take advantage of thread parallelism.
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
 {
   return dot(inverse_full_pivot(A), b);
 }
 
-template<typename T, Index N, Index P, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N, Index P,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Matrix<T, N, P, ES>
 solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B)
 {

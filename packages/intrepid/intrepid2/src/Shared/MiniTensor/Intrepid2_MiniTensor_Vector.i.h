@@ -48,7 +48,7 @@ namespace Intrepid2
 //
 // Default constructor
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector() :
     TensorBase<T, Store>::TensorBase()
@@ -60,7 +60,7 @@ Vector<T, N, ES>::Vector() :
 //
 // Constructor that initializes to NaNs
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(Index const dimension) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER)
@@ -71,7 +71,7 @@ Vector<T, N, ES>::Vector(Index const dimension) :
 ///
 /// Create vector from a specified value
 ///
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(Index const dimension, ComponentValue const value) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
@@ -79,7 +79,7 @@ Vector<T, N, ES>::Vector(Index const dimension, ComponentValue const value) :
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(ComponentValue const value) :
     TensorBase<T, Store>::TensorBase(N, ORDER, value)
@@ -90,14 +90,9 @@ Vector<T, N, ES>::Vector(ComponentValue const value) :
 //
 // Create vector from array
 //
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -107,13 +102,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -124,13 +115,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -142,13 +129,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     ArrayT & data,
     iType index1,
@@ -167,13 +150,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     ArrayT & data,
     iType index1,
@@ -194,13 +173,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     ArrayT & data,
     iType index1,
@@ -223,13 +198,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
@@ -240,13 +211,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
@@ -258,13 +225,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     ArrayT & data,
@@ -282,13 +245,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     ArrayT & data,
@@ -308,13 +267,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     ArrayT & data,
@@ -336,13 +291,9 @@ Vector<T, N, ES>::Vector(
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>::Vector(
     Index const dimension,
     ArrayT & data,
@@ -365,10 +316,9 @@ Vector<T, N, ES>::Vector(
 {
   return;
 }
-#endif
 
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(Index const dimension, T const * data_ptr) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
@@ -376,7 +326,7 @@ Vector<T, N, ES>::Vector(Index const dimension, T const * data_ptr) :
   return;
 }
 
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const * data_ptr) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
@@ -387,7 +337,7 @@ Vector<T, N, ES>::Vector(T const * data_ptr) :
 //
 // Copy constructor
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(Vector<T, N, ES> const & v) :
     TensorBase<T, Store>::TensorBase(v)
@@ -398,7 +348,7 @@ Vector<T, N, ES>::Vector(Vector<T, N, ES> const & v) :
 //
 // Create vector specifying components
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const & s0, T const & s1)
 {
@@ -416,7 +366,7 @@ Vector<T, N, ES>::Vector(T const & s0, T const & s1)
 //
 // Create vector specifying components
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const & s0, T const & s1, T const & s2)
 {
@@ -435,7 +385,7 @@ Vector<T, N, ES>::Vector(T const & s0, T const & s1, T const & s2)
 //
 // Simple destructor
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::~Vector()
 {
@@ -445,7 +395,7 @@ Vector<T, N, ES>::~Vector()
 //
 // Get dimension
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Index
 Vector<T, N, ES>::get_dimension() const
@@ -456,7 +406,7 @@ Vector<T, N, ES>::get_dimension() const
 //
 // Set dimension
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void
 Vector<T, N, ES>::set_dimension(Index const dimension)
@@ -473,7 +423,7 @@ Vector<T, N, ES>::set_dimension(Index const dimension)
 //
 // Indexing for constant vector
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T const &
 Vector<T, N, ES>::operator()(Index const i) const
@@ -484,7 +434,7 @@ Vector<T, N, ES>::operator()(Index const i) const
 //
 // Vector indexing
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T &
 Vector<T, N, ES>::operator()(Index const i)
@@ -495,7 +445,7 @@ Vector<T, N, ES>::operator()(Index const i)
 //
 // Vector addition
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<typename Promote<S, T>::type, N, ES>
 operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
@@ -511,7 +461,7 @@ operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Vector subtraction
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<typename Promote<S, T>::type, N, ES>
 operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
@@ -527,7 +477,7 @@ operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Vector minus
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<T, N, ES>
 operator-(Vector<T, N, ES> const & u)
@@ -543,7 +493,7 @@ operator-(Vector<T, N, ES> const & u)
 //
 // Vector dot product
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename Promote<S, T>::type
 operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
@@ -554,7 +504,7 @@ operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Vector equality tested by components
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 
 bool
@@ -566,7 +516,7 @@ operator==(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Vector inequality tested by components
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 
 bool
@@ -578,7 +528,7 @@ operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Scalar vector product
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename
 lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
@@ -595,7 +545,7 @@ operator*(S const & s, Vector<T, N, ES> const & u)
 //
 // Vector scalar product
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename
 lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
@@ -612,7 +562,7 @@ operator*(Vector<T, N, ES> const & u, S const & s)
 //
 // Vector scalar division
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<typename Promote<S, T>::type, N, ES>
 operator/(Vector<T, N, ES> const & u, S const & s)
@@ -628,7 +578,7 @@ operator/(Vector<T, N, ES> const & u, S const & s)
 //
 // Scalar vector division
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Vector<T, N, ES> const & u)
@@ -644,7 +594,7 @@ operator/(S const & s, Vector<T, N, ES> const & u)
 //
 // Vector dot product
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename Promote<S, T>::type
 dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
@@ -681,7 +631,7 @@ dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 // Cross product only valid for R^3.
 //
-template<typename S, typename T, Index N, class ES>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<typename Promote<S, T>::type, N, ES>
 cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
@@ -703,7 +653,7 @@ cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
     break;
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR: Vector::cross - Cross product undefined for R^");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -723,7 +673,7 @@ cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 // R^N vector 2-norm
 // \return \f$ \sqrt{u \cdot u} \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T
 norm(Vector<T, N, ES> const & u)
@@ -757,7 +707,7 @@ norm(Vector<T, N, ES> const & u)
 // R^N vector 2-norm square for fast distance calculations.
 // \return \f$ u \cdot u \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T
 norm_square(Vector<T, N, ES> const & u)
@@ -791,7 +741,7 @@ norm_square(Vector<T, N, ES> const & u)
 // R^N vector 1-norm
 // \return \f$ \sum_i |u_i| \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T
 norm_1(Vector<T, N, ES> const & u)
@@ -826,7 +776,7 @@ norm_1(Vector<T, N, ES> const & u)
 // R^N vector infinity-norm
 // \return \f$ \max(|u_0|,...|u_i|,...|u_N|) \f$
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  T
 norm_infinity(Vector<T, N, ES> const & u)
@@ -860,7 +810,7 @@ norm_infinity(Vector<T, N, ES> const & u)
 //
 // \return u / |u|, fails for |u| = 0
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  Vector<T, N, ES>
 unit(Vector<T, N, ES> const & u)
@@ -871,7 +821,7 @@ unit(Vector<T, N, ES> const & u)
 //
 // Compute Householder vector
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair<Vector<T, N, ES>, T>
 house(Vector<T, N, ES> const & x)

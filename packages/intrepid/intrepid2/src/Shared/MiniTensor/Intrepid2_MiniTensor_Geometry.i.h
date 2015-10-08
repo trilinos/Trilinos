@@ -50,11 +50,7 @@ namespace Intrepid2 {
 //
 namespace {
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ELEMENT::Type
 find_type_1D(Index const nodes)
 {
@@ -64,11 +60,7 @@ find_type_1D(Index const nodes)
   }
 }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ELEMENT::Type
 find_type_2D(Index const nodes)
 {
@@ -79,11 +71,7 @@ find_type_2D(Index const nodes)
   }
 }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ELEMENT::Type
 find_type_3D(Index const nodes)
 {
@@ -100,11 +88,7 @@ find_type_3D(Index const nodes)
 //
 //
 //
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ELEMENT::Type
 find_type(Index const dimension, Index const number_nodes)
 {
@@ -132,7 +116,7 @@ find_type(Index const dimension, Index const number_nodes)
   }
 
   if (type == ELEMENT::UNKNOWN) {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR: find_type; Unknown element type");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -153,16 +137,12 @@ find_type(Index const dimension, Index const number_nodes)
 //
 // Constructor for SphericalParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 SphericalParametrization<T, N, ES>::SphericalParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   minimum_=0;
   maximum_=NPP_MAX_32U;
 #else
@@ -175,12 +155,8 @@ SphericalParametrization<T, N, ES>::SphericalParametrization(
 //
 // Normal vector for SphericalParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>
 SphericalParametrization<T, N, ES>::get_normal(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -201,12 +177,8 @@ SphericalParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for SphericalParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 SphericalParametrization<T, N, ES>::operator()(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -240,16 +212,12 @@ SphericalParametrization<T, N, ES>::operator()(
 //
 // Constructor for StereographicParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 StereographicParametrization<T, N, ES>::StereographicParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   minimum_=0;
   maximum_=NPP_MAX_32U;
 #else
@@ -262,12 +230,8 @@ StereographicParametrization<T, N, ES>::StereographicParametrization(
 //
 // Normal vector for StereographicParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>
 StereographicParametrization<T, N, ES>::get_normal(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -293,12 +257,8 @@ StereographicParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for StereographicParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 StereographicParametrization<T, N, ES>::operator()(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -332,16 +292,12 @@ StereographicParametrization<T, N, ES>::operator()(
 //
 // Constructor for ProjectiveParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ProjectiveParametrization<T, N, ES>::ProjectiveParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   minimum_=0;
   maximum_=NPP_MAX_32U;
 #else
@@ -354,12 +310,8 @@ ProjectiveParametrization<T, N, ES>::ProjectiveParametrization(
 //
 // Normal vector for ProjectiveParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>
 ProjectiveParametrization<T, N, ES>::get_normal(
     Vector<T, dimension_const<N, 3>::value, ES> const & parameters
@@ -392,12 +344,8 @@ ProjectiveParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for ProjectiveParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 ProjectiveParametrization<T, N, ES>::operator()(
     Vector<T, dimension_const<N, 3>::value, ES> const & parameters
@@ -431,16 +379,12 @@ ProjectiveParametrization<T, N, ES>::operator()(
 //
 // Constructor for TangentParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TangentParametrization<T, N, ES>::TangentParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   minimum_=0;
   maximum_=NPP_MAX_32U;
 #else
@@ -453,12 +397,8 @@ TangentParametrization<T, N, ES>::TangentParametrization(
 //
 // Normal vector for TangentParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>
 TangentParametrization<T, N, ES>::get_normal(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -490,12 +430,8 @@ TangentParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for TangentParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TangentParametrization<T, N, ES>::operator()(
     Vector<T, dimension_const<N, 2>::value, ES> const & parameters
@@ -529,16 +465,12 @@ TangentParametrization<T, N, ES>::operator()(
 //
 // Constructor for CartesianParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 CartesianParametrization<T, N, ES>::CartesianParametrization(
     Tensor4<T, N, ES> const & A) : tangent_(A)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   minimum_=0;
   maximum_=NPP_MAX_32U;
 #else
@@ -551,12 +483,8 @@ CartesianParametrization<T, N, ES>::CartesianParametrization(
 //
 // Normal vector for CartesianParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 Vector<T, N, ES>
 CartesianParametrization<T, N, ES>::get_normal(
     Vector<T, dimension_const<N, 3>::value,ES> const & parameters
@@ -580,12 +508,8 @@ CartesianParametrization<T, N, ES>::get_normal(
 //
 // Evaluation for CartesianParametrization
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 CartesianParametrization<T, N, ES>::operator()(
     Vector<T, dimension_const<N, 3>::value, ES> const & parameters
@@ -617,12 +541,8 @@ CartesianParametrization<T, N, ES>::operator()(
 //
 // Constructor for ParametricGrid
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 ParametricGrid<T, N, ES>::ParametricGrid(
     Vector<T, N, ES> const & lower,
     Vector<T, N, ES> const & upper,
@@ -641,13 +561,9 @@ ParametricGrid<T, N, ES>::ParametricGrid(
 //
 // Traverse the grid and apply the visitor to each point.
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 template<typename Visitor>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
 {

@@ -122,11 +122,7 @@ TensorBase<T, ST>::TensorBase(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
@@ -141,11 +137,7 @@ TensorBase<T, ST>::TensorBase(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
@@ -161,11 +153,7 @@ TensorBase<T, ST>::TensorBase(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
@@ -182,11 +170,7 @@ TensorBase<T, ST>::TensorBase(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
@@ -204,11 +188,7 @@ TensorBase<T, ST>::TensorBase(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
@@ -414,7 +394,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
     break;
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Unknown specification of value for filling components");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -467,7 +447,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -520,7 +500,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -581,7 +561,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -657,7 +637,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -711,11 +691,7 @@ TensorBase<T, ST>::fill(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
@@ -751,7 +727,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -820,11 +796,7 @@ TensorBase<T, ST>::fill(
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
@@ -861,7 +833,7 @@ TensorBase<T, ST>::fill(
   switch (rank) {
 
   default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR(Intrepid2_MiniTensor_TensorBase, fill function): Invalid rank");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;

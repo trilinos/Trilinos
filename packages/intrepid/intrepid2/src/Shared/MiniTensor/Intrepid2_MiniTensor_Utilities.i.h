@@ -48,11 +48,7 @@
 namespace Intrepid2 {
 
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 swap(T & a, T & b)
 {
@@ -62,11 +58,7 @@ swap(T & a, T & b)
 }
 
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 max(const T & a, const T & b)
 {
@@ -90,19 +82,11 @@ sgn(T const & s)
 // Copysign function
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 copysign(T const & a, T const & b)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-  return b >= 0 ? abs(a) : -abs(a);
-#else
   return b >= 0 ? std::abs(a) : -std::abs(a);
-#endif
 }
 
 //
@@ -112,15 +96,11 @@ copysign(T const & a, T const & b)
 // determines the underlying floating-point type.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 not_a_number()
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   return NPP_MAX_32U; 
 #else
   return std::numeric_limits<typename Sacado::ScalarType<T>::type>::quiet_NaN();
@@ -134,15 +114,11 @@ not_a_number()
 // determines the underlying floating-point type.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   return NPP_MAX_32U;
 #else
   return
@@ -154,11 +130,7 @@ machine_epsilon()
 // The circle constant
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 tau()
 {
@@ -172,11 +144,7 @@ tau()
 // Random number generation. Teuchos [-1,1]
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 random()
 {
@@ -188,11 +156,7 @@ random()
 // Uniform [0,1] random number generation.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 random_uniform()
 {
@@ -204,11 +168,7 @@ random_uniform()
 // Normal N(0,1) random number generation.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 typename Sacado::ScalarType<T>::type
 random_normal()
 {
@@ -219,22 +179,14 @@ random_normal()
 
   S const
   Theta = tau<S>() * random_uniform<S>();
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-  return static_cast<S>(sqrt(-2.0 * log(R)) * cos(Theta));
-#else
   return static_cast<S>(std::sqrt(-2.0 * std::log(R)) * cos(Theta));
-#endif
 }
 
 //
 // Compute a non-negative integer power by binary manipulation.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 integer_power(T const & X, Index const exponent)
 {
@@ -266,7 +218,7 @@ integer_power(T const & X, Index const exponent)
   Index const
   rightmost_bit = 1;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   Index const
   number_digits =NPP_MAX_32U;
 #else
@@ -325,11 +277,7 @@ integer_power(T const & X, Index const exponent)
 // Utility for Kronecker delta in 2D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 kronecker_delta(Index const i, Index const j)
 {
@@ -345,11 +293,7 @@ kronecker_delta(Index const i, Index const j)
 // Utility for Kronecker delta in 3D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 kronecker_delta(Index const i, Index const j, Index const k)
 {
@@ -366,11 +310,7 @@ kronecker_delta(Index const i, Index const j, Index const k)
 // Utility for Kronecker delta in 4D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 kronecker_delta(Index const i, Index const j, Index const k, Index const l)
 {
@@ -388,11 +328,7 @@ kronecker_delta(Index const i, Index const j, Index const k, Index const l)
 // Utility for Levi-Civita/permutation/alternating symbol in 2D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 levi_civita(Index const i, Index const j)
 {
@@ -410,11 +346,7 @@ levi_civita(Index const i, Index const j)
 // Utility for Levi-Civita/permutation/alternating symbol in 3D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 levi_civita(Index const i, Index const j, Index const k)
 {
@@ -437,11 +369,7 @@ levi_civita(Index const i, Index const j, Index const k)
 // Utility for Levi-Civita/permutation/alternating symbol in 4D
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 T
 levi_civita(Index const i, Index const j, Index const k, Index const l)
 {

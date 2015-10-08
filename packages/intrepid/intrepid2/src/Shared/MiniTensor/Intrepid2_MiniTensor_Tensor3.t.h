@@ -47,10 +47,8 @@ namespace Intrepid2 {
 //
 // \return \f$ B = A : u := B_i = A_{ijk} u_{jk} \f$
 //
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<typename Promote<S, T>::type, N, ES>
 dotdot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & u)
 {
@@ -81,10 +79,8 @@ dotdot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & u)
 //
 // \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 //
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u)
 {
@@ -115,10 +111,8 @@ dot(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u)
 //
 // \return \f$ B = u \cdot A := B_{ij} = u_p A{pij} \f$
 //
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A)
 {
@@ -150,10 +144,8 @@ dot(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A)
 //
 // \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 //
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot2(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u)
 {
@@ -184,10 +176,8 @@ dot2(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u)
 //
 // \return \f$ B = u \cdot A := B_{ij} = u_p A_{ipj} \f$
 //
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot2(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A)
 {
@@ -197,10 +187,8 @@ dot2(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A)
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
 ///
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
 {
@@ -233,10 +221,8 @@ dot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
 ///
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 {
@@ -269,10 +255,8 @@ dot(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
 ///
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
 {
@@ -306,10 +290,8 @@ dot2(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B)
 ///
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
 ///
-template<typename S, typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 {
@@ -346,7 +328,7 @@ dot2(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 // \param is input stream
 // \return is input stream
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 std::istream &
 operator>>(std::istream & is, Tensor3<T, N, ES> & A)
 {
@@ -370,7 +352,7 @@ operator>>(std::istream & is, Tensor3<T, N, ES> & A)
 // \param os output stream
 // \return os output stream
 //
-template<typename T, Index N, class ES>
+template<typename T, Index N,  typename ES>
 std::ostream &
 operator<<(std::ostream & os, Tensor3<T, N, ES> const & A)
 {

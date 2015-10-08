@@ -60,7 +60,7 @@ struct dimension_const<DYNAMIC, C> {
 /// Validate dimension
 template<Index D>
 struct check_static {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   static Index const
   maximum_dimension =  NPP_MAX_32U;
 #else
@@ -77,7 +77,7 @@ KOKKOS_INLINE_FUNCTION
 void
 check_dynamic(Index const dimension)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   static Index const
   maximum_dimension =  NPP_MAX_32U;
 #else
@@ -88,7 +88,7 @@ check_dynamic(Index const dimension)
   assert(Store::IS_DYNAMIC == true);
 
   if (dimension > maximum_dimension) {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
     Kokkos::abort("ERROR (check_dynamic) : Requested dimension exceeds maximum allowed");
 #else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -235,7 +235,7 @@ struct dimension_product<DYNAMIC, DYNAMIC> {
 ///
 /// Base static storage class. Simple linear access memory model.
 ///
-template<typename T, Index N, class ES=NOKOKKOS>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class Storage
 {
 public:
@@ -257,20 +257,20 @@ public:
   bool const
   IS_KOKKOS = false;
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage() {}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   explicit
   Storage(Index const number_entries)
   {
     resize(number_entries);
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ~Storage() {}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator[](Index const i) const
   {
@@ -278,7 +278,7 @@ KOKKOS_INLINE_FUNCTION
     return storage_[i];
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T &
   operator[](Index const i)
   {
@@ -286,16 +286,16 @@ KOKKOS_INLINE_FUNCTION
     return storage_[i];
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Index
   size() const
   {
     return size_;
   }
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries) {
-#if defined (HAVE_INTREPID_KOKKOSCORE)
+#if defined (KOKKOS_HAVE_CUDA)
    if(number_entries == N) ;
    else Kokkos::abort("ERROR (MiniTensor): wrong # of entries in MiniTensor resize()");
 #else
@@ -305,20 +305,20 @@ KOKKOS_INLINE_FUNCTION
    }
   
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   clear()
   {
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   pointer_type
   get_pointer()
   {
     return &storage_[0];
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const
   {
@@ -334,10 +334,10 @@ KOKKOS_INLINE_FUNCTION
   }
 
 private:
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage(Storage<T, N, ES> const & s);
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage<T, N, ES> &
   operator=(Storage<T, N, ES> const & s);
 
@@ -352,7 +352,7 @@ KOKKOS_INLINE_FUNCTION
 /// Base dynamic storage class. Simple linear access memory model.
 ///
 //Kokkos specialization of Storage
-template<typename T, class ES>
+template<typename T,  typename ES>
 class Storage<T, DYNAMIC, ES>
 {
 public:
@@ -374,22 +374,22 @@ public:
   bool const
   IS_KOKKOS = true;
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage()
   {
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   explicit
   Storage(Index const number_entries)
   {
     resize(number_entries);
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ~Storage() {clear();}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator[](Index const i) const
   {
@@ -397,7 +397,7 @@ KOKKOS_INLINE_FUNCTION
     return storage_[i];
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T &
   operator[](Index const i)
   {
@@ -405,14 +405,14 @@ KOKKOS_INLINE_FUNCTION
     return storage_[i];
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Index
   size() const
   {
     return size_;
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries)
   {
@@ -423,7 +423,7 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   clear()
   {
@@ -434,15 +434,15 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   pointer_type
   get_pointer() {return storage_;}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const {return storage_;}
 
- static constexpr
+  static constexpr
   KOKKOS_INLINE_FUNCTION
   Index
   static_size()
@@ -452,8 +452,10 @@ KOKKOS_INLINE_FUNCTION
 
 
 private:
+  KOKKOS_INLINE_FUNCTION
   Storage(Storage<T, DYNAMIC,ES> const & s);
-KOKKOS_INLINE_FUNCTION
+
+  KOKKOS_INLINE_FUNCTION
   Storage<T, DYNAMIC, ES> &
   operator=(Storage<T, DYNAMIC, ES> const & s);
 
@@ -464,7 +466,7 @@ KOKKOS_INLINE_FUNCTION
   size_;
 };
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
 //CUDA specialization for the DYNAMIC storage
 template<typename T>
 class Storage<T, DYNAMIC, Kokkos::Cuda>
@@ -488,33 +490,33 @@ public:
   bool const
   IS_KOKKOS = true;
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage() : storage_(NULL), size_(0) {}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   explicit
   Storage(Index const number_entries) : storage_(NULL), size_(0)
   {resize(number_entries);}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ~Storage() {clear();}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T const &
   operator[](Index const i) const
   {assert(i < size()); return storage_[i];}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   T &
   operator[](Index const i)
   {assert(i < size()); return storage_[i];}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Index
   size() const
   {return size_;}
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   resize(Index const number_entries)
   {
@@ -523,7 +525,7 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void
   clear()
   {
@@ -532,14 +534,14 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   pointer_type
   get_pointer()
   {
     return storage_;
   }
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const_pointer_type
   get_const_pointer() const
   {
@@ -556,10 +558,10 @@ KOKKOS_INLINE_FUNCTION
 
 private:
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
 
-KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   Storage<T, DYNAMIC, Kokkos::Cuda> &
   operator=(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
 

@@ -49,10 +49,8 @@ namespace Intrepid2 {
 // \param \f$ F, u \f$
 // \return \f$ F^{-T} u \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -70,7 +68,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+#if defined(KOKKOS_HAVE_CUDA) 
       Kokkos::abort("ERROR(push_forward_covariant): Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -114,10 +112,8 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, v \f$
 // \return \f$ F^T v \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -130,7 +126,7 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
       Kokkos::abort("ERROR (pull_back_covariant): Supports only 2D and 3D. Found dimension" );
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -164,10 +160,8 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, u \f$
 // \return \f$ F u \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -180,7 +174,7 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & 
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (push_forward_contravariant) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -214,10 +208,8 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & 
 // \param \f$ F, u \f$
 // \return \f$ F^{-1} u \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -235,7 +227,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (push_back_contravariant) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -279,10 +271,8 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, A \f$
 // \return \f$ F^{-T} A F^{-1} \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 {
@@ -300,7 +290,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (push_forward_contravariant) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -343,10 +333,8 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F^T A F\f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 {
@@ -358,10 +346,8 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, A \f$
 // \return \f$ F A F^T \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 {
@@ -373,10 +359,8 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & 
 // \param \f$ F, A \f$
 // \return \f$ F^{-1} A F^{-T} \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 {
@@ -394,7 +378,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (push_back_contravariant) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -437,10 +421,8 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A)
 // \param \f$ F, u \f$
 // \return \f$ \det F F^{-1} u \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -453,7 +435,7 @@ piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (piola) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -497,10 +479,8 @@ piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, u \f$
 // \return \f$ (\det F)^{-1} F u \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<T, N, ES>
 piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 {
@@ -518,7 +498,7 @@ piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (piola_inverse) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -553,10 +533,8 @@ piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u)
 // \param \f$ F, \sigma \f$
 // \return \f$ \det F \sigma F^{-T} \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
 {
@@ -569,7 +547,7 @@ piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
   switch (dimension) {
 
     default:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
+#if defined(KOKKOS_HAVE_CUDA)
      Kokkos::abort("ERROR (piola) : Supports only 2D and 3D. Found dimension:");
 #else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
@@ -613,10 +591,8 @@ piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma)
 // \param \f$ F, P \f$
 // \return \f$ (\det F)^{-1} P F^T \f$
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P)
 {
@@ -631,10 +607,8 @@ piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P)
 //
 // Smallest eigenvalue by inverse iteration.
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 smallest_eigenvalue(Tensor<T, N, ES> const & A)
 {
@@ -678,10 +652,8 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A)
 // Check strict ellipticity condition for 4th-order tensor.
 // Assume A has major symmetries.
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 check_strict_ellipticity(Tensor4<T, N, ES> const & A)
 {
@@ -712,10 +684,8 @@ check_strict_ellipticity(Tensor4<T, N, ES> const & A)
 // Check strong ellipticity condition for 4th-order tensor.
 // Assume A has major and minor symmetries.
 //
-template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-#endif
 std::pair<bool, Vector<T, N, ES> >
 check_strong_ellipticity(Tensor4<T, N, ES> const & A)
 {
@@ -737,7 +707,7 @@ check_strong_ellipticity(Tensor4<T, N, ES> const & A)
   T
   error = 1.0;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_HAVE_CUDA)
   T
   prev_eigenvalue =  NPP_MAX_32U;
 #else
