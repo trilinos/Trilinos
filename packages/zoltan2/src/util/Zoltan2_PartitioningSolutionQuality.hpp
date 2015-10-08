@@ -205,6 +205,14 @@ public:
     else                       // idx weight
       cut = metrics_[idx].getGlobalMax();
   }
+
+  /*! \brief Print all the metrics
+   */
+  void printMetrics(std::ostream &os) const {
+    Zoltan2::printMetrics<scalar_t, part_t>(os, 
+      targetGlobalParts_, numGlobalParts_, 
+      metrics_.view(0, metrics_.size()));
+  }
 };
 
 template <typename Adapter>

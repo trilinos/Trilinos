@@ -1432,11 +1432,14 @@ template <typename scalar_t, typename part_t>
  */
 
 template <typename scalar_t, typename part_t>
-  void printMetrics( std::ostream &os, part_t numParts, 
+  void printMetrics( std::ostream &os,
+    part_t targetNumParts, part_t numParts, 
     const ArrayView<GraphMetricValues<scalar_t> > &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   os << std::endl;
+  if (targetNumParts != numParts)
+    os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
 
   std::string unset("unset");
 
@@ -1465,11 +1468,12 @@ template <typename scalar_t, typename part_t>
  */
 
 template <typename scalar_t, typename part_t>
-  void printMetrics( std::ostream &os, part_t numParts, 
+  void printMetrics( std::ostream &os,
+    part_t targetNumParts, part_t numParts, 
     const GraphMetricValues<scalar_t> &info)
 {
   ArrayView<GraphMetricValues<scalar_t> > infoList(&info, 1);
-  printMetrics( os, numParts, infoList);
+  printMetrics( os, targetNumParts, numParts, infoList);
 }
 
 /*! \brief Compute the norm of the vector of weights.
