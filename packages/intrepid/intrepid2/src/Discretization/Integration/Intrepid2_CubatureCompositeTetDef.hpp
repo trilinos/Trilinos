@@ -68,7 +68,7 @@ const CubatureTemplate *  CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::e
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
-  return INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM;
+  return INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM;
 }
 
 
@@ -81,7 +81,7 @@ const char* CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::getName() const
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_COMPOSITE_TET";
+const char* CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_COMPOSITE_TET";
 
 
 //-------------------------------------------------------------------------------------//
@@ -99,7 +99,7 @@ const char* CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ 
 */
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const CubatureTemplate CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM+1] =
+const CubatureTemplate CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM+1] =
 {
   // Cubature templates for the reference tet {(0,0,0), (1,0,0), (0,1,0), (0,0,1)}
   //

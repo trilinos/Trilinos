@@ -46,8 +46,8 @@
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_CONTROLVOLUME_HPP
-#define INTREPID_CUBATURE_CONTROLVOLUME_HPP
+#ifndef INTREPID2_CUBATURE_CONTROLVOLUME_HPP
+#define INTREPID2_CUBATURE_CONTROLVOLUME_HPP
 
 #include "Intrepid2_Cubature.hpp"
 #include "Teuchos_Assert.hpp"

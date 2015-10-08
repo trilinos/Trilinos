@@ -46,8 +46,8 @@
     \author Created by D. Kouri and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_LINESORTED_HPP
-#define INTREPID_CUBATURE_LINESORTED_HPP
+#ifndef INTREPID2_CUBATURE_LINESORTED_HPP
+#define INTREPID2_CUBATURE_LINESORTED_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
