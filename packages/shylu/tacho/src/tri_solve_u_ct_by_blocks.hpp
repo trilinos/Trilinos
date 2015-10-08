@@ -11,8 +11,7 @@ namespace Tacho {
 
   using namespace std;
 
-  template<typename ParallelForType,
-           typename CrsTaskViewTypeA,
+  template<typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
   static int genTrsmTasks_TriSolveUpperConjTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
@@ -20,8 +19,7 @@ namespace Tacho {
                                                              CrsTaskViewTypeA &A, 
                                                              DenseTaskViewTypeB &B);
 
-  template<typename ParallelForType,
-           typename CrsTaskViewTypeA,
+  template<typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
   KOKKOS_INLINE_FUNCTION
@@ -31,8 +29,7 @@ namespace Tacho {
                                                              DenseTaskViewTypeC &C);
   
   template<>
-  template<typename ParallelForType,
-           typename CrsTaskViewTypeA,
+  template<typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
@@ -75,10 +72,10 @@ namespace Tacho {
         // -----------------------------------------------------
 
         // B1 = inv(triu(A11))*B1
-        genTrsmTasks_TriSolveUpperConjTransposeByBlocks<ParallelForType>(policy, diagA, A11, B1);
+        genTrsmTasks_TriSolveUpperConjTransposeByBlocks(policy, diagA, A11, B1);
         
         // B2 = B2 - A12'*B1
-        genGemmTasks_TriSolveUpperConjTransposeByBlocks<ParallelForType>(policy, A12, B1, B2);
+        genGemmTasks_TriSolveUpperConjTransposeByBlocks(policy, A12, B1, B2);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

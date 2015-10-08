@@ -15,8 +15,7 @@ namespace Tacho {
   // BLAS Herk
   // =========
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename DenseExecViewTypeA,
            typename DenseExecViewTypeC>
   KOKKOS_INLINE_FUNCTION

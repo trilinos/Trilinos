@@ -52,6 +52,7 @@ inline
 Tensor<T, N>::Tensor() :
     TensorBase<T, Store>::TensorBase()
 {
+  set_dimension(N);
   return;
 }
 
@@ -468,7 +469,7 @@ template<typename T, Index N>
 inline Index
 Tensor<T, N>::get_dimension() const
 {
-  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+  return TensorBase<T, Store>::get_dimension();
 }
 
 //
@@ -479,12 +480,11 @@ inline
 void
 Tensor<T, N>::set_dimension(Index const dimension)
 {
-  if (IS_DYNAMIC == true) {
-    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  if (IS_DYNAMIC == false) {
+    assert(dimension <= N);
   }
-  else {
-    assert(dimension == N);
-  }
+
+  TensorBase<T, Store>::set_dimension(dimension, ORDER);
 
   return;
 }

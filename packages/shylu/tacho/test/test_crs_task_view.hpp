@@ -9,12 +9,9 @@
 #include "crs_matrix_helper.hpp"
 #include "graph_helper_scotch.hpp" 
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 namespace Tacho {
 

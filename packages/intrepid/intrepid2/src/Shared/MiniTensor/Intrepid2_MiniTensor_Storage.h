@@ -47,18 +47,18 @@
 namespace Intrepid2 {
 
 /// Set to constant value if not dynamic
-template <Index N, Index C>
+template<Index N, Index C>
 struct dimension_const {
   static Index const value = C;
 };
 
-template <Index C>
+template<Index C>
 struct dimension_const<DYNAMIC, C> {
   static Index const value = DYNAMIC;
 };
 
 /// Validate dimension
-template <Index D>
+template<Index D>
 struct check_static {
 #if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
   static Index const
@@ -73,9 +73,8 @@ struct check_static {
 };
 
 template <typename Store>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
+template<typename Store>
 inline
 #endif
 void
@@ -106,58 +105,58 @@ check_dynamic(Index const dimension)
 }
 
 /// Integer power template restricted to orders defined below
-template <Index D, Index O>
+template<Index D, Index O>
 struct dimension_power {
   static Index const value = 0;
 };
 
-template <Index D>
+template<Index D>
 struct dimension_power<D, 1> {
   static Index const value = D;
 };
 
-template <Index D>
+template<Index D>
 struct dimension_power<D, 2> {
   static Index const value = D * D;
 };
 
-template <Index D>
+template<Index D>
 struct dimension_power<D, 3> {
   static Index const value = D * D * D;
 };
 
-template <Index D>
+template<Index D>
 struct dimension_power<D, 4> {
   static Index const value = D * D * D * D;
 };
 
 /// Integer square for manipulations between 2nd and 4rd-order tensors.
-template <Index N>
+template<Index N>
 struct dimension_square {
   static Index const value = 0;
 };
 
-template <>
+template<>
 struct dimension_square<DYNAMIC> {
   static Index const value = DYNAMIC;
 };
 
-template <>
+template<>
 struct dimension_square<1> {
   static Index const value = 1;
 };
 
-template <>
+template<>
 struct dimension_square<2> {
   static Index const value = 4;
 };
 
-template <>
+template<>
 struct dimension_square<3> {
   static Index const value = 9;
 };
 
-template <>
+template<>
 struct dimension_square<4> {
   static Index const value = 16;
 };
@@ -165,73 +164,73 @@ struct dimension_square<4> {
 /// Integer square root template restricted to dimensions defined below.
 /// Useful for constructing a 2nd-order tensor from a 4th-order
 /// tensor with static storage.
-template <Index N>
+template<Index N>
 struct dimension_sqrt {
   static Index const value = 0;
 };
 
-template <>
+template<>
 struct dimension_sqrt<DYNAMIC> {
   static Index const value = DYNAMIC;
 };
 
-template <>
+template<>
 struct dimension_sqrt<1> {
   static Index const value = 1;
 };
 
-template <>
+template<>
 struct dimension_sqrt<4> {
   static Index const value = 2;
 };
 
-template <>
+template<>
 struct dimension_sqrt<9> {
   static Index const value = 3;
 };
 
-template <>
+template<>
 struct dimension_sqrt<16> {
   static Index const value = 4;
 };
 
 /// Manipulation of static and dynamic dimensions.
-template <Index N, Index P>
+template<Index N, Index P>
 struct dimension_add {
   static Index const value = N + P;
 };
 
-template <Index P>
+template<Index P>
 struct dimension_add<DYNAMIC, P> {
   static Index const value = DYNAMIC;
 };
 
-template <Index N, Index P>
+template<Index N, Index P>
 struct dimension_subtract {
   static Index const value = N - P;
 };
 
-template <Index P>
+template<Index P>
 struct dimension_subtract<DYNAMIC, P> {
   static Index const value = DYNAMIC;
 };
 
-template <Index N, Index P>
+template<Index N, Index P>
 struct dimension_product {
   static Index const value = N * P;
 };
 
-template <Index N>
+template<Index N>
 struct dimension_product<N, DYNAMIC> {
   static Index const value = DYNAMIC;
 };
 
-template <Index P>
+template<Index P>
 struct dimension_product<DYNAMIC, P> {
   static Index const value = DYNAMIC;
 };
 
-template <>
+template<>
 struct dimension_product<DYNAMIC, DYNAMIC> {
   static Index const value = DYNAMIC;
 };
@@ -247,63 +246,66 @@ template<typename T, Index N,  class ES>
 class Storage
 {
 public:
-  typedef T value_type;
-  typedef T * pointer_type;
-  typedef T & reference_type;
-  typedef T const * const_pointer_type;
-  typedef T const & const_reference_type;
+  using value_type = T;
+  using pointer_type = T *;
+  using reference_type = T &;
+  using const_pointer_type = T const *;
+  using const_reference_type = T const &;
 
-  static
-  bool const
+  static constexpr
+  bool
   IS_STATIC = true;
 
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = false;
 
   static
   bool const
   IS_KOKKOS = false;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage() {}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   explicit
-  Storage(Index const number_entries) {resize(number_entries);}
+  Storage(Index const number_entries)
+  {
+    resize(number_entries);
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   ~Storage() {}
+  ~Storage()
+  {
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T const &
   operator[](Index const i) const
-  {assert(i < N); return storage_[i];}
+  {
+    assert(i < size());
+    return storage_[i];
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T &
   operator[](Index const i)
-  {assert(i < N); return storage_[i];}
+  {
+    assert(i < size());
+    return storage_[i];
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Index
-  size() const {return N;}
+  size() const
+  {
+    return size_;
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   resize(Index const number_entries) {
 #if defined (HAVE_INTREPID_KOKKOSCORE)
@@ -312,41 +314,50 @@ KOKKOS_INLINE_FUNCTION
 #else
     assert(number_entries == N);
 #endif
+    size_ = number_entries;
    }
+  
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
-  clear() {}
+  clear()
+  {
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   pointer_type
-  get_pointer() {return &storage_[0];}
+  get_pointer()
+  {
+    return &storage_[0];
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   const_pointer_type
-  get_const_pointer() const {return &storage_[0];}
+  get_const_pointer() const
+  {
+    return &storage_[0];
+  }
+
+  static constexpr
+  Index
+  static_size()
+  {
+    return N;
+  }
 
 private:
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage(Storage<T, N, ES> const & s);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage<T, N, ES> &
   operator=(Storage<T, N, ES> const & s);
 
   T
   storage_[N];
 
+  Index
+  size_{N};
 };
 
 ///
@@ -363,95 +374,89 @@ public:
   using const_pointer_type = T const *;
   using const_reference_type = T const &;
 
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = true;
 
-  static
-  bool const
+  static constexpr
+  bool
   IS_STATIC = false;
 
   static 
   bool const
   IS_KOKKOS = true;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
-  Storage() : storage_(NULL), size_(0) {}
+  Storage()
+  {
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   explicit
-  Storage(Index const number_entries) : storage_(NULL), size_(0)
-  {resize(number_entries);}
+  Storage(Index const number_entries)
+  {
+    resize(number_entries);
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   ~Storage() {clear();}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T const &
   operator[](Index const i) const
-  {assert(i < size()); return storage_[i];}
+  {
+    assert(i < size());
+    return storage_[i];
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T &
   operator[](Index const i)
-  {assert(i < size()); return storage_[i];}
+  {
+    assert(i < size());
+    return storage_[i];
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Index
   size() const
-  {return size_;}
+  {
+    return size_;
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   resize(Index const number_entries)
   {
     if (number_entries != size_) {
-      clear(); storage_ = new T[number_entries]; size_ = number_entries;
+      clear();
+      storage_ = new T[number_entries];
+      size_ = number_entries;
     }
   }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   clear()
   {
-    if (storage_ != NULL) {
-      delete [] storage_; storage_ = NULL; size_ = 0;
+    if (storage_ != nullptr) {
+      delete[] storage_;
+      storage_ = nullptr;
+      size_ = 0;
     }
   }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   pointer_type
   get_pointer() {return storage_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   const_pointer_type
   get_const_pointer() const {return storage_;}
 
 private:
   Storage(Storage<T, DYNAMIC,ES> const & s);
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage<T, DYNAMIC, ES> &
   operator=(Storage<T, DYNAMIC, ES> const & s);
 
@@ -474,59 +479,45 @@ public:
   using const_pointer_type = T const *;
   using const_reference_type = T const &;
 
-  static
-  bool const
+  static constexpr
+  bool 
   IS_DYNAMIC = true;
 
-  static
-  bool const
+  static constexpr
+  bool 
   IS_STATIC = false;
 
   static
   bool const
   IS_KOKKOS = true;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage() : storage_(NULL), size_(0) {}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   explicit
   Storage(Index const number_entries) : storage_(NULL), size_(0)
   {resize(number_entries);}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   ~Storage() {clear();}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T const &
   operator[](Index const i) const
   {assert(i < size()); return storage_[i];}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T &
   operator[](Index const i)
   {assert(i < size()); return storage_[i];}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Index
   size() const
   {return size_;}
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   resize(Index const number_entries)
   {
@@ -535,9 +526,7 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   clear()
   {
@@ -546,36 +535,41 @@ KOKKOS_INLINE_FUNCTION
     }
   }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   pointer_type
-  get_pointer() {return storage_;}
+  get_pointer()
+  {
+    return storage_;
+  }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   const_pointer_type
-  get_const_pointer() const {return storage_;}
+  get_const_pointer() const
+  {
+    return storage_;
+  }
+
+  static constexpr
+  Index
+  static_size()
+  {
+    return 0;
+  }
 
 private:
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Storage<T, DYNAMIC, Kokkos::Cuda> &
   operator=(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
 
   T *
-  storage_;
+  storage_{nullptr};
 
   Index
-  size_;
+  size_{0};
 };
 
 #endif

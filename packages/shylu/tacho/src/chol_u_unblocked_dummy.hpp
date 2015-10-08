@@ -14,8 +14,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewType>
+  template<typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Chol<Uplo::Upper,AlgoChol::Dummy,Variant::One>
@@ -26,7 +25,6 @@ namespace Tacho {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     // row_view_type r1t, r2t;
 
@@ -40,10 +38,10 @@ namespace Tacho {
 
       if (nnz_r1t) {
         // inverse scale
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type j) {
-                          r1t.Value(j) /= alpha;
-                        });
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_r1t),
+                             [&](const ordinal_type j) {
+                               r1t.Value(j) /= alpha;
+                             });
       }
     }
     return 0;

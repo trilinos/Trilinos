@@ -111,7 +111,7 @@ EXAMPLE_PATH           = ../examples \
                          .
 EXAMPLE_PATTERNS       =
 EXAMPLE_RECURSIVE      = YES
-IMAGE_PATH             = images
+IMAGE_PATH             = .
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO

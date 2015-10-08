@@ -23,6 +23,7 @@ APPEND_SET(HEADERS
     Kokkos_DefaultNode.hpp
     Kokkos_NodeAPIConfigDefs.hpp
     Kokkos_NodeAPIVersion.hpp
+    Kokkos_NodeHelpers.hpp
   )
 APPEND_SET(SOURCES
     Kokkos_DefaultNode.cpp

@@ -1631,13 +1631,6 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
                             M->getComm (), M->getNode ()));
 }
 
-#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
-// Include KokkosRefactor partial specialization if enabled
-#  if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#    include "Tpetra_KokkosRefactor_Map_def.hpp"
-#  endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#endif // defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
-
 //
 // Explicit instantiation macro
 //

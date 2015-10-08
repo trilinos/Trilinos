@@ -57,6 +57,7 @@ inline
 Tensor4<T, N, ES>::Tensor4() :
 TensorBase<T, Store>::TensorBase()
 {
+  set_dimension(N);
   return;
 }
 
@@ -249,7 +250,7 @@ inline
 Index
 Tensor4<T, N, ES>::get_dimension() const
 {
-  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+  return TensorBase<T, Store>::get_dimension();
 }
 
 //
@@ -264,12 +265,11 @@ inline
 void
 Tensor4<T, N, ES>::set_dimension(Index const dimension)
 {
-  if (IS_DYNAMIC == true) {
-    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  if (IS_DYNAMIC == false) {
+    assert(dimension <= N);
   }
-  else {
-    assert(dimension == N);
-  }
+
+  TensorBase<T, Store>::set_dimension(dimension, ORDER);
 
   return;
 }

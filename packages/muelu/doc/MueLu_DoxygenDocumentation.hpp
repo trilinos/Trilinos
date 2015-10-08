@@ -53,7 +53,7 @@
 
 \mainpage
 
-@image html muelu2.png
+@image html muelu.png
 
 \section muelu_index Table of Contents
 
@@ -76,7 +76,7 @@ Useful views of the Doxygen documentation are:
   - Browsing the class documentation organized by logical groups.  Choose the <a href="modules.html">Modules tab</a>.
 
 The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
-<a href=https://trilinos.org/packages/muelu>MueLu home page</a>.
+<a href=https://trilinos.org/packages/muelu/muelu-documentation>MueLu home page</a>.
 
 
 \section muelu_authors Authors and Contributors
@@ -100,7 +100,7 @@ The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
 \section muelu_questions For All Questions and Comments...
 
    Please contact the authors listed in the License above, or use one of the
-   <a href=https://trilinos.org/packages/muelu>MueLu mailing lists</a>.
+   <a href=https://trilinos.org/packages/muelu/muelu-contact-us>MueLu mailing lists</a>.
 
 */
 

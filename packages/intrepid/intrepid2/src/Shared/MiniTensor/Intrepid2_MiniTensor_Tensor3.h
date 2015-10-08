@@ -47,10 +47,7 @@
 namespace Intrepid2 {
 
 template<typename T, Index N, class ES=NOKOKKOS>
-struct tensor3_store
-{
-  typedef Storage<T, dimension_power<N, 3>::value> type;
-};
+using tensor3_store = Storage<T, dimension_power<N, 3>::value>;
 
 ///
 /// Third-order tensor.
@@ -63,47 +60,43 @@ public:
   ///
   /// Order
   ///
-  static
-  Index const
+  static constexpr
+  Index
   ORDER = 3;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef typename tensor3_store<T, N, ES>::type
-  Store;
+  using Store = tensor3_store<T, N, ES>;
 
   ///
   /// Tensor order
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
-  static
+  static constexpr
   Index
-  get_order() {return ORDER;}
+  get_order()
+  {
+    return ORDER;
+  }
 
   ///
   /// 3rd-order tensor constructor with NaNs
   /// \param dimension the space dimension
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif 
   explicit
   Tensor3();
 
   explicit
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(Index const dimension);
 
   ///
@@ -112,15 +105,11 @@ KOKKOS_INLINE_FUNCTION
   /// \param value all components are set equal to this
   ///
   explicit
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(ComponentValue const value);
 
   explicit
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(Index const dimension, ComponentValue const value);
 
   ///
@@ -129,32 +118,24 @@ KOKKOS_INLINE_FUNCTION
   /// \param data_ptr pointer into the array
   ///
   explicit
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(T const * data_ptr);
 
   explicit
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
   /// 3rd-order tensor constructor from 3rd-order tensor
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Tensor3(Tensor3<T, N, ES> const & A);
 
   ///
   /// 3rd-order tensor simple destructor
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   ~Tensor3();
 
   ///
@@ -163,9 +144,7 @@ KOKKOS_INLINE_FUNCTION
   /// \param j index
   /// \param k index
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T const &
   operator()(Index const i, Index const j, Index const k) const;
 
@@ -175,27 +154,21 @@ KOKKOS_INLINE_FUNCTION
   /// \param j index
   /// \param k index
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   T &
   operator()(Index const i, Index const j, Index const k);
 
   ///
   /// \return dimension
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   Index
   get_dimension() const;
 
   ///
   /// \param dimension of vector
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
   void
   set_dimension(Index const dimension);
 
@@ -208,9 +181,7 @@ KOKKOS_INLINE_FUNCTION
 /// \return \f$ A + B \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 operator+(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -221,9 +192,7 @@ operator+(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// \return \f$ A - B \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 operator-(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -232,9 +201,7 @@ operator-(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// \return \f$ -A \f$
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES>
 operator-(Tensor3<T, N, ES> const & A);
 
@@ -243,9 +210,7 @@ operator-(Tensor3<T, N, ES> const & A);
 /// Tested by components
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 operator==(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -254,9 +219,7 @@ operator==(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// Tested by components
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -267,9 +230,7 @@ operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
 operator*(S const & s, Tensor3<T, N, ES> const & A);
 
@@ -280,9 +241,7 @@ operator*(S const & s, Tensor3<T, N, ES> const & A);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
 operator*(Tensor3<T, N, ES> const & A, S const & s);
 
@@ -293,9 +252,7 @@ operator*(Tensor3<T, N, ES> const & A, S const & s);
 /// \return \f$ A / s \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 operator/(Tensor3<T, N, ES> const & A, S const & s);
 
@@ -306,9 +263,7 @@ operator/(Tensor3<T, N, ES> const & A, S const & s);
 /// \return \f$ s / A \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Tensor3<T, N, ES> const & A);
 
@@ -319,9 +274,7 @@ operator/(S const & s, Tensor3<T, N, ES> const & A);
 /// \return \f$ B = A : u := B_i = A_{ijk} u_{jk} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Vector<typename Promote<S, T>::type, N, ES>
 dotdot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & u);
 
@@ -332,9 +285,7 @@ dotdot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & u);
 /// \return \f$ B = A \cdot u := B_{ij} = A_{ijp} u_p \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u);
 
@@ -345,9 +296,7 @@ dot(Tensor3<T, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \return \f$ B = u \cdot A := B_{ij} = u_p A{pij} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A);
 
@@ -358,9 +307,7 @@ dot(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A);
 /// \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot2(Tensor3<T, N, ES> const & A, Vector<S> const & u);
 
@@ -371,9 +318,7 @@ dot2(Tensor3<T, N, ES> const & A, Vector<S> const & u);
 /// \return \f$ B = u \cdot A := B_{ij} = u_p A_{ipj} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<typename Promote<S, T>::type, N, ES>
 dot2(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A);
 
@@ -384,9 +329,7 @@ dot2(Vector<S, N, ES> const & u, Tensor3<T, N, ES> const & A);
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ijp} B_{pk} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 
@@ -397,9 +340,7 @@ dot(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{pjk} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -410,9 +351,7 @@ dot(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ipj} B_{pk} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 
@@ -423,9 +362,7 @@ dot2(Tensor3<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \return \f$ C = A \cdot B := C_{ijk} = A_{ip} B_{jpk} \f$
 ///
 template<typename S, typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 
@@ -433,23 +370,17 @@ dot2(Tensor<S, N, ES> const & A, Tensor3<T, N, ES> const & B);
 /// Levi-Civita symbol
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 levi_civita_3();
 
 template<typename T, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, DYNAMIC,ES> const
 levi_civita_3(Index const dimension);
 
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 levi_civita_3(Index const dimension);
 
@@ -457,23 +388,17 @@ levi_civita_3(Index const dimension);
 /// Permutation symbol
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 permutation_3();
 
 template<typename T, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, DYNAMIC,ES> const
 permutation_3(Index const dimension);
 
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 permutation_3(Index const dimension);
 
@@ -481,23 +406,17 @@ permutation_3(Index const dimension);
 /// Alternating symbol
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 alternator_3();
 
 template<typename T, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, DYNAMIC,ES> const
 alternator_3(Index const dimension);
 
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor3<T, N, ES> const
 alternator_3(Index const dimension);
 

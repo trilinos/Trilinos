@@ -49,19 +49,15 @@ namespace Intrepid2
 // Default constructor.
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
-TensorBase<T, ST>::TensorBase() :
-    dimension_(0)
+TensorBase<T, ST>::TensorBase()
 {
-  if (ST::IS_DYNAMIC == true) {
-    set_number_components(0);
-  } else {
-    fill(NANS);
-  }
+  Index const
+  static_size = ST::static_size();
+
+  set_number_components(static_size);
+  fill(NANS);
+
   return;
 }
 
@@ -69,13 +65,8 @@ TensorBase<T, ST>::TensorBase() :
 // Construction that initializes to NaNs
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
-TensorBase<T, ST>::TensorBase(Index const dimension, Index const order) :
-    dimension_(0)
+TensorBase<T, ST>::TensorBase(Index const dimension, Index const order)
 {
   set_dimension(dimension, order);
   fill(NANS);
@@ -86,16 +77,11 @@ TensorBase<T, ST>::TensorBase(Index const dimension, Index const order) :
 // Create with specified value
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    ComponentValue const value) :
-    dimension_(0)
+    ComponentValue const value)
 {
   set_dimension(dimension, order);
   fill(value);
@@ -106,16 +92,11 @@ TensorBase<T, ST>::TensorBase(
 // Construction from a scalar
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    T const & s) :
-    dimension_(0)
+    T const & s)
 {
   set_dimension(dimension, order);
   fill(s);
@@ -127,17 +108,12 @@ TensorBase<T, ST>::TensorBase(
 //Kokkos data Types:
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1) :
-    dimension_(0)
+    iType index1)
 {
   set_dimension(dimension, order);
   fill(data, index1);
@@ -156,8 +132,7 @@ TensorBase<T, ST>::TensorBase(
     Index const order,
     ArrayT & data,
     iType index1,
-    iType index2) :
-    dimension_(0)
+    iType index2)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2);
@@ -177,8 +152,7 @@ TensorBase<T, ST>::TensorBase(
     ArrayT & data,
     iType index1,
     iType index2,
-    iType index3) :
-    dimension_(0)
+    iType index3)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3);
@@ -199,8 +173,7 @@ TensorBase<T, ST>::TensorBase(
     iType index1,
     iType index2,
     iType index3,
-    iType index4) :
-    dimension_(0)
+    iType index4)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4);
@@ -222,8 +195,7 @@ TensorBase<T, ST>::TensorBase(
     iType index2,
     iType index3,
     iType index4,
-    iType index5) :
-    dimension_(0)
+    iType index5)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5);
@@ -246,8 +218,7 @@ TensorBase<T, ST>::TensorBase(
     iType index3,
     iType index4,
     iType index5,
-    iType index6) :
-    dimension_(0)
+    iType index6)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5, index6);
@@ -255,30 +226,22 @@ TensorBase<T, ST>::TensorBase(
 }
 
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    T const * data_ptr) :
-    dimension_(0)
+    T const * data_ptr)
 {
   set_dimension(dimension, order);
   fill(data_ptr);
   return;
 }
+
 //
 // Copy constructor
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
     dimension_(X.dimension_)
 {
@@ -298,11 +261,7 @@ TensorBase<T, ST>::TensorBase(TensorBase<T, ST> const & X) :
 // Copy assignment
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST> &
 TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 {
@@ -325,11 +284,7 @@ TensorBase<T, ST>::operator=(TensorBase<T, ST> const & X)
 //
 // Simple destructor
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST>::~TensorBase()
 {
   return;
@@ -339,15 +294,10 @@ TensorBase<T, ST>::~TensorBase()
 // Get dimension
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 Index
 TensorBase<T, ST>::get_dimension() const
 {
-  assert(ST::IS_DYNAMIC == true);
   return dimension_;
 }
 
@@ -355,17 +305,11 @@ TensorBase<T, ST>::get_dimension() const
 // Set dimension
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  if (ST::IS_STATIC == true) return;
-
-  dimension_ = dimension;
+  dimension_ = dimension == DYNAMIC ? 0 : dimension;
 
   Index const
   number_components = integer_power(dimension, order);
@@ -379,11 +323,7 @@ TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 // Linear access to components
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 T const &
 TensorBase<T, ST>::operator[](Index const i) const
 {
@@ -394,11 +334,7 @@ TensorBase<T, ST>::operator[](Index const i) const
 // Linear access to components
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 T &
 TensorBase<T, ST>::operator[](Index const i)
 {
@@ -409,11 +345,7 @@ TensorBase<T, ST>::operator[](Index const i)
 // Get total number of components
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 Index
 TensorBase<T, ST>::get_number_components() const
 {
@@ -424,11 +356,7 @@ TensorBase<T, ST>::get_number_components() const
 // Allocate space for components
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::set_number_components(Index const number_components)
 {
@@ -440,11 +368,7 @@ TensorBase<T, ST>::set_number_components(Index const number_components)
 // Fill components with value.
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(ComponentValue const value)
 {
@@ -509,11 +433,7 @@ TensorBase<T, ST>::fill(ComponentValue const value)
 // Fill components from argument
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(T const & s)
 {
@@ -532,11 +452,7 @@ TensorBase<T, ST>::fill(T const & s)
 //
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1)
 {
@@ -574,11 +490,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1)
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
 {
@@ -639,11 +551,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2)
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
 {
@@ -714,11 +622,7 @@ TensorBase<T, ST>::fill(ArrayT & data, iType index1, iType index2, iType index3)
 
 template<typename T, typename ST>
 template<class ArrayT, typename iType>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(
     ArrayT & data,
@@ -1042,11 +946,7 @@ TensorBase<T, ST>::fill(
   return;
 }
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::fill(T const * data_ptr)
 {
@@ -1067,11 +967,7 @@ TensorBase<T, ST>::fill(T const * data_ptr)
 //
 template<typename T, typename ST>
 template<typename S, typename SS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 TensorBase<T, ST> &
 TensorBase<T, ST>::operator+=(TensorBase<S, SS> const & X)
 {
@@ -1092,11 +988,7 @@ TensorBase<T, ST>::operator+=(TensorBase<S, SS> const & X)
 //
 template<typename T, typename ST>
 template<typename S, typename SS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 TensorBase<T, ST> &
 TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
 {
@@ -1117,11 +1009,7 @@ TensorBase<T, ST>::operator-=(TensorBase<S, SS> const & X)
 //
 template<typename T, typename ST>
 template<typename S>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 TensorBase<T, ST> &
 TensorBase<T, ST>::operator*=(S const & X)
 {
@@ -1139,11 +1027,7 @@ TensorBase<T, ST>::operator*=(S const & X)
 //
 template<typename T, typename ST>
 template<typename S>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif 
 TensorBase<T, ST> &
 TensorBase<T, ST>::operator/=(S const & X)
 {
@@ -1160,11 +1044,7 @@ TensorBase<T, ST>::operator/=(S const & X)
 // Fill with zeros
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 void
 TensorBase<T, ST>::clear()
 {
@@ -1193,17 +1073,11 @@ norm_f_square(TensorBase<T, ST> const & X)
 // Frobenius norm
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 norm_f(TensorBase<T, ST> const & X)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-  return sqrt(norm_f_square(X));
-#else
   return std::sqrt(norm_f_square(X));
-#endif
 }
 
 //
@@ -1211,9 +1085,7 @@ norm_f(TensorBase<T, ST> const & X)
 //
 template<typename R, typename S, typename T, typename SR, typename SS,
     typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 add(
     TensorBase<R, SR> const & A,
@@ -1239,9 +1111,7 @@ add(
 //
 template<typename R, typename S, typename T, typename SR, typename SS,
     typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 subtract(
     TensorBase<R, SR> const & A,
@@ -1265,9 +1135,7 @@ subtract(
 // Base minus
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 minus(TensorBase<T, ST> const & A, TensorBase<T, ST> & B)
 {
@@ -1287,9 +1155,7 @@ minus(TensorBase<T, ST> const & A, TensorBase<T, ST> & B)
 // Base equality
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B)
 {
@@ -1309,9 +1175,7 @@ equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B)
 // Base not equality
 //
 template<typename T, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 bool
 not_equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B)
 {
@@ -1322,9 +1186,7 @@ not_equal(TensorBase<T, ST> const & A, TensorBase<T, ST> const & B)
 // Base scaling
 //
 template<typename R, typename S, typename T, typename SR, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 scale(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
 {
@@ -1344,9 +1206,7 @@ scale(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
 // Base division
 //
 template<typename R, typename S, typename T, typename SR, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 divide(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
 {
@@ -1366,9 +1226,7 @@ divide(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
 // Base split (scalar divided by tensor)
 //
 template<typename R, typename S, typename T, typename SR, typename ST>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 split(TensorBase<R, SR> const & A, S const & s, TensorBase<T, ST> & B)
 {

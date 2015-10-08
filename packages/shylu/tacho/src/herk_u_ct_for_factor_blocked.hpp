@@ -14,8 +14,7 @@ namespace Tacho {
   // Herk used in the factorization phase
   // ====================================
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewTypeA,
            typename CrsExecViewTypeC>
   KOKKOS_INLINE_FUNCTION
@@ -31,10 +30,9 @@ namespace Tacho {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
-    typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
     // scale the matrix C with beta
-    scaleCrsMatrix<ParallelForType>(member, beta, C);
+    scaleCrsMatrix(member, beta, C);
 
     // C(i,j) += alpha*A'(i,k)*A(k,j)
     for (ordinal_type k=0;k<A.NumRows();++k) {
@@ -42,23 +40,23 @@ namespace Tacho {
       const ordinal_type nnz = a.NumNonZeros();
 
       if (nnz > 0) {
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nnz),
-                        [&](const ordinal_type i) {
-                          const ordinal_type row_at_i  = a.Col(i);
-                          const value_type   val_at_ik = conj(a.Value(i));
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz),
+                             [&](const ordinal_type i) {
+                               const ordinal_type row_at_i  = a.Col(i);
+                               const value_type   val_at_ik = conj(a.Value(i));
 
-                          row_view_type &c = C.RowView(row_at_i);
+                               row_view_type &c = C.RowView(row_at_i);
 
-                          ordinal_type idx = 0;
-                          for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
-                            const ordinal_type col_at_j  = a.Col(j);
-                            const value_type   val_at_kj = a.Value(j);
+                               ordinal_type idx = 0;
+                               for (ordinal_type j=i;j<nnz && (idx > -2);++j) {
+                                 const ordinal_type col_at_j  = a.Col(j);
+                                 const value_type   val_at_kj = a.Value(j);
 
-                            idx = c.Index(col_at_j, idx);
-                            if (idx >= 0)
-                              c.Value(idx) += alpha*val_at_ik*val_at_kj;
-                          }
-                        });
+                                 idx = c.Index(col_at_j, idx);
+                                 if (idx >= 0)
+                                   c.Value(idx) += alpha*val_at_ik*val_at_kj;
+                               }
+                             });
         member.team_barrier();
       }
     }
