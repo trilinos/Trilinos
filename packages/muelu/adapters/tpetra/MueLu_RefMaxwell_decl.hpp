@@ -68,7 +68,6 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
-#include "XpetraExt_MatrixMatrix.hpp"
 #include "Xpetra_ExportFactory.hpp"
 
 namespace MueLu {

@@ -55,6 +55,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Utilities.hpp"
@@ -186,8 +187,8 @@ namespace MueLuTests {
     // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
     //       (for multiplication of a square matrix with a rectangular matrix)
     //       however it seems to work for two rectangular matrices
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = MueLu::Utils<Scalar,LO,GO>::Multiply(*R1,false,*P1,false,out);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*R1,false,*P1,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
 
     RCP<Vector> x = VectorFactory::Build(RP->getDomainMap());
     RCP<Vector> bRP  = VectorFactory::Build(RP->getRangeMap());
@@ -199,8 +200,8 @@ namespace MueLuTests {
 
     TEST_EQUALITY(bRP->norm1() - bPtP->norm1() < 1e-12, true);
 
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*R2,false,*P2,false,out);
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = MueLu::Utils<Scalar,LO,GO>::Multiply(*P2,true,*P2,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > RP2 = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*R2,false,*P2,false,out);
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtP2 = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*P2,true,*P2,false,out);
 
     x = VectorFactory::Build(RP2->getDomainMap());
     bRP  = VectorFactory::Build(RP2->getRangeMap());
@@ -214,21 +215,6 @@ namespace MueLuTests {
 
 
     //R1->describe(*fos,Teuchos::VERB_EXTREME);
-
-    /*RCP<CrsMatrixWrap> crsP1 = rcp_dynamic_cast<CrsMatrixWrap>(P1);
-      RCP<CrsMatrix> crsMat = crsP1->getCrsMatrix();
-      RCP<Xpetra::EpetraCrsMatrix> epcrsMat = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(crsMat);
-      RCP<Epetra_CrsMatrix> epMat = epcrsMat->getEpetra_CrsMatrixNonConst();
-      EpetraExt::RowMatrixToMatrixMarketFile( "Test.mat", *epMat);*/
-
-    //P1->describe(*fos,Teuchos::VERB_EXTREME);
-
-    //R1->getRangeMap()->describe(*fos,Teuchos::VERB_EXTREME);
-    //P1->describe(*fos,Teuchos::VERB_EXTREME);
-    //R1->describe(*fos,Teuchos::VERB_EXTREME);
-
-
-
   }
 
   // check Hierarchy::Setup routine with GenericRFactory as restriction factory

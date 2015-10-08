@@ -48,6 +48,7 @@
 
 #include <Xpetra_CrsMatrixFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_SteepestDescentSolver_decl.hpp"
 
@@ -83,11 +84,11 @@ namespace MueLu {
     P = rcp_const_cast<Matrix>(rcpFromRef(P0));
 
     for (size_t k = 0; k < nIts_; k++) {
-      AP = Utils::Multiply(*A, false, *P, false, mmfancy, true, false);
+      AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, mmfancy, true, false);
 #if 0
       // gradient = -2 A^T * A * P
       SC stepLength = 2*stepLength_;
-      G = Utils::Multiply(*A, true, *AP, false, true, true);
+      G = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, true, *AP, false, true, true);
       C.Apply(*G, *Ptmp);
 #else
       // gradient = - A * P
@@ -97,7 +98,7 @@ namespace MueLu {
 #endif
 
       RCP<Matrix> newP;
-      Utils2::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptmp, false, -stepLength, *P, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P->getDomainMap(), P->getRangeMap() );
       P = newP;
     }

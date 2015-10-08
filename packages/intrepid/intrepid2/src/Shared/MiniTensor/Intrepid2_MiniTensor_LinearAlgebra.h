@@ -608,6 +608,13 @@ template<typename T, Index N, typename ES=NOKOKKOS>
 T
 cond(Tensor<T, N, ES> const & A);
 
+///
+/// Reciprocal condition number: ratio of smallest to largest singular values.
+///
+template<typename T, Index N>
+T
+inv_cond(Tensor<T, N> const & A);
+
 } // namespace Intrepid2
 
 #include "Intrepid2_MiniTensor_LinearAlgebra.i.h"

@@ -42,8 +42,8 @@
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
 #define TPETRA_CRSMATRIX_DEF_HPP
 
-/// \file Tpetra_MultiVector_def.hpp
-/// \brief Definition of the Tpetra::MultiVector class
+/// \file Tpetra_CrsMatrix_def.hpp
+/// \brief Definition of the Tpetra::CrsMatrix class
 ///
 /// If you want to use Tpetra::CrsMatrix, include
 /// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
@@ -4709,17 +4709,6 @@ namespace Tpetra {
         << X_domainMap->getNumVectors ()
         << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
         "is broken.  Please report this bug to the Tpetra developers.");
-
-      // TEUCHOS_TEST_FOR_EXCEPTION(
-      //   X_colMap->getLocalMV ().getStride () !=
-      //   X_domainMap->getLocalMV ().getStride (),
-      //   std::logic_error,
-      //   "Tpetra::CrsMatrix::gaussSeidelCopy: "
-      //   "X_colMap has local stride " << X_colMap->getLocalMV ().getStride ()
-      //   << ", which does not equal the local stride "
-      //   << X_domainMap->getLocalMV ().getStride () << " of X_domainMap.  "
-      //   "This means that Tpetra::MultiVector::offsetViewNonConst is broken.  "
-      //   "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
       if (zeroInitialGuess) {

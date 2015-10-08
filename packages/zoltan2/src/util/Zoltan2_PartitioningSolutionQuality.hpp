@@ -179,7 +179,7 @@ public:
    */
   GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const GraphModel<Adapter> > &graph,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const RCP<const Adapter> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
 
@@ -204,6 +204,14 @@ public:
       cut = metrics_[0].getGlobalMax();
     else                       // idx weight
       cut = metrics_[idx].getGlobalMax();
+  }
+
+  /*! \brief Print all the metrics
+   */
+  void printMetrics(std::ostream &os) const {
+    Zoltan2::printMetrics<scalar_t, part_t>(os, 
+      targetGlobalParts_, numGlobalParts_, 
+      metrics_.view(0, metrics_.size()));
   }
 };
 
@@ -253,7 +261,7 @@ template <typename Adapter>
   GraphPartitioningSolutionQuality<Adapter>::GraphPartitioningSolutionQuality(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const GraphModel<Adapter> > &graph,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
   const RCP<const Adapter> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
@@ -283,7 +291,7 @@ template <typename Adapter>
   ArrayRCP<scalar_t> globalSums;
 
   try{
-    globalWeightedCutsByPart<Adapter, typename Adapter::part_t>(env,
+    globalWeightedCutsByPart<Adapter>(env,
       problemComm, graph, partArray, numGlobalParts_, metrics_, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS;

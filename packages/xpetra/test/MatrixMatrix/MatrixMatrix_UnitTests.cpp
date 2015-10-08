@@ -85,7 +85,8 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Exceptions.hpp>
 
-#include <XpetraExt_MatrixMatrix.hpp>
+//#include <XpetraExt_MatrixMatrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 //#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
 
@@ -226,7 +227,8 @@ namespace {
       //yAB->describe(*fos,Teuchos::VERB_EXTREME);
 
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      //Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,
         false,
         *xB,
@@ -235,7 +237,7 @@ namespace {
       //Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node>(*xAB,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), xAB->getFrobeniusNorm(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,
         true,
         *xB,
@@ -244,7 +246,7 @@ namespace {
       //Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node>(*xAtB,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), xAtB->getFrobeniusNorm(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,
         false,
         *xB,
@@ -253,7 +255,7 @@ namespace {
       //Xpetra::MatrixMatrix::Add<Scalar, LO, GO, Node> (*xABt,false,1.0,*yAB,-1.0);
       TEUCHOS_TEST_EQUALITY(yAB->getFrobeniusNorm(), xABt->getFrobeniusNorm(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,
         true,
         *xB,
@@ -309,7 +311,7 @@ namespace {
       Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yABt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
       Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > yAtBt= Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(map, 10));
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
         *xA,
         false,
         *xB,
@@ -319,7 +321,7 @@ namespace {
       TEUCHOS_TEST_EQUALITY(xAB->getGlobalNumDiags(), yAB->getGlobalNumDiags(), out, success );
       TEUCHOS_TEST_EQUALITY(xAB->getNodeNumEntries(), yAB->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
           true,
           *xB,
@@ -329,7 +331,7 @@ namespace {
         TEUCHOS_TEST_EQUALITY(xAtB->getGlobalNumDiags(), yAtB->getGlobalNumDiags(), out, success );
         TEUCHOS_TEST_EQUALITY(xAtB->getNodeNumEntries(), yAtB->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
           false,
           *xB,
@@ -339,7 +341,7 @@ namespace {
         TEUCHOS_TEST_EQUALITY(xABt->getGlobalNumDiags(), yABt->getGlobalNumDiags(), out, success );
         TEUCHOS_TEST_EQUALITY(xABt->getNodeNumEntries(), yABt->getNodeNumEntries(), out, success );
 
-      Xpetra::MatrixMatrix::Multiply<Scalar, LO, GO, Node> (
+      Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
           true,
           *xB,

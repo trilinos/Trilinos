@@ -46,11 +46,11 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DECL_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DECL_HPP
 
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"

@@ -49,6 +49,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
@@ -64,13 +65,14 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Constructor)
   {
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
     TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
     out << *sapFactory << std::endl;
-
   }
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
@@ -112,7 +114,7 @@ namespace MueLuTests {
     // construct the data to compare
     SC omega = dampingFactor / lambdaMax;
     RCP<Vector> invDiag = Utils_kokkos::GetMatrixDiagonalInverse(*A);
-    RCP<Matrix> Ptest   = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out);
+    RCP<Matrix> Ptest   = Xpetra::IteratorOps<SC,LO,GO,NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label");
 
     // compare matrices by multiplying them by a random vector
     RCP<MultiVector> X = MultiVectorFactory::Build(A->getDomainMap(), 1);

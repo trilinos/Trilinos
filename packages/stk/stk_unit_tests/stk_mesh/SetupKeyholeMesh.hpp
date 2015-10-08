@@ -1,3 +1,5 @@
+#ifndef setupkeyholemeshhpp
+#define setupkeyholemeshhpp
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -247,3 +249,5 @@ void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
 }
 
 } } } // namespace stk mesh unit_test
+
+#endif

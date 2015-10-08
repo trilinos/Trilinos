@@ -923,11 +923,6 @@ typedef Device execution_space;
   Kokkos::parallel_for (N, InitView (a));
 */
 
-template<typename T, typename = void>
-struct conditional_eSpace : Kokkos::HostSpace { };
-
-template<typename T>
-struct conditional_eSpace<T, decltype(std::declval<T>().execution_space, void())> : T { };
 
 
 template <class ArrayJac>

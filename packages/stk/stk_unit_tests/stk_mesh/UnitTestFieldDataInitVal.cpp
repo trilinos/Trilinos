@@ -103,6 +103,69 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
   ASSERT_EQ( *data_ptr, initial_value );
 }
 
+TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
+{
+  // Test that if an initial-value is set on a scalar field, that value is
+  // present the first time field-data is referenced for that field.
+  //
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(pm);
+  if (numProcs == 1) {
+      // Set up meta and bulk data
+      const unsigned spatial_dim = 2;
+      MetaData meta_data(spatial_dim);
+    
+      stk::mesh::Part& newPart = meta_data.declare_part("new part");
+    
+      const unsigned num_states = 1;
+      Field<double>& dfield = meta_data.declare_field<Field<double> >(stk::topology::NODE_RANK, "double_scalar", num_states);
+    
+      const double initial_value = 99.9;
+    
+      stk::mesh::put_field(dfield, newPart, &initial_value);
+    
+      meta_data.commit();
+    
+      BulkData mesh(meta_data, pm);
+      unsigned p_rank = mesh.parallel_rank();
+    
+      // Begin modification cycle so we can create stuff
+      mesh.modification_begin();
+    
+      //declare a node that is not in newPart:
+      EntityId node_id = p_rank+1;
+      Entity node = mesh.declare_entity(NODE_RANK, node_id, meta_data.universal_part());
+
+      //declare two nodes that *are* in newPart:
+      node_id = p_rank+2;
+      Entity node_tmp = mesh.declare_entity(NODE_RANK, node_id, newPart);
+      node_id = p_rank+3;
+      Entity node_tmp2 = mesh.declare_entity(NODE_RANK, node_id, newPart);
+    
+      mesh.modification_end();
+    
+      //zero the field-data for the nodes that have dfield:
+      double* data_ptr = stk::mesh::field_data( dfield, node_tmp);
+      ASSERT_TRUE( nullptr != data_ptr);
+      *data_ptr = 0.0;
+      data_ptr = stk::mesh::field_data( dfield, node_tmp2);
+      ASSERT_TRUE( nullptr != data_ptr);
+      *data_ptr = 0.0;
+
+      mesh.modification_begin();
+      //delete one of the nodes in newPart, add the node that wasn't previously in newPart:
+      mesh.destroy_entity(node_tmp);
+      mesh.change_entity_parts(node, {&newPart});
+      mesh.modification_end();
+    
+      //now expect that data for dfield on node matches initial value
+      data_ptr = stk::mesh::field_data( dfield, node);
+    
+      ASSERT_EQ( initial_value, *data_ptr);
+  }
+}
+
 TEST(UnitTestFieldDataInitVal, test_vector_field)
 {
   // Test that if an initial-value is set on a vector field, that value is

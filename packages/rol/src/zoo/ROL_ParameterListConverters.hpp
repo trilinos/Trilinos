@@ -180,9 +180,9 @@ inline void tierParameterList( Teuchos::ParameterList &outList,
   dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
   dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
 
-  dict["Backtracking Rate"]                                 = join("Step","Line Search","Line Search Method","Backtracking Rate");
-  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Line Search Method","Bracketing Tolerance");
-  dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
+  dict["Backtracking Rate"]                                 = join("Step","Line Search","Line-Search Method","Backtracking Rate");
+  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Line-Search Method","Bracketing Tolerance");
+  dict["Linesearch Type"]                                   = join("Step","Line Search","Line-Search Method","Type");
 
   dict["Initial Trust-Region Radius"]                       = join("Step","Trust Region","Initial Radius");
   dict["Maximum Trust-Region Radius"]                       = join("Step","Trust Region","Maximum Radius");

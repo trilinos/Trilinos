@@ -243,6 +243,7 @@ void run(const UserInputForTests &uinput,
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
   ComparisonSource * comparison_source = new ComparisonSource;
+  comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
   comparison_source->addTimer("solve time");
@@ -256,14 +257,14 @@ void run(const UserInputForTests &uinput,
   }
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
   {
-    if(rank == 0) std::cerr << "Zoltan2 probnlem parameters not provided" << std::endl;
+    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
     return;
   }
   
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
   base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
-   comparison_source->timers["adapter construction time"]->stop();
+  comparison_source->timers["adapter construction time"]->stop();
   
 //  if(rank == 0) cout << "Got input adapter... " << endl;
   if(ia == nullptr)
@@ -371,6 +372,20 @@ void run(const UserInputForTests &uinput,
   if (rank == 0)
     cout << "Problem solved." << endl;
   
+#ifdef KDDKDD
+  {
+  const base_t::gno_t *kddIDs = NULL;
+  ia->getIDsView(kddIDs);
+  for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
+    std::cout << rank << " LID " << i
+              << " GID " << kddIDs[i]
+              << " PART " 
+              << reinterpret_cast<basic_problem_t *>(problem)->getSolution().getPartListView()[i]
+              << std::endl;
+  }
+  }
+#endif
+
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
@@ -432,7 +447,6 @@ void run(const UserInputForTests &uinput,
   comparison_source->problem = RCP<basic_problem_t>(reinterpret_cast<basic_problem_t *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
-  comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   
   // write mesh solution
 //  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();

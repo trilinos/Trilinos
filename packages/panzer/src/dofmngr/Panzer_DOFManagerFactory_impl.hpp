@@ -56,16 +56,20 @@ Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder) const
+                            const std::string & fieldOrder,
+                            const bool callBuildGlobalUnknowns) const
 {
 
 #ifdef PANZER_HAVE_FEI
    if(useDOFManagerFEI_)
-      return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+      return buildUniqueGlobalIndexer<panzer::DOFManagerFEI<LO,GO> >(mpiComm,physicsBlocks,connMngr,
+                                                                     fieldOrder,callBuildGlobalUnknowns);
    else
-      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+      return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder,
+                                                                  callBuildGlobalUnknowns);
 #else
-   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder);
+   return buildUniqueGlobalIndexer<panzer::DOFManager<LO,GO> >(mpiComm,physicsBlocks,connMngr,fieldOrder,
+                                                               callBuildGlobalUnknowns);
 #endif
 }
 
@@ -75,7 +79,8 @@ Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> >
 DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder) const
+                            const std::string & fieldOrder,
+                            const bool callBuildGlobalUnknowns) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::DOFManagerFactory::buildUnqueGlobalIndexer");
 
@@ -93,7 +98,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    {
      Teuchos::RCP<panzer::DOFManager<LO,GO> > nativeDofMngr = 
          Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
-     if(nativeDofMngr!=Teuchos::null)
+     if (nativeDofMngr!=Teuchos::null)
        nativeDofMngr->enableTieBreak(useTieBreak_);
    }
 
@@ -139,7 +144,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
       dofManager->setFieldOrder(fieldOrderV);
    }
 
-   {
+   if (callBuildGlobalUnknowns) {
      PANZER_FUNC_TIME_MONITOR("panzer::DOFManagerFactory::buildUnqueGlobalIndexer:buildGlobalUnknowns");
      dofManager->buildGlobalUnknowns();
    }

@@ -68,7 +68,7 @@ struct check_static {
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
 #endif
 
-  STATIC_ASSERT(D < maximum_dimension, dimension_too_large);
+  static_assert(D < maximum_dimension, "Dimension is too large");
   static Index const value = D;
 };
 

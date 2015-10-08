@@ -5,6 +5,22 @@
  *      Author: jonchu
  */
 #include "NoGhostGameofLife.hpp"
+#include <stddef.h>                     // for size_t
+#include <utility>                      // for pair
+#include "GameOfLife/EntityKeyHash.hpp"  // for hash
+#include "GameOfLife/GameofLifeMesh.hpp"  // for GameofLifeMesh, etc
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/GetEntities.hpp"  // for get_entities
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/parallel/CommSparse.hpp"  // for CommSparse
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer, unpack
 
 //public
 NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name)

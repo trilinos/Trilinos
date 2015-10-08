@@ -752,6 +752,497 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
   } // switch (dim)
 }
 
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse4_3 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse4_3 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+ index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));     
+        for (index_type i1=0; i1<dim_i1; i1++) {
+         
+
+          size_t i, j, rowID = 0, colID = 0;
+          int rowperm[3]={0,1,2};
+          int colperm[3]={0,1,2}; // Complete pivoting
+          Scalar emax(0);
+
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              if( std::abs( inMats(i0,i1,i,j) ) >  emax){
+                rowID = i;  colID = j; emax = std::abs( inMats(i0,i1,i,j) );
+              }
+            }
+          }
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+          if( rowID ){
+            rowperm[0] = rowID;
+            rowperm[rowID] = 0;
+          }
+          if( colID ){
+            colperm[0] = colID;
+            colperm[colID] = 0;
+          }
+          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              B[i][j] = inMats(i0,i1,rowperm[i],colperm[j]);
+            }
+          }
+          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
+          for(i=0; i < 2; ++i){
+            for(j=0; j < 2; ++j){
+              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
+            }
+          }
+          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+
+          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
+          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
+
+          for(j=0; j<2;j++)
+            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
+          for(i=0; i<2;i++)
+            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
+
+          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
+          Bi[1][1] =  Si[0][0];
+          Bi[1][2] =  Si[0][1];
+          Bi[2][1] =  Si[1][0];
+          Bi[2][2] =  Si[1][1];
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              inverseMats(i0,i1,i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
+            }
+          }
+        } // for i1
+
+
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse4_2 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse4_2 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+index_type dim_i1 = static_cast<index_type>(inMats.dimension(1)); 
+       for (index_type i1=0; i1<dim_i1; i1++) {
+ 
+
+          Scalar determinant    = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i0,i1,0,0)==(Scalar)0)   && (inMats(i0,i1,0,1)==(Scalar)0) &&
+					(inMats(i0,i1,1,0)==(Scalar)0) && (inMats(i0,i1,1,1)==(Scalar)0) ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+          inverseMats(i0,i1,0,0)   = inMats(i0,i1,1,1) / determinant;
+          inverseMats(i0,i1,0,1) = - inMats(i0,i1,0,1) / determinant;
+          //
+          inverseMats(i0,i1,1,0) = - inMats(i0,i1,1,0) / determinant;
+          inverseMats(i0,i1,1,1) =   inMats(i0,i1,0,0) / determinant;
+        } // for i1
+   }
+};
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse4_1 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse4_1 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+    index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));      
+        for (index_type i1=0; i1<dim_i1; i1++) {
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i0,i1,0,0) == (Scalar)0 ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+
+          inverseMats(i0,i1,0,0) = (Scalar)1 / inMats(i0,i1,0,0);
+        } // for i1
+    
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse3_3 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse3_3 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+        size_t i, j, rowID = 0, colID = 0;
+          int rowperm[3]={0,1,2};
+          int colperm[3]={0,1,2}; // Complete pivoting
+          Scalar emax(0);
+
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              if( std::abs( inMats(i1,i,j) ) >  emax){
+                rowID = i;  colID = j; emax = std::abs( inMats(i1,i,j) );
+              }
+            }
+          }
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+
+          if( rowID ){
+            rowperm[0] = rowID;
+            rowperm[rowID] = 0;
+          }
+          if( colID ){
+            colperm[0] = colID;
+            colperm[colID] = 0;
+          }
+          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              B[i][j] = inMats(i1,rowperm[i],colperm[j]);
+            }
+          }
+          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
+          for(i=0; i < 2; ++i){
+            for(j=0; j < 2; ++j){
+              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
+            }
+          }
+          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+				      std::invalid_argument,
+				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+
+
+          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
+          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
+
+          for(j=0; j<2;j++)
+            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
+          for(i=0; i<2;i++)
+            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
+
+          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
+          Bi[1][1] =  Si[0][0];
+          Bi[1][2] =  Si[0][1];
+          Bi[2][1] =  Si[1][0];
+          Bi[2][2] =  Si[1][1];
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              inverseMats(i1,i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
+            }
+          }
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse3_2 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse3_2 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+ 
+          Scalar determinant    = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(i1,0,0)==(Scalar)0)   && (inMats(i1,0,1)==(Scalar)0) &&
+                                        (inMats(i1,1,0)==(Scalar)0) && (inMats(i1,1,1)==(Scalar)0) ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+
+          inverseMats(i1,0,0)   = inMats(i1,1,1) / determinant;
+          inverseMats(i1,0,1) = - inMats(i1,0,1) / determinant;
+          //
+          inverseMats(i1,1,0) = - inMats(i1,1,0) / determinant;
+          inverseMats(i1,1,1) =   inMats(i1,0,0) / determinant;
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse3_1 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse3_1 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+ 
+ #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+	TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(i1,0,0) == (Scalar)0 ),
+				    std::invalid_argument,
+				    ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+
+
+        inverseMats(i1,0,0) = (Scalar)1 / inMats(i1,0,0); 
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse2_3 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse2_3 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+       size_t i, j, rowID = 0, colID = 0;
+          int rowperm[3]={0,1,2};
+          int colperm[3]={0,1,2}; // Complete pivoting
+          Scalar emax(0);
+
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              if( std::abs( inMats(i,j) ) >  emax){
+                rowID = i;  colID = j; emax = std::abs( inMats(i,j) );
+              }
+            }
+          }
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+
+          if( rowID ){
+            rowperm[0] = rowID;
+            rowperm[rowID] = 0;
+          }
+          if( colID ){
+            colperm[0] = colID;
+            colperm[colID] = 0;
+          }
+          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              B[i][j] = inMats(rowperm[i],colperm[j]);
+            }
+          }
+          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
+          for(i=0; i < 2; ++i){
+            for(j=0; j < 2; ++j){
+              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
+            }
+          }
+          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+
+          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
+          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
+
+          for(j=0; j<2;j++)
+            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
+          for(i=0; i<2;i++)
+            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
+
+          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
+          Bi[1][1] =  Si[0][0];
+          Bi[1][2] =  Si[0][1];
+          Bi[2][1] =  Si[1][0];
+          Bi[2][2] =  Si[1][1];
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              inverseMats(i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
+            }
+          }
+   
+ 
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse2_2 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse2_2 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+  
+   Scalar determinant    = inMats(0,0)*inMats(1,1)-inMats(0,1)*inMats(1,0);
+#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats(0,0)==(Scalar)0)   && (inMats(0,1)==(Scalar)0) &&
+                                        (inMats(1,0)==(Scalar)0) && (inMats(1,1)==(Scalar)0) ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
+                                      std::invalid_argument,
+                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
+#endif
+          inverseMats(0,0)   = inMats(1,1) / determinant;
+          inverseMats(0,1) = - inMats(0,1) / determinant;
+          //
+          inverseMats(1,0) = - inMats(1,0) / determinant;
+          inverseMats(1,1) =   inMats(0,0) / determinant;
+   }
+};
+
+template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInverse>
+struct inverse2_1 {
+  ArrayInverseWrap inverseMats;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  inverse2_1 (ArrayInverseWrap inverseMats_, ArrayInWrap inMats_) :
+    inverseMats (inverseMats_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+  #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
+      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats(0,0) == (Scalar)0 ),
+				  std::invalid_argument,
+				  ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
+#endif
+#endif
+           inverseMats(0,0) = (Scalar)1 / inMats(0,0);   
+ 
+   }
+};
+
+
 template<class Scalar>
 template<class ArrayInverse, class ArrayIn>
 void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn & inMats) {
@@ -792,127 +1283,20 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
       dim_i1 = static_cast<size_t>(inMats.dimension(1));
        switch(dim) {
     case 3: {
-     
+     Kokkos::parallel_for (dim_i0, inverse4_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
 
-      for (size_t i0=0; i0<dim_i0; i0++) {
-  
-        for (size_t i1=0; i1<dim_i1; i1++) {
-         
-
-          size_t i, j, rowID = 0, colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMatsWrap(i0,i1,i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMatsWrap(i0,i1,i,j) );
-              }
-            }
-          }
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-          if( rowID ){
-            rowperm[0] = rowID;
-            rowperm[rowID] = 0;
-          }
-          if( colID ){
-            colperm[0] = colID;
-            colperm[colID] = 0;
-          }
-          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              B[i][j] = inMatsWrap(i0,i1,rowperm[i],colperm[j]);
-            }
-          }
-          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-          for(i=0; i < 2; ++i){
-            for(j=0; j < 2; ++j){
-              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-            }
-          }
-          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-
-          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
-          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
-
-          for(j=0; j<2;j++)
-            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
-          for(i=0; i<2;i++)
-            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
-
-          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
-          Bi[1][1] =  Si[0][0];
-          Bi[1][2] =  Si[0][1];
-          Bi[2][1] =  Si[1][0];
-          Bi[2][2] =  Si[1][1];
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              inverseMatsWrap(i0,i1,i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
-            }
-          }
-        } // for i1
-      } // for i0
+   
       break;
     } // case 3
 
     case 2: {
 
-      for (size_t i0=0; i0<dim_i0; i0++) {
-
-        for (size_t i1=0; i1<dim_i1; i1++) {
- 
-
-          Scalar determinant    = inMatsWrap(i0,i1,0,0)*inMatsWrap(i0,i1,1,1)-inMatsWrap(i0,i1,0,1)*inMatsWrap(i0,i1,1,0);
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMatsWrap(i0,i1,0,0)==(Scalar)0)   && (inMatsWrap(i0,i1,0,1)==(Scalar)0) &&
-					(inMatsWrap(i0,i1,1,0)==(Scalar)0) && (inMatsWrap(i0,i1,1,1)==(Scalar)0) ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-          inverseMatsWrap(i0,i1,0,0)   = inMatsWrap(i0,i1,1,1) / determinant;
-          inverseMatsWrap(i0,i1,0,1) = - inMatsWrap(i0,i1,0,1) / determinant;
-          //
-          inverseMatsWrap(i0,i1,1,0) = - inMatsWrap(i0,i1,1,0) / determinant;
-          inverseMatsWrap(i0,i1,1,1) =   inMatsWrap(i0,i1,0,0) / determinant;
-        } // for i1
-      } // for i0
+     Kokkos::parallel_for (dim_i0, inverse4_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
       break;
     } // case 2
 
     case 1: {
-       for (size_t i0=0; i0<dim_i0; i0++) {
-        for (size_t i1=0; i1<dim_i1; i1++) {
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( inMatsWrap(i0,i1,0,0) == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-
-          inverseMatsWrap(i0,i1,0,0) = (Scalar)1 / inMatsWrap(i0,i1,0,0);
-        } // for i1
-      } // for i2
+   Kokkos::parallel_for (dim_i0, inverse4_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
           
       
       break;
@@ -925,125 +1309,22 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
        switch(dim) {
     case 3: {
 
-        for (size_t i1=0; i1<dim_i1; i1++) {
-
-          size_t i, j, rowID = 0, colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMatsWrap(i1,i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMatsWrap(i1,i,j) );
-              }
-            }
-          }
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-
-          if( rowID ){
-            rowperm[0] = rowID;
-            rowperm[rowID] = 0;
-          }
-          if( colID ){
-            colperm[0] = colID;
-            colperm[colID] = 0;
-          }
-          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              B[i][j] = inMatsWrap(i1,rowperm[i],colperm[j]);
-            }
-          }
-          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-          for(i=0; i < 2; ++i){
-            for(j=0; j < 2; ++j){
-              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-            }
-          }
-          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-				      std::invalid_argument,
-				      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-
-
-          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
-          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
-
-          for(j=0; j<2;j++)
-            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
-          for(i=0; i<2;i++)
-            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
-
-          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
-          Bi[1][1] =  Si[0][0];
-          Bi[1][2] =  Si[0][1];
-          Bi[2][1] =  Si[1][0];
-          Bi[2][2] =  Si[1][1];
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              inverseMatsWrap(i1,i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
-            }
-          }
-        } // for i1
+       Kokkos::parallel_for (dim_i1, inverse3_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
       
       break;
     } // case 3
 
     case 2: {
 
-        for (size_t i1=0; i1<dim_i1; i1++) {
-         
-
-          Scalar determinant    = inMatsWrap(i1,0,0)*inMatsWrap(i1,1,1)-inMatsWrap(i1,0,1)*inMatsWrap(i1,1,0);
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMatsWrap(i1,0,0)==(Scalar)0)   && (inMatsWrap(i1,0,1)==(Scalar)0) &&
-                                        (inMatsWrap(i1,1,0)==(Scalar)0) && (inMatsWrap(i1,1,1)==(Scalar)0) ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-
-          inverseMatsWrap(i1,0,0)   = inMatsWrap(i1,1,1) / determinant;
-          inverseMatsWrap(i1,0,1) = - inMatsWrap(i1,0,1) / determinant;
-          //
-          inverseMatsWrap(i1,1,0) = - inMatsWrap(i1,1,0) / determinant;
-          inverseMatsWrap(i1,1,1) =   inMatsWrap(i1,0,0) / determinant;
-        } // for i1
+      Kokkos::parallel_for (dim_i1, inverse3_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));
+    
  
       break;
     } // case 2
 
     case 1: {
    
-      for (size_t i1=0; i1<dim_i1; i1++) {
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-	TEUCHOS_TEST_FOR_EXCEPTION( ( inMatsWrap(i1,0,0) == (Scalar)0 ),
-				    std::invalid_argument,
-				    ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-
-
-        inverseMatsWrap(i1,0,0) = (Scalar)1 / inMatsWrap(i1,0,0); 
-        } 
-    
-          
+   Kokkos::parallel_for (dim_i1, inverse3_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));       
       
        break;
       } // case 1
@@ -1053,108 +1334,18 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
     case 2:
      switch(dim) {
     case 3: {
-          size_t i, j, rowID = 0, colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMatsWrap(i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMatsWrap(i,j) );
-              }
-            }
-          }
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-
-          if( rowID ){
-            rowperm[0] = rowID;
-            rowperm[rowID] = 0;
-          }
-          if( colID ){
-            colperm[0] = colID;
-            colperm[colID] = 0;
-          }
-          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              B[i][j] = inMatsWrap(rowperm[i],colperm[j]);
-            }
-          }
-          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-          for(i=0; i < 2; ++i){
-            for(j=0; j < 2; ++j){
-              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-            }
-          }
-          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-
-          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
-          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
-
-          for(j=0; j<2;j++)
-            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
-          for(i=0; i<2;i++)
-            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
-
-          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
-          Bi[1][1] =  Si[0][0];
-          Bi[1][2] =  Si[0][1];
-          Bi[2][1] =  Si[1][0];
-          Bi[2][2] =  Si[1][1];
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              inverseMatsWrap(i,j) = Bi[colperm[i]][rowperm[j]]; // set inverse
-            }
-          }
-   
+     Kokkos::parallel_for (dim_i1, inverse2_3<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));   
       break;
     } // case 3
 
     case 2: {
-          Scalar determinant    = inMatsWrap(0,0)*inMatsWrap(1,1)-inMatsWrap(0,1)*inMatsWrap(1,0);
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMatsWrap(0,0)==(Scalar)0)   && (inMatsWrap(0,1)==(Scalar)0) &&
-                                        (inMatsWrap(1,0)==(Scalar)0) && (inMatsWrap(1,1)==(Scalar)0) ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
-                                      std::invalid_argument,
-                                      ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-          inverseMatsWrap(0,0)   = inMatsWrap(1,1) / determinant;
-          inverseMatsWrap(0,1) = - inMatsWrap(0,1) / determinant;
-          //
-          inverseMatsWrap(1,0) = - inMatsWrap(1,0) / determinant;
-          inverseMatsWrap(1,1) =   inMatsWrap(0,0) / determinant;
-      
+        
+     Kokkos::parallel_for (dim_i1, inverse2_2<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));      
       break;
     } // case 2
 
     case 1: {
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-      TEUCHOS_TEST_FOR_EXCEPTION( ( inMatsWrap(0,0) == (Scalar)0 ),
-				  std::invalid_argument,
-				  ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-           inverseMatsWrap(0,0) = (Scalar)1 / inMatsWrap(0,0);       
+        Kokkos::parallel_for (dim_i1, inverse2_1<Scalar,ArrayWrapper<Scalar,ArrayInverse, Rank<ArrayInverse >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayInverse > (inverseMatsWrap,inMatsWrap));   
       break;
     } // case 1
 
@@ -1166,183 +1357,6 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
 }
 	
 
-/*
-template<class Scalar>
-template<class ArrayInverse, class ArrayIn>
-void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn & inMats) {
-
-  int arrayRank = inMats.rank();
-
-#ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( ( arrayRank != inverseMats.rank() ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (arrayRank < 2) || (arrayRank > 4) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
-    for (int i=0; i<arrayRank; i++) {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(i) != inverseMats.dimension(i) ),
-                          std::invalid_argument,
-                          ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION( ( inMats.dimension(arrayRank-2) != inMats.dimension(arrayRank-1) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
-    TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats.dimension(arrayRank-2) < 1) || (inMats.dimension(arrayRank-2) > 3) ),
-                        std::invalid_argument,
-                        ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
-#endif
-
-  size_t dim_i0 = 1; // first  index dimension (e.g. cell index)
-  size_t dim_i1 = 1; // second index dimension (e.g. point index)
-  size_t dim    = inMats.dimension(arrayRank-2); // spatial dimension
-
-  // determine i0 and i1 dimensions
-  switch(arrayRank) {
-    case 4:
-      dim_i0 = inMats.dimension(0);
-      dim_i1 = inMats.dimension(1);
-      break;
-    case 3:
-      dim_i1 = inMats.dimension(0);
-      break;
-  }
-
-  switch(dim) {
-    case 3: {
-      int offset_i0, offset;
-
-      for (size_t i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (size_t i1=0; i1<dim_i1; i1++) {
-          offset  = offset_i0 + i1;
-          offset *= 9;
-
-          size_t i, j, rowID = 0, colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMats[offset+i*3+j] ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMats[offset+i*3+j] );
-              }
-            }
-          }
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( emax == (Scalar)0 ),
-                              std::invalid_argument,
-                              ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-          if( rowID ){
-            rowperm[0] = rowID;
-            rowperm[rowID] = 0;
-          }
-          if( colID ){
-            colperm[0] = colID;
-            colperm[colID] = 0;
-          }
-          Scalar B[3][3], S[2][2], Bi[3][3]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              B[i][j] = inMats[offset+rowperm[i]*3+colperm[j]];
-            }
-          }
-          B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-          for(i=0; i < 2; ++i){
-            for(j=0; j < 2; ++j){
-              S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-            }
-          }
-          Scalar detS = S[0][0]*S[1][1]- S[0][1]*S[1][0], Si[2][2];
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( detS == (Scalar)0 ),
-                              std::invalid_argument,
-                              ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-
-          Si[0][0] =  S[1][1]/detS;                  Si[0][1] = -S[0][1]/detS;
-          Si[1][0] = -S[1][0]/detS;                  Si[1][1] =  S[0][0]/detS;
-
-          for(j=0; j<2;j++)
-            Bi[0][j+1] = -( B[0][1]*Si[0][j] + B[0][2]* Si[1][j])/B[0][0];
-          for(i=0; i<2;i++)
-            Bi[i+1][0] = -(Si[i][0]*B[1][0] + Si[i][1]*B[2][0]);
-
-          Bi[0][0] =  ((Scalar)1/B[0][0])-Bi[0][1]*B[1][0]-Bi[0][2]*B[2][0];
-          Bi[1][1] =  Si[0][0];
-          Bi[1][2] =  Si[0][1];
-          Bi[2][1] =  Si[1][0];
-          Bi[2][2] =  Si[1][1];
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              inverseMats[offset+i*3+j] = Bi[colperm[i]][rowperm[j]]; // set inverse
-            }
-          }
-        } // for i1
-      } // for i0
-      break;
-    } // case 3
-
-    case 2: {
-      int offset_i0, offset;
-
-      for (size_t i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (size_t i1=0; i1<dim_i1; i1++) {
-          offset  = offset_i0 + i1;;
-          offset *= 4;
-
-          Scalar determinant    = inMats[offset]*inMats[offset+3]-inMats[offset+1]*inMats[offset+2];;
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( (inMats[offset]==(Scalar)0)   && (inMats[offset+1]==(Scalar)0) &&
-                                (inMats[offset+2]==(Scalar)0) && (inMats[offset+3]==(Scalar)0) ),
-                              std::invalid_argument,
-                              ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-          TEUCHOS_TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
-                              std::invalid_argument,
-                              ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
-#endif
-#endif
-          inverseMats[offset]   = inMats[offset+3] / determinant;
-          inverseMats[offset+1] = - inMats[offset+1] / determinant;
-          //
-          inverseMats[offset+2] = - inMats[offset+2] / determinant;
-          inverseMats[offset+3] =   inMats[offset] / determinant;
-        } // for i1
-      } // for i0
-      break;
-    } // case 2
-
-    case 1: {
-      int offset_i0, offset;
-
-      for (size_t i0=0; i0<dim_i0; i0++) {
-        offset_i0 = i0*dim_i1;
-        for (size_t i1=0; i1<dim_i1; i1++) {
-          offset  = offset_i0 + i1;;
-#ifdef HAVE_INTREPID_DEBUG
-#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
-          TEUCHOS_TEST_FOR_EXCEPTION( ( inMats[offset] == (Scalar)0 ),
-                              std::invalid_argument,
-                              ">>> ERROR (Matrix): Inverse of a zero matrix is undefined!");
-#endif
-#endif
-          inverseMats[offset] = (Scalar)1 / inMats[offset];
-        } // for i1
-      } // for i2
-      break;
-    } // case 1
-
-  } // switch (dim)
-}
-*/
 
 
 template<class Scalar>
@@ -1493,6 +1507,230 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
   return determinant;
 }
 
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det4_3 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det4_3 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
+        for (index_type i1=0; i1<dim_i1; i1++) {
+      
+
+          int i,j,rowID = 0;
+          int colID = 0;
+          int rowperm[3]={0,1,2};
+          int colperm[3]={0,1,2}; // Complete pivoting
+          Scalar emax(0), determinant(0);
+
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              if( std::abs( inMats(i0,i1,i,j) ) >  emax){
+                rowID = i;  colID = j; emax = std::abs( inMats(i0,i1,i,j) );
+              }
+            }
+          }
+          if( emax > 0 ){
+            if( rowID ){
+              rowperm[0] = rowID;
+              rowperm[rowID] = 0;
+            }
+            if( colID ){
+              colperm[0] = colID;
+              colperm[colID] = 0;
+            }
+            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
+            for(i=0; i < 3; ++i){
+              for(j=0; j < 3; ++j){
+                B[i][j] = inMats(i0,i1,rowperm[i],colperm[j]);
+              }
+            }
+            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
+            for(i=0; i < 2; ++i){
+              for(j=0; j < 2; ++j){
+                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
+              }
+            }
+            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
+            if( rowID ) determinant = -determinant;
+            if( colID ) determinant = -determinant;
+          }
+          detArray(i0,i1)= determinant;
+        } // for i1
+ 
+   }
+};
+
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det4_2 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det4_2 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
+        for (index_type i1=0; i1<dim_i1; i1++) {
+
+          detArray(i0,i1) = inMats(i0,i1,0,0)*inMats(i0,i1,1,1)-inMats(i0,i1,0,1)*inMats(i0,i1,1,0);
+        } // for i1
+ 
+   }
+};
+
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det4_1 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det4_1 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i0) const {
+index_type dim_i1 = static_cast<index_type>(inMats.dimension(1));
+              for (index_type i1=0; i1<dim_i1; i1++) {
+          detArray(i0,i1) = inMats(i0,i1,0,0);
+        } // for i1
+ 
+   }
+};
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det3_3 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det3_3 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+          int i,j,rowID = 0;
+          int colID = 0;
+          int rowperm[3]={0,1,2};
+          int colperm[3]={0,1,2}; // Complete pivoting
+          Scalar emax(0), determinant(0);
+	
+
+          for(i=0; i < 3; ++i){
+            for(j=0; j < 3; ++j){
+              if( std::abs( inMats(i1,i,j) ) >  emax){
+                rowID = i;  colID = j; emax = std::abs( inMats(i1,i,j) );
+              }
+            }
+          }
+          if( emax > 0 ){
+            if( rowID ){
+              rowperm[0] = rowID;
+              rowperm[rowID] = 0;
+            }
+            if( colID ){
+              colperm[0] = colID;
+              colperm[colID] = 0;
+            }
+            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
+            for(i=0; i < 3; ++i){
+              for(j=0; j < 3; ++j){
+                B[i][j] = inMats(i1,rowperm[i],colperm[j]);
+              }
+            }
+            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
+            for(i=0; i < 2; ++i){
+              for(j=0; j < 2; ++j){
+                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
+              }
+            }
+            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
+            if( rowID ) determinant = -determinant;
+            if( colID ) determinant = -determinant;
+          }
+          detArray(i1) = determinant;
+ 
+   }
+};
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det3_2 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det3_2 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+      detArray(i1) = inMats(i1,0,0)*inMats(i1,1,1)-inMats(i1,0,1)*inMats(i1,1,0);
+ 
+   }
+};
+
+template <class Scalar,class ArrayDetWrap,class ArrayInWrap,class ArrayDet>
+struct det3_1 {
+  ArrayDetWrap detArray;
+  ArrayInWrap inMats;
+typedef typename conditional_eSpace<ArrayDet>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  det3_1 (ArrayDetWrap detArray_, ArrayInWrap inMats_) :
+    detArray (detArray_),inMats (inMats_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type i1) const {
+      detArray(i1) = inMats(i1,0,0);
+ 
+   }
+};
 template<class Scalar>
 template<class ArrayDet, class ArrayIn>
 void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
@@ -1532,76 +1770,20 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
         switch(dim) {
     case 3: {
    
-
-      for (size_t i0=0; i0<dim_i0; i0++) {
-       
-        for (size_t i1=0; i1<dim_i1; i1++) {
-      
-
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMatsWrap(i0,i1,i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMatsWrap(i0,i1,i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMatsWrap(i0,i1,rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArrayWrap(i0,i1)= determinant;
-        } // for i1
-      } // for i0
+     Kokkos::parallel_for (dim_i0, det4_3<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
+     
       break;
     } // case 3
 
     case 2: {   
 
-      for (size_t i0=0; i0<dim_i0; i0++) {
-      
-        for (size_t i1=0; i1<dim_i1; i1++) {
-
-          detArrayWrap(i0,i1) = inMatsWrap(i0,i1,0,0)*inMatsWrap(i0,i1,1,1)-inMatsWrap(i0,i1,0,1)*inMatsWrap(i0,i1,1,0);
-        } // for i1
-      } // for i0
+       Kokkos::parallel_for (dim_i0, det4_2<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
       break;
     } // case 2
 
     case 1: {
 
-      for (size_t i0=0; i0<dim_i0; i0++) {
-      
-        for (size_t i1=0; i1<dim_i1; i1++) {
-          detArrayWrap(i0,i1) = inMatsWrap(i0,i1,0,0);
-        } // for i1
-      } // for i2
+          Kokkos::parallel_for (dim_i0, det4_1<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
       break;
     } // case 1
 
@@ -1612,62 +1794,19 @@ void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
         switch(dim) {
     case 3: {   
       for (size_t i1=0; i1<dim_i1; i1++) {
+          Kokkos::parallel_for (dim_i1, det3_3<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
 
-          int i,j,rowID = 0;
-          int colID = 0;
-          int rowperm[3]={0,1,2};
-          int colperm[3]={0,1,2}; // Complete pivoting
-          Scalar emax(0), determinant(0);
-	
-
-          for(i=0; i < 3; ++i){
-            for(j=0; j < 3; ++j){
-              if( std::abs( inMatsWrap(i1,i,j) ) >  emax){
-                rowID = i;  colID = j; emax = std::abs( inMatsWrap(i1,i,j) );
-              }
-            }
-          }
-          if( emax > 0 ){
-            if( rowID ){
-              rowperm[0] = rowID;
-              rowperm[rowID] = 0;
-            }
-            if( colID ){
-              colperm[0] = colID;
-              colperm[colID] = 0;
-            }
-            Scalar B[3][3], S[2][2]; // B=rowperm inMat colperm, S=Schur complement(Boo)
-            for(i=0; i < 3; ++i){
-              for(j=0; j < 3; ++j){
-                B[i][j] = inMatsWrap(i1,rowperm[i],colperm[j]);
-              }
-            }
-            B[1][0] /= B[0][0]; B[2][0] /= B[0][0];// B(:,0)/=pivot
-            for(i=0; i < 2; ++i){
-              for(j=0; j < 2; ++j){
-                S[i][j] = B[i+1][j+1] - B[i+1][0] * B[0][j+1]; // S = B -z*y'
-              }
-            }
-            determinant = B[0][0] * (S[0][0] * S[1][1] - S[0][1] * S[1][0]); // det(B)
-            if( rowID ) determinant = -determinant;
-            if( colID ) determinant = -determinant;
-          }
-          detArrayWrap(0) = determinant;
 	  }       
       break;
     } // case 3
 
     case 2: {
-      for (size_t i1=0; i1<dim_i1; i1++) {
-      detArrayWrap(i1) = inMatsWrap(i1,0,0)*inMatsWrap(i1,1,1)-inMatsWrap(i1,0,1)*inMatsWrap(i1,1,0);
-      }
+   Kokkos::parallel_for (dim_i1, det3_2<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
       break;
     } // case 2
 
     case 1: {
-      for (size_t i1=0; i1<dim_i1; i1++) {
-	detArrayWrap(i1) = inMatsWrap(i1,0,0);
-      }
+Kokkos::parallel_for (dim_i1, det3_1<Scalar,ArrayWrapper<Scalar,ArrayDet, Rank<ArrayDet >::value, false>, ArrayWrapper<Scalar,ArrayIn, Rank<ArrayIn >::value, true>, ArrayDet > (detArrayWrap,inMatsWrap));
       break;
     } // case 1
 }

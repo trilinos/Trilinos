@@ -63,6 +63,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -384,6 +385,7 @@ int main (int argc,char * argv[])
     po.test_Jacobian = false;
     clp.setOption("test-jacobian", "dont-test-jacobian", &po.test_Jacobian,
                   "Test Jacobian using finite differences.");
+    po.generate_mesh_only = false;
     clp.setOption("generate-mesh-only", "dont-generate-mesh-only", &po.generate_mesh_only,
                   "Generate mesh, save, and quit.");
     try {
@@ -558,7 +560,15 @@ int main (int argc,char * argv[])
 
   panzer::DOFManagerFactory<int,int> globalIndexerFactory;
   RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-    = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks,
+                                                    conn_manager, "", false);
+  {
+    Teuchos::RCP<panzer::DOFManager<int,int> > nativeDofMngr =
+      Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager);
+    TEUCHOS_ASSERT( ! nativeDofMngr.is_null());
+    nativeDofMngr->enableGhosting(true);
+    nativeDofMngr->buildGlobalUnknowns();
+  }
 
   // construct some linear algebra object, build object to pass to evaluators
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory

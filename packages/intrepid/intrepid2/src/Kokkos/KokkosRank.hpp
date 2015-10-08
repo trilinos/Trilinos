@@ -11,6 +11,12 @@ typedef int index_type;
 
 }
 
+template<typename T, typename = void>
+struct conditional_eSpace : Kokkos::HostSpace { };
+
+template<typename T>
+struct conditional_eSpace<T, decltype(std::declval<T>().execution_space, void())> : T { };
+
 template<class A>
 struct CheckType{static const bool value = false; };
 

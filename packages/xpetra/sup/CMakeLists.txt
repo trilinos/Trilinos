@@ -16,8 +16,7 @@ SET(HEADERS "")
 APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*.cpp)
 
-SET(SOURCES
-  mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
+SET(SOURCE mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 
 #
 #

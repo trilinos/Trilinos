@@ -1,4 +1,9 @@
 #include "MeshSnake.hpp"
+#include <ctime>                        // for time, NULL
+#include <iostream>
+#include <vector>                       // for vector
+#include "MeshBuilder/MeshBuilder.hpp"  // for MeshBuilder, HexMeshBuilder, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 
 /*
  * MeshSnake

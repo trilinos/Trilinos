@@ -170,6 +170,7 @@ struct OperatorData
 #include "Epetra_MpiComm.h"
 #endif
 #include "PyTrilinos_Epetra_Util.hpp"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY

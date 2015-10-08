@@ -43,6 +43,7 @@
 #define Intrepid2_MiniTensor_Definitions_h
 
 #include <complex>
+#include <type_traits>
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Sacado.hpp"
@@ -53,21 +54,17 @@ class NOKOKKOS{};
 
 namespace Intrepid2 {
 
-/// Static assertion
-#define STATIC_ASSERT(condition, name)\
-  typedef char static_assertion_failed_ ## name [(condition) ? 1 : -1]
-
 /// Indexing type
-typedef unsigned int Index;
+using Index = unsigned int;
 
 /// High count type
-typedef long unsigned int LongCount;
+using LongCount = long unsigned int;
 
 /// Floating point type
-typedef double Real;
+using Real = double;
 
 /// Complex type
-typedef std::complex<Real> Complex;
+using Complex = std::complex<Real>;
 
 /// The classes
 template <typename T, Index N, class ES=NOKOKKOS> class Vector;
@@ -77,7 +74,7 @@ template <typename T, Index N, class ES=NOKOKKOS> class Tensor4;
 template <typename T, Index M, Index N, class ES=NOKOKKOS> class Matrix;
 
 /// Indicator for dynamic storage
-Index const
+constexpr Index
 DYNAMIC = 0;
 
 /// For use with type promotion
@@ -188,6 +185,11 @@ struct order_1234< Tensor3<T, N, ES> > {
 
 template <typename T, Index N, class ES>
 struct order_1234< Tensor4<T, N, ES> > {
+ static const bool value = true;          
+  };                        
+
+template<typename T, Index M, Index N, class ES>
+struct order_1234<Matrix<T, M, N, ES> {
   static const bool value = true;
 };
 
@@ -195,32 +197,32 @@ struct order_1234< Tensor4<T, N, ES> > {
 
 using std::string;
 
-template <Index N>
+template<Index N>
 struct dimension_string {
   static string eval() {return string("INVALID");}
 };
 
-template <>
+template<>
 struct dimension_string<DYNAMIC> {
   static string eval() {return string("DYNAMIC");}
 };
 
-template <>
+template<>
 struct dimension_string<1> {
   static string eval() {return string("1");}
 };
 
-template <>
+template<>
 struct dimension_string<2> {
   static string eval() {return string("2");}
 };
 
-template <>
+template<>
 struct dimension_string<3> {
   static string eval() {return string("3");}
 };
 
-template <>
+template<>
 struct dimension_string<4> {
   static string eval() {return string("4");}
 };
@@ -241,42 +243,42 @@ using std::complex;
 using std::string;
 
 /// Specialization of Promote for Index
-template <>
+template<>
 struct Promote<double, Index> {
   typedef double type;
 };
 
-template <>
+template<>
 struct Promote<Index, double> {
   typedef double type;
 };
 
-template <>
+template<>
 struct Promote<float, Index> {
   typedef float type;
 };
 
-template <>
+template<>
 struct Promote<Index, float> {
   typedef float type;
 };
 
-template <>
+template<>
 struct Promote<complex<double>, Index> {
   typedef complex<double> type;
 };
 
-template <>
+template<>
 struct Promote<Index, complex<double>> {
   typedef complex<double> type;
 };
 
-template <>
+template<>
 struct Promote<complex<float>, Index> {
   typedef complex<float> type;
 };
 
-template <>
+template<>
 struct Promote<Index, complex<float>> {
   typedef complex<float> type;
 };

@@ -1084,7 +1084,6 @@ namespace Tpetra {
       }
       else {
         k_gblInds1D_ = gbl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
-        gblInds1D_ = Kokkos::Compat::persistingView (k_gblInds1D_);
       }
       nodeNumAllocated_ = numInds;
       storageStatus_ = Details::STORAGE_1D_UNPACKED;
@@ -1259,8 +1258,9 @@ namespace Tpetra {
   {
     Teuchos::ArrayView<const GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
-      if (gblInds1D_ != null) {
-        view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
+      if (k_gblInds1D_.dimension_0 () != 0) {
+        auto rng = std::make_pair (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
+        view = Kokkos::Compat::getConstArrayView (Kokkos::subview (k_gblInds1D_, rng));
       }
       else if (! gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
@@ -1277,10 +1277,11 @@ namespace Tpetra {
   {
     Teuchos::ArrayView<GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
-      if (gblInds1D_ != null) {
-        view = gblInds1D_ (rowinfo.offset1D, rowinfo.allocSize);
+      if (k_gblInds1D_.dimension_0 () != 0) {
+        auto rng = std::make_pair (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
+        view = Kokkos::Compat::getArrayView (Kokkos::subview (k_gblInds1D_, rng));
       }
-      else if (!gblInds2D_[rowinfo.localRow].empty()) {
+      else if (! gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
       }
     }
@@ -1497,12 +1498,17 @@ namespace Tpetra {
     }
 
     // Copy new indices at end of global index array
-    if (gblInds1D_ != null)
-      std::copy(indices.begin(), indices.end(),
-                gblInds1D_.begin()+rowInfo.offset1D+rowInfo.numEntries);
-    else
+    if (k_gblInds1D_.dimension_0 () != 0) {
+      const size_t numIndsToCopy = static_cast<size_t> (indices.size ());
+      const size_t offset = rowInfo.offset1D + rowInfo.numEntries;
+      for (size_t k = 0; k < numIndsToCopy; ++k) {
+        k_gblInds1D_[offset + k] = indices[k];
+      }
+    }
+    else {
       std::copy(indices.begin(), indices.end(),
                 gblInds2D_[myRow].begin()+rowInfo.numEntries);
+    }
 
     // FIXME (mfh 07 Aug 2014) We should just sync at fillComplete,
     // but for now, for correctness, do the modify-sync cycle here.
@@ -4496,7 +4502,6 @@ namespace Tpetra {
         // can deallocate the global column indices (which we know are
         // in 1-D storage, because the graph has static profile).
         k_gblInds1D_ = gbl_col_inds_type ();
-        gblInds1D_ = Teuchos::null;
       }
       else {  // the graph has dynamic profile (2-D index storage)
         lclInds2D_ = arcp<Array<LO> > (lclNumRows);
@@ -5475,7 +5480,7 @@ namespace Tpetra {
 #define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) template class CrsGraph< LO , GO , NODE >;
 #define TPETRA_CRSGRAPH_SORTROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::sortRowIndicesAndValues< S >(const RowInfo, const Teuchos::ArrayView< S >& );
 #define TPETRA_CRSGRAPH_MERGEROWINDICESANDVALUES_INSTANT(S,LO,GO,NODE) template void CrsGraph< LO , GO , NODE >::mergeRowIndicesAndValues< S >(RowInfo, const ArrayView< S >& );
-#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE) template ArrayRCP< S > CrsGraph< LO , GO , NODE >::allocateValues1D< S >() const;
+#define TPETRA_CRSGRAPH_ALLOCATEVALUES1D_INSTANT(S,LO,GO,NODE)
 #define TPETRA_CRSGRAPH_ALLOCATEVALUES2D_INSTANT(S,LO,GO,NODE) template ArrayRCP< Array< S > > CrsGraph< LO , GO , NODE >::allocateValues2D< S >() const;
 
 #define TPETRA_CRSGRAPH_INSTANT(S,LO,GO,NODE)                    \

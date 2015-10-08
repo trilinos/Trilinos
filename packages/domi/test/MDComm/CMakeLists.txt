@@ -59,7 +59,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_1D_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=1"
   STANDARD_PASS_OUTPUT
@@ -86,7 +86,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_2D_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=2"
   STANDARD_PASS_OUTPUT
@@ -167,7 +167,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_3D_1_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=3"
   STANDARD_PASS_OUTPUT

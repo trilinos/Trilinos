@@ -1,36 +1,21 @@
-#include <gtest/gtest.h>
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <set>
-#include <map>
-#include <unordered_map>
-#include <unordered_set>
-#include <stdlib.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <GameOfLife/GameofLife.hpp>    // for PartGameofLife, etc
+#include <GameOfLife/GameofLifeMesh.hpp>  // for QuadGameofLifeMesh, etc
+#include <GameOfLife/NoGhostGameofLife.hpp>  // for NoGhostGameofLife
+#include <GameOfLife/PNGProcessor.hpp>  // for PNGProcessor, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <string>                       // for string
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_util/stk_util/parallel/CommSparse.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
 
-#include <time.h>
 
-#include <GameOfLife/GameofLife.hpp>
-#include <GameOfLife/PNGProcessor.hpp>
-#include <GameOfLife/EntityKeyHash.hpp>
-#include <GameOfLife/GameofLifeMesh.hpp>
-#include <GameOfLife/NoGhostGameofLife.hpp>
 
 /*
  * There are 1 proc and 4 proc tests, mostly clones of each other to test parallel

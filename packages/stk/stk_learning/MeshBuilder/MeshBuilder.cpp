@@ -5,6 +5,23 @@
  *      Author: jonchu
  */
 #include "MeshBuilder.hpp"
+#include <stddef.h>                     // for size_t
+#include <vector>                       // for allocator, vector
+#include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_io/IossBridge.hpp"        // for put_io_part_attribute
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian2d, etc
+#include "stk_mesh/base/FEMHelpers.hpp"  // for declare_element
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/GetEntities.hpp"  // for get_entities
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 
 // change for meshing big things
 const double zOffset = 1;

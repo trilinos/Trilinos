@@ -52,10 +52,8 @@
 #  include "Teuchos_BLAS.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-#  include "Kokkos_ArithTraits.hpp"
-#  include "Kokkos_Complex.hpp"
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+#include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_Complex.hpp"
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
 #  include "Teuchos_Details_Lapack128.hpp"
@@ -79,13 +77,11 @@ namespace Details {
     typedef Teuchos::LAPACK<int, Scalar> lapack_type;
   };
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   template<class T>
   struct GetLapackType<Kokkos::complex<T> > {
     typedef std::complex<T> lapack_scalar_type;
     typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
   };
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
   template<>
@@ -135,18 +131,10 @@ template<class Scalar, class LO>
 class LittleBlock {
 public:
   typedef Scalar scalar_type;
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-#else
-  typedef Scalar impl_scalar_type;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 private:
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
-#else
-  typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
   /// \brief Constructor
@@ -164,7 +152,6 @@ public:
     strideY_ (strideY)
   {}
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   /// \brief Constructor that takes an \c impl_scalar_type pointer.
   ///
   /// \param A [in] Pointer to the block's entries, as
@@ -187,23 +174,16 @@ public:
                const LO blockSize,
                const LO strideX,
                const LO strideY,
-#  ifdef KOKKOS_HAVE_CXX11
                typename std::enable_if<
                  ! std::is_same<Scalar, T>::value &&
                  std::is_convertible<Scalar, T>::value &&
                  sizeof (Scalar) == sizeof (T),
-#  else
-               typename Kokkos::Impl::enable_if<
-                 ! Kokkos::Impl::is_same<Scalar, T>::value &&
-                 sizeof (Scalar) == sizeof (T),
-#  endif // KOKKOS_HAVE_CXX11
                int*>::type ignoreMe = NULL) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
     strideX_ (strideX),
     strideY_ (strideY)
   {}
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
   //! The block size (number of rows, and number of columns).
   LO getBlockSize () const {
@@ -345,18 +325,10 @@ template<class Scalar, class LO>
 class LittleVector {
 public:
   typedef Scalar scalar_type;
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-#else
-  typedef Scalar impl_scalar_type;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 private:
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
-#else
-  typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 public:
   /// \brief Constructor
@@ -369,7 +341,6 @@ public:
     strideX_ (stride)
   {}
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
   /// \brief Constructor that takes an \c impl_scalar_type pointer.
   ///
   /// \param A [in] Pointer to the vector's entries, as
@@ -390,22 +361,15 @@ public:
   LittleVector (T* const A,
                 const LO blockSize,
                 const LO stride,
-#  ifdef KOKKOS_HAVE_CXX11
                 typename std::enable_if<
                   ! std::is_same<Scalar, T>::value &&
                   std::is_convertible<Scalar, T>::value &&
                   sizeof (Scalar) == sizeof (T),
-#  else
-                typename Kokkos::Impl::enable_if<
-                  ! Kokkos::Impl::is_same<Scalar, T>::value &&
-                  sizeof (Scalar) == sizeof (T),
-#  endif // KOKKOS_HAVE_CXX11
                 int*>::type ignoreMe = NULL) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
     strideX_ (stride)
   {}
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
   //! Pointer to the block's entries.
   Scalar* getRawPtr () const {

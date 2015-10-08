@@ -66,4 +66,14 @@
 /* #undef HAVE_MUELU_AMGX */
 
 /* #undef HAVE_MUELU_CGAL */
+
+/*  
+ If deprecated warnings are on, and the compiler supports them, then
+ define MUELU_DEPRECATED to emit deprecated warnings.  Otherwise,
+ give it an empty definition.
+*/
+#define MUELU_DEPRECATED
+#define MUELU_DEPRECATED_MSG(MSG)
+
+
 #endif /* MUELU_CONFIG_HPP */

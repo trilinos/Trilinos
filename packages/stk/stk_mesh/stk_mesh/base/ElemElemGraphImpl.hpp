@@ -32,20 +32,22 @@ struct parallel_info
     int m_other_proc;
     int m_other_side_ord;
     int m_permutation;
+    stk::topology m_remote_element_toplogy;
     bool m_in_body_to_be_skinned;
     bool m_is_air;
 
     stk::mesh::EntityId m_chosen_side_id;
 
-    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, bool inPart, bool isInAir=false) :
-        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
+    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
+        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
         m_chosen_side_id(chosen_face_id) {}
 };
 
 struct ConnectedElementData
 {
     int m_procId;
-    LocalId m_elementId;
+    LocalId m_elementLocalId;
+    stk::mesh::EntityId m_elementIdentifier;
     stk::topology m_elementTopology;
     unsigned m_sideIndex;
     stk::mesh::EntityId m_suggestedFaceId;
@@ -55,10 +57,11 @@ struct ConnectedElementData
 
     ConnectedElementData()
     : m_procId(-1),
-      m_elementId(std::numeric_limits<impl::LocalId>::max()),
+      m_elementLocalId(std::numeric_limits<impl::LocalId>::max()),
+      m_elementIdentifier(stk::mesh::InvalidEntityId),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
       m_sideIndex(std::numeric_limits<unsigned>::max()),
-      m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max()),
+      m_suggestedFaceId(stk::mesh::InvalidEntityId),
       m_isInPart(true), m_isAir(false)
     {}
 };
@@ -72,6 +75,7 @@ struct SharedEdgeInfo
     stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
     bool m_isInPart;
+    bool m_isInAir;
     stk::topology m_remoteElementTopology;
 };
 
@@ -113,9 +117,6 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
-size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
-        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel, const stk::mesh::Selector*air = nullptr);
-
 std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
@@ -150,7 +151,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
         int element1_side_id);
 
-void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
+void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
                                           stk::mesh::Entity localElement,
                                           const unsigned sideOrdinal,
                                           ConnectedElementDataVector & connectedElementData);

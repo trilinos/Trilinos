@@ -78,13 +78,8 @@ max(const T & a, const T & b)
 
 //
 // Sign function
-//
 template <typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#else
-inline
-#endif
 int
 sgn(T const & s)
 {

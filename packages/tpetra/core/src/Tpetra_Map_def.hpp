@@ -953,11 +953,9 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
     typedef GlobalOrdinal GO; // convenient abbreviation
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     typedef Kokkos::DualView<GO*, device_type> dual_view_type;
     typedef typename dual_view_type::t_dev::memory_space device_memory_space;
     typedef typename dual_view_type::t_host::memory_space host_memory_space;
-#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global

@@ -520,8 +520,6 @@ levi_civita_3(Index const dimension)
 
   return A;
 }
-
-//
 // Permutation symbol
 //
 template<typename T, Index N, class ES>

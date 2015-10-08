@@ -8,21 +8,19 @@
 #ifndef MESHBUILDER_HPP_
 #define MESHBUILDER_HPP_
 
-#include <vector>
-#include <algorithm>
-#include <stdlib.h>
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_topology/topology.hpp>    // for topology
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
 
 typedef stk::mesh::Field<int> ScalarIntField;
 
