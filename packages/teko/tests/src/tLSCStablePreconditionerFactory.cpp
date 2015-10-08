@@ -97,13 +97,13 @@ void tLSCStablePreconditionerFactory::initializeTest()
    comm = rcp(new Epetra_SerialComm());
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
 
-   const RCP<Epetra_CrsMatrix> ptrF  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   const RCP<Epetra_CrsMatrix> ptrB  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   const RCP<Epetra_CrsMatrix> ptrBt = rcp(new Epetra_CrsMatrix(Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrF  = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrB  = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrBt = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
 
-   const RCP<Epetra_CrsMatrix> ptrInvF = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   const RCP<Epetra_CrsMatrix> ptrInvS = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   const RCP<Epetra_CrsMatrix> ptrInvMass = rcp(new Epetra_CrsMatrix(Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrInvF = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrInvS = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
+   const RCP<Epetra_CrsMatrix> ptrInvMass = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy,*map,2));
 
    indicies[0] = 0;
    indicies[1] = 1;

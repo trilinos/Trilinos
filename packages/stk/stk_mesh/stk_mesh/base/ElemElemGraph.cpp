@@ -17,7 +17,6 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
-
 namespace stk { namespace mesh {
 
 const impl::LocalId ElemElemGraph::INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
@@ -394,7 +393,7 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& element_s
     {
         connect_remote_element_to_existing_graph( receivedSharedEdge);
     }
-    //this->write_graph();
+    //this->write_graph()
 }
 
 void ElemElemGraph::write_graph() const
@@ -2494,6 +2493,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                         {
                             stk::mesh::impl::ElementSidePair side_pair = std::make_pair(m_entity_to_local_id[this_element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(this_element, other_element));
                             stk::mesh::Entity side = this->add_side_to_mesh(side_pair, skin_parts, get_available_side_id());
+
                             int side_other = this->get_side_from_element1_to_locally_owned_element2(other_element, this_element);
                             stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(m_bulk_data.bucket(other_element).topology().num_positive_permutations());
                             m_bulk_data.declare_relation(other_element, side, side_other, perm);

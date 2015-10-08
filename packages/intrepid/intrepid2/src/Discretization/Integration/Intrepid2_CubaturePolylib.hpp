@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_POLYLIB_HPP
-#define INTREPID_CUBATURE_POLYLIB_HPP
+#ifndef INTREPID2_CUBATURE_POLYLIB_HPP
+#define INTREPID2_CUBATURE_POLYLIB_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"

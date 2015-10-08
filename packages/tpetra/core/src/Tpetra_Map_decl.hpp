@@ -203,7 +203,7 @@ namespace Tpetra {
   /// <li>the set of global indices (over all processes) forms an
   ///   interval, </li>
   /// <li>every global index in that interval is owned by exactly one
-  ///   process in the Map's communicator, <li>
+  ///   process in the Map's communicator, </li>
   /// <li>the (ordered) list of global indices on each process p in
   ///   the Map's communicator forms a contiguous interval, and </li>
   /// <li>if process p owns a global index \f$g_p\f$ and process q

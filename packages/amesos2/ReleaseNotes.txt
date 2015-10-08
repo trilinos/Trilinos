@@ -1,7 +1,9 @@
-Release notes for Amesos2 in Trilinos 12.2
+Release notes for Amesos2 in Trilinos 12.4
 -----------------------------------------------------
 - Added MUMPS 5.0 support
-
+- KLU2 is enabled by default
+- Bug fixes
+- Superlu_dist multiple version support (up to 4.0)
 
 Release notes for Amesos2 in Trilinos 11.8 (Apr. 2014):
 --------------------------------------------------------

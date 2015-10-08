@@ -1,5 +1,5 @@
-#ifndef INTREPID_HGRAD_HEX_CN_FEMDEF_HPP
-#define INTREPID_HGRAD_HEX_CN_FEMDEF_HPP
+#ifndef INTREPID2_HGRAD_HEX_CN_FEMDEF_HPP
+#define INTREPID2_HGRAD_HEX_CN_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //

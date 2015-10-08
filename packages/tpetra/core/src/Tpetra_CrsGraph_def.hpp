@@ -1311,6 +1311,14 @@ namespace Tpetra {
 
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     RowInfo ret;
+    if (! hasRowInfo () || rowMap_.is_null () || ! rowMap_->isNodeLocalElement (myRow)) {
+      ret.localRow = STINV;
+      ret.allocSize = 0;
+      ret.numEntries = 0;
+      ret.offset1D = STINV;
+      return ret;
+    }
+
     ret.localRow = myRow;
     if (nodeNumAllocated_ != 0 && nodeNumAllocated_ != STINV) {
       // graph data structures have the info that we need

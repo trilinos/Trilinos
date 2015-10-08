@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectLineGauss(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 1;
-  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_LINE_GAUSS_MAX_ENUM),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectLineGauss): No cubature rule implemented for the desired polynomial degree.");
 } // end constructor
@@ -68,7 +68,7 @@ const CubatureTemplate *  CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
-  return INTREPID_CUBATURE_LINE_GAUSS_MAX_ENUM;
+  return INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM;
 }
 
 
@@ -81,7 +81,7 @@ const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::getName() co
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_LINE_GAUSS";
+const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_LINE_GAUSS";
 
 
 //-------------------------------------------------------------------------------------//
@@ -99,7 +99,7 @@ const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_nam
 */
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const CubatureTemplate CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_LINE_GAUSS_MAX_ENUM+1] =
+const CubatureTemplate CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID2_CUBATURE_LINE_GAUSS_MAX_ENUM+1] =
 {
 
   // Collection of Gauss rules on [-1,1]

@@ -1,5 +1,4 @@
 #include "PNGProcessor.hpp"
-#include <ext/alloc_traits.h>
 #include <stdio.h>                      // for printf
 #include <algorithm>                    // for sort
 #include "GameOfLife/LodePNG.hpp"       // for decode

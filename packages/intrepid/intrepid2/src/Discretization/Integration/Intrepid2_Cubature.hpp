@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_HPP
-#define INTREPID_CUBATURE_HPP
+#ifndef INTREPID2_CUBATURE_HPP
+#define INTREPID2_CUBATURE_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_FieldContainer.hpp"

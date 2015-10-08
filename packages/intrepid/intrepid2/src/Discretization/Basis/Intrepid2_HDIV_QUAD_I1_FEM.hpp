@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal and K. Petrson.
  */
 
-#ifndef INTREPID_HDIV_QUAD_I1_FEM_HPP
-#define INTREPID_HDIV_QUAD_I1_FEM_HPP
+#ifndef INTREPID2_HDIV_QUAD_I1_FEM_HPP
+#define INTREPID2_HDIV_QUAD_I1_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
