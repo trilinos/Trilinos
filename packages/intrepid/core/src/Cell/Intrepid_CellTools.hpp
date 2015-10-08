@@ -380,6 +380,12 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
     
+    template<class ArrayJac, class ArrayPoint, class ArrayCell>
+    static void setJacobian(ArrayJac &                   jacobian,
+                            const ArrayPoint &           points,
+                            const ArrayCell  &           cellWorkset,
+                            const Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                            const int &                  whichCell = -1);
   
     
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
