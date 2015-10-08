@@ -1934,10 +1934,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint) const
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const size_t hint) const
   {
     using Teuchos::ArrayView;
-    ArrayView<const LocalOrdinal> colInds = this->getLocalView (rowinfo);
+    auto colInds = this->getLocalKokkosRowView (rowinfo);
     return this->findLocalIndex (rowinfo, ind, colInds, hint);
   }
 
@@ -1945,9 +1947,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (RowInfo rowinfo,
-                  LocalOrdinal ind,
-                  Teuchos::ArrayView<const LocalOrdinal> colInds,
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const Teuchos::ArrayView<const LocalOrdinal>& colInds,
                   size_t hint) const
   {
     typedef typename Teuchos::ArrayView<const LocalOrdinal>::iterator IT;
@@ -1988,6 +1990,60 @@ namespace Tpetra {
       return Teuchos::OrdinalTraits<size_t>::invalid ();
     }
   }
+
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                  const size_t hint) const
+  {
+    typedef const LocalOrdinal* IT;
+
+    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  We could
+    // imagine templating this method on the memory space, but makes
+    // more sense to let UVM work.
+
+    // If the hint was correct, then the hint is the offset to return.
+    if (hint < rowinfo.numEntries && colInds(hint) == ind) {
+      return hint;
+    }
+
+    // The hint was wrong, so we must search for the given column
+    // index in the column indices for the given row.  How we do the
+    // search depends on whether the graph's column indices are
+    // sorted.
+    IT beg = colInds.ptr_on_device ();
+    IT end = beg + rowinfo.numEntries;
+    IT ptr = beg + rowinfo.numEntries; // "null"
+    bool found = true;
+
+    if (isSorted ()) {
+      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
+      if (p.first == p.second) {
+        found = false;
+      } else {
+        ptr = p.first;
+      }
+    }
+    else {
+      ptr = std::find (beg, end, ind); // direct search
+      if (ptr == end) {
+        found = false;
+      }
+    }
+
+    if (found) {
+      return static_cast<size_t> (ptr - beg);
+    }
+    else {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+  }
+
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

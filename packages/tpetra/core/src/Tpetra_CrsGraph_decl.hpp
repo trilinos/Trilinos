@@ -1760,12 +1760,13 @@ namespace Tpetra {
     /// searching for the indices (which may take a lot more than
     /// two comparisons).
     size_t
-    findLocalIndex (RowInfo rowinfo,
-                    LocalOrdinal ind,
-                    size_t hint = 0) const;
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const size_t hint = 0) const;
 
-    /// Find the column offset corresponding to the given (local)
-    /// column index, given a view of the (local) column indices.
+    /// \brief Find the column offset corresponding to the given
+    ///   (local) column index, given a view of the (local) column
+    ///   indices.
     ///
     /// The name of this method is a bit misleading.  It does not
     /// actually find the column index.  Instead, it takes a local
@@ -1793,10 +1794,18 @@ namespace Tpetra {
     /// See the documentation of the three-argument version of this
     /// method for an explanation and justification of the hint.
     size_t
-    findLocalIndex (RowInfo rowinfo,
-                    LocalOrdinal ind,
-                    Teuchos::ArrayView<const LocalOrdinal> colInds,
-                    size_t hint = 0) const;
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                    const size_t hint) const;
+
+    /// \brief Legacy version of the 4-argument findLocalIndex above,
+    ///   that takes a Teuchos::ArrayView instead of a Kokkos::View.
+    size_t
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const Teuchos::ArrayView<const LocalOrdinal>& colInds,
+                    const size_t hint = 0) const;
 
     /// \brief Find the column offset corresponding to the given
     ///   (global) column index.
