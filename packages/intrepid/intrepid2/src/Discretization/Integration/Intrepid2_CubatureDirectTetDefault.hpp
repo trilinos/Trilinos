@@ -46,20 +46,20 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_DIRECT_TET_DEFAULT_HPP
-#define INTREPID_CUBATURE_DIRECT_TET_DEFAULT_HPP
+#ifndef INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP
+#define INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
 #include "Teuchos_Assert.hpp"
 
-/** \def   INTREPID_CUBATURE_TET_DEFAULT_MAX
+/** \def   INTREPID2_CUBATURE_TET_DEFAULT_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct tetrahedron rule of the default type.
 */
 // srkenno@sandia.gov 6/21/10:
 // see below comment for the enum
-#define INTREPID_CUBATURE_TET_DEFAULT_MAX 20
+#define INTREPID2_CUBATURE_TET_DEFAULT_MAX 20
 
 
 namespace Intrepid2 {
@@ -72,12 +72,12 @@ class CubatureDirectTetDefault : public Intrepid2::CubatureDirect<Scalar,ArrayPo
   public:
   // srkenno@sandia.gov 6/21/10:
   // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
-  enum {INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM = INTREPID_CUBATURE_TET_DEFAULT_MAX};
+  enum {INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM = INTREPID2_CUBATURE_TET_DEFAULT_MAX};
   private:
 
   /** \brief Complete set of data defining default cubature rules on a tetrahedron.
   */
-  static const CubatureTemplate cubature_data_[INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
+  static const CubatureTemplate cubature_data_[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
 
   /** \brief Names of templates for frequently used direct cubature rules.
   */
@@ -109,12 +109,12 @@ class CubatureDirectTetDefault : public Intrepid2::CubatureDirect<Scalar,ArrayPo
 
   /** \brief Exposes cubature data, accessible without construction.
   */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
+  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
 
 }; // end class CubatureDirect 
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM+1] {
+inline const CubatureTemplate (& CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1] {
   return cubature_data_;
 }
 

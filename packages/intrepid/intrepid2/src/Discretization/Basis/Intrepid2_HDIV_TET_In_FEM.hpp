@@ -46,8 +46,8 @@
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_HDIV_TET_In_FEM_HPP
-#define INTREPID_HDIV_TET_In_FEM_HPP
+#ifndef INTREPID2_HDIV_TET_In_FEM_HPP
+#define INTREPID2_HDIV_TET_In_FEM_HPP
 
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Basis.hpp"

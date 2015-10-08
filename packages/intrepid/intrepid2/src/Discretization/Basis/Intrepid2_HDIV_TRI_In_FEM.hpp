@@ -46,8 +46,8 @@
     \author Created by R. Kirby.
 */
 
-#ifndef INTREPID_HDIV_TRI_In_FEM_HPP
-#define INTREPID_HDIV_TRI_In_FEM_HPP
+#ifndef INTREPID2_HDIV_TRI_In_FEM_HPP
+#define INTREPID2_HDIV_TRI_In_FEM_HPP
 
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Basis.hpp"
