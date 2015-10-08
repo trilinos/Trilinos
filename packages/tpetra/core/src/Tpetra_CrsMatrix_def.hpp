@@ -2019,9 +2019,6 @@ namespace Tpetra {
     if (! isLocalRow) {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
-      //
-      // FIXME (mfh 02 Jan 2015) replaceGlobalValues returns invalid
-      // in this case.
       return static_cast<LO> (0);
     }
 
@@ -2118,9 +2115,7 @@ namespace Tpetra {
     if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
-      //
-      // FIXME (mfh 02 Jan 2015) replaceLocalValues returns 0 in this case.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
+      return static_cast<LO> (0);
     }
 
     if (staticGraph_.is_null ()) {
