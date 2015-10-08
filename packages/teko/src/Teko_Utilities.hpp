@@ -56,6 +56,7 @@
 #define __Teko_Utilities_hpp__
 
 #include "Epetra_CrsMatrix.h"
+#include "Tpetra_CrsMatrix.hpp"
 
 // Teuchos includes
 #include "Teuchos_VerboseObject.hpp"
@@ -76,6 +77,8 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+
+#include "Teko_ConfigDefs.hpp"
 
 #ifdef _MSC_VER
 #ifndef _MSC_EXTENSIONS
@@ -118,6 +121,7 @@ using Thyra::block1x2;
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil);
+Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil);
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
@@ -142,6 +146,7 @@ Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil);
+Teuchos::RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO stride,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil);
 
 /** \brief Function used internally by Teko to find the output stream.
   * 
@@ -311,14 +316,14 @@ Teuchos::RCP<Thyra::VectorBase<double> > indicatorVector(
 
 //! @name LinearOp utilities
 //@{
-typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
-typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
-typedef Teuchos::RCP<Thyra::LinearOpBase<double> > InverseLinearOp;
-typedef Teuchos::RCP<Thyra::LinearOpBase<double> > ModifiableLinearOp;
+typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<ST> > BlockedLinearOp;
+typedef Teuchos::RCP<const Thyra::LinearOpBase<ST> > LinearOp;
+typedef Teuchos::RCP<Thyra::LinearOpBase<ST> > InverseLinearOp;
+typedef Teuchos::RCP<Thyra::LinearOpBase<ST> > ModifiableLinearOp;
 
 //! Build a square zero operator from a single vector space
 inline LinearOp zero(const VectorSpace & vs)
-{ return Thyra::zero<double>(vs,vs); }
+{ return Thyra::zero<ST>(vs,vs); }
 
 //! Replace nonzeros with a scalar value, used to zero out an operator
 void putScalar(const ModifiableLinearOp & op,double scalar);
