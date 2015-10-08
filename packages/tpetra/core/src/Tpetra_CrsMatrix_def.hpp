@@ -2015,18 +2015,18 @@ namespace Tpetra {
       // The sizes of values and indices must match.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-    if (! isLocalRow) {
-      // The calling process does not own this row, so it is not
-      // allowed to modify its values.
-      return static_cast<LO> (0);
-    }
 
     if (indices.size () == 0) {
       return static_cast<LO> (0);
     }
     else {
       RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The input local row is invalid on the calling process,
+        // which means that the calling process replaced 0 entries.
+        return static_cast<LO> (0);
+      }
+
       ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
         return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,
@@ -2290,18 +2290,18 @@ namespace Tpetra {
       // The sizes of values and indices must match.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-    if (! isLocalRow) {
-      // The calling process doesn't own the local row, so we can't
-      // insert into it.
-      return static_cast<LO> (0);
-    }
 
     if (indices.size () == 0) {
       return static_cast<LO> (0);
     }
     else {
       RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The input local row is invalid on the calling process,
+        // which means that the calling process summed 0 entries.
+        return static_cast<LO> (0);
+      }
+
       ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
         return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,
