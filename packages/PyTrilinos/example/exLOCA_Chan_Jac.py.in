@@ -1,8 +1,59 @@
 #! ${PYTHON_EXECUTABLE}
 # -*- python -*-
 
-# ************************************************************************
+# ***********************************************************************
+#
+#          PyTrilinos: Python Interfaces to Trilinos Packages
+#                 Copyright (2014) Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia
+# Corporation, the U.S. Government retains certain rights in this
+# software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+#
+# ***********************************************************************
 # @HEADER
+
+########################################################################
+#
+# Chan problem with preconditioner, developed by Romain Veltz.  See
+#
+# Romain Veltz, Pascal Chossat, Olivier Faugeras, "On the Effects on
+#     Cortical Spontaneous Activity of the Symmetries of the Network of
+#     Pinwheels in Visual Area V1," The Journal of Mathematical
+#     Neuroscience, December 2015, 5:11.
+#
+# http://link.springer.com/article/10.1186/s13408-015-0023-8
+#
+########################################################################
 
 # System imports
 from   numpy    import *
@@ -19,7 +70,7 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 parser.add_option("-n", "--numelem", type="int", dest="numelem", default=20,
                   help="set the number of elements [default 100]")
-parser.add_option("--sigma", type="float", dest="sigma", default=0.0,
+parser.add_option("--sigma", type="float", dest="sigma", default=1.0,
                   help="set alpha")
 parser.add_option("--scale", type="float", dest="scale", default=1.0,
                   help="set scale")
@@ -86,7 +137,7 @@ class ChanJac(Epetra.Operator):
             y.Update(self.alpha_, y, self.beta_, x,0.0)
             return 0
         except Exception, e:
-            print "A python exception was raised in ChanJac>.Apply:"
+            print "A python exception was raised in ChanJac.Apply:"
             print e
             return -1
 
@@ -154,7 +205,7 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
   def computeJacobian(self, x, Jac):
       try:
           self.Jaco_.x_jac = x.copy()
-          self.Jaco_.setShMat(1.0,0.0);
+          self.Jaco_.setShMat(1.0,0.0)
           return True
       except Exception, e:
           print "Proc", self.__myPID, \
@@ -219,7 +270,7 @@ def main():
   stepper     = paramList["LOCA"]["Stepper"]
   printParams["Output Information"] = NOX.Utils.StepperIteration + \
                                       NOX.Utils.StepperDetails
-  stepper["Max Steps"] = 30
+  stepper["Max Steps"] = 100
   stepper["Min Value"] = -100.0
   stepper["Max Value"] = 100.0
   stepper["Initial Value"] = 1.09
@@ -227,7 +278,7 @@ def main():
   paramList["LOCA"]["Step Size"]["Initial Step Size"] = -0.01
   paramList["LOCA"]["Step Size"]["Max Step Size"] = 0.1
 
-  stepper["Compute Eigenvalues"] = True
+  stepper["Compute Eigenvalues"] = False
   stepper["Eigensolver"]["Shift"] = 0.0
   stepper["Eigensolver"]["Num Blocks"] = 20
   stepper["Eigensolver"]["Block Size"] = 4
@@ -286,7 +337,6 @@ def main():
 
   status = stepper.run()
   print("- Completed stepper run")
-
   if 1==0:
       import pylab as plt
       plt.subplot(121)
@@ -294,7 +344,7 @@ def main():
       plt.subplot(122)
       plt.plot(array(interface.history)[:,0],'.-')
       plt.show()
-  print("- plot done!")
+      print("- plot done!")
 
   return status
 
