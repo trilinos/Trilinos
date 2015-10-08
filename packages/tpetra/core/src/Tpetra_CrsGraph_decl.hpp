@@ -1695,15 +1695,19 @@ namespace Tpetra {
 
   private:
 
-    /// \brief Get a const, nonowned, locally indexed view of the
-    ///   locally owned row myRow, such that rowinfo =
-    ///   getRowInfo(myRow).
+    /// \brief Get a const nonowned view of the local column indices
+    ///   of row rowinfo.localRow.
+    ///
+    /// \param rowinfo [in] Result of calling getRowInfo with the
+    ///   index of the local row to view.
     Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowView (const RowInfo& rowinfo) const;
 
-    /// \brief Get a nonconst, nonowned, locally indexed view of the
-    ///   locally owned row myRow, such that rowinfo =
-    ///   getRowInfo(myRow).
+    /// \brief Get a nonconst nonowned view of the local column
+    ///   indices of row rowinfo.localRow.
+    ///
+    /// \param rowinfo [in] Result of calling getRowInfo with the
+    ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
 
