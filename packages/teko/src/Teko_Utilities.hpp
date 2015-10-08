@@ -159,6 +159,7 @@ const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream();
 // { return Teuchos::VerboseObjectBase::getDefaultOStream(); }
 
 #ifndef Teko_DEBUG_OFF
+//#if 0
    #define Teko_DEBUG_EXPR(str) str
    #define Teko_DEBUG_MSG(str,level) if(level<=Teko_DEBUG_INT) { \
       Teuchos::RCP<Teuchos::FancyOStream> out = Teko::getOutputStream(); \
@@ -173,15 +174,16 @@ const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream();
                               Teko::getOutputStream()->popTab(); }
    #define Teko_DEBUG_PUSHTAB() Teko::getOutputStream()->pushTab(3)
    #define Teko_DEBUG_POPTAB() Teko::getOutputStream()->popTab()
+   #define Teko_DEBUG_SCOPE(str,level)
 
-   struct __DebugScope__ {
-      __DebugScope__(const std::string & str,int level)
-         : str_(str), level_(level)
-      { Teko_DEBUG_MSG("BEGIN "+str_,level_); Teko_DEBUG_PUSHTAB(); }      
-      ~__DebugScope__()
-      { Teko_DEBUG_POPTAB(); Teko_DEBUG_MSG("END "+str_,level_); } 
-      std::string str_; int level_; };
-   #define Teko_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
+//   struct __DebugScope__ {
+//      __DebugScope__(const std::string & str,int level)
+//         : str_(str), level_(level)
+//      { Teko_DEBUG_MSG("BEGIN "+str_,level_); Teko_DEBUG_PUSHTAB(); }      
+//      ~__DebugScope__()
+//      { Teko_DEBUG_POPTAB(); Teko_DEBUG_MSG("END "+str_,level_); } 
+//      std::string str_; int level_; };
+//   #define Teko_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
 #else 
    #define Teko_DEBUG_EXPR(str)
    #define Teko_DEBUG_MSG(str,level)
