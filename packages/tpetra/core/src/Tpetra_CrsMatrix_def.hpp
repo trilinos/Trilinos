@@ -2007,7 +2007,11 @@ namespace Tpetra {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    else if (! this->hasColMap ()) {
+    // Don't call this->hasColMap(), because that calls getCrsGraph().
+    // That changes RCP's reference count, which is not thread safe.
+    // Just dereferencing an RCP or calling RCP::is_null() does not
+    // change its reference count.
+    else if (staticGraph_.is_null () || staticGraph_->colMap_.is_null ()) {
       // There is no such thing as local column indices without a column Map.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
@@ -2282,7 +2286,11 @@ namespace Tpetra {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    else if (! this->hasColMap ()) {
+    // Don't call this->hasColMap(), because that calls getCrsGraph().
+    // That changes RCP's reference count, which is not thread safe.
+    // Just dereferencing an RCP or calling RCP::is_null() does not
+    // change its reference count.
+    else if (staticGraph_.is_null () || staticGraph_->colMap_.is_null ()) {
       // There is no such thing as local column indices without a column Map.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
