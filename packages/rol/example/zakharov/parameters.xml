@@ -1,5 +1,5 @@
 <ParameterList name="Inputs">
-  <Parameter name="Descent Type"                            type="string"  value="Newton-Krylov"       />
+  <Parameter name="Descent Type"                            type="string"  value="Nonlinear CG"       />
   <Parameter name="Linesearch Type"                         type="string"  value="Backtracking"        />
   <Parameter name="Linesearch Curvature Condition"          type="string"  value="Strong Wolfe Conditions"    />
   <Parameter name="Accept Linesearch Minimizer"             type="bool"    value="true"                />

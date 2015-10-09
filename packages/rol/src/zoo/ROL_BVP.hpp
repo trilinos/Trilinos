@@ -55,7 +55,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_StdBoundConstraint.hpp"
+#include "ROL_BoundConstraint.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -64,21 +64,41 @@ namespace ZOO {
    */
   template<class Real>
   class Objective_BVP : public Objective<Real> {
+
+  typedef std::vector<Real>  vector;
+  typedef Vector<Real>       V;
+  typedef StdVector<Real>    SV;  
+
+  typedef typename vector::size_type uint;
+
   private: 
     int dim_;
+
+    Teuchos::RCP<const vector> getVector( const V& x ) {
+      using Teuchos::dyn_cast;
+      using Teuchos::getConst;
+      return dyn_cast<const SV>(getConst(x)).getVector();
+    }
+
+    Teuchos::RCP<vector> getVector( V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<SV>(x).getVector();
+    }
+
 
   public:
     Objective_BVP(void) : dim_(20) {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > ex =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+ 
+      using Teuchos::RCP;
+      RCP<const vector> ex = getVector(x);
       Real val = 0.0;
       Real f   = 0.0;
-      Real h   = 1.0/((Real)(this->dim_) + 1.0);
-      for ( int i = 0; i < this->dim_; i++ ) {
+      Real h   = 1.0/((Real)(dim_) + 1.0);
+      for ( uint i = 0; i < dim_; i++ ) {
         f = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0; 
-        if ( i < (this->dim_-1) ) { f -= (*ex)[i+1]; } 
+        if ( i < (dim_-1) ) { f -= (*ex)[i+1]; } 
         if ( i > 0 )              { f -= (*ex)[i-1]; }
         val += f*f;
       }
@@ -86,45 +106,46 @@ namespace ZOO {
     }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > ex =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<std::vector<Real> > eg =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+
+      using Teuchos::RCP;    
+      RCP<const vector> ex = getVector(x);
+      RCP<vector> eg = getVector(g);
       g.zero();
-      Real h  = 1.0/((Real)(this->dim_) + 1.0);
-      std::vector<Real> f(this->dim_,0.0);
-      for ( int i = 0; i < this->dim_; i++ ) {
+      Real h  = 1.0/((Real)(dim_) + 1.0);
+      vector f(dim_,0.0);
+
+      for ( uint i = 0; i < dim_; i++ ) {
         f[i] = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
-        if ( i < (this->dim_-1) ) { f[i] -= (*ex)[i+1]; }
+        if ( i < (dim_-1) ) { f[i] -= (*ex)[i+1]; }
         if ( i > 0)               { f[i] -= (*ex)[i-1]; }
       }
       Real df = 0.0;
-      for ( int i = 0; i < this->dim_; i++ ) {
+      for ( uint i = 0; i < dim_; i++ ) {
         df = (2.0 + 3.0*h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0)/2.0)*f[i];
-        if ( i < (this->dim_-1) ) { df -= f[i+1]; }
-        if ( i > 0 )              { df -= f[i-1]; }
+        if ( i < (dim_-1) ) { df -= f[i+1]; }
+        if ( i > 0 )        { df -= f[i-1]; }
         (*eg)[i] += 2.0*df;
       }
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > ex =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > ev =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > ehv =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+
+      using Teuchos::RCP;
+      RCP<const vector> ex = getVector(x);
+      RCP<const vector> ev = getVector(v);
+      RCP<vector> ehv = getVector(hv);
+
       hv.zero();
-      Real h = 1.0/((Real)(this->dim_) + 1.0);
+      Real h = 1.0/((Real)(dim_) + 1.0);
       Real f = 0.0, df = 0.0, dfn = 0.0, hf = 0.0;
-      for ( int i = 0; i < this->dim_; i++ ) {
+      for ( uint i = 0; i < dim_; i++ ) {
         f  = 2.0*(*ex)[i] + h*h*std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,3.0)/2.0;
         df = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i] + (Real)(i+1)*h + 1.0,2.0);
         hf = 3.0 * h*h * ((*ex)[i] + (Real)(i+1)*h + 1.0);
-        if ( i < (this->dim_-2) ) {
+        if ( i < (dim_-2) ) {
           (*ehv)[i] += 2.0*(*ev)[i+2];
         }
-        if ( i < (this->dim_-1) ) {
+        if ( i < (dim_-1) ) {
           f -= (*ex)[i+1];
           dfn = 2.0 + 3.0/2.0 * h*h * std::pow((*ex)[i+1] + (Real)(i+2)*h + 1.0,2.0);
           (*ehv)[i] -= 2.0*(df + dfn)*(*ev)[i+1];
@@ -148,20 +169,37 @@ namespace ZOO {
   template<class Real>
   void getBVP( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<BoundConstraint<Real> > &con, 
                 Vector<Real> &x0, Vector<Real> &x ) {
+
+    typedef std::vector<Real>     vector;
+    typedef Vector<Real>          V;
+    typedef StdVector<Real>       SV; 
+
+    typedef typename vector::size_type uint;
+    
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::dyn_cast;
+
     // Cast Initial Guess and Solution Vectors
-    Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
-    Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
-    int n = xp->size();
+    RCP<vector> x0p = dyn_cast<SV>(x0).getVector(); 
+    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
+ 
+    uint n = xp->size();
     // Resize Vectors
     n = 20;
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
     obj = Teuchos::rcp( new Objective_BVP<Real> );
+
     // Instantiate BoundConstraint
-    std::vector<Real> l, u;
+
+    RCP<vector> l_rcp = rcp( new vector() );
+    RCP<vector> u_rcp = rcp( new vector() );
+
+    RCP<V> l = rcp( new SV(l_rcp) );
+    RCP<V> u = rcp( new SV(u_rcp) );
+
     std::vector<Real> val(n,0.0); 
     val[0] = 0.1*0.2321;
     val[1] = -0.1*0.4520;
@@ -183,21 +221,21 @@ namespace ZOO {
     val[17] = -0.1*1.0702;
     val[18] = -0.1*0.7858;
     val[19] = -0.1*0.4323;
-    for ( int i = 0; i < n; i++ ) { 
+    for ( uint i = 0; i < n; i++ ) { 
       if ( i%2 == 0 ) {  
-        l.push_back(std::max(-0.2*(Real)(n),val[i]+0.1));
-        u.push_back(std::min( 0.2*(Real)(n),val[i]+1.1));
+        l_rcp->push_back(std::max(-0.2*(Real)(n),val[i]+0.1));
+        u_rcp->push_back(std::min( 0.2*(Real)(n),val[i]+1.1));
       }
       else {
-        l.push_back(-0.2*(Real)(n));
-        u.push_back( 0.2*(Real)(n));
+        l_rcp->push_back(-0.2*(Real)(n));
+        u_rcp->push_back( 0.2*(Real)(n));
       }
     }
-    //std::vector<Real> l(n,-0.5), u(n,0.0);
-    con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
+    
+    con = rcp( new BoundConstraint<Real>(l,u) );
     // Get Initial Guess
     Real h = 1.0/((Real)n + 1.0);
-    for ( int i = 0; i < n; i++ ) {
+    for ( uint i = 0; i < n; i++ ) {
       (*x0p)[i] = (Real)(i+1)*h*((Real)(i+1)*h - 1.0);
     }
     con->project(x0);

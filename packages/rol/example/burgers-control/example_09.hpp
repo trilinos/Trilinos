@@ -1205,7 +1205,7 @@ public:
 //    Real nu = fem_->get_viscosity();
 //
 //    return 0.5*nu*fem_->compute_H1_dot(*up,*up);
-
+ 
     Real val = 0.5*((((Real)indices_[0]+1.)*(fem_->mesh_spacing())-x_)
                     *(x_+(2.-((Real)indices_[0]+1.))*(fem_->mesh_spacing()))/(fem_->mesh_spacing())
                     +(fem_->mesh_spacing())) * (*up)[indices_[0]];

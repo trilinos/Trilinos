@@ -52,6 +52,7 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterListConverters.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -91,10 +92,15 @@ int main(int argc, char *argv[]) {
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
 
-    parlist->set("Descent Type", "Newton-Krylov");
+    Teuchos::ParameterList tieredlist;
+   
+    ROL::tierParameterList(tieredlist,*parlist);
+
 
     // Define Step
-    ROL::LineSearchStep<RealT> step(*parlist);
+    ROL::LineSearchStep<RealT> step(tieredlist);
+
+    *outStream << tieredlist << std::endl;
 
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance

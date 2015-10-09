@@ -147,6 +147,10 @@ Teuchos::RCP<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
+Teuchos::RCP<std::vector<Element> > getVector() {
+  return std_vec_;
+}
+
 Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
   Teuchos::RCP<OptStdVector> e = Teuchos::rcp( new OptStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
   (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
@@ -227,6 +231,10 @@ Teuchos::RCP<ROL::Vector<Real> > clone() const {
 }
 
 Teuchos::RCP<const std::vector<Element> > getVector() const {
+  return std_vec_;
+}
+
+Teuchos::RCP<std::vector<Element> > getVector() {
   return std_vec_;
 }
 
@@ -313,6 +321,10 @@ Teuchos::RCP<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
+Teuchos::RCP<std::vector<Element> > getVector() {
+  return std_vec_;
+}
+
 Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
   Teuchos::RCP<ConStdVector> e = Teuchos::rcp( new ConStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
   (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
@@ -393,6 +405,10 @@ Teuchos::RCP<ROL::Vector<Real> > clone() const {
 }
 
 Teuchos::RCP<const std::vector<Element> > getVector() const {
+  return std_vec_;
+}
+
+Teuchos::RCP<std::vector<Element> > getVector() {
   return std_vec_;
 }
 

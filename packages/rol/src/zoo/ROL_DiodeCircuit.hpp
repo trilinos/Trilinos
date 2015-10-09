@@ -31,13 +31,20 @@ namespace ZOO {
   */
   template<class Real>
   class Objective_DiodeCircuit : public Objective<Real> {
+
+  typedef std::vector<Real>  vector;
+  typedef Vector<Real>       V;
+  typedef StdVector<Real>    SV;  
+
+  typedef typename vector::size_type uint;
+
   private:
     /// Thermal voltage (constant)
     Real Vth_; 
     /// Vector of measured currents in DC analysis (data)
-    Teuchos::RCP<std::vector<Real> > Imeas_;
+    Teuchos::RCP<vector> Imeas_;
     /// Vector of source voltages in DC analysis (input) 
-    Teuchos::RCP<std::vector<Real> > Vsrc_; 
+    Teuchos::RCP<vector> Vsrc_; 
     /// If true, use Lambert-W function to solve circuit, else use Newton's method.
     bool lambertw_; 
     /// Percentage of noise to add to measurements; if 0.0 - no noise.
@@ -47,6 +54,17 @@ namespace ZOO {
     /// 0 - use FD(with scaling), 1 - use exact implementation (with second order derivatives), 2 - use Gauss-Newton approximation (first order derivatives only)
     int use_hessvec_;
   
+    Teuchos::RCP<const vector> getVector( const V& x ) {
+      using Teuchos::dyn_cast;
+      using Teuchos::getConst;
+      return dyn_cast<const SV>(getConst(x)).getVector();
+    }
+
+    Teuchos::RCP<vector> getVector( V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<SV>(x).getVector();
+    }
+
   public:
 
     /*!
@@ -62,8 +80,8 @@ namespace ZOO {
       use_adjoint_ = use_adjoint;
       use_hessvec_ = use_hessvec;
       int n = (Vsrc_max-Vsrc_min)/Vsrc_step + 1;
-      Vsrc_ = Teuchos::rcp(new std::vector<Real>(n,0.0));
-      Imeas_ = Teuchos::rcp(new std::vector<Real>(n,0.0));
+      Vsrc_ = Teuchos::rcp(new vector(n,0.0));
+      Imeas_ = Teuchos::rcp(new vector(n,0.0));
       std::ofstream output ("Measurements.dat");
       Real left = 0.0; Real right = 1.0;
       if(lambertw_){
@@ -118,8 +136,8 @@ namespace ZOO {
       for(int k=0;std::getline(input_file,line);++k){dim=k;} // count number of lines
       input_file.clear(); // reset to beginning of file
       input_file.seekg(0,std::ios::beg); 
-      Vsrc_ = Teuchos::rcp(new std::vector<Real>(dim,0.0));
-      Imeas_ = Teuchos::rcp(new std::vector<Real>(dim,0.0));
+      Vsrc_ = Teuchos::rcp(new vector(dim,0.0));
+      Imeas_ = Teuchos::rcp(new vector(dim,0.0));
       double Vsrc, Imeas;
       std::cout << "Using input file to generate data." << "\n";
       for(int i=0;i<dim;i++){
@@ -366,10 +384,10 @@ namespace ZOO {
 
     //! Solve circuit given optimization parameters Is and Rs
     void solve_circuit(Vector<Real> &I, const Vector<Real> &S){
-      Teuchos::RCP<std::vector<Real> > Ip =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(I)).getVector());
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
+
+      using Teuchos::RCP;  
+      RCP<vector> Ip = getVector(I);
+      RCP<const vector> Sp = getVector(S);
 
       int n = Ip->size();
       
@@ -399,18 +417,20 @@ namespace ZOO {
       ---
      */
     Real value(const Vector<Real> &S, Real &tol){
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
-      int n = Imeas_->size();
-      StdVector<Real> I( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > Ip =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(I)).getVector());
+
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      RCP<const vector> Sp = getVector(S);
+
+      uint n = Imeas_->size();
+      SV I( rcp( new vector(n,0.0) ) );
+      RCP<vector> Ip = getVector(I);
 
       // Solve state equation
-      this->solve_circuit(I,S);
+      solve_circuit(I,S);
       Real val = 0;
       
-      for(int i=0;i<n;i++){
+      for(uint i=0;i<n;i++){
 	val += ((*Ip)[i]-(*Imeas_)[i])*((*Ip)[i]-(*Imeas_)[i]);
       }
       return val/2.0;
@@ -424,17 +444,14 @@ namespace ZOO {
      ---
      */
     void solve_adjoint(Vector<Real> &lambda, const Vector<Real> &I, const Vector<Real> &S){
+     
+      using Teuchos::RCP;
+      RCP<vector> lambdap = getVector(lambda);
+      RCP<const vector> Ip = getVector(I);
+      RCP<const vector> Sp = getVector(S);
       
-      Teuchos::RCP<std::vector<Real> > lambdap =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(lambda)).getVector());
-      
-      Teuchos::RCP<const std::vector<Real> > Ip =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(I))).getVector();
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
-      
-      int n = Ip->size();
-      for(int i=0;i<n;i++){
+      uint n = Ip->size();
+      for(uint i=0;i<n;i++){
         (*lambdap)[i] = ((*Imeas_)[i]-(*Ip)[i])/diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
       }
     }
@@ -448,15 +465,13 @@ namespace ZOO {
     */
     void solve_sensitivity_Is(Vector<Real> &sens, const Vector<Real> &I, const Vector<Real> &S){
       
-      Teuchos::RCP<std::vector<Real> > sensp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sens)).getVector());
-      Teuchos::RCP<const std::vector<Real> > Ip =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(I))).getVector();
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
+      using Teuchos::RCP; 
+      RCP<vector> sensp = getVector(sens);
+      RCP<const vector> Ip = getVector(I);
+      RCP<const vector> Sp = getVector(S);
       
-      int n = Ip->size();
-      for(int i=0;i<n;i++){
+      uint n = Ip->size();
+      for(uint i=0;i<n;i++){
         (*sensp)[i] = -diodeIs((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1])/diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
       }
     }
@@ -469,67 +484,65 @@ namespace ZOO {
       ---
     */
     void solve_sensitivity_Rs(Vector<Real> &sens, const Vector<Real> &I, const Vector<Real> &S){
+
+      using Teuchos::RCP;       
+      RCP<vector> sensp = getVector(sens);
+      RCP<const vector> Ip = getVector(I);
+      RCP<const vector> Sp = getVector(S);
       
-      Teuchos::RCP<std::vector<Real> > sensp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sens)).getVector());
-      Teuchos::RCP<const std::vector<Real> > Ip =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(I))).getVector();
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
-      
-      int n = Ip->size();
-      for(int i=0;i<n;i++){
+      uint n = Ip->size();
+      for(uint i=0;i<n;i++){
         (*sensp)[i] = -diodeRs((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1])/diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
       }
     }
     
     //! Compute the gradient of the reduced objective function either using adjoint or using sensitivities
     void gradient(Vector<Real> &g, const Vector<Real> &S, Real &tol){
-      
-      Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
-      Teuchos::RCP<const std::vector<Real> > Sp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
 
-      int n = Imeas_->size();
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      RCP<vector> gp = getVector(g); 
+      RCP<const vector> Sp = getVector(S);
+
+      uint n = Imeas_->size();
       
-      StdVector<Real> I( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > Ip =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(I)).getVector());
-      
+      SV I( rcp( new vector(n,0.0) ) );
+      RCP<vector> Ip = getVector(I);    
+ 
       // Solve state equation      
-      this->solve_circuit(I,S);
+      solve_circuit(I,S);
       
       if(use_adjoint_){      
 	// Compute the gradient of the reduced objective function using adjoint computation
-	StdVector<Real> lambda( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > lambdap =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(lambda)).getVector());
+	SV lambda( Teuchos::rcp( new vector(n,0.0) ) );
+	RCP<vector> lambdap = getVector(lambda);
 	
 	// Solve adjoint equation
-	this->solve_adjoint(lambda,I,S);
+        solve_adjoint(lambda,I,S);
       
 	// Compute gradient
 	(*gp)[0] = 0.0; (*gp)[1] = 0.0;
-	for(int i=0;i<n;i++){
+	for(uint i=0;i<n;i++){
 	  (*gp)[0] += diodeIs((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1])*(*lambdap)[i];
 	  (*gp)[1] += diodeRs((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1])*(*lambdap)[i];		
 	}      
       }
       else{
 	// Compute the gradient of the reduced objective function using sensitivities
-	StdVector<Real> sensIs( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	StdVector<Real> sensRs( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
+	SV sensIs( rcp( new vector(n,0.0) ) );
+	SV sensRs( rcp( new vector(n,0.0) ) );
+
 	// Solve sensitivity equations
-	this->solve_sensitivity_Is(sensIs,I,S);
-	this->solve_sensitivity_Rs(sensRs,I,S);
+	solve_sensitivity_Is(sensIs,I,S);
+	solve_sensitivity_Rs(sensRs,I,S);
 	
-	Teuchos::RCP<std::vector<Real> > sensIsp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sensIs)).getVector());
-	Teuchos::RCP<std::vector<Real> > sensRsp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sensRs)).getVector());
-	
-	// Write sensitivities into file
+	RCP<vector> sensIsp = getVector(sensIs); 
+        RCP<vector> sensRsp = getVector(sensRs);	
+
+        // Write sensitivities into file
 	std::ofstream output ("Sensitivities.dat");
-	for(int k=0;k<n;k++){
+	for(uint k=0;k<n;k++){
 	  if(output.is_open()){
 	    output << std::scientific << (*sensIsp)[k] << " " << (*sensRsp)[k] << "\n";
 	  }	
@@ -537,7 +550,7 @@ namespace ZOO {
 	output.close();
 	// Compute gradient
 	(*gp)[0] = 0.0; (*gp)[1] = 0.0;
-	for(int i=0;i<n;i++){
+	for(uint i=0;i<n;i++){
 	  (*gp)[0] += ((*Ip)[i]-(*Imeas_)[i])*(*sensIsp)[i];
 	  (*gp)[1] += ((*Ip)[i]-(*Imeas_)[i])*(*sensRsp)[i];	
 	}      
@@ -554,13 +567,15 @@ namespace ZOO {
       ---
      */
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &S, Real &tol ){
+
+      using Teuchos::RCP; 
+      using Teuchos::rcp;
+
       if(use_hessvec_==0){
 	// Use finite-difference approximation
       	// Modification of parent class function that takes into accout different scale of components
-      	Teuchos::RCP<const std::vector<Real> > vp =
-      	  (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      	Teuchos::RCP<const std::vector<Real> > Sp =
-      	  (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
+      	RCP<const vector> vp = getVector(v);
+      	RCP<const vector> Sp = getVector(S);
       	Real gtol = std::sqrt(ROL_EPSILON);
 	
       	// Get Step Length                                                                                     
@@ -575,103 +590,91 @@ namespace ZOO {
       	Real h2 = Rs_scale*h;
 	
 	// Compute Gradient at S                                                                               
-      	Teuchos::RCP<Vector<Real> > g = S.clone();
-      	this->gradient(*g,S,gtol);
+      	RCP<V> g = S.clone();
+      	gradient(*g,S,gtol);
 
       	// Compute New Step S + h*v                                                                            
-	Teuchos::RCP<std::vector<Real> > Snewp = Teuchos::rcp( new std::vector<Real> (2, 0.0) );
-      	ROL::StdVector<Real> Snew(Snewp);
+	RCP<vector> Snewp = rcp( new vector(2, 0.0) );
+      	SV Snew(Snewp);
       	(*Snewp)[0] = (*Sp)[0] + h1*(*vp)[0];
       	(*Snewp)[1] = (*Sp)[1] + h2*(*vp)[1];
       	
       	// Compute Gradient at x + h*v                                                                    
       	hv.zero();
-      	this->gradient(hv,Snew,gtol);
+      	gradient(hv,Snew,gtol);
 
       	// Compute Newton Quotient                                                                            
       	hv.axpy(-1.0,*g);
       	hv.scale(1.0/std::sqrt(h1*h1+h2*h2));
       }
       else if(use_hessvec_==1){
-	Teuchos::RCP<std::vector<Real> > hvp =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-	Teuchos::RCP<const std::vector<Real> > vp =
-	  (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-	Teuchos::RCP<const std::vector<Real> > Sp =
-	  (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
+	RCP<vector> hvp = getVector(hv);
+	RCP<const vector> vp = getVector(v);
+	RCP<const vector> Sp = getVector(S);
 	
-	int n = Imeas_->size();
+	uint n = Imeas_->size();
 	
-	StdVector<Real> I( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > Ip =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(I)).getVector());
-	
+	SV I( rcp( new vector(n,0.0) ) );
+	RCP<vector> Ip = getVector(I);
+
 	// Solve state equation      
-	this->solve_circuit(I,S);
+	solve_circuit(I,S);
 	
-	
-	StdVector<Real> lambda( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > lambdap =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(lambda)).getVector());
+	SV lambda( Teuchos::rcp( new vector(n,0.0) ) );
+	RCP<vector> lambdap = getVector(lambda);
 	
 	// Solve adjoint equation
-	this->solve_adjoint(lambda,I,S);
+	solve_adjoint(lambda,I,S);
 	
-	StdVector<Real> w( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > wp =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(w)).getVector());
+	SV w( rcp( new vector(n,0.0) ) );
+	RCP<vector> wp = getVector(w);
 	
 	// Solve state sensitivity equation
-	for(int i=0;i<n;i++){
+	for(uint i=0;i<n;i++){
 	  (*wp)[i] = ( (*vp)[0] * diodeIs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) + (*vp)[1] * diodeRs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) ) / diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
 	}
 	
-	StdVector<Real> p( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > pp =
-	  Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(p)).getVector());
-	
-	// Solve for p
-	for(int j=0;j<n;j++){
+	SV p( rcp( new vector(n,0.0) ) );
+	RCP<vector> pp = getVector(p);	
+
+        // Solve for p
+	for(uint j=0;j<n;j++){
 	  (*pp)[j] = ( (*wp)[j] + (*lambdap)[j] * diodeII( (*Ip)[j],(*Vsrc_)[j],(*Sp)[0],(*Sp)[1] ) * (*wp)[j] - (*lambdap)[j] * diodeIIs( (*Ip)[j],(*Vsrc_)[j],(*Sp)[0],(*Sp)[1] ) * (*vp)[0] - (*lambdap)[j] * diodeIRs( (*Ip)[j],(*Vsrc_)[j],(*Sp)[0],(*Sp)[1] ) * (*vp)[1] ) / diodeI( (*Ip)[j],(*Vsrc_)[j],(*Sp)[0],(*Sp)[1] );
 	}
 	
 	// Assemble Hessian-vector product
 	(*hvp)[0] = 0.0;(*hvp)[1] = 0.0;
-	for(int k=0;k<n;k++){
+	for(uint k=0;k<n;k++){
 	  (*hvp)[0] += diodeIs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) * (*pp)[k] - (*lambdap)[k] * (*wp)[k] * diodeIIs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) + (*lambdap)[k] * (*vp)[0] * diodeIsIs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) + (*lambdap)[k] * (*vp)[1] * diodeIsRs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] );
 	  (*hvp)[1] += diodeRs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) * (*pp)[k] - (*lambdap)[k] * (*wp)[k] * diodeIRs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) + (*lambdap)[k] * (*vp)[0] * diodeIsRs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] ) + (*lambdap)[k] * (*vp)[1] * diodeRsRs( (*Ip)[k],(*Vsrc_)[k],(*Sp)[0],(*Sp)[1] );
 	}
       }
       else if(use_hessvec_==2){
 	//Gauss-Newton approximation
-	Teuchos::RCP<std::vector<Real> > hvp =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-	Teuchos::RCP<const std::vector<Real> > vp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-	Teuchos::RCP<const std::vector<Real> > Sp =
-          (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(S))).getVector();
+	RCP<vector> hvp = getVector(hv);
+	RCP<const vector> vp = getVector(v);
+	RCP<const vector> Sp = getVector(S);
 	
-        int n = Imeas_->size();
+        uint n = Imeas_->size();
 
-        StdVector<Real> I( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-	Teuchos::RCP<std::vector<Real> > Ip =
-          Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(I)).getVector());
+        SV I( rcp( new vector(n,0.0) ) );
+	RCP<vector> Ip = getVector(I);
 
         // Solve state equation                                                                                
-        this->solve_circuit(I,S);
+        solve_circuit(I,S);
 
 	// Compute sensitivities
-	StdVector<Real> sensIs( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-        StdVector<Real> sensRs( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
+	SV sensIs( rcp( new vector(n,0.0) ) );
+        SV sensRs( rcp( new vector(n,0.0) ) );
         // Solve sensitivity equations                                                                          
-        this->solve_sensitivity_Is(sensIs,I,S);
-        this->solve_sensitivity_Rs(sensRs,I,S);
-	Teuchos::RCP<std::vector<Real> > sensIsp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sensIs)).getVector());
-	Teuchos::RCP<std::vector<Real> > sensRsp = Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(sensRs)).getVector());
-	
-	// Compute approximate Hessian
+        solve_sensitivity_Is(sensIs,I,S);
+        solve_sensitivity_Rs(sensRs,I,S);
+	RCP<vector> sensIsp = getVector(sensIs); 
+        RCP<vector> sensRsp = getVector(sensRs);	
+ 
+        // Compute approximate Hessian
 	Real H11 = 0.0; Real H12 = 0.0; Real H22 = 0.0;
-	for(int k=0;k<n;k++){
+	for(uint k=0;k<n;k++){
 	  H11 += (*sensIsp)[k]*(*sensIsp)[k];
 	  H12 += (*sensIsp)[k]*(*sensRsp)[k];
 	  H22 += (*sensRsp)[k]*(*sensRsp)[k];
@@ -682,7 +685,7 @@ namespace ZOO {
 	(*hvp)[1] = H12*(*vp)[0] + H22*(*vp)[1];
       }
       else{
-	this->ROL::Objective<Real>::hessVec( hv, v, S, tol ); // Use parent class function	
+	ROL::Objective<Real>::hessVec( hv, v, S, tol ); // Use parent class function	
       }
     }
 
@@ -698,8 +701,10 @@ namespace ZOO {
       ---
      */
     void generate_plot(Real Is_lo, Real Is_up, Real Is_step, Real Rs_lo, Real Rs_up, Real Rs_step){
-      Teuchos::RCP<std::vector<double> > S_rcp = Teuchos::rcp(new std::vector<double>(2,0.0) );
-      ROL::StdVector<double> S(S_rcp);
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      RCP<vector> S_rcp = rcp(new vector(2,0.0) );
+      SV S(S_rcp);
       std::ofstream output ("Objective.dat");
 
       Real Is = 0.0;
@@ -714,7 +719,7 @@ namespace ZOO {
 	  Rs = Rs_lo + j*Rs_step;
 	  (*S_rcp)[0] = Is;
 	  (*S_rcp)[1] = Rs;
-	  val = this->value(S,tol);
+	  val = value(S,tol);
 	  if(output.is_open()){
 	    output << std::scientific << Is << " " << Rs << " " << val << "\n";
 	  }

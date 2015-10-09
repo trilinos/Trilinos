@@ -635,6 +635,8 @@ public:
     x.axpy(1.0, s);
     if ( softUp_ ) {
       obj.update(x,true,algo_state.iter);
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
     }
 
     // Compute new gradient

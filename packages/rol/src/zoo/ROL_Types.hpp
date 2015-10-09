@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <Teuchos_getConst.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>

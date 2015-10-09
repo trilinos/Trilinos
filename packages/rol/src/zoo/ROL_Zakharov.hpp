@@ -174,16 +174,18 @@ void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<
     typedef Vector<Real>      V;
     typedef StdVector<Real>   SV;  
  
+    typedef typename vector::size_type uint;
+
     // Cast Initial Guess and Solution Vectors
     RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
     RCP<vector> xp  = dyn_cast<SV>(x).getVector();
 
-    int n = xp->size();
+    uint n = xp->size();
     // Resize Vectors
     n = 10;
 
     RCP<vector> k_rcp = rcp(new vector(n,0));
-    for(int i=0;i<n;++i) {
+    for(uint i=0;i<n;++i) {
         (*k_rcp)[i] = i+1.0;    
     }    
     RCP<V> k = rcp(new SV(k_rcp));
