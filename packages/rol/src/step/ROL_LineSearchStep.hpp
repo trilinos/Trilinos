@@ -187,7 +187,7 @@ public:
       d_(Teuchos::null), gp_(Teuchos::null),
       iterKrylov_(0), flagKrylov_(0),
       els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_HAGAR_ZHANG),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
       econd_(CURVATURECONDITION_WOLFE),
       edesc_(DESCENT_STEEPEST),
       esec_(SECANT_LBFGS),
@@ -225,7 +225,7 @@ public:
       secant_ = SecantFactory<Real>(parlist);
     }
     // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Hagar-Zhang"));
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
@@ -247,7 +247,7 @@ public:
       d_(Teuchos::null), gp_(Teuchos::null),
       iterKrylov_(0), flagKrylov_(0),
       els_(LINESEARCH_USERDEFINED),
-      enlcg_(NONLINEARCG_HAGAR_ZHANG),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
       econd_(CURVATURECONDITION_WOLFE),
       edesc_(DESCENT_STEEPEST),
       esec_(SECANT_LBFGS),
@@ -284,7 +284,7 @@ public:
       secant_ = SecantFactory<Real>(parlist);
     }
     // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Hagar-Zhang"));
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
@@ -307,7 +307,7 @@ public:
       d_(Teuchos::null), gp_(Teuchos::null),
       iterKrylov_(0), flagKrylov_(0),
       els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_HAGAR_ZHANG),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
       econd_(CURVATURECONDITION_WOLFE),
       edesc_(DESCENT_STEEPEST),
       esec_(SECANT_USERDEFINED),
@@ -341,7 +341,7 @@ public:
     useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Hagar-Zhang"));
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
@@ -363,7 +363,7 @@ public:
       d_(Teuchos::null), gp_(Teuchos::null),
       iterKrylov_(0), flagKrylov_(0),
       els_(LINESEARCH_BACKTRACKING),
-      enlcg_(NONLINEARCG_HAGAR_ZHANG),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
       econd_(CURVATURECONDITION_WOLFE),
       edesc_(DESCENT_STEEPEST),
       esec_(SECANT_LBFGS),
@@ -396,7 +396,7 @@ public:
       secant_ = SecantFactory<Real>(parlist);
     }
     // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Hagar-Zhang"));
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
@@ -421,7 +421,7 @@ public:
       d_(Teuchos::null), gp_(Teuchos::null),
       iterKrylov_(0), flagKrylov_(0),
       els_(LINESEARCH_USERDEFINED),
-      enlcg_(NONLINEARCG_HAGAR_ZHANG),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
       econd_(CURVATURECONDITION_WOLFE),
       edesc_(DESCENT_STEEPEST),
       esec_(SECANT_USERDEFINED),
@@ -453,7 +453,7 @@ public:
     useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     // Initialize Nonlinear CG Object
-    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Hagar-Zhang"));
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
