@@ -156,8 +156,8 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -172,10 +172,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {
@@ -229,14 +229,14 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
     if ( state_->lagmultVec == Teuchos::null ) {
       state_->lagmultVec = l.clone();
-      state_->lagmultVec->set(l);
     }
+    state_->lagmultVec->set(l);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -251,10 +251,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {
@@ -299,14 +299,14 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
     if ( state_->lagmultVec == Teuchos::null ) {
       state_->lagmultVec = l.clone();
-      state_->lagmultVec->set(l);
     }
+    state_->lagmultVec->set(l);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -321,10 +321,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {

@@ -87,11 +87,9 @@ private:
     con.update(x,true,algo_state.iter);
     myPen_->update(x,true,algo_state.iter);
     // Compute objective value, constraint value, & gradient of Lagrangian
-    algo_state.value = obj.value(x, zerotol);
-    con.value(*(state->constraintVec),x,zerotol);
-    obj.gradient(*(state->gradientVec), x, zerotol);
-    con.applyAdjointJacobian(*g_,l,x,zerotol);
-    state->gradientVec->plus(*g_);
+    algo_state.value = myPen_->value(x, zerotol);
+    con.value(*(state->constraintVec),x, zerotol);
+    myPen_->gradient(*(state->gradientVec), x, zerotol);
     // Compute criticality measure
     if (bnd.isActivated()) {
       x_->set(x);

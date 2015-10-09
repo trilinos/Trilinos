@@ -90,7 +90,7 @@ private:
   void computePenalty(const Vector<Real> &x) {
     if ( !isConEvaluated_ ) {
       xlam_->set(x);
-      xlam_->axpy(1.0/mu_,*lam_);
+      xlam_->axpy(1./mu_,*lam_);
 
       if ( con_->isFeasible(*xlam_) ) {
         l1_->zero(); dl1_->zero();
@@ -99,37 +99,25 @@ private:
       else {
         // Compute lower penalty component
         l1_->set(*l_);
-        con_->pruneLowerActive(*l1_,*xlam_);
-        l1_->scale(-1.0);
-        l1_->plus(*l_);
-
+        con_->pruneLowerInactive(*l1_,*xlam_);
         tmp_->set(*xlam_);
-        con_->pruneLowerActive(*tmp_,*xlam_);
-        tmp_->axpy(-1.0,*xlam_);
-        l1_->plus(*tmp_);
+        con_->pruneLowerInactive(*tmp_,*xlam_);
+        l1_->axpy(-1.,*tmp_);
 
         // Compute upper penalty component
         u1_->set(*xlam_);
-        con_->pruneUpperActive(*u1_,*xlam_);
-        u1_->scale(-1.0);
-        u1_->plus(*xlam_);
-
+        con_->pruneUpperInactive(*u1_,*xlam_);
         tmp_->set(*u_);
-        con_->pruneUpperActive(*tmp_,*xlam_);
-        tmp_->axpy(-1.0,*u_);
-        u1_->plus(*tmp_);
+        con_->pruneUpperInactive(*tmp_,*xlam_);
+        u1_->axpy(-1.,*tmp_);
 
         // Compute derivative of lower penalty component
         dl1_->set(l1_->dual());
-        con_->pruneLowerActive(*dl1_,*xlam_);
-        dl1_->scale(-1.0);
-        dl1_->plus(l1_->dual());
+        con_->pruneLowerInactive(*dl1_,*xlam_);
 
         // Compute derivative of upper penalty component
         du1_->set(u1_->dual());
-        con_->pruneUpperActive(*du1_,*xlam_);
-        du1_->scale(-1.0);
-        du1_->plus(u1_->dual());
+        con_->pruneUpperInactive(*du1_,*xlam_);
       }
 
       isConEvaluated_ = true;
@@ -171,9 +159,9 @@ public:
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
     computePenalty(x);
 
-    lam_->set(*u1_);
-    lam_->axpy(-1.0,*l1_);
-    lam_->scale(mu_);
+    //lam_->set(*u1_);
+    //lam_->axpy(-1.,*l1_);
+    //lam_->scale(mu_);
 
     mu_ = mu;
 

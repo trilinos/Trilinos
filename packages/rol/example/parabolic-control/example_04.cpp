@@ -760,51 +760,54 @@ int main(int argc, char *argv[]) {
     robj.checkGradient(xz,yz,true);
     robj.checkHessVec(xz,yz,true);
     // Initialize constraints -- these are set to -infinity and infinity.
-    std::vector<RealT> lo(nt,-ROL::ROL_OVERFLOW);
-    std::vector<RealT> hi(nt,ROL::ROL_OVERFLOW);
+    std::vector<RealT> lo(nt,-1.e16);
+    std::vector<RealT> hi(nt, 1.e16);
     ROL::StdBoundConstraint<RealT> icon(lo,hi);
 
-    // PDAS parameter list.
+    // Run primal dual active set.
     Teuchos::ParameterList parlist;
-    parlist.set("Absolute Krylov Tolerance",              1.e-8);
-    parlist.set("Relative Krylov Tolerance",              1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",    50);
-    parlist.set("PDAS Relative Step Tolerance",           1.e-8);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-6);
-    parlist.set("PDAS Maximum Number of Iterations",      10);
-    parlist.set("PDAS Dual Scaling",                      (alpha>0.0) ? alpha : 1.e-4 );      
-    // Trust-region parameter list.
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
+    parlist.sublist("General").sublist("Krylov").set("Type", "Conjugate Residuals");
+    parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1.e-8);
+    parlist.sublist("General").sublist("Krylov").set("Relative Tolerance", 1.e-4);
+    parlist.sublist("General").sublist("Krylov").set("Iteration Limit", 50);
+    parlist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
+    parlist.sublist("General").sublist("Secant").set("Use as Hessian", true);
+    parlist.sublist("General").sublist("Secant").set("Use as Preconditioner", false);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance", 1.e-8);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance", 1.e-6);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 10);
+    parlist.sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling", (alpha>0.) ? alpha : 1.e-4);
+    parlist.sublist("Status Test").set("Gradient Tolerance", 1.e-8);
+    parlist.sublist("Status Test").set("Step Tolerance", 1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit", 100);
 
-    // Primal dual active set.
-    ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
-    ROL::DefaultAlgorithm<RealT> algo_pdas(step_pdas,status,false);
+    ROL::DefaultAlgorithm<RealT> algo_pdas("Primal Dual Active Set",parlist,false);
     xz.zero();
     std::clock_t timer_pdas = std::clock();
     algo_pdas.run(xz,robj,icon,true);
     std::cout << "Primal Dual Active Set required " << (std::clock()-timer_pdas)/(RealT)CLOCKS_PER_SEC 
               << " seconds.\n";
 
-    // Projected Newton.
+    // Run projected Newton with trust-region.
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
+    parlist_tr->sublist("Status Test").set("Gradient Tolerance", 1.e-8);
+    parlist_tr->sublist("Status Test").set("Step Tolerance", 1.e-14);
+    parlist_tr->sublist("Status Test").set("Iteration Limit", 100);
+
     ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
+    ROL::DefaultAlgorithm<RealT> algo_tr("Trust Region",*parlist_tr,false);
     xz.zero();
     std::clock_t timer_tr = std::clock();
-    algo_tr.run(xz,robj,icon,true);
+    //algo_tr.run(xz,robj,icon,true);
+    algo_tr.run(xz,robj,true);
     std::cout << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
               << " seconds.\n";
 
     // SQP.
-    RealT ctol = 1.e-10;
-    ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
-    ROL::CompositeStepSQP<RealT> step_sqp(*parlist_tr);
-    ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
+    parlist_tr->sublist("Status Test").set("Constraint Tolerance", 1.e-10);
+    ROL::DefaultAlgorithm<RealT> algo_sqp("Composite Step SQP",*parlist_tr,false);
     x.zero();
     std::clock_t timer_sqp = std::clock();
     algo_sqp.run(x,g,l,c,obj,con,true);

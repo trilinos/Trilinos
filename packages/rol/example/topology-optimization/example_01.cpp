@@ -238,7 +238,7 @@ public:
     }
   }
 
-  void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z, 
+  void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z,
                       bool transpose = false) {
     // Fill jacobian
     K.shape(2*(this->nx_+1)*(this->ny_+1),2*(this->nx_+1)*(this->ny_+1));
@@ -247,10 +247,10 @@ public:
     for (int i=0; i<this->nx_; i++) {
       for (int j=0; j<this->ny_; j++) {
         n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
+        n2 = (this->ny_+1)*(i+1)+(j+1);
         Zp = std::pow(z[i+j*this->nx_],(Real)this->p_);
         for (int r=0; r<8; r++) {
-          row = this->get_index(r,n1,n2); 
+          row = this->get_index(r,n1,n2);
           if ( this->check_on_boundary(row) ) {
             K(row,row) = 1.0;
           }
@@ -271,7 +271,7 @@ public:
         }
       }
     }
-  } 
+  }
 
   void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z, 
                       const std::vector<Real> &v, bool transpose = false) {
