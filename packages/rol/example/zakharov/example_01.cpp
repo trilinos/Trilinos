@@ -90,7 +90,6 @@ int main(int argc, char *argv[]) {
 
     RCP<ParameterList> parlist = rcp(new ParameterList());
     std::string paramfile = "parameters.xml";
-    //updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
    // Define algorithm.

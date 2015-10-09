@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         // Load optimizer parameters form XML file
         Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
         std::string paramfile = "parameters.xml";
-        Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
+        Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 
         // Define algorithm.
         Algorithm<RealT> algo("Line Search",*parlist);
