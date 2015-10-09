@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     // Get input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);

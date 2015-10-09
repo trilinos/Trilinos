@@ -166,7 +166,7 @@ int main(int argc, char **argv)
     // Define algorithm.
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
+    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
     ROL::Algorithm<RealT> algo("Composite Step SQP", *parlist);
 
     // Run algorithm.

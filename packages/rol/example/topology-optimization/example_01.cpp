@@ -1024,7 +1024,7 @@ int main(int argc, char *argv[]) {
     // Read optimization input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Initialize RCPs.
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.
