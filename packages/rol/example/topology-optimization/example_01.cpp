@@ -1004,13 +1004,13 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    int nx   = 32; // Number of x-elements (60 for prob = 1, 32 for prob = 2).
-    int ny   = 20; // Number of y-elements (20 for prob = 1, 20 for prob = 2).
+    int nx   = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    int ny   = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     Teuchos::RCP<FEM<RealT> > pFEM = Teuchos::rcp(new FEM<RealT>(nx,ny,P,prob));
     // Objective function description.
-    int   nreg = 21;       // # of Moreau-Yoshida parameter updates.
-    int   npen = 10;       // # of penalty parameter updates.
+    int   nreg = 11;       // # of Moreau-Yoshida parameter updates (e.g., 21).
+    int   npen = 2;        // # of penalty parameter updates (e.g., 10).
     RealT frac = 0.4;      // Volume fraction.
     RealT reg  = 1.0;      // Moreau-Yoshida regularization parameter.
     RealT pen  = 1.e-4;    // 0-1 penalty parameter. 
@@ -1020,7 +1020,7 @@ int main(int argc, char *argv[]) {
     bool useTR      = false; // Use trust-region or line-search.
     RealT gtol      = 1e-5;  // Norm of gradient tolerance.
     RealT stol      = 1e-8;  // Norm of step tolerance.
-    int   maxit     = 500;   // Maximum number of iterations.
+    int   maxit     = 100;   // Maximum number of iterations (e.g., 500).
     // Read optimization input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -1028,7 +1028,7 @@ int main(int argc, char *argv[]) {
     // Initialize RCPs.
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> >         algo;   // Optimization algorithm.
+    Teuchos::RCP<ROL::Algorithm<RealT> >                algo;   // Optimization algorithm.
     Teuchos::RCP<ROL::Step<RealT> >                     step;   // Globalized step.
     Teuchos::RCP<ROL::StatusTest<RealT> >               status; // Status test.
     // Initialize equality constraint.
@@ -1075,51 +1075,50 @@ int main(int argc, char *argv[]) {
       ROL::Vector_SimOpt<RealT> x(up,zp);
       ROL::Vector_SimOpt<RealT> y(yup,yzp);
       // Test equality constraint.
-      pcon->checkApplyJacobian(x,y,jv,true);
+      pcon->checkApplyJacobian(x,y,jv,true,*outStream);
       //pcon->checkApplyAdjointJacobian(x,yu,jv,x,true);
-      pcon->checkApplyAdjointHessian(x,yu,y,x,true);
+      pcon->checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
       // Test full objective function.
       pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
-      pobj->checkGradient(x,y,true);
-      pobj->checkHessVec(x,y,true);
+      pobj->checkGradient(x,y,true,*outStream);
+      pobj->checkHessVec(x,y,true,*outStream);
       // Test reduced objective function.
       robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
-      robj->checkGradient(z,yz,true);
-      robj->checkHessVec(z,yz,true);
+      robj->checkGradient(z,yz,true,*outStream);
+      robj->checkHessVec(z,yz,true,*outStream);
     }
     // Run optimization.
     for ( int j=0; j<npen; j++ ) {
-      std::cout << "\nPenalty parameter: " << pen << "\n";
+      *outStream << "\nPenalty parameter: " << pen << "\n";
       for ( int i=0; i<nreg; i++ ) {
-        std::cout << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
+        *outStream << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
         // Initialize full objective function.
         pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
         // Initialize reduced objective function.
         robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
         if ( !useTR ) {
           // Run line-search secant step.
-          parlist->set("Descent Type","Quasi-Newton Method");
-          parlist->set("Secant Type","Limited Memory SR1");
-          maxit  = std::max(maxit-100,0);
+          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
+          parlist->sublist("General").sublist("Secant").set("Type", "Limited-Memory SR1");
           if ( maxit > 0 ) {
             step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
             status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
-            algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-            algo->run(z,*robj,bound,true);
+            algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+            algo->run(z,*robj,bound,true,*outStream);
           }
           // Run line-search Newton-Krylov step.
-          parlist->set("Descent Type","Newton-Krylov");
+          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
           step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
-          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,500));
-          algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-          algo->run(z,*robj,bound,true);
+          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
+          algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+          algo->run(z,*robj,bound,true,*outStream);
         }
         else {
           // Run trust-region step.
           step   = Teuchos::rcp(new ROL::TrustRegionStep<RealT>(*parlist));
           status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
-          algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-          algo->run(z,*robj,bound,true);
+          algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+          algo->run(z,*robj,bound,true,*outStream);
         }
         // Compute volume.
         RealT vol = 0.0;
@@ -1128,7 +1127,7 @@ int main(int argc, char *argv[]) {
             vol += (*z_rcp)[i+j*nx];
           }
         }
-        std::cout << "The volume fraction is " << vol/pFEM->numZ() << "\n";
+        *outStream << "The volume fraction is " << vol/pFEM->numZ() << "\n";
         // Increase Moreau-Yoshida regularization parameter.
         reg *= 2.0;
       }

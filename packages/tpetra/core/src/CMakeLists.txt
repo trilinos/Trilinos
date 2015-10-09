@@ -300,7 +300,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   # Zoltan2 wants Scalar = int for CrsMatrix (Bug 6298), and thus
   # indirectly for RowMatrix as well.
-  SET (CrsMatrix_ETI_SCALARS ${TpetraCore_ETI_SCALARS})
+  SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
 
   # Generate ETI .cpp files for Tpetra::CrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)

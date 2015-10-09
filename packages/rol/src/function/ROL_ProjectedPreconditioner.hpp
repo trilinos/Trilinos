@@ -88,7 +88,7 @@ public:
                           const Teuchos::RCP<Vector<Real> > &g, bool useSecant = true ) 
     : obj_(obj), con_(con), x_(x), g_(g), secant_(secant), eps_(0.0) {
     if ( con_->isActivated() ) {
-      v_ = x_->clone();
+      v_ = g_->clone();
     }
     useSecant_ = useSecant;
   }

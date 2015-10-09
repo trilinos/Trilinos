@@ -769,11 +769,11 @@ void GraphModel<Adapter>::shared_constructor(
         eOffsets_[i+1] = ecnt;
     }
     nLocalEdges_ = ecnt;
-    if (nWeightsPerEdge_) {
+    if (nWeightsPerEdge_ && (subsetGraph || removeSelfEdges)) {
       for (int w = 0; w < nWeightsPerEdge_; w++) {
         ArrayRCP<const scalar_t> wgtArray(tmpEWeights[w],
-                                          0, adapterNLocalEdges, true);
-        eWeights_[w] = input_t(wgtArray, 0);
+                                          0, nLocalEdges_, true);
+        eWeights_[w] = input_t(wgtArray, 1);
       }
       delete [] tmpEWeights;
     }

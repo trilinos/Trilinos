@@ -438,11 +438,6 @@ int main(int argc, char *argv[]) {
     // Retrieve objective, constraint, iteration vector, solution vector.
     ROL::ZOO::getSimpleEqConstrained <RealT, OptStdVector<RealT>, OptDualStdVector<RealT>, ConStdVector<RealT>, ConDualStdVector<RealT> > (obj, constr, x, sol);
 
-    Teuchos::ParameterList parlist;
-    // Define Step
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
-    ROL::CompositeStepSQP<RealT> step(parlist);
-
     // Run derivative checks, etc.
     int dim = 5;
     int nc = 3;
@@ -487,15 +482,16 @@ int main(int argc, char *argv[]) {
     RealT augtol = 1e-8;
     constr->solveAugmentedSystem(v1, v2, gd, vc, xtest, augtol);
     
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-18;  // norm of step tolerance
-    int   maxit = 1000;    // maximum number of iterations
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
 
-    // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step, status, false);
+    // Define algorithm.
+    Teuchos::ParameterList parlist;
+    std::string stepname = "Composite Step SQP";
+    parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-2);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
     // Run Algorithm
     vl.zero();

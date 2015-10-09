@@ -59,13 +59,14 @@
 #include "ROL_BundleStep.hpp"
 
 namespace ROL {
+
   template<class Real>
   class StepFactory {
     public:
     ~StepFactory(void){}
 
     Teuchos::RCP<Step<Real> > getStep(const std::string &type,
-                                      Teuchos::ParameterList &parlist) {
+                                      Teuchos::ParameterList &parlist) const {
       EStep els = StringToEStep(type);
       switch(els) {
         case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
@@ -79,6 +80,7 @@ namespace ROL {
       }
     }
   };
+
 }
 
 #endif

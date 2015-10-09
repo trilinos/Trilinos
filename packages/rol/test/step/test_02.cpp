@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(*parlist);
+    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(*parlist));
 
     // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
@@ -127,17 +127,14 @@ int main(int argc, char *argv[]) {
         }
 
         // Define Step
-        ROL::TrustRegionStep<RealT> step(*parlist);
+        Teuchos::RCP<ROL::TrustRegionStep<RealT> > step = Teuchos::rcp(new ROL::TrustRegionStep<RealT>(*parlist));
 
         // Define Algorithm
-        ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+        ROL::Algorithm<RealT> algo(step,status,false);
 
         // Run Algorithm
         x.set(x0);
-        std::vector<std::string> output = algo.run(x, *obj);
-        for ( unsigned i = 0; i < output.size(); i++ ) {
-          std::cout << output[i];
-        }
+        algo.run(x, *obj, true, *outStream);
 
         // Compute Error 
         e.set(x);

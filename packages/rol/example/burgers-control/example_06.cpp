@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE BURGERS FEM CLASS ******************************/
     /*************************************************************************/
-    int nx      = 512;   // Set spatial discretization.
+    int nx      = 256;   // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT nl    = 1.0;   // Nonlinearity parameter (1 = Burgers, 0 = linear).
     RealT cH1   = 1.0;   // Scale for derivative term in H1 norm.
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // DEFINE ALGORITHM
-    ROL::DefaultAlgorithm<RealT> algo("Trust Region",*parlist,false);
+    ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     // RUN OPTIMIZATION
     z.zero();
     algo.run(z, g, *obj, print, *outStream);

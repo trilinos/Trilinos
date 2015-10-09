@@ -15,7 +15,7 @@
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
       <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximumt Storage"       type="int"    value="10"                  />
+      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
 
