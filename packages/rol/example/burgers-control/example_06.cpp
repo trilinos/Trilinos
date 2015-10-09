@@ -220,8 +220,7 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename,
-      Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // DEFINE ALGORITHM
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     // RUN OPTIMIZATION
