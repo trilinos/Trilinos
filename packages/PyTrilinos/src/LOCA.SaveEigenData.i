@@ -49,11 +49,14 @@ SaveEigenData of the Trilinos continuation algorithm package LOCA:
 
     http://trilinos.sandia.gov/packages/nox
 
-The purpose of LOCA.SaveEigenData is to provide ***.  The python
-version of LOCA.SaveEigenData supports the following classes:
+The purpose of LOCA.SaveEigenData is to provide the capability to save
+eigenvectors and eigenvalues.  The python version of
+LOCA.SaveEigenData supports the following classes:
 
-    * Factory  - Factory for creating strategy objects to save eigenvectors/
-                 values
+    * Factory          - Factory for creating strategy objects to save
+                         eigenvectors/values
+    * AbstractStrategy - Abstract class for saving eigenvectors/values
+    * DefaultStrategy  - Default class for saving eigenvectors/values
 "
 %enddef
 
@@ -71,6 +74,7 @@ version of LOCA.SaveEigenData supports the following classes:
 
 // LOCA includes
 #include "LOCA.H"
+#include "LOCA_SaveEigenData_DefaultStrategy.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -95,6 +99,14 @@ using Teuchos::RCP;
 
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::SaveEigenData::Factory)
+%teuchos_rcp(LOCA::SaveEigenData::AbstractStrategy)
+%teuchos_rcp(LOCA::SaveEigenData::DefaultStrategy)
 
 // LOCA::SaveEigenData Factory class
 %include "LOCA_SaveEigenData_Factory.H"
+
+// LOCA::SaveEigenData AbstractStrategy class
+%include "LOCA_SaveEigenData_AbstractStrategy.H"
+
+// LOCA::SaveEigenData DefaultStrategy class
+%include "LOCA_SaveEigenData_DefaultStrategy.H"

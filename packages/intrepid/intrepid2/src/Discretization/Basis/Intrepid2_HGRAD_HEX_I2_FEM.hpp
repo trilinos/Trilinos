@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
  */
 
-#ifndef INTREPID_HGRAD_HEX_I2_FEM_HPP
-#define INTREPID_HGRAD_HEX_I2_FEM_HPP
+#ifndef INTREPID2_HGRAD_HEX_I2_FEM_HPP
+#define INTREPID2_HGRAD_HEX_I2_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {

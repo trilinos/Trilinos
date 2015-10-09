@@ -72,7 +72,7 @@ namespace ZOO {
   typedef typename vector::size_type uint;
 
   private: 
-    int dim_;
+    uint dim_;
 
     Teuchos::RCP<const vector> getVector( const V& x ) {
       using Teuchos::dyn_cast;

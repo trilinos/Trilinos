@@ -42,8 +42,8 @@
 #ifndef TPETRA_CRSMATRIX_DEF_HPP
 #define TPETRA_CRSMATRIX_DEF_HPP
 
-/// \file Tpetra_MultiVector_def.hpp
-/// \brief Definition of the Tpetra::MultiVector class
+/// \file Tpetra_CrsMatrix_def.hpp
+/// \brief Definition of the Tpetra::CrsMatrix class
 ///
 /// If you want to use Tpetra::CrsMatrix, include
 /// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
@@ -2007,7 +2007,11 @@ namespace Tpetra {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    else if (! this->hasColMap ()) {
+    // Don't call this->hasColMap(), because that calls getCrsGraph().
+    // That changes RCP's reference count, which is not thread safe.
+    // Just dereferencing an RCP or calling RCP::is_null() does not
+    // change its reference count.
+    else if (staticGraph_.is_null () || staticGraph_->colMap_.is_null ()) {
       // There is no such thing as local column indices without a column Map.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
@@ -2015,21 +2019,18 @@ namespace Tpetra {
       // The sizes of values and indices must match.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-    if (! isLocalRow) {
-      // The calling process does not own this row, so it is not
-      // allowed to modify its values.
-      //
-      // FIXME (mfh 02 Jan 2015) replaceGlobalValues returns invalid
-      // in this case.
-      return static_cast<LO> (0);
-    }
 
     if (indices.size () == 0) {
       return static_cast<LO> (0);
     }
     else {
       RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The input local row is invalid on the calling process,
+        // which means that the calling process replaced 0 entries.
+        return static_cast<LO> (0);
+      }
+
       ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
         return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,
@@ -2118,9 +2119,7 @@ namespace Tpetra {
     if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
-      //
-      // FIXME (mfh 02 Jan 2015) replaceLocalValues returns 0 in this case.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
+      return static_cast<LO> (0);
     }
 
     if (staticGraph_.is_null ()) {
@@ -2287,7 +2286,11 @@ namespace Tpetra {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    else if (! this->hasColMap ()) {
+    // Don't call this->hasColMap(), because that calls getCrsGraph().
+    // That changes RCP's reference count, which is not thread safe.
+    // Just dereferencing an RCP or calling RCP::is_null() does not
+    // change its reference count.
+    else if (staticGraph_.is_null () || staticGraph_->colMap_.is_null ()) {
       // There is no such thing as local column indices without a column Map.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
@@ -2295,18 +2298,18 @@ namespace Tpetra {
       // The sizes of values and indices must match.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const bool isLocalRow = getRowMap ()->isNodeLocalElement (localRow);
-    if (! isLocalRow) {
-      // The calling process doesn't own the local row, so we can't
-      // insert into it.
-      return static_cast<LO> (0);
-    }
 
     if (indices.size () == 0) {
       return static_cast<LO> (0);
     }
     else {
       RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The input local row is invalid on the calling process,
+        // which means that the calling process summed 0 entries.
+        return static_cast<LO> (0);
+      }
+
       ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
         return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,

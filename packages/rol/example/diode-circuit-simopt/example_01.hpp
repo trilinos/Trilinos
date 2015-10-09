@@ -398,7 +398,7 @@ public:
     Imeas_ = Teuchos::rcp(new std::vector<Real>(ns_,0.0));
     Real temp;
     std::ifstream measurements("measurements.dat");
-    std::cout << "Reading measurements" << std::endl;
+    //std::cout << "Reading measurements" << std::endl;
     if (measurements.is_open()){
       for (int i=0;i<ns_;i++){
 	measurements >> temp;

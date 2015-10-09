@@ -56,26 +56,27 @@
 namespace ROL {
 
 template<class Real>
-class DefaultAlgorithmFactory {
+class AlgorithmFactory {
 private:
   Teuchos::RCP<Step<Real> > step_;
   Teuchos::RCP<StatusTest<Real> > status_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
 
 public:
-  DefaultAlgorithmFactory(const std::string &name,
-                          Teuchos::ParameterList &parlist,
-                          bool printHeader = false) {
+  AlgorithmFactory() {}
+
+  const Teuchos::RCP<Algorithm<Real> >& get(const std::string &name,
+                                            Teuchos::ParameterList &parlist,
+                                            bool printHeader = false) {
     EStep els = StringToEStep(name);
     if ( !(isValidStep(els)) ) {
       algo_ = Teuchos::null;
     }
-    step_   = StepFactory<Real>(name,parlist);
-    status_ = StatusTestFactory<Real>(name,parlist);
-    algo_   = Teuchos::rcp( new DefaultAlgorithm<Real>(*step_,*status_,printHeader) );
-  }
-
-  const Teuchos::RCP<DefaultAlgorithm<Real> >& get(void) {
+    else {
+      step_   = StepFactory<Real>(name,parlist);
+      status_ = StatusTestFactory<Real>(name,parlist);
+      algo_ = Teuchos::rcp( new Algorithm<Real>(step_,status_,printHeader) );
+    }
     return algo_;
   }
 };

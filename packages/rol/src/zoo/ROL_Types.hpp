@@ -1163,29 +1163,14 @@ namespace ROL {
       ROL::Objective
   \endcode
 
-  \subsection step_qs_sec Step 3: Choose optimization step.
+  \subsection step_qs_sec Step 3: Choose optimization algorithm.
   ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
 
   \code
-      ROL::LineSearchStep<RealT> step(parlist);
+      ROL::Algorithm<RealT> algo("Line Search",parlist);
   \endcode
 
-  \subsection status_qs_sec Step 4: Set status test.
-  ---  with gradient tolerance, step tolerance, and the maximum
-  number of iterations, respectively.
-
-  \code
-      ROL::StatusTest<RealT> status(gtol, stol, maxit);
-  \endcode
-
-  \subsection algo_qs_sec Step 5: Define an algorithm.
-  ---  based on the status test and the step.
-
-  \code
-      ROL::DefaultAlgorithm<RealT> algo(step,status);
-  \endcode
-
-  \subsection run_qs_sec Step 6: Run algorithm.
+  \subsection run_qs_sec Step 4: Run algorithm.
   ---  starting from the initial iterate @b x, applied to objective function @b obj.
 
   \code

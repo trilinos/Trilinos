@@ -95,10 +95,6 @@ int main(int argc, char **argv)
 
   try {
 
-      Teuchos::ParameterList parlist;
-      parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
-      ROL::CompositeStepSQP<RealT> step(parlist);
-
       int ni = 12;     // Number of interpolation points
       int nq = 20;     // Number of quadrature points
 
@@ -196,15 +192,11 @@ int main(int argc, char **argv)
         *outStream << e.what();
       } 
  
-      // Define Status Test
-      RealT gtol  = 1e-12;  // norm of gradient tolerance
-      RealT ctol  = 1e-12;  // norm of constraint tolerance
-      RealT stol  = 1e-18;  // norm of step tolerance
-      int   maxit = 1000;    // maximum number of iterations
-      ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
-
-      // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(step, status, false);
+      // Define and run algorithm.
+      Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
+      std::string paramfile = "parameters.xml";
+      Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
+      ROL::Algorithm<RealT> algo("Composite Step SQP", *parlist);
       algo.run(x,g,l,c,obj,constr,true,*outStream);
 
   }

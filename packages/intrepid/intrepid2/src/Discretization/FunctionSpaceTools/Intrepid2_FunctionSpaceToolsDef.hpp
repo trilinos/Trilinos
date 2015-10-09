@@ -1332,11 +1332,36 @@ void FunctionSpaceTools::dataIntegral(ArrayOutData &            outputData,
 }
 
 } // dataIntegral
+template <class Scalar,class ArrayOut,class ArrayDet>
+struct computeCellMeasure_Abs {
+  ArrayOut outVals;
+  ArrayDet inDet;
+typedef typename conditional_eSpace<ArrayOut>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  computeCellMeasure_Abs (ArrayOut outVals_, ArrayDet inDet_) :
+    outVals (outVals_),inDet (inDet_)
+  {}
 
+
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+   if (inDet(cell,0) < 0.0) {
+      for (index_type point=0; point<outVals.dimension(1); point++) {
+        outVals(cell, point) *= -1.0;
+      }
+    }
+ 
+   }
+};
 template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
 inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVals,
                                                    const ArrayDet       & inDet,
                                                    const ArrayWeights   & inWeights) {
+ArrayWrapper<Scalar,ArrayOut, Rank<ArrayOut >::value, false>outValsWrap(outVals);
 #ifdef HAVE_INTREPID_DEBUG
 
   TEUCHOS_TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
@@ -1346,13 +1371,9 @@ inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVal
 
   ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
   // must use absolute value of inDet, so flip sign where needed
-  for (int cell=0; cell<outVals.dimension(0); cell++) {
-    if (inDet(cell,0) < 0.0) {
-      for (int point=0; point<outVals.dimension(1); point++) {
-        outVals(cell, point) *= -1.0;
-      }
-    }
-  }
+
+Kokkos::parallel_for (outVals.dimension(0), computeCellMeasure_Abs<Scalar, ArrayWrapper<Scalar,ArrayOut, Rank<ArrayOut >::value, false>,ArrayDet> (outValsWrap,inDet));
+ 
 
 } // computeCellMeasure
 

@@ -257,7 +257,7 @@ void run(const UserInputForTests &uinput,
   }
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
   {
-    if(rank == 0) std::cerr << "Zoltan2 probnlem parameters not provided" << std::endl;
+    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
     return;
   }
   
@@ -372,6 +372,20 @@ void run(const UserInputForTests &uinput,
   if (rank == 0)
     cout << "Problem solved." << endl;
   
+#ifdef KDDKDD
+  {
+  const base_t::gno_t *kddIDs = NULL;
+  ia->getIDsView(kddIDs);
+  for (size_t i = 0; i < ia->getLocalNumIDs(); i++) {
+    std::cout << rank << " LID " << i
+              << " GID " << kddIDs[i]
+              << " PART " 
+              << reinterpret_cast<basic_problem_t *>(problem)->getSolution().getPartListView()[i]
+              << std::endl;
+  }
+  }
+#endif
+
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////

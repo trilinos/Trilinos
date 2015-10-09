@@ -59,21 +59,28 @@
 #include "ROL_BundleStep.hpp"
 
 namespace ROL {
+
   template<class Real>
-  inline Teuchos::RCP<Step<Real> > StepFactory(const std::string &type,
-                                               Teuchos::ParameterList &parlist) {
-    EStep els = StringToEStep(type);
-    switch(els) {
-      case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
-      case STEP_BUNDLE:              return Teuchos::rcp( new BundleStep<Real>(parlist) );
-      case STEP_COMPOSITESTEPSQP:    return Teuchos::rcp( new CompositeStepSQP<Real>(parlist) );
-      case STEP_LINESEARCH:          return Teuchos::rcp( new LineSearchStep<Real>(parlist) );
-      case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new MoreauYosidaPenaltyStep<Real>(parlist) );
-      case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new PrimalDualActiveSetStep<Real>(parlist) );
-      case STEP_TRUSTREGION:         return Teuchos::rcp( new TrustRegionStep<Real>(parlist) );
-      default:                       return Teuchos::null;
+  class StepFactory {
+    public:
+    ~StepFactory(void){}
+
+    Teuchos::RCP<Step<Real> > getStep(const std::string &type,
+                                      Teuchos::ParameterList &parlist) const {
+      EStep els = StringToEStep(type);
+      switch(els) {
+        case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
+        case STEP_BUNDLE:              return Teuchos::rcp( new BundleStep<Real>(parlist) );
+        case STEP_COMPOSITESTEPSQP:    return Teuchos::rcp( new CompositeStepSQP<Real>(parlist) );
+        case STEP_LINESEARCH:          return Teuchos::rcp( new LineSearchStep<Real>(parlist) );
+        case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new MoreauYosidaPenaltyStep<Real>(parlist) );
+        case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new PrimalDualActiveSetStep<Real>(parlist) );
+        case STEP_TRUSTREGION:         return Teuchos::rcp( new TrustRegionStep<Real>(parlist) );
+        default:                       return Teuchos::null;
+      }
     }
-  }
+  };
+
 }
 
 #endif

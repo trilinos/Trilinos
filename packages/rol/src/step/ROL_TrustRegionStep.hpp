@@ -517,7 +517,7 @@ public:
         // Compute new objective value
         if ( softUp_ ) {
           obj.update(*xnew_);
-        } 
+        }
         else {
           obj.update(*xnew_,true,algo_state.iter);
         }

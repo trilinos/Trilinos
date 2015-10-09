@@ -46,18 +46,11 @@
     \brief Interior Point test using Hock & Schittkowski problem 32.
 */
 
-
-#include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_HS32.hpp"
-#include "ROL_InteriorPoint.hpp"
-#include "ROL_LogBarrierObjective.hpp"
-#include "ROL_StatusTestSQP.hpp"
-
-
 #include "Teuchos_getConst.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_HS32.hpp"
+#include "ROL_LogBarrierObjective.hpp"
+#include "ROL_InteriorPoint.hpp"
+
 
 template<class Real> 
 void print_vector(const ROL::Vector<Real> &x) {
@@ -118,8 +111,7 @@ int main(int argc, char *argv[]) {
     RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,0.0) );
     RCP<vec> dopt_rcp = rcp( new vec(xopt_dim,0.0) );
     RCP<vec> vopt_rcp = rcp( new vec(xopt_dim,0.0) );
-    RCP<vec> gopt_rcp = rcp( new vec(xopt_dim,0.0) );   
-
+   
     RCP<vec> vec_rcp  = rcp( new vec(ce_dim,1.0) );
     RCP<vec> vel_rcp  = rcp( new vec(ce_dim,1.0) );
    
@@ -130,7 +122,6 @@ int main(int argc, char *argv[]) {
     RCP<vec> xs_rcp = rcp( new vec(ci_dim,1.0) );    
     RCP<vec> vs_rcp = rcp( new vec(ci_dim,0.0) );
     RCP<vec> ds_rcp = rcp( new vec(ci_dim,0.0) );
-    RCP<vec> gs_rcp = rcp( new vec(ci_dim,0.0) );
 
     // Feasible initial guess
     (*xopt_rcp)[0] = 0.1;
@@ -153,7 +144,6 @@ int main(int argc, char *argv[]) {
     RCPV xopt = rcp( new SV(xopt_rcp) );
     RCPV dopt = rcp( new SV(dopt_rcp) );
     RCPV vopt = rcp( new SV(vopt_rcp) );
-    RCPV gopt = rcp( new SV(gopt_rcp) );
     RCPV vec  = rcp( new SV(vec_rcp) );
     RCPV vel  = rcp( new SV(vel_rcp) );
     RCPV vic  = rcp( new SV(vic_rcp) );
@@ -161,13 +151,11 @@ int main(int argc, char *argv[]) {
     RCPV xs   = rcp( new SV(xs_rcp) );
     RCPV vs   = rcp( new SV(vs_rcp) );
     RCPV ds   = rcp( new SV(ds_rcp) );
-    RCPV gs   = rcp( new SV(gs_rcp) );
 
     // Partitioned vectors of optimization and slack variables
     RCPV x = CreatePartitionedVector(xopt,xs);
     RCPV v = CreatePartitionedVector(vopt,vs);
     RCPV d = CreatePartitionedVector(dopt,ds);
-    RCPV g = CreatePartitionedVector(gopt,gs);
     RCPV vc = CreatePartitionedVector(vic,vec);
     RCPV vl = CreatePartitionedVector(vil,vel);
 
@@ -216,32 +204,6 @@ int main(int argc, char *argv[]) {
     ipcon->checkApplyJacobian(*x,*v,*vc,true,*outStream);
     ipcon->checkApplyAdjointJacobian(*x,*vl,*vc,*x,true,*outStream);
     ipcon->checkApplyAdjointHessian(*x,*vl,*d,*x,true,*outStream);    
-
-    // Set solver parameters
-    Teuchos::ParameterList parlist;
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",80);
-    parlist.set("Absolute Krylov Tolerance",1e-4);    
-
-    // Solve the modified problem with SQP 
-    ROL::CompositeStepSQP<RealT> step(parlist);
-
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);  
-
-    // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
-   
-    std::vector<std::string> output = algo.run(*x,*g,*vl,*vc,*ipobj,*ipcon,false); 
-  
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      *outStream << output[i];
-    }
 
   }
   catch (std::logic_error err) {

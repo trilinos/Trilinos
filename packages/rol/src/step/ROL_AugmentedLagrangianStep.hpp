@@ -71,7 +71,7 @@ private:
   Teuchos::RCP<AugmentedLagrangian<Real> > augLag_;
   Teuchos::RCP<Step<Real> > step_;
   Teuchos::RCP<StatusTest<Real> > status_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
 
   Teuchos::RCP<Teuchos::ParameterList> parlist_;
@@ -194,7 +194,7 @@ public:
       step_ = Teuchos::rcp(new LineSearchStep<Real>(*parlist_));
     }
     status_ = Teuchos::rcp(new StatusTest<Real>(tol,1.e-6*tol,maxit_));
-    algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));
+    algo_   = Teuchos::rcp(new Algorithm<Real>(step_,status_,false));
     x_->set(x);
     algo_->run(*x_,*augLag_,bnd,print_);
     s.set(*x_); s.axpy(-1.0,x);

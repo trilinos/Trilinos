@@ -1037,18 +1037,22 @@ C     --Write the element block
 
 C     --Write the node sets
       if (numnps .gt. 0) then
-        do 90 i= 0, numnps-1
-          if (lnpsdf .eq. 0) then
+        if (lnpsdf .eq. 0) then
+          do i= 0, numnps-1
             ia(kndnps+i) = 0
             ia(kixdns+i) = 0
-          else
-            ia(kndnps+i) = ia(knnns+i)
-            ia(kixdns+i) = ia(kixnns+i)
-          end if
- 90     continue
-         call expcns (ndbout, ia(kidns), ia(knnns), ia(kndnps),
-     &        ia(kixnns), ia(kixdns), ia(kltnns), a(kfacns), ierr)
-         call putnam(NDBOUT, 2, numnps, C(KNAMNP))
+          end do
+          call expcns (ndbout, ia(kidns), ia(knnns), ia(kndnps),
+     &      ia(kixnns), ia(kixdns), ia(kltnns), a(kfacns), ierr)
+        else
+C ... This strangness is due to bug in gfortran compiler 
+C     which was optimizing out the setting of ia(kidns) and ia(indnps).
+C     since they are the same as ia(knnns) and ia(kixnns), just use
+C     those values.  Bug is in gfortran-4.8 up to 5.0?          
+          call expcns (ndbout, ia(kidns), ia(knnns), ia(knnns),
+     &      ia(kixnns), ia(kixnns), ia(kltnns), a(kfacns), ierr)
+        end if
+        call putnam(NDBOUT, 2, numnps, C(KNAMNP))
       end if
       
 C     --Write the side sets

@@ -188,8 +188,8 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
          << "Running on " << comm.NumProc() << " processors");
 
    // pick 
-   int nx = 5; // * comm.NumProc();
-   int ny = 5; // * comm.NumProc();
+   int nx = 5 * comm.NumProc();
+   int ny = 5 * comm.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided

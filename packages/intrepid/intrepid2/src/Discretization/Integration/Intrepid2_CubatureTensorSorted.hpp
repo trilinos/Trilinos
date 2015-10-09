@@ -46,8 +46,8 @@
     \author Created by D. Kouri and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_TENSORSORTED_HPP
-#define INTREPID_CUBATURE_TENSORSORTED_HPP
+#ifndef INTREPID2_CUBATURE_TENSORSORTED_HPP
+#define INTREPID2_CUBATURE_TENSORSORTED_HPP
 
 #include "Intrepid2_CubatureLineSorted.hpp"
 
