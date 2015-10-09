@@ -177,7 +177,7 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<Scala
     // Get a pointer to the direction vector
     RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
 
-    RCP<vector> aju = dyn_cast<SV>(aju).getVector();
+    RCP<vector> ajup = dyn_cast<SV>(aju).getVector();
 
     int n = xp->size();
 

@@ -583,10 +583,10 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vec
     using Teuchos::dyn_cast;  using Teuchos::getConst;
 
     RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(getVector(v)).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(getVector(w)).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(getVector(u)).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(getVector(z)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
  
     int n = up->size();
     int m = zp->size();

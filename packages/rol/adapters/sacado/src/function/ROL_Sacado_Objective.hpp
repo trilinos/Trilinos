@@ -153,7 +153,7 @@ void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<Sc
     // Get a pointer to the direction vector
     RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
 
-    RCP<vector> hvp = dyn_cast<SV>(hv).getConst();
+    RCP<vector> hvp = dyn_cast<SV>(hv).getVector();
 
 
     int n = xp->size();
