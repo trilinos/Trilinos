@@ -37,10 +37,10 @@ namespace ZOO {
   template<class Real>
   class Objective_DiodeCircuit : public Objective<Real> {
 
-    typedef std::vector<Real>  vector;
-    typedef Vector<Real>       V;
-    typedef DiodeVector<Real>  DV;
-   
+    typedef std::vector<Real>     vector;
+    typedef Vector<Real>          V;
+    typedef DiodeVector<Real>     DV;
+    typedef DualDiodeVector<Real> DDV; 
     typedef typename vector::size_type uint;
 
   private:
@@ -61,12 +61,22 @@ namespace ZOO {
   
     Teuchos::RCP<const vector> getVector( const V& x ) {
       using Teuchos::dyn_cast;  using Teuchos::getConst;
-      return dyn_cast<const DV>(getConst(x)).getVector();
+      try { 
+        return dyn_cast<const DV>(getConst(x)).getVector();
+      }
+      catch (std::exception &e) {
+        return dyn_cast<const DDV>(getConst(x)).getVector();    
+      }
     }
 
     Teuchos::RCP<vector> getVector( V& x ) {
       using Teuchos::dyn_cast;
-      return dyn_cast<DV>(x).getVector(); 
+      try {
+        return dyn_cast<DV>(x).getVector(); 
+      }
+      catch (std::exception &e) {
+        return dyn_cast<DDV>(x).getVector(); 
+      }
     }
 
   public:

@@ -445,7 +445,6 @@ namespace ZOO {
                                Vector<Real> &sol ) {
 
     typedef std::vector<Real> vector;
-    typedef StdVector<Real>   SV;
     
     typedef typename vector::size_type uint;
 
@@ -453,8 +452,8 @@ namespace ZOO {
     using Teuchos::dyn_cast;  using Teuchos::getConst;
 
     // Cast initial guess and solution vectors.
-    RCP<vector> x0p  = dyn_cast<SV>(x0).getVector(); 
-    RCP<vector> solp = dyn_cast<SV>(sol).getVector();
+    RCP<vector> x0p  = dyn_cast<XPrim>(x0).getVector(); 
+    RCP<vector> solp = dyn_cast<XPrim>(sol).getVector();
 
     uint n = 5;
 

@@ -565,6 +565,14 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef std::vector<RealT>     vector;
+  typedef ROL::Vector<RealT>     V;
+  typedef ROL::StdVector<RealT>  SV;
+  
+  typedef typename vector::size_type uint;
+
+  using Teuchos::RCP;  using Teuchos::rcp;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -582,33 +590,40 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int dim = 128; // Set problem dimension.
+    uint dim = 128; // Set problem dimension.
     RealT alpha = 1.e-6;
     Objective_PoissonInversion<RealT> obj(dim, alpha);
 
     // Iteration vector.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
+    RCP<vector> y_rcp = rcp( new vector(dim, 0.0) );
+
     // Set initial guess.
-    for (int i=0; i<dim; i++) {
+    for (uint i=0; i<dim; i++) {
       (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
       (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX + 1.e2;
     }
-    ROL::StdVector<RealT> x(x_rcp);
-    ROL::StdVector<RealT> y(y_rcp);
+
+    SV x(x_rcp);
+    SV y(y_rcp);
+
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
 
-    std::vector<RealT> lo(dim,1.0);
-    std::vector<RealT> up(dim,10.0);
-    BoundConstraint_PoissonInversion<RealT> icon(lo,up);
+    RCP<vector> l_rcp = rcp( new vector(dim,1.0) );
+    RCP<vector> u_rcp = rcp( new vector(dim,10.0) );
+
+    RCP<V> lo = rcp( new SV(l_rcp) );
+    RCP<V> up = rcp( new SV(u_rcp) );
+
+    ROL::BoundConstraint<RealT> icon(lo,up);
 
     Teuchos::ParameterList parlist;
 
     // Krylov parameters.
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
-    parlist.sublist("General").sublist("Krylov").set("Iteration Limit",dim);
+    parlist.sublist("General").sublist("Krylov").set("Iteration Limit",static_cast<int>(dim));
     // PDAS parameters.
     parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-8);
     parlist.sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-6);
@@ -630,7 +645,7 @@ int main(int argc, char *argv[]) {
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
+    for ( uint i = 0; i < dim; i++ ) {
       file << (*x_rcp)[i] << "\n";
     }
     file.close();
@@ -647,7 +662,7 @@ int main(int argc, char *argv[]) {
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
+    for ( uint i = 0; i < dim; i++ ) {
       file_tr << (*y_rcp)[i] << "\n";
     }
     file_tr.close();
@@ -656,12 +671,12 @@ int main(int argc, char *argv[]) {
     obj.solve_state_equation(u,*y_rcp);
     std::ofstream file_u;
     file_u.open("state.txt");
-    for ( unsigned i = 0; i < (unsigned)(dim-1); i++ ) {
+    for ( uint i = 0; i < (dim-1); i++ ) {
       file_u << u[i] << "\n";
     }
     file_u.close();
    
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    RCP<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)dim-1.0);
