@@ -64,7 +64,7 @@
     Fletcher Conjugate Descent | \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
     Liu-Storey                 | \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
     Dai-Yuan                   | \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
-    Hagar-Zhang                | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+    Hager-Zhang                | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
     Oren-Luenberger            | \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
             
 */
@@ -121,7 +121,7 @@ public:
            state_->nlcg_type != NONLINEARCG_FLETCHER_CONJDESC ) {
         y_ = g.clone();
       }
-      if ( state_->nlcg_type == NONLINEARCG_HAGAR_ZHANG ||
+      if ( state_->nlcg_type == NONLINEARCG_HAGER_ZHANG ||
            state_->nlcg_type == NONLINEARCG_OREN_LUENBERGER ) {
         yd_ = g.clone();
       }
@@ -182,7 +182,7 @@ public:
           break;
           }
 
-        case NONLINEARCG_HAGAR_ZHANG: {
+        case NONLINEARCG_HAGER_ZHANG: {
           Real eta_0 = 1e-2; 
           y_->set(g);
           y_->axpy(-1.0, *(state_->grad[0]));

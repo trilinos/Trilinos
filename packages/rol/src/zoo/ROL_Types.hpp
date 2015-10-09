@@ -521,7 +521,7 @@ namespace ROL {
       \arg    FLETCHER_CONJDESC  \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
       \arg    LIU_STOREY         \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
       \arg    DAI_YUAN           \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
-      \arg    HAGAR_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+      \arg    HAGER_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
       \arg    OREN_LUENBERGER    \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
    */
   enum ENonlinearCG{
@@ -532,7 +532,7 @@ namespace ROL {
     NONLINEARCG_FLETCHER_CONJDESC,
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
-    NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_HAGER_ZHANG,
     NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
@@ -547,7 +547,7 @@ namespace ROL {
       case NONLINEARCG_FLETCHER_CONJDESC:     retString = "Fletcher Conjugate Descent";  break;
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
-      case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_HAGER_ZHANG:           retString = "Hager-Zhang";                 break;
       case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
@@ -568,7 +568,7 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_HAGER_ZHANG)       ||
             (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
