@@ -188,10 +188,10 @@ public:
     parlist_->sublist("Status Test").set("Gradient Tolerance",omega_);
     parlist_->sublist("Status Test").set("Step Tolerance",1.e-6*omega_);
     if ( !useTR_ ) {
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Trust Region",*parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Trust Region",*parlist_,false));
     }
     else {
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Line Search",*parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Line Search",*parlist_,false));
     }
     x_->set(x);
     algo_->run(*x_,*augLag_,bnd,print_);
