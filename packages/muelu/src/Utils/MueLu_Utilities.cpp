@@ -76,6 +76,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_TPETRA
     if (TorE == "tpetra") {
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
       try {
         const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
@@ -93,6 +94,9 @@ namespace MueLu {
         std::cout << "threw exception '" << e.what() << "'" << std::endl;
         throw Exceptions::RuntimeError("Utils::Transpose failed, perhaps because matrix is not a Crs matrix");
       }
+#else
+      throw Exceptions::RuntimeError("Utils::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
+#endif
     } //if
 #endif
 
@@ -152,74 +156,6 @@ namespace MueLu {
     throw Exceptions::RuntimeError("Matrix scaling is not possible because Epetra has not been enabled.");
 #endif // HAVE_MUELU_EPETRA
   } //Utils2::MyOldScaleMatrix_Epetra()
-
-  // -- ------------------------------------------------------- --
-
-  RCP<Xpetra::MultiVector<double,int,int> > Utils2<double,int,int>::ReadMultiVector(const std::string& fileName, const RCP<const Map>& map) {
-    Xpetra::UnderlyingLib lib = map->lib();
-
-    if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-      Epetra_MultiVector * MV;
-      EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-      return Xpetra::toXpetra<int>(rcp(MV));
-#else
-      throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
-#endif
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<SC,LO,GO,NO>                    sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>  reader_type;
-      typedef Tpetra::Map<LO,GO,NO>                             map_type;
-      typedef Tpetra::MultiVector<SC,LO,GO,NO>                  multivector_type;
-
-      RCP<const map_type>   temp = toTpetra(map);
-      RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
-      RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
-      return rmv;
-#else
-      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
-#endif
-    } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
-    }
-
-    return Teuchos::null;
-  }
-
-  RCP<const Xpetra::Map<int,int> > Utils2<double,int,int>::ReadMap(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
-    if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-        Epetra_Map *eMap;
-        int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
-        if (rv != 0)
-          throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + toString(rv) + ")");
-
-        RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
-        return Xpetra::toXpetra<int>(*eMap1);
-#else
-        throw Exceptions::RuntimeError("MueLu has not been compiled with Epetra and EpetraExt support.");
-#endif
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      typedef Tpetra::CrsMatrix<double,int,int,NO> sparse_matrix_type;
-      typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
-
-      RCP<NO> node = rcp(new NO());
-
-      RCP<const Tpetra::Map<int,int,NO> > tMap = reader_type::readMapFile(fileName, comm, node);
-      if (tMap.is_null())
-        throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
-
-      return Xpetra::toXpetra(tMap);
-#else
-      throw Exceptions::RuntimeError("MueLu has not been compiled with Tpetra support.");
-#endif
-    } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
-    }
-  }
-
 
   /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
      from level-specific sublists from inList

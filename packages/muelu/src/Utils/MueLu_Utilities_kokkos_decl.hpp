@@ -69,6 +69,8 @@
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 
+#include <Xpetra_IO.hpp>
+
 #ifdef HAVE_MUELU_EPETRA
 #include <Epetra_MultiVector.h>
 #include <Epetra_CrsMatrix.h>
@@ -210,41 +212,6 @@ namespace MueLu {
       return Utils::Residual(Op, X, RHS);
     }
 
-    // NOTE:
-    // A better place for the Read/Write function is probably Xpetra
-
-    //! Read/Write methods
-    //@{
-    /*! @brief Save map to file. */
-    static void Write(const std::string& fileName, const Map& M)                { Utils::Write(fileName, M); }
-
-    /*! @brief Save vector to file in Matrix Market format.  */
-    static void Write(const std::string& fileName, const MultiVector& Vec)      { Utils::Write(fileName, Vec); }
-
-    /*! @brief Save matrix to file in Matrix Market format. */
-    static void Write(const std::string& fileName, const Matrix& Op)            { Utils::Write(fileName, Op); }
-
-    //! @brief Read matrix from file in Matrix Market or binary format.
-    static Teuchos::RCP<Matrix> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm, bool binary = false) {
-      return Utils::Read(fileName, lib, comm, binary);
-    }
-
-    /*! @brief Read matrix from file in Matrix Market or binary format.
-
-        If only rowMap is specified, then it is used for the domainMap and rangeMap, as well.
-    */
-    static Teuchos::RCP<Matrix> Read(const std::string&   fileName,
-                                     const RCP<const Map> rowMap,
-                                           RCP<const Map> colMap           = Teuchos::null,
-                                     const RCP<const Map> domainMap        = Teuchos::null,
-                                     const RCP<const Map> rangeMap         = Teuchos::null,
-                                     const bool           callFillComplete = true,
-                                     const bool           binary           = false,
-                                     const bool           tolerant         = false,
-                                     const bool           debug            = false)
-    { return Utils::Read(fileName, rowMap, colMap, domainMap, rangeMap, callFillComplete, binary, tolerant, debug); }
-    //@}
-
     static void PauseForDebugger();
 
     /*! @brief Simple transpose for Tpetra::CrsMatrix types
@@ -339,10 +306,10 @@ namespace MueLu {
     }
 
      static RCP<MultiVector> ReadMultiVector (const std::string& fileName, const RCP<const Map>& map) {
-      return Utils2::ReadMultiVector(fileName, map);
+      return Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(fileName, map);
     }
     static RCP<const Map>   ReadMap         (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
-      return Utils2::ReadMap(fileName, lib, comm);
+      return Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(fileName, lib, comm);
     }
 
   };

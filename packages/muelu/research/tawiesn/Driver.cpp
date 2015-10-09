@@ -50,6 +50,7 @@
 #include <fstream>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
     RCP<Matrix> A = Teuchos::null;
     if (matrixFileName != "") {
       fancyout << "Read matrix from file " << matrixFileName << std::endl;
-      A = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
+      A = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
     }
     RCP<const Map>   map = A->getRowMap();
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(),nPDE);
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
 
     if (nspFileName != "") {
       fancyout << "Read null space from file " << nspFileName << std::endl;
-      nullspace = Utils2::ReadMultiVector(std::string(nspFileName), A->getRowMap());
+      nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(nspFileName), A->getRowMap());
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
       if (nNspVectors > Teuchos::as<int>(nullspace->getNumVectors())) {
         fancyout << "Set number of null space vectors from " << nNspVectors << " to " << nullspace->getNumVectors() << " as only " << nullspace->getNumVectors() << " are provided by " << nspFileName << std::endl;
@@ -216,7 +217,7 @@ int main(int argc, char *argv[]) {
       RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,eltList(),0,comm);
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
-      coordinates = Utils2::ReadMultiVector(std::string(cooFileName), myCoordMap);
+      coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(cooFileName), myCoordMap);
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
     }
 
@@ -304,7 +305,7 @@ int main(int argc, char *argv[]) {
     RCP<MultiVector> B = VectorFactory::Build(map,1);
 
     if (rhsFileName != "")
-      B = Utils2::ReadMultiVector(std::string(rhsFileName), A->getRowMap());
+      B = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(rhsFileName), A->getRowMap());
     else
     {
       // we set seed for reproducibility

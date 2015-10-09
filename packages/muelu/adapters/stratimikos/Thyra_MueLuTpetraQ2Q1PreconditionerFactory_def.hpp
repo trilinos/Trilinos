@@ -63,11 +63,12 @@
 
 #include <Teko_Utilities.hpp>
 
+#include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_IO.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
 
 #include "MueLu.hpp"
 
@@ -498,8 +499,8 @@ namespace Thyra {
       RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
       RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
 
-      Utils::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
-      Utils::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
+      Xpetra::IO<SC,LO,GO,NO>::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
+      Xpetra::IO<SC,LO,GO,NO>::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
     }
 #endif
 

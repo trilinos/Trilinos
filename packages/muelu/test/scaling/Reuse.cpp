@@ -47,6 +47,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <Teuchos_Time.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -168,7 +169,7 @@ int main(int argc, char *argv[]) {
       RCP<Matrix> Aprecond = matrices[i];
       if (Aprecond.is_null()) {
         out << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-        Aprecond = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+        Aprecond = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
         out << "done" << std::endl;
 
         Aprecond->SetFixedBlockSize(numPDEs);
@@ -225,7 +226,7 @@ int main(int argc, char *argv[]) {
           if (Amatvec.is_null()) {
             // Load the matrix
             out << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-            Amatvec = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+            Amatvec = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
             out << "done" << std::endl;
 
             Amatvec->SetFixedBlockSize(numPDEs);
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) {
         RCP<MultiVector> rhs = rhss[j];
         if (rhs.is_null()) {
           out << "[" << j << "] Loading rhs " << rhsFileName << "\"... ";
-          rhs = Utils2::ReadMultiVector(std::string(rhsFileName), Amatvec->getRowMap());
+          rhs = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(std::string(rhsFileName), Amatvec->getRowMap());
           out << "done" << std::endl;
 
           if (inMemory)

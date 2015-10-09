@@ -52,6 +52,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Operator.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_Hierarchy_decl.hpp"
 
@@ -64,7 +65,6 @@
 #include "MueLu_SmootherFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -796,9 +796,9 @@ namespace MueLu {
           R = rcp_dynamic_cast<Matrix>(Levels_[i]-> template Get< RCP< Operator> >("R"));
       }
 
-      if (!A.is_null()) Utils::Write("A_" + toString(i) + ".m", *A);
-      if (!P.is_null()) Utils::Write("P_" + toString(i) + ".m", *P);
-      if (!R.is_null()) Utils::Write("R_" + toString(i) + ".m", *R);
+      if (!A.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A_" + toString(i) + ".m", *A);
+      if (!P.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("P_" + toString(i) + ".m", *P);
+      if (!R.is_null()) Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("R_" + toString(i) + ".m", *R);
     }
   }
 
