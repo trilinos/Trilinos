@@ -143,30 +143,17 @@ int main(int argc, char **argv) {
     // Instantiate normalization constraint
     Normalization_Constraint<RealT> constr(nx,dx);
 
-    // Define Step
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",80);
-    parlist.set("Absolute Krylov Tolerance",1e-4);
+    // Define algorithm.
+    std::string stepname = "Composite Step SQP";
+    parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-4);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
-    ROL::CompositeStepSQP<RealT> step(parlist);
-
-
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
-
-    // Define Algorithm
-    DefaultAlgorithm<RealT> algo(step,status,false);
-
-    // Run Algorithm
-    std::vector<std::string> output = algo.run(psi, g, lam, c, obj, constr, false);
-
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      *outStream << output[i];
-    }
+    // Run algorithm.
+    algo.run(psi, g, lam, c, obj, constr, true, *outStream);
 
 
    if(algo.getState()->gnorm>1e-6) {

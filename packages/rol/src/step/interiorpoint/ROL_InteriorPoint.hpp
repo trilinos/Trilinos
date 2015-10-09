@@ -46,8 +46,6 @@
 #include "ROL_EqualityConstraint.hpp"
 #include "ROL_BoundConstraint.hpp"
 
-#include "Teuchos_getConst.hpp"
-
 namespace ROL {
 
 
@@ -70,6 +68,8 @@ private:
   Teuchos::RCP<Objective<Real> > barrier_;
 
   Real mu_;
+  int nfval_;
+  int ngval_;
 
   // Downcast const ROL::Vector to const ROL::PartitionedVector
   const PV& partition(const V& x) {
@@ -88,11 +88,19 @@ private:
 public:
   InteriorPointObjective( const Teuchos::RCP<Objective<Real> > &obj, 
                           const Teuchos::RCP<Objective<Real> > &barrier, Real mu ) :
-    obj_(obj),barrier_(barrier),mu_(mu) {
+    obj_(obj),barrier_(barrier),mu_(mu),nfval_(0),ngval_(0) {
   }
  
   void updatePenalty( Real mu ) {
     mu_ = mu;
+  }
+
+  int getNumberFunctionEvaluations(void) {
+    return nfval_;
+  } 
+ 
+  int getNumberGradientEvaluations(void) {
+    return ngval_;
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
@@ -101,6 +109,7 @@ public:
     Teuchos::RCP<const V> xopt = xpv.get(OPT);    
     Teuchos::RCP<const V> s    = xpv.get(SLACK);
 
+    ++nfval_;
     return obj_->value(*xopt,tol) + mu_*barrier_->value(*s,tol); 
 
   }
@@ -119,7 +128,8 @@ public:
     obj_->gradient(*gopt, *xopt, tol);
     barrier_->gradient(*gs, *s, tol); 
     gs->scale(mu_);
-   
+
+    ++ngval_;   
   } 
    
   void hessVec( Vector<Real> &hv, const Vector<Real> &v,
@@ -170,7 +180,8 @@ private:
   Teuchos::RCP<EqualityConstraint<Real> > incon_;
   Teuchos::RCP<EqualityConstraint<Real> > eqcon_;
    
-  bool hasEquality_;
+  bool hasEquality_;         // True if an equality constraint is present
+  int  ncval_;               // Number of constraint evaluations
 
   // Downcast const ROL::Vector to const ROL::PartitionedVector
   const PV& partition(const V& x) {
@@ -190,12 +201,17 @@ public:
   // Constructor with inequality and equality constraints
   InteriorPointEqualityConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon, 
                             const Teuchos::RCP<EqualityConstraint<Real> > &eqcon ) :
-     incon_(incon), eqcon_(eqcon),hasEquality_(true) {}
+     incon_(incon), eqcon_(eqcon),hasEquality_(true), ncval_(0) {}
 
   // Constructor with inequality constraint only
   InteriorPointEqualityConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon ) :
-    incon_(incon), hasEquality_(false) {}
+    incon_(incon), hasEquality_(false), ncval_(0) {}
 
+ 
+  int getNumberConstraintEvaluations(void) {
+    return ncval_;
+  }
+ 
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
@@ -218,6 +234,7 @@ public:
       eqcon_->value(*ce, *xopt, tol);
     }
 
+    ++ncval_;
   }
 
   void applyJacobian( Vector<Real> &jv,

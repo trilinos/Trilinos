@@ -42,8 +42,6 @@
 // @HEADER
 
 #include "ROL_Vector.hpp"
-#include "Teuchos_getConst.hpp"
-
 
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H

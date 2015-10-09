@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
     /*************************************************************************/
-    bool useEChessian = false;
+    bool useEChessian = true;
     EqualityConstraint_BurgersControl<RealT> con(fem, useEChessian);
     /*************************************************************************/
     /************* INITIALIZE BOUND CONSTRAINTS ******************************/
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,x,10.0);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
-    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c);
+    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c,false);
     myAugLag.updateMultipliers(l,1.);
     myAugLag.checkGradient(x, y, true, *outStream);
     myAugLag.checkHessVec(x, g, y, true, *outStream);
@@ -216,12 +216,11 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist
       = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename,
-      Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // SOLVE USING MOREAU-YOSIDA PENALTY
-    ROL::DefaultAlgorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
+    ROL::Algorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
     zp->set(*zrandp);
-    RealT zerotol = 0.0;
+    RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
     con.solve(*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
     gup->scale(-1.0);
@@ -231,7 +230,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > xMY = x.clone();
     xMY->set(x);
     // SOLVE USING AUGMENTED LAGRANGIAN
-    ROL::DefaultAlgorithm<RealT> algoAL("Augmented Lagrangian",*parlist,false);
+    ROL::Algorithm<RealT> algoAL("Augmented Lagrangian",*parlist,false);
     zp->set(*zrandp);
     con.solve(*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
@@ -242,7 +241,7 @@ int main(int argc, char *argv[]) {
     // COMPARE SOLUTIONS
     Teuchos::RCP<ROL::Vector<RealT> > err = x.clone();
     err->set(x); err->axpy(-1.,*xMY);
-    errorFlag += ((err->norm() > 1.e-3*x.norm()) ? 1 : 0);
+    errorFlag += ((err->norm() > 1.e-2*x.norm()) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

@@ -65,7 +65,7 @@ template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
   Teuchos::RCP<MoreauYosidaPenalty<Real> > myPen_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
   Teuchos::RCP<Vector<Real> > g_; 
   Teuchos::RCP<Vector<Real> > l_; 
@@ -87,11 +87,9 @@ private:
     con.update(x,true,algo_state.iter);
     myPen_->update(x,true,algo_state.iter);
     // Compute objective value, constraint value, & gradient of Lagrangian
-    algo_state.value = obj.value(x, zerotol);
-    con.value(*(state->constraintVec),x,zerotol);
-    obj.gradient(*(state->gradientVec), x, zerotol);
-    con.applyAdjointJacobian(*g_,l,x,zerotol);
-    state->gradientVec->plus(*g_);
+    algo_state.value = myPen_->value(x, zerotol);
+    con.value(*(state->constraintVec),x, zerotol);
+    myPen_->gradient(*(state->gradientVec), x, zerotol);
     // Compute criticality measure
     if (bnd.isActivated()) {
       x_->set(x);
@@ -168,7 +166,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Composite Step SQP",*parlist_,false));
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step SQP",*parlist_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
     s.set(*x_); s.axpy(-1.0,x);

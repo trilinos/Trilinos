@@ -68,7 +68,7 @@ private:
   Teuchos::RCP<BoundConstraint<Real> > bnd_;
   Teuchos::RCP<EqualityConstraint<Real> > con_;
 
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
 
   Teuchos::ParameterList parlist_;
 
@@ -89,7 +89,7 @@ private:
       parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
       parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
     }
     else {
       parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",1.e1);
@@ -108,7 +108,7 @@ private:
       parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
       parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Augmented Lagrangian",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist_,false));
     }
   }
 

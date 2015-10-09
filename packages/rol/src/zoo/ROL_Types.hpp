@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <Teuchos_getConst.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
@@ -520,7 +521,7 @@ namespace ROL {
       \arg    FLETCHER_CONJDESC  \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
       \arg    LIU_STOREY         \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
       \arg    DAI_YUAN           \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
-      \arg    HAGAR_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+      \arg    HAGER_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
       \arg    OREN_LUENBERGER    \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
    */
   enum ENonlinearCG{
@@ -531,7 +532,7 @@ namespace ROL {
     NONLINEARCG_FLETCHER_CONJDESC,
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
-    NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_HAGER_ZHANG,
     NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
@@ -546,7 +547,7 @@ namespace ROL {
       case NONLINEARCG_FLETCHER_CONJDESC:     retString = "Fletcher Conjugate Descent";  break;
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
-      case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_HAGER_ZHANG:           retString = "Hager-Zhang";                 break;
       case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
@@ -567,7 +568,7 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_HAGER_ZHANG)       ||
             (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
@@ -1162,29 +1163,14 @@ namespace ROL {
       ROL::Objective
   \endcode
 
-  \subsection step_qs_sec Step 3: Choose optimization step.
+  \subsection step_qs_sec Step 3: Choose optimization algorithm.
   ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
 
   \code
-      ROL::LineSearchStep<RealT> step(parlist);
+      ROL::Algorithm<RealT> algo("Line Search",parlist);
   \endcode
 
-  \subsection status_qs_sec Step 4: Set status test.
-  ---  with gradient tolerance, step tolerance, and the maximum
-  number of iterations, respectively.
-
-  \code
-      ROL::StatusTest<RealT> status(gtol, stol, maxit);
-  \endcode
-
-  \subsection algo_qs_sec Step 5: Define an algorithm.
-  ---  based on the status test and the step.
-
-  \code
-      ROL::DefaultAlgorithm<RealT> algo(step,status);
-  \endcode
-
-  \subsection run_qs_sec Step 6: Run algorithm.
+  \subsection run_qs_sec Step 4: Run algorithm.
   ---  starting from the initial iterate @b x, applied to objective function @b obj.
 
   \code

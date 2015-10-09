@@ -4,37 +4,37 @@ TRIBITS_ADD_EXECUTABLE(
   example_01
   SOURCES example_01.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   example_02
   SOURCES example_02.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   example_03
   SOURCES example_03.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   example_04
   SOURCES example_04.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   example_05
   SOURCES example_05.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   example_06
   SOURCES example_06.cpp 
   ADD_DIR_TO_NAME
-  )
+)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   ParabolicControlDataCopy
@@ -43,3 +43,58 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )
+
+string( TOLOWER ${CMAKE_BUILD_TYPE} lower_build_type )
+
+if( ${lower_build_type} STREQUAL "release" )
+
+  TRIBITS_ADD_TEST(
+    example_01
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_02
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_03
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_04
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_05
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  TRIBITS_ADD_TEST(
+    example_06
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+endif()
+  
