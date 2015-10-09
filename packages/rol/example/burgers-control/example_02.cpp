@@ -135,16 +135,16 @@ int main(int argc, char *argv[]) {
     // Get parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",1000);
-    // Define ROL algorithm factory.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+    // Declare ROL algorithm pointer.
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
 
     // Run optimization with Composite Step SQP.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Composite Step SQP",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
     z.zero();
     con.solve(u,z,zerotol);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     zSQP->set(z);
 
     // Run Optimization with Trust-Region algorithm.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     z.zero();
     algo->run(z,robj,true,*outStream);
 

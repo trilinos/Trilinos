@@ -65,14 +65,11 @@
 
 namespace ROL {
 
-template<class Real>
-class DefaultAlgorithm;
-
 template <class Real>
 class AugmentedLagrangianStep : public Step<Real> {
 private:
   Teuchos::RCP<AugmentedLagrangian<Real> > augLag_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
 
   Teuchos::RCP<Teuchos::ParameterList> parlist_;

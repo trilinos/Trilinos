@@ -46,8 +46,8 @@
     \author Created by P. Bochev, D. Ridzal, and M. Keegan.
 */
 
-#ifndef INTREPID_CUBATURE_GEN_SPARSE_HPP
-#define INTREPID_CUBATURE_GEN_SPARSE_HPP
+#ifndef INTREPID2_CUBATURE_GEN_SPARSE_HPP
+#define INTREPID2_CUBATURE_GEN_SPARSE_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
@@ -55,11 +55,11 @@
 #include "Intrepid2_CubatureSparseHelper.hpp"
 #include "Teuchos_Assert.hpp"
 
-/** \def INTREPID_CUBATURE_SPARSE2D_GAUSS_MAX
+/** \def INTREPID2_CUBATURE_SPARSE2D_GAUSS_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a generalized sparse rule of the Gauss(-Legendre) type in 2D.
 */
-#define INTREPID_CUBATURE_GENSPARSE_GAUSS_MAX 17
+#define INTREPID2_CUBATURE_GENSPARSE_GAUSS_MAX 17
 
 
 namespace Intrepid2{

@@ -111,7 +111,7 @@ void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_POLYLIB";
+const char* CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_POLYLIB";
 
 
 

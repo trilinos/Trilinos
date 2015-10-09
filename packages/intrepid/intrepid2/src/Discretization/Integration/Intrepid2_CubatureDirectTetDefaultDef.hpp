@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectTetDefault(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 3;
-  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectTetDefault): No direct cubature rule implemented for the desired polynomial degree.");
 } // end constructor
@@ -68,7 +68,7 @@ const CubatureTemplate *  CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
-  return INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM;
+  return INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM;
 }
 
 
@@ -81,7 +81,7 @@ const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::getName() c
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_TET_DEFAULT";
+const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_TET_DEFAULT";
 
 
 //-------------------------------------------------------------------------------------//
@@ -99,7 +99,7 @@ const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_na
 */
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const CubatureTemplate CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_TET_DEFAULT_MAX_ENUM+1] =
+const CubatureTemplate CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1] =
 {
   // Cubature templates for the reference tet {(0,0,0), (1,0,0), (0,1,0), (0,0,1)}
   //

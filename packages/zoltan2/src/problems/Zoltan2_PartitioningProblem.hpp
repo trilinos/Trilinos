@@ -120,8 +120,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
-      graphMetrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -137,8 +136,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
-      graphMetrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -154,8 +152,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
-      graphMetrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -244,6 +241,18 @@ public:
       os << "No metrics available." << std::endl;
     else
       metrics_->printMetrics(os);
+  };
+
+  /*! \brief Print the array of metrics
+   *   \param os the output stream for the report.
+   *   Metrics were only computed if user requested
+   *   metrics with a parameter.
+   */
+  void printGraphMetrics(std::ostream &os) const {
+    if (graphMetrics_.is_null())
+      os << "No metrics available." << std::endl;
+    else
+      graphMetrics_->printMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
@@ -390,7 +399,6 @@ private:
   // Did the user request metrics?
 
   bool metricsRequested_;
-  bool graphMetricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
   RCP<const GraphPartitioningSolutionQuality<Adapter> > graphMetrics_;
 };
@@ -636,24 +644,21 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     Z2_FORWARD_EXCEPTIONS
 
     metrics_ = rcp(quality);
-  }
 
-  if (graphMetricsRequested_ && (algName_ == std::string("scotch") ||
-				 algName_ == std::string("parmetis"))){
-    typedef PartitioningSolution<Adapter> ps_t;
-    typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
+    if (algName_==std::string("scotch") || algName_==std::string("parmetis")){
+      typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
-    gpsq_t *quality = NULL;
-    RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
+      gpsq_t *graphQuality = NULL;
 
-    try{
-      quality = new gpsq_t(this->envConst_, problemCommConst_,
-                          this->graphModel_, this->inputAdapter_,
-                          solutionConst);
+      try{
+	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
+			     this->graphModel_, this->inputAdapter_,
+			     solutionConst);
+      }
+      Z2_FORWARD_EXCEPTIONS
+
+      graphMetrics_ = rcp(graphQuality);
     }
-    Z2_FORWARD_EXCEPTIONS
-
-    graphMetrics_ = rcp(quality);
   }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");

@@ -46,8 +46,8 @@
     \author Created by P. Bochev and J. Lai.
 */
 
-#ifndef INTREPID_CUBATURE_POLYGON_HPP
-#define INTREPID_CUBATURE_POLYGON_HPP
+#ifndef INTREPID2_CUBATURE_POLYGON_HPP
+#define INTREPID2_CUBATURE_POLYGON_HPP
 
 #include "Intrepid2_Cubature.hpp"
 #include "Teuchos_Assert.hpp"

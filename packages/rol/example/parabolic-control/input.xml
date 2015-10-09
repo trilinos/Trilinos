@@ -15,7 +15,7 @@
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
       <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
       <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximumt Storage"       type="int"    value="10"                  />
+      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
 
@@ -77,7 +77,7 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
-      <Parameter name="Safeguard Size"                       type="double" value="1.e4"         />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e8"         />
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">

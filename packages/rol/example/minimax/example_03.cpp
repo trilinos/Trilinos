@@ -94,20 +94,9 @@ int main(int argc, char *argv[]) {
     // Algorithmic input parameters.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-
-    // Define status test.
-    RealT gtol  = 1e-4; // norm of gradient tolerance
-    int   maxit = 1000; // maximum number of iterations
-    parlist->set("Bundle Step: Epsilon Solution Tolerance",gtol);
-    parlist->set("Bundle Step: Maximum Trust-Region Parameter",1.e5);
-    parlist->set("Bundle Step: Tolerance for Trust-Region Parameter",1.e-3);
-    parlist->set("Bundle Step: Maximum Bundle Size",10);
-    ROL::BundleStatusTest<RealT> status(gtol, maxit);    
-    ROL::BundleStep<RealT> step(*parlist);
-
-    // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    std::string stepname = "Bundle";
+    ROL::Algorithm<RealT> algo(stepname,*parlist);
 
     // Run algorithm.
     algo.run(x, obj, true, *outStream);

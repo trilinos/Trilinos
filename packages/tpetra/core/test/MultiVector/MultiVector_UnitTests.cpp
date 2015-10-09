@@ -1858,18 +1858,28 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ZeroScaleUpdate, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag M0 = ScalarTraits<Mag>::zero();
-    // get a comm and node
+    typedef Tpetra::global_size_t GST;
+
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const Mag M0 = ScalarTraits<Mag>::zero ();
+
+    const Scalar zero = STS::zero ();
+    const Scalar one = STS::one ();
+    const Scalar two = one + one;
+    const Scalar four = two + two;
+
     RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
+
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO, GO, Node> > map =
+      createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm, node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1880,16 +1890,17 @@ namespace {
     // has values .5 of a multivector B constructed from the second
     // then 2*A - B = 0
     // we test both scale(), both update(), and norm()
-    values[0] = as<Scalar>(1);
-    values[1] = as<Scalar>(1);
-    values[2] = as<Scalar>(2);
-    values[3] = as<Scalar>(2);
-    values[4] = as<Scalar>(4);
-    values[5] = as<Scalar>(4);
-    MV A(map,values(0,4),LDA,numVectors),
-       B(map,values(2,4),LDA,numVectors);
-    Array<Mag> norms(numVectors), zeros(numVectors);
-    std::fill(zeros.begin(),zeros.end(),M0);
+    values[0] = one;
+    values[1] = one;
+    values[2] = two;
+    values[3] = two;
+    values[4] = four;
+    values[5] = four;
+    MV A (map, values (0,4), LDA, numVectors);
+    MV B (map, values (2,4), LDA, numVectors);
+    Array<Mag> norms (numVectors);
+    Array<Mag> zeros (numVectors);
+    std::fill (zeros.begin (), zeros.end (), M0);
     //
     //      [.... ....]
     // A == [ones ones]
@@ -1903,38 +1914,37 @@ namespace {
     //   scale it by 2 in situ
     //   check that it equals B: subtraction in situ
     {
-      MV A2(createCopy(A));
-      A2.scale(as<Scalar>(2));
-      A2.update(as<Scalar>(-1),B,as<Scalar>(1));
-      A2.norm1(norms);
+      MV A2 (A, Teuchos::Copy);
+      A2.scale (two);
+      A2.update (-one, B, one);
+      A2.norm1 (norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set A2 = A
     //   check that it equals B: scale,subtraction in situ
     {
-      MV A2(createCopy(A));
-
-      A2.update(as<Scalar>(-1),B,as<Scalar>(2));
-      A2.norm1(norms);
+      MV A2 (A, Teuchos::Copy);
+      A2.update (-one, B, two);
+      A2.norm1 (norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
     //   set it to zero by combination with A,B
     {
-      MV C(map,numVectors);
-      C.randomize();
-      C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
-      C.norm1(norms);
+      MV C (map, numVectors);
+      C.randomize ();
+      C.update (-one, B, two, A, zero);
+      C.norm1 (norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
     {
-      MV C(map,numVectors);
-      C.scale(as<Scalar>(2),A);
-      C.update(as<Scalar>(1),B,as<Scalar>(-1));
-      C.norm1(norms);
+      MV C (map, numVectors);
+      C.scale (two, A);
+      C.update (one, B, -one);
+      C.norm1 (norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
   }

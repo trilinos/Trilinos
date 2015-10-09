@@ -47,8 +47,8 @@
     \author Created by R. Kirby
 */
 
-#ifndef INTREPID_PRODUCTTOPOLOGY_HPP
-#define INTREPID_PRODUCTTOPOLOGY_HPP
+#ifndef INTREPID2_PRODUCTTOPOLOGY_HPP
+#define INTREPID2_PRODUCTTOPOLOGY_HPP
 
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_Assert.hpp"

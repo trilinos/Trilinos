@@ -71,9 +71,12 @@
 
 template<class Real>
 class FEM {
+
+  typedef typename std::vector<Real>::size_type uint;
+
 private:
-  int nx_;
-  int ny_;
+  uint nx_;
+  uint ny_;
   int p_;
   int prob_;
   Real E_;
@@ -82,7 +85,7 @@ private:
 
 public:
 
-  FEM(int nx, int ny, int p = 3, int prob = 1, Real E = 1.0, Real nu = 0.3) 
+  FEM(uint nx, uint ny, int p = 3, int prob = 1, Real E = 1.0, Real nu = 0.3) 
   : nx_(nx), ny_(ny), p_(p), prob_(prob), E_(E), nu_(nu) {
     std::vector<Real> k(8,0.0);
     k[0] =  1.0/2.0-nu_/6.0; 
@@ -168,11 +171,11 @@ public:
     KE_(7,7) = E_/(1.0-nu_*nu_)*k[0];
   }
 
-  int numX(void) { return this->nx_; }
-  int numY(void) { return this->ny_; }
-  int numZ(void) { return this->nx_*this->ny_; }
-  int numU(void) { return 2*(this->nx_+1)*(this->ny_+1); }
-  int power(void) { return this->p_; }
+  uint numX(void) { return nx_; }
+  uint numY(void) { return ny_; }
+  uint numZ(void) { return nx_*ny_; }
+  uint numU(void) { return 2*(nx_+1)*(ny_+1); }
+  int power(void) { return p_; }
 
   int get_index(int r, int n1, int n2) {
     int ind = 0;
@@ -189,15 +192,15 @@ public:
     return ind;
   }
 
-  bool check_on_boundary(int r) {
-    switch(this->prob_) {
+  bool check_on_boundary(uint r) {
+    switch(prob_) {
       case 0: 
-        if ( (r < 2*(this->ny_+1) && r%2 == 0) || ( r == 2*(this->nx_+1)*(this->ny_+1)-1 ) ) {
+        if ( (r < 2*(ny_+1) && r%2 == 0) || ( r == 2*(nx_+1)*(ny_+1)-1 ) ) {
           return true;
         }
         break;
       case 1: 
-        if ( r < 2*(this->ny_+1) ) {
+        if ( r < 2*(ny_+1) ) {
           return true;
         }
         break;
@@ -207,58 +210,58 @@ public:
 
   void set_boundary_conditions(Teuchos::SerialDenseVector<int, Real> &U) {
     for (int i=0; i<U.length(); i++) {
-      if ( this->check_on_boundary(i) ) {
+      if ( check_on_boundary(i) ) {
         U(i) = 0.0;
       }
     }
   }
 
   void set_boundary_conditions(std::vector<Real> &u) {
-    for (unsigned i=0; i<u.size(); i++) {
-      if ( this->check_on_boundary(i) ) {
+    for (uint i=0; i<u.size(); i++) {
+      if ( check_on_boundary(i) ) {
         u[i] = 0.0;
       }
     }
   }
 
   void build_force(std::vector<Real> &F) {
-    F.assign(this->numU(),0.0);
-    switch(this->prob_) {
-      case 0: F[1] = -1;                               break;
-      case 1: F[2*(this->nx_+1)*(this->ny_+1)-1] = -1; break;
+    F.assign(numU(),0.0);
+    switch(prob_) {
+      case 0: F[1] = -1;                   break;
+      case 1: F[2*(nx_+1)*(ny_+1)-1] = -1; break;
     }
   }
 
   void build_force(Teuchos::SerialDenseVector<int, Real> &F) {
-    F.resize(this->numU());
+    F.resize(numU());
     F.putScalar(0.0);
-    switch(this->prob_) {
-      case 0: F(1) = -1;                               break;
-      case 1: F(2*(this->nx_+1)*(this->ny_+1)-1) = -1; break;
+    switch(prob_) {
+      case 0: F(1) = -1;                   break;
+      case 1: F(2*(nx_+1)*(ny_+1)-1) = -1; break;
     }
   }
 
   void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z,
                       bool transpose = false) {
     // Fill jacobian
-    K.shape(2*(this->nx_+1)*(this->ny_+1),2*(this->nx_+1)*(this->ny_+1));
+    K.shape(2*(nx_+1)*(ny_+1),2*(nx_+1)*(ny_+1));
     int n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0, val = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1);
-        Zp = std::pow(z[i+j*this->nx_],(Real)this->p_);
-        for (int r=0; r<8; r++) {
-          row = this->get_index(r,n1,n2);
-          if ( this->check_on_boundary(row) ) {
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = std::pow(z[i+j*nx_],(Real)p_);
+        for (uint r=0; r<8; r++) {
+          row = get_index(r,n1,n2); 
+          if ( check_on_boundary(row) ) {
             K(row,row) = 1.0;
           }
           else {
-            for (int c=0; c<8; c++) {
-              col = this->get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                val = Zp*(this->KE_)(r,c);
+            for (uint c=0; c<8; c++) {
+              col = get_index(c,n1,n2);
+              if ( !check_on_boundary(col) ) {
+                val = Zp*(KE_)(r,c);
                 if (transpose) {
                   K(col,row) += val;
                 }
@@ -276,25 +279,25 @@ public:
   void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z, 
                       const std::vector<Real> &v, bool transpose = false) {
     // Fill jacobian
-    K.shape(2*(this->nx_+1)*(this->ny_+1),2*(this->nx_+1)*(this->ny_+1));
-    int n1 = 0, n2 = 0, row = 0, col = 0;
+    K.shape(2*(nx_+1)*(ny_+1),2*(nx_+1)*(ny_+1));
+    uint n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0, V = 0.0, val = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
-        Zp = (this->p_ == 1) ? 1.0 : (Real)this->p_*std::pow(z[i+j*this->nx_],(Real)this->p_-1.0);
-        V  = v[i+j*this->nx_];
-        for (int r=0; r<8; r++) {
-          row = this->get_index(r,n1,n2); 
-          if ( this->check_on_boundary(row) ) {
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = (p_ == 1) ? 1.0 : (Real)p_*std::pow(z[i+j*nx_],(Real)p_-1.0);
+        V  = v[i+j*nx_];
+        for (uint r=0; r<8; r++) {
+          row = get_index(r,n1,n2); 
+          if ( check_on_boundary(row) ) {
             K(row,row) = 1.0;
           }
           else {
-            for (int c=0; c<8; c++) {
-              col = this->get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                val = Zp*V*(this->KE_)(r,c);
+            for (uint c=0; c<8; c++) {
+              col = get_index(c,n1,n2);
+              if ( !check_on_boundary(col) ) {
+                val = Zp*V*(KE_)(r,c);
                 if (transpose) {
                   K(col,row) += val;
                 }
@@ -310,24 +313,24 @@ public:
   }
 
   void apply_jacobian(std::vector<Real> &ju, const std::vector<Real> &u, const std::vector<Real> &z) {
-    int n1 = 0, n2 = 0, row = 0, col = 0;
+    uint n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0;
     ju.assign(u.size(),0.0);
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
-        Zp = std::pow(z[i+j*this->nx_],(Real)this->p_);
-        for (int r=0; r<8; r++) {
-          row = this->get_index(r,n1,n2); 
-          if ( this->check_on_boundary(row) ) {
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = std::pow(z[i+j*nx_],(Real)p_);
+        for (uint r=0; r<8; r++) {
+          row = get_index(r,n1,n2); 
+          if ( check_on_boundary(row) ) {
             ju[row] = u[row];
           }
           else {
-            for (int c=0; c<8; c++) {
-              col = this->get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                ju[row] += Zp*(this->KE_)(r,c)*u[col];
+            for (uint c=0; c<8; c++) {
+              col = get_index(c,n1,n2);
+              if ( !check_on_boundary(col) ) {
+                ju[row] += Zp*(KE_)(r,c)*u[col];
               }
             }
           }
@@ -339,25 +342,25 @@ public:
   void apply_jacobian(std::vector<Real> &ju, const std::vector<Real> &u, const std::vector<Real> &z, 
                       const std::vector<Real> &v) {
     // Fill jacobian
-    int n1 = 0, n2 = 0, row = 0, col = 0;
+    uint n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0, V = 0.0;
     ju.assign(u.size(),0.0);
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
-        Zp = (this->p_ == 1) ? 1.0 : (Real)this->p_*std::pow(z[i+j*this->nx_],(Real)this->p_-1.0);
-        V  = v[i+j*this->nx_];
-        for (int r=0; r<8; r++) {
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = (p_ == 1) ? 1.0 : (Real)p_*std::pow(z[i+j*nx_],(Real)p_-1.0);
+        V  = v[i+j*nx_];
+        for (uint r=0; r<8; r++) {
           row = get_index(r,n1,n2); 
-          if ( this->check_on_boundary(row) ) {
+          if ( check_on_boundary(row) ) {
             ju[row] = u[row];
           }
           else {
-            for (int c=0; c<8; c++) {
+            for (uint c=0; c<8; c++) {
               col = get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                ju[row] += V*Zp*(this->KE_)(r,c)*u[col];
+              if ( !check_on_boundary(col) ) {
+                ju[row] += V*Zp*(KE_)(r,c)*u[col];
               }
             }
           }
@@ -369,29 +372,29 @@ public:
   void apply_adjoint_jacobian(std::vector<Real> &jv, const std::vector<Real> &u, const std::vector<Real> &z, 
                               const std::vector<Real> &v) {
     // Fill jacobian
-    int n1 = 0, n2 = 0, row = 0, col = 0;
+    uint n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0, VKU = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
-        Zp = (this->p_ == 1) ? 1.0 : (Real)this->p_*std::pow(z[i+j*this->nx_],(Real)this->p_-1.0);
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = (p_ == 1) ? 1.0 : (Real)p_*std::pow(z[i+j*nx_],(Real)p_-1.0);
         VKU = 0.0;
-        for (int r=0; r<8; r++) {
+        for (uint r=0; r<8; r++) {
           row = get_index(r,n1,n2); 
-          if ( this->check_on_boundary(row) ) {
+          if ( check_on_boundary(row) ) {
             VKU += v[row]*u[row];
           }
           else {
-            for (int c=0; c<8; c++) {
+            for (uint c=0; c<8; c++) {
               col = get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                VKU += Zp*(this->KE_)(r,c)*u[col]*v[row];
+              if ( !check_on_boundary(col) ) {
+                VKU += Zp*(KE_)(r,c)*u[col]*v[row];
               }
             }
           }
         }
-        jv[i+j*this->nx_] = VKU;
+        jv[i+j*nx_] = VKU;
       }
     }
   }
@@ -399,32 +402,32 @@ public:
   void apply_adjoint_jacobian(std::vector<Real> &jv, const std::vector<Real> &u, const std::vector<Real> &z, 
                               const std::vector<Real> &v, const std::vector<Real> &w) {
     // Fill jacobian
-    int n1 = 0, n2 = 0, row = 0, col = 0;
+    uint n1 = 0, n2 = 0, row = 0, col = 0;
     Real Zp = 0.0, V = 0.0, VKU = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      for (int j=0; j<this->ny_; j++) {
-        n1 = (this->ny_+1)* i   +(j+1);
-        n2 = (this->ny_+1)*(i+1)+(j+1); 
-        Zp = (this->p_ == 1) ? 0.0 : 
-               ((this->p_ == 2) ? 2.0 : 
-                 (Real)this->p_*((Real)this->p_-1.0)*std::pow(z[i+j*this->nx_],(Real)this->p_-2.0));
-        V  = v[i+j*this->nx_];
+    for (uint i=0; i<nx_; i++) {
+      for (uint j=0; j<ny_; j++) {
+        n1 = (ny_+1)* i   +(j+1);
+        n2 = (ny_+1)*(i+1)+(j+1); 
+        Zp = (p_ == 1) ? 0.0 : 
+               ((p_ == 2) ? 2.0 : 
+                 (Real)p_*((Real)p_-1.0)*std::pow(z[i+j*nx_],(Real)p_-2.0));
+        V  = v[i+j*nx_];
         VKU = 0.0;
-        for (int r=0; r<8; r++) {
+        for (uint r=0; r<8; r++) {
           row = get_index(r,n1,n2); 
-          if ( this->check_on_boundary(row) ) {
+          if ( check_on_boundary(row) ) {
             VKU += w[row]*u[row];
           }
           else {
-            for (int c=0; c<8; c++) {
+            for (uint c=0; c<8; c++) {
               col = get_index(c,n1,n2);
-              if ( !this->check_on_boundary(col) ) {
-                VKU += Zp*V*(this->KE_)(r,c)*u[col]*w[row];
+              if ( !check_on_boundary(col) ) {
+                VKU += Zp*V*(KE_)(r,c)*u[col]*w[row];
               }
             }
           }
         }
-        jv[i+j*this->nx_] = VKU;
+        jv[i+j*nx_] = VKU;
       }
     }
   }
@@ -432,35 +435,56 @@ public:
 
 template<class Real>
 class EqualityConstraint_TopOpt : public ROL::EqualityConstraint_SimOpt<Real> {
+
+  typedef std::vector<Real>    vector;
+  typedef ROL::Vector<Real>    V;
+  typedef ROL::StdVector<Real> SV;
+  
+  typedef typename vector::size_type uint;
+ 
 private:
   Teuchos::RCP<FEM<Real> > FEM_;
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    return dyn_cast<const SV>(getConst(x)).getVector();
+  }
+  
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
 
 public:
 
   EqualityConstraint_TopOpt(Teuchos::RCP<FEM<Real> > & FEM) : FEM_(FEM) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > cp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector());
-    this->applyJacobian_1(c, u, u, z, tol);
-    std::vector<Real> f;
-    this->FEM_->build_force(f);
-    for (unsigned i = 0; i < f.size(); i++) {
+
+    using Teuchos::RCP;
+
+    RCP<vector> cp = getVector(c);
+    applyJacobian_1(c, u, u, z, tol);
+    vector f;
+    FEM_->build_force(f);
+    for (uint i = 0; i < f.size(); i++) {
       (*cp)[i] -= f[i];
     }
   }
 
   void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > up =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
-    this->FEM_->build_jacobian(K,*zp);
+    FEM_->build_jacobian(K,*zp);
     // Assemble RHS
     Teuchos::SerialDenseVector<int, Real> F(K.numRows());
-    this->FEM_->build_force(F);
+    FEM_->build_force(F);
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseSolver<int, Real> solver;
@@ -469,10 +493,10 @@ public:
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
-    this->FEM_->set_boundary_conditions(U);
+    FEM_->set_boundary_conditions(U);
     // Retrieve solution
     up->resize(U.length(),0.0);
-    for (int i=0; i<U.length(); i++) {
+    for (uint i=0; i<static_cast<uint>(U.length()); i++) {
       (*up)[i] = U(i);
     }
     // Compute residual
@@ -483,53 +507,52 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
-    std::vector<Real> V;
+    vector V;
     V.assign(vp->begin(),vp->end());
-    this->FEM_->set_boundary_conditions(V);
-    this->FEM_->apply_jacobian(*jvp,V,*zp);
+    FEM_->set_boundary_conditions(V);
+    FEM_->apply_jacobian(*jvp,V,*zp);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z); 
+
     // Apply Jacobian
-    std::vector<Real> U;
+    vector U;
     U.assign(up->begin(),up->end());
-    this->FEM_->set_boundary_conditions(U);
-    this->FEM_->apply_jacobian(*jvp,U,*zp,*vp);
+    FEM_->set_boundary_conditions(U);
+    FEM_->apply_jacobian(*jvp,U,*zp,*vp);
   }
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > ijvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ijv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<vector> ijvp = getVector(ijv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
-    this->FEM_->build_jacobian(K,*zp);
+    FEM_->build_jacobian(K,*zp);
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseVector<int, Real> F(vp->size());
-    for (unsigned i=0; i<vp->size(); i++) {
+    for (uint i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
@@ -538,68 +561,65 @@ public:
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
-    this->FEM_->set_boundary_conditions(U);
+    FEM_->set_boundary_conditions(U);
     // Retrieve solution
     ijvp->resize(U.length(),0.0);
-    for (int i=0; i<U.length(); i++) {
+    for (uint i=0; i<static_cast<uint>(U.length()); i++) {
       (*ijvp)[i] = U(i);
     }
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ajv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    using Teuchos::RCP;
+ 
+    RCP<vector> ajvp = getVector(ajv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // apply jacobian
-    std::vector<Real> V;
+    vector V;
     V.assign(vp->begin(),vp->end());
-    this->FEM_->set_boundary_conditions(V);
-    this->FEM_->apply_jacobian(*jvp,V,*zp);
+    FEM_->set_boundary_conditions(V);
+    FEM_->apply_jacobian(*ajvp,V,*zp);
   }
 
-  void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
+  void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<vector> ajvp = getVector(ajv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
-    std::vector<Real> U;
+    vector U;
     U.assign(up->begin(),up->end());
-    this->FEM_->set_boundary_conditions(U);
+    FEM_->set_boundary_conditions(U);
     std::vector<Real> V;
     V.assign(vp->begin(),vp->end());
-    this->FEM_->set_boundary_conditions(V);
-    this->FEM_->apply_adjoint_jacobian(*jvp,U,*zp,V);
+    FEM_->set_boundary_conditions(V);
+    FEM_->apply_adjoint_jacobian(*ajvp,U,*zp,V);
   }
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > iajvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(iajv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+     using Teuchos::RCP;
+      
+     RCP<vector> iajvp = getVector(iajv);
+     RCP<const vector> vp = getVector(v);
+     RCP<const vector> up = getVector(u);
+     RCP<const vector> zp = getVector(z);
+
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
-    this->FEM_->build_jacobian(K,*zp);
+    FEM_->build_jacobian(K,*zp);
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseVector<int, Real> F(vp->size());
-    for (unsigned i=0; i<vp->size(); i++) {
+    for (uint i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
@@ -608,7 +628,7 @@ public:
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
-    this->FEM_->set_boundary_conditions(U);
+    FEM_->set_boundary_conditions(U);
     // Retrieve solution
     iajvp->resize(U.length(),0.0);
     for (int i=0; i<U.length(); i++) {
@@ -631,24 +651,22 @@ public:
   }
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > ahwvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(ahwv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > wp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(w))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<vector> ahwvp = getVector(ahwv);
+    RCP<const vector> wp = getVector(w);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
-    std::vector<Real> U;
+    vector U;
     U.assign(up->begin(),up->end());
-    this->FEM_->set_boundary_conditions(U);
-    std::vector<Real> W;
+    FEM_->set_boundary_conditions(U);
+    vector W;
     W.assign(wp->begin(),wp->end());
-    this->FEM_->set_boundary_conditions(W);
-    this->FEM_->apply_adjoint_jacobian(*ahwvp,U,*zp,*vp,W);
+    FEM_->set_boundary_conditions(W);
+    FEM_->apply_adjoint_jacobian(*ahwvp,U,*zp,*vp,W);
   }
 
   //void solveAugmentedSystem(ROL::Vector<Real> &v1, ROL::Vector<Real> &v2, const ROL::Vector<Real> &b1,
@@ -657,6 +675,13 @@ public:
 
 template<class Real>
 class Objective_TopOpt : public ROL::Objective_SimOpt<Real> {
+
+  typedef std::vector<Real>    vector;
+  typedef ROL::Vector<Real>    V;
+  typedef ROL::StdVector<Real> SV;
+  
+  typedef typename vector::size_type uint;  
+
 private:
   Teuchos::RCP<FEM<Real> > FEM_;
   Real frac_; 
@@ -666,6 +691,16 @@ private:
 
   bool useLC_; // Use linear form of compliance.  Otherwise use quadratic form.
 
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    return dyn_cast<const SV>(getConst(x)).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
+
 public:
 
   Objective_TopOpt(Teuchos::RCP<FEM<Real> > FEM, 
@@ -673,153 +708,157 @@ public:
     : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen), rmin_(rmin), useLC_(true) {}
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+ 
     // Apply Jacobian
-    std::vector<Real> KU(up->size(),0.0);
-    if ( this->useLC_ ) {
-      this->FEM_->build_force(KU);
+    vector KU(up->size(),0.0);
+    if ( useLC_ ) {
+      FEM_->build_force(KU);
     }
     else {
-      std::vector<Real> U;
+      vector U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
-      this->FEM_->apply_jacobian(KU,U,*zp);
+      FEM_->set_boundary_conditions(U);
+      FEM_->apply_jacobian(KU,U,*zp);
     }
     // Compliance
     Real c = 0.0;
-    for (unsigned i=0; i<up->size(); i++) {
+    for (uint i=0; i<up->size(); i++) {
       c += (*up)[i]*KU[i];
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0, r = 0.0;
-    for (unsigned i=0; i<zp->size(); i++) {
+    for (uint i=0; i<zp->size(); i++) {
       vol += (*zp)[i]; 
     }
-    vol  = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
-    r = (this->reg_)*std::pow(vol,3.0);
+    vol  = (vol <= frac_*FEM_->numZ()) ? 0.0 : (vol - frac_*FEM_->numZ());
+    r = (reg_)*std::pow(vol,3.0);
     // Compute 0-1 penalty
     Real val = 0.0, p = 0.0;
-    if ( this->rmin_ <= 0.0 ) {
-      for (unsigned i=0; i<zp->size(); i++) {
+    if ( rmin_ <= 0.0 ) {
+      for (uint i=0; i<zp->size(); i++) {
         val += (*zp)[i]*(1.0-(*zp)[i]);
       }
     }
     else {
       Real sum = 0.0, area = 0.0;
-      int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
-      for (int i=0; i<this->FEM_->numX(); i++) {
-        for (int j=0; j<this->FEM_->numY(); j++) {
+      uint i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+      for (uint i=0; i<FEM_->numX(); i++) {
+        for (uint j=0; j<FEM_->numY(); j++) {
           sum = 0.0;
-          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
-          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
-          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
-          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+          i1 = std::max(i-(uint)floor(rmin_),(uint)1)-1;
+          i2 = std::min(i+(uint)floor(rmin_),FEM_->numX());
+          j1 = std::max(j-(uint)floor(rmin_),(uint)1)-1;
+          j2 = std::min(j+(uint)floor(rmin_),FEM_->numY());
           area = (Real)(i2-i1)*(j2-j1); 
-          for (int ii=i1; ii<i2; ii++) {
-            for (int jj=j1; jj<j2; jj++) {
-              sum += (*zp)[ii+this->FEM_->numX()*jj]/area;
+          for (uint ii=i1; ii<i2; ii++) {
+            for (uint jj=j1; jj<j2; jj++) {
+              sum += (*zp)[ii+FEM_->numX()*jj]/area;
             }
           }
           val += sum*(1.0-sum);
         }
       }
     }
-    p = (this->pen_)*val;
+    p = (pen_)*val;
     return c + r + p;
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+
+    using Teuchos::RCP;
+
     // Unwrap g
-    Teuchos::RCP<std::vector<Real> > gp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
+    RCP<vector> gp = getVector(g);
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
-    std::vector<Real> KU(up->size(),0.0);
-    if ( this->useLC_ ) {
-      this->FEM_->build_force(KU);
+    vector KU(up->size(),0.0);
+    if ( useLC_ ) {
+      FEM_->build_force(KU);
       // Apply jacobian to u
-      for (unsigned i=0; i<up->size(); i++) {
+      for (uint i=0; i<up->size(); i++) {
         (*gp)[i] = KU[i];
       }
     }
     else {
-      std::vector<Real> U;
+      vector U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
-      this->FEM_->apply_jacobian(KU,U,*zp);
+      FEM_->set_boundary_conditions(U);
+      FEM_->apply_jacobian(KU,U,*zp);
       // Apply jacobian to u
-      for (unsigned i=0; i<up->size(); i++) {
+      for (uint i=0; i<up->size(); i++) {
         (*gp)[i] = 2.0*KU[i];
       }
     }
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+
+    using Teuchos::RCP;
+
     // Unwrap g
-    Teuchos::RCP<std::vector<Real> > gp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(g)).getVector());
+    RCP<vector> gp = getVector(g);
+
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
     g.zero();
-    if ( !this->useLC_ ) {
-      std::vector<Real> U;
+    if ( !useLC_ ) {
+      vector U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
-      this->FEM_->apply_adjoint_jacobian(*gp,U,*zp,U);
+      FEM_->set_boundary_conditions(U);
+      FEM_->apply_adjoint_jacobian(*gp,U,*zp,U);
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0;
-    for (unsigned i=0; i<zp->size(); i++) {
+    for (uint i=0; i<zp->size(); i++) {
       vol += (*zp)[i]; 
     }
-    vol = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
-    for (unsigned i=0; i<zp->size(); i++) {
-      (*gp)[i] += (this->reg_)*3.0*std::pow(vol,2.0);
+    vol = (vol <= frac_*FEM_->numZ()) ? 0.0 : (vol - frac_*FEM_->numZ());
+    for (uint i=0; i<zp->size(); i++) {
+      (*gp)[i] += (reg_)*3.0*std::pow(vol,2.0);
       // Compute 0-1 penalty
-      if ( this->rmin_ <= 0.0 ) {
-        (*gp)[i] += (this->pen_)*(1.0-2.0*(*zp)[i]);
+      if ( rmin_ <= 0.0 ) {
+        (*gp)[i] += (pen_)*(1.0-2.0*(*zp)[i]);
       }
     }
     // Compute 0-1 penalty
-    std::vector<Real> Tz(zp->size(),0.0);
+    vector Tz(zp->size(),0.0);
     Real area = 0.0;
-    int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
-    if (this->rmin_ > 0.0) {
-      for (int i=0; i<this->FEM_->numX(); i++) {
-        for (int j=0; j<this->FEM_->numY(); j++) {
-          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
-          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
-          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
-          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+    uint i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+    if (rmin_ > 0.0) {
+      for (uint i=0; i<FEM_->numX(); i++) {
+        for (uint j=0; j<FEM_->numY(); j++) {
+          i1 = std::max(i-(uint)floor(rmin_),(uint)1)-1;
+          i2 = std::min(i+(uint)floor(rmin_),FEM_->numX());
+          j1 = std::max(j-(uint)floor(rmin_),(uint)1)-1;
+          j2 = std::min(j+(uint)floor(rmin_),FEM_->numY());
           area = (Real)(i2-i1)*(j2-j1);
-          for (int ii=i1; ii<i2; ii++) {
-            for (int jj=j1; jj<j2; jj++) {
-              Tz[i+j*this->FEM_->numX()] += (*zp)[ii+this->FEM_->numX()*jj]/area;
+          for (uint ii=i1; ii<i2; ii++) {
+            for (uint jj=j1; jj<j2; jj++) {
+              Tz[i+j*FEM_->numX()] += (*zp)[ii+FEM_->numX()*jj]/area;
             }
           }
         }
       }
-      for (int i=0; i<this->FEM_->numX(); i++) {
-        for (int j=0; j<this->FEM_->numY(); j++) {
-          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
-          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
-          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
-          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+      for (uint i=0; i<FEM_->numX(); i++) {
+        for (uint j=0; j<FEM_->numY(); j++) {
+          i1 = std::max(i-(uint)floor(rmin_),(uint)1)-1;
+          i2 = std::min(i+(uint)floor(rmin_),FEM_->numX());
+          j1 = std::max(j-(uint)floor(rmin_),(uint)1)-1;
+          j2 = std::min(j+(uint)floor(rmin_),FEM_->numY());
           area = (Real)(i2-i1)*(j2-j1);
-          for (int ii=i1; ii<i2; ii++) {
-            for (int jj=j1; jj<j2; jj++) {
-              (*gp)[ii+jj*this->FEM_->numX()] += (this->pen_)*(1.0-2.0*Tz[i+this->FEM_->numX()*j])/area;
+          for (uint ii=i1; ii<i2; ii++) {
+            for (uint jj=j1; jj<j2; jj++) {
+              (*gp)[ii+jj*FEM_->numX()] += (pen_)*(1.0-2.0*Tz[i+FEM_->numX()*j])/area;
             }
           }
         }
@@ -829,25 +868,26 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+
+    using Teuchos::RCP;
+    RCP<vector> hvp = getVector(hv);
+
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    RCP<const vector> vp = getVector(v);
+
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
     hv.zero();
-    if ( !this->useLC_ ) {
-      std::vector<Real> KV(vp->size(),0.0);
-      std::vector<Real> V;
+    if ( !useLC_ ) {
+      vector KV(vp->size(),0.0);
+      vector V;
       V.assign(vp->begin(),vp->end());
-      this->FEM_->set_boundary_conditions(V);
-      this->FEM_->apply_jacobian(KV,V,*zp);
-      for (unsigned i=0; i<vp->size(); i++) {
+      FEM_->set_boundary_conditions(V);
+      FEM_->apply_jacobian(KV,V,*zp);
+      for (uint i=0; i<vp->size(); i++) {
         (*hvp)[i] = 2.0*KV[i];
       }
     }
@@ -855,26 +895,28 @@ public:
 
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+
+    using Teuchos::RCP;
+
     // Unwrap hv
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+    RCP<vector> hvp = getVector(hv);
+
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    RCP<const vector> vp = getVector(v);
+
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Apply Jacobian
     hv.zero();
-    if ( !this->useLC_ ) {
-      std::vector<Real> KU(up->size(),0.0);
-      std::vector<Real> U;
+    if ( !useLC_ ) {
+      vector KU(up->size(),0.0);
+      vector U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
-      this->FEM_->apply_jacobian(KU,U,*zp,*vp);
-      for (unsigned i=0; i<up->size(); i++) {
+      FEM_->set_boundary_conditions(U);
+      FEM_->apply_jacobian(KU,U,*zp,*vp);
+      for (uint i=0; i<up->size(); i++) {
         (*hvp)[i] = 2.0*KU[i];
       }
     }
@@ -882,28 +924,30 @@ public:
 
   void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
+
+    using Teuchos::RCP;
+
     // Unwrap g
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+    RCP<vector> hvp = getVector(hv);
+
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    RCP<const vector> vp = getVector(v);
+
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+ 
     // Apply Jacobian
     hv.zero();
-    if ( !this->useLC_ ) {
+    if ( !useLC_ ) {
       std::vector<Real> U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
+      FEM_->set_boundary_conditions(U);
       std::vector<Real> V;
       V.assign(vp->begin(),vp->end());
-      this->FEM_->set_boundary_conditions(V);
-      this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
-      for (unsigned i=0; i<hvp->size(); i++) {
+      FEM_->set_boundary_conditions(V);
+      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
+      for (uint i=0; i<hvp->size(); i++) {
         (*hvp)[i] *= 2.0;
       }
     }
@@ -911,70 +955,72 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > hvp = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(hv)).getVector());
+
+    using Teuchos::RCP;
+
+    RCP<vector> hvp = getVector(hv);
+
     // Unwrap v
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    RCP<const vector> vp = getVector(v);
+
     // Unwrap x
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+    
     // Apply Jacobian
     hv.zero();
-    if ( !this->useLC_ ) {
-      std::vector<Real> U;
+    if ( !useLC_ ) {
+      vector U;
       U.assign(up->begin(),up->end());
-      this->FEM_->set_boundary_conditions(U);
-      std::vector<Real> V;
+      FEM_->set_boundary_conditions(U);
+      vector V;
       V.assign(vp->begin(),vp->end());
-      this->FEM_->set_boundary_conditions(V);
-      this->FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
+      FEM_->set_boundary_conditions(V);
+      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
     }
     // Compute Moreau-Yoshida term
     Real vol = 0.0, vvol = 0.0;
-    for (unsigned i=0; i<zp->size(); i++) {
+    for (uint i=0; i<zp->size(); i++) {
       vol  += (*zp)[i]; 
       vvol += (*vp)[i];
     }
-    vol  = (vol <= this->frac_*this->FEM_->numZ()) ? 0.0 : (vol - this->frac_*this->FEM_->numZ());
-    for (unsigned i=0; i<zp->size(); i++) {
-      (*hvp)[i] += (this->reg_)*6.0*vol*vvol; //(*vzp)[i];
+    vol  = (vol <= frac_*FEM_->numZ()) ? 0.0 : (vol - frac_*FEM_->numZ());
+    for (uint i=0; i<zp->size(); i++) {
+      (*hvp)[i] += (reg_)*6.0*vol*vvol; //(*vzp)[i];
       // Compute 0-1 penalty
-      if ( this->rmin_ <= 0.0 ) {
-        (*hvp)[i] -= (this->pen_)*2.0*(*vp)[i];
+      if ( rmin_ <= 0.0 ) {
+        (*hvp)[i] -= (pen_)*2.0*(*vp)[i];
       }
     }
     // Compute 0-1 penalty
-    std::vector<Real> Tv(zp->size(),0.0);
-    int i1 = 0, i2 = 0, j1 = 0, j2 = 0;
+    vector Tv(zp->size(),0.0);
+    uint i1 = 0, i2 = 0, j1 = 0, j2 = 0;
     Real area = 0.0;
-    if (this->rmin_ > 0.0) {
-      for (int i=0; i<this->FEM_->numX(); i++) {
-        for (int j=0; j<this->FEM_->numY(); j++) {
-          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
-          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
-          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
-          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+    if (rmin_ > 0.0) {
+      for (uint i=0; i<FEM_->numX(); i++) {
+        for (uint j=0; j<FEM_->numY(); j++) {
+          i1 = std::max(i-(uint)floor(rmin_),(uint)1)-1;
+          i2 = std::min(i+(uint)floor(rmin_),FEM_->numX());
+          j1 = std::max(j-(uint)floor(rmin_),(uint)1)-1;
+          j2 = std::min(j+(uint)floor(rmin_),FEM_->numY());
           area = (Real)(i2-i1)*(j2-j1);
-          for (int ii=i1; ii<i2; ii++) {
-            for (int jj=j1; jj<j2; jj++) {
-              Tv[i+j*this->FEM_->numX()] += (*vp)[ii+this->FEM_->numX()*jj]/area;
+          for (uint ii=i1; ii<i2; ii++) {
+            for (uint jj=j1; jj<j2; jj++) {
+              Tv[i+j*FEM_->numX()] += (*vp)[ii+FEM_->numX()*jj]/area;
             }
           }
         }
       }
-      for (int i=0; i<this->FEM_->numX(); i++) {
-        for (int j=0; j<this->FEM_->numY(); j++) {
-          i1 = std::max(i-(int)floor(this->rmin_),1)-1;
-          i2 = std::min(i+(int)floor(this->rmin_),this->FEM_->numX());
-          j1 = std::max(j-(int)floor(this->rmin_),1)-1;
-          j2 = std::min(j+(int)floor(this->rmin_),this->FEM_->numY());
+      for (uint i=0; i<FEM_->numX(); i++) {
+        for (uint j=0; j<FEM_->numY(); j++) {
+          i1 = std::max(i-(uint)floor(rmin_),(uint)1)-1;
+          i2 = std::min(i+(uint)floor(rmin_),FEM_->numX());
+          j1 = std::max(j-(uint)floor(rmin_),(uint)1)-1;
+          j2 = std::min(j+(uint)floor(rmin_),FEM_->numY());
           area = (Real)(i2-i1)*(j2-j1);
-          for (int ii=i1; ii<i2; ii++) {
-            for (int jj=j1; jj<j2; jj++) {
-              (*hvp)[ii+jj*this->FEM_->numX()] -= (this->pen_)*2.0*Tv[i+this->FEM_->numX()*j]/area;
+          for (uint ii=i1; ii<i2; ii++) {
+            for (uint jj=j1; jj<j2; jj++) {
+              (*hvp)[ii+jj*FEM_->numX()] -= (pen_)*2.0*Tv[i+FEM_->numX()*j]/area;
             }
           }
         }
@@ -987,6 +1033,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef typename std::vector<RealT>::size_type uint;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -1004,13 +1051,13 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    int nx   = 32; // Number of x-elements (60 for prob = 1, 32 for prob = 2).
-    int ny   = 20; // Number of y-elements (20 for prob = 1, 20 for prob = 2).
+    uint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    uint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     Teuchos::RCP<FEM<RealT> > pFEM = Teuchos::rcp(new FEM<RealT>(nx,ny,P,prob));
     // Objective function description.
-    int   nreg = 21;       // # of Moreau-Yoshida parameter updates.
-    int   npen = 10;       // # of penalty parameter updates.
+    int   nreg = 11;       // # of Moreau-Yoshida parameter updates (e.g., 21).
+    int   npen = 2;        // # of penalty parameter updates (e.g., 10).
     RealT frac = 0.4;      // Volume fraction.
     RealT reg  = 1.0;      // Moreau-Yoshida regularization parameter.
     RealT pen  = 1.e-4;    // 0-1 penalty parameter. 
@@ -1020,15 +1067,15 @@ int main(int argc, char *argv[]) {
     bool useTR      = false; // Use trust-region or line-search.
     RealT gtol      = 1e-5;  // Norm of gradient tolerance.
     RealT stol      = 1e-8;  // Norm of step tolerance.
-    int   maxit     = 500;   // Maximum number of iterations.
+    int   maxit     = 100;   // Maximum number of iterations (e.g., 500).
     // Read optimization input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Initialize RCPs.
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> >         algo;   // Optimization algorithm.
+    Teuchos::RCP<ROL::Algorithm<RealT> >                algo;   // Optimization algorithm.
     Teuchos::RCP<ROL::Step<RealT> >                     step;   // Globalized step.
     Teuchos::RCP<ROL::StatusTest<RealT> >               status; // Status test.
     // Initialize equality constraint.
@@ -1054,14 +1101,14 @@ int main(int argc, char *argv[]) {
     if (derivCheck) {
       // Initialize control vectors.
       Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (pFEM->numZ(), 0.0) );
-      for (int i=0; i<pFEM->numZ(); i++) {
+      for (uint i=0; i<pFEM->numZ(); i++) {
         (*yz_rcp)[i] = frac * (RealT)rand()/(RealT)RAND_MAX;
       }
       ROL::StdVector<RealT> yz(yz_rcp);
       Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
       // Initialize state vectors.
       Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (pFEM->numU(), 0.0) );
-      for (int i=0; i<pFEM->numU(); i++) {
+      for (uint i=0; i<pFEM->numU(); i++) {
       (*u_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
       }
@@ -1075,60 +1122,59 @@ int main(int argc, char *argv[]) {
       ROL::Vector_SimOpt<RealT> x(up,zp);
       ROL::Vector_SimOpt<RealT> y(yup,yzp);
       // Test equality constraint.
-      pcon->checkApplyJacobian(x,y,jv,true);
+      pcon->checkApplyJacobian(x,y,jv,true,*outStream);
       //pcon->checkApplyAdjointJacobian(x,yu,jv,x,true);
-      pcon->checkApplyAdjointHessian(x,yu,y,x,true);
+      pcon->checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
       // Test full objective function.
       pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
-      pobj->checkGradient(x,y,true);
-      pobj->checkHessVec(x,y,true);
+      pobj->checkGradient(x,y,true,*outStream);
+      pobj->checkHessVec(x,y,true,*outStream);
       // Test reduced objective function.
       robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
-      robj->checkGradient(z,yz,true);
-      robj->checkHessVec(z,yz,true);
+      robj->checkGradient(z,yz,true,*outStream);
+      robj->checkHessVec(z,yz,true,*outStream);
     }
     // Run optimization.
     for ( int j=0; j<npen; j++ ) {
-      std::cout << "\nPenalty parameter: " << pen << "\n";
+      *outStream << "\nPenalty parameter: " << pen << "\n";
       for ( int i=0; i<nreg; i++ ) {
-        std::cout << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
+        *outStream << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
         // Initialize full objective function.
         pobj = Teuchos::rcp(new Objective_TopOpt<RealT>(pFEM,frac,reg,pen,rmin));
         // Initialize reduced objective function.
         robj = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobj,pcon,up,pp));
         if ( !useTR ) {
           // Run line-search secant step.
-          parlist->set("Descent Type","Quasi-Newton Method");
-          parlist->set("Secant Type","Limited Memory SR1");
-          maxit  = std::max(maxit-100,0);
+          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
+          parlist->sublist("General").sublist("Secant").set("Type", "Limited-Memory SR1");
           if ( maxit > 0 ) {
             step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
             status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
-            algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-            algo->run(z,*robj,bound,true);
+            algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+            algo->run(z,*robj,bound,true,*outStream);
           }
           // Run line-search Newton-Krylov step.
-          parlist->set("Descent Type","Newton-Krylov");
+          parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
           step   = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
-          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,500));
-          algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-          algo->run(z,*robj,bound,true);
+          status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
+          algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+          algo->run(z,*robj,bound,true,*outStream);
         }
         else {
           // Run trust-region step.
           step   = Teuchos::rcp(new ROL::TrustRegionStep<RealT>(*parlist));
           status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol,stol,maxit));
-          algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
-          algo->run(z,*robj,bound,true);
+          algo   = Teuchos::rcp(new ROL::Algorithm<RealT>(step,status,false));
+          algo->run(z,*robj,bound,true,*outStream);
         }
         // Compute volume.
         RealT vol = 0.0;
-        for (int i=0; i<nx; i++) {
-          for (int j=0; j<ny; j++) {
+        for (uint i=0; i<nx; i++) {
+          for (uint j=0; j<ny; j++) {
             vol += (*z_rcp)[i+j*nx];
           }
         }
-        std::cout << "The volume fraction is " << vol/pFEM->numZ() << "\n";
+        *outStream << "The volume fraction is " << vol/pFEM->numZ() << "\n";
         // Increase Moreau-Yoshida regularization parameter.
         reg *= 2.0;
       }
@@ -1138,8 +1184,8 @@ int main(int argc, char *argv[]) {
       std::ofstream file;
       file.open(name.str().c_str());
       RealT val = 0.0;
-      for (int i=0; i<nx; i++) {
-        for (int j=0; j<ny; j++) {
+      for (uint i=0; i<nx; i++) {
+        for (uint j=0; j<ny; j++) {
           val = (*z_rcp)[i+j*nx];
           file << i << "  " << j << "  " << val << "\n"; 
         }

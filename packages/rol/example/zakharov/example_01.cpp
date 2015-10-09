@@ -52,6 +52,7 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterListConverters.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -89,29 +90,18 @@ int main(int argc, char *argv[]) {
 
     RCP<ParameterList> parlist = rcp(new ParameterList());
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
+    updateParametersFromXmlFile(paramfile,parlist.ptr());
 
-    parlist->set("Descent Type", "Newton-Krylov");
+   // Define algorithm.
+    ROL::Algorithm<RealT> algo("Line Search",*parlist);
 
-    // Define Step
-    ROL::LineSearchStep<RealT> step(*parlist);
-
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-13;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
-
-    // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
-
-    // Iteration Vector 
+    // Iteration vector.
     RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
 
-    // Vector of natural numbers
+    // Vector of natural numbers.
     RCP<vector> k_rcp = rcp( new vector(dim, 0.0) );
 
-    // For gradient and Hessian checks 
+    // For gradient and Hessian checks. 
     RCP<vector> xtest_rcp = rcp( new vector(dim, 0.0) );
     RCP<vector> d_rcp     = rcp( new vector(dim, 0.0) );
     RCP<vector> v_rcp     = rcp( new vector(dim, 0.0) );
@@ -131,7 +121,7 @@ int main(int argc, char *argv[]) {
     RCP<V> k = rcp(new SV(k_rcp) );
     SV x(x_rcp);
 
-    // Check gradient and Hessian
+    // Check gradient and Hessian.
     SV xtest(xtest_rcp);
     SV d(d_rcp);
     SV v(v_rcp);
@@ -144,7 +134,7 @@ int main(int argc, char *argv[]) {
     obj.checkHessVec(xtest, v, true, *outStream);                              *outStream << "\n";
     obj.checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
    
-    // Check inverse Hessian 
+    // Check inverse Hessian.
     RealT tol=0;
     obj.hessVec(hv,v,xtest,tol);
     obj.invHessVec(ihhv,hv,xtest,tol);
@@ -153,11 +143,8 @@ int main(int argc, char *argv[]) {
     *outStream << "||H^{-1}Hv-v|| = " << ihhv.norm() << std::endl;
      
 
-    // Run Algorithm
-    std::vector<std::string> output = algo.run(x, obj, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      *outStream << output[i];
-    }
+    // Run algorithm.
+    algo.run(x, obj, true, *outStream);
 
     // Get True Solution
     RCP<vector> xtrue_rcp = rcp( new vector(dim, 0.0) );
@@ -167,7 +154,7 @@ int main(int argc, char *argv[]) {
     // Compute Error
     x.axpy(-1.0, xtrue);
     RealT abserr = x.norm();
-    *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+    *outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
     if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
       errorFlag += 1;
     }

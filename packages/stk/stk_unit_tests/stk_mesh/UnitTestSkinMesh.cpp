@@ -972,7 +972,7 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
         if (mesh.is_valid(element1))
         {
             unsigned num_faces = mesh.num_faces(element1);
-            EXPECT_EQ(0u, num_faces); // should be 1 when correct
+            EXPECT_EQ(1u, num_faces);
         }
     }
 }

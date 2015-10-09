@@ -973,50 +973,48 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
     // Check derivatives.
-    obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
-    con.checkApplyJacobian(x,y,c,true);
+    obj.checkGradient(x,y,true,*outStream);
+    obj.checkHessVec(x,y,true,*outStream);
+    con.checkApplyJacobian(x,y,c,true,*outStream);
     //con.checkApplyAdjointJacobian(x,yu,c,x,true);
-    con.checkApplyAdjointHessian(x,yu,y,x,true);
+    con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
     // Check Jacobians and adjoint Jacobians.
-    con.checkAdjointConsistencyJacobian_1(c,yu,xu,xz,true);
-    con.checkAdjointConsistencyJacobian_2(c,yz,xu,xz,true);
+    con.checkAdjointConsistencyJacobian_1(c,yu,xu,xz,true,*outStream);
+    con.checkAdjointConsistencyJacobian_2(c,yz,xu,xz,true,*outStream);
     // Check solves.
-    con.checkSolve(xu,xz,c,true);
-    con.checkInverseJacobian_1(c,yu,xu,xz,true);
-    con.checkInverseAdjointJacobian_1(yu,c,xu,xz,true);
+    con.checkSolve(xu,xz,c,true,*outStream);
+    con.checkInverseJacobian_1(c,yu,xu,xz,true,*outStream);
+    con.checkInverseAdjointJacobian_1(yu,c,xu,xz,true,*outStream);
     // Check reduced objective derivatives
-    robj.checkGradient(xz,yz,true);
-    robj.checkHessVec(xz,yz,true);
-
-    // Trust-region parameter list.
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
+    robj.checkGradient(xz,yz,true,*outStream);
+    robj.checkHessVec(xz,yz,true,*outStream);
 
     // Projected Newton.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
-    ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    // Status test parameters.
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
+    // Define algorithm.
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    // Run algorithm.
     xz.zero();
     std::clock_t timer_tr = std::clock();
-    algo_tr.run(xz,robj,true);
-    std::cout << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
-              << " seconds.\n";
+    algo->run(xz, robj, true, *outStream);
+    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
+               << " seconds.\n";
 
-    // SQP.
-    RealT ctol = 1.e-12;
-    ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
-    ROL::CompositeStepSQP<RealT> step_sqp(*parlist_tr);
-    ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
+    // Composite step SQP.
+    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);
+    // Set algorithm.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
     x.zero();
     std::clock_t timer_sqp = std::clock();
-    algo_sqp.run(x,g,l,c,obj,con,true);
-    std::cout << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC 
-              << " seconds.\n";
+    algo->run(x, g, l, c, obj, con, true, *outStream);
+    *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC 
+               << " seconds.\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

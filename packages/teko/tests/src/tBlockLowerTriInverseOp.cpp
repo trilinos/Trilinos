@@ -58,6 +58,7 @@
 
 #include "Teko_Utilities.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
+#include "Test_Utils.hpp"
 
 namespace Teko {
 namespace Test {
@@ -65,7 +66,7 @@ namespace Test {
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-static const RCP<const Thyra::LinearOpBase<double> > build2x2(const RCP<const Epetra_Map> & map,double a,double b,double c,double d)
+static const RCP<const Thyra::LinearOpBase<double> > build2x2op(const RCP<const Epetra_Map> & map,double a,double b,double c,double d)
 {
    int indicies[2];
    double row0[2];
@@ -76,8 +77,8 @@ static const RCP<const Thyra::LinearOpBase<double> > build2x2(const RCP<const Ep
 
    // build a CrsMatrix
    RCP<Epetra_CrsMatrix> blk  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   row0[0] = a; row0[1] = c;  // do a transpose here!
-   row1[0] = b; row1[1] = d; 
+   row0[0] = a; row0[1] = c;
+   row1[0] = b; row1[1] = d;
    blk->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
    blk->InsertGlobalValues(1,2,&row1[0],&indicies[0]);
    blk->FillComplete();
@@ -101,27 +102,27 @@ void tBlockLowerTriInverseOp::initializeTest()
    A_->beginBlockFill(3,3);
 
    // build 0,0 matrix
-   blk = build2x2(map,  1.0,  3.0,
+   blk = build2x2op(map,  1.0,  3.0,
                         2.0, -1.0);
    A_->setBlock(0,0,blk);
 
    // build 1,0 matrix
-   blk = build2x2(map,  2.0,  9.0,
+   blk = build2x2op(map,  2.0,  9.0,
                         8.0,  3.0);
    A_->setBlock(1,0,blk);
 
    // build 1,1 matrix
-   blk = build2x2(map,  7.0,  8.0,
+   blk = build2x2op(map,  7.0,  8.0,
                        -2.0,  4.0);
    A_->setBlock(1,1,blk);
 
    // build 2,1 matrix
-   blk = build2x2(map, -1.0,  6.0,
+   blk = build2x2op(map, -1.0,  6.0,
                         2.0,  1.0);
    A_->setBlock(2,1,blk);
 
    // build 2,2 matrix
-   blk = build2x2(map,  3.0,  9.0,
+   blk = build2x2op(map,  3.0,  9.0,
                         7.0,  1.0);
    A_->setBlock(2,2,blk);
 
@@ -132,34 +133,34 @@ void tBlockLowerTriInverseOp::initializeTest()
    invA_->beginBlockFill(3,3);
 
    // build 0,0 matrix
-   blk = build2x2(map,  0.142857142857143,   0.428571428571429,
+   blk = build2x2op(map,  0.142857142857143,   0.428571428571429,
                         0.285714285714286,  -0.142857142857143);
    invA_->setBlock(0,0,blk);
    invDiag_.push_back(blk);
 
    // build 1,0 matrix
-   blk = build2x2(map, -0.454545454545455,   0.266233766233766,
+   blk = build2x2op(map, -0.454545454545455,   0.266233766233766,
                        -0.045454545454545,  -0.444805194805195);
    invA_->setBlock(1,0,blk);
 
    // build 2,0 matrix
-   blk = build2x2(map,  0.303571428571429,  -0.271103896103896, 
+   blk = build2x2op(map,  0.303571428571429,  -0.271103896103896, 
                         0.069642857142857,   0.090746753246753);
    invA_->setBlock(2,0,blk);
 
    // build 1,1 matrix
-   blk = build2x2(map,  0.090909090909091,  -0.181818181818182,
+   blk = build2x2op(map,  0.090909090909091,  -0.181818181818182,
                         0.045454545454545,   0.159090909090909);
    invA_->setBlock(1,1,blk);
    invDiag_.push_back(blk);
 
    // build 2,1 matrix
-   blk = build2x2(map, -0.050000000000000,  0.086363636363636,
+   blk = build2x2op(map, -0.050000000000000,  0.086363636363636,
                        -0.045833333333333, -0.019318181818182);
    invA_->setBlock(2,1,blk);
 
    // build 2,2 matrix
-   blk = build2x2(map, -0.016666666666667,   0.150000000000000, 
+   blk = build2x2op(map, -0.016666666666667,   0.150000000000000, 
                         0.116666666666667,  -0.050000000000000);
    invA_->setBlock(2,2,blk);
    invDiag_.push_back(blk);

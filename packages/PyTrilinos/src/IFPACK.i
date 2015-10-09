@@ -128,6 +128,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_MapColoring.h"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY

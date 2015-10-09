@@ -67,6 +67,9 @@
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "Epetra/Teko_EpetraHelpers.hpp"
 #include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Tpetra/Teko_TpetraHelpers.hpp"
+
+#include "Thyra_TpetraLinearOp.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
@@ -272,21 +275,35 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
    LinearOp modF = F;
-   const RCP<const Epetra_Operator> epF = Thyra::get_Epetra_Operator(*F);
-   if(epF!=Teuchos::null && rowZeroingNeeded_) {
-      // try to get a CRS matrix
-      const RCP<const Epetra_CrsMatrix> crsF = rcp_dynamic_cast<const Epetra_CrsMatrix>(epF);
+   if(!Teko::TpetraHelpers::isTpetraLinearOp(F)){ // Epetra
+     const RCP<const Epetra_Operator> epF = Thyra::get_Epetra_Operator(*F);
+     if(epF!=Teuchos::null && rowZeroingNeeded_) {
+        // try to get a CRS matrix
+        const RCP<const Epetra_CrsMatrix> crsF = rcp_dynamic_cast<const Epetra_CrsMatrix>(epF);
 
-      // if it is a CRS matrix get rows that need to be zeroed
-      if(crsF!=Teuchos::null) {
-         std::vector<int> zeroIndices;
+        // if it is a CRS matrix get rows that need to be zeroed
+        if(crsF!=Teuchos::null) {
+           std::vector<int> zeroIndices;
           
-         // get rows in need of zeroing
-         Teko::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
+           // get rows in need of zeroing
+           Teko::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
 
-         // build an operator that zeros those rows
-         modF = Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndices,crsF)));
-      }
+           // build an operator that zeros those rows
+           modF = Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndices,crsF)));
+        }
+     }
+   } else { //Tpetra
+     ST scalar = 0.0;
+     bool transp = false;
+     RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsF = Teko::TpetraHelpers::getTpetraCrsMatrix(F, &scalar, &transp);
+
+     std::vector<GO> zeroIndices;
+          
+     // get rows in need of zeroing
+     Teko::TpetraHelpers::identityRowIndices(*crsF->getRowMap(), *crsF,zeroIndices);
+
+     // build an operator that zeros those rows
+      modF = Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crsF->getDomainMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crsF->getRangeMap()),rcp(new Teko::TpetraHelpers::ZeroedOperator(zeroIndices,crsF)));
    }
 
    // compute gamma

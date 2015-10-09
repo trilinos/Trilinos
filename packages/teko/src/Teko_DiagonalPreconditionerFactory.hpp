@@ -50,6 +50,7 @@
 // Teko includes
 #include "Teko_PreconditionerState.hpp"
 #include "Teko_PreconditionerFactory.hpp"
+#include "Tpetra/Teko_TpetraHelpers.hpp"
 
 class EpetraExt_PointToBlockDiagPermute; 
 
