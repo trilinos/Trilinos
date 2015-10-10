@@ -49,8 +49,8 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_BoundConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -231,12 +231,12 @@ int main(int argc, char *argv[]) {
       ROL::StdVector<RealT> c(c_rcp);
       ROL::StdVector<RealT> l(l_rcp);
       
-      ROL::Algorithm<RealT> algo_sqp("Composite Step SQP",*parlist);
+      ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist);
       //x.zero();
-      std::clock_t timer_sqp = std::clock();
-      algo_sqp.run(x,g,l,c,obj,con,true,*outStream);
+      std::clock_t timer_cs = std::clock();
+      algo_cs.run(x,g,l,c,obj,con,true,*outStream);
       *outStream << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
-      *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
+      *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
 		 << " seconds.\n";
     }
     soln.axpy(-1.0, z);

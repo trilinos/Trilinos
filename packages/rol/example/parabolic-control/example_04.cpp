@@ -49,9 +49,9 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_StatusTest.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_StdVector.hpp"
@@ -803,17 +803,17 @@ int main(int argc, char *argv[]) {
     *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
 
-    // Composite step SQP.
+    // Composite step.
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Set algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     x.zero();
-    std::clock_t timer_sqp = std::clock();
+    std::clock_t timer_cs = std::clock();
     algo->run(x, g, l, c, obj, con, true, *outStream);
-    *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC 
                << " seconds.\n";
   }
   catch (std::logic_error err) {

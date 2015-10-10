@@ -53,7 +53,7 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_AugmentedLagrangianStep.hpp"
 #include "ROL_MoreauYosidaPenaltyStep.hpp"
 #include "ROL_BundleStep.hpp"
@@ -71,7 +71,7 @@ namespace ROL {
       switch(els) {
         case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
         case STEP_BUNDLE:              return Teuchos::rcp( new BundleStep<Real>(parlist) );
-        case STEP_COMPOSITESTEPSQP:    return Teuchos::rcp( new CompositeStepSQP<Real>(parlist) );
+        case STEP_COMPOSITESTEP:       return Teuchos::rcp( new CompositeStep<Real>(parlist) );
         case STEP_LINESEARCH:          return Teuchos::rcp( new LineSearchStep<Real>(parlist) );
         case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new MoreauYosidaPenaltyStep<Real>(parlist) );
         case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new PrimalDualActiveSetStep<Real>(parlist) );

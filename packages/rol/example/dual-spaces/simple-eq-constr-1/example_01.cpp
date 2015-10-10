@@ -48,8 +48,8 @@
 
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTestSQP.hpp"
-#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
 
     // Define algorithm.
     Teuchos::ParameterList parlist;
-    std::string stepname = "Composite Step SQP";
+    std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-2);
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);

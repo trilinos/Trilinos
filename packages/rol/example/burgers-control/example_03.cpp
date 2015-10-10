@@ -159,12 +159,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zTR = z.clone();
     zTR->set(z);
 
-    // Solve using composite step SQP.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
+    // Solve using a composite step method.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     x.zero();
-    std::clock_t timer_sqp = std::clock();
+    std::clock_t timer_cs = std::clock();
     algo->run(x,g,l,c,obj,con,true,*outStream);
-    *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
+    *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
     // Compute error between solutions

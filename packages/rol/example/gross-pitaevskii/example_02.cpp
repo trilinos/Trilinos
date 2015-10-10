@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 
 
     // Define algorithm.
-    std::string stepname = "Composite Step SQP";
+    std::string stepname = "Composite Step";
     parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-4);
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);

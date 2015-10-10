@@ -147,7 +147,7 @@ namespace ROL {
 
       \arg    AUGMENTEDLAGRANGIAN     describe
       \arg    BUNDLE                  describe
-      \arg    COMPOSITESTEPSQP        describe
+      \arg    COMPOSITESTEP           describe
       \arg    LINESEARCH              describe
       \arg    MOREAUYOSIDAPENALTY     describe
       \arg    PRIMALDUALACTIVESET     describe
@@ -156,7 +156,7 @@ namespace ROL {
   enum EStep{
     STEP_AUGMENTEDLAGRANGIAN = 0,
     STEP_BUNDLE,
-    STEP_COMPOSITESTEPSQP,
+    STEP_COMPOSITESTEP,
     STEP_LINESEARCH,
     STEP_MOREAUYOSIDAPENALTY,
     STEP_PRIMALDUALACTIVESET,
@@ -169,7 +169,7 @@ namespace ROL {
     switch(tr) {
       case STEP_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian";   break;
       case STEP_BUNDLE:              retString = "Bundle";                 break;
-      case STEP_COMPOSITESTEPSQP:    retString = "Composite Step SQP";     break;
+      case STEP_COMPOSITESTEP:       retString = "Composite Step";         break;
       case STEP_LINESEARCH:          retString = "Line Search";            break;
       case STEP_MOREAUYOSIDAPENALTY: retString = "Moreau-Yosida Penalty";  break;
       case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
@@ -188,7 +188,7 @@ namespace ROL {
   inline int isValidStep(EStep ls) {
     return( (ls == STEP_AUGMENTEDLAGRANGIAN) ||
             (ls == STEP_BUNDLE) ||
-            (ls == STEP_COMPOSITESTEPSQP) ||
+            (ls == STEP_COMPOSITESTEP) ||
             (ls == STEP_LINESEARCH) ||
             (ls == STEP_MOREAUYOSIDAPENALTY) ||
             (ls == STEP_PRIMALDUALACTIVESET) ||
@@ -1243,7 +1243,7 @@ namespace ROL {
               \mbox{subject to} & c(x) = 0 \,.
             \end{array}
           \f]
-          Equality constraints are handled in ROL using matrix-free sequential quadratic programming (SQP).
+          Equality constraints are handled in ROL using, for example, matrix-free composite-step methods, including sequential quadratic programming (SQP).
           The user implements the methods of the #ROL::EqualityConstraint interface.
       \li @b Type-EB. Equality and bound constraints:
           \f[
@@ -1262,7 +1262,7 @@ namespace ROL {
               &&&&&& s \ge 0 \,.
             \end{array}
           \f]
-          ROL uses a combination of matrix-free SQP, projection methods and primal-dual active set methods to solve these problems.
+          ROL uses a combination of matrix-free composite-step methods, projection methods and primal-dual active set methods to solve these problems.
           The user implements the methods of the #ROL::EqualityConstraint and the #ROL::BoundConstraint interfaces.
 
     Third, ROL's design enables streamlined algorithmic extensions, such as the \ref stochastic_group capability.

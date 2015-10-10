@@ -44,7 +44,7 @@
 /*! \file  example_02.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
 	   the SimOpt interface.  We solve the control problem using Composite
-           Step SQP and trust regions.
+           Step and trust regions.
 */
 
 #include "example_02.hpp"
@@ -143,15 +143,15 @@ int main(int argc, char *argv[]) {
     // Declare ROL algorithm pointer.
     Teuchos::RCP<ROL::Algorithm<RealT> > algo;
 
-    // Run optimization with Composite Step SQP.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step SQP",*parlist,false));
+    // Run optimization with Composite Step.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
     z.zero();
     con.solve(u,z,zerotol);
     c.zero(); l.zero();
     algo->run(x, g, l, c, obj, con, true, *outStream);
-    Teuchos::RCP<ROL::Vector<RealT> > zSQP = z.clone();
-    zSQP->set(z);
+    Teuchos::RCP<ROL::Vector<RealT> > zCS = z.clone();
+    zCS->set(z);
 
     // Run Optimization with Trust-Region algorithm.
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     // Check solutions.
     Teuchos::RCP<ROL::Vector<RealT> > err = z.clone();
-    err->set(*zSQP); err->axpy(-1.,z);
+    err->set(*zCS); err->axpy(-1.,z);
     errorFlag += ((err->norm()) > 1.e-8) ? 1 : 0;
   }
   catch (std::logic_error err) {

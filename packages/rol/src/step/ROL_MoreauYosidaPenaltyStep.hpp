@@ -166,7 +166,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step SQP",*parlist_,false));
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",*parlist_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
     s.set(*x_); s.axpy(-1.0,x);

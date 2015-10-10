@@ -44,7 +44,7 @@
 #ifndef ROL_INTERIORPOINTSTEP_H
 #define ROL_INTERIORPOINTSTEP_H
 
-#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_InteriorPoint.hpp"
 #include "ROL_Types.hpp"
 
@@ -90,7 +90,7 @@ public:
     
     ParameterList& iplist  = parlist.sublist("Step").sublist("Interior Point");
     ParameterList& stlist  = parlist.sublist("Status Test");
-    ParameterList& sqplist = parlist.sublist("Step").sublist("Composite Step SQP");  
+    ParameterList& cslist = parlist.sublist("Step").sublist("Composite Step");  
 
 
     // Interior Point parameters
@@ -110,7 +110,7 @@ public:
      
     parlist_ = Teuchos::rcp(&parlist, false);
 
-    step_ = Teuchos::rcp(new CompositeStepSQP<Real>(sqplist) );
+    step_ = Teuchos::rcp(new CompositeStep<Real>(cslist) );
 
   }
 
@@ -161,7 +161,7 @@ public:
                 AlgorithmState<Real> &algo_state ) {
 
     // Reset the status test
-    status_ = Teuchos::rcp( new StatusTestSQP<Real>(gtol_,ctol_,stol_,maxit_) );
+    status_ = Teuchos::rcp( new ConstraintStatusTest<Real>(gtol_,ctol_,stol_,maxit_) );
 
     // Create the algorithm 
     algo_ = Teuchos::rcp( new DefaultAlgorithm<Real>(step_,status_,false) );
