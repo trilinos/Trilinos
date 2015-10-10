@@ -155,7 +155,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
 
   # <double, int, long long int>
-   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+  IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
     GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT ON)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT ON)
   ELSE()
@@ -217,6 +217,7 @@ ENDIF()
 # The HAVE_MUELU_TPETRA_INST_INT_INT flag is enabled if Tpetra is enabled
 # with TPETRA_INST_INT_INT. This flag is used to control whether we need
 # special stub implementations for the MueLu::Tpetra stack with GO=int.
+# taw 9 Oct 2015: This is independent from ETI on/off
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
   SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
