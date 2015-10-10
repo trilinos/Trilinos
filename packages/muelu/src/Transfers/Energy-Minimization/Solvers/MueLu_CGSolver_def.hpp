@@ -110,9 +110,13 @@ namespace MueLu {
 
     // R_0 = -A*X_0
     R = MatrixFactory2::BuildCopy(T);
+#if 0 // TAW: what is this????
 #ifdef HAVE_MUELU_TPETRA
     if (useTpetra)
       Utils::Op2NonConstTpetraCrs(R)->resumeFill();
+#endif
+#else
+    R->resumeFill();
 #endif
     R->scale(-one);
     if (useTpetra)
