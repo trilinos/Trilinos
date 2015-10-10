@@ -575,6 +575,8 @@ public:
     @brief Xpetra utility class containing IO routines to read/write vectors, matrices.
 
     Specialization for LO=GO=int
+
+    TODO: do we need specialization for SC=double and std::complex<>???
  */
 template <class Scalar,class Node>
 class IO<Scalar,int,int,Node> {
@@ -967,7 +969,7 @@ public:
 
       RCP<const map_type>   temp = toTpetra(map);
       RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
-      RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
+      RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >      rmv  = Xpetra::toXpetra(TMV);
       return rmv;
 #else
   throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra GO=int support.");
