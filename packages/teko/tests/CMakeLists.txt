@@ -1,17 +1,20 @@
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/src/Epetra)
+TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra)
 
 SET(HEADERS "")
 SET(SOURCES "")
 
 APPEND_GLOB( HEADERS 
   ./src/Epetra/*.hpp
+  ./src/Tpetra/*.hpp
   ./src/*.hpp
 )
 
 APPEND_GLOB( SOURCES 
   ./src/Epetra/*.cpp
+  ./src/Tpetra/*.cpp
   ./src/*.cpp
 )
 
@@ -35,6 +38,31 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
    testdriver
+   ARGS
+   NUM_MPI_PROCS 1
+   FAIL_REGULAR_EXPRESSION "Teko tests failed"
+   )
+
+TRIBITS_ADD_EXECUTABLE(
+  testdriver_tpetra
+  SOURCES
+      ${HEADERS}
+      ${SOURCES}
+      ./Test_Utils.cpp
+      ./Test_Utils.hpp
+      ./testdriver_tpetra.cpp
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_TEST(
+   testdriver_tpetra
+   ARGS
+   NUM_MPI_PROCS 4
+   FAIL_REGULAR_EXPRESSION "Teko tests failed"
+   )
+
+TRIBITS_ADD_TEST(
+   testdriver_tpetra
    ARGS
    NUM_MPI_PROCS 1
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
@@ -68,6 +96,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
   EXEDEPS testdriver
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(testdriver_tpetra_copyfiles
+  SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
+  EXEDEPS testdriver_tpetra
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

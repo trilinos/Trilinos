@@ -141,16 +141,16 @@ int main(int argc, char *argv[]) {
     // Get input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    // Build DefualtAlgorithm.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+    // Build Algorithm pointer.
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo;
 
     // Solve using trust regions.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     z.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(z,robj,true,*outStream);
@@ -159,12 +159,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > zTR = z.clone();
     zTR->set(z);
 
-    // Solve using composite step SQP.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Composite Step SQP",*parlist,false));
+    // Solve using a composite step method.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     x.zero();
-    std::clock_t timer_sqp = std::clock();
+    std::clock_t timer_cs = std::clock();
     algo->run(x,g,l,c,obj,con,true,*outStream);
-    *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
+    *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
     // Compute error between solutions

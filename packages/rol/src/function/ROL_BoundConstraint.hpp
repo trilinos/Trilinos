@@ -451,6 +451,19 @@ public:
     this->pruneActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
   }
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+    tmp->set(v);
+    this->pruneLowerActive(*tmp,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+    tmp->set(v);
+    this->pruneUpperActive(*tmp,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -464,6 +477,18 @@ public:
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,g,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+    tmp->set(v);
+    this->pruneLowerActive(*tmp,g,x,eps);
+    v.axpy(-1.0,*tmp);
+  }
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
+    tmp->set(v);
+    this->pruneUpperActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
  

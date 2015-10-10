@@ -84,8 +84,11 @@ public:
   ~AugmentedLagrangian() {}
 
   AugmentedLagrangian(Objective<Real> &obj, EqualityConstraint<Real> &con, 
-                const ROL::Vector<Real> &x, const ROL::Vector<Real> &c)
-    : mu_(0.0), fval_(0.0), isConEvaluated_(false), ncval_(0), nfval_(0), ngval_(0) {
+                const ROL::Vector<Real> &x, const ROL::Vector<Real> &c,
+                const bool flag, const int HessianLevel = 1)
+    : mu_(0.0), fval_(0.0), isConEvaluated_(false),
+      ncval_(0), nfval_(0), ngval_(0),
+      flag_(flag), HessianLevel_(HessianLevel) {
     obj_ = Teuchos::rcp(&obj, false);
     con_ = Teuchos::rcp(&con, false);
     c_    = c.clone();
@@ -93,8 +96,6 @@ public:
     dc2_  = c.clone();
     lam_  = c.dual().clone();
     dlam_ = c.dual().clone();
-    flag_ = true;
-    HessianLevel_ = 1;
   }
 
   void updateMultipliers(Vector<Real> &lam, Real mu) {
@@ -166,10 +167,10 @@ public:
     // Compute Augmented Lagrangian value
     Real val = 0.0;
     if (flag_) {
-      val = (fval_ - cval)/mu_ + 0.5*pval;
+      val = (fval_ + cval)/mu_ + 0.5*pval;
     }
     else {
-      val = fval_ - cval + 0.5*mu_*pval;
+      val = fval_ + cval + 0.5*mu_*pval;
     }
     nfval_++;
     return val;
@@ -194,12 +195,12 @@ public:
     // Compute gradient of Augmented Lagrangian
     dlam_->set(c_->dual());
     if ( flag_ ) {
-      g.scale(1.0/mu_);
-      dlam_->axpy(-1.0/mu_,*lam_);
+      g.scale(1./mu_);
+      dlam_->axpy(1./mu_,*lam_);
     }
     else {
       dlam_->scale(mu_);
-      dlam_->axpy(-1.0,*lam_);
+      dlam_->plus(*lam_);
     }
     con_->applyAdjointJacobian(*dc1_,*dlam_,x,tol);
     g.plus(*dc1_);
@@ -223,42 +224,30 @@ public:
     }
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
-    // Apply Augmented Lagrangia Hessian to a vector
-    if (HessianLevel_ == 0) {
-      dlam_->set(c_->dual());
-    }
-    else if (HessianLevel_ == 1) {
-      dlam_->set(*lam_);
-    }
-    if ( flag_ ) {
-      hv.scale(1.0/mu_);
-      if (HessianLevel_ == 0) {
-        dlam_->axpy(-1.0/mu_,*lam_);
-      }
-      else if (HessianLevel_ == 1) {
-        dlam_->scale(-1.0/mu_);
-      }
-    }
-    else {
-      if (HessianLevel_ == 0) {
-        dlam_->scale(mu_);
-        dlam_->axpy(-1.0,*lam_);
-      }
-      else if (HessianLevel_ == 1) {
-        dlam_->scale(-1.0);
-      }
-    }
     if (HessianLevel_ < 2) {
-      con_->applyAdjointHessian(*dc1_,*dlam_,v,x,tol);
-      hv.plus(*dc1_);
-    }
-    con_->applyJacobian(*dc2_,v,x,tol);
-    con_->applyAdjointJacobian(*dc1_,dc2_->dual(),x,tol);
-    if (flag_) {
-      hv.plus(*dc1_);
-    }
-    else {
-      hv.axpy(mu_,*dc1_);
+      con_->applyJacobian(*dc2_,v,x,tol);
+      con_->applyAdjointJacobian(*dc1_,dc2_->dual(),x,tol);
+      if (flag_) {
+        hv.scale(1./mu_);
+        hv.plus(*dc1_);
+      }
+      else {
+        hv.axpy(mu_,*dc1_);
+      }
+
+      if (HessianLevel_ == 0) {
+        // Apply Augmented Lagrangian Hessian to a vector
+        dlam_->set(c_->dual());
+        if ( flag_ ) {
+          dlam_->axpy(1./mu_,*lam_);
+        }
+        else {
+          dlam_->scale(mu_);
+          dlam_->plus(*lam_);
+        }
+        con_->applyAdjointHessian(*dc1_,*dlam_,v,x,tol);
+        hv.plus(*dc1_);
+      }
     }
   }
 

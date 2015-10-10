@@ -380,7 +380,8 @@ Piro::PerformROLAnalysis(
   }
 
   // Define Step
-  ROL::LineSearchStep<double> step(rolParams.sublist("ROL Options"));
+  Teuchos::RCP<ROL::LineSearchStep<double> > step = 
+    Teuchos::rcp(new ROL::LineSearchStep<double>(rolParams.sublist("ROL Options")));
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
   *out << std::endl;
@@ -390,10 +391,11 @@ Piro::PerformROLAnalysis(
   double gtol  = rolParams.get("Gradient Tolerance", 1e-5);  // norm of gradient tolerance
   double stol  = rolParams.get("Step Tolerance", 1e-5);  // norm of step tolerance
   int   maxit = rolParams.get("Max Iterations", 100);    // maximum number of iterations
-  ROL::StatusTest<double> status(gtol, stol, maxit);
+  Teuchos::RCP<ROL::StatusTest<double> > status =
+    Teuchos::rcp(new ROL::StatusTest<double>(gtol, stol, maxit));
 
   // Define Algorithm
-  ROL::DefaultAlgorithm<double> algo(step,status,print);
+  ROL::Algorithm<double> algo(step,status,print);
 
   // Run Algorithm
   std::vector<std::string> output;

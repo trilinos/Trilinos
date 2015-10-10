@@ -82,7 +82,7 @@ using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 using Thyra::epetraLinearOp;
 
-RCP<Teuchos::ParameterList> buildLibPL(int numTerms,std::string scalingType)
+static RCP<Teuchos::ParameterList> buildLibPL(int numTerms,std::string scalingType)
 {
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
    RCP<Teuchos::ParameterList> nList = rcp(new Teuchos::ParameterList());

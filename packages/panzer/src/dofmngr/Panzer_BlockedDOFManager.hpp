@@ -311,6 +311,9 @@ public:
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() 
    { return connMngr_; } 
 
+   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return getConnManager(); }
+
    /** build the global unknown numberings
      *   1. this builds the pattens
      *   2. Build a default geometric pattern to pass to the connection manager

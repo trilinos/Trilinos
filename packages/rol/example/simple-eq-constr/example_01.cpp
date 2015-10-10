@@ -49,8 +49,8 @@
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -87,11 +87,6 @@ int main(int argc, char *argv[]) {
 
     // Retrieve objective, constraint, iteration vector, solution vector.
     ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
-
-    Teuchos::ParameterList parlist;
-    // Define Step
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-2);
-    ROL::CompositeStepSQP<RealT> step(parlist);
 
     // Run derivative checks, etc.
     int dim = 5;
@@ -134,25 +129,22 @@ int main(int argc, char *argv[]) {
     RealT augtol = 1e-8;
     constr->solveAugmentedSystem(v1, v2, d, vc, xtest, augtol);
     
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-18;  // norm of step tolerance
-    int   maxit = 1000;    // maximum number of iterations
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
-
-    // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step, status, false);
+    // Define algorithm.
+    Teuchos::ParameterList parlist;
+    std::string stepname = "Composite Step";
+    parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-2);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
     // Run Algorithm
     vl.zero();
     //(*x_rcp)[0] = 3.0; (*x_rcp)[1] = 2.0; (*x_rcp)[2] = 2.0; (*x_rcp)[3] = 1.0; (*x_rcp)[4] = 1.0;
     //(*x_rcp)[0] = -5.0; (*x_rcp)[1] = -5.0; (*x_rcp)[2] = -5.0; (*x_rcp)[3] = -6.0; (*x_rcp)[4] = -6.0;
 
-    std::vector<std::string> output = algo.run(x, g, vl, vc, *obj, *constr, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      *outStream << output[i];
-    }
+    algo.run(x, g, vl, vc, *obj, *constr, true, *outStream);
 
     // Compute Error
     *outStream << "\nReference solution x_r =\n";

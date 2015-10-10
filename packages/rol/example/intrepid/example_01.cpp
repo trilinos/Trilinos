@@ -47,8 +47,8 @@
 
 #include "ROL_Vector_SimOpt.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 
 // Minimize (1/2)*||u-utarget||^2+(gamma/2)||z||^2
 // 
@@ -162,20 +162,20 @@ int main(int argc, char *argv[]) {
     // Equality Constraint
     RCP<EqualityConstraint_SimOpt<RealT>> con = rcp( new BVPConstraint<RealT>(disc) );
  
-    obj->checkGradient(uz,y,true);
-    obj->checkHessVec(uz,y,true);
+    obj->checkGradient(uz,y,true,*outStream);
+    obj->checkHessVec(uz,y,true,*outStream);
 
-    con->checkApplyJacobian(uz,y,c,true);
-    con->checkApplyAdjointHessian(uz,yz,y,uz,true);
+    con->checkApplyJacobian(uz,y,c,true,*outStream);
+    con->checkApplyAdjointHessian(uz,yz,y,uz,true,*outStream);
 
-    con->checkInverseJacobian_1(c,yu,u,z,true);
-    con->checkInverseAdjointJacobian_1(c,yu,u,z,true);
+    con->checkInverseJacobian_1(c,yu,u,z,true,*outStream);
+    con->checkInverseAdjointJacobian_1(c,yu,u,z,true,*outStream);
 
-    con->checkAdjointConsistencyJacobian_1(w,v,u,z,true);
-    con->checkAdjointConsistencyJacobian_2(w,v,u,z,true);
+    con->checkAdjointConsistencyJacobian_1(w,v,u,z,true,*outStream);
+    con->checkAdjointConsistencyJacobian_2(w,v,u,z,true,*outStream);
  
     // --------------------
-    // End dervative checks 
+    // End derivative checks 
     // --------------------
 
   
@@ -183,26 +183,18 @@ int main(int argc, char *argv[]) {
     // Run optimization 
     // ----------------  
 
+    // Define algorithm.
     Teuchos::ParameterList parlist;
-    
-    // Define Step
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",80);
-    parlist.set("Absolute Krylov Tolerance",1e-4);
+    std::string stepname = "Composite Step";
+    parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-4);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    Algorithm<RealT> algo(stepname, parlist);
 
-    CompositeStepSQP<RealT> step(parlist);
-
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
-
-    // Define Algorithm
-    DefaultAlgorithm<RealT> algo(step,status,false);
-
-    std::vector<std::string> output = algo.run(uz,g,l,c,*obj,*con,true,*outStream);
+    // Run algorithm.
+    algo.run(uz,g,l,c,*obj,*con,true,*outStream);
 
   } 
   catch ( std::logic_error err ) {

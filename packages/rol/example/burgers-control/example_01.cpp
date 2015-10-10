@@ -52,6 +52,14 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef std::vector<RealT>    vector;
+  typedef ROL::Vector<RealT>    V;
+  typedef ROL::StdVector<RealT> SV;
+  
+  typedef typename vector::size_type uint;
+
+  using Teuchos::RCP;  using Teuchos::rcp;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -69,31 +77,39 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 1028;  // Set spatial discretization.
+    uint nx     = 1028;  // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 0.0) );
-    for (int i=0; i<nx+2; i++) {
+    RCP<vector> x_rcp = rcp( new vector(nx+2, 1.0) );
+    RCP<vector> y_rcp = rcp( new vector(nx+2, 0.0) );
+    for (uint i=0; i<nx+2; i++) {
       (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    ROL::StdVector<RealT> x(x_rcp);
-    ROL::StdVector<RealT> y(y_rcp);
+
+    SV x(x_rcp);
+    SV y(y_rcp);
+
     // Check deriatives.
     obj.checkGradient(x,x,y,true,*outStream);
     obj.checkHessVec(x,x,y,true,*outStream);
+
     // Initialize Constraints
-    BoundConstraint_BurgersControl<RealT> icon(nx+2);
+    RCP<vector> l_rcp = rcp(new vector(nx+2,0.0) );
+    RCP<vector> u_rcp = rcp(new vector(nx+2,1.0) );
+    RCP<V> lo = rcp( new SV(l_rcp) );
+    RCP<V> up = rcp( new SV(u_rcp) ); 
+      
+    ROL::BoundConstraint<RealT> icon(lo,up);
 
     // ROL components.
-    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+    RCP<ROL::Algorithm<RealT> > algo;
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    RCP<Teuchos::ParameterList> parlist = rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
@@ -108,7 +124,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -120,12 +136,12 @@ int main(int argc, char *argv[]) {
     }
     file_pdas.close();
 
-    // Projected Newtion.
+    // Projected Newton.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);

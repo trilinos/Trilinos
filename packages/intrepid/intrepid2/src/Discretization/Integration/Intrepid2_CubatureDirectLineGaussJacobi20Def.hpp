@@ -52,7 +52,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectLineGaussJacobi20(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 1;
-  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM),
+  TEUCHOS_TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectLineGaussJacobi20): No cubature rule implemented for the desired polynomial degree.");
 } // end constructor
@@ -68,7 +68,7 @@ const CubatureTemplate *  CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,Arra
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
-  return INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM;
+  return INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM;
 }
 
 
@@ -81,7 +81,7 @@ const char* CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::getN
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const char* CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_LINE_GAUSSJACOBI20";
+const char* CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID2_CUBATURE_LINE_GAUSSJACOBI20";
 
 
 //-------------------------------------------------------------------------------------//
@@ -99,7 +99,7 @@ const char* CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::cuba
 */
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const CubatureTemplate CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1] =
+const CubatureTemplate CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1] =
 {
 
   // Collection of GaussJacobi20 rules on [-1,1]
