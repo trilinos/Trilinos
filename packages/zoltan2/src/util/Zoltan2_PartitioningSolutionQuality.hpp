@@ -180,7 +180,7 @@ public:
   GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
-    const RCP<const Adapter> &ia, 
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
 
   /*! \brief Return the graph metric values.
@@ -262,7 +262,7 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
-  const RCP<const Adapter> &ia, 
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
     metrics_(),  metricsConst_()

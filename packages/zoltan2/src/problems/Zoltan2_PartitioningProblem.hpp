@@ -652,7 +652,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       try{
 	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
-			     this->graphModel_, this->inputAdapter_,
+			     this->graphModel_, this->baseInputAdapter_,
 			     solutionConst);
       }
       Z2_FORWARD_EXCEPTIONS
