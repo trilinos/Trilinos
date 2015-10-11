@@ -112,11 +112,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   out.setShowProcRank(true);
 
   // clean rows associated with boundary conditions
-  Utils::findDirichletRows(SM_Matrix_,BCrows_);
-  Utils::findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+  findDirichletRows(SM_Matrix_,BCrows_);
+  findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
   D0_Matrix_->resumeFill();
-  Utils::Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
-  Utils::Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
+  Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
+  Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
   D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -126,7 +126,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
   TMT_Matrix_->resumeFill();
-  Utils::Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
+  Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -156,7 +156,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
   A22_->resumeFill();
-  Utils::Remove_Zeroed_Rows(A22_,1.0e-16);
+  Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
 
   // Use HierarchyManagers to build 11 & 22 Hierarchies
@@ -231,8 +231,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
-  Utils::Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
-  Utils::Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
+  Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
+  Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
