@@ -645,7 +645,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     metrics_ = rcp(quality);
 
-    if (algName_==std::string("scotch") || algName_==std::string("parmetis")){
+    if (modelAvail_[GraphModelType] == true){
       typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
       gpsq_t *graphQuality = NULL;
