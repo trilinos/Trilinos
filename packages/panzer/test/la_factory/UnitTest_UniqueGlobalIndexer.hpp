@@ -174,6 +174,11 @@ public:
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
 
+   /** Not needed, so return null.
+     */
+   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return Teuchos::null; }
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<LocalOrdinalT> > elements_; // local element IDs
@@ -294,6 +299,11 @@ public:
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
 
+   /** Not needed, so return null.
+     */
+   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return Teuchos::null; }
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<LocalOrdinalT> > elements_; // local element IDs
@@ -412,6 +422,11 @@ public:
 
    int getElementBlockGIDCount(const std::string &) const { TEUCHOS_ASSERT(false); }
    int getElementBlockGIDCount(const std::size_t &) const { TEUCHOS_ASSERT(false); }
+
+   /** Not needed, so return null.
+     */
+   virtual Teuchos::RCP<const panzer::ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return Teuchos::null; }
 
 private:
    int procRank_;

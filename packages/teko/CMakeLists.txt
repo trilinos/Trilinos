@@ -9,11 +9,30 @@ TRIBITS_PACKAGE(Teko)
 #
 # B) Set up package-specific options
 #
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_USE_LONGLONG_GO
+  HAVE_${PACKAGE_NAME}_USE_LONGLONG_GO
+  "Use long long for global ordinal"
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Ifpack2_Trilinos
+  HAVE_${PACKAGE_NAME}_ENABLE_Ifpack2
+  "Enable Ifpack2 preconditioners"
+  OFF
+  )
 
 #TRIBITS_ADD_OPTION_AND_DEFINE(Teko_ENABLE_BLOCK_SMOOTHERS
 #  Teko_ENABLE_ML_SMOOTHERS
 #  "Enable ml block smoothers."
 #  OFF )
+
+IF(${PACKAGE_NAME}_ENABLE_MueLu)
+   GLOBAL_SET(HAVE_MUELU ON)
+ELSE()
+   GLOBAL_SET(HAVE_MUELU OFF)
+ENDIF()
 
 # Enable ML block Smoothers
 IF(ML_ENABLE_TekoSmoothers)

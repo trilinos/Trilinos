@@ -332,4 +332,59 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    /////////////////////////////////////////////////////////////
 }
 
+namespace {
+void testAssociatedNeighbors(const STKConnManager<int>& connMngr, const int vals[][3],
+                             Teuchos::FancyOStream& out, bool& success)
+{
+  for (int i = 0; i < sizeof(vals)/sizeof(*vals); ++i) {
+    const std::size_t sz = connMngr.getAssociatedNeighbors(vals[i][0]).size();
+    TEST_EQUALITY(sz, vals[i][1]);
+    if (sz)
+      TEST_EQUALITY(connMngr.getAssociatedNeighbors(vals[i][0])[0], vals[i][2]);  
+  }
+}
+}
+
+TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
+{
+   using Teuchos::RCP;
+
+   const int numProcs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   const int myRank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+
+   const RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
+   TEST_ASSERT( ! mesh.is_null());
+
+   RCP<const panzer::FieldPattern>
+     fp = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+
+   STKConnManager<int> connMngr(mesh);
+   connMngr.associateElementsInSideset("vertical_0");
+   connMngr.associateElementsInSideset("left");
+   connMngr.buildConnectivity(*fp);
+   {
+     Teuchos::RCP<Teuchos::Comm<int> >
+       comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD));
+     std::vector<std::string> ss = connMngr.checkAssociateElementsInSidesets(*comm);
+     TEST_EQUALITY(ss.size(), 1);
+     TEST_EQUALITY(ss[0], "left");
+   }
+
+   if (numProcs == 1) {
+     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}, {2, 1, 1}, {3, 0, 0}};
+     testAssociatedNeighbors(connMngr, vals, out, success);
+   } else if (numProcs == 2 && myRank == 0) {
+     const int vals[][3] = {{0, 0, 0}, {1, 1, 2}};
+     testAssociatedNeighbors(connMngr, vals, out, success);
+   } else if (numProcs == 2 && myRank == 1) {
+     const int vals[][3] = {{0, 1, 3}, {1, 0, 0}};
+     testAssociatedNeighbors(connMngr, vals, out, success);
+   }
+   else {
+     // We'll not check any other cases here. Interface connection
+     // correctness is tested in much greater detail in
+     //     adapters/stk/example/PoissonInterfaceExample/main.cpp.
+   }
+}
+
 }

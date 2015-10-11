@@ -302,7 +302,6 @@ private:
     std::vector<Real> s(this->nx_,0.0);
     std::vector<Real> utmp(this->nx_,0.0);
     for (int i=0; i<maxit; i++) {
-      //std::cout << i << "  " << rnorm << "\n";
       // Get Jacobian
       this->compute_pde_jacobian(d,o,u);
       // Solve Newton system
@@ -684,34 +683,33 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> x(x_rcp);
     ROL::StdVector<RealT> y(y_rcp);
     // Check deriatives.
-    obj.checkGradient(x,y,true);
-    obj.checkHessVec(x,y,true);
+    obj.checkGradient(x,y,true,*outStream);
+    obj.checkHessVec(x,y,true,*outStream);
     // Initialize Constraints
     BoundConstraint_ParabolicControl<RealT> icon(nt);
 
     // Primal dual active set.
-    Teuchos::ParameterList parlist;
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Krylov parameters.
-    parlist.set("Absolute Krylov Tolerance",              1.e-8);
-    parlist.set("Relative Krylov Tolerance",              1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",    50);
+    parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
+    parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
+    parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // PDAS parameters.
-    parlist.set("PDAS Relative Step Tolerance",           1.e-8);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-6);
-    parlist.set("PDAS Maximum Number of Iterations",      10);
-    parlist.set("PDAS Dual Scaling",                      (alpha>0.0) ? alpha : 1.e-4 );      
-    // Define step.
-    ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
-    // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-8);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-6);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 1);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",(alpha>0.0)?alpha:1.e-4);
+    // Status test parameters.
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_pdas(step_pdas,status,false);
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     x.zero();
-    algo_pdas.run(x, obj, icon, true);
+    algo->run(x, obj, icon, true, *outStream);
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
@@ -720,17 +718,14 @@ int main(int argc, char *argv[]) {
     }
     file.close();
 
-    // Projected Newtion.
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
-    // Define step.
-    ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
-    // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
+    // Projected Newton.
+    // re-load parameters
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    // Set algorithm.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Run Algorithm
     y.zero();
-    algo_tr.run(y,obj,icon,true);
+    algo->run(y, obj, icon, true, *outStream);
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
@@ -743,9 +738,9 @@ int main(int argc, char *argv[]) {
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)nt-1.0);
-    std::cout << "\nError between PDAS solution and TR solution is " << error << "\n";
-    errorFlag = ((error > std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
-#if 1
+    *outStream << "\nError between PDAS solution and TR solution is " << error << "\n";
+    errorFlag = ((error > 1e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
+
     // Output state to file.
     std::vector<std::vector<RealT> > U(nt);
     obj.solve_state(U,*y_rcp);
@@ -769,7 +764,6 @@ int main(int argc, char *argv[]) {
       file2 << "\n";
     }
     file2.close();
-#endif
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

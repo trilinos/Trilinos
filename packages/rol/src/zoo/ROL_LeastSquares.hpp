@@ -63,17 +63,37 @@ namespace ZOO {
    */
   template<class Real>
   class Objective_LeastSquares : public Objective<Real> {
-  public:
-    Real value( const Vector<Real> &x, Real &tol ) {
-      StdVector<Real> & ex =
-        Teuchos::dyn_cast<StdVector<Real> >(const_cast <Vector<Real> &>(x));
-      Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
 
-      int n    = xp->size();
+    typedef std::vector<Real>  vector;
+    typedef Vector<Real>       V;
+    typedef StdVector<Real>    SV;     
+
+    typedef typename vector::size_type uint; 
+
+  private:
+
+    Teuchos::RCP<const vector> getVector( const V& x ) {
+      using Teuchos::dyn_cast;
+      using Teuchos::getConst;
+      return dyn_cast<const SV>(getConst(x)).getVector();
+    }
+
+    Teuchos::RCP<vector> getVector( V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<SV>(x).getVector();
+    }
+
+  public:
+
+    Real value( const Vector<Real> &x, Real &tol ) {
+      using Teuchos::RCP;
+      RCP<const vector> xp = getVector(x);
+
+      uint n    = xp->size();
       Real h   = 1.0/((Real)n+1.0);
       Real val = 0.0;
       Real res = 0.0;
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           res = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
         }
@@ -90,15 +110,15 @@ namespace ZOO {
    }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
 
-      int n  = xp->size();
+      using Teuchos::RCP;
+      RCP<const vector> xp = getVector(x);
+      RCP<vector> gp = getVector(g);
+
+      uint n  = xp->size();
       Real h = 1.0/((Real)n+1.0);
-      std::vector<Real> res(n,0.0);
-      for (int i=0; i<n; i++) {
+      vector res(n,0.0);
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
         }
@@ -110,7 +130,7 @@ namespace ZOO {
         }
       }
 
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           (*gp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
         }
@@ -124,17 +144,16 @@ namespace ZOO {
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+ 
+      using Teuchos::RCP;
+      RCP<const vector> xp = getVector(x);
+      RCP<const vector> vp = getVector(v);
+      RCP<vector> hvp = getVector(hv);
 
-      int n  = xp->size();
+      uint n  = xp->size();
       Real h = 1.0/((Real)n+1.0);
-      std::vector<Real> res(n,0.0);
-      for (int i=0; i<n; i++) {
+      vector res(n,0.0);
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           res[i] = 1.0/h*((*vp)[i+1]-2.0*(*vp)[i]);
         }
@@ -146,7 +165,7 @@ namespace ZOO {
         }
       }
 
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           (*hvp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
         }
@@ -163,26 +182,36 @@ namespace ZOO {
 
   template<class Real>
   void getLeastSquares( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
+
+    typedef std::vector<Real> vector;
+    typedef StdVector<Real>   SV;
+
+    typedef typename vector::size_type uint;
+ 
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::dyn_cast;
+
     // Cast Initial Guess and Solution Vectors
-    Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
-    Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
-    int n = xp->size();
+    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
+    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
+
+    uint n = xp->size();
+
     // Resize Vectors
     n = 32;
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_LeastSquares<Real> );
+    obj = rcp( new Objective_LeastSquares<Real> );
     // Get Initial Guess
-    for (int i=0; i<n; i++) {
+    for (uint i=0; i<n; i++) {
       (*x0p)[i] = 0.0;
     }
     // Get Solution
     Real h  = 1.0/((Real)n+1.0);
     Real pt = 0.0;
-    for( int i=0; i<n; i++ ) {
+    for( uint i=0; i<n; i++ ) {
       pt = (Real)(i+1)*h;
       (*xp)[i] = pt*(1.0-pt);
     }

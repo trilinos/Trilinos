@@ -68,7 +68,7 @@ private:
   Teuchos::RCP<BoundConstraint<Real> > bnd_;
   Teuchos::RCP<EqualityConstraint<Real> > con_;
 
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
 
   Teuchos::ParameterList parlist_;
 
@@ -86,29 +86,31 @@ private:
       parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Iteration Limit",1000);
       parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Print History",false);
 
-      parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
-      parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
+      parlist_.sublist("Status Test").set("Gradient Tolerance",   1.e-4);
+      parlist_.sublist("Status Test").set("Constraint Tolerance", 1.e-6);
+      parlist_.sublist("Status Test").set("Iteration Limit", 15);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
     }
     else {
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",1.e1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Penalty Parameter Growth Factor",1.e2);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Optimality Tolerance Update Exponent",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Feasibility Tolerance Update Exponent",0.1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Optimality Tolerance Decrease Exponent",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Feasibility Tolerance Decrease Exponent",0.9);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Optimality Tolerance",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Feasibility Tolerance",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Minimum Penalty Parameter Reciprocal",0.1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Print Intermediate Optimization History",false);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Subproblem Iteration Limit",1000);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Subproblem Step Type",0);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Initial Penalty Parameter",1.e1);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Penalty Parameter Growth Factor",1.e2);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Optimality Tolerance Update Exponent",1.);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Feasibility Tolerance Update Exponent",0.1);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Optimality Tolerance Decrease Exponent",1.);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Feasibility Tolerance Decrease Exponent",0.9);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Initial Optimality Tolerance",1.);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Initial Feasibility Tolerance",1.);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Minimum Penalty Parameter Reciprocal",0.1);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Print Intermediate Optimization History",false);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit",1000);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type",0);
 
-      parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
-      parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
+      parlist_.sublist("Status Test").set("Gradient Tolerance",   1.e-4);
+      parlist_.sublist("Status Test").set("Constraint Tolerance", 1.e-6);
+      parlist_.sublist("Status Test").set("Iteration Limit", 15);
 
-      algo_ = Teuchos::rcp(new DefaultAlgorithm<Real>("Augmented Lagrangian",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist_,false));
     }
   }
 

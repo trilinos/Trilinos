@@ -270,39 +270,31 @@ int main(int argc, char *argv[]) {
     }
     BoundConstraint_PoissonControl<RealT> icon(lo,up);
 
-    Teuchos::ParameterList parlist;
+    // Primal dual active set.
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Krylov parameters.
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    50);
+    parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
+    parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
+    parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // PDAS parameters.
-    parlist.set("PDAS Relative Step Tolerance",           1.e-8);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-6);
-    parlist.set("PDAS Maximum Number of Iterations",      1);
-    parlist.set("PDAS Dual Scaling",                      alpha);      
-    // Define step.
-    ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
-
-    // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    StatusTest_PDAS<RealT> status_pdas(gtol, stol, maxit);    
-
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-8);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-6);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 1);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",(alpha>0.0)?alpha:1.e-4);
+    // Status test parameters.
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_pdas(step_pdas,status_pdas,false);
-
+    Teuchos::RCP<ROL::Algorithm<RealT> > algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Iteration vector.
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    // Set initial guess.
-    for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = 0.0;
-    }
     ROL::StdVector<RealT> x(x_rcp);
-
     // Run algorithm.
-    algo_pdas.run(x, obj, icon, true);
-
+    x.zero();
+    algo->run(x, obj, icon, true, *outStream);
     std::ofstream file;
     file.open("control_PDAS.txt");
     for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
@@ -310,22 +302,17 @@ int main(int argc, char *argv[]) {
     }
     file.close();
 
-    // Use Projected Methods
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
-    ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
-    ROL::StatusTest<RealT> status_tr(gtol,stol,maxit);
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
+    // Projected Newton.
+    // re-load parameters
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    // Set algorithm.
+    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Iteration vector.
     Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    // Set initial guess.
-    for (int i=0; i<dim; i++) {
-      (*y_rcp)[i] = 0.0;
-    }
     ROL::StdVector<RealT> y(y_rcp);
     // Run Algorithm
-    algo_tr.run(y,obj,icon,true);
+    y.zero();
+    algo->run(y, obj, icon, true, *outStream);
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
@@ -337,8 +324,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > error = x.clone();
     error->set(x);
     error->axpy(-1.0,y);
-    std::cout << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";
-        
+    *outStream << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";
+    errorFlag = ((error->norm() > 1e2*std::sqrt(ROL::ROL_EPSILON)) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
