@@ -756,6 +756,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Hierarchy, BlockCrs)
   {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       out << "===== Generating matrices =====" << std::endl;
@@ -849,6 +850,7 @@ namespace MueLuTests {
       H.Iterate(*RHS, *X, iterations);
 
     }
+#endif
 #endif
     TEST_EQUALITY(0,0);
   }
