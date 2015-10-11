@@ -2,6 +2,8 @@
 #define ROL_DIODECIRCUIT_HPP
 
 #include "ROL_Objective.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_ScaledStdVector.hpp"
 #include "ROL_BoundConstraint.hpp"
 
 #include <iostream>
@@ -17,12 +19,6 @@
 namespace ROL {
 namespace ZOO {
 
-  template <class Real, class Element=Real>
-  class DiodeVector;  // Optimization space.
-
-  template <class Real, class Element=Real>
-  class DualDiodeVector;  // Dual optimization space.
-
   /*!
     \brief The diode circuit problem.
     
@@ -37,11 +33,12 @@ namespace ZOO {
   template<class Real>
   class Objective_DiodeCircuit : public Objective<Real> {
 
-    typedef std::vector<Real>     vector;
-    typedef Vector<Real>          V;
-    typedef DiodeVector<Real>     DV;
-    typedef DualDiodeVector<Real> DDV; 
-    typedef typename vector::size_type uint;
+    typedef std::vector<Real>            vector;
+    typedef Vector<Real>                 V;
+    typedef StdVector<Real>              STDV;
+    typedef PrimalScaledStdVector<Real>  PSV;
+    typedef DualScaledStdVector<Real>    DSV; 
+    typedef typename vector::size_type   uint;
 
   private:
     /// Thermal voltage (constant)
@@ -50,6 +47,8 @@ namespace ZOO {
     Teuchos::RCP<std::vector<Real> > Imeas_;
     /// Vector of source voltages in DC analysis (input) 
     Teuchos::RCP<std::vector<Real> > Vsrc_; 
+    /// Scaling vector for the optimization variables. 
+    Teuchos::RCP<std::vector<Real> > scaling_rcp_; 
     /// If true, use Lambert-W function to solve circuit, else use Newton's method.
     bool lambertw_; 
     /// Percentage of noise to add to measurements; if 0.0 - no noise.
@@ -62,20 +61,30 @@ namespace ZOO {
     Teuchos::RCP<const vector> getVector( const V& x ) {
       using Teuchos::dyn_cast;  using Teuchos::getConst;
       try { 
-        return dyn_cast<const DV>(getConst(x)).getVector();
+        return dyn_cast<const STDV>(getConst(x)).getVector();
       }
       catch (std::exception &e) {
-        return dyn_cast<const DDV>(getConst(x)).getVector();    
+        try { 
+          return dyn_cast<const PSV>(getConst(x)).getVector();
+        }
+        catch (std::exception &e) {
+          return dyn_cast<const DSV>(getConst(x)).getVector();
+        }
       }
     }
 
     Teuchos::RCP<vector> getVector( V& x ) {
       using Teuchos::dyn_cast;
       try {
-        return dyn_cast<DV>(x).getVector(); 
+        return dyn_cast<STDV>(x).getVector(); 
       }
       catch (std::exception &e) {
-        return dyn_cast<DDV>(x).getVector(); 
+        try {
+          return dyn_cast<PSV>(x).getVector(); 
+        }
+        catch (std::exception &e) {
+          return dyn_cast<DSV>(x).getVector(); 
+        }
       }
     }
 
@@ -130,7 +139,12 @@ namespace ZOO {
 	}
       }
 	
-	output.close();
+      output.close();
+
+      scaling_rcp_ = Teuchos::rcp(new std::vector<Real>(2, 0.0));
+      (*scaling_rcp_)[0] = 1e24;
+      (*scaling_rcp_)[1] = 1e01;
+ 
     }
 
     /*!
@@ -161,6 +175,11 @@ namespace ZOO {
         (*Imeas_)[i] = Imeas;
       }
       input_file.close();
+
+      scaling_rcp_ = Teuchos::rcp(new std::vector<Real>(2, 0.0));
+      (*scaling_rcp_)[0] = 1e24;
+      (*scaling_rcp_)[1] = 1e01;
+
     }
 
     //! Change the method for solving the circuit if needed
@@ -433,7 +452,7 @@ namespace ZOO {
       using Teuchos::RCP;  using Teuchos::rcp;
       RCP<const vector> Sp = getVector(S);
       uint n = Imeas_->size();
-      DV I( rcp( new vector(n,0.0) ) );
+      STDV I( rcp( new vector(n,0.0) ) );
       RCP<vector> Ip = getVector(I);
 
       // Solve state equation
@@ -515,7 +534,7 @@ namespace ZOO {
       
       uint n = Imeas_->size();
       
-      DV I( rcp( new vector(n,0.0) ) );
+      STDV I( rcp( new vector(n,0.0) ) );
       RCP<vector> Ip = getVector(I);
       
       // Solve state equation      
@@ -523,7 +542,7 @@ namespace ZOO {
       
       if(use_adjoint_){      
 	// Compute the gradient of the reduced objective function using adjoint computation
-	DV lambda( rcp( new vector(n,0.0) ) );
+	STDV lambda( rcp( new vector(n,0.0) ) );
         RCP<vector> lambdap = getVector(lambda);
 	
 	// Solve adjoint equation
@@ -538,8 +557,8 @@ namespace ZOO {
       }
       else{
 	// Compute the gradient of the reduced objective function using sensitivities
-	DV sensIs( rcp( new vector(n,0.0) ) );
-	DV sensRs( rcp( new vector(n,0.0) ) );
+	STDV sensIs( rcp( new vector(n,0.0) ) );
+	STDV sensRs( rcp( new vector(n,0.0) ) );
 	// Solve sensitivity equations
 	solve_sensitivity_Is(sensIs,I,S);
 	solve_sensitivity_Rs(sensRs,I,S);
@@ -587,19 +606,19 @@ namespace ZOO {
 	
 	uint n = Imeas_->size();
 	
-	DV I( rcp( new vector(n,0.0) ) );
+	STDV I( rcp( new vector(n,0.0) ) );
 	RCP<vector> Ip = getVector(I);
 	
 	// Solve state equation      
 	solve_circuit(I,S);
 	
-	DV lambda( rcp( new vector(n,0.0) ) );
+	STDV lambda( rcp( new vector(n,0.0) ) );
 	RCP<vector> lambdap = getVector(lambda);
 	
 	// Solve adjoint equation
 	solve_adjoint(lambda,I,S);
 	
-	DV w( rcp( new vector(n,0.0) ) );
+	STDV w( rcp( new vector(n,0.0) ) );
 	RCP<vector> wp = getVector(w);
 	
 	// Solve state sensitivity equation
@@ -607,7 +626,7 @@ namespace ZOO {
 	  (*wp)[i] = ( (*vp)[0] * diodeIs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) + (*vp)[1] * diodeRs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) ) / diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
 	}
 	
-	DV p( rcp( new vector(n,0.0) ) );
+	STDV p( rcp( new vector(n,0.0) ) );
 	RCP<vector> pp = getVector(p);
 	
 	// Solve for p
@@ -630,15 +649,15 @@ namespace ZOO {
 	
         uint n = Imeas_->size();
 
-        DV I( rcp( new vector(n,0.0) ) );
+        STDV I( rcp( new vector(n,0.0) ) );
 	RCP<vector> Ip = getVector(I);
 
         // Solve state equation                                                                                
         solve_circuit(I,S);
 
 	// Compute sensitivities
-	DV sensIs( rcp( new vector(n,0.0) ) );
-        DV sensRs( rcp( new vector(n,0.0) ) );
+	STDV sensIs( rcp( new vector(n,0.0) ) );
+        STDV sensRs( rcp( new vector(n,0.0) ) );
 
         // Solve sensitivity equations                                                                          
         solve_sensitivity_Is(sensIs,I,S);
@@ -676,7 +695,7 @@ namespace ZOO {
      */
     void generate_plot(Real Is_lo, Real Is_up, Real Is_step, Real Rs_lo, Real Rs_up, Real Rs_step){
       Teuchos::RCP<std::vector<double> > S_rcp = Teuchos::rcp(new std::vector<double>(2,0.0) );
-      DiodeVector<double> S(S_rcp);
+      StdVector<double> S(S_rcp);
       std::ofstream output ("Objective.dat");
 
       Real Is = 0.0;
@@ -704,175 +723,6 @@ namespace ZOO {
   };
 
 
-  // Vector space definitions:
-
-  // Optimization space.
-  template <class Real, class Element>
-  class DiodeVector : public Vector<Real> {
-
-    typedef typename std::vector<Element>::size_type uint;
-
-  private:
-    Teuchos::RCP<std::vector<Element> >  std_vec_;
-    std::vector<Element> scaling_;
-    mutable Teuchos::RCP<DualDiodeVector<Real> >  dual_vec_;
-
-  public:
-
-    DiodeVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(Teuchos::null) {
-      scaling_.resize(2);
-      scaling_[0] = 1e24;
-      scaling_[1] = 1e0;
-    }
-
-    void plus( const ROL::Vector<Real> &x ) {
-      const DiodeVector & ex = Teuchos::dyn_cast<const DiodeVector>(x);
-      const std::vector<Element> & xval = *(ex.getVector());
-      uint dimension = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        (*std_vec_)[i] += xval[i];
-      }
-    }
-
-    void scale( const Real alpha ) {
-      uint dimension = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        (*std_vec_)[i] *= alpha;
-      }
-    }
-
-    Real dot( const ROL::Vector<Real> &x ) const {
-      Real val = 0;
-      const DiodeVector & ex = Teuchos::dyn_cast<const DiodeVector>(x);
-      const std::vector<Element> & xval = *(ex.getVector());
-      uint dimension  = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        val += (*std_vec_)[i]*xval[i]*scaling_[i];
-      }
-      return val;
-    }
-
-    Real norm() const {
-      Real val = 0;
-      val = std::sqrt( dot(*this) );
-      return val;
-    }
-
-    Teuchos::RCP<ROL::Vector<Real> > clone() const {
-      return Teuchos::rcp( new DiodeVector( Teuchos::rcp( new std::vector<Element>(std_vec_->size()) ) ) );
-    }
-
-    Teuchos::RCP<const std::vector<Element> > getVector() const {
-      return std_vec_;
-    }
-
-    Teuchos::RCP<std::vector<Element> > getVector() {
-      return std_vec_;
-    }
-
-    Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
-      Teuchos::RCP<DiodeVector> e = Teuchos::rcp( new DiodeVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
-      (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
-      return e;
-    }
-
-    int dimension() const {return static_cast<int>(std_vec_->size());}
-
-    const ROL::Vector<Real> & dual() const {
-      std::vector<Element> tmp_vec(*std_vec_);
-      tmp_vec[0] *= scaling_[0];
-      tmp_vec[1] *= scaling_[1];
-      dual_vec_ = Teuchos::rcp( new DualDiodeVector<Real>( Teuchos::rcp( new std::vector<Element>(tmp_vec) ) ) );
-      return *dual_vec_;
-    }
-
-  }; // class DiodeVector
-
-
-  // Dual optimization space.
-  template <class Real, class Element>
-  class DualDiodeVector : public ROL::Vector<Real> {
-
-    typedef typename std::vector<Element>::size_type uint;
-
-  private:
-    Teuchos::RCP<std::vector<Element> >  std_vec_;
-    std::vector<Element> scaling_;
-    mutable Teuchos::RCP<DiodeVector<Real> >  dual_vec_;
-
-  public:
-
-    DualDiodeVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(Teuchos::null) {
-      scaling_.resize(2);
-      scaling_[0] = 1e-24;
-      scaling_[1] = 1e0;
-    }
-
-    void plus( const ROL::Vector<Real> &x ) {
-      const DualDiodeVector & ex = Teuchos::dyn_cast<const DualDiodeVector>(x);
-      const std::vector<Element> & xval = *(ex.getVector());
-      uint dimension  = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        (*std_vec_)[i] += xval[i];
-      }
-    }
-
-    void scale( const Real alpha ) {
-      uint dimension = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        (*std_vec_)[i] *= alpha;
-      }
-    }
-
-    Real dot( const ROL::Vector<Real> &x ) const {
-      Real val = 0;
-      const DualDiodeVector & ex = Teuchos::dyn_cast<const DualDiodeVector>(x);
-      const std::vector<Element> & xval = *(ex.getVector());
-      uint dimension  = std_vec_->size();
-      for (uint i=0; i<dimension; i++) {
-        val += (*std_vec_)[i]*xval[i]*scaling_[i];
-      }
-      return val;
-    }
-
-    Real norm() const {
-      Real val = 0;
-      val = std::sqrt( dot(*this) );
-      return val;
-    }
-
-    Teuchos::RCP<ROL::Vector<Real> > clone() const {
-      return Teuchos::rcp( new DualDiodeVector( Teuchos::rcp( new std::vector<Element>(std_vec_->size()) ) ) );
-    }
-
-    Teuchos::RCP<const std::vector<Element> > getVector() const {
-      return std_vec_;
-    }
-
-    Teuchos::RCP<std::vector<Element> > getVector() {
-      return std_vec_;
-    }
-
-    Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
-      Teuchos::RCP<DualDiodeVector> e = Teuchos::rcp( new DualDiodeVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
-      (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
-      return e;
-    }
-
-    int dimension() const {return static_cast<int>(std_vec_->size());}
-
-    const ROL::Vector<Real> & dual() const {
-      std::vector<Element> tmp_vec(*std_vec_);
-      tmp_vec[0] *= scaling_[0];
-      tmp_vec[1] *= scaling_[1];
-      dual_vec_ = Teuchos::rcp( new DiodeVector<Real>( Teuchos::rcp( new std::vector<Element>(tmp_vec) ) ) );
-      return *dual_vec_;
-    }
-
-}; // class DualDiodeVector
-
-
-  
   /*! 
     \brief Bound constraints on optimization parameters
 
@@ -893,21 +743,24 @@ namespace ZOO {
     /// Scaling for the epsilon margin
     Real scale_;
 
+    /// Scaling vector for the optimization variables. 
+    Teuchos::RCP<std::vector<Real> > scaling_rcp_; 
+
     const Teuchos::RCP<std::vector<Real> > cast_vector(ROL::Vector<Real> &x) const {
       try {
-        return (Teuchos::dyn_cast<DiodeVector<Real> >(x)).getVector();
+        return (Teuchos::dyn_cast<PrimalScaledStdVector<Real> >(x)).getVector();
       }
       catch (std::exception &e) {
-        return (Teuchos::dyn_cast<DualDiodeVector<Real> >(x)).getVector();
+        return (Teuchos::dyn_cast<DualScaledStdVector<Real> >(x)).getVector();
       }
     }
 
     const Teuchos::RCP<const std::vector<Real> > cast_const_vector(const ROL::Vector<Real> &x) const {
       try {
-        return (Teuchos::dyn_cast<const DiodeVector<Real> >(x)).getVector();
+        return (Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x)).getVector();
       }
       catch (std::exception &e) {
-        return (Teuchos::dyn_cast<const DualDiodeVector<Real> >(x)).getVector();
+        return (Teuchos::dyn_cast<const DualScaledStdVector<Real> >(x)).getVector();
       }
     }
 
@@ -922,6 +775,11 @@ namespace ZOO {
 
       scale_ = scale;
       min_diff_ = 0.5*std::min(x_up_[0]-x_lo_[0],x_up_[1]-x_lo_[1]);
+
+      scaling_rcp_ = Teuchos::rcp(new std::vector<Real>(2, 0.0));
+      (*scaling_rcp_)[0] = 1e24;
+      (*scaling_rcp_)[1] = 1e01;
+
     }
     void project( Vector<Real> &x ) {
       const Teuchos::RCP<std::vector<Real> > ex = cast_vector(x);
@@ -1008,14 +866,14 @@ namespace ZOO {
     void setVectorToUpperBound( ROL::Vector<Real> &u ) {
       Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(2,0.0) );
       us->assign(this->x_up_.begin(),this->x_up_.end());
-      Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new DiodeVector<Real>(us) );
+      Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new PrimalScaledStdVector<Real>(us, scaling_rcp_) );
       u.set(*up);
     }
 
     void setVectorToLowerBound( ROL::Vector<Real> &l ) {
       Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(2,0.0) );
       ls->assign(this->x_lo_.begin(),this->x_lo_.end());
-      Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new DiodeVector<Real>(ls) );
+      Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new PrimalScaledStdVector<Real>(ls, scaling_rcp_) );
       l.set(*lp);
     }
   };
@@ -1026,9 +884,9 @@ namespace ZOO {
   // void getDiodeCircuit( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
   //   // Cast Initial Guess and Solution Vectors                                     
   //   Teuchos::RCP<std::vector<Real> > x0p =
-  //     Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DiodeVector<Real> >(x0)).getVector());
+  //     Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalScaledStdVector<Real> >(x0)).getVector());
   //   Teuchos::RCP<std::vector<Real> > xp =
-  //     Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DiodeVector<Real> >(x)).getVector());
+  //     Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalScaledStdVector<Real> >(x)).getVector());
 
   //   int n = xp->size();
 
