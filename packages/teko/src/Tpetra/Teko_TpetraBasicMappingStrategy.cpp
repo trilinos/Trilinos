@@ -88,7 +88,7 @@ void BasicMappingStrategy::copyTpetraIntoThyra(const Tpetra::MultiVector<ST,LO,G
    // perform a simple copy
    //RCP<Thyra::DefaultSpmdMultiVector<ST> > vec 
    //         = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<ST> >(Teuchos::rcpFromRef(*thyra_X)); 
-      RCP<Thyra::TpetraMultiVector<ST,LO,GO,NT> > vec = rcp_dynamic_cast<Thyra::TpetraMultiVector<ST,LO,GO,NT> >(rcpFromRef(*thyra_X));
+      RCP<Thyra::TpetraMultiVector<ST,LO,GO,NT> > vec = rcp_dynamic_cast<Thyra::TpetraMultiVector<ST,LO,GO,NT> >(Teuchos::rcpFromRef(*thyra_X));
    Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,NT> > ptrX = Teuchos::rcp_const_cast<Tpetra::MultiVector<ST,LO,GO,NT> >(Teuchos::rcpFromRef(X));
    fillDefaultSpmdMultiVector(vec,ptrX);
 }
