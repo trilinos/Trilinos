@@ -427,7 +427,7 @@ Tensor<T, N, ES>::Tensor(
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, N, ES>::Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A)
+Tensor<T, N, ES>::Tensor(Tensor4<T, dimension_sqrt<N>::value, ES> const & A)
 {
   Index const
   dimension_4th = A.get_dimension();
@@ -1580,7 +1580,7 @@ zero(Index const dimension)
 // Local utility functions
 namespace {
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void ones_in_diagonal(Tensor<T, N, ES> & A)
 {
@@ -1611,7 +1611,7 @@ void ones_in_diagonal(Tensor<T, N, ES> & A)
   return;
 }
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void fill_levi_civita(Tensor<T, N, ES> & A)
 {
@@ -1716,7 +1716,7 @@ levi_civita_2()
   return A;
 }
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 levi_civita_2(Index const dimension)
@@ -1729,7 +1729,7 @@ levi_civita_2(Index const dimension)
   return A;
 }
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 levi_civita_2(Index const dimension)
@@ -1746,7 +1746,7 @@ levi_civita_2(Index const dimension)
 //
 // Permutation symbol
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 permutation_2()
@@ -1754,7 +1754,7 @@ permutation_2()
   return levi_civita_2<T, N, ES>();
 }
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 permutation_2(Index const dimension)
@@ -1763,7 +1763,7 @@ permutation_2(Index const dimension)
 }
 
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 permutation_2(Index const dimension)
@@ -1774,7 +1774,7 @@ permutation_2(Index const dimension)
 //
 // Alternating symbol
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2()
@@ -1782,7 +1782,7 @@ alternator_2()
   return levi_civita_2<T, N,ES>();
 }
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC, ES> const
 alternator_2(Index const dimension)
@@ -1790,7 +1790,7 @@ alternator_2(Index const dimension)
   return levi_civita_2<T, DYNAMIC, ES>(dimension);
 }
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 alternator_2(Index const dimension)
@@ -1801,7 +1801,7 @@ alternator_2(Index const dimension)
 //
 // 2nd-order tensor transpose
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 transpose(Tensor<T, N, ES> const & A)
@@ -1842,7 +1842,7 @@ transpose(Tensor<T, N, ES> const & A)
 // symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A + A^T) \f$
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 sym(Tensor<T, N, ES> const & A)
@@ -1907,7 +1907,7 @@ sym(Tensor<T, N, ES> const & A)
 // skew symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A - A^T) \f$
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 skew(Tensor<T, N, ES> const & A)
@@ -1966,7 +1966,7 @@ skew(Tensor<T, N, ES> const & A)
 // for N!=3.
 // \param u vector
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 skew(Vector<T, N, ES> const & u)

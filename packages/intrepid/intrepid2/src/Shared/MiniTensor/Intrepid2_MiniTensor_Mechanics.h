@@ -51,7 +51,7 @@ namespace Intrepid2 {
 /// \param A tensor
 /// \return \f$ \frac{1}{3} \mathrm{tr}\:A I \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 vol(Tensor<T, N, ES> const & A);
@@ -61,7 +61,7 @@ vol(Tensor<T, N, ES> const & A);
 /// \param A tensor
 /// \return \f$ A - vol(A) \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 dev(Tensor<T, N, ES> const & A);
@@ -71,7 +71,7 @@ dev(Tensor<T, N, ES> const & A);
 /// \param \f$ F, u \f$
 /// \return \f$ F^{-T} u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -81,7 +81,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
 /// \param \f$ F, u \f$
 /// \return \f$ F^T u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -91,7 +91,7 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
 /// \param \f$ F, u \f$
 /// \return \f$ F u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -101,7 +101,7 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & 
 /// \param \f$ F, u \f$
 /// \return \f$ F^{-1} u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -111,7 +111,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
 /// \param \f$ F, A \f$
 /// \return \f$ F^{-T} A F^{-1} \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
@@ -121,7 +121,7 @@ push_forward_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
 /// \param \f$ F, A \f$
 /// \return \f$ F^T A F\f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
@@ -131,7 +131,7 @@ pull_back_covariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
 /// \param \f$ F, A \f$
 /// \return \f$ F A F^T \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
@@ -141,7 +141,7 @@ push_forward_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & 
 /// \param \f$ F, A \f$
 /// \return \f$ F^{-1} A F^{-T} \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
@@ -151,7 +151,7 @@ pull_back_contravariant(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & A);
 /// \param \f$ F, u \f$
 /// \return \f$ \det F F^{-1} u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -161,7 +161,7 @@ piola(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
 /// \param \f$ F, u \f$
 /// \return \f$ (\det F)^{-1} F u \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
@@ -172,7 +172,7 @@ piola_inverse(Tensor<T, N, ES> const & F, Vector<T, N, ES> const & u);
 /// \param \f$ F, sigma \f$
 /// \return \f$ \det F sigma F^{-T} \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma);
@@ -183,7 +183,7 @@ piola(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & sigma);
 /// \param \f$ F, P \f$
 /// \return \f$ (\det F)^{-1} P F^T \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES>
 piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P);
@@ -191,7 +191,7 @@ piola_inverse(Tensor<T, N, ES> const & F, Tensor<T, N, ES> const & P);
 ///
 /// Smallest eigenvalue by inverse iteration.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 smallest_eigenvalue(Tensor<T, N, ES> const & A);
@@ -204,7 +204,7 @@ smallest_eigenvalue(Tensor<T, N, ES> const & A);
 /// \return whether the smallest eigenvalue of the 2nd-order
 /// tensor is less or equal than zero.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 check_strict_ellipticity(Tensor4<T, N, ES> const & A);
@@ -215,7 +215,7 @@ check_strict_ellipticity(Tensor4<T, N, ES> const & A);
 /// \param A 4th-order tensor.
 /// \return whether \f$ (m\odot n):A:(m\odot n) > 0 \forall m,n \neq 0 \f$.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 std::pair<bool, Vector<T, N, ES> >
 check_strong_ellipticity(Tensor4<T, N, ES> const & A);
 

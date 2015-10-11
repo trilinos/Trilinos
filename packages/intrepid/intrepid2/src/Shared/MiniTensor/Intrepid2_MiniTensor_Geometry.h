@@ -65,7 +65,7 @@ enum Type {
 ///
 /// Length of a segment
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 length(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1);
@@ -73,7 +73,7 @@ length(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1);
 ///
 /// Area of a triangle
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
@@ -83,7 +83,7 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Area of a quadrilateral, assummed planar. If not planar, returns
 /// the sum of the areas of the two triangles p0,p1,p2 and p0,p2,p3
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
@@ -92,7 +92,7 @@ area(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 ///
 /// Volume of tetrahedron
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
@@ -104,7 +104,7 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Base is p0,p1,p2,p3
 /// Apex is p4
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
@@ -116,7 +116,7 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// Assumption: all faces are planar
 /// Decompose into 3 pyramids
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 T
 volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
@@ -130,7 +130,7 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// For these we can just take the average of the vertices.
 /// WARNING: This is not the center of mass.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 centroid(std::vector<Vector<T, N, ES> > const & points);
@@ -140,7 +140,7 @@ centroid(std::vector<Vector<T, N, ES> > const & points);
 /// Input: 3 independent nodes on the face
 /// Output: normal vector
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 normal(Vector<T, N, ES> const & p0,
@@ -153,7 +153,7 @@ normal(Vector<T, N, ES> const & p0,
 /// to the plane as defined by the right hand rule.
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 in_normal_side(
@@ -169,12 +169,12 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
-template<typename T, typename I, Index N,  typename ES=NOKOKKOS>
+template<typename T, typename I, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end);
 
-template<typename T, typename I,  typename ES=NOKOKKOS>
+template<typename T, typename I,  typename ES>
 KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end);
@@ -185,7 +185,7 @@ bounding_box(I start, I end);
 /// \param min max points defining the box
 /// \return whether the point is inside
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 in_box(
@@ -198,7 +198,7 @@ in_box(
 /// \param min max the bounding box
 /// \return p point inside box
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 random_in_box(
@@ -210,7 +210,7 @@ random_in_box(
 /// determine if point p is inside it.
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 in_tetrahedron(
@@ -227,7 +227,7 @@ in_tetrahedron(
 /// Assumption: faces are planar
 /// If a tolrance is given, use that as criterion for minimal distance.
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 in_hexahedron(
@@ -248,7 +248,7 @@ in_hexahedron(
 /// \param n vector of points to test
 /// \return index to closest point
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 typename std::vector< Vector<T, N, ES> >::size_type
 closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const & n);
 
@@ -269,7 +269,7 @@ median(Iterator begin, Iterator end);
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_quadrilateral(
@@ -286,7 +286,7 @@ interpolate_quadrilateral(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_triangle(
@@ -302,7 +302,7 @@ interpolate_triangle(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_hexahedron(
@@ -323,11 +323,11 @@ interpolate_hexahedron(
 /// \param p0 ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_tetrahedron(
-    Vector<T, dimension_const<N, 4>::value> & xi,
+    Vector<T, dimension_const<N, 4>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,
@@ -341,7 +341,7 @@ interpolate_tetrahedron(
 /// \param v ... corner nodes
 /// \return interpolated position
 ///
-template<typename T, Index M, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index M, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_element(
@@ -355,7 +355,7 @@ interpolate_element(
 /// \param points vector of points
 /// \return distance matrix
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 std::vector< std::vector<T> >
 distance_matrix(std::vector< Vector<T, N, ES> > const & points);
 
@@ -365,7 +365,7 @@ distance_matrix(std::vector< Vector<T, N, ES> > const & points);
 /// \param distances distance matrix
 /// \return minimum distance
 ///
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 std::vector<T>
 minimum_distances(std::vector< std::vector<T>> const & distances);
 
@@ -380,7 +380,7 @@ find_type(Index const dimension, Index const number_nodes);
 ///
 /// Spherical parametrization functor
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class SphericalParametrization
 {
 public:
@@ -441,7 +441,7 @@ private:
 ///
 /// Stereographic parametrization functor
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class StereographicParametrization
 {
 public:
@@ -502,7 +502,7 @@ private:
 ///
 /// Projective parametrization functor
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class ProjectiveParametrization
 {
 public:
@@ -566,7 +566,7 @@ private:
 ///
 /// Tangent parametrization functor
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class TangentParametrization
 {
 public:
@@ -633,7 +633,7 @@ private:
 ///
 /// Cartesian parametrization functor
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class CartesianParametrization
 {
 public:
@@ -694,7 +694,7 @@ private:
 ///
 /// Parametric grid class
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 class ParametricGrid
 {
 

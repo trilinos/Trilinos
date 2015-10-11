@@ -658,7 +658,7 @@ bool
 check_strict_ellipticity(Tensor4<T, N, ES> const & A)
 {
   // Convert to 2nd-order tensor
-  Tensor<T, dimension_square<N>::value> const
+  Tensor<T, dimension_square<N>::value, ES > const
   B(A);
 
   // Check bounds for eigenvalues

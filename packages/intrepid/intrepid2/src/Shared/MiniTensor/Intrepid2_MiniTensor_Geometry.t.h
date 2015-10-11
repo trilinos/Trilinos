@@ -669,7 +669,7 @@ template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 interpolate_tetrahedron(
-    Vector<T, dimension_const<N, 4>::value> & xi,
+    Vector<T, dimension_const<N, 4>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,

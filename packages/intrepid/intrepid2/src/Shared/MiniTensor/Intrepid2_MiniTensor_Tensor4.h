@@ -46,13 +46,13 @@
 
 namespace Intrepid2 {
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 using tensor4_store = Storage<T, dimension_power<N, 4>::value, ES>;
 
 ///
 /// Fourth-order tensor.
 ///
-template<typename T, Index N = DYNAMIC,  typename ES>
+template<typename T, Index N = DYNAMIC,  typename ES=NOKOKKOS>
 class Tensor4 : public TensorBase<T, tensor4_store<T, N, ES>>
 {
 public:
@@ -195,7 +195,7 @@ public:
 /// \param B 4th-order tensor
 /// \return \f$ A + B \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 operator+(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -206,7 +206,7 @@ operator+(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ A - B \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 operator-(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -215,7 +215,7 @@ operator-(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// 4th-order tensor minus
 /// \return \f$ -A \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES>
 operator-(Tensor4<T, N, ES> const & A);
@@ -224,7 +224,7 @@ operator-(Tensor4<T, N, ES> const & A);
 /// 4th-order equality
 /// Tested by components
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator==(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -233,7 +233,7 @@ operator==(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// 4th-order inequality
 /// Tested by components
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 bool
 operator!=(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -244,7 +244,7 @@ operator!=(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param A 4th-order tensor
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES> >::type
 operator*(S const & s, Tensor4<T, N, ES> const & A);
@@ -255,7 +255,7 @@ operator*(S const & s, Tensor4<T, N, ES> const & A);
 /// \param s scalar
 /// \return \f$ s A \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES> >::type
 operator*(Tensor4<T, N, ES> const & A, S const & s);
@@ -266,7 +266,7 @@ operator*(Tensor4<T, N, ES> const & A, S const & s);
 /// \param s scalar
 /// \return \f$ A / s \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 operator/(Tensor4<T, N, ES> const & A, S const & s);
@@ -277,7 +277,7 @@ operator/(Tensor4<T, N, ES> const & A, S const & s);
 /// \param A 4th-order tensor
 /// \return \f$ s / A \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Tensor4<T, N, ES> const & A);
@@ -285,7 +285,7 @@ operator/(S const & s, Tensor4<T, N, ES> const & A);
 ///
 /// 4th-order tensor transpose
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES>
 transpose(Tensor4<T, N, ES> const & A);
@@ -368,17 +368,17 @@ levi_civita_4(Index const dimension);
 ///
 /// Permutation symbol
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 permutation_4();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 permutation_4(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 permutation_4(Index const dimension);
@@ -386,17 +386,17 @@ permutation_4(Index const dimension);
 ///
 /// Alternating symbol
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 alternator_4();
 
-template<typename T,  typename ES=NOKOKKOS>
+template<typename T,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC, ES> const
 alternator_4(Index const dimension);
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES> const
 alternator_4(Index const dimension);
@@ -405,7 +405,7 @@ alternator_4(Index const dimension);
 /// 4th-order inverse
 /// \return \f$ B such that B : A = A : B = I_1 \f$
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N, ES>
 inverse(Tensor4<T, N, ES> const & A);
@@ -416,7 +416,7 @@ inverse(Tensor4<T, N, ES> const & A);
 /// \param u vector
 /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk}=A_{ijkp} u_{p} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Tensor4<T, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -427,7 +427,7 @@ dot(Tensor4<T, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \param u vector
 /// \return 3rd-order tensor \f$ u dot A \f$ as \f$ B_{ijk}=u_{p} A_{pijk} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot(Vector<S, N, ES> const & u, Tensor4<T, N, ES> const & A);
@@ -438,7 +438,7 @@ dot(Vector<S, N, ES> const & u, Tensor4<T, N, ES> const & A);
 /// \param u vector
 /// \return 3rd-order tensor \f$ B = A \cdot u := B_{ijk} = A_{ijpk} u_{p} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Tensor4<T, N, ES> const & A, Vector<S, N, ES> const & u);
@@ -449,7 +449,7 @@ dot2(Tensor4<T, N, ES> const & A, Vector<S, N, ES> const & u);
 /// \param u vector
 /// \return 3rd-order tensor \f$ u dot2 A \f$ as \f$ B_{ijk}=u_{p} A_{ipjk} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor3<typename Promote<S, T>::type, N, ES>
 dot2(Vector<S, N, ES> const & u, Tensor4<T, N, ES> const & A);
@@ -460,7 +460,7 @@ dot2(Vector<S, N, ES> const & u, Tensor4<T, N, ES> const & A);
 /// \param B 2nd-order tensor
 /// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 dotdot(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
@@ -471,7 +471,7 @@ dotdot(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \param A 4th-order tensor
 /// \return 2nd-order tensor \f$ C = B : A := C_{ij} = B_{pq} A_{pqij} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N, ES>
 dotdot(Tensor<S, N, ES> const & B, Tensor4<T, N, ES> const & A);
@@ -482,7 +482,7 @@ dotdot(Tensor<S, N, ES> const & B, Tensor4<T, N, ES> const & A);
 /// \param B 4th-order tensor
 /// \return 2nd-order tensor \f$ C = A : B := C_{ij} = A_{ijpq} B_{pq} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dotdot(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -493,7 +493,7 @@ dotdot(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \otimes B := C_{ijkl} = A_{ij} B_{kl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 tensor(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -504,7 +504,7 @@ tensor(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C_{ijkl} = A_{ik} B_{jl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 tensor2(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -515,7 +515,7 @@ tensor2(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C_{ijkl} = A_{il} B_{kj} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 tensor3(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -526,7 +526,7 @@ tensor3(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijkp} B_{pl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
@@ -537,7 +537,7 @@ dot(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijkp} B_{lp} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot_t(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
@@ -548,7 +548,7 @@ dot_t(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot(Tensor<S> const & A, Tensor4<T, N, ES> const & B);
@@ -559,7 +559,7 @@ dot(Tensor<S> const & A, Tensor4<T, N, ES> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pi} B_{pjkl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 t_dot(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -570,7 +570,7 @@ t_dot(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{ijpl} B_{pk} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot2(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
@@ -581,7 +581,7 @@ dot2(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C = A \cdot B^T := C_{ijkl} = A_{ijpl} B_{kp} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot2_t(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
@@ -592,7 +592,7 @@ dot2_t(Tensor4<T, N, ES> const & A, Tensor<S, N, ES> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A \cdot B := C_{ijkl} = A_{jp} B_{ipkl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 dot2(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -603,7 +603,7 @@ dot2(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param B 4th-order tensor
 /// \return \f$ C = A^T \cdot B := C_{ijkl} = A_{pj} B_{ipkl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 t_dot2(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -616,7 +616,7 @@ t_dot2(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \return \f$ A \odot B \f$ which is
 /// \f$ C_{ijkl} = \frac{1}{2}(A_{ik} B_{jl} + A_{il} B_{jk}) \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 odot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
@@ -627,7 +627,7 @@ odot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B);
 /// \param B 2nd-order tensor
 /// \return \f$ C'_{i'j'k'l'} = A_{i'i} A_{j'j} A_{k'k} A_{l'l} B_{ijkl} \f$
 ///
-template<typename S, typename T, Index N,  typename ES=NOKOKKOS>
+template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N, ES>
 kronecker(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
@@ -638,7 +638,7 @@ kronecker(Tensor<S, N, ES> const & A, Tensor4<T, N, ES> const & B);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 std::istream &
 operator>>(std::istream & is, Tensor4<T, N, ES> & A);
 
@@ -648,7 +648,7 @@ operator>>(std::istream & is, Tensor4<T, N, ES> & A);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 std::ostream &
 operator<<(std::ostream & os, Tensor4<T, N, ES> const & A);
 

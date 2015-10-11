@@ -352,7 +352,7 @@ template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>::Vector(T const & s0, T const & s1)
 {
-  Vector < T, N > &
+  Vector < T, N, ES > &
       self = (*this);
 
   self.set_dimension(2);
@@ -531,7 +531,7 @@ operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v)
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename
-lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES> >::type
 operator*(S const & s, Vector<T, N, ES> const & u)
 {
   Vector<typename Promote<S, T>::type, N, ES>
@@ -548,7 +548,7 @@ operator*(S const & s, Vector<T, N, ES> const & u)
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
  typename
-lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES> >::type
 operator*(Vector<T, N, ES> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N, ES>

@@ -48,7 +48,6 @@
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
-class NOKOKKOS{};
 
 #define         NPP_MAX_32U   (32 )
 
@@ -67,15 +66,18 @@ using Real = double;
 using Complex = std::complex<Real>;
 
 /// The classes
-template <typename T, Index N,  typename ES=NOKOKKOS> class Vector;
-template <typename T, Index N,  typename ES=NOKOKKOS> class Tensor;
-template <typename T, Index N,  typename ES=NOKOKKOS> class Tensor3;
-template <typename T, Index N,  typename ES=NOKOKKOS> class Tensor4;
-template <typename T, Index M, Index N,  typename ES=NOKOKKOS> class Matrix;
+template <typename T, Index N,  typename ES> class Vector;
+template <typename T, Index N,  typename ES> class Tensor;
+template <typename T, Index N,  typename ES> class Tensor3;
+template <typename T, Index N,  typename ES> class Tensor4;
+template <typename T, Index M, Index N,  typename ES> class Matrix;
 
 /// Indicator for dynamic storage
 constexpr Index
 DYNAMIC = 0;
+
+// Default execution space
+class NOKOKKOS{};
 
 /// For use with type promotion
 using Sacado::Promote;
@@ -83,7 +85,7 @@ using Sacado::mpl::lazy_disable_if;
 using Sacado::mpl::disable_if_c;
 
 /// Vector
-template <typename T,  typename ES=NOKOKKOS>
+template <typename T>
 struct is_vector {
   static const bool value = false;
 };
@@ -93,13 +95,13 @@ struct is_vector< Vector<T, N, ES> > {
   static const bool value = true;
 };
 
-template <typename T, Index N,  typename ES=NOKOKKOS>
+template <typename T, Index N,  typename ES>
 struct apply_vector {
-  typedef Vector<typename T::type, N> type;
+  typedef Vector<typename T::type, N, ES> type;
 };
 
 /// 2nd-order tensor
-template <typename T,   typename ES=NOKOKKOS>
+template <typename T>
 struct is_tensor {
   static const bool value = false;
 };
@@ -115,7 +117,7 @@ struct apply_tensor {
 };
 
 /// 3rd-order tensor
-template <typename T,  typename ES=NOKOKKOS>
+template <typename T>
 struct is_tensor3 {
   static const bool value = false;
 };
@@ -125,13 +127,13 @@ struct is_tensor3< Tensor3<T, N, ES> > {
   static const bool value = true;
 };
 
-template <typename T, Index N,  typename ES=NOKOKKOS>
+template <typename T, Index N,  typename ES>
 struct apply_tensor3 {
-  typedef Tensor3<typename T::type, N> type;
+  typedef Tensor3<typename T::type, N, ES> type;
 };
 
 /// 4th-order tensor
-template <typename T,   typename ES=NOKOKKOS>
+template <typename T>
 struct is_tensor4 {
   static const bool value = false;
 };
@@ -147,7 +149,7 @@ struct apply_tensor4 {
 };
 
 /// Matrix
-template <typename T,  typename ES=NOKOKKOS>
+template <typename T>
 struct is_matrix {
   static const bool value = false;
 };
@@ -163,7 +165,7 @@ struct apply_matrix {
 };
 
 /// Tensors from 1st to 4th order and matrix
-template <typename T,  typename ES=NOKOKKOS>
+template <typename T>
 struct order_1234 {
   static const bool value = false;
 };
@@ -232,6 +234,7 @@ struct dimension_string<4> {
 namespace Sacado {
 
 using Intrepid2::DYNAMIC;
+using Intrepid2::NOKOKKOS;
 using Intrepid2::Index;
 using Intrepid2::Vector;
 using Intrepid2::Tensor;
@@ -307,10 +310,10 @@ struct IsScalarType< Vector<T, N, ES> > {
 template <typename T, Index N,  typename ES>
 struct Value< Vector<T, N, ES> > {
   typedef typename ValueType< Vector<T, N, ES> >::type value_type;
-  static const Vector<value_type, N>
+  static const Vector<value_type, N, ES>
   eval(Vector<T, N, ES> const & x)
   {
-    Vector<value_type, N> v(x.get_dimension());
+    Vector<value_type, N, ES> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
       v[i] = Value<T>::eval(x[i]);
@@ -323,10 +326,10 @@ struct Value< Vector<T, N, ES> > {
 template <typename T, Index N,  typename ES>
 struct ScalarValue< Vector<T, N, ES> > {
   typedef typename ScalarType< Vector<T, N, ES> >::type scalar_type;
-  static const Vector<scalar_type, N>
+  static const Vector<scalar_type, N, ES>
   eval(Vector<T, N, ES> const & x)
   {
-    Vector<scalar_type, N> v(x.get_dimension());
+    Vector<scalar_type, N, ES> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
       v[i] = ScalarValue<T>::eval(x[i]);
@@ -464,10 +467,10 @@ struct IsScalarType< Tensor3<T, N, ES> > {
 template <typename T, Index N,  typename ES>
 struct Value< Tensor3<T, N, ES> > {
   typedef typename ValueType< Tensor3<T, N, ES> >::type value_type;
-  static const Tensor3<value_type, N>
+  static const Tensor3<value_type, N, ES>
   eval(Tensor3<T, N, ES> const & x)
   {
-    Tensor3<value_type, N> v(x.get_dimension());
+    Tensor3<value_type, N, ES> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
       v[i] = Value<T>::eval(x[i]);
@@ -480,10 +483,10 @@ struct Value< Tensor3<T, N, ES> > {
 template <typename T, Index N,  typename ES>
 struct ScalarValue< Tensor3<T, N, ES> > {
   typedef typename ScalarType< Tensor3<T, N, ES> >::type scalar_type;
-  static const Tensor3<scalar_type, N>
+  static const Tensor3<scalar_type, N, ES>
   eval(Tensor3<T, N, ES> const & x)
   {
-    Tensor3<scalar_type, N> v(x.get_dimension());
+    Tensor3<scalar_type, N, ES> v(x.get_dimension());
 
     for (Index i = 0; i < x.get_number_components(); ++i) {
       v[i] = ScalarValue<T>::eval(x[i]);

@@ -226,7 +226,7 @@ operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES> >::type
 operator*(S const & s, Tensor3<T, N, ES> const & A)
 {
   Tensor3<typename Promote<S, T>::type, N, ES>
@@ -242,7 +242,7 @@ operator*(S const & s, Tensor3<T, N, ES> const & A)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N, ES> >::type
 operator*(Tensor3<T, N, ES> const & A, S const & s)
 {
   Tensor3<typename Promote<S, T>::type, N, ES>
@@ -322,7 +322,7 @@ Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k)
 // Local utility functions
 namespace {
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void ones_in_diagonal(Tensor3<T, N, ES> & A)
 {
@@ -353,7 +353,7 @@ void ones_in_diagonal(Tensor3<T, N, ES> & A)
   return;
 }
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
 void fill_levi_civita(Tensor3<T, N, ES> & A)
 {

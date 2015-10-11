@@ -578,8 +578,7 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
     total_number_points *= points_per_dimension_(dimension);
   }
 
-  Vector<LongCount, N>
-  steps(number_parameters, ONES);
+  Vector<LongCount, N, ES> steps(number_parameters, ONES);
 
   for (Index dimension = 1; dimension < number_parameters; ++dimension) {
     steps(dimension) =

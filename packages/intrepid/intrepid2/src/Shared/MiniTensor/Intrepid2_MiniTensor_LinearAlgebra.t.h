@@ -98,7 +98,7 @@ Index const maximum_dimension = NPP_MAX_32U ;
   switch (dimension) {
 
   case 1:
-    return Tensor<T, N>(1, ONES) / A(0,0);
+    return Tensor<T, N, ES>(1, ONES) / A(0,0);
     break;
 
   default:
@@ -251,7 +251,7 @@ inverse_fast23(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, dimension_subtract<N, 1>::value >
+Tensor<T, dimension_subtract<N, 1>::value , ES>
 subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 {
   Index const
@@ -260,7 +260,7 @@ subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
   assert(i < dimension);
   assert(j < dimension);
 
-  Tensor<T, dimension_subtract<N, 1>::value >
+  Tensor<T, dimension_subtract<N, 1>::value, ES >
   B(dimension - 1);
 
   Index p = 0;
@@ -1294,7 +1294,7 @@ namespace {
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_bidiagonal(T f, T g, T h)
 {
@@ -1387,7 +1387,7 @@ svd_bidiagonal(T f, T g, T h)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_2x2(Tensor<T, N, ES> const & A)
 {
@@ -1422,7 +1422,7 @@ svd_2x2(Tensor<T, N, ES> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_NxN(Tensor<T, N, ES> const & A)
 {
@@ -1843,7 +1843,7 @@ polar_left_logV(Tensor<T, N, ES> const & F)
   return boost::make_tuple(V, R, v);
 }
 
-template<typename T, Index N,  typename ES=NOKOKKOS>
+template<typename T, Index N,  typename ES>
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
 polar_left_logV_eig(Tensor<T, N, ES> const & F)
 {
