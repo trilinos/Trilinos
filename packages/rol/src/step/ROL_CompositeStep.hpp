@@ -76,7 +76,10 @@ private:
 
   // Stopping conditions.
   int maxiterCG_;
+  int maxiterOSS_;
   Real tolCG_;
+  Real tolOSS_;
+  bool tolOSSfixed_;
 
   // Tolerances and stopping conditions for subalgorithms.
   Real lmhtol_;
@@ -118,7 +121,7 @@ private:
     return (T(0) < val) - (val < T(0));
   }
 
-  void printInfoLS(std::vector<Real> res) {
+  void printInfoLS(const std::vector<Real> &res) const {
     if (infoLS_) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
@@ -132,6 +135,10 @@ private:
     }
   }
 
+  Real setTolOSS(const Real intol) const {
+    return tolOSSfixed_ ? tolOSS_ : intol;
+  }
+
 public:
 
   virtual ~CompositeStep() {}
@@ -143,16 +150,21 @@ public:
     iterCG_ = 0;
 
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
-    Real nominal_tol = steplist.get("Nominal Optimality Solver Tolerance", 1e-3);
- 
-    maxiterCG_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
-    tolCG_     = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",1e-2);
 
-    lmhtol_  = nominal_tol;
-    qntol_   = nominal_tol;
-    pgtol_   = nominal_tol;
-    projtol_ = nominal_tol;
-    tangtol_ = nominal_tol;
+    //maxiterOSS_  = steplist.sublist("Optimality System Solver").get("Iteration Limit", 50);
+    tolOSS_      = steplist.sublist("Optimality System Solver").get("Nominal Relative Tolerance", 1e-8);
+    tolOSSfixed_ = steplist.sublist("Optimality System Solver").get("Fix Tolerance", true);
+ 
+    maxiterCG_   = steplist.sublist("Tangential Subproblem Solver").get("Iteration Limit", 20);
+    tolCG_       = steplist.sublist("Tangential Subproblem Solver").get("Relative Tolerance", 1e-2);
+
+    int outLvl   = steplist.get("Output Level", 0);
+
+    lmhtol_  = tolOSS_;
+    qntol_   = tolOSS_;
+    pgtol_   = tolOSS_;
+    projtol_ = tolOSS_;
+    tangtol_ = tolOSS_;
     tntmax_  = 2.0;
 
     zeta_    = 0.8;
@@ -164,12 +176,15 @@ public:
     nnorm_   = 0.0;
     tnorm_   = 0.0;
 
+    infoALL_  = false;
+    if (outLvl > 0) { 
+      infoALL_ = true;
+    }
     infoQN_  = false;
     infoLM_  = false;
     infoTS_  = false;
     infoAC_  = false;
     infoLS_  = false;
-    infoALL_ = false;
     infoQN_  = infoQN_ || infoALL_;
     infoLM_  = infoLM_ || infoALL_;
     infoTS_  = infoTS_ || infoALL_;
@@ -468,7 +483,7 @@ public:
 
     /* Compute linear solver tolerance. */
     Real b1norm  = b1->norm();
-    Real tol = lmhtol_*b1norm;
+    Real tol = setTolOSS(lmhtol_*b1norm);
 
     /* Solve augmented system. */
     augiters = con.solveAugmentedSystem(*v1, *v2, *b1, *b2, x, tol);
@@ -553,7 +568,7 @@ public:
     // Compute tolerance for linear solver.
     con.applyJacobian(*ctemp, *nCP, x, zerotol);
     ctemp->plus(c);
-    Real tol = qntol_*ctemp->norm();
+    Real tol = setTolOSS(qntol_*ctemp->norm());
     // Form right-hand side.
     ctemp->scale(-one);
     nCPdual->set(nCP->dual());
@@ -696,7 +711,7 @@ public:
       // Compute (inexact) projection W*r.
       if (iterCG_ == 1) {
         // Solve augmented system.
-        Real tol = pgtol_;
+        Real tol = setTolOSS(pgtol_);
         augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
         totalCallLS_++;
         totalIterLS_ = totalIterLS_ + augiters.size();
@@ -730,7 +745,7 @@ public:
       }
       else {
         // Solve augmented system.
-        Real tol = projtol_;
+        Real tol = setTolOSS(projtol_);
         augiters = con.solveAugmentedSystem(*Wr, *ltemp, *r, *czero, x, tol);
         totalCallLS_++;
         totalIterLS_ = totalIterLS_ + augiters.size();
@@ -1045,7 +1060,7 @@ public:
           }
         }
         // Solve augmented system.
-        Real tol = tangtol;
+        Real tol = setTolOSS(tangtol);
         // change augiters = con.solveAugmentedSystem(t, *ltemp, *t_orig, *czero, x, tol);
         t_dual->set(t_orig->dual());
         augiters = con.solveAugmentedSystem(t, *ltemp, *t_dual, *czero, x, tol);
@@ -1153,11 +1168,13 @@ public:
             projtol_ = projtol;
             tangtol_ = tangtol;
           }*/
-          lmhtol_  *= tol_red_all;
-          qntol_   *= tol_red_all;
-          pgtol_   *= tol_red_all;
-          projtol_ *= tol_red_all;
-          tangtol_ *= tol_red_all;
+          if (!tolOSSfixed_) {
+            lmhtol_  *= tol_red_all;
+            qntol_   *= tol_red_all;
+            pgtol_   *= tol_red_all;
+            projtol_ *= tol_red_all;
+            tangtol_ *= tol_red_all;
+          }
           // Recompute the quasi-normal step.
           computeQuasinormalStep(n, c, x, zeta_*Delta_, con);
           // Solve tangential subproblem.

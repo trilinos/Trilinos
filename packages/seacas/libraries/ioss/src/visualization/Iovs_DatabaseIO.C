@@ -925,6 +925,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
+    int64_t cns_save_num_to_get;
 
     if( num_to_get > 0 &&
        (field.get_name() == "ids" ||
@@ -934,7 +935,10 @@ namespace Iovs {
       int id = get_id(ns, EX_NODE_SET, &this->ids_);
 
       if(this->createNodeSets == 0)
+        {
+        cns_save_num_to_get = num_to_get;
         num_to_get = 0;
+        }
 
       if (field.get_type() == Ioss::Field::INTEGER)
         {
@@ -956,6 +960,12 @@ namespace Iovs {
                                      static_cast<int64_t*>(data),
                                      this->DBFilename.c_str());
         }
+
+      if(this->createNodeSets == 0)
+        {
+        num_to_get = cns_save_num_to_get;
+        }
+
       }
     return num_to_get;
   }
@@ -976,6 +986,7 @@ namespace Iovs {
                                          void *data, size_t data_size) const
   {
     int64_t num_to_get = field.verify(data_size);
+    int64_t css_save_num_to_get;
 
     if ( (field.get_name() == "element_side")||
          (field.get_name() == "element_side_raw") )
@@ -999,15 +1010,57 @@ namespace Iovs {
           }
 
         if(this->createSideSets == 0)
+          {
+          css_save_num_to_get = num_to_get;
           num_to_get = 0;
+          }
 
+          //std::cerr << "Iovs_DatabaseIO::"
+          //    "put_field_internal doing CreateSideSet (1)\n";
           if(this->pvcsa)
-            this->pvcsa->CreateSideSet(eb->name().c_str(),
+            {
+            const Ioss::SideSet *ebowner = eb->owner();
+            /*
+            if(ebowner == NULL)
+              {
+              std::cerr << "eb->owner() returned null\n";
+              }
+            else
+              {
+              std::cerr << "eb->owner() not null\n";
+              std::cerr << "ebowner->name(): " << ebowner->name() << "\n";
+              }
+            */
+            /*NOTE: Jeff Mauldin JAM 2015Oct8
+             CreateSideSet is called once for each block which the sideset
+             spans, and the eb->name() for the side set is the ebowner->name()
+             with additional characters to indicate which block we are doing.
+             The current implementation of the sierra sideset construction
+             creates a single independent sideset and collects all the
+             nodes and elements from the side set from each block spanned by
+             the sideset into that single sideset.  It needs to have the
+             ebowner->name(), not the eb->name(), because that is the name
+             in the input deck for the sideset for reference for things like
+             extractblock.  It may become necessary at a later date to
+             pass in both ebowner->name() AND eb->name(), but for now we
+             are just passing in ebowner->name() to give us correct
+             functionality while not chaning the function interface*/
+            this->pvcsa->CreateSideSet(/*eb->name().c_str(),*/
+                                       ebowner->name().c_str(),
                                        id,
                                        num_to_get,
                                        &element[0],
                                        &side[0],
                                        this->DBFilename.c_str());
+            }
+          //std::cerr << "Iovs_DatabaseIO::"
+          //    "put_field_internal back from CreateSideSet (1) \n";
+          //
+          //
+        if(this->createSideSets == 0)
+          {
+          num_to_get = css_save_num_to_get;
+          }
         }
       else
         {
@@ -1022,15 +1075,56 @@ namespace Iovs {
           }
 
         if(this->createSideSets == 0)
-           num_to_get = 0;
+          {
+          css_save_num_to_get = num_to_get;
+          num_to_get = 0;
+          }
 
+         //std::cerr << "Iovs_DatabaseIO::"
+         //    "put_field_internal doing CreateSideSet (2)\n";
          if(this->pvcsa)
-            this->pvcsa->CreateSideSet(eb->name().c_str(),
+            {
+            const Ioss::SideSet *ebowner = eb->owner();
+            /*
+            if(ebowner == NULL)
+              {
+              std::cerr << "eb->owner() returned null\n";
+              }
+            else
+              {
+              std::cerr << "eb->owner() not null\n";
+              std::cerr << "ebowner->name(): " << ebowner->name() << "\n";
+              }
+            */
+            /*NOTE: Jeff Mauldin JAM 2015Oct8
+             CreateSideSet is called once for each block which the sideset
+             spans, and the eb->name() for the side set is the ebowner->name()
+             with additional characters to indicate which block we are doing.
+             The current implementation of the sierra sideset construction
+             creates a single independent sideset and collects all the
+             nodes and elements from the side set from each block spanned by
+             the sideset into that single sideset.  It needs to have the
+             ebowner->name(), not the eb->name(), because that is the name
+             in the input deck for the sideset for reference for things like
+             extractblock.  It may become necessary at a later date to
+             pass in both ebowner->name() AND eb->name(), but for now we
+             are just passing in ebowner->name() to give us correct
+             functionality while not chaning the function interface*/
+            this->pvcsa->CreateSideSet(/*eb->name().c_str(),*/
+                                       ebowner->name().c_str(),
                                        id,
                                        num_to_get,
                                        &element[0],
                                        &side[0],
                                        this->DBFilename.c_str());
+            }
+          //std::cerr << "Iovs_DatabaseIO::"
+          //    "put_field_internal back from CreateSideSet (2) \n";
+          //
+        if(this->createSideSets == 0)
+          {
+          num_to_get = css_save_num_to_get;
+          }
         }
       }
     return num_to_get;

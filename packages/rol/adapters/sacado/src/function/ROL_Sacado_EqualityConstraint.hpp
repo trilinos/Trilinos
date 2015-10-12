@@ -113,14 +113,14 @@ void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv
     typedef StdVector<ScalarT>         SV;
   
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
-    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     int n = xp->size();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
 
     RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
 
@@ -169,13 +169,13 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<Scala
     typedef StdVector<ScalarT>         SV;
   
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
 
     RCP<vector> ajup = dyn_cast<SV>(aju).getVector();
 
@@ -227,16 +227,16 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
     typedef StdVector<ScalarT>           SV;
   
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the dual constraint vector
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
 
     // Get a pointer to the directional adjoint Hessian 
     RCP<vector> ahuvp = dyn_cast<SV>(ahuv).getVector();

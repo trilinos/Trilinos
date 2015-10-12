@@ -9,6 +9,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 
+#include "SideIdPool.hpp"
 #include "ElemElemGraphImpl.hpp"
 
 namespace stk { class CommBuffer; }
@@ -66,8 +67,6 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
-    stk::mesh::EntityId get_available_side_id();
-
     void add_elements(const stk::mesh::EntityVector &elements);
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
@@ -88,6 +87,7 @@ public:
     void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
     void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
                                          impl::ParallelGraphInfo &new_parallel_graph_entries);
+    stk::mesh::EntityId get_available_side_id();
 
 protected:
     void fill_graph();
@@ -154,8 +154,6 @@ protected:
 
     void connect_remote_element_to_existing_graph(const impl::SharedEdgeInfo &receivedSharedEdge);
 
-    void generate_additional_ids_collective(size_t num_additional_ids_needed);
-
     void collect_local_shell_connectivity_data(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete,
                                                std::vector<impl::ShellConnectivityData>& shellConnectivityList,
                                                stk::mesh::EntityVector &deletedShells);
@@ -192,11 +190,10 @@ protected:
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
-    std::vector<stk::mesh::EntityId> m_suggested_side_ids;
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
-    size_t m_num_ids_used;
+    stk::mesh::SideIdPool m_sideIdPool;
 
     static const impl::LocalId INVALID_LOCAL_ID;
     static const int INVALID_SIDE_ID;
@@ -206,7 +203,7 @@ private:
                                                            const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
-    void make_space_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
+    void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
     void add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
@@ -233,8 +230,6 @@ private:
                                                                                         int side_id);
 
     size_t pack_shared_side_nodes_of_elements(stk::CommSparse &comm, impl::ElemSideToProcAndFaceId& elements_to_communicate);
-
-    void reset_suggested_side_id_iter(size_t numIdsNotReallyUsed);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

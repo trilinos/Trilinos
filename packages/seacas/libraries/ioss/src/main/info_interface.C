@@ -241,12 +241,3 @@ bool Info::Interface::parse_options(int argc, char **argv)
   return true;
 }
 
-void Info::Interface::dump(std::ostream &) const
-{
-}
-
-void Info::Interface::show_version()
-{
-  std::cout << "\tExodusII Information Program\n";
-}
-

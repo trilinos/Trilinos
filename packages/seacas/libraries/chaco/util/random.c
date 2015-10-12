@@ -129,65 +129,11 @@ double rand_rect_port(void)
 /* skip ahead in recursion
   residue = (a^skip * init) mod modulus
   Use Russian peasant algorithm  */
-long skip_ahead(long a, long init_rand, long modulus, long skip)
-{
-  long residue = 1 ;
-
-  if (init_rand < 1 || init_rand > modulus-1 || skip < 0)
-    return -1 ;
-  while (skip > 0) {
-    if (skip % 2)
-      residue = mult_mod(a, residue, modulus) ;
-    a = mult_mod(a, a, modulus) ;
-    skip >>= 1 ;
-  }
-  residue = mult_mod(residue, init_rand, modulus) ;
-
-  assert(residue >= 1 && residue <= modulus-1) ;
-
-  return residue ;
-
-}
 
 
 /* calculate residue = (a * x) mod modulus for arbitrary a and x
   without overflow assume 0 < a < modulus and 0 < x < modulus
   use Russian peasant algorithm followed by approximate factoring */
-long mult_mod(long a, long x, long modulus)
-{
-
-  long q, r, k, residue;
-
-  residue = -modulus ;        /* to avoid overflow on addition */
-
-  while (a > SHRT_MAX) {  /* use Russian Peasant to reduce a */
-    if (a % 2) {
-      residue += x;
-      if (residue > 0)
-	residue -= modulus ;
-    }
-    x += (x - modulus) ;
-    if (x < 0)
-      x += modulus ;
-    a >>=1;
-  }
-  /* now apply approximate factoring to a
-     and compute (a * x) mod modulus */
-  q = modulus / a ;
-  r = modulus - a * q ;
-  k = x / q ;
-  x = a * (x - q * k) - r * k ;
-  while (x < 0)
-    x += modulus ;
-  /* add result to residue and take mod */
-  residue += x ;
-  if (residue < 0)    /* undo initial subtraction if necessary */
-    residue += modulus ;
-
-  assert(residue >= 1 && residue <= modulus-1) ;
-
-  return residue ;
-}
 
 
 #if     defined(TESTING)

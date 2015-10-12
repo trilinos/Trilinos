@@ -88,7 +88,6 @@ extern struct Parallel_IO PIO_Info;
 
 extern char    Par_Nem_File_Name[];        /* The parallel nemesis file name */
 
-int which_file(char *, char *, char **, char **);
 int read_pexoII_info(const char *);
 void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
 void gen_par_filename(char *scalar_fname, char *par_fname, int proc_for, int nprocs);

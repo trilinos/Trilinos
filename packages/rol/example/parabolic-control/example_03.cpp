@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_02.cpp
+/*! \file  example_03.cpp
     \brief Shows how to solve a linear-quadratic parabolic control problem 
            with bound constraints.
 */
@@ -65,12 +65,19 @@
 
 template<class Real>
 class Objective_ParabolicControl : public ROL::Objective<Real> {
+
+  typedef std::vector<Real>     vector;
+  typedef ROL::Vector<Real>     V;
+  typedef ROL::StdVector<Real>  SV;
+
+  typedef typename vector::size_type uint;
+
 private:
   std::vector<Real> u0_;
   Real alpha_;
   Real eps2_;
-  int nx_;
-  int nt_;
+  uint nx_;
+  uint nt_;
   Real T_;
   Real dx_;
   Real dt_;
@@ -81,17 +88,27 @@ private:
 /***************************************************************/
 /********** BEGIN PRIVATE MEMBER FUNCTION DECLARATION **********/
 /***************************************************************/
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    return Teuchos::dyn_cast<const SV>(x).getVector();
+  }
+ 
+  Teuchos::RCP<vector> getVector( V& x ) {
+    return Teuchos::dyn_cast<SV>(x).getVector();
+  }
+
+
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
-    Mu.resize(this->nx_,0.0);
-    for (int i=0; i<this->nx_; i++) {
+    Mu.resize(nx_,0.0);
+    for (uint i=0; i<nx_; i++) {
       if ( i == 0 ) {
-        Mu[i] = this->dx_/6.0*(2.0*u[i] + u[i+1]);
+        Mu[i] = dx_/6.0*(2.0*u[i] + u[i+1]);
       }
-      else if ( i == this->nx_-1 ) {
-        Mu[i] = this->dx_/6.0*(u[i-1] + 2.0*u[i]);
+      else if ( i == nx_-1 ) {
+        Mu[i] = dx_/6.0*(u[i-1] + 2.0*u[i]);
       }
       else {
-        Mu[i] = this->dx_/6.0*(u[i-1] + 4.0*u[i] + u[i+1]);
+        Mu[i] = dx_/6.0*(u[i-1] + 4.0*u[i] + u[i+1]);
       }
     }
   }
@@ -99,35 +116,35 @@ private:
   void compute_pde_jacobian(std::vector<Real> &d, std::vector<Real> &o, const std::vector<Real> &u) {
     // Get Diagonal and Off-Diagonal Entries of linear PDE Jacobian
     d.clear();
-    d.resize(this->nx_,4.0*this->dx_/6.0 + this->dt_*this->eps2_*2.0/this->dx_);
-    d[0]           = this->dx_/3.0 + this->dt_*this->eps2_/this->dx_;
-    d[this->nx_-1] = this->dx_/3.0 + this->dt_*this->eps2_/this->dx_;
+    d.resize(nx_,4.0*dx_/6.0 + dt_*eps2_*2.0/dx_);
+    d[0]           = dx_/3.0 + dt_*eps2_/dx_;
+    d[nx_-1] = dx_/3.0 + dt_*eps2_/dx_;
     o.clear();
-    o.resize(this->nx_-1,this->dx_/6.0 - this->dt_*this->eps2_/this->dx_);
+    o.resize(nx_-1,dx_/6.0 - dt_*eps2_/dx_);
     // Contribution from nonlinearity
     Real phi1 = 0.0, phi2 = 0.0, f = 0.0, x = 0.0, w = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      if (i<this->nx_-1) {
-        for (int j=0; j<4; j++) {
-          x = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i+1);
-          w = 0.5*this->dx_*this->wts_[j];
-          f = this->evaluate_nonlinearity(x,u,1);
+    for (uint i=0; i<nx_; i++) {
+      if (i<nx_-1) {
+        for (uint j=0; j<4; j++) {
+          x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
+          w = 0.5*dx_*wts_[j];
+          f = evaluate_nonlinearity(x,u,1);
           // Diagonal contribution
-          phi1 = ((Real)(i+1)*this->dx_-x)/this->dx_;
-          d[i]+= this->dt_*w*f*phi1*phi1;
+          phi1 = ((Real)(i+1)*dx_-x)/dx_;
+          d[i]+= dt_*w*f*phi1*phi1;
           // Off diagonal contribution
-          phi2 = (x-(Real)(i)*this->dx_)/this->dx_;
-          o[i]+= this->dt_*w*f*phi1*phi2;
+          phi2 = (x-static_cast<Real>(i)*dx_)/dx_;
+          o[i]+= dt_*w*f*phi1*phi2;
         }
       }
       if (i>0) {
-        for (int j=0; j<4; j++) {
-          x = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i-1);
-          w = 0.5*this->dx_*this->wts_[j];
-          f = this->evaluate_nonlinearity(x,u,1);
+        for (uint j=0; j<4; j++) {
+          x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i-1);
+          w = 0.5*dx_*wts_[j];
+          f = evaluate_nonlinearity(x,u,1);
           // Diagonal contribution
-          phi1 = (x-(Real)(i-1)*this->dx_)/this->dx_;
-          d[i]+= this->dt_*w*f*phi1*phi1;
+          phi1 = (x-(Real)(i-1)*dx_)/dx_;
+          d[i]+= dt_*w*f*phi1*phi1;
         }
       }
     }
@@ -137,27 +154,27 @@ private:
                  const std::vector<Real> &s, Real alpha = 1.0) {
     // Contribution from nonlinearity
     Real phi = 0.0, fx = 0.0, px = 0.0, sx = 0.0, x = 0.0, w = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      if (i<this->nx_-1) {
-        for (int j=0; j<4; j++) {
-          x  = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i+1);
-          w  = 0.5*this->dx_*this->wts_[j];
-          fx = this->evaluate_nonlinearity(x,u,2);
-          px = this->evaluate_solution(x,p);
-          sx = this->evaluate_solution(x,s);
-          phi = ((Real)(i+1)*this->dx_-x)/this->dx_;
-          r[i]+= alpha*this->dt_*w*fx*px*sx*phi;
+    for (uint i=0; i<nx_; i++) {
+      if (i<nx_-1) {
+        for (uint j=0; j<4; j++) {
+          x  = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
+          w  = 0.5*dx_*wts_[j];
+          fx = evaluate_nonlinearity(x,u,2);
+          px = evaluate_solution(x,p);
+          sx = evaluate_solution(x,s);
+          phi = (static_cast<Real>(i+1)*dx_-x)/dx_;
+          r[i]+= alpha*dt_*w*fx*px*sx*phi;
         }
       }
       if (i>0) {
-        for (int j=0; j<4; j++) {
-          x = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i-1);
-          w = 0.5*this->dx_*this->wts_[j];
-          fx = this->evaluate_nonlinearity(x,u,2);
-          px = this->evaluate_solution(x,p);
-          sx = this->evaluate_solution(x,s);
-          phi = (x-(Real)(i-1)*this->dx_)/this->dx_;
-          r[i]+= alpha*this->dt_*w*fx*px*sx*phi;
+        for (uint j=0; j<4; j++) {
+          x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i-1);
+          w = 0.5*dx_*wts_[j];
+          fx = evaluate_nonlinearity(x,u,2);
+          px = evaluate_solution(x,p);
+          sx = evaluate_solution(x,s);
+          phi = (x-(Real)(i-1)*dx_)/dx_;
+          r[i]+= alpha*dt_*w*fx*px*sx*phi;
         }
       }
     }
@@ -179,19 +196,19 @@ private:
     // Determine u(x)
     Real pt  = 0.0;
     Real val = 0.0;
-    for (int i=0; i<this->nx_; i++) {
-      if (x <= (Real)(i+1)*this->dx_ && x >= (Real)(i)*this->dx_) {
-        pt  = (Real)(i+1)*this->dx_;
-        val = u[i]*(pt-x)/this->dx_;
-        pt  = (Real)(i)*this->dx_;
-        val+= u[i+1]*(x-pt)/this->dx_;
+    for (uint i=0; i<nx_; i++) {
+      if (x <= static_cast<Real>(i+1)*dx_ && x >= static_cast<Real>(i)*dx_) {
+        pt  = static_cast<Real>(i+1)*dx_;
+        val = u[i]*(pt-x)/dx_;
+        pt  = static_cast<Real>(i)*dx_;
+        val+= u[i+1]*(x-pt)/dx_;
         break;
       }
-      else if (x <= (Real)(i)*this->dx_ && x >= (Real)(i-1)*this->dx_) {
-        pt  = (Real)(i)*this->dx_;
-        val = u[i-1]*(pt-x)/this->dx_;
-        pt  = (Real)(i-1)*this->dx_;
-        val+= u[i]*(x-pt)/this->dx_;
+      else if (x <= static_cast<Real>(i)*dx_ && x >= static_cast<Real>(i-1)*dx_) {
+        pt  = static_cast<Real>(i)*dx_;
+        val = u[i-1]*(pt-x)/dx_;
+        pt  = static_cast<Real>(i-1)*dx_;
+        val+= u[i]*(x-pt)/dx_;
         break;
       }
     }
@@ -200,7 +217,7 @@ private:
 
   Real evaluate_nonlinearity(const Real x, const std::vector<Real> &u, const int deriv = 0) {
     // Compute u(x)^3 - u(x) or its derivatives 3 u(x)^2 - 1 and 6 u(x)
-    Real val = this->evaluate_solution(x,u);
+    Real val = evaluate_solution(x,u);
     if (deriv == 0) {
       return std::pow(val,3.0)-val;
     }
@@ -215,44 +232,44 @@ private:
   void compute_residual(std::vector<Real> &r, 
                   const std::vector<Real> &up, const std::vector<Real> &u, const Real z) {
     r.clear();
-    r.resize(this->nx_,0.0);
+    r.resize(nx_,0.0);
     Real x = 0.0, w = 0.0;
-    for (int i=0; i<this->nx_; i++) {
+    for (uint i=0; i<nx_; i++) {
       if ( i==0 ) {
         // Contribution from mass and stiffness term
-        r[i] = this->dx_/6.0*(2.0*u[i]+u[i+1]) + this->dt_*this->eps2_/this->dx_*(u[i]-u[i+1]);
+        r[i] = dx_/6.0*(2.0*u[i]+u[i+1]) + dt_*eps2_/dx_*(u[i]-u[i+1]);
         // Contribution from previous state
-        r[i]-= this->dx_/6.0*(2.0*up[i]+up[i+1]); 
+        r[i]-= dx_/6.0*(2.0*up[i]+up[i+1]); 
       }
-      else if ( i==this->nx_-1 ) {
+      else if ( i==nx_-1 ) {
         // Contribution from mass and stiffness term
-        r[i] = this->dx_/6.0*(u[i-1]+2.0*u[i]) + this->dt_*this->eps2_/this->dx_*(u[i]-u[i-1]);
+        r[i] = dx_/6.0*(u[i-1]+2.0*u[i]) + dt_*eps2_/dx_*(u[i]-u[i-1]);
         // Contribution from previous state
-        r[i]-= this->dx_/6.0*(2.0*up[i]+up[i-1]); 
+        r[i]-= dx_/6.0*(2.0*up[i]+up[i-1]); 
         // Contribution from control
-        r[i]-= this->dt_*z;
+        r[i]-= dt_*z;
       }
       else {
         // Contribution from mass and stiffness term
-        r[i] = this->dx_/6.0*(u[i-1]+4.0*u[i]+u[i+1]) 
-             + this->dt_*this->eps2_/this->dx_*(2.0*u[i]-u[i-1]-u[i+1]);
+        r[i] = dx_/6.0*(u[i-1]+4.0*u[i]+u[i+1]) 
+             + dt_*eps2_/dx_*(2.0*u[i]-u[i-1]-u[i+1]);
         // Contribution from previous state
-        r[i]-= this->dx_/6.0*(up[i-1]+4.0*up[i]+up[i+1]); 
+        r[i]-= dx_/6.0*(up[i-1]+4.0*up[i]+up[i+1]); 
       }
 
       // Contribution from nonlinearity
-      if (i<this->nx_-1) {
+      if (i<nx_-1) {
         for (int j=0; j<4; j++) {
-          x = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i+1);
-          w = 0.5*this->dx_*this->wts_[j];
-          r[i]+= this->dt_*w*this->evaluate_nonlinearity(x,u,0)*((Real)(i+1)*this->dx_-x)/this->dx_;
+          x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i+1);
+          w = 0.5*dx_*wts_[j];
+          r[i]+= dt_*w*evaluate_nonlinearity(x,u,0)*(static_cast<Real>(i+1)*dx_-x)/dx_;
         }
       }
       if (i>0) {
-        for (int j=0; j<4; j++) {
-          x = 0.5*this->dx_*this->pts_[j] + 0.5*this->dx_*(Real)(2*i-1);
-          w = 0.5*this->dx_*this->wts_[j];
-          r[i]+= this->dt_*w*this->evaluate_nonlinearity(x,u,0)*(x-(Real)(i-1)*this->dx_)/this->dx_;
+        for (uint j=0; j<4; j++) {
+          x = 0.5*dx_*pts_[j] + 0.5*dx_*(Real)(2*i-1);
+          w = 0.5*dx_*wts_[j];
+          r[i]+= dt_*w*evaluate_nonlinearity(x,u,0)*(x-static_cast<Real>(i-1)*dx_)/dx_;
         }
       }
     }
@@ -260,14 +277,14 @@ private:
 
   Real compute_norm(const std::vector<Real> &r) {
     Real norm = 0.0;
-    for (unsigned i=0; i<r.size(); i++) {
+    for (uint i=0; i<r.size(); i++) {
       norm += r[i]*r[i];
     }
     return std::sqrt(norm);
   }
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (unsigned i=0; i<u.size(); i++) {
+    for (uint i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }
@@ -278,10 +295,11 @@ private:
     // Perform LDL factorization
     Teuchos::LAPACK<int,Real> lp;
     int info;
-    int ldb  = this->nx_;
+    int nx  = static_cast<int>(nx_);
+    int ldb = nx;
     int nhrs = 1;
-    lp.PTTRF(this->nx_,&d[0],&o[0],&info);
-    lp.PTTRS(this->nx_,nhrs,&d[0],&o[0],&u[0],ldb,&info);
+    lp.PTTRF(nx,&d[0],&o[0],&info);
+    lp.PTTRS(nx,nhrs,&d[0],&o[0],&u[0],ldb,&info);
   }
 
   void run_newton(std::vector<Real> &u, const std::vector<Real> &up, const Real z) {
@@ -289,36 +307,36 @@ private:
     u.assign(up.begin(),up.end());
     // Compute residual and residual norm
     std::vector<Real> r(u.size(),0.0);
-    this->compute_residual(r,up,u,z);
-    Real rnorm = this->compute_norm(r);
+    compute_residual(r,up,u,z);
+    Real rnorm = compute_norm(r);
     // Define tolerances
     Real tol   = 1.e2*ROL::ROL_EPSILON;
     Real maxit = 100;
     // Initialize Jacobian storage
-    std::vector<Real> d(this->nx_,0.0);
-    std::vector<Real> o(this->nx_-1,0.0);
+    std::vector<Real> d(nx_,0.0);
+    std::vector<Real> o(nx_-1,0.0);
     // Iterate Newton's method
     Real alpha = 1.0, tmp = 0.0;
-    std::vector<Real> s(this->nx_,0.0);
-    std::vector<Real> utmp(this->nx_,0.0);
-    for (int i=0; i<maxit; i++) {
+    std::vector<Real> s(nx_,0.0);
+    std::vector<Real> utmp(nx_,0.0);
+    for (uint i=0; i<maxit; i++) {
       // Get Jacobian
-      this->compute_pde_jacobian(d,o,u);
+      compute_pde_jacobian(d,o,u);
       // Solve Newton system
-      this->linear_solve(s,d,o,r);
+      linear_solve(s,d,o,r);
       // Perform line search
       tmp = rnorm;
       alpha = 1.0;
       utmp.assign(u.begin(),u.end());
-      this->update(utmp,s,-alpha);
-      this->compute_residual(r,up,utmp,z);
-      rnorm = this->compute_norm(r); 
+      update(utmp,s,-alpha);
+      compute_residual(r,up,utmp,z);
+      rnorm = compute_norm(r); 
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
-        this->update(utmp,s,-alpha);
-        this->compute_residual(r,up,utmp,z);
-        rnorm = this->compute_norm(r); 
+        update(utmp,s,-alpha);
+        compute_residual(r,up,utmp,z);
+        rnorm = compute_norm(r); 
       }
       // Update iterate
       u.assign(utmp.begin(),utmp.end());
@@ -333,7 +351,7 @@ private:
 
 public:
 
-  Objective_ParabolicControl(Real alpha = 1.e-4, Real eps = 1.0, int nx = 128, int nt = 100, Real T = 1) 
+  Objective_ParabolicControl(Real alpha = 1.e-4, Real eps = 1.0, uint nx = 128, uint nt = 100, Real T = 1) 
     : alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     eps2_ = eps*eps;    
 
@@ -363,13 +381,13 @@ public:
   void solve_state(std::vector<std::vector<Real> > &U, const std::vector<Real> &z) {
     // Initialize State Storage
     U.clear();
-    U.resize(this->nt_+1);
-    (U[0]).assign(this->u0_.begin(),this->u0_.end());
-    std::vector<Real> up(this->u0_);
-    std::vector<Real> u(this->u0_);
+    U.resize(nt_+1);
+    (U[0]).assign(u0_.begin(),u0_.end());
+    std::vector<Real> up(u0_);
+    std::vector<Real> u(u0_);
     // Time Step Using Implicit Euler
-    for ( int t = 0; t < this->nt_; t++ ) {
-      this->run_newton(u,up,z[t]);
+    for ( uint t = 0; t < nt_; t++ ) {
+      run_newton(u,up,z[t]);
       (U[t+1]).assign(u.begin(),u.end());
       up.assign(u.begin(),u.end());
     }
@@ -378,29 +396,29 @@ public:
   void solve_adjoint(std::vector<std::vector<Real> > &P, const std::vector<std::vector<Real> > &U) {
     // Initialize State Storage
     P.clear();
-    P.resize(this->nt_);
+    P.resize(nt_);
     // Time Step Using Implicit Euler
-    std::vector<Real> p(this->nx_,0.0);
-    std::vector<Real> d(this->nx_,0.0);
-    std::vector<Real> r(this->nx_,0.0);
-    std::vector<Real> o(this->nx_-1,0.0);
-    for ( int t = this->nt_; t > 0; t-- ) {
+    std::vector<Real> p(nx_,0.0);
+    std::vector<Real> d(nx_,0.0);
+    std::vector<Real> r(nx_,0.0);
+    std::vector<Real> o(nx_-1,0.0);
+    for ( uint t = nt_; t > 0; t-- ) {
       // Get PDE Jacobian
-      this->compute_pde_jacobian(d,o,U[t]);
+      compute_pde_jacobian(d,o,U[t]);
       // Get Right Hand Side
-      r.assign(this->nx_,0.0);
-      if ( t==this->nt_ ) {
-        std::vector<Real> diff(this->nx_,0.0);
-        for (int i=0; i<this->nx_; i++) {
-          diff[i] = -((U[t])[i]-this->evaluate_target((Real)i*this->dx_));
+      r.assign(nx_,0.0);
+      if ( t==nt_ ) {
+        std::vector<Real> diff(nx_,0.0);
+        for (uint i=0; i<nx_; i++) {
+          diff[i] = -((U[t])[i]-evaluate_target(static_cast<Real>(i)*dx_));
         }
-        this->apply_mass(r,diff);
+        apply_mass(r,diff);
       }
       else {
-        this->apply_mass(r,P[t]);
+        apply_mass(r,P[t]);
       } 
       // Solve solve adjoint system at current time step
-      this->linear_solve(p,d,o,r);
+      linear_solve(p,d,o,r);
       // Update State Storage
       (P[t-1]).assign(p.begin(),p.end());
     }
@@ -410,26 +428,26 @@ public:
                          const std::vector<std::vector<Real> > &U, const std::vector<Real> &z) {
     // Initialize State Storage
     V.clear();
-    V.resize(this->nt_);
+    V.resize(nt_);
     // Time Step Using Implicit Euler
-    std::vector<Real> v(this->nx_,0.0);
-    std::vector<Real> d(this->nx_,0.0);
-    std::vector<Real> r(this->nx_,0.0);
-    std::vector<Real> o(this->nx_-1,0.0);
-    for ( int t = 0; t < this->nt_; t++ ) {
+    std::vector<Real> v(nx_,0.0);
+    std::vector<Real> d(nx_,0.0);
+    std::vector<Real> r(nx_,0.0);
+    std::vector<Real> o(nx_-1,0.0);
+    for ( uint t = 0; t < nt_; t++ ) {
       // Get PDE Jacobian
-      this->compute_pde_jacobian(d,o,U[t+1]);
+      compute_pde_jacobian(d,o,U[t+1]);
       // Get Right Hand Side
       if( t == 0 ) {
-        r.assign(this->nx_,0.0);
-        r[this->nx_-1] = this->dt_*z[t];
+        r.assign(nx_,0.0);
+        r[nx_-1] = dt_*z[t];
       }
       else {
-        this->apply_mass(r,V[t-1]);
-        r[this->nx_-1] += this->dt_*z[t];
+        apply_mass(r,V[t-1]);
+        r[nx_-1] += dt_*z[t];
       }
       // Solve solve adjoint system at current time step
-      this->linear_solve(v,d,o,r);
+      linear_solve(v,d,o,r);
       // Update State Storage
       (V[t]).assign(v.begin(),v.end());
     }
@@ -440,66 +458,68 @@ public:
                            const std::vector<std::vector<Real> > &V, const std::vector<Real> &z) {
     // Initialize State Storage
     Q.clear();
-    Q.resize(this->nt_);
+    Q.resize(nt_);
     // Time Step Using Implicit Euler
-    std::vector<Real> q(this->nx_,0.0);
-    std::vector<Real> d(this->nx_,0.0);
-    std::vector<Real> r(this->nx_,0.0);
-    std::vector<Real> o(this->nx_-1,0.0);
-    for ( int t = this->nt_; t > 0; t-- ) {
+    std::vector<Real> q(nx_,0.0);
+    std::vector<Real> d(nx_,0.0);
+    std::vector<Real> r(nx_,0.0);
+    std::vector<Real> o(nx_-1,0.0);
+    for ( uint t = nt_; t > 0; t-- ) {
       // Get PDE Jacobian
-      this->compute_pde_jacobian(d,o,U[t]);
+      compute_pde_jacobian(d,o,U[t]);
       // Get Right Hand Side
-      if ( t == this->nt_ ) {
-        std::vector<Real> tmp(this->nx_,0.0);
-        r.assign(this->nx_,0.0);
-        this->apply_mass(tmp,V[t-1]);
-        this->update(r,tmp,-1.0);
+      if ( t == nt_ ) {
+        std::vector<Real> tmp(nx_,0.0);
+        r.assign(nx_,0.0);
+        apply_mass(tmp,V[t-1]);
+        update(r,tmp,-1.0);
       }
       else {
-        this->apply_mass(r,Q[t]);
+        apply_mass(r,Q[t]);
       }
-      this->add_pde_hessian(r,U[t],P[t-1],V[t-1],-1.0);
+      add_pde_hessian(r,U[t],P[t-1],V[t-1],-1.0);
       // Solve Tridiagonal System Using LAPACK's SPD Tridiagonal Solver
-      this->linear_solve(q,d,o,r);
+      linear_solve(q,d,o,r);
       // Update State Storage
       (Q[t-1]).assign(q.begin(),q.end());
     }
   }
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    RCP<const vector> zp = getVector(z);
+
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
-    this->solve_state(U,*zp);
+    solve_state(U,*zp);
     // COMPUTE RESIDUAL
     Real val  = 0.0;
     Real res  = 0.0;
     Real res1 = 0.0;
     Real res2 = 0.0;
     Real res3 = 0.0;
-    for (int t=0; t<this->nt_; t++) {
+    for (uint t=0; t<nt_; t++) {
       val += (*zp)[t]*(*zp)[t];
     }
-    val *= 0.5*this->alpha_*this->dt_;
+    val *= 0.5*alpha_*dt_;
 
-    for (int i=0; i<this->nx_; i++) {
+    for (uint i=0; i<nx_; i++) {
       if ( i == 0 ) {
-        res1 = (U[this->nt_])[i]-evaluate_target((Real)i*this->dx_);
-        res2 = (U[this->nt_])[i+1]-evaluate_target((Real)(i+1)*this->dx_);
-        res  = this->dx_/6.0*(2.0*res1 + res2)*res1;
+        res1 = (U[nt_])[i]-evaluate_target(static_cast<Real>(i)*dx_);
+        res2 = (U[nt_])[i+1]-evaluate_target(static_cast<Real>(i+1)*dx_);
+        res  = dx_/6.0*(2.0*res1 + res2)*res1;
       }
-      else if ( i == this->nx_-1 ) {
-        res1 = (U[this->nt_])[i-1]-evaluate_target((Real)(i-1)*this->dx_);
-        res2 = (U[this->nt_])[i]-evaluate_target((Real)i*this->dx_);
-        res  = this->dx_/6.0*(res1 + 2.0*res2)*res2;
+      else if ( i == nx_-1 ) {
+        res1 = (U[nt_])[i-1]-evaluate_target(static_cast<Real>(i-1)*dx_);
+        res2 = (U[nt_])[i]-evaluate_target(static_cast<Real>(i)*dx_);
+        res  = dx_/6.0*(res1 + 2.0*res2)*res2;
       }
       else {
-        res1 = (U[this->nt_])[i-1]-evaluate_target((Real)(i-1)*this->dx_);
-        res2 = (U[this->nt_])[i]-evaluate_target((Real)i*this->dx_);
-        res3 = (U[this->nt_])[i+1]-evaluate_target((Real)(i+1)*this->dx_);
-        res  = this->dx_/6.0*(res1 + 4.0*res2 + res3)*res2;
+        res1 = (U[nt_])[i-1]-evaluate_target(static_cast<Real>(i-1)*dx_);
+        res2 = (U[nt_])[i]-evaluate_target(static_cast<Real>(i)*dx_);
+        res3 = (U[nt_])[i+1]-evaluate_target(static_cast<Real>(i+1)*dx_);
+        res  = dx_/6.0*(res1 + 4.0*res2 + res3)*res2;
       }
       val += 0.5*res;
     }
@@ -507,154 +527,67 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<std::vector<Real> > gp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
+
+    using Teuchos::RCP;
+    RCP<const vector> zp = getVector(z);
+    RCP<vector> gp = getVector(g);
+
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
-    this->solve_state(U,*zp);
+    solve_state(U,*zp);
     // SOLVE ADJOINT EQUATION
     std::vector<std::vector<Real> > P;
-    this->solve_adjoint(P,U);
+    solve_adjoint(P,U);
     // COMPUTE GRADIENT
-    for (int t=0; t<this->nt_; t++) {
-      (*gp)[t] = this->dt_*(this->alpha_*(*zp)[t] - (P[t])[this->nx_-1]);
+    for (uint t=0; t<nt_; t++) {
+      (*gp)[t] = dt_*(alpha_*(*zp)[t] - (P[t])[nx_-1]);
     }
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<std::vector<Real> > hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+    using Teuchos::RCP;
+    RCP<const vector> zp = getVector(z);
+    RCP<const vector> vp = getVector(v);
+    RCP<vector> hvp = getVector(hv);
+
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
-    this->solve_state(U,*zp);
+    solve_state(U,*zp);
     // SOLVE ADJOINT EQUATION
     std::vector<std::vector<Real> > P;
-    this->solve_adjoint(P,U);
+    solve_adjoint(P,U);
     // SOLVE STATE SENSITIVITY EQUATION
     std::vector<std::vector<Real> > V;
-    this->solve_state_sensitivity(V,U,*vp);
+    solve_state_sensitivity(V,U,*vp);
     // SOLVE ADJOINT SENSITIVITY EQUATION
     std::vector<std::vector<Real> > Q;
-    this->solve_adjoint_sensitivity(Q,U,P,V,*vp);
+    solve_adjoint_sensitivity(Q,U,P,V,*vp);
     // COMPUTE HESSVEC
-    for (int t=0; t<this->nt_; t++) {
-      (*hvp)[t] = this->dt_*(this->alpha_*(*vp)[t] - (Q[t])[this->nx_-1]);
+    for (uint t=0; t<nt_; t++) {
+      (*hvp)[t] = dt_*(alpha_*(*vp)[t] - (Q[t])[nx_-1]);
     }
   }
 };
 
-template<class Real>
-class BoundConstraint_ParabolicControl : public ROL::BoundConstraint<Real> {
-private:
-  int dim_;
-  std::vector<Real> x_lo_;
-  std::vector<Real> x_up_;
-  Real min_diff_;
-public:
-  BoundConstraint_ParabolicControl(int dim) : dim_(dim), min_diff_(0.5) {
-    x_lo_.resize(dim_,0.0);
-    x_up_.resize(dim_,1.0);
-  }
-  bool isFeasible( const ROL::Vector<Real> &x ) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    bool val = true;
-    int  cnt = 1;
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( (*ex)[i] >= this->x_lo_[i] && (*ex)[i] <= this->x_up_[i] ) { cnt *= 1; }
-      else                                                            { cnt *= 0; }
-    }
-    if ( cnt == 0 ) { val = false; }
-    return val;
-  }
-  void project( ROL::Vector<Real> &x ) {
-    Teuchos::RCP<std::vector<Real> > ex =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(x)).getVector());
-    for ( int i = 0; i < this->dim_; i++ ) {
-      (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
-    }
-  }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] >= this->x_up_[i]-epsn) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ){
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
-    us->assign(this->x_up_.begin(),this->x_up_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new ROL::StdVector<Real>(us) );
-    u.set(*up);
-  }
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
-    ls->assign(this->x_lo_.begin(),this->x_lo_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new ROL::StdVector<Real>(ls) );
-    l.set(*lp);
-  }
-};
+
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef std::vector<RealT>     vector;
+  typedef ROL::Vector<RealT>     V;
+  typedef ROL::StdVector<RealT>  SV;
+ 
+  typedef typename vector::size_type uint;
+
+  using Teuchos::RCP;  using Teuchos::rcp;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
     outStream = Teuchos::rcp(&std::cout, false);
@@ -667,26 +600,33 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 100;   // Set spatial discretization.
-    int nt      = 100;   // Set temporal discretization.
+    uint nx     = 100;   // Set spatial discretization.
+    uint nt     = 100;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
     Objective_ParabolicControl<RealT> obj(alpha,eps,nx,nt,T);
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (nt, 0.0) );
-    for (int i=0; i<nt; i++) {
+    RCP<vector> x_rcp = rcp( new vector(nt, 1.0) );
+    RCP<vector> y_rcp = rcp( new vector(nt, 0.0) );
+    for (uint i=0; i<nt; i++) {
       (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    ROL::StdVector<RealT> x(x_rcp);
-    ROL::StdVector<RealT> y(y_rcp);
+    SV x(x_rcp);
+    SV y(y_rcp);
     // Check deriatives.
     obj.checkGradient(x,y,true,*outStream);
     obj.checkHessVec(x,y,true,*outStream);
+
     // Initialize Constraints
-    BoundConstraint_ParabolicControl<RealT> icon(nt);
+    RCP<vector> l_rcp = rcp( new vector( nt, 0.0 ) );
+    RCP<vector> u_rcp = rcp( new vector( nt, 1.0 ) );
+
+    RCP<V> lo = rcp( new SV( l_rcp ) );
+    RCP<V> up = rcp( new SV( u_rcp ) );
+
+    ROL::BoundConstraint<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -706,14 +646,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    RCP<ROL::Algorithm<RealT> > algo = rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( unsigned i = 0; i < (unsigned)nt; i++ ) {
+    for ( uint i = 0; i < nt; i++ ) {
       file << (*x_rcp)[i] << "\n";
     }
     file.close();
@@ -729,12 +669,12 @@ int main(int argc, char *argv[]) {
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( unsigned i = 0; i < (unsigned)nt; i++ ) {
+    for ( uint i = 0; i < nt; i++ ) {
       file_tr << (*y_rcp)[i] << "\n";
     }
     file_tr.close();
    
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    RCP<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)nt-1.0);
@@ -746,9 +686,9 @@ int main(int argc, char *argv[]) {
     obj.solve_state(U,*y_rcp);
     std::ofstream file1;
     file1.open("state_tx.txt");
-    for (unsigned t=0; t<(unsigned)nt; t++) {
+    for (uint t=0; t<nt; t++) {
       file1 << t*(T/((RealT)nt-1.0)) << "  ";
-      for (unsigned i=0; i<(unsigned)nx; i++) {
+      for (uint i=0; i<nx; i++) {
         file1 << (U[t])[i] << "  ";
       }
       file1 << "\n";
@@ -756,9 +696,9 @@ int main(int argc, char *argv[]) {
     file1.close();
     std::ofstream file2;
     file2.open("state_xt.txt");
-    for (unsigned i=0; i<(unsigned)nx; i++) {
+    for (uint i=0; i<nx; i++) {
       file2 << i*(1.0/((RealT)nx-1.0)) << "  ";
-      for (unsigned t=0; t<(unsigned)nt; t++) {
+      for (uint t=0; t<nt; t++) {
         file2 << (U[t])[i] << "  ";
       }
       file2 << "\n";

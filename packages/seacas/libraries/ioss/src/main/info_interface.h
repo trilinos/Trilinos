@@ -57,8 +57,6 @@ namespace Info {
       bool ints_64_bit() const {return ints64Bit_;}
       bool list_groups() const {return listGroups_;}
       
-      double maximum_time() const {return maximumTime_;}
-      double minimum_time() const {return minimumTime_;}
       int surface_split_scheme() const {return surfaceSplitScheme_;}
       char field_suffix_separator() const {return fieldSuffixSeparator_;}
       bool use_generic_names() const {return useGenericNames_;}
@@ -69,9 +67,7 @@ namespace Info {
       std::string groupname() const {return groupname_;}
   
       //! Dumps representation of data in this class to cerr
-      void dump(std::ostream &str) const;
   
-      static void show_version();
   
     private:
       void enroll_options();

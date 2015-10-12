@@ -319,12 +319,6 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
     EXPECT_EQ(4u, elem_graph.num_edges());
     EXPECT_EQ(4u, elem_graph.num_parallel_edges());
 
-    std::vector<stk::mesh::EntityId> ids = elem_graph.get_copy_of_all_ids();
-    std::sort(ids.begin(), ids.end());
-    std::vector<stk::mesh::EntityId>::iterator iter = std::unique(ids.begin(), ids.end());
-    bool ids_are_unique = iter == ids.end();
-    EXPECT_TRUE(ids_are_unique);
-
     stk::mesh::impl::ParallelGraphInfo p_graph_info = elem_graph.get_parallel_graph_info();
     std::vector<stk::mesh::EntityId> chosen_ids;
     stk::mesh::impl::ParallelGraphInfo::iterator iter1 = p_graph_info.begin();
@@ -334,8 +328,8 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
     }
 
     std::sort(chosen_ids.begin(), chosen_ids.end());
-    iter = std::unique(chosen_ids.begin(), chosen_ids.end());
-    ids_are_unique = iter == chosen_ids.end();
+    std::vector<stk::mesh::EntityId>::iterator iter = std::unique(chosen_ids.begin(), chosen_ids.end());
+    bool ids_are_unique = iter == chosen_ids.end();
     EXPECT_TRUE(ids_are_unique);
 
     test_similarity_on_both_procs(chosen_ids, bulkData.parallel());
