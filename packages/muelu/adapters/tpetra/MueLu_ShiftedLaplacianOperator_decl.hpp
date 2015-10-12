@@ -55,11 +55,6 @@
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Utilities.hpp"
 
-// Belos
-#include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-
 // TODO: Kokkos headers
 
 namespace MueLu {
@@ -152,8 +147,10 @@ namespace MueLu {
     RCP< Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > R_, P_, A_;
     RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Ac_;
     RCP< Teuchos::ParameterList >  BelosList_;
-    RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
-    RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
+
+    //RCP< Belos::LinearProblem<Scalar,MV,OP> > BelosLP_;
+    //RCP< Belos::SolverManager<Scalar,MV,OP> > BelosSM_;
+
     // cycles -> number of V-cycles
     // iters  -> number of GMRES iterations per correction
     // option -> 0 if no correction is desired

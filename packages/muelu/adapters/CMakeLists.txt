@@ -56,15 +56,15 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
    APPEND_SET(HEADERS
      tpetra/MueLu_CreateTpetraPreconditioner.hpp
-     tpetra/MueLu_RefMaxwell_decl.hpp
-     tpetra/MueLu_RefMaxwell_def.hpp
      tpetra/MueLu_TpetraOperator_decl.hpp
      tpetra/MueLu_TpetraOperator_def.hpp
    )
 
-   IF (${PACKAGE_NAME}_ENABLE_Belos)
+   IF (${PACKAGE_NAME}_ENABLE_Belos AND TPETRA_INST_INT_INT)
 
      APPEND_SET(HEADERS
+       tpetra/MueLu_RefMaxwell_decl.hpp
+       tpetra/MueLu_RefMaxwell_def.hpp
        tpetra/MueLu_ShiftedLaplacian_decl.hpp
        tpetra/MueLu_ShiftedLaplacian_def.hpp
        tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
@@ -145,11 +145,13 @@ ENDFUNCTION(MUELUADAPTERS_PROCESS_ETI_TEMPLATE)
 
 SET(MUELUADAPTERS_ETI_CPP_SOURCES "")
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  # Set the list of classes in MueLu adapters that aretemplated
+  # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
-  GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
-    MueLu::RefMaxwell
-    )
+  IF (${PACKAGE_NAME}_ENABLE_Belos AND TPETRA_INST_INT_INT)
+    GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+      MueLu::RefMaxwell
+      )
+  ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
