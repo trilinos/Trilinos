@@ -70,6 +70,22 @@ public:
    void initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi,
                    const std::vector<GlobalOrdinalT> & filteredIndices);
 
+   /** Get an indicator describing if a particular local GID has been filtered. This method
+     * requires communication. 
+     *
+     * \param[out] indicator Vector the same length of output argument of
+     *                       <code>getOwendAndSharedIndices</code>. If a value is one it
+     *                       is included (not filtered), if it is zero then the GID has
+     *                       been filtered out.
+     */
+   void getOwnedAndSharedNotFilteredIndicator(std::vector<int> & indicator) const;
+
+   /** Get the set of filtered indices that are owned and shared. 
+     *
+     * \param[out] indices Set of filtered indices
+     */
+   void getFilteredOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const ;
+
    // This functions are overriden, and the filtered indices removed
   
    virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;

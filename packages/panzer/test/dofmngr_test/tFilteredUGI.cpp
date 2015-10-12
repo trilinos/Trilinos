@@ -191,6 +191,9 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+
+      RCP<const Teuchos::MpiComm<int> > tComm 
+         = rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
    #else
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
@@ -219,11 +222,41 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
    dofManager->buildGlobalUnknowns();
 
-   std::vector<int> filtered;
-   dofManager->getElementGIDs(1,filtered);
+   std::vector<int> my_filtered;
+   dofManager->getElementGIDs(1,my_filtered);
+
+   // now we will compute all the filtered indices in this UGI
+   // here we will print some things out for a sanity check
+   std::vector<int> all_filtered;
+   {
+     int mySize = Teuchos::as<int>(my_filtered.size());
+     std::vector<int> neighborSizes(numProc,0);
+     Teuchos::gatherAll(*tComm,1,&mySize,Teuchos::as<int>(neighborSizes.size()),&neighborSizes[0]);
+
+     out << "MY SZ = " << my_filtered.size() << std::endl;
+     out << "SZ = " << neighborSizes[0] << std::endl;
+     out << "SZ = " << neighborSizes[1] << std::endl;
+
+     int totalSize = 0;
+     for(std::size_t i=0;i<neighborSizes.size();i++)
+       totalSize += Teuchos::as<int>(neighborSizes[i]);
+
+     all_filtered.resize(totalSize);
+     Teuchos::gatherAll(*tComm,mySize,&my_filtered[0],Teuchos::as<int>(totalSize),&all_filtered[0]);
+
+     out << "MY Filtered = ";
+     for(std::size_t i=0;i<my_filtered.size();i++)
+       out << my_filtered[i] << " ";
+     out << std::endl;
+
+     out << "All Filtered = ";
+     for(std::size_t i=0;i<all_filtered.size();i++)
+       out << all_filtered[i] << " ";
+     out << std::endl;
+   }
 
    Filtered_UniqueGlobalIndexer<int,int> filtered_ugi;
-   filtered_ugi.initialize(dofManager,filtered);
+   filtered_ugi.initialize(dofManager,my_filtered);
 
    // check the GIDs
    {
@@ -293,14 +326,76 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
      // look at the difference, and make sure they are all in the
      // filtering vector
-     TEST_ASSERT(diff.size()<=filtered.size());
+     TEST_ASSERT(diff.size()<=my_filtered.size());
      for(std::size_t i=0;i<diff.size();i++) {
-       TEST_ASSERT(std::find(filtered.begin(),filtered.end(),diff[i])!=filtered.end());
+       TEST_ASSERT(std::find(my_filtered.begin(),my_filtered.end(),diff[i])!=my_filtered.end());
      }
 
      // make sure no index in the owned index vector is in the filtering vector
      for(std::size_t i=0;i<indices_f.size();i++) {
-       TEST_ASSERT(std::find(filtered.begin(),filtered.end(),indices_f[i])==filtered.end());
+       TEST_ASSERT(std::find(my_filtered.begin(),my_filtered.end(),indices_f[i])==my_filtered.end());
+     }
+   }
+
+   // test getOwnedAndSharedNotFilteredIndicator
+   out << "testing getOwnedAndSharedNotFilteredIndicator" << std::endl;
+   {
+     std::vector<int> indicator;
+     filtered_ugi.getOwnedAndSharedNotFilteredIndicator(indicator);
+
+     std::vector<int> indices;
+     filtered_ugi.getOwnedAndSharedIndices(indices);
+
+     TEST_EQUALITY(indices.size(),indicator.size());
+
+     for(std::size_t i=0;i<indicator.size();i++) {
+       if(indicator[i]==1) {
+         // not filtered, should not be in all_filtered array
+         TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices[i])==all_filtered.end());
+       }
+       else if(indicator[i]==0) {
+         // filtered, should be in all_filtered array
+         TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices[i])!=all_filtered.end());
+       }
+       else {
+         // protect that neither one nor zero is set (also report a useful error)
+         TEST_ASSERT(indicator[i]==0 || indicator[i]==1);
+       }
+     }
+   }
+
+   // test getFilteredOwnedAndSharedIndices
+   out << "testing getFilteredOwnedAndSharedIndices" << std::endl;
+   {
+     std::vector<int> indices_f;
+     filtered_ugi.getFilteredOwnedAndSharedIndices(indices_f);
+
+     std::vector<int> indices;
+     filtered_ugi.getOwnedAndSharedIndices(indices);
+
+     // check that the size didn't grow
+     TEST_ASSERT(indices_f.size()<indices.size());
+
+     // sort each set of owned indices, then do a set difference and 
+     // crop the difference indices
+     std::vector<int> diff;
+     diff.resize(indices.size()); 
+     std::sort(indices.begin(),indices.end());
+     std::sort(indices_f.begin(),indices_f.end());
+     std::vector<int>::iterator it = std::set_difference(indices.begin(),indices.end(),
+                                                         indices_f.begin(),indices_f.end(),diff.begin());
+     diff.resize(it-diff.begin());
+
+     // look at the difference, and make sure they are all in the
+     // filtering vector
+     TEST_ASSERT(diff.size()<=all_filtered.size());
+     for(std::size_t i=0;i<diff.size();i++) {
+       TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),diff[i])!=all_filtered.end());
+     }
+
+     // make sure no index in the owned index vector is in the filtering vector
+     for(std::size_t i=0;i<indices_f.size();i++) {
+       TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices_f[i])==all_filtered.end());
      }
    }
 
