@@ -517,7 +517,6 @@ median(Iterator begin, Iterator end)
 
   Iterator
   mid_iterator = begin + mid_index;
- Kokkos::abort("ERROR (median) : Median function has to be changed to not use std::  functions");
   std::partial_sort(begin, mid_iterator, end);
 
   if (size % 2 == 0) {
