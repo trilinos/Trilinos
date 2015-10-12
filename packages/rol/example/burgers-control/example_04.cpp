@@ -120,15 +120,16 @@ int main(int argc, char *argv[]) {
     //std::vector<RealT> Ulo(nx, -1.e8), Uhi(nx, 1.e8);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Ubnd
        = Teuchos::rcp(new H1BoundConstraint<RealT>(Ulo,Uhi,fem));
-    //Ubnd.deactivate();
+    //Ubnd->deactivate();
     // INITIALIZE CONTROL CONSTRAINTS
     //std::vector<RealT> Zlo(nx+2, -1.e8), Zhi(nx+2, 1.e8);
     std::vector<RealT> Zlo(nx+2,0.), Zhi(nx+2,2.);
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
       = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
-    //bnd2.deactivate();
+    //Zbnd->deactivate();
     // INITIALIZE SIMOPT BOUND CONSTRAINTS
     ROL::BoundConstraint_SimOpt<RealT> bnd(Ubnd,Zbnd);
+//bnd.deactivate();
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
@@ -184,6 +185,11 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
+    // READ IN XML INPUT
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
@@ -205,18 +211,12 @@ int main(int argc, char *argv[]) {
     ROL::MoreauYosidaPenalty<RealT> myPen(obj,bnd,x,10.0);
     myPen.checkGradient(x, y, true, *outStream);
     myPen.checkHessVec(x, g, y, true, *outStream);
-    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c,false);
-    myAugLag.updateMultipliers(l,1.);
+    ROL::AugmentedLagrangian<RealT> myAugLag(obj,con,x,c,l,1.,*parlist);
     myAugLag.checkGradient(x, y, true, *outStream);
     myAugLag.checkHessVec(x, g, y, true, *outStream);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
-    // READ IN XML INPUT
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // SOLVE USING MOREAU-YOSIDA PENALTY
     ROL::Algorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
     zp->set(*zrandp);

@@ -88,39 +88,41 @@ private:
   int ngval_;
 
   void computePenalty(const Vector<Real> &x) {
-    if ( !isConEvaluated_ ) {
-      xlam_->set(x);
-      xlam_->axpy(1./mu_,*lam_);
+    if ( con_->isActivated() ) {
+      if ( !isConEvaluated_ ) {
+        xlam_->set(x);
+        xlam_->axpy(1./mu_,*lam_);
 
-      if ( con_->isFeasible(*xlam_) ) {
-        l1_->zero(); dl1_->zero();
-        u1_->zero(); du1_->zero();
+        if ( con_->isFeasible(*xlam_) ) {
+          l1_->zero(); dl1_->zero();
+          u1_->zero(); du1_->zero();
+        }
+        else {
+          // Compute lower penalty component
+          l1_->set(*l_);
+          con_->pruneLowerInactive(*l1_,*xlam_);
+          tmp_->set(*xlam_);
+          con_->pruneLowerInactive(*tmp_,*xlam_);
+          l1_->axpy(-1.,*tmp_);
+
+          // Compute upper penalty component
+          u1_->set(*xlam_);
+          con_->pruneUpperInactive(*u1_,*xlam_);
+          tmp_->set(*u_);
+          con_->pruneUpperInactive(*tmp_,*xlam_);
+          u1_->axpy(-1.,*tmp_);
+
+          // Compute derivative of lower penalty component
+          dl1_->set(l1_->dual());
+          con_->pruneLowerInactive(*dl1_,*xlam_);
+
+          // Compute derivative of upper penalty component
+          du1_->set(u1_->dual());
+          con_->pruneUpperInactive(*du1_,*xlam_);
+        }
+
+        isConEvaluated_ = true;
       }
-      else {
-        // Compute lower penalty component
-        l1_->set(*l_);
-        con_->pruneLowerInactive(*l1_,*xlam_);
-        tmp_->set(*xlam_);
-        con_->pruneLowerInactive(*tmp_,*xlam_);
-        l1_->axpy(-1.,*tmp_);
-
-        // Compute upper penalty component
-        u1_->set(*xlam_);
-        con_->pruneUpperInactive(*u1_,*xlam_);
-        tmp_->set(*u_);
-        con_->pruneUpperInactive(*tmp_,*xlam_);
-        u1_->axpy(-1.,*tmp_);
-
-        // Compute derivative of lower penalty component
-        dl1_->set(l1_->dual());
-        con_->pruneLowerInactive(*dl1_,*xlam_);
-
-        // Compute derivative of upper penalty component
-        du1_->set(u1_->dual());
-        con_->pruneUpperInactive(*du1_,*xlam_);
-      }
-
-      isConEvaluated_ = true;
     }
   }
 
@@ -157,13 +159,15 @@ public:
   }
 
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
-    computePenalty(x);
+    if ( con_->isActivated() ) {
+      computePenalty(x);
 
-    //lam_->set(*u1_);
-    //lam_->axpy(-1.,*l1_);
-    //lam_->scale(mu_);
+      lam_->set(*u1_);
+      lam_->axpy(-1.,*l1_);
+      lam_->scale(mu_);
 
-    mu_ = mu;
+      mu_ = mu;
+    }
 
     nfval_ = 0;
     ngval_ = 0;
@@ -207,12 +211,16 @@ public:
       @param[in]          tol is a tolerance for inexact Moreau-Yosida penalty computation.
   */
   Real value( const Vector<Real> &x, Real &tol ) {
-    computePenalty(x);
     // Compute objective function value
     fval_ = obj_->value(x,tol);
     nfval_++;
     // Add value of the Moreau-Yosida penalty
-    return fval_ + 0.5*mu_*(l1_->dot(*l1_) + u1_->dot(*u1_));
+    Real fval = fval_;
+    if ( con_->isActivated() ) {
+      computePenalty(x);
+      fval += 0.5*mu_*(l1_->dot(*l1_) + u1_->dot(*u1_));
+    }
+    return fval;
   }
 
   /** \brief Compute gradient.
@@ -223,14 +231,16 @@ public:
       @param[in]          tol is a tolerance for inexact Moreau-Yosida penalty computation.
   */
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    computePenalty(x);
     // Compute gradient of objective function
     obj_->gradient(*g_,x,tol);
     ngval_++;
     g.set(*g_);
     // Add gradient of the Moreau-Yosida penalty
-    g.axpy(-mu_,*dl1_);
-    g.axpy(mu_,*du1_);
+    if ( con_->isActivated() ) {
+      computePenalty(x);
+      g.axpy(-mu_,*dl1_);
+      g.axpy(mu_,*du1_);
+    }
   }
 
   /** \brief Apply Hessian approximation to vector.
@@ -242,31 +252,34 @@ public:
       @param[in]          tol is a tolerance for inexact Moreau-Yosida penalty computation.
   */
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    computePenalty(x);
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
     // Add Hessian of the Moreau-Yosida penalty
-    v_->set(v);
-    con_->pruneLowerActive(*v_,*xlam_);
-    v_->scale(-1.0);
-    v_->plus(v);
-    dv_->set(v_->dual());
-    dv2_->set(*dv_);
-    con_->pruneLowerActive(*dv_,*xlam_);
-    dv_->scale(-1.0);
-    dv_->plus(*dv2_);
-    hv.axpy(mu_,*dv_);
+    if ( con_->isActivated() ) {
+      computePenalty(x);
 
-    v_->set(v);
-    con_->pruneUpperActive(*v_,*xlam_);
-    v_->scale(-1.0);
-    v_->plus(v);
-    dv_->set(v_->dual());
-    dv2_->set(*dv_);
-    con_->pruneUpperActive(*dv_,*xlam_);
-    dv_->scale(-1.0);
-    dv_->plus(*dv2_);
-    hv.axpy(mu_,*dv_);
+      v_->set(v);
+      con_->pruneLowerActive(*v_,*xlam_);
+      v_->scale(-1.0);
+      v_->plus(v);
+      dv_->set(v_->dual());
+      dv2_->set(*dv_);
+      con_->pruneLowerActive(*dv_,*xlam_);
+      dv_->scale(-1.0);
+      dv_->plus(*dv2_);
+      hv.axpy(mu_,*dv_);
+
+      v_->set(v);
+      con_->pruneUpperActive(*v_,*xlam_);
+      v_->scale(-1.0);
+      v_->plus(v);
+      dv_->set(v_->dual());
+      dv2_->set(*dv_);
+      con_->pruneUpperActive(*dv_,*xlam_);
+      dv_->scale(-1.0);
+      dv_->plus(*dv2_);
+      hv.axpy(mu_,*dv_);
+    }
   }
 
 }; // class MoreauYosidaPenalty
