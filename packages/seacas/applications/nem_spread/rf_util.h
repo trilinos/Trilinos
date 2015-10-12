@@ -85,6 +85,5 @@ void my_sort(int64_t count, T ra[], U rb[])
 /*****************************************************************************/
 /*****************************************************************************/
 extern void  print_line     (const char *charstr, int ntimes);
-extern int   break_message_up(size_t, size_t, size_t, int **);
 
 #endif /* #ifndef _RF_UTIL_H */

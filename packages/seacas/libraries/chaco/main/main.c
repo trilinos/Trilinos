@@ -206,7 +206,6 @@ skip:
 
 	if (DEBUG_MEMORY > 0) {
 	    printf("\n");
-	    smalloc_stats();
 	}
 
 	if (PROMPT) {

@@ -44,8 +44,6 @@ long get_init_rand_port(void);
 long genr_rand_port(long init_rand) ;
 long rand_port(void) ;
 double rand_rect_port(void) ;
-long skip_ahead(long a, long init_rand, long modulus, long skip) ;
-long mult_mod(long a, long x, long modulus) ;
 
 #ifdef __cplusplus
 }                               /* close brackets on extern "C" declaration */

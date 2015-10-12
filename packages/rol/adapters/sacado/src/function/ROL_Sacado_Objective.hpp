@@ -101,10 +101,10 @@ void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<Sca
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;  
 
     // Get a pointer to the optimization vector
-    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the gradient vector
     RCP<vector> gp = dyn_cast<SV>(g).getVector();
@@ -145,13 +145,13 @@ void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<Sc
     typedef StdVector<ScalarT>           SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;  
  
     // Get a pointer to the optimization vector 
-    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the direction vector
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
 
     RCP<vector> hvp = dyn_cast<SV>(hv).getVector();
 

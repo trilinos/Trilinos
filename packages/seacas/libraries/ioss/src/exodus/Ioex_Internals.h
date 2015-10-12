@@ -415,7 +415,6 @@ namespace Ioex {
      *   invalidated by a join/re-spread to a different number of
      *   processors.
      */
-    bool check_processor_info(int processor_count, int processor_id);
 
   private:
     Internals(const Internals& from); // do not implement

@@ -175,20 +175,6 @@ string ExoII_Read<INT>::Close_File()
   return "";
 }
 
-// **********************  Access functions  ************************ //
-
-template <typename INT>
-string ExoII_Read<INT>::Coordinate_Name(unsigned i) const
-{
-  SMART_ASSERT(Check_State());
-  SMART_ASSERT(i < 3);
-  
-  if (i < coord_names.size())
-    return coord_names[i];
-  else
-    return "";
-}
-
 template <typename INT>
 double ExoII_Read<INT>::Time(int time_num) const
 {
@@ -487,36 +473,6 @@ size_t ExoII_Read<INT>::Block_Id(size_t block_index) const
 }
 
 template <typename INT>
-int ExoII_Read<INT>::Block_Index(size_t block_id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t b = 0; b < num_elmt_blocks; ++b)
-    if (eblocks[b].Id() == block_id)
-      return b;
-  return -1;
-}
-
-template <typename INT>
-int ExoII_Read<INT>::Node_Set_Index(size_t id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t b = 0; b < num_node_sets; ++b)
-    if (nsets[b].Id() == id)
-      return b;
-  return -1;
-}
-
-template <typename INT>
-int ExoII_Read<INT>::Side_Set_Index(size_t id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t b = 0; b < num_side_sets; ++b)
-    if (ssets[b].Id() == id)
-      return b;
-  return -1;
-}
-
-template <typename INT>
 string ExoII_Read<INT>::Load_Node_Map()
 {
   SMART_ASSERT(Check_State());
@@ -594,56 +550,6 @@ string ExoII_Read<INT>::Free_Elmt_Map()
   elmt_map = 0;
   
   return "";
-}
-
-template <typename INT>
-string ExoII_Read<INT>::Load_Elmt_Order()
-{
-  SMART_ASSERT(Check_State());
-  
-  if (!Open()) return "WARNING:  File not open!";
-  
-  delete [] elmt_order;
-  elmt_order = 0;
-  
-  if (num_elmts == 0) return "WARNING:  There are no elements!";
-  
-  elmt_order = new INT[ num_elmts ];  SMART_ASSERT(elmt_order != 0);
-  
-  ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
-  int err = ex_get_map(file_id, elmt_order);
-  ex_opts(EX_VERBOSE);
-  
-  if (err < 0) {
-    std::cout << "EXODIFF ERROR: Unable to load element order; "
-	      << "Exodus error = " << err << ".  Aborting..." << std::endl;
-    exit(1);
-  }
-  else if (err > 0)
-    return "WARNING: Default element order being used.";
-  
-  return "";
-}
-
-template <typename INT>
-string ExoII_Read<INT>::Free_Elmt_Order()
-{
-  SMART_ASSERT(Check_State());
-  
-  delete [] elmt_order;
-  elmt_order = 0;
-  
-  return "";
-}
-
-template <typename INT>
-void ExoII_Read<INT>::Free_All_Maps()
-{
-  SMART_ASSERT(Check_State());
-  
-  delete [] node_map;      node_map = 0;
-  delete [] elmt_map;      elmt_map = 0;
-  delete [] elmt_order;  elmt_order = 0;
 }
 
 
@@ -891,16 +797,6 @@ string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 }
 
 template <typename INT>
-size_t ExoII_Read<INT>::Side_Set_Id(size_t set_index) const
-{
-  SMART_ASSERT(Check_State());
-  
-  if (set_index >= num_side_sets) return 0;
-  
-  return ssets[set_index].Id();
-}
-
-template <typename INT>
 Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Index(size_t side_set_index) const
 {
   SMART_ASSERT(Check_State());
@@ -950,130 +846,6 @@ string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num,
   local_elmt_index = global_elmt_num - total - 1;
   
   return "";
-}
-
-template <typename INT>
-void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
-{
-  SMART_ASSERT(Check_State());
-  
-  const char* separator = "       --------------------------------------------------";
-  
-  s << "ExoII_Read::Display():  file name = " << file_name << std::endl;
-  
-  if (title != "")
-    s << "                             title = " << title << std::endl;
-  
-  s << "                           file id = ";
-  if (file_id >= 0) s << file_id << std::endl;
-  else              s << "(not open)" << std::endl;
-  
-  s << "                         dimension = " << dimension << std::endl
-    << "                   number of nodes = " << num_nodes << std::endl
-    << "                number of elements = " << num_elmts << std::endl;
-  
-  if (dimension >= 1) {
-    if (coord_names.size() >= 1)
-      s << "             first coordinate name = " << coord_names[0] << std::endl;
-    else
-      s << "             first coordinate name = " << std::endl;
-  }
-  if (dimension >= 2) {
-    if (coord_names.size() >= 2)
-      s << "            second coordinate name = " << coord_names[1] << std::endl;
-    else
-      s << "            second coordinate name = " << std::endl;
-  }
-  if (dimension >= 3) {
-    if (coord_names.size() >= 3)
-      s << "             third coordinate name = " << coord_names[2] << std::endl;
-    else
-      s << "             third coordinate name = " << std::endl;
-  }
-  
-  s << separator << std::endl;
-  s << "          number of element blocks = " << num_elmt_blocks << std::endl
-    << "              number of nodes sets = " << num_node_sets << std::endl
-    << "               number of side sets = " << num_side_sets << std::endl;
-  
-  if (num_elmt_blocks) {
-    s << separator << std::endl;
-    
-    s << "                   ELEMENT BLOCKS" << std::endl;
-    s << "\tIndex \tId     num elmts    nodes/elmt num attr  type" << std::endl;
-    for (size_t b = 0; b < num_elmt_blocks; ++b) {
-      s << "\t" << b << "   \t" << eblocks[b].Id()
-	<< "  \t"    << eblocks[b].Size()
-	<< "  \t\t"  << eblocks[b].num_nodes_per_elmt
-	<< "  \t  "  << eblocks[b].attr_count()
-	<< "  \t "   << eblocks[b].elmt_type << std::endl;
-    }
-  }
-  
-  if (num_node_sets) {
-    s << separator << std::endl;
-    
-    s << "              NODE SETS " << std::endl
-      << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (size_t nset = 0; nset < num_node_sets; ++nset) {
-      s << "\t"   << nset << "  \t" << nsets[nset].Id()
-	<< "  \t" << nsets[nset].Size()
-	<< "  \t" << nsets[nset].num_dist_factors << std::endl;
-    }
-  }
-  
-  if (num_side_sets) {
-    s << separator << std::endl;
-    
-    s << "              SIDE SETS " << std::endl
-      << "\tIndex \tId     length \tdistribution factors length" << std::endl;
-    for (size_t sset = 0; sset < num_side_sets; ++sset) {
-      s << "\t"   << sset << "  \t" << ssets[sset].Id()
-	<< "  \t" << ssets[sset].Size()
-	<< "  \t" << ssets[sset].num_dist_factors << std::endl;
-    }
-  }
-  
-  if (io_word_size || db_version > 0.0 || api_version > 0.0)
-    s << separator << std::endl;
-  if (io_word_size)
-    s << "                  file's data size = " << io_word_size
-      << " bytes" << std::endl;
-  if (db_version > 0.0)
-    s << "           Exodus database version = " << db_version << std::endl;
-  if (api_version > 0.0)
-    s << "            Exodus library version = " << api_version << std::endl;
-  
-  s << separator << std::endl;
-  
-  if (num_times) {  // Use this to indicate whether results data exists.
-    s << "\t\tRESULTS INFO" << std::endl << separator << std::endl;
-    
-    s << "           number global variables = " << global_vars.size() << std::endl
-      << "            number nodal variables = " << nodal_vars.size()  << std::endl
-      << "          number element variables = " << elmt_vars.size()   << std::endl;
-    
-    unsigned max = global_vars.size() > nodal_vars.size() ?
-      global_vars.size(): nodal_vars.size();
-    max = elmt_vars.size() > max ? elmt_vars.size(): max;
-    
-    if (max) s << "\t  GLOBAL    \t  NODAL    \t  ELEMENT" << std::endl;
-    for (unsigned i = 0; i < max; ++i) {
-      if (i < global_vars.size()) s << "\t    " << global_vars[i];
-      else s << "\t          ";
-      if (i < nodal_vars.size()) s << "\t    " << nodal_vars[i];
-      else s << "\t          ";
-      if (i < elmt_vars.size()) s << "\t    " << elmt_vars[i] << std::endl;
-      else s << std::endl;
-    }
-    
-    s << separator << std::endl;
-    
-    s << "                   number of times = " << num_times << std::endl;
-    for (int t = 0; t < num_times; ++t)
-      s << "\t\t(" << (t+1) << ") " << times[t] << std::endl;
-    
-  }
 }
 
 template <typename INT>
@@ -1238,36 +1010,6 @@ void ExoII_Read<INT>::Display_Maps(std::ostream& s) const
       s << std::endl;
     }
   }
-}
-
-template <typename INT>
-int ExoII_Read<INT>::Elmt_Block_Index(size_t eblock_id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t b = 0; b < num_elmt_blocks; ++b)
-    if (eblocks[b].Id() == eblock_id)
-      return b;
-  return -1;
-}
-
-template <typename INT>
-int ExoII_Read<INT>::NSet_Index(size_t nset_id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t n = 0; n < num_node_sets; ++n)
-    if (nsets[n].Id() == nset_id)
-      return n;
-  return -1;
-}
-
-template <typename INT>
-int ExoII_Read<INT>::SSet_Index(size_t sset_id) const
-{
-  SMART_ASSERT(Check_State());
-  for (size_t s = 0; s < num_side_sets; ++s)
-    if (ssets[s].Id() == sset_id)
-      return s;
-  return -1;
 }
 
 template <typename INT>
@@ -1615,19 +1357,6 @@ void ExoII_Read<INT>::Get_Init_Data()
   }
   
 }  // End of EXODIFF
-
-
-// Simple check that a file can be opened.
-template <typename INT>
-int ExoII_Read<INT>::File_Exists(const char* fname)
-{
-  if (!fname) return 0;
-  if (std::strlen(fname) == 0) return 0;
-  std::ifstream file_check(fname, std::ios::in);
-  if (!file_check) return 0;
-  file_check.close();
-  return 1;
-}
 
 namespace {
   void read_vars(int file_id, EXOTYPE flag, const char *type,
