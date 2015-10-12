@@ -222,31 +222,50 @@ int main(int argc, char *argv[]) {
     RCP<NO> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read data from files
-    RCP<tOperator> A11, A119Pt;
-    if (!binary) {
-      A11     = Reader<tCrsMatrix>::readSparseFile((prefix + "A.mm").c_str(),          comm, node);
-      A119Pt  = A11;
-      if (use9ptPatA)
-        A119Pt = Reader<tCrsMatrix>::readSparseFile((prefix + "AForPat.mm").c_str(), comm, node);
-    } else {
-      A11     = ReadBinary<SC,LO,GO,NO>((prefix + "A.dat").c_str(),  comm);
-      A119Pt  = A11;
-      if (use9ptPatA)
-        A119Pt = ReadBinary<SC,LO,GO,NO>((prefix + "AForPat.dat").c_str(), comm);
+    RCP<tOperator> A11, A119Pt, A21, A12;
+    RCP<tMultiVector> Vcoords, Pcoords;
+    ArrayRCP<LO> p2vMap;
+
+    std::string filename;
+    try {
+      if (!binary) {
+        filename = prefix + "A.mm";
+        A11     = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+        A119Pt  = A11;
+        if (use9ptPatA) {
+          filename = prefix + "AForPat.mm";
+          A119Pt = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+        }
+      } else {
+        filename = prefix + "A.dat";
+        A11     = ReadBinary<SC,LO,GO,NO>(filename.c_str(), comm);
+        A119Pt  = A11;
+        if (use9ptPatA) {
+          filename = prefix + "AForPat.dat";
+          A119Pt = ReadBinary<SC,LO,GO,NO>(filename.c_str(), comm);
+        }
+      }
+      filename = prefix + "B.mm";
+      A21 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+      filename = prefix + "Bt.mm";
+      A12 = Reader<tCrsMatrix>::readSparseFile(filename.c_str(), comm, node);
+
+      RCP<const tMap> cmap1 = A11->getDomainMap(), cmap2 = A12->getDomainMap();
+      filename = prefix + "VelCoords.mm";
+      Vcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(),  comm, node, cmap1);
+      filename = prefix + "PresCoords.mm";
+      Pcoords = Reader<tCrsMatrix>::readDenseFile(filename.c_str(), comm, node, cmap2);
+
+      // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
+      filename = prefix + "p2vMap.mm";
+      ArrayRCP<const SC> slop = Utils2::ReadMultiVector(filename.c_str(),
+                                                        Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
+      p2vMap.resize(slop.size());
+      for (int i = 0; i < slop.size(); i++)
+        p2vMap[i] = as<LO>(slop[i]);
+    } catch (...) {
+      throw MueLu::Exceptions::RuntimeError("Error reading file: \"" + filename + "\"");
     }
-    RCP<tOperator> A21 = Reader<tCrsMatrix>::readSparseFile((prefix + "B.mm").c_str(),          comm, node);
-    RCP<tOperator> A12 = Reader<tCrsMatrix>::readSparseFile((prefix + "Bt.mm").c_str(),         comm, node);
-
-    RCP<const tMap> cmap1 = A11->getDomainMap(), cmap2 = A12->getDomainMap();
-    RCP<tMultiVector> Vcoords = Reader<tCrsMatrix>::readDenseFile ((prefix + "VelCoords.mm").c_str(),  comm, node, cmap1);
-    RCP<tMultiVector> Pcoords = Reader<tCrsMatrix>::readDenseFile ((prefix + "PresCoords.mm").c_str(), comm, node, cmap2);
-
-    // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
-    ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(),
-                                                      Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
-    ArrayRCP<LO> p2vMap(slop.size());
-    for (int i = 0; i < slop.size(); i++)
-      p2vMap[i] = as<LO>(slop[i]);
 
     // Convert matrices to Teko/Thyra operators
     RCP<const THTP_Vs> domain11 = tpetraVectorSpace<SC>(A11->getDomainMap());
