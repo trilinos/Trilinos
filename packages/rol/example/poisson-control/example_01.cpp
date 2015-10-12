@@ -63,142 +63,6 @@
 
 #include "ROL_BoundConstraint.hpp"
 
-template<class Real>
-class BoundConstraint_PoissonControl : public ROL::BoundConstraint<Real> {
-private:
-  int dim_;
-  std::vector<Real> x_lo_;
-  std::vector<Real> x_up_;
-  Real min_diff_;
-public:
-  BoundConstraint_PoissonControl(std::vector<Real> &lo, std::vector<Real> &up) {
-    dim_ = lo.size();
-    x_lo_.clear();
-    x_lo_.assign(lo.begin(),lo.end());
-    x_up_.clear();
-    x_up_.assign(up.begin(),up.end());
-    for ( unsigned i = 0; i < (unsigned)dim_; i++ ) {
-      if ( i == 0 ) {
-        min_diff_ = x_up_[i]-x_lo_[i];
-      }
-      else {
-        min_diff_ = std::min(min_diff_,x_up_[i]-x_lo_[i]);
-      }
-    }
-    min_diff_ *= 0.5;
-  }
-  bool isFeasible( const ROL::Vector<Real> &x ) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    bool val = true;
-    int  cnt = 1;
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( (*ex)[i] >= this->x_lo_[i] && (*ex)[i] <= this->x_up_[i] ) { cnt *= 1; }
-      else                                                            { cnt *= 0; }
-    }
-    if ( cnt == 0 ) { val = false; }
-    return val;
-  }
-  void project( ROL::Vector<Real> &x ) {
-    Teuchos::RCP<std::vector<Real> > ex =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(x)).getVector());
-    for ( int i = 0; i < this->dim_; i++ ) {
-      (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
-    }
-  }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] >= this->x_up_[i]-epsn) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ){
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    Teuchos::RCP<const std::vector<Real> > ex =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<const std::vector<Real> > eg =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-    Teuchos::RCP<std::vector<Real> > ev =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-    Real epsn = std::min(eps,this->min_diff_);
-    for ( int i = 0; i < this->dim_; i++ ) {
-      if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
-        (*ev)[i] = 0.0;
-      }
-    }
-  }
-  void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    Teuchos::RCP<std::vector<Real> > us = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
-    us->assign(this->x_up_.begin(),this->x_up_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > up = Teuchos::rcp( new ROL::StdVector<Real>(us) );
-    u.set(*up);
-  }
-  void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    Teuchos::RCP<std::vector<Real> > ls = Teuchos::rcp( new std::vector<Real>(this->dim_,0.0) );
-    ls->assign(this->x_lo_.begin(),this->x_lo_.end()); 
-    Teuchos::RCP<ROL::Vector<Real> > lp = Teuchos::rcp( new ROL::StdVector<Real>(ls) );
-    l.set(*lp);
-  }
-//  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-//    Teuchos::RCP<const std::vector<Real> > ex =
-//      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-//    Teuchos::RCP<std::vector<Real> > ev =
-//      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-//    Real epsn = std::min(eps,this->min_diff_);
-//    for ( int i = 0; i < this->dim_; i++ ) {
-//      if ( ((*ex)[i] <= this->x_lo_[i]+epsn) ||
-//           ((*ex)[i] >= this->x_up_[i]-epsn) ) {
-//        (*ev)[i] = 0.0;
-//      }
-//    }
-//  }
-//  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-//    Teuchos::RCP<const std::vector<Real> > ex =
-//      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(x))).getVector();
-//    Teuchos::RCP<const std::vector<Real> > eg =
-//      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(g))).getVector();
-//    Teuchos::RCP<std::vector<Real> > ev =
-//      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(v)).getVector());
-//    Real epsn = std::min(eps,this->min_diff_);
-//    for ( int i = 0; i < this->dim_; i++ ) {
-//      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ||
-//           ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
-//        (*ev)[i] = 0.0;
-//      }
-//    }
-//  }
-};
 
 template <class Real>
 class StatusTest_PDAS : public ROL::StatusTest<Real> {
@@ -237,6 +101,14 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef std::vector<RealT>     vector;
+  typedef ROL::Vector<RealT>     V;
+  typedef ROL::StdVector<RealT>  SV;
+ 
+  typedef typename vector::size_type uint;
+  
+  using Teuchos::RCP;  using Teuchos::rcp;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -253,51 +125,63 @@ int main(int argc, char *argv[]) {
   // *** Example body.
 
   try {
-    int dim = 256; // Set problem dimension.
+    uint dim = 256; // Set problem dimension.
     RealT alpha = 1.e-4;
     ROL::ZOO::Objective_PoissonControl<RealT> obj(alpha);
-    std::vector<RealT> lo(dim);
-    std::vector<RealT> up(dim);
-    for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
-      if ( i < (unsigned)dim/3  ||  i > 2*(unsigned)dim/3 ) {
-        lo[i] = 0.0; 
-        up[i] = 0.25;
+
+    RCP<vector> l_rcp = rcp( new vector(dim) );
+    RCP<vector> u_rcp = rcp( new vector(dim) );
+
+    RCP<V> lo = rcp( new SV(l_rcp) );
+    RCP<V> up = rcp( new SV(u_rcp) );
+
+    for ( uint i = 0; i < dim; i++ ) {
+      if ( i < dim/3.0  ||  i > 2*dim/3.0 ) {
+        (*l_rcp)[i] = 0.0; 
+        (*u_rcp)[i] = 0.25;
       }
       else {
-        lo[i] = 0.75;
-        up[i] = 1.0;
+        (*l_rcp)[i] = 0.75;
+        (*u_rcp)[i] = 1.0;
       }
     }
-    BoundConstraint_PoissonControl<RealT> icon(lo,up);
+    ROL::BoundConstraint<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    RCP<Teuchos::ParameterList> parlist = rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
+
     // PDAS parameters.
     parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-8);
     parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-6);
     parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 1);
     parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",(alpha>0.0)?alpha:1.e-4);
+
     // Status test parameters.
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
+
     // Define algorithm.
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    RCP<ROL::Algorithm<RealT> > algo = rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+
     // Iteration vector.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> x(x_rcp);
+    RCP<vector> x_rcp = rcp( new vector(dim, 0.0) );
+    SV x(x_rcp);
+
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
+
+    for ( uint i = 0; i < dim; i++ ) {
       file << (*x_rcp)[i] << "\n";
     }
     file.close();
@@ -308,20 +192,21 @@ int main(int argc, char *argv[]) {
     // Set algorithm.
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Iteration vector.
-    Teuchos::RCP<std::vector<RealT> > y_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> y(y_rcp);
+    RCP<vector> y_rcp = rcp( new vector(dim, 0.0) );
+    SV y(y_rcp);
+
     // Run Algorithm
     y.zero();
     algo->run(y, obj, icon, true, *outStream);
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( unsigned i = 0; i < (unsigned)dim; i++ ) {
+    for ( uint i = 0; i < dim; i++ ) {
       file_tr << (*y_rcp)[i] << "\n";
     }
     file_tr.close();
    
-    Teuchos::RCP<ROL::Vector<RealT> > error = x.clone();
+    RCP<V> error = x.clone();
     error->set(x);
     error->axpy(-1.0,y);
     *outStream << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";
