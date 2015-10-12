@@ -47,8 +47,6 @@ namespace ZOO {
     Teuchos::RCP<std::vector<Real> > Imeas_;
     /// Vector of source voltages in DC analysis (input) 
     Teuchos::RCP<std::vector<Real> > Vsrc_; 
-    /// Scaling vector for the optimization variables. 
-    Teuchos::RCP<std::vector<Real> > scaling_rcp_; 
     /// If true, use Lambert-W function to solve circuit, else use Newton's method.
     bool lambertw_; 
     /// Percentage of noise to add to measurements; if 0.0 - no noise.
@@ -141,10 +139,6 @@ namespace ZOO {
 	
       output.close();
 
-      scaling_rcp_ = Teuchos::rcp(new std::vector<Real>(2, 0.0));
-      (*scaling_rcp_)[0] = 1e24;
-      (*scaling_rcp_)[1] = 1e01;
- 
     }
 
     /*!
@@ -175,10 +169,6 @@ namespace ZOO {
         (*Imeas_)[i] = Imeas;
       }
       input_file.close();
-
-      scaling_rcp_ = Teuchos::rcp(new std::vector<Real>(2, 0.0));
-      (*scaling_rcp_)[0] = 1e24;
-      (*scaling_rcp_)[1] = 1e01;
 
     }
 
