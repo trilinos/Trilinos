@@ -167,8 +167,8 @@ int main(int argc,char * argv[])
    Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum_tpetra,AbsRowSum_tpetra);
    Teko_ADD_UNIT_TEST(Teko::Test::tNeumannSeries_tpetra,NeumannSeries_tpetra);
    Teko_ADD_UNIT_TEST(Teko::Test::tPCDStrategy_tpetra,PCDStrategy_tpetra);
-   //if(not isfast) {
-   if(false){
+   if(not isfast) {
+   //if(false){
       Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest_tpetra,LSCIntegrationTest_tpetra);
       Teko_ADD_UNIT_TEST(Teko::Test::tStridedTpetraOperator,tStridedTpetraOperator);
       Teko_ADD_UNIT_TEST(Teko::Test::tBlockedTpetraOperator,tBlockedTpetraOperator);
