@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <Teuchos_getConst.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
@@ -146,7 +147,7 @@ namespace ROL {
 
       \arg    AUGMENTEDLAGRANGIAN     describe
       \arg    BUNDLE                  describe
-      \arg    COMPOSITESTEPSQP        describe
+      \arg    COMPOSITESTEP           describe
       \arg    LINESEARCH              describe
       \arg    MOREAUYOSIDAPENALTY     describe
       \arg    PRIMALDUALACTIVESET     describe
@@ -155,7 +156,7 @@ namespace ROL {
   enum EStep{
     STEP_AUGMENTEDLAGRANGIAN = 0,
     STEP_BUNDLE,
-    STEP_COMPOSITESTEPSQP,
+    STEP_COMPOSITESTEP,
     STEP_LINESEARCH,
     STEP_MOREAUYOSIDAPENALTY,
     STEP_PRIMALDUALACTIVESET,
@@ -168,7 +169,7 @@ namespace ROL {
     switch(tr) {
       case STEP_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian";   break;
       case STEP_BUNDLE:              retString = "Bundle";                 break;
-      case STEP_COMPOSITESTEPSQP:    retString = "Composite Step SQP";     break;
+      case STEP_COMPOSITESTEP:       retString = "Composite Step";         break;
       case STEP_LINESEARCH:          retString = "Line Search";            break;
       case STEP_MOREAUYOSIDAPENALTY: retString = "Moreau-Yosida Penalty";  break;
       case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
@@ -187,7 +188,7 @@ namespace ROL {
   inline int isValidStep(EStep ls) {
     return( (ls == STEP_AUGMENTEDLAGRANGIAN) ||
             (ls == STEP_BUNDLE) ||
-            (ls == STEP_COMPOSITESTEPSQP) ||
+            (ls == STEP_COMPOSITESTEP) ||
             (ls == STEP_LINESEARCH) ||
             (ls == STEP_MOREAUYOSIDAPENALTY) ||
             (ls == STEP_PRIMALDUALACTIVESET) ||
@@ -520,7 +521,7 @@ namespace ROL {
       \arg    FLETCHER_CONJDESC  \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
       \arg    LIU_STOREY         \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
       \arg    DAI_YUAN           \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
-      \arg    HAGAR_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+      \arg    HAGER_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
       \arg    OREN_LUENBERGER    \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
    */
   enum ENonlinearCG{
@@ -531,7 +532,7 @@ namespace ROL {
     NONLINEARCG_FLETCHER_CONJDESC,
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
-    NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_HAGER_ZHANG,
     NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
@@ -546,7 +547,7 @@ namespace ROL {
       case NONLINEARCG_FLETCHER_CONJDESC:     retString = "Fletcher Conjugate Descent";  break;
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
-      case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_HAGER_ZHANG:           retString = "Hager-Zhang";                 break;
       case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
@@ -567,7 +568,7 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_HAGER_ZHANG)       ||
             (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
@@ -1242,7 +1243,7 @@ namespace ROL {
               \mbox{subject to} & c(x) = 0 \,.
             \end{array}
           \f]
-          Equality constraints are handled in ROL using matrix-free sequential quadratic programming (SQP).
+          Equality constraints are handled in ROL using, for example, matrix-free composite-step methods, including sequential quadratic programming (SQP).
           The user implements the methods of the #ROL::EqualityConstraint interface.
       \li @b Type-EB. Equality and bound constraints:
           \f[
@@ -1261,7 +1262,7 @@ namespace ROL {
               &&&&&& s \ge 0 \,.
             \end{array}
           \f]
-          ROL uses a combination of matrix-free SQP, projection methods and primal-dual active set methods to solve these problems.
+          ROL uses a combination of matrix-free composite-step methods, projection methods and primal-dual active set methods to solve these problems.
           The user implements the methods of the #ROL::EqualityConstraint and the #ROL::BoundConstraint interfaces.
 
     Third, ROL's design enables streamlined algorithmic extensions, such as the \ref stochastic_group capability.

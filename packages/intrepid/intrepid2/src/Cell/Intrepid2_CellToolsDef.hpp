@@ -1141,7 +1141,7 @@ FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSp
                                       const shards::CellTopology & cellTopo,
                                       const int &                  whichCell) 
   {
-    INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+    INTREPID2_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
   
    ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> jacobianWrap(jacobian);
    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
@@ -1308,7 +1308,7 @@ template<class ArrayJacInv, class ArrayJac>
 void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
                                        const ArrayJac &  jacobian) 
 {
-  INTREPID_VALIDATE( validateArguments_setJacobianInv(jacobianInv, jacobian) );
+  INTREPID2_VALIDATE( validateArguments_setJacobianInv(jacobianInv, jacobian) );
 
   RealSpaceTools<Scalar>::inverse(jacobianInv, jacobian);
 }
@@ -1317,7 +1317,7 @@ template<class ArrayJacDet, class ArrayJac>
 void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
                                        const ArrayJac &  jacobian)
 {
-  INTREPID_VALIDATE( validateArguments_setJacobianDetArgs(jacobianDet, jacobian) );
+  INTREPID2_VALIDATE( validateArguments_setJacobianDetArgs(jacobianDet, jacobian) );
   RealSpaceTools<Scalar>::det(jacobianDet, jacobian);
 }
 
@@ -1335,7 +1335,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
                                            const shards::CellTopology & cellTopo,
                                            const int &                  whichCell)
 {
-  INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
+  INTREPID2_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
 
    ArrayWrapper<Scalar,ArrayPhysPoint, Rank<ArrayPhysPoint >::value, false>physPointsWrap(physPoints);
    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
@@ -1548,7 +1548,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
                                             const shards::CellTopology &  cellTopo,
                                             const int &                   whichCell)
 {
-  INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell) );
+  INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell) );
   
   size_t spaceDim  = (size_t)cellTopo.getDimension();
   size_t numPoints;
@@ -1659,7 +1659,7 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
 {
 ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
 ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
- INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+ INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
   size_t spaceDim  = (size_t)cellTopo.getDimension();
   size_t numPoints;
   size_t numCells=0;
@@ -1708,7 +1708,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
   
   // Newton method to solve the equation F(refPoints) - physPoints = 0:
   // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-  for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter) {
+  for(int iter = 0; iter < INTREPID2_MAX_NEWTON; ++iter) {
     
     // Jacobians at the old iterates and their inverses. 
     setJacobian(jacobian, xOld, cellWorkset, cellTopo, whichCell);
@@ -1740,12 +1740,12 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     }
     
     // Stopping criterion:
-    if (totalError < INTREPID_TOL) {
+    if (totalError < INTREPID2_TOL) {
       break;
     } 
-    else if ( iter > INTREPID_MAX_NEWTON) {
-      INTREPID_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
-                      << INTREPID_MAX_NEWTON  << " iterations\n" );
+    else if ( iter > INTREPID2_MAX_NEWTON) {
+      INTREPID2_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
+                      << INTREPID2_MAX_NEWTON  << " iterations\n" );
       break;
     }
 
@@ -2420,7 +2420,7 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
                                                 const int &                   whichCell, 
                                                 const double &                threshold)
 {
-  INTREPID_VALIDATE( validateArguments_checkPointwiseInclusion(inCell, points, cellWorkset, whichCell, cell) );
+  INTREPID2_VALIDATE( validateArguments_checkPointwiseInclusion(inCell, points, cellWorkset, whichCell, cell) );
   
   // For cell topologies with reference cells this test maps the points back to the reference cell
   // and uses the method for reference cells

@@ -58,8 +58,8 @@
 #include "ROL_Sacado_EqualityConstraint.hpp"
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_EqualityConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
     std::string paramfile = "parameters.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
-    ROL::Algorithm<RealT> algo("Composite Step SQP", *parlist);
+    ROL::Algorithm<RealT> algo("Composite Step", *parlist);
 
     // Run algorithm.
     vl.zero();

@@ -145,7 +145,7 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+04 * INTREPID_TOL;
+  double                                   reltol = 1.0e+04 * INTREPID2_TOL;
   int                                      maxDeg[4];
   int                                      maxOffset[4];
   int                                      numPoly[4];
@@ -186,7 +186,7 @@ Kokkos::initialize();
                                      shards::getCellTopologyData< shards::Wedge<> >(),
                                      shards::getCellTopologyData< shards::Pyramid<> >() };
   // format of data files with analytic values
-  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
+  TypeOfExactData dataFormat[] = {INTREPID2_UTILS_SCALAR, INTREPID2_UTILS_FRACTION, INTREPID2_UTILS_FRACTION, INTREPID2_UTILS_FRACTION};
 
   // compute and compare integrals
   try {

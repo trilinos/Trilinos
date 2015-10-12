@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
       /******************* START COMPARISON ***********************/
       for (int cell_id = 0; cell_id < numCells; cell_id++) {
         *outStream << "Volume of cell " << cell_id << " = " << volumes(cell_id) << "    vs.    Analytic value =  " << tetvols[cell_id] << "\n";
-        if (std::fabs(volumes(cell_id)-tetvols[cell_id]) > INTREPID_TOL) {
+        if (std::fabs(volumes(cell_id)-tetvols[cell_id]) > INTREPID2_TOL) {
           errorFlag++;
         }
       }

@@ -107,8 +107,8 @@
       <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
     </ParameterList>
 
-    <!-- ===========  COMPOSITE STEP SQP  =========== -->
-    <ParameterList name="Composite Step SQP">
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
       <Parameter name="Nominal Optimality Solver Tolerance" type="double" value="1.e-3" />
     </ParameterList>
 
@@ -171,7 +171,7 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-12" />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-10" />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-10" />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="1000"   />

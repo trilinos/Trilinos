@@ -645,15 +645,14 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     metrics_ = rcp(quality);
 
-    if (algName_==std::string("scotch") || algName_==std::string("parmetis")){
+    if (modelAvail_[GraphModelType] == true){
       typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
       gpsq_t *graphQuality = NULL;
 
       try{
 	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
-			     this->graphModel_, this->inputAdapter_,
-			     solutionConst);
+			     this->baseInputAdapter_, solutionConst);
       }
       Z2_FORWARD_EXCEPTIONS
 

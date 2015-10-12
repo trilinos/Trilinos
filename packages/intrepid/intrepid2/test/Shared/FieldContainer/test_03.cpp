@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   // Set error flag.
   int errorFlag  = 0;
 
-  double zero = INTREPID_TOL;
+  double zero = INTREPID2_TOL;
 
   try {
   

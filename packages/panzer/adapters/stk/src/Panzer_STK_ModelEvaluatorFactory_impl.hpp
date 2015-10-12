@@ -215,11 +215,45 @@ namespace panzer_stk_classic {
   namespace {
     bool hasInterfaceCondition(const std::vector<panzer::BC>& bcs)
     {
-      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit) {
+      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
         if (bcit->bcType() == panzer::BCT_Interface)
           return true;
-      }
       return false;
+    }
+
+    Teuchos::RCP<STKConnManager<int> >
+    getSTKConnManager(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr =
+        Teuchos::rcp_dynamic_cast<STKConnManager<int> >(conn_mgr);
+      TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
+                                 "There are interface conditions, but the connection manager"
+                                 " does not support the necessary connections.");
+      return stk_conn_mgr;
+    }
+
+    void buildInterfaceConnections(const std::vector<panzer::BC>& bcs,
+                                   const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+        if (bcit->bcType() == panzer::BCT_Interface)
+          stk_conn_mgr->associateElementsInSideset(bcit->sidesetID());
+    }
+
+    void checkInterfaceConnections(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
+                                   const Teuchos::RCP<Teuchos::Comm<int> >& comm)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
+      if ( ! sidesets.empty()) {
+        std::stringstream ss;
+        ss << "Sideset IDs";
+        for (std::size_t i = 0; i < sidesets.size(); ++i)
+          ss << " " << sidesets[i];
+        ss << " did not yield associations, but these sidesets correspond to BCT_Interface BCs.";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str());
+      }
     }
   } // namespace
 
@@ -517,31 +551,25 @@ namespace panzer_stk_classic {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else {
+       const bool has_interface_condition = hasInterfaceCondition(bcs);
+       if (has_interface_condition)
+         buildInterfaceConnections(bcs, conn_manager);
+
        const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager_int
          = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,int> >(conn_manager,true);
 
        // use a flat DOF manager
-
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
-       const bool has_interface_condition = hasInterfaceCondition(bcs);
+       globalIndexerFactory.setEnableGhosting(has_interface_condition);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
-                                                         field_order, ! has_interface_condition);
+                                                         field_order);
        globalIndexer = dofManager;
-       if (has_interface_condition) {
-         Teuchos::RCP<panzer::DOFManager<int,int> > nativeDofMngr =
-           Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager);
-         TEUCHOS_TEST_FOR_EXCEPTION(nativeDofMngr.is_null(), std::logic_error,
-                                    "There are interface conditions, but the non-native DOF manager"
-                                    " does not support the necessary ghosting.");
-         nativeDofMngr->enableGhosting(true);
-         {
-           PANZER_FUNC_TIME_MONITOR("panzer_stk_classic::ModelEvaluatorFactory::buildObjects::buildGlobalUnknowns");
-           nativeDofMngr->buildGlobalUnknowns();
-         }
-       }
+
+       if (has_interface_condition)
+         checkInterfaceConnections(conn_manager, dofManager->getComm());
 
        linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
 

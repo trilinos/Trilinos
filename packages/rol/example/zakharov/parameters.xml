@@ -1,5 +1,5 @@
 <ParameterList name="Inputs">
-  <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+ <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
@@ -107,8 +107,8 @@
       <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
     </ParameterList>
 
-    <!-- ===========  COMPOSITE STEP SQP  =========== -->
-    <ParameterList name="Composite Step SQP">
+    <!-- ===========  COMPOSITE STEP  =========== -->
+    <ParameterList name="Composite Step">
       <Parameter name="Nominal Optimality Solver Tolerance" type="double" value="1.e-3" />
     </ParameterList>
 

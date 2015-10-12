@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_COMPOSITESTEPSQP_H
-#define ROL_COMPOSITESTEPSQP_H
+#ifndef ROL_COMPOSITESTEP_H
+#define ROL_COMPOSITESTEP_H
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
@@ -51,16 +51,16 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-/** \class ROL::CompositeStepSQP
+/** \class ROL::CompositeStep
     \brief Implements the computation of optimization steps
-           with composite-step trust-region SQP methods.
+           with composite-step trust-region methods.
 */
 
 
 namespace ROL {
 
 template <class Real>
-class CompositeStepSQP : public Step<Real> {
+class CompositeStep : public Step<Real> {
 private:
 
   // Vectors used for cloning.
@@ -134,15 +134,15 @@ private:
 
 public:
 
-  virtual ~CompositeStepSQP() {}
+  virtual ~CompositeStep() {}
 
-  CompositeStepSQP( Teuchos::ParameterList & parlist ) : Step<Real>() {
+  CompositeStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     flagCG_ = 0;
     flagAC_ = 0;
     iterCG_ = 0;
 
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step SQP");
+    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
     Real nominal_tol = steplist.get("Nominal Optimality Solver Tolerance", 1e-3);
  
     maxiterCG_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
@@ -379,7 +379,7 @@ public:
 
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << " Composite-step trust-region SQP solver";
+    hist << "\n" << " Composite-step trust-region solver";
     hist << "\n";
     return hist.str();
   }
@@ -446,7 +446,7 @@ public:
 
     if (infoLM_) {
       std::stringstream hist;
-      hist << "\n  SQP_lagrange_multiplier\n";
+      hist << "\n  Lagrange multiplier step\n";
       std::cout << hist.str();
     }
 
@@ -509,7 +509,7 @@ public:
 
     if (infoQN_) {
       std::stringstream hist;
-      hist << "\n  SQP_quasi-normal_step\n";
+      hist << "\n  Quasi-normal step\n";
       std::cout << hist.str();
     }
 
@@ -669,7 +669,7 @@ public:
 
     if (infoTS_) {
       std::stringstream hist;
-      hist << "\n  SQP_tangential_subproblem\n";
+      hist << "\n  Tangential subproblem\n";
       hist << std::setw(6)  << std::right << "iter" << std::setw(18) << "||Wr||/||Wr0||" << std::setw(15) << "||s||";
       hist << std::setw(15) << "delta" << std::setw(15) << "||c'(x)s||" << "\n";
       std::cout << hist.str();
@@ -958,7 +958,7 @@ public:
 
     if (infoAC_) {
       std::stringstream hist;
-      hist << "\n  SQP_accept\n";
+      hist << "\n  Composite step acceptance\n";
       std::cout << hist.str();
     }
 
@@ -1218,7 +1218,7 @@ public:
 
   } // accept
 
-}; // class CompositeStepSQP
+}; // class CompositeStep
 
 } // namespace ROL
 

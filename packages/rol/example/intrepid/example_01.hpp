@@ -232,7 +232,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
     void vec2mat(RCP<Matrix> &m, const V &v) {
 
       using Teuchos::dyn_cast;
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+      RCP<const vec> vp = dyn_cast<const SV>(v).getVector();
 
       for(int i=0;i<nDoF_;++i) {
         (*m)(i,0) = (*vp)[i];  
@@ -245,7 +245,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
        using Teuchos::dyn_cast;
        using Teuchos::rcp_const_cast;
 
-       RCP<vec> vp = rcp_const_cast<vec>((dyn_cast<SV>(v)).getVector()); 
+       RCP<vec> vp = (dyn_cast<SV>(v)).getVector(); 
        
        for(int i=0;i<nDoF_;++i) {
          (*vp)[i] = (*m)(i,0);   
@@ -257,7 +257,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
     void gather(FC<ScalarT> &fc, const V& v) {
 
       using Teuchos::dyn_cast;
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+      RCP<const vec> vp = dyn_cast<const SV>(v).getVector();
 
       for(int cell=0;cell<numCells_;++cell) {
         for(int field=0;field<numFields_;++field) {
@@ -338,10 +338,10 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
       std::fill(ahwvp->begin(),ahwvp->end(),0.0);
 
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
-      RCP<const vec> wp = (dyn_cast<SV>(const_cast<V &>(w))).getVector();
-      RCP<const vec> up = (dyn_cast<SV>(const_cast<V &>(u))).getVector();
-      RCP<const vec> zp = (dyn_cast<SV>(const_cast<V &>(z))).getVector();
+      RCP<const vec> vp = (dyn_cast<const SV>(v)).getVector();
+      RCP<const vec> wp = (dyn_cast<const SV>(w)).getVector();
+      RCP<const vec> up = (dyn_cast<const SV>(u)).getVector();
+      RCP<const vec> zp = (dyn_cast<const SV>(z)).getVector();
 
       FC<DSFad> u_fc(numCells_,numFields_);
       FC<DSFad> z_fc(numCells_,numFields_);

@@ -52,6 +52,7 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterListConverters.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -91,7 +92,7 @@ int main(int argc, char *argv[]) {
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
-    // Define algorithm.
+   // Define algorithm.
     ROL::Algorithm<RealT> algo("Line Search",*parlist);
 
     // Iteration vector.

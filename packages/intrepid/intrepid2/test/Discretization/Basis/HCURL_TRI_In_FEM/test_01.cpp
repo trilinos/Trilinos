@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
     for (int i=0;i<myBasisValuesDIV.dimension(0);i++) {
       for (int j=0;j<myBasisValuesDIV.dimension(1);j++) {
-        if (std::abs( myBasisValuesDIV(i,j,1) + myBasisValuesCURL(i,j,0) ) > INTREPID_TOL ) {
+        if (std::abs( myBasisValuesDIV(i,j,1) + myBasisValuesCURL(i,j,0) ) > INTREPID2_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Output the multi-index of the value where the error is:
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
                     << " but correct value: " << -myBasisValuesDIV(i,j,1) << "\n";
           *outStream << "Difference: " << std::abs( myBasisValuesCURL(i,j,0) + myBasisValuesDIV(i,j,1) ) << "\n";
         }
-        if (std::abs( myBasisValuesDIV(i,j,0) - myBasisValuesCURL(i,j,1) ) > INTREPID_TOL ) {
+        if (std::abs( myBasisValuesDIV(i,j,0) - myBasisValuesCURL(i,j,1) ) > INTREPID2_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           // Output the multi-index of the value where the error is:
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<myBasisValues.dimension(0);i++) {
       for (int j=0;j<myBasisValues.dimension(1);j++) {
         for (int k=0;k<myBasisValues.dimension(2);k++) {
-          if (std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) > INTREPID_TOL ) {
+          if (std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) > INTREPID2_TOL ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -313,7 +313,7 @@ int main(int argc, char *argv[]) {
     int cur=0;
     for (int i=0;i<myBasisValues.dimension(0);i++) {
       for (int j=0;j<myBasisValues.dimension(1);j++) {
-        if (std::abs( myBasisValues(i,j) - fiat_curls[cur] ) > INTREPID_TOL ) {
+        if (std::abs( myBasisValues(i,j) - fiat_curls[cur] ) > INTREPID2_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

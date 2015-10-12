@@ -75,6 +75,11 @@ class OptDualStdVector;  // Dual optimization space.
 template <class Real, class Element>
 class OptStdVector : public ROL::Vector<Real> {
 
+  typedef std::vector<Element> vector;
+  typedef ROL::Vector<Real>    V;
+
+  typedef typename vector::size_type uint;
+
 private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptDualStdVector<Real> >  dual_vec_;
@@ -84,27 +89,27 @@ public:
 OptStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(Teuchos::null) {}
 
 void plus( const ROL::Vector<Real> &x ) {
-  OptStdVector &ex = Teuchos::dyn_cast<OptStdVector>(const_cast <ROL::Vector<Real> &>(x));
-  Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
-  unsigned dimension  = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  using Teuchos::RCP;  using Teuchos::dyn_cast;  using Teuchos::getConst;
+  RCP<const vector> xvalptr = dyn_cast<const OptStdVector>(getConst(x)).getVector(); 
+  uint dimension  = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
   }
 }
 
 void scale( const Real alpha ) {
-  unsigned dimension = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  uint dimension = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] *= alpha;
   }
 }
 
 Real dot( const ROL::Vector<Real> &x ) const {
   Real val = 0;
-  OptStdVector<Real, Element> & ex = Teuchos::dyn_cast<OptStdVector<Real, Element> >(const_cast <ROL::Vector<Real> &>(x));
-  Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
-  unsigned dimension  = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  using Teuchos::RCP;  using Teuchos::dyn_cast;  using Teuchos::getConst;
+  RCP<const vector> xvalptr = dyn_cast<const OptStdVector>(getConst(x)).getVector(); 
+  uint dimension  = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     val += (*std_vec_)[i]*(*xvalptr)[i];
   }
   return val;
@@ -124,13 +129,21 @@ Teuchos::RCP<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
+Teuchos::RCP<std::vector<Element> > getVector() {
+  return std_vec_;
+}
+
 Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
-  Teuchos::RCP<OptStdVector> e = Teuchos::rcp( new OptStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
-  (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
+  using Teuchos::RCP;  using Teuchos::rcp;
+  RCP<vector> e_rcp = rcp( new vector(std_vec_->size(),0.0) );
+  (*e_rcp)[i] = 1.0;
+  
+  RCP<V> e = rcp( new OptStdVector( e_rcp ) );
+  
   return e;
 }
 
-int dimension() const {return std_vec_->size();}
+int dimension() const {return static_cast<int>(std_vec_->size());}
 
 const ROL::Vector<Real> & dual() const {
   dual_vec_ = Teuchos::rcp( new OptDualStdVector<Real>( Teuchos::rcp( new std::vector<Element>(*std_vec_) ) ) );
@@ -144,6 +157,11 @@ const ROL::Vector<Real> & dual() const {
 template <class Real, class Element>
 class OptDualStdVector : public ROL::Vector<Real> {
 
+  typedef std::vector<Element> vector;
+  typedef ROL::Vector<Real>    V;
+
+  typedef typename vector::size_type uint;
+
 private:
 Teuchos::RCP<std::vector<Element> >  std_vec_;
 mutable Teuchos::RCP<OptStdVector<Real> >  dual_vec_;
@@ -153,27 +171,28 @@ public:
 OptDualStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(Teuchos::null) {}
 
 void plus( const ROL::Vector<Real> &x ) {
-  OptDualStdVector &ex = Teuchos::dyn_cast<OptDualStdVector>(const_cast <ROL::Vector<Real> &>(x));
-  Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
-  unsigned dimension  = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  using Teuchos::RCP;  using Teuchos::dyn_cast;  using Teuchos::getConst;
+  RCP<const vector> xvalptr = dyn_cast<const OptDualStdVector>(getConst(x)).getVector(); 
+
+  uint dimension  = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
   }
 }
 
 void scale( const Real alpha ) {
-  unsigned dimension = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  uint dimension = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] *= alpha;
   }
 }
 
 Real dot( const ROL::Vector<Real> &x ) const {
   Real val = 0;
-  OptDualStdVector<Real, Element> & ex = Teuchos::dyn_cast<OptDualStdVector<Real, Element> >(const_cast <ROL::Vector<Real> &>(x));
-  Teuchos::RCP<const std::vector<Element> > xvalptr = ex.getVector();
-  unsigned dimension  = std_vec_->size();
-  for (unsigned i=0; i<dimension; i++) {
+  using Teuchos::RCP;  using Teuchos::dyn_cast;  using Teuchos::getConst;
+  RCP<const vector> xvalptr = dyn_cast<const OptDualStdVector>(getConst(x)).getVector(); 
+  uint dimension  = std_vec_->size();
+  for (uint i=0; i<dimension; i++) {
     val += (*std_vec_)[i]*(*xvalptr)[i];
   }
   return val;
@@ -193,9 +212,16 @@ Teuchos::RCP<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
+Teuchos::RCP<std::vector<Element> > getVector() {
+  return std_vec_;
+}
+
 Teuchos::RCP<ROL::Vector<Real> > basis( const int i ) const {
-  Teuchos::RCP<OptDualStdVector> e = Teuchos::rcp( new OptDualStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ) );
-  (const_cast <std::vector<Element> &> (*e->getVector()))[i]= 1.0;
+  using Teuchos::RCP;  using Teuchos::rcp;
+  RCP<vector> e_rcp = rcp( new vector(std_vec_->size(),0.0) );
+  (*e_rcp)[i] = 1.0;
+  
+  RCP<V> e = rcp( new OptDualStdVector( e_rcp ) );
   return e;
 }
 

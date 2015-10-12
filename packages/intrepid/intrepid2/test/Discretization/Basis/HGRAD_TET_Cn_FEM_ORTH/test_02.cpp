@@ -321,7 +321,7 @@ Kokkos::initialize();
           for (int basis_order=total_order; basis_order <= max_order; basis_order++) {
 
             // set test tolerance;
-            double zero = basis_order*basis_order*basis_order*100*INTREPID_TOL;
+            double zero = basis_order*basis_order*basis_order*100*INTREPID2_TOL;
 
             //create basis
             Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =

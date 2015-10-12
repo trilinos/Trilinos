@@ -118,12 +118,12 @@ int main(int argc, char *argv[]) {
       for (int k=0;k<myCub.getNumPoints();k++) {
         cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
       }
-      if (i != j && fabs( cur ) > 20.0 * INTREPID_TOL) {
-        std::cout << INTREPID_TOL << std::endl;
+      if (i != j && fabs( cur ) > 20.0 * INTREPID2_TOL) {
+        std::cout << INTREPID2_TOL << std::endl;
         std::cout << i << " " << j << " " << cur << std::endl;
         errorFlag++;
       }
-      else if (i == j && fabs( cur ) < 20.0 * INTREPID_TOL ) {
+      else if (i == j && fabs( cur ) < 20.0 * INTREPID2_TOL ) {
         std::cout << i << " " << j << " " << cur << std::endl;
         errorFlag++;
       }

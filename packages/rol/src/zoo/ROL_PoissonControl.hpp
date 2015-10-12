@@ -63,22 +63,40 @@ namespace ZOO {
    */
   template<class Real>
   class Objective_PoissonControl : public Objective<Real> {
+
+  typedef std::vector<Real>  vector;
+  typedef Vector<Real>       V;
+  typedef StdVector<Real>    SV;  
+
+  typedef typename vector::size_type uint;
+
   private:
     Real alpha_;
+
+    Teuchos::RCP<const vector> getVector( const V& x ) {
+      using Teuchos::dyn_cast;
+      using Teuchos::getConst;
+      return dyn_cast<const SV>(getConst(x)).getVector();
+    }
+
+    Teuchos::RCP<vector> getVector( V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<SV>(x).getVector();
+    }
 
   public:
 
     Objective_PoissonControl(Real alpha = 1.e-4) : alpha_(alpha) {}
 
     void apply_mass(Vector<Real> &Mz, const Vector<Real> &z ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<std::vector<Real> > Mzp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(Mz)).getVector());
 
-      int  n = zp->size();
+      using Teuchos::RCP;
+      RCP<const vector> zp = getVector(z);
+      RCP<vector> Mzp = getVector(Mz);
+
+      uint  n = zp->size();
       Real h = 1.0/((Real)n+1.0);
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
           (*Mzp)[i] = h/6.0*(4.0*(*zp)[i] + (*zp)[i+1]);
         }
@@ -92,55 +110,58 @@ namespace ZOO {
     }
 
     void solve_poisson(Vector<Real> & u, const Vector<Real> & z) {
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
 
-      int  n = up->size();
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      RCP<vector> up = getVector(u);
+
+      uint  n = up->size();
       Real h = 1.0/((Real)n+1.0);
-      StdVector<Real> b( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > bp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(b)).getVector());
-      this->apply_mass(b,z);
+      SV b( Teuchos::rcp( new vector(n,0.0) ) );
+      RCP<vector> bp = getVector(b);
+      apply_mass(b,z);
 
       Real d   =  2.0/h;
       Real o   = -1.0/h;
       Real m   = 0.0;
-      std::vector<Real> c(n,o);
+      vector c(n,o);
       c[0]     = c[0]/d;
       (*up)[0] = (*bp)[0]/d;
-      for ( int i = 1; i < n; i++ ) {
+      for ( uint i = 1; i < n; i++ ) {
         m        = 1.0/(d - o*c[i-1]);
         c[i]     = c[i]*m;
         (*up)[i] = ( (*bp)[i] - o*(*up)[i-1] )*m;
       }
-      for ( int i = n-1; i > 0; i-- ) {
+      for ( uint i = n-1; i > 0; i-- ) {
         (*up)[i-1] = (*up)[i-1] - c[i-1]*(*up)[i];
       }
     }
 
     Real evaluate_target(Real x) {
-      Real val = 1.0/3.0*std::pow(x,4.0) - 2.0/3.0*std::pow(x,3.0) + 1.0/3.0*x + 8.0*this->alpha_;
+      Real val = 1.0/3.0*std::pow(x,4.0) - 2.0/3.0*std::pow(x,3.0) + 1.0/3.0*x + 8.0*alpha_;
       return val;
     }
 
     Real value( const Vector<Real> &z, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      int  n    = zp->size();
+
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      RCP<const vector> zp = getVector(z);
+      uint  n    = zp->size();
       Real h    = 1.0/((Real)n+1.0);
       // SOLVE STATE EQUATION
-      StdVector<Real> u( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      this->solve_poisson(u,z);
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
+      SV u( rcp( new vector(n,0.0) ) );
+      solve_poisson(u,z);
+      RCP<vector> up = getVector(u);
 
       Real val  = 0.0;
       Real res  = 0.0;
       Real res1 = 0.0;
       Real res2 = 0.0;
       Real res3 = 0.0;
-      for (int i=0; i<n; i++) {
-        res = this->alpha_*(*zp)[i];
+      for (uint i=0; i<n; i++) {
+        res = alpha_*(*zp)[i];
         if ( i == 0 ) {
           res *= h/6.0*(4.0*(*zp)[i] + (*zp)[i+1]);
           res1 = (*up)[i]-evaluate_target((Real)(i+1)*h);
@@ -166,95 +187,95 @@ namespace ZOO {
    }
 
     void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
-      int  n = zp->size();
+
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      RCP<const vector> zp = getVector(z);
+      RCP<vector> gp = getVector(g);
+
+      uint  n = zp->size();
       Real h = 1.0/((Real)n+1.0);
 
       // SOLVE STATE EQUATION
-      StdVector<Real> u( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      this->solve_poisson(u,z);
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
+      SV u( rcp( new vector(n,0.0) ) );
+      solve_poisson(u,z);
+      RCP<vector> up = getVector(u);
 
       // SOLVE ADJOINT EQUATION
       StdVector<Real> res( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      Teuchos::RCP<std::vector<Real> > rp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(res)).getVector());
-      for (int i=0; i<n; i++) {
+      RCP<vector> rp = getVector(res);
+
+      for (uint i=0; i<n; i++) {
         (*rp)[i] = -((*up)[i]-evaluate_target((Real)(i+1)*h));
       }
-      StdVector<Real> p( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      this->solve_poisson(p,res);
-      Teuchos::RCP<std::vector<Real> > pp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(p)).getVector());
+
+      SV p( rcp( new vector(n,0.0) ) );
+      solve_poisson(p,res);
+      RCP<vector> pp = getVector(p);
 
       Real res1 = 0.0;
       Real res2 = 0.0;
       Real res3 = 0.0;
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
-          res1 = this->alpha_*(*zp)[i] - (*pp)[i];
-          res2 = this->alpha_*(*zp)[i+1] - (*pp)[i+1];
+          res1 = alpha_*(*zp)[i] - (*pp)[i];
+          res2 = alpha_*(*zp)[i+1] - (*pp)[i+1];
           (*gp)[i] = h/6.0*(4.0*res1 + res2);
         }
         else if ( i == n-1 ) {
-          res1 = this->alpha_*(*zp)[i-1] - (*pp)[i-1];
-          res2 = this->alpha_*(*zp)[i] - (*pp)[i];
+          res1 = alpha_*(*zp)[i-1] - (*pp)[i-1];
+          res2 = alpha_*(*zp)[i] - (*pp)[i];
           (*gp)[i] = h/6.0*(res1 + 4.0*res2);
         }
         else {
-          res1 = this->alpha_*(*zp)[i-1] - (*pp)[i-1];
-          res2 = this->alpha_*(*zp)[i] - (*pp)[i];
-          res3 = this->alpha_*(*zp)[i+1] - (*pp)[i+1];
+          res1 = alpha_*(*zp)[i-1] - (*pp)[i-1];
+          res2 = alpha_*(*zp)[i] - (*pp)[i];
+          res3 = alpha_*(*zp)[i+1] - (*pp)[i+1];
           (*gp)[i] = h/6.0*(res1 + 4.0*res2 + res3);
         }
       }
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(z))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
+ 
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      RCP<const vector> zp = getVector(z);
+      RCP<const vector> vp = getVector(v);
+      RCP<vector> hvp = getVector(hv);
 
-      int  n = zp->size();
+      uint  n = zp->size();
       Real h = 1.0/((Real)n+1.0);
 
       // SOLVE STATE EQUATION
-      StdVector<Real> u( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      this->solve_poisson(u,v);
-      Teuchos::RCP<std::vector<Real> > up =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(u)).getVector());
+      SV u( rcp( new vector(n,0.0) ) );
+      solve_poisson(u,v);
+      RCP<vector> up = getVector(u);
 
       // SOLVE ADJOINT EQUATION
-      StdVector<Real> p( Teuchos::rcp( new std::vector<Real>(n,0.0) ) );
-      this->solve_poisson(p,u);
-      Teuchos::RCP<std::vector<Real> > pp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(p)).getVector());
+      SV p( rcp( new vector(n,0.0) ) );
+
+      solve_poisson(p,u);
+      RCP<vector> pp = getVector(p);  
 
       Real res1 = 0.0;
       Real res2 = 0.0;
       Real res3 = 0.0;
-      for (int i=0; i<n; i++) {
+      for (uint i=0; i<n; i++) {
         if ( i == 0 ) {
-          res1 = this->alpha_*(*vp)[i] + (*pp)[i];
-          res2 = this->alpha_*(*vp)[i+1] + (*pp)[i+1];
+          res1 = alpha_*(*vp)[i] + (*pp)[i];
+          res2 = alpha_*(*vp)[i+1] + (*pp)[i+1];
           (*hvp)[i] = h/6.0*(4.0*res1 + res2);
         }
         else if ( i == n-1 ) {
-          res1 = this->alpha_*(*vp)[i-1] + (*pp)[i-1];
-          res2 = this->alpha_*(*vp)[i] + (*pp)[i];
+          res1 = alpha_*(*vp)[i-1] + (*pp)[i-1];
+          res2 = alpha_*(*vp)[i] + (*pp)[i];
           (*hvp)[i] = h/6.0*(res1 + 4.0*res2);
         }
         else {
-          res1 = this->alpha_*(*vp)[i-1] + (*pp)[i-1];
-          res2 = this->alpha_*(*vp)[i] + (*pp)[i];
-          res3 = this->alpha_*(*vp)[i+1] + (*pp)[i+1];
+          res1 = alpha_*(*vp)[i-1] + (*pp)[i-1];
+          res2 = alpha_*(*vp)[i] + (*pp)[i];
+          res3 = alpha_*(*vp)[i+1] + (*pp)[i+1];
           (*hvp)[i] = h/6.0*(res1 + 4.0*res2 + res3);
         }
       }
@@ -264,26 +285,35 @@ namespace ZOO {
 
   template<class Real>
   void getPoissonControl( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
+
+    typedef std::vector<Real> vector;
+    typedef StdVector<Real>   SV;
+ 
+    typedef typename vector::size_type uint;
+   
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::dyn_cast;
+
     // Cast Initial Guess and Solution Vectors
-    Teuchos::RCP<std::vector<Real> > x0p =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
-    Teuchos::RCP<std::vector<Real> > xp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x)).getVector());
-    int n = xp->size();
+    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
+    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
+
+    uint n = xp->size();
     // Resize Vectors
     n = 512;
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_PoissonControl<Real> );
+    obj = rcp( new Objective_PoissonControl<Real> );
     // Get Initial Guess
-    for (int i=0; i<n; i++) {
+    for (uint i=0; i<n; i++) {
       (*x0p)[i] = 0.0;
     }
     // Get Solution
     Real h  = 1.0/((Real)n+1.0);
     Real pt = 0.0;
-    for( int i=0; i<n; i++ ) {
+    for( uint i=0; i<n; i++ ) {
       pt = (Real)(i+1)*h;
       (*xp)[i] = 4.0*pt*(1.0-pt);
     }

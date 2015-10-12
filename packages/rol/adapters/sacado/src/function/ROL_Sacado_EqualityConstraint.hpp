@@ -108,21 +108,24 @@ void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv
 
     // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
+  
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  using Teuchos::getConst;
 
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
 
     int n = xp->size();
 
     // Get a pointer to the direction vector
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
 
-    Teuchos::RCP<std::vector<ScalarT> > jvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(jv)).getVector());
+    RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
 
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > x_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
     x_fad_rcp->reserve(n);
 
     // Initialize constructor for each element
@@ -131,7 +134,7 @@ void Sacado_EqualityConstraint<Real,Constr>::applyJacobianAD(Vector<ScalarT> &jv
     }
 
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
     c_fad_rcp->reserve(dim_);
 
     for(int j=0; j<dim_; ++j) {
@@ -161,22 +164,25 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<Scala
 
    // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
+  
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  using Teuchos::getConst;
 
     // Get a pointer to the optimization vector
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
 
     // Get a pointer to the direction vector
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
 
-    Teuchos::RCP<std::vector<ScalarT> > ajup = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(aju)).getVector());
+    RCP<vector> ajup = dyn_cast<SV>(aju).getVector();
 
     int n = xp->size();
 
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > x_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
     x_fad_rcp->reserve(n);
 
     // Initialize constructor for each element
@@ -184,7 +190,7 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointJacobianAD(Vector<Scala
         x_fad_rcp->push_back(FadType(n,i,(*xp)[i])); 
     }
 
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
     c_fad_rcp->reserve(dim_);
     for(int j=0; j<dim_; ++j) {
         c_fad_rcp->push_back(0);  
@@ -214,34 +220,36 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
                                                                    const Vector<ScalarT> &v, const Vector<ScalarT> &x, 
                                                                    Real &tol){
 
-   // Data type which supports automatic differentiation 
+    // Data type which supports automatic differentiation 
     typedef Sacado::Fad::SFad<ScalarT,1> FadType;
+    typedef std::vector<FadType>         Fadvector;
+    typedef std::vector<ScalarT>         vector;
+    typedef StdVector<ScalarT>           SV;
+  
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  using Teuchos::getConst;
 
     // Get a pointer to the optimization vector
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(getConst(x)).getVector();
 
     // Get a pointer to the dual constraint vector
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
 
     // Get a pointer to the direction vector
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
 
     // Get a pointer to the directional adjoint Hessian 
-    Teuchos::RCP<std::vector<ScalarT> > ahuvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ahuv)).getVector());
+    RCP<vector> ahuvp = dyn_cast<SV>(ahuv).getVector();
 
     // Number of optimization variables
     int n = xp->size();
 
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > x_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
     x_fad_rcp->reserve(n);
 
     // Allocate for directional adjoint Jacobian
-    Teuchos::RCP<std::vector<FadType> > aju_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> aju_fad_rcp = rcp( new Fadvector );
     aju_fad_rcp->reserve(n);
 
     for(int i=0; i<n; ++i) {
@@ -254,11 +262,11 @@ void Sacado_EqualityConstraint<Real,Constr>::applyAdjointHessianAD(Vector<Scalar
     }
 
     // Allocate for constraint vector
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
     c_fad_rcp->reserve(dim_);
 
     // Allocate for dual constraint vector
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp =  Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
     u_fad_rcp->reserve(dim_);
 
      for(int j=0; j<dim_; ++j) {
