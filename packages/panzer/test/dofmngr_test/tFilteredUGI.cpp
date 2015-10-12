@@ -525,6 +525,11 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      // check that ones sum up to the number of ids
      // that were not filtered
      TEST_EQUALITY(sum,ghosted_x.MyLength()-count);
+
+     
+     // do a lazy test to ensure you can construct a unique matrix
+     RCP<Thyra::LinearOpBase<double> > uniqueMatrix  = lof.getThyraMatrix();
+     TEST_ASSERT(uniqueMatrix!=Teuchos::null);
    }
 
 
