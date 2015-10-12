@@ -189,7 +189,8 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
   Real temp = zero;
   Real resnrm = zero;
 
-  tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-8;
+  //tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*1e-8;
+  tol = std::sqrt(b1.dot(b1)+b2.dot(b2))*tol;
 
   // Set initial guess to zero.
   v1.zero(); v2.zero();
