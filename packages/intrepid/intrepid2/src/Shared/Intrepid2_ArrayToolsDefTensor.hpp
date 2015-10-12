@@ -635,6 +635,510 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
 				  ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight rank 2 or 3 required.")
 	}    
   }
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_2 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for( index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, point)*inputFields(cell, field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};    
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, point, row)*inputFields(cell, field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};         
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_4_n {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_4_n (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, point, row, col)*inputFields(cell, field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};  
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_4_t {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_4_t (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, point, col, row)*inputFields(cell, field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_2_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, 0)*inputFields(cell, field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};    
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, 0, row)*inputFields(cell, field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};         
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_4_n_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_4_n_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, 0, row, col)*inputFields(cell, field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};  
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_4_4_t_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_4_4_t_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, 0, col, row)*inputFields(cell, field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};     
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_2 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, point)*inputFields(field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};    
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+		    inputData(cell, point, row)*inputFields(field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};         
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_4_n {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_4_n (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, point, row, col)*inputFields(field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};  
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_4_t {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_4_t (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+			inputData(cell, point, col, row)*inputFields(field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_2_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+                    inputData(cell, 0)*inputFields(field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};    
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  outputFields(cell, field, point, row) = \
+                    inputData(cell, 0, row)*inputFields(field, point, row);
+		} // Row-loop
+	      } // P-loop
+	    } // F-loop
+   }
+};         
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_4_n_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_4_n_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+ 	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+                        inputData(cell, 0, row, col)*inputFields(field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};  
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct matvecProductDataField_3_4_t_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+  
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+
+  matvecProductDataField_3_4_t_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cell) const {
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    outputFields(cell, field, point, row) = 0.0;
+		    for(index_type col = 0; col < matDim; col++){
+		      outputFields(cell, field, point, row) += \
+                        inputData(cell, 0, col, row)*inputFields(field, point, col);
+		    }// col
+		  } //row
+		}// point
+	      }// field
+   }
+};                     
   template<class Scalar, 
            class ArrayOutFields, 
            class ArrayInData, 
@@ -775,9 +1279,7 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     size_t numDataPts = inputData.dimension(1);
     size_t inRank     = getrank(inputFields);    
     size_t numCells   = outputFields.dimension(0);
-    size_t numFields  = outputFields.dimension(1);
-    size_t numPoints  = outputFields.dimension(2);
-    size_t matDim     = outputFields.dimension(3);
+
     /*********************************************************************************************
      *                              inputFields is (C,F,P,D)                                     *
      *********************************************************************************************/
@@ -786,61 +1288,21 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
         
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for( size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, point)*inputFieldsWrap(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+
+ Kokkos::parallel_for (numCells, matvecProductDataField_4_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
+
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_4_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, point, row, col)*inputFieldsWrap(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_4_4_n<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, point, col, row)*inputFieldsWrap(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_4_4_t<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } //transpose
 	  else {
 	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
@@ -856,61 +1318,19 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       else{  // constant data case
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, 0)*inputFieldsWrap(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_4_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, 0, row)*inputFieldsWrap(cell, field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_4_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, 0, row, col)*inputFieldsWrap(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_4_4_n_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, 0, col, row)*inputFieldsWrap(cell, field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_4_4_t_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } //transpose
 	  else {
 	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
@@ -932,61 +1352,19 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
         
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, point)*inputFieldsWrap(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_3_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-		    inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_3_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, point, row, col)*inputFieldsWrap(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_3_4_n<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-			inputDataWrap(cell, point, col, row)*inputFieldsWrap(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } //transpose
 	  else {
 	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
@@ -1002,61 +1380,19 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       else{  // constant data case
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-                    inputDataWrap(cell, 0)*inputFieldsWrap(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_3_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  outputFieldsWrap(cell, field, point, row) = \
-                    inputDataWrap(cell, 0, row)*inputFieldsWrap(field, point, row);
-		} // Row-loop
-	      } // P-loop
-	    } // F-loop
-	  }// C-loop
+Kokkos::parallel_for (numCells, matvecProductDataField_3_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  break;
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-                        inputDataWrap(cell, 0, row, col)*inputFieldsWrap(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_3_4_n_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    outputFieldsWrap(cell, field, point, row) = 0.0;
-		    for(size_t col = 0; col < matDim; col++){
-		      outputFieldsWrap(cell, field, point, row) += \
-                        inputDataWrap(cell, 0, col, row)*inputFieldsWrap(field, point, col);
-		    }// col
-		  } //row
-		}// point
-	      }// field
-	    }// cell
+Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
 	  } //transpose
 	  else {
 	    TEUCHOS_TEST_FOR_EXCEPTION( !( (transpose == 'n') || (transpose == 'N') || (transpose == 't') || (transpose == 'T') ), std::invalid_argument,
