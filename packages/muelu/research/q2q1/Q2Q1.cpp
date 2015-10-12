@@ -193,18 +193,19 @@ int main(int argc, char *argv[]) {
 
     // configure problem
     std::string prefix = "./Q2Q1_9x9_";      clp.setOption("prefix",     &prefix,        "prefix for data files");
+    std::string rhs    = "";                    clp.setOption("rhs",        &rhs,           "rhs");
 
     // configure run
-    std::string xmlFileName  = "driver.xml"; clp.setOption("xml",        &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
-    double      tol          = 1e-12;        clp.setOption("tol",        &tol,           "solver convergence tolerance");
-    std::string type         = "structured"; clp.setOption("type",       &type,          "structured/unstructured");
-    int         use9ptPatA   = 1;            clp.setOption("use9pt",     &use9ptPatA,    "use 9-point stencil matrix for velocity prolongator construction");
-    int         useFilters   = 1;            clp.setOption("usefilters", &useFilters,    "use filters on A and BB^T");
+    std::string xmlFileName  = "driver.xml";    clp.setOption("xml",        &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
+    double      tol          = 1e-8;            clp.setOption("tol",        &tol,           "solver convergence tolerance");
+    std::string type         = "unstructured";  clp.setOption("type",       &type,          "structured/unstructured");
+    int         use9ptPatA   = 1;               clp.setOption("use9pt",     &use9ptPatA,    "use 9-point stencil matrix for velocity prolongator construction");
+    int         useFilters   = 1;               clp.setOption("usefilters", &useFilters,    "use filters on A and BB^T");
 
-    int         binary       = 0;            clp.setOption("binary",     &binary,        "read matrix in binary format");
+    int         binary       = 0;               clp.setOption("binary",     &binary,        "read matrix in binary format");
 
     // configure misc
-    int         printTimings = 0;            clp.setOption("timings",    &printTimings,  "print timings to screen");
+    int         printTimings = 0;               clp.setOption("timings",    &printTimings,  "print timings to screen");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -276,7 +277,7 @@ int main(int argc, char *argv[]) {
 
     ParameterList& GmresDetails = BelosList.sublist("Solver Types").sublist("Block GMRES");
     GmresDetails.set("Maximum Iterations",      100);
-    GmresDetails.set("Convergence Tolerance",   1e-12);
+    GmresDetails.set("Convergence Tolerance",   tol);
     GmresDetails.set("Verbosity",               Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     GmresDetails.set("Output Frequency",        1);
     GmresDetails.set("Output Style",            Belos::Brief);
@@ -326,16 +327,16 @@ int main(int argc, char *argv[]) {
     const RCP<Thyra::LinearOpBase<SC> > thA = Thyra::createLinearOp(A);
     Thyra::initializeOp<SC>(*lowsFactory, thA, nsA.ptr());
 
-    RCP<tMultiVector> tX = Tpetra::createVector<SC>(fullMap);
-#if 1
-    tX->randomize();
+    RCP<tMultiVector> tX = Tpetra::createVector<SC>(fullMap), tB;
+    if (rhs == "") {
+      tX->randomize();
 
-    RCP<tMultiVector> tB = Tpetra::createVector<SC>(fullMap);
-    A->apply(*tX, *tB);
-#else
-    typedef Tpetra::MatrixMarket::Reader<tCrsMatrix> reader_type;
-    RCP<tMultiVector> tB = reader_type::readDenseFile((prefix + "rhs.mm").c_str(), fullMap->getComm(), fullMap->getNode(), fullMap);
-#endif
+      tB = Tpetra::createVector<SC>(fullMap);
+      A->apply(*tX, *tB);
+    } else {
+      typedef Tpetra::MatrixMarket::Reader<tCrsMatrix> reader_type;
+      tB = reader_type::readDenseFile(rhs.c_str(), fullMap->getComm(), fullMap->getNode(), fullMap);
+    }
 
     tX->putScalar(0.0);
 
