@@ -1663,7 +1663,6 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N, ES> const
 identity(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
 
   Tensor<T, N, ES>
   A(dimension, ZEROS);

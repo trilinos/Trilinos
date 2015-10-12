@@ -169,12 +169,12 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
-template<typename T, typename I, Index N,  typename ES>
+template<typename T, typename I, Index N,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, N, ES>, Vector<T, N, ES>>
 bounding_box(I start, I end);
 
-template<typename T, typename I,  typename ES>
+template<typename T, typename I,  typename ES=NOKOKKOS>
 KOKKOS_INLINE_FUNCTION
 std::pair< Vector<T, DYNAMIC, ES>, Vector<T, DYNAMIC, ES>>
 bounding_box(I start, I end);
@@ -380,7 +380,7 @@ find_type(Index const dimension, Index const number_nodes);
 ///
 /// Spherical parametrization functor
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class SphericalParametrization
 {
 public:
@@ -441,7 +441,7 @@ private:
 ///
 /// Stereographic parametrization functor
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class StereographicParametrization
 {
 public:
@@ -502,7 +502,7 @@ private:
 ///
 /// Projective parametrization functor
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class ProjectiveParametrization
 {
 public:
@@ -566,7 +566,7 @@ private:
 ///
 /// Tangent parametrization functor
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class TangentParametrization
 {
 public:
@@ -633,7 +633,7 @@ private:
 ///
 /// Cartesian parametrization functor
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class CartesianParametrization
 {
 public:
@@ -694,7 +694,7 @@ private:
 ///
 /// Parametric grid class
 ///
-template<typename T, Index N,  typename ES>
+template<typename T, Index N,  typename ES=NOKOKKOS>
 class ParametricGrid
 {
 
