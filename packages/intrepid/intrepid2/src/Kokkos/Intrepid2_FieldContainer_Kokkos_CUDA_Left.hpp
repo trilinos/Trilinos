@@ -78,8 +78,9 @@ Scalar& operator() (const size_t i0, const size_t i1, const size_t i2,
                           const size_t i3, const size_t i4, const size_t i5,
                           const size_t i6, const size_t i7)const;
 size_t rank(){return rankValue;}
-
+size_t rank() const {return rankValue;}
 size_t size(){return sizeValue;}
+size_t size() const {return sizeValue;}
 
 size_t dimension(size_t num){return dim[num];}
 

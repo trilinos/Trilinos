@@ -179,7 +179,6 @@ public:
    */
   GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
 
@@ -261,7 +260,6 @@ template <typename Adapter>
   GraphPartitioningSolutionQuality<Adapter>::GraphPartitioningSolutionQuality(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
@@ -276,6 +274,14 @@ template <typename Adapter>
   // using all weights.
 
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
+
+  std::bitset<NUM_MODEL_FLAGS> modelFlags;
+
+  // Create a GraphModel based on input data.
+
+  RCP<GraphModel<base_adapter_t> > graph;
+  graph = rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
 
   // Local number of objects.
 

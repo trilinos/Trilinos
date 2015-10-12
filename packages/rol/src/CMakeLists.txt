@@ -36,6 +36,7 @@ APPEND_SET(HEADERS
   vector/ROL_Vector_SimOpt.hpp
   vector/ROL_StdVector.hpp
   vector/ROL_PartitionedVector.hpp
+  vector/ROL_ScaledStdVector.hpp
   )
 
 #

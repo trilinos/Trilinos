@@ -308,7 +308,7 @@ Kokkos::initialize();
               edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
               
               // Compare with d-component of edge tangent by CellTools
-              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -325,7 +325,7 @@ Kokkos::initialize();
             // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
             if(cellDim == 2) {
               CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
-              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -337,7 +337,7 @@ Kokkos::initialize();
                   << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
                   << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
               }
-              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -458,7 +458,7 @@ Kokkos::initialize();
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -472,7 +472,7 @@ Kokkos::initialize();
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -530,7 +530,7 @@ Kokkos::initialize();
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -544,7 +544,7 @@ Kokkos::initialize();
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"

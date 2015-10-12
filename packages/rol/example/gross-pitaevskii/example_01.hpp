@@ -201,7 +201,7 @@ private:
 
     applyK(psi,*kpsi);
 
-    for(int i=0;i<nx_;++i) {
+    for(uint i=0;i<nx_;++i) {
       (*gp)[i] = ((*kpsip)[i] + (*Vp_)[i]*(*psip)[i] + 2.0*g_*pow((*psip)[i],3))*dx_;
     } 
       

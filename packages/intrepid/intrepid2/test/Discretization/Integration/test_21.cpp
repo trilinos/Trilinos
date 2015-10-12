@@ -208,7 +208,7 @@ Kokkos::initialize();
 
   // internal variables:
   int         errorFlag    = 0;
-  long double TOL          = INTREPID_TOL;
+  long double TOL          = INTREPID2_TOL;
   int         dimension    = 2;
   int         maxLevel     = 25;
   bool        isNormalized = true;                  

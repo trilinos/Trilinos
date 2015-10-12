@@ -62,41 +62,16 @@ APPEND_SET(HEADERS
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
   APPEND_SET(HEADERS ${HEADERS}
   Kokkos/KokkosRank.hpp
-  )
-IF (HAVE_INTREPID_KOKKOSCORE AND KOKKOS_HAVE_CUDA)
-  IF( TPL_ENABLE_MPI )
-      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
-  ENDIF()
-
-
-  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES} "." )
-  CUDA_INCLUDE_DIRECTORIES( ${CUDA_INCLUDE_DIRECTORIES}
-                     ${KokkosCore_INCLUDE_DIRS}
-                     ${Intrepid2_INCLUDE_DIRS}
-                     ${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-
-
-
- SET(SOURCES ${SOURCES}
-      ${OBJECTS_CUDA1}
-      ${OBJECTS_CUDA2}
-      ${OBJECTS_CUDA3}
-      )
-
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-  APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/KokkosRank.hpp
-  )	
-ENDIF()
-
-IF(HAVE_INTREPID_KOKKOSCORE)
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
-  APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/KokkosRank.hpp
-  )	
-ENDIF()
+  Kokkos/Intrepid2_FieldContainer_Kokkos.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_OpenMP_Left.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_OpenMP_Right.hpp 
+  Kokkos/Intrepid2_FieldContainer_Kokkos_PThreads_Left.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_PThreads_Right.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_Serial_Left.hpp
+  Kokkos/Intrepid2_FieldContainer_Kokkos_Serial_Right.hpp
+ )
 
 
 

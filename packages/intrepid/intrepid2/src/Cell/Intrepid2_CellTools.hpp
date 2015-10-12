@@ -1159,7 +1159,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
     static int checkPointInclusion(const Scalar*                 point,
                                    const int                     pointDim,
                                    const shards::CellTopology &  cellTopo,
-                                   const double &                threshold = INTREPID_THRESHOLD);
+                                   const double &                threshold = INTREPID2_THRESHOLD);
     
     
     
@@ -1178,7 +1178,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
     template<class ArrayPoint>
     static int checkPointsetInclusion(const ArrayPoint &            points,
                                       const shards::CellTopology &  cellTopo, 
-                                      const double &                threshold = INTREPID_THRESHOLD);
+                                      const double &                threshold = INTREPID2_THRESHOLD);
     
     
     
@@ -1212,7 +1212,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
     static void checkPointwiseInclusion(ArrayIncl &                   inRefCell,
                                         const ArrayPoint &            points,
                                         const shards::CellTopology &  cellTopo, 
-                                        const double &                threshold = INTREPID_THRESHOLD);
+                                        const double &                threshold = INTREPID2_THRESHOLD);
     
     
     
@@ -1257,7 +1257,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                                         const ArrayCell &             cellWorkset,
                                         const shards::CellTopology &  cell,
                                         const int &                   whichCell = -1, 
-                                        const double &                threshold = INTREPID_THRESHOLD);
+                                        const double &                threshold = INTREPID2_THRESHOLD);
     
     
     
