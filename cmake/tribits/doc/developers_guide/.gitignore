@@ -23,6 +23,8 @@
 /snapshot-dir-help.txt.tmp
 /clone_extra_repos-help.txt
 /clone_extra_repos-help.txt.tmp
+/is_checkin_tested_commit.txt
+/is_checkin_tested_commit.txt.tmp
 /install_devtools-help.txt
 /install_devtools-help.txt.tmp
 

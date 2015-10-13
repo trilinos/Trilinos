@@ -154,10 +154,10 @@ public:
     using Teuchos::rcp;
     using Teuchos::dyn_cast;
 
-    RCPV bvec = this->clone();
+    RCPV bvec = clone();
 
     // Downcast
-    PV &eb = dyn_cast<PV>(const_cast <V&>(*bvec));    
+    PV &eb = dyn_cast<PV>(*bvec);    
 
     int begin = 0;   
     int end = 0;

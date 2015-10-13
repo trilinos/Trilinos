@@ -387,7 +387,16 @@ def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
   consoleOutputFile = None, verbose=False \
   ):
   extraReposFile = getExtraReposFilePath(inOptions)
+  printConsoleOutputFile = False
+  if not consoleOutputFile:
+    # Need to send output to a file so that you can read it back in again and
+    # then print it out using the 'print' statement.  This is needed so that
+    # the output shows up in both the STDOUT and the checkin-test.out log
+    # files!
+    consoleOutputFile = "TribitsGetExtraReposForCheckinTest.out"
+    printConsoleOutputFile = True
   cmnd = "\""+inOptions.withCmake+"\""+ \
+    " -DSUPPRESS_PRINT_VAR_OUTPUT=TRUE" \
     " -DPROJECT_SOURCE_DIR="+inOptions.srcDir+ \
     " -DTRIBITS_BASE_DIR="+inOptions.tribitsDir+ \
     " -DEXTRA_REPOS_FILE="+extraReposFile+ \
@@ -398,8 +407,12 @@ def getExtraReposPyFileFromCmakeFile(inOptions, extraReposPythonOutFile, \
     cmnd += " -DIGNORE_MISSING_EXTRA_REPOSITORIES=TRUE"
   cmnd += \
     " -P "+inOptions.tribitsDir+"/ci_support/TribitsGetExtraReposForCheckinTest.cmake"
-  echoRunSysCmnd(cmnd, throwExcept=True, timeCmnd=True, outFile=consoleOutputFile, \
-    verbose=verbose)
+  try:
+    echoRunSysCmnd(cmnd, throwExcept=True, timeCmnd=True, outFile=consoleOutputFile, \
+      verbose=verbose)
+  finally:
+    if printConsoleOutputFile:
+      print "\n", open(consoleOutputFile, 'r').read()
 
 
 def translateExtraReposPyToDictGitRepo(extraReposPyDict):

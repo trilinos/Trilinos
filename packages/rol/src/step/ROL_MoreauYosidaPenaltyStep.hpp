@@ -55,7 +55,63 @@
 
 /** @ingroup step_group
     \class ROL::MoreauYosidaPenaltyStep
-    \brief Provides the interface to compute augmented Lagrangian steps.
+    \brief Implements the computation of optimization steps using Moreau-Yosida
+           regularized bound constraints.
+
+    To describe the generalized Moreau-Yosida penalty method, we consider the
+    following abstract setting.  Suppose \f$\mathcal{X}\f$ is a Hilbert space
+    of functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We assume
+    \f$ f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that the generalized Moreau-Yosida penalty
+    method will also work with secant approximations of the Hessian. 
+
+    The generalized Moreau-Yosida penalty method is a proveably convergent
+    algorithm for convex optimization problems and may not converge for general
+    nonlinear, nonconvex problems.  The algorithm solves
+    \f[
+       \min_x \quad f(x) \quad \text{s.t.} \quad c(x) = 0, \quad a \le x \le b.
+    \f]
+    We can respresent the bound constraints using the indicator function
+    \f$\iota_{[a,b]}(x) = 0\f$ if \f$a \le x \le b\f$ and equals \f$\infty\f$
+    otherwise.  Using this indicator function, we can write our optimization
+    problem as the (nonsmooth) equality constrained program
+    \f[
+       \min_x \quad f(x) + \iota_{[a,b]}(x) \quad \text{s.t.}\quad c(x) = 0.
+    \f]
+    Since the indicator function is not continuously Fr&eacute;chet
+    differentiable, we cannot apply our existing algorithms (such as, Composite
+    Step SQP) to the above equality constrained problem.  To circumvent this
+    issue, we smooth the indicator function using generalized Moreau-Yosida
+    regularization, i.e., we replace \f$\iota_{[a,b]}\f$ in the objective
+    function with
+    \f[
+       \varphi(x,\mu,c) = \inf_y\; \{\; \iota_{[a,b]}(x-y)
+         + \langle \mu, y\rangle_{\mathcal{X}}
+         + \frac{c}{2}\|y\|_{\mathcal{X}}^2 \;\}.
+    \f]
+    One can show that \f$\varphi(\cdot,\mu,c)\f$ for any \f$\mu\in\mathcal{X}\f$
+    and \f$c > 0\f$ is continuously Fr&eacute;chet
+    differentiable with respect to \f$x\f$.  Thus, using this penalty,
+    Step::compute solves the following subproblem: given
+    \f$c_k>0\f$ and \f$\mu_k\in\mathcal{X}\f$, determine \f$x_k\in\mathcal{X}\f$
+    that solves
+    \f[
+      \min_{x} \quad f(x) + \varphi(x,\mu_k,c_k)\quad\text{s.t.}
+         c(x) = 0.
+    \f]
+    The multipliers \f$\mu_k\f$ are then updated in Step::update as
+    \f$\mu_{k+1} = \nabla_x\varphi(x_k,\mu_k,c_k)\f$ and \f$c_k\f$ is
+    potentially increased (although this is not always necessary).
+
+    For more information on this method see:
+    \li D. P. Bertsekas. "Approximations Procedures Based on the Method of
+    Multipliers." Journal of Optimization Theory and Applications,
+    Vol. 23(4), 1977.
+    \li K. Ito, K. Kunisch. "Augmented Lagrangian Methods for Nonsmooth,
+    Convex, Optimization in Hilbert Space." Nonlinear Analysis, 2000.
 */
 
 
@@ -73,7 +129,7 @@ private:
   Real tau_;
   bool print_;
 
-  Teuchos::RCP<Teuchos::ParameterList> parlist_;
+  Teuchos::ParameterList parlist_;
   int subproblemIter_;
 
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
@@ -90,6 +146,8 @@ private:
     algo_state.value = myPen_->value(x, zerotol);
     con.value(*(state->constraintVec),x, zerotol);
     myPen_->gradient(*(state->gradientVec), x, zerotol);
+    con.applyAdjointJacobian(*g_,l,x,zerotol);
+    state->gradientVec->plus(*g_);
     // Compute criticality measure
     if (bnd.isActivated()) {
       x_->set(x);
@@ -114,22 +172,21 @@ public:
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
     : Step<Real>(), myPen_(Teuchos::null), algo_(Teuchos::null),
       x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
-      tau_(10.), print_(false), parlist_(Teuchos::null), subproblemIter_(0) {
+      tau_(10.), print_(false), parlist_(parlist), subproblemIter_(0) {
     // Parse parameters
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",10.0);
     tau_   = steplist.get("Penalty Parameter Growth Factor",10.0);
     print_ = steplist.sublist("Subproblem").get("Print History",false);
     // Set parameters for step subproblem
-    parlist_ = Teuchos::rcp(&parlist,false);
     Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",1.e-8);
     Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance",1.e-8);
     Real stol = 1.e-6*std::min(gtol,ctol);
     int maxit = steplist.sublist("Subproblem").get("Iteration Limit",1000);
-    parlist_->sublist("Status Test").set("Gradient Tolerance",   gtol);
-    parlist_->sublist("Status Test").set("Constraint Tolerance", ctol);
-    parlist_->sublist("Status Test").set("Step Tolerance",       stol);
-    parlist_->sublist("Status Test").set("Iteration Limit",      maxit);
+    parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
+    parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
+    parlist_.sublist("Status Test").set("Step Tolerance",       stol);
+    parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -166,7 +223,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",*parlist_,false));
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
     s.set(*x_); s.axpy(-1.0,x);
