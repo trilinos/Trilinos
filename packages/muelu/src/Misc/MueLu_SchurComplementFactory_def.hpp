@@ -75,7 +75,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("A", NoFactory::getRCP()/*null*/, "Generating factory of the matrix A used for building Schur complement\n"
                                                                                    "(must be a 2x2 blocked operator)");
     validParamList->set<SC>                     ("omega",                     one, "Scaling parameter in S = A(1,1) - 1/omega A(1,0) diag{A(0,0)}^{-1} A(0,1)");
-    validParamList->set<bool>                   ("lumping",                 false, "Use lumping to construct diag(A(0,0), i.e. use row sum of the abs values on the diagonal "
+    validParamList->set<bool>                   ("lumping",                 false, "Use lumping to construct diag(A(0,0)), i.e. use row sum of the abs values on the diagonal "
                                                                                    "as approximation of A00 (and A00^{-1})");
     validParamList->set<bool>                   ("fixing",                  false, "Fix diagonal by replacing small entries with 1.0");
 
