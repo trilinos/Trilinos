@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<myBasisValues.dimension(0);i++) {
       for (int j=0;j<myBasisValues.dimension(1);j++) {
         for (int k=0;k<myBasisValues.dimension(2);k++) {
-          if (std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) > 10.0*INTREPID2_TOL ) {
+          if (std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) > 10.0*INTREPID_TOL ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -468,7 +468,7 @@ int main(int argc, char *argv[]) {
     int cur=0;
     for (int i=0;i<myBasisDivs.dimension(0);i++) {
       for (int j=0;j<myBasisDivs.dimension(1);j++) {
-        if (std::abs( myBasisDivs(i,j) - fiat_divs[cur] ) > 10.0 * INTREPID2_TOL ) {
+        if (std::abs( myBasisDivs(i,j) - fiat_divs[cur] ) > 10.0 * INTREPID_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

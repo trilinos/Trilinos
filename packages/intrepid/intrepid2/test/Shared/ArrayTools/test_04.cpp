@@ -1546,7 +1546,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 5.c scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_c_f_p_d(c, f, p, d1);
     FieldContainer<double> out_c_f_p_d(c, f, p, d1);
@@ -1731,7 +1731,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 5.d scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_f_p_d(f, p, d1);
     FieldContainer<double> in_c_f_p_d(c, f, p, d1);
@@ -2061,7 +2061,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 6.c scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_c_p_d(c, p, d1);
     FieldContainer<double> out_c_p_d(c, p, d1);
@@ -2246,7 +2246,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 6.d scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_p_d(p, d1);
     FieldContainer<double> in_c_p_d(c, p, d1);
@@ -2442,7 +2442,7 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
   {// Test 7.a scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_c_f_p_d_d(c, f, p, d1, d1);
     FieldContainer<double> data_c_p(c, p);
@@ -2624,7 +2624,7 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
   {// Test 7.b scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_f_p_d_d(f, p, d1, d1);
     FieldContainer<double> in_c_f_p_d_d(c, f, p, d1, d1);
@@ -2824,7 +2824,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 8.a scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_c_p_d_d(c, p, d1, d1);
     FieldContainer<double> out_c_p_d_d(c, p, d1, d1);
@@ -3007,7 +3007,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 8.b scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_p_d_d(p, d1, d1);
     FieldContainer<double> in_c_p_d_d(c, p, d1, d1);
