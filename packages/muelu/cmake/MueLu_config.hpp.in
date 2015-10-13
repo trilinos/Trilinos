@@ -1,6 +1,9 @@
 #ifndef MUELU_CONFIG_HPP
 #define MUELU_CONFIG_HPP
-#cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
+#ifndef F77_BLAS_MANGLE
+ #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
 
 /* Options */
 

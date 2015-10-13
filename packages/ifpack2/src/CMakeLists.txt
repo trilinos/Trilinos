@@ -183,6 +183,7 @@ ENDIF()
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
+APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_ETIHelperMacros.h )
 
 # Automatically generate ETI (explicit template instanatiation) files
 # for Node types that use the (new) Kokkos Devices.
