@@ -55,7 +55,63 @@
 
 /** @ingroup step_group
     \class ROL::MoreauYosidaPenaltyStep
-    \brief Provides the interface to compute augmented Lagrangian steps.
+    \brief Implements the computation of optimization steps using Moreau-Yosida
+           regularized bound constraints.
+
+    To describe the generalized Moreau-Yosida penalty method, we consider the
+    following abstract setting.  Suppose \f$\mathcal{X}\f$ is a Hilbert space
+    of functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We assume
+    \f$ f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that the generalized Moreau-Yosida penalty
+    method will also work with secant approximations of the Hessian. 
+
+    The generalized Moreau-Yosida penalty method is a proveably convergent
+    algorithm for convex optimization problems and may not converge for general
+    nonlinear, nonconvex problems.  The algorithm solves
+    \f[
+       \min_x \quad f(x) \quad \text{s.t.} \quad c(x) = 0, \quad a \le x \le b.
+    \f]
+    We can respresent the bound constraints using the indicator function
+    \f$\iota_{[a,b]}(x) = 0\f$ if \f$a \le x \le b\f$ and equals \f$\infty\f$
+    otherwise.  Using this indicator function, we can write our optimization
+    problem as the (nonsmooth) equality constrained program
+    \f[
+       \min_x \quad f(x) + \iota_{[a,b]}(x) \quad \text{s.t.}\quad c(x) = 0.
+    \f]
+    Since the indicator function is not continuously Fr&eacute;chet
+    differentiable, we cannot apply our existing algorithms (such as, Composite
+    Step SQP) to the above equality constrained problem.  To circumvent this
+    issue, we smooth the indicator function using generalized Moreau-Yosida
+    regularization, i.e., we replace \f$\iota_{[a,b]}\f$ in the objective
+    function with
+    \f[
+       \varphi(x,\mu,c) = \inf_y\; \{\; \iota_{[a,b]}(x-y)
+         + \langle \mu, y\rangle_{\mathcal{X}}
+         + \frac{c}{2}\|y\|_{\mathcal{X}}^2 \;\}.
+    \f]
+    One can show that \f$\varphi(\cdot,\mu,c)\f$ for any \f$\mu\in\mathcal{X}\f$
+    and \f$c > 0\f$ is continuously Fr&eacute;chet
+    differentiable with respect to \f$x\f$.  Thus, using this penalty,
+    Step::compute solves the following subproblem: given
+    \f$c_k>0\f$ and \f$\mu_k\in\mathcal{X}\f$, determine \f$x_k\in\mathcal{X}\f$
+    that solves
+    \f[
+      \min_{x} \quad f(x) + \varphi(x,\mu_k,c_k)\quad\text{s.t.}
+         c(x) = 0.
+    \f]
+    The multipliers \f$\mu_k\f$ are then updated in Step::update as
+    \f$\mu_{k+1} = \nabla_x\varphi(x_k,\mu_k,c_k)\f$ and \f$c_k\f$ is
+    potentially increased (although this is not always necessary).
+
+    For more information on this method see:
+    \li D. P. Bertsekas. "Approximations Procedures Based on the Method of
+    Multipliers." Journal of Optimization Theory and Applications,
+    Vol. 23(4), 1977.
+    \li K. Ito, K. Kunisch. "Augmented Lagrangian Methods for Nonsmooth,
+    Convex, Optimization in Hilbert Space." Nonlinear Analysis, 2000.
 */
 
 
