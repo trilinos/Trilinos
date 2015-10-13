@@ -125,16 +125,6 @@ vector3d operator* (double scalar, const vector3d& from)
   return tmp *= scalar;
 }
 
-double vector3d::squared_length () const
-{
-    return x*x + y*y + z*z;
-}
-
-double vector3d::dot (const vector3d& from) const
-{
-    return x*from.x + y*from.y + z*from.z;
-}
-
 vector3d operator/ (const vector3d& lhs, double scalar)
 {
   if ( scalar != 0.0 ) {
@@ -163,28 +153,4 @@ vector3d& vector3d::operator/= (double scalar)
 double vector3d::length () const
 {
   return sqrt(x*x + y*y + z*z);
-}
-
-double vector3d::normalize (double tolerance)
-{
-  double mylength = length();
-
-  if ( mylength > tolerance ) {
-    x /= mylength;
-    y /= mylength;
-    z /= mylength;
-  } else {
-    mylength = 0.0;
-  }
-
-  return mylength;
-}
-
-vector3d vector3d::plane_normal(const vector3d &v1,
-				const vector3d &v2,
-				const vector3d &v3)
-{
-  vector3d v32 = v3;   v32 -= v2;
-  vector3d v12 = v1;   v12 -= v2;
-  return v32.cross(v12);
 }

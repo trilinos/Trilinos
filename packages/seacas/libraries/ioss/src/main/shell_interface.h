@@ -51,9 +51,7 @@ namespace IOShell {
     bool parse_options(int argc, char **argv);
   
     //! Dumps representation of data in this class to cerr
-    void dump(std::ostream &str) const;
   
-    static void show_version();
   
     void enroll_options();
 

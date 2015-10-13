@@ -109,7 +109,17 @@
 
     <!-- ===========  COMPOSITE STEP  =========== -->
     <ParameterList name="Composite Step">
-      <Parameter name="Nominal Optimality Solver Tolerance" type="double" value="1.e-3" />
+      <Parameter name="Output Level" type="int" value="0" />
+      <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+      <ParameterList name="Optimality System Solver">
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-8"  />
+        <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
+      </ParameterList>
+      <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+      <ParameterList name="Tangential Subproblem Solver">
+        <Parameter name="Iteration Limit"    type="int"    value="20"   />
+        <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+      </ParameterList>
     </ParameterList>
 
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->

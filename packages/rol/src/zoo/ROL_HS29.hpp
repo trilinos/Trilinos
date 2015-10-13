@@ -68,8 +68,7 @@ private:
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {
@@ -127,8 +126,7 @@ private:
   
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {

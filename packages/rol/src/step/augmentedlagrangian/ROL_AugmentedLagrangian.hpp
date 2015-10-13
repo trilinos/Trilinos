@@ -68,55 +68,89 @@ private:
   Teuchos::RCP<EqualityConstraint<Real> > con_;
   Teuchos::RCP<Vector<Real> > lam_;
   Teuchos::RCP<Vector<Real> > dlam_;
+  Teuchos::RCP<Vector<Real> > x_;
+  Teuchos::RCP<Vector<Real> > g_;
   Teuchos::RCP<Vector<Real> > c_;
   Teuchos::RCP<Vector<Real> > dc1_;
   Teuchos::RCP<Vector<Real> > dc2_;
-  Real mu_;
+
   Real fval_;
-  bool isConEvaluated_;
   int ncval_;
   int nfval_;
   int ngval_;
-  bool flag_;
+
+  Real penaltyParameter_;
+  Real penaltyUpdate_;
+  Real multiplierUpdateScale_;
+  Real multiplierUpdateExponent_;
+  int multiplierUpdateMethod_;
+  bool scaleLagrangian_;
   int HessianLevel_;
 
 public:
   ~AugmentedLagrangian() {}
 
   AugmentedLagrangian(Objective<Real> &obj, EqualityConstraint<Real> &con, 
-                const ROL::Vector<Real> &x, const ROL::Vector<Real> &c,
-                const bool flag, const int HessianLevel = 1)
-    : mu_(0.0), fval_(0.0), isConEvaluated_(false),
-      ncval_(0), nfval_(0), ngval_(0),
-      flag_(flag), HessianLevel_(HessianLevel) {
+                const Vector<Real> &x, const Vector<Real> &c,
+                const Vector<Real> &l, const Real mu,
+                Teuchos::ParameterList &parlist)
+    : fval_(0.0), ncval_(0), nfval_(0), ngval_(0), penaltyParameter_(mu) {
     obj_ = Teuchos::rcp(&obj, false);
     con_ = Teuchos::rcp(&con, false);
-    c_    = c.clone();
+
+    x_    = x.clone();
+    g_    = x.dual().clone();
     dc1_  = x.dual().clone();
     dc2_  = c.clone();
-    lam_  = c.dual().clone();
-    dlam_ = c.dual().clone();
+    c_    = c.clone();
+    lam_  = l.clone();
+    dlam_ = l.clone();
+    lam_->set(l);
+
+    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    penaltyUpdate_            = sublist.get("Penalty Parameter Growth Factor", 1.e1);
+    multiplierUpdateScale_    = sublist.get("Multiplier Update Scale",         1.e0); 
+    multiplierUpdateExponent_ = sublist.get("Multiplier Update Exponent",      1.e0);
+    multiplierUpdateMethod_   = sublist.get("Multiplier Update Method",        1);
+    scaleLagrangian_          = sublist.get("Use Scaled Augmented Lagrangian", false);
+    HessianLevel_             = sublist.get("Level of Hessian Approximation",  0);
   }
 
-  void updateMultipliers(Vector<Real> &lam, Real mu) {
-    lam_->set(lam);
-    mu_ = mu;
-    ncval_ = 0;
-    nfval_ = 0;
-    ngval_ = 0;
+  bool updateMultipliers(Vector<Real> &l, Real &penaltyParameter,
+                         const Vector<Real> &x, const Real feasTolerance) {
+    bool updated = false;
+    if ( multiplierUpdateMethod_ == 0 ) {
+      l.axpy(penaltyParameter,c_->dual());
+    }
+    else if ( multiplierUpdateMethod_ == 1 ) {
+      Real tol = std::sqrt(ROL_EPSILON);
+      dc2_->zero();
+      con_->solveAugmentedSystem(*x_,l,*g_,*dc2_,x,tol);
+      l.scale(-1.);
+    }
+
+    penaltyParameter *= ((c_->norm() < feasTolerance) ? 1. : penaltyUpdate_);
+    penaltyParameter_ = penaltyParameter;
+
+    if ( l.norm() < multiplierUpdateScale_*std::pow(penaltyParameter_,multiplierUpdateExponent_) ) {
+      updated = true;
+      lam_->set(l);
+    }
+    else {
+      l.set(*lam_);
+    }
+    return updated;
   }
 
   Real getObjectiveValue(void) const {
     return fval_;
   }
 
-  void getConstraintVec(Vector<Real> &c, const ROL::Vector<Real> &x) {
-    Real tol = ROL::ROL_EPSILON;
-    if ( !isConEvaluated_ ) {
-      con_->value(*c_,x,tol);
-      ncval_++;
-      isConEvaluated_ = true;
-    }
+  void getObjectiveGradient(Vector<Real> &g) const {
+    g.set(*g_);
+  }
+
+  void getConstraintVec(Vector<Real> &c) {
     c.set(*c_);
   }
 
@@ -132,6 +166,10 @@ public:
     return ngval_;
   }
 
+  void reset(void) {
+    ncval_ = 0.; nfval_ = 0.; ngval_ = 0.;
+  }
+
   /** \brief Update augmented Lagrangian function. 
 
       This function updates the augmented Lagrangian function at new iterations. 
@@ -140,9 +178,18 @@ public:
       @param[in]          iter   is the outer algorithm iterations count.
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    Real tol = std::sqrt(ROL_EPSILON);
     obj_->update(x,flag,iter);
     con_->update(x,flag,iter);
-    isConEvaluated_ = false;
+    // Evaluate constraint
+    con_->value(*c_,x,tol);
+    ncval_++;
+    // Compute objective function value
+    fval_ = obj_->value(x,tol);
+    nfval_++;
+    // Compute objective function gradient
+    obj_->gradient(*g_,x,tol);
+    ngval_++;
   }
 
   /** \brief Compute value.
@@ -152,27 +199,27 @@ public:
       @param[in]          tol is a tolerance for inexact augmented Lagrangian computation.
   */
   Real value( const Vector<Real> &x, Real &tol ) {
-    // Evaluate constraint if not already done
-    if ( !isConEvaluated_ ) {
-      con_->value(*c_,x,tol);
-      ncval_++;
-      isConEvaluated_ = true;
-    }
+    // Evaluate constraint
+    con_->value(*c_,x,tol);
+    ncval_++;
     // Compute objective function value
     fval_ = obj_->value(x,tol);
+    nfval_++;
+    // Compute objective function gradient
+    obj_->gradient(*g_,x,tol);
+    ngval_++;
     // Apply Lagrange multiplier to constraint
     Real cval = lam_->dot(c_->dual());
     // Compute penalty term
     Real pval = c_->dot(*c_);
     // Compute Augmented Lagrangian value
     Real val = 0.0;
-    if (flag_) {
-      val = (fval_ + cval)/mu_ + 0.5*pval;
+    if (scaleLagrangian_) {
+      val = (fval_ + cval)/penaltyParameter_ + 0.5*pval;
     }
     else {
-      val = fval_ + cval + 0.5*mu_*pval;
+      val = fval_ + cval + 0.5*penaltyParameter_*pval;
     }
-    nfval_++;
     return val;
   }
 
@@ -184,27 +231,28 @@ public:
       @param[in]          tol is a tolerance for inexact augmented Lagrangian computation.
   */
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    // Evaluate constraint if not already done
-    if ( !isConEvaluated_ ) {
-      con_->value(*c_,x,tol);
-      ncval_++;
-      isConEvaluated_ = true;
-    }
-    // Compute gradient of objective function
-    obj_->gradient(g,x,tol);
+    // Evaluate constraint
+    con_->value(*c_,x,tol);
+    ncval_++;
+    // Compute objective function value
+    fval_ = obj_->value(x,tol);
+    nfval_++;
+    // Compute objective function gradient
+    obj_->gradient(*g_,x,tol);
+    ngval_++;
+    g.set(*g_);
     // Compute gradient of Augmented Lagrangian
     dlam_->set(c_->dual());
-    if ( flag_ ) {
-      g.scale(1./mu_);
-      dlam_->axpy(1./mu_,*lam_);
+    if ( scaleLagrangian_ ) {
+      g.scale(1./penaltyParameter_);
+      dlam_->axpy(1./penaltyParameter_,*lam_);
     }
     else {
-      dlam_->scale(mu_);
+      dlam_->scale(penaltyParameter_);
       dlam_->plus(*lam_);
     }
     con_->applyAdjointJacobian(*dc1_,*dlam_,x,tol);
     g.plus(*dc1_);
-    ngval_++;
   }
 
   /** \brief Apply Hessian approximation to vector.
@@ -216,33 +264,36 @@ public:
       @param[in]          tol is a tolerance for inexact augmented Lagrangian computation.
   */
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    // Evaluate constraint if not already done
-    if ( !isConEvaluated_ ) {
-      con_->value(*c_,x,tol);
-      ncval_++;
-      isConEvaluated_ = true;
-    }
+    // Evaluate constraint
+    con_->value(*c_,x,tol);
+    ncval_++;
+    // Compute objective function value
+    fval_ = obj_->value(x,tol);
+    nfval_++;
+    // Compute objective function gradient
+    obj_->gradient(*g_,x,tol);
+    ngval_++;
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
     if (HessianLevel_ < 2) {
       con_->applyJacobian(*dc2_,v,x,tol);
       con_->applyAdjointJacobian(*dc1_,dc2_->dual(),x,tol);
-      if (flag_) {
-        hv.scale(1./mu_);
+      if (scaleLagrangian_) {
+        hv.scale(1./penaltyParameter_);
         hv.plus(*dc1_);
       }
       else {
-        hv.axpy(mu_,*dc1_);
+        hv.axpy(penaltyParameter_,*dc1_);
       }
 
       if (HessianLevel_ == 0) {
         // Apply Augmented Lagrangian Hessian to a vector
         dlam_->set(c_->dual());
-        if ( flag_ ) {
-          dlam_->axpy(1./mu_,*lam_);
+        if ( scaleLagrangian_ ) {
+          dlam_->axpy(1./penaltyParameter_,*lam_);
         }
         else {
-          dlam_->scale(mu_);
+          dlam_->scale(penaltyParameter_);
           dlam_->plus(*lam_);
         }
         con_->applyAdjointHessian(*dc1_,*dlam_,v,x,tol);

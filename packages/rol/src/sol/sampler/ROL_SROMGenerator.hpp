@@ -104,7 +104,7 @@ private:
       parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Minimum Penalty Parameter Reciprocal",0.1);
       parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Print Intermediate Optimization History",false);
       parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit",1000);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type",0);
+      parlist_.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Trust Region");
 
       parlist_.sublist("Status Test").set("Gradient Tolerance",   1.e-4);
       parlist_.sublist("Status Test").set("Constraint Tolerance", 1.e-6);

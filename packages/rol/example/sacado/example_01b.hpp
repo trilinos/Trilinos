@@ -125,8 +125,8 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     FunctionZakharov<HessVecType> zfuncHessVec_; 
 
     Teuchos::RCP<const vector> getVector( const V& x ) {
-      using Teuchos::dyn_cast;  using Teuchos::getConst;
-      return dyn_cast<const SV>(getConst(x)).getVector();
+      using Teuchos::dyn_cast;
+      return dyn_cast<const SV>(x).getVector();
     }
 
     Teuchos::RCP<vector> getVector( V& x ) {

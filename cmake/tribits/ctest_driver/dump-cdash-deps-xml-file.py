@@ -47,8 +47,8 @@
 usageHelp = r"""dump-package-deps-table.py [OPTIONS]
 
 Tool that dumps an XML file that can be read by CTest/CDash to specify the
-TriBITS project package dependenices in a way that is independent of TriBITS.
-In CTest/CDash terminology, a TriBITS package is a "Subproject".
+TriBITS project packages in a way that is independent of TriBITS.  In
+CTest/CDash terminology, a TriBITS package is a "Subproject".
 
 By default, if you just run:
 
@@ -59,9 +59,15 @@ By default, if you just run:
 then the XML file CDashSubprojectDependencies.xml will get written.
 
 You can also change what XML input file is used and what XML file is written.
-This is maily to facilitate unit testing of this script.
+This is mainly to facilitate unit testing of this script.
 
-Have fun looking through all of the TriBITS package dependencies!
+NOTE: Currently this script is gutted to only list out the parent packages
+(subprojects) and their regression email addresses.  It does not currently
+list any dependent packages.  Currently CDash does not do anything very useful
+with that information anyway and actually makes it really hard to see the
+actually subproject-specific test results if there are a lot of upstream
+packages (because it lists summaries of all of the dependent packages above it
+first).
 
 """
 

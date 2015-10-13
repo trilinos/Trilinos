@@ -186,7 +186,11 @@ int main(int argc, char *argv[]) {
     // Define algorithm.
     Teuchos::ParameterList parlist;
     std::string stepname = "Composite Step";
-    parlist.sublist("Step").sublist(stepname).set("Nominal Optimality Solver Tolerance",1.e-4);
+    parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
+    parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);
+    parlist.sublist("Step").sublist(stepname).sublist("Tangential Subproblem Solver").set("Iteration Limit",20);
+    parlist.sublist("Step").sublist(stepname).sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
+    parlist.sublist("Step").sublist(stepname).set("Output Level",0);
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);

@@ -72,7 +72,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_getConst.hpp"
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
@@ -110,8 +109,7 @@ private:
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {
@@ -201,7 +199,7 @@ private:
 
     applyK(psi,*kpsi);
 
-    for(int i=0;i<nx_;++i) {
+    for(uint i=0;i<nx_;++i) {
       (*gp)[i] = ((*kpsip)[i] + (*Vp_)[i]*(*psip)[i] + 2.0*g_*pow((*psip)[i],3))*dx_;
     } 
       
@@ -251,8 +249,7 @@ private:
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {

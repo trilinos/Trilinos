@@ -78,15 +78,12 @@ namespace ZOO {
 
     template<class VectorType> 
     Teuchos::RCP<const vector> getVector( const V& x ) {
-      using Teuchos::dyn_cast;
-      using Teuchos::getConst;  
-      return dyn_cast<const VectorType>(getConst(x)).getVector();
+      return Teuchos::dyn_cast<const VectorType>((x)).getVector();
     }
  
     template<class VectorType> 
     Teuchos::RCP<vector> getVector( V& x ) {
-      using Teuchos::dyn_cast;
-      return dyn_cast<VectorType>(x).getVector();
+      return Teuchos::dyn_cast<VectorType>(x).getVector();
     }
 
   public:

@@ -251,8 +251,6 @@ namespace Ioxf {
     const Ioss::Map& get_element_map()         const;
 
     // Internal data handling
-    void build_element_reorder_map(int start, int count);
-    void build_node_reorder_map(int *new_ids, int count);
 
     int handle_node_ids(int* ids, int num_to_get);
     int handle_element_ids(const Ioss::ElementBlock *eb, int* ids, int num_to_get);

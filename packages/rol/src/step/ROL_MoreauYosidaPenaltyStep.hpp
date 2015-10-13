@@ -73,7 +73,7 @@ private:
   Real tau_;
   bool print_;
 
-  Teuchos::RCP<Teuchos::ParameterList> parlist_;
+  Teuchos::ParameterList parlist_;
   int subproblemIter_;
 
   void updateState(const Vector<Real> &x, const Vector<Real> &l,
@@ -90,6 +90,8 @@ private:
     algo_state.value = myPen_->value(x, zerotol);
     con.value(*(state->constraintVec),x, zerotol);
     myPen_->gradient(*(state->gradientVec), x, zerotol);
+    con.applyAdjointJacobian(*g_,l,x,zerotol);
+    state->gradientVec->plus(*g_);
     // Compute criticality measure
     if (bnd.isActivated()) {
       x_->set(x);
@@ -114,22 +116,21 @@ public:
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
     : Step<Real>(), myPen_(Teuchos::null), algo_(Teuchos::null),
       x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
-      tau_(10.), print_(false), parlist_(Teuchos::null), subproblemIter_(0) {
+      tau_(10.), print_(false), parlist_(parlist), subproblemIter_(0) {
     // Parse parameters
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",10.0);
     tau_   = steplist.get("Penalty Parameter Growth Factor",10.0);
     print_ = steplist.sublist("Subproblem").get("Print History",false);
     // Set parameters for step subproblem
-    parlist_ = Teuchos::rcp(&parlist,false);
     Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",1.e-8);
     Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance",1.e-8);
     Real stol = 1.e-6*std::min(gtol,ctol);
     int maxit = steplist.sublist("Subproblem").get("Iteration Limit",1000);
-    parlist_->sublist("Status Test").set("Gradient Tolerance",   gtol);
-    parlist_->sublist("Status Test").set("Constraint Tolerance", ctol);
-    parlist_->sublist("Status Test").set("Step Tolerance",       stol);
-    parlist_->sublist("Status Test").set("Iteration Limit",      maxit);
+    parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
+    parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
+    parlist_.sublist("Status Test").set("Step Tolerance",       stol);
+    parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -166,7 +167,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",*parlist_,false));
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
     s.set(*x_); s.axpy(-1.0,x);

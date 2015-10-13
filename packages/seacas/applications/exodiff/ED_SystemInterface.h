@@ -56,7 +56,6 @@ class SystemInterface
   
   void Parse_Command_File();
   void Set_Max_Names(int size);
-  void allocateNames();
   
   // Program parameters.
   bool quiet_flag;        // By default, warnings and other info is produced
