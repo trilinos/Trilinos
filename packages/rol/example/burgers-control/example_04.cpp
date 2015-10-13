@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     //Zbnd->deactivate();
     // INITIALIZE SIMOPT BOUND CONSTRAINTS
     ROL::BoundConstraint_SimOpt<RealT> bnd(Ubnd,Zbnd);
-//bnd.deactivate();
+    bnd.deactivate();
     /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
