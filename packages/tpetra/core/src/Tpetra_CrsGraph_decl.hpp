@@ -1463,7 +1463,7 @@ namespace Tpetra {
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class Scalar, class BinaryFunction>
     LocalOrdinal
-    transformLocalValues (RowInfo rowInfo,
+    transformLocalValues (const RowInfo& rowInfo,
                           const Teuchos::ArrayView<Scalar>& rowVals,
                           const Teuchos::ArrayView<const LocalOrdinal>& inds,
                           const Teuchos::ArrayView<const Scalar>& newVals,
@@ -1476,7 +1476,7 @@ namespace Tpetra {
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      Teuchos::ArrayView<const LocalOrdinal> colInds = getLocalView (rowInfo);
+      auto colInds = getLocalKokkosRowView (rowInfo);
 
       LocalOrdinal numValid = 0; // number of valid local column indices
       for (size_type j = 0; j < numElts; ++j) {
@@ -1490,6 +1490,112 @@ namespace Tpetra {
       return numValid;
     }
 
+  private:
+    /// \brief Implementation detail of CrsMatrix::sumIntoLocalValues.
+    ///
+    /// \tparam Scalar The type of each entry in the sparse matrix.
+    /// \tparam InputMemorySpace Kokkos memory space / device in which
+    ///   the input data live.  This may differ from the memory space
+    ///   in which the current matrix values (rowVals) live.
+    /// \tparam ValsMemorySpace Kokkos memory space / device in which
+    ///   the matrix's current values live.  This may differ from the
+    ///   memory space in which the input data (inds and newVals)
+    ///   live.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Local column indices of that row to modify.
+    /// \param newVals [in] For each k, increment the value in rowVals
+    ///   corresponding to local column index inds[k] by newVals[k].
+    template<class Scalar, class InputMemorySpace, class ValsMemorySpace>
+    LocalOrdinal
+    sumIntoLocalValues (const RowInfo& rowInfo,
+                        const Kokkos::View<Scalar*, ValsMemorySpace,
+                          Kokkos::MemoryUnmanaged>& rowVals,
+                        const Kokkos::View<const LocalOrdinal*, InputMemorySpace,
+                          Kokkos::MemoryUnmanaged>& inds,
+                        const Kokkos::View<const Scalar*, InputMemorySpace,
+                          Kokkos::MemoryUnmanaged>& newVals) const
+    {
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in both InputMemorySpace and ValsMemorySpace.
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const LocalOrdinal numElts = static_cast<LocalOrdinal> (inds.dimension_0 ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = this->getLocalKokkosRowView (rowInfo);
+
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (LocalOrdinal j = 0; j < numElts; ++j) {
+        const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
+        if (k != STINV) {
+          rowVals(k) += newVals(j);
+          hint = k+1;
+          ++numValid;
+        }
+      }
+      return numValid;
+    }
+
+    /// \brief Implementation detail of CrsMatrix::replaceLocalValues.
+    ///
+    /// \tparam Scalar The type of each entry in the sparse matrix.
+    /// \tparam InputMemorySpace Kokkos memory space / device in which
+    ///   the input data live.  This may differ from the memory space
+    ///   in which the current matrix values (rowVals) live.
+    /// \tparam ValsMemorySpace Kokkos memory space / device in which
+    ///   the matrix's current values live.  This may differ from the
+    ///   memory space in which the input data (inds and newVals)
+    ///   live.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Local column indices of that row to modify.
+    /// \param newVals [in] For each k, replace the value
+    ///   corresponding to local column index inds[k] with newVals[k].
+    template<class Scalar, class InputMemorySpace, class ValsMemorySpace>
+    LocalOrdinal
+    replaceLocalValues (const RowInfo& rowInfo,
+                        const Kokkos::View<Scalar*, ValsMemorySpace,
+                          Kokkos::MemoryUnmanaged>& rowVals,
+                        const Kokkos::View<const LocalOrdinal*, InputMemorySpace,
+                          Kokkos::MemoryUnmanaged>& inds,
+                        const Kokkos::View<const Scalar*, InputMemorySpace,
+                          Kokkos::MemoryUnmanaged>& newVals) const
+    {
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in both InputMemorySpace and ValsMemorySpace.
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const LocalOrdinal numElts = static_cast<LocalOrdinal> (inds.size ());
+      size_t hint = 0; // Guess for the current index k into rowVals
+
+      // Get a view of the column indices in the row.  This amortizes
+      // the cost of getting the view over all the entries of inds.
+      auto colInds = this->getLocalKokkosRowView (rowInfo);
+
+      LocalOrdinal numValid = 0; // number of valid local column indices
+      for (LocalOrdinal j = 0; j < numElts; ++j) {
+        const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
+        if (k != STINV) {
+          rowVals(k) = newVals[j];
+          hint = k+1;
+          ++numValid;
+        }
+      }
+      return numValid;
+    }
+
+  protected:
     /// \brief Transform the given values using global indices.
     ///
     /// \param rowInfo [in] Information about a given row of the graph.
@@ -1637,6 +1743,26 @@ namespace Tpetra {
     Teuchos::ArrayView<LocalOrdinal>
     getLocalViewNonConst (const RowInfo rowinfo);
 
+  private:
+
+    /// \brief Get a const nonowned view of the local column indices
+    ///   of row rowinfo.localRow.
+    ///
+    /// \param rowinfo [in] Result of calling getRowInfo with the
+    ///   index of the local row to view.
+    Kokkos::View<const LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
+    getLocalKokkosRowView (const RowInfo& rowinfo) const;
+
+    /// \brief Get a nonconst nonowned view of the local column
+    ///   indices of row rowinfo.localRow.
+    ///
+    /// \param rowinfo [in] Result of calling getRowInfo with the
+    ///   index of the local row to view.
+    Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
+    getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+
+  protected:
+
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
@@ -1684,12 +1810,13 @@ namespace Tpetra {
     /// searching for the indices (which may take a lot more than
     /// two comparisons).
     size_t
-    findLocalIndex (RowInfo rowinfo,
-                    LocalOrdinal ind,
-                    size_t hint = 0) const;
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const size_t hint = 0) const;
 
-    /// Find the column offset corresponding to the given (local)
-    /// column index, given a view of the (local) column indices.
+    /// \brief Find the column offset corresponding to the given
+    ///   (local) column index, given a view of the (local) column
+    ///   indices.
     ///
     /// The name of this method is a bit misleading.  It does not
     /// actually find the column index.  Instead, it takes a local
@@ -1700,7 +1827,7 @@ namespace Tpetra {
     /// It is best to use this method if you plan to call it several
     /// times for the same row, like in transformLocalValues().  In
     /// that case, it amortizes the overhead of calling
-    /// getLocalView().
+    /// getLocalKokkosRowView().
     ///
     /// \param rowinfo [in] Result of getRowInfo() for the given row.
     /// \param ind [in] (Local) column index for which to find the offset.
@@ -1717,10 +1844,18 @@ namespace Tpetra {
     /// See the documentation of the three-argument version of this
     /// method for an explanation and justification of the hint.
     size_t
-    findLocalIndex (RowInfo rowinfo,
-                    LocalOrdinal ind,
-                    Teuchos::ArrayView<const LocalOrdinal> colInds,
-                    size_t hint = 0) const;
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                    const size_t hint) const;
+
+    /// \brief Legacy version of the 4-argument findLocalIndex above,
+    ///   that takes a Teuchos::ArrayView instead of a Kokkos::View.
+    size_t
+    findLocalIndex (const RowInfo& rowinfo,
+                    const LocalOrdinal ind,
+                    const Teuchos::ArrayView<const LocalOrdinal>& colInds,
+                    const size_t hint = 0) const;
 
     /// \brief Find the column offset corresponding to the given
     ///   (global) column index.
