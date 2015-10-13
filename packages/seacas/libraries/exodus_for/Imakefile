@@ -1,0 +1,89 @@
+XCOMM Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+XCOMM retains certain rights in this software.
+XCOMM 
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.  
+XCOMM 
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM 
+
+XCOMM Imakefile for ExodusII libraries
+XCOMM Building ExodusII libraries for installation
+/* Building ExodusII libraries for installation
+ * % accmkmf
+ * % make Makefiles
+ * % make
+ *
+ * Building ExodusII libraries for debugging
+ * % accmkmf
+ * % make Makefiles
+ * % make DEBUG=-g
+ *
+ */
+
+#define IHaveSubdirs
+
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
+
+#define ExtraOptions "CCOPTIONS=$(CCOPTIONS)"
+
+INCLIST2 = exodusII_int.inc exodusII.inc
+
+SUBDIRS = forbind/include \
+	  forbind/src \
+	  forbind/test
+
+#if Build64BitAccess == YES
+AllTarget(libexoIIv2for.a libexoIIv2for32.a)
+#else
+AllTarget(libexoIIv2for.a)
+#endif
+
+InstallSubdirIncludeList(makeincludes,forbind/include,$(INCLIST2),$(INCDIR))
+
+/* Directory for exodusII fortran wrappers */
+NamedTargetSubdirs(libexoIIv2for.a,forbind/src,"making exoIIv2for ",PassDebugFlags ExtraOptions,libexoIIv2for.a)
+
+#if Build64BitAccess == YES
+NamedTargetSubdirs(libexoIIv2for32.a,forbind/src,"making exoIIv2for32 ",PassDebugFlags ExtraOptions,libexoIIv2for32.a)
+#endif
+
+InstallLibrary(exoIIv2for,$(LIBDIR))
+
+#if Build64BitAccess == YES
+InstallLibrary(exoIIv2for32,$(LIBDIR))
+#endif
+
+check: test
+test:: libexoIIv2for.a
+
+NamedMakeSubdirs(test,forbind/test)
+DependSubdirs($(SUBDIRS))

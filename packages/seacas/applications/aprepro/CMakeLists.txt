@@ -1,7 +1,5 @@
-INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-
-TRIBITS_SUBPACKAGE(Aprepro)
+SEACAS_PACKAGE(Aprepro)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -34,5 +32,43 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(aprepro)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+option(GENERATE_FLEX_FILES "Generate source files using flex" OFF)
+if(GENERATE_FLEX_FILES)
+  find_program(FLEX_EXE NAMES flex
+               DOC "Flex Executable")
+  if(NOT FLEX_EXE)
+    message(SEND_ERROR "The CMake variable FLEX_EXE does not point to a valid flex executable.")
+  endif()
+
+  add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lex.yy.c
+                     COMMAND ${FLEX_EXE}
+                     ARGS aprepro.l
+                     MAIN_DEPENDENCY aprepro.l
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     )
+endif()
+
+option(GENERATE_BISON_FILES "Generate source files using bison" OFF)
+if(GENERATE_BISON_FILES)
+  find_program(BISON_EXE NAMES bison
+               DOC "Bison Executable")
+  if(NOT BISON_EXE)
+    message(SEND_ERROR "The CMake variable BISON_EXE does not point to a valid bison executable.")
+  endif()
+
+  if(WIN32)
+    get_filename_component(BISON_PATH ${BISON_EXE} PATH)
+    set(ENV{PATH} "${BISON_PATH};$ENV{PATH}")
+  endif(WIN32)
+
+  add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.h
+                            ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.c
+                     COMMAND ${BISON_EXE}
+                     ARGS --yacc --defines aprepro.y
+                     MAIN_DEPENDENCY aprepro.y
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     )
+endif()
+
+SEACAS_POSTPROCESS()
 

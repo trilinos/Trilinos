@@ -88,8 +88,7 @@ ExtraStuffToClean(lex.yy.c y.tab.c y.tab.h)
 test: check
 
 check: aprepro
-	@echo "****Test should produce the following 7 lines of output to stderr:"
-	@echo "Aprepro: WARN: Undefined variable 'ifundefined' (test.inp_app, line 49)"
+	@echo "****Test should produce the following 6 lines of output to stderr:"
 	@echo "Aprepro: WARN: Undefined variable 'Parse' (test.inp_app, line 78)"
 	@echo "Aprepro: ERROR:  syntax error (test.inp_app, line 78)"
 	@echo "Aprepro: WARN: Undefined variable 'This' (test.inp_app, line 79)"

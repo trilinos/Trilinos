@@ -1,0 +1,65 @@
+XCOMM $Id: Imakefile,v 1.26 2007/11/14 16:58:20 gdsjaar Exp $
+XCOMM Imakefile for ACCESS/libraries directory
+
+XCOMM The ACCESS/libraries directory has subdirectories 
+#define IHaveSubdirs
+
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
+
+ACCESSLIBSUBDIRS = \
+$(SUPLIBSRC) \
+$(MAPVARLIBSRC) \
+$(EXODUSSRC) \
+$(EXODUSFORSRC) \
+$(PLTSRC) \
+$(NEMESISSRC) \
+$(CHACOSRC) \
+$(ZOLTANSRC) \
+$(IOSSSRC) \
+$(LEGACYSRC) \
+$(APREPROLIBSRC) \
+$(SVDISRC)
+
+XCOMM Using 32 or 64 bit addressing platform - defined in *.cf file
+#if Use64BitAddress
+SUBDIRS = $(ACCESSLIBSUBDIRS) $(SUPESSRC)
+#else
+SUBDIRS = $(ACCESSLIBSUBDIRS) $(SUPESSRC) $(SUPESDPSRC)
+#endif
+
+makeincludes::
+	@if test -d $(EXODUSSRC) ; \
+	then \
+	(cd $(EXODUSSRC)/cbind/include   && $(MAKE) install) ; \
+	fi; \
+	if test -d $(EXODUSFORSRC) ; \
+	then \
+	(cd $(EXODUSFORSRC)/forbind/include && $(MAKE) install) ; \
+	fi; \
+	if test -d $(NEMESISSRC) ; \
+	then \
+	(cd $(NEMESISSRC) && $(MAKE) makeincludes) ; \
+	fi;
+	if test -d $(ZOLTANSRC) ; \
+	then \
+	(cd $(ZOLTANSRC) && $(MAKE) makeincludes) ; \
+	fi;
+	if test -d $(IOSSSRC) ; \
+	then \
+	(cd $(IOSSSRC) && $(MAKE) makeincludes) ; \
+	fi;
+	if test -d $(APREPROLIBSRC) ; \
+	then \
+	(cd $(APREPROLIBSRC) && $(MAKE) makeincludes) ; \
+	fi;
+	if test -d $(SUPLIBSRC) ; \
+	then \
+	(cd $(SUPLIBSRC) && $(MAKE) makeincludes) ; \
+	fi;
+
+MakeAllLibraries($(SUBDIRS),PassDebugFlags)
+

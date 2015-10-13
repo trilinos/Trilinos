@@ -1,8 +1,6 @@
-INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
-
-TRIBITS_SUBPACKAGE(Nemspread)
+INCLUDE(FortranSettings)
+SEACAS_PACKAGE(Nemspread)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -20,5 +18,6 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(nem_spread)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+SEACAS_POSTPROCESS()
+
 

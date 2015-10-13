@@ -1,0 +1,100 @@
+XCOMM $Id: Imakefile,v 1.158 2008/06/19 14:57:43 gdsjaar Exp $
+
+AllTarget(exodus.py)
+AllTarget(exodus.html)
+
+ExtraStuffToClean(exodus.py)
+ExtraStuffToClean(exodus.pyc)
+ExtraStuffToClean(exodus.html)
+
+SEPARATOR="."
+
+exodus.py: exodus.py.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ exodus.py.in > exodus.py
+	chmod +x exodus.py
+
+exodus.html:
+	python -m pydoc -w exodus
+
+InstallProgram(exodus.py,$(BINDIR))
+InstallNonExecFile(exodus.html,$(ACCESSDIR)/doc)
+
+XCOMM Some systems do not have enhanced getopt.  Provide our own copy...
+NormalCTarget(getopt.seacas,getopt.seacas.o,NullParameter,NullParameter,NullParameter)
+InstallProgram(getopt.seacas,$(BINDIR))
+
+XCOMM Definitions for options program
+SRCS = main.c alloca.c getopt.c getopt1.c
+OBJS = $(SRCS:.c=.o)
+
+DEFINES = $(ALLOCA_DEFINES)
+XCOMM Build the program that parses long options
+NormalCTarget(options,$(OBJS),NullParameter,NullParameter,NullParameter)
+InstallProgram(options,$(BINDIR))
+
+XCOMM Build the program that outputs zero-padded sequence [0..limit)
+XCOMM Used as a helper for scripts dealing with processor files.
+NormalCTarget(zpad,zpad.o,NullParameter,NullParameter,NullParameter)
+InstallProgram(zpad,$(BINDIR))
+
+XCOMM The platform standard cpp defines are removed while creating script 
+#if defined(GnuCpp)
+STD_CPP_DEFINES = -$$ -traditional
+#else
+STD_CPP_DEFINES = 
+#endif
+
+XCOMM Build the program to test if exodusii file
+EXTRA_DEFINES = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE 
+NormalCTarget(exo-test-ver,exo-test-ver.o,NullParameter,NullParameter,$(EXOIIV2C) $(NETCDF))
+InstallProgram(exo-test-ver,$(BINDIR))
+
+audit.log::
+	touch audit.log
+	chmod 666 audit.log
+
+INCLUDELIST =  subop.h arguments.h rmscr.h environment.h log.h run.h usage.h format.h parse.h setio.h variables.h
+
+XCOMM Generate the utility scripts
+all:: decomp epup blot fastq post loadbal
+clean::
+	rm -f decomp epup blot fastq post loadbal
+
+loadbal: loadbal.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ loadbal.in > loadbal
+	chmod +x loadbal
+
+decomp: decomp.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ decomp.in > decomp
+	chmod +x decomp
+
+epup: epup.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ epup.in > epup
+	chmod +x epup
+
+blot: blot.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ blot.in > blot
+	chmod +x blot
+
+fastq: fastq.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ fastq.in > fastq
+	chmod +x fastq
+
+post: post.in Imakefile $(CONFIGDIR)/$(MACROFILE)
+	$(ETCDIR)/MsubCmd +R@ -R@ post.in > post
+	chmod +x post
+
+XCOMM Install plot scripts
+InstallProgram(blot,        $(BINDIR))
+InstallProgram(fastq,       $(BINDIR))
+InstallProgram(decomp,      $(BINDIR))
+InstallProgram(epup,        $(BINDIR))
+InstallProgram(post,        $(BINDIR))
+InstallProgram(loadbal,     $(BINDIR))
+
+InstallProgram(failprob,    $(ETCDIR))
+InstallProgram(sfmakedepend,$(ETCDIR))
+
+InstallProgram(buildSEACAS,$(ETCDIR))
+
+

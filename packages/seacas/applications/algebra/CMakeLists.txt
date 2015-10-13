@@ -2,7 +2,7 @@ INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
 
-TRIBITS_SUBPACKAGE(Algebra)
+SEACAS_PACKAGE(Algebra)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -21,5 +21,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(algebra)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+SEACAS_POSTPROCESS()
 

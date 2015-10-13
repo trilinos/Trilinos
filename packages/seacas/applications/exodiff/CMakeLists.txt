@@ -1,7 +1,6 @@
-INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-
-TRIBITS_SUBPACKAGE(Exodiff)
+INCLUDE(FortranSettings)
+SEACAS_PACKAGE(Exodiff)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -19,5 +18,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(exodiff)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+SEACAS_POSTPROCESS()
 

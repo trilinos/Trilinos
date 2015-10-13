@@ -1,8 +1,6 @@
-INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsLibraryMacros)
 
-TRIBITS_SUBPACKAGE(Exomatlab)
+SEACAS_PACKAGE(Exomatlab)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -20,5 +18,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(exomatlab)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+SEACAS_POSTPROCESS()
 

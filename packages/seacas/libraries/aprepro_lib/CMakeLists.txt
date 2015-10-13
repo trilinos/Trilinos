@@ -1,11 +1,5 @@
-
-option(USE_TRIBITS "Use the Tribits modules to build Aprepro" ON)
-if(USE_TRIBITS)
-  INCLUDE(TribitsSubPackageMacros)
-  INCLUDE(TribitsLibraryMacros)
-
-  TRIBITS_SUBPACKAGE(Aprepro_lib)
-endif()
+INCLUDE(TribitsLibraryMacros)
+SEACAS_PACKAGE(Aprepro_lib)
 
 SET(APREPRO_VERSION_MAJOR "4")
 SET(APREPRO_VERSION_MINOR "02")
@@ -67,17 +61,13 @@ if(GENERATE_BISON_FILES)
                      )
 endif()
 
-if(USE_TRIBITS)
-  TRIBITS_ADD_LIBRARY(
-    aprepro_lib
-    HEADERS	${HEADERS}
-    SOURCES ${SOURCES}
-  )
-  TRIBITS_SUBPACKAGE_POSTPROCESS()
+TRIBITS_ADD_LIBRARY(
+  aprepro_lib
+  HEADERS	${HEADERS}
+  SOURCES ${SOURCES}
+)
 
-else()
-  add_library(aprepro_lib ${HEADERS} ${SOURCES})
-endif()
+SEACAS_POSTPROCESS()
 
 option(BUILD_TEST_APP "Build the test application" OFF)
 if(BUILD_TEST_APP)

@@ -1,8 +1,5 @@
-INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-INCLUDE(FortranSettings)
-
-TRIBITS_SUBPACKAGE(Txtexo)
+SEACAS_PACKAGE(Txtexo)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -21,5 +18,4 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(txtexo)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
-
+SEACAS_POSTPROCESS()
