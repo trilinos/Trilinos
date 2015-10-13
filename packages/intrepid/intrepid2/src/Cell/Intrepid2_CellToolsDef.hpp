@@ -1842,6 +1842,132 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
 }
   
   
+template<class Scalar>
+template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                                     const ArrayInitGuess &        initGuess,
+                                                     const ArrayPhysPoint &        physPoints,
+                                                     const ArrayCell      &        cellWorkset,
+                                                     const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                                     const int &                   whichCell)
+{
+ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
+ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
+// INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+  size_t spaceDim  = (size_t)HGRAD_Basis->cellTopology().getDimension();
+  size_t numPoints;
+  size_t numCells=0;
+  
+  // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
+  FieldContainer<Scalar> xOld;
+  FieldContainer<Scalar> xTem;  
+  FieldContainer<Scalar> jacobian;
+  FieldContainer<Scalar> jacobInv;
+  FieldContainer<Scalar> error; 
+  FieldContainer<Scalar> cellCenter(spaceDim);
+  
+  // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
+  if(whichCell == -1){
+    numPoints = static_cast<size_t>(physPoints.dimension(1));
+    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    xOld.resize(numCells, numPoints, spaceDim);
+    xTem.resize(numCells, numPoints, spaceDim);  
+    jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
+    error.resize(numCells,numPoints); 
+    // Set initial guess to xOld
+    for(size_t c = 0; c < numCells; c++){
+      for(size_t p = 0; p < numPoints; p++){
+        for(size_t d = 0; d < spaceDim; d++){
+          xOld(c, p, d) = initGuessWrap(c, p, d);
+        }// d
+      }// p
+    }// c
+  }
+  // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
+  else {
+    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    xOld.resize(numPoints, spaceDim);
+    xTem.resize(numPoints, spaceDim);  
+    jacobian.resize(numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numPoints, spaceDim, spaceDim);
+    error.resize(numPoints); 
+    // Set initial guess to xOld
+    for(size_t p = 0; p < numPoints; p++){
+      for(size_t d = 0; d < spaceDim; d++){
+        xOld(p, d) = initGuessWrap(p, d);
+      }// d
+    }// p
+  }
+  
+  // Newton method to solve the equation F(refPoints) - physPoints = 0:
+  // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
+  for(int iter = 0; iter < INTREPID2_MAX_NEWTON; ++iter) {
+    
+    // Jacobians at the old iterates and their inverses. 
+    setJacobian(jacobian, xOld, cellWorkset, HGRAD_Basis, whichCell);
+    setJacobianInv(jacobInv, jacobian);
+    // The Newton step.
+    mapToPhysicalFrame( xTem, xOld, cellWorkset, HGRAD_Basis->cellTopology(), whichCell );      // xTem <- F(xOld)
+    RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
+    RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
+    RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
+
+    // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
+    RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
+    RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
+
+    // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
+    double totalError;
+    if(whichCell == -1) {
+      FieldContainer<Scalar> cellWiseError(numCells);
+      // error(C,P) -> cellWiseError(P)
+
+      RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
+      totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
+    }
+    //Average L2 error for a single set of physical points: error is rank-1 (P) array
+    else{
+
+      totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
+      totalError = totalError;
+    }
+    
+    // Stopping criterion:
+    if (totalError < INTREPID2_TOL) {
+      break;
+    } 
+    else if ( iter > INTREPID2_MAX_NEWTON) {
+      INTREPID2_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
+                      << INTREPID2_MAX_NEWTON  << " iterations\n" );
+      break;
+    }
+
+    // initialize next Newton step
+//    xOld = refPoints;
+int refPointsRank=getrank(refPoints);
+if (refPointsRank==3){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         for(size_t k=0;k<static_cast<size_t>(refPoints.dimension(2));k++){
+            xOld(i,j,k) = refPointsWrap(i,j,k);
+         }
+      }
+   }
+}else if(refPointsRank==2){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         xOld(i,j) = refPointsWrap(i,j);
+      }
+   }
+
+}
+
+
+
+  } // for(iter)
+}
+
 
 template<class Scalar>
 template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>

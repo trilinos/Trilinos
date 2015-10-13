@@ -694,6 +694,14 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                                              const shards::CellTopology &  cellTopo,
                                              const int &                   whichCell = -1);
     
+    template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+    static void mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                             const ArrayInitGuess &        initGuess,
+                                             const ArrayPhysPoint &        physPoints,
+                                             const ArrayCell      &        cellWorkset,
+					     const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                             const int &                   whichCell = -1);
+    
 
     
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
