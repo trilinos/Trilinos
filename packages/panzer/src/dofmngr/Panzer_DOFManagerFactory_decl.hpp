@@ -52,7 +52,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), enableGhosting_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -67,11 +67,6 @@ public:
      *            freedom. This is relevant when degrees of freedom are shared
      *            on the same geometric entity. The default is an alphabetical
      *            ordering.
-     * \param[in] buildGlobalUnknowns Build the global unknowns before
-     *            returning. The default value gives backwards-compatible
-     *            behavior. Set this to false if the caller will initialize the
-     *            DOF manager in additional ways before issuing the call to
-     *            build the global unknowns itself.
      *
      * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
      *          the object is fully constructed. If it is false, the caller must
@@ -81,8 +76,7 @@ public:
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder="",
-                            const bool callBuildGlobalUnknowns=true) const;
+                            const std::string & fieldOrder="") const;
 
    void setUseDOFManagerFEI(bool flag)
    { 
@@ -115,22 +109,27 @@ public:
    void setUseTieBreak(bool flag) 
    { useTieBreak_ = flag; }
 
-   bool getUseTieBreak()
+   bool getUseTieBreak() const
    { return useTieBreak_; }
 
-   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
+   void setEnableGhosting(bool flag)
+   { enableGhosting_ = flag; }
 
+   bool getEnableGhosting() const
+   { return enableGhosting_; }
+
+   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 protected:
    template <typename DOFManagerT>
    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                             const Teuchos::RCP<ConnManager<LO,GO> > & connMngr,
-                            const std::string & fieldOrder,
-                            const bool callBuildGlobalUnknowns) const;
+                            const std::string & fieldOrder) const;
 
    bool useDOFManagerFEI_;
    bool useTieBreak_;
+   bool enableGhosting_;
 };
 
 }

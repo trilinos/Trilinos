@@ -331,7 +331,7 @@ Kokkos::initialize();
            
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
           int l = k + i * spaceDim * numPoints + j * spaceDim;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         
@@ -351,7 +351,7 @@ Kokkos::initialize();
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
         int l =  j + i * numPoints;
-        if (std::abs(vals(i,j) - basisCurls[l]) > INTREPID_TOL) {
+        if (std::abs(vals(i,j) - basisCurls[l]) > INTREPID2_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

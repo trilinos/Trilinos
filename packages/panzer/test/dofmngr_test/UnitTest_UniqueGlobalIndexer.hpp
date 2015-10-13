@@ -157,6 +157,11 @@ public:
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
 
+   /** Not needed, so return null.
+     */
+   virtual Teuchos::RCP<const ConnManagerBase<short> > getConnManagerBase() const
+   { return Teuchos::null; }
+
 private:
    int procRank_;
    mutable Teuchos::RCP<std::vector<short> > elements_b0_; // local element IDs

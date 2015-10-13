@@ -211,7 +211,7 @@ Kokkos::initialize();
       Kokkos::View<double***> out_c_f_p("out_c_f_p",c, f, p);
       Kokkos::View<double****> out_c_f_p_d("out_c_f_p_d",c, f, p, d1);
       Kokkos::View<double*****> out_c_f_p_d_d("out_c_f_p_d_d",c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (unsigned int i=0; i<in_f_p.dimension(0); i++) {
@@ -283,7 +283,7 @@ Kokkos::initialize();
       Kokkos::View<double****> outi_c_f_p_d("outi_c_f_p_d",c, f, p, d1);
       Kokkos::View<double*****> out_c_f_p_d_d("out_c_f_p_d_d",c, f, p, d1, d2);
       Kokkos::View<double*****> outi_c_f_p_d_d("outi_c_f_p_d_d",c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
       // fill with 1's
       for (unsigned int i=0; i<in_f_p.dimension(0); i++) {
 		   for (unsigned int j=0; j<in_f_p.dimension(1); j++) {
@@ -408,7 +408,7 @@ Kokkos::initialize();
       Kokkos::View<double****> outi_c_f_p_d("outi_c_f_p_d",c, f, p, d1);
       Kokkos::View<double*****> out_c_f_p_d_d("out_c_f_p_d_d",c, f, p, d1, d2);
       Kokkos::View<double*****> outi_c_f_p_d_d("outi_c_f_p_d_d",c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (unsigned int i=0; i<out_c_f_p.dimension(0); i++) {

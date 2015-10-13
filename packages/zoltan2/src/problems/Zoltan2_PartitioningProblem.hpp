@@ -243,6 +243,18 @@ public:
       metrics_->printMetrics(os);
   };
 
+  /*! \brief Print the array of metrics
+   *   \param os the output stream for the report.
+   *   Metrics were only computed if user requested
+   *   metrics with a parameter.
+   */
+  void printGraphMetrics(std::ostream &os) const {
+    if (graphMetrics_.is_null())
+      os << "No metrics available." << std::endl;
+    else
+      graphMetrics_->printMetrics(os);
+  };
+
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
    *
    *  \param len  The size of the \c partIds and \c partSizes lists
@@ -633,15 +645,14 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     metrics_ = rcp(quality);
 
-    if (algName_==std::string("scotch") || algName_==std::string("parmetis")){
+    if (modelAvail_[GraphModelType] == true){
       typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
       gpsq_t *graphQuality = NULL;
 
       try{
 	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
-			     this->graphModel_, this->inputAdapter_,
-			     solutionConst);
+			     this->baseInputAdapter_, solutionConst);
       }
       Z2_FORWARD_EXCEPTIONS
 

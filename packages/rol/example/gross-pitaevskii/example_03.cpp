@@ -220,32 +220,21 @@ int main(int argc, char* argv[]) {
     constr->checkApplyAdjointJacobian(xtest, vl, vc, g, true, *outStream);  *outStream << "\n";
     constr->checkApplyAdjointHessian(xtest, vl, d, g, true, *outStream);    *outStream << "\n";
 
+    // Define algorithm.
+    std::string stepname = "Composite Step";
+    parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Nominal Relative Tolerance",1e-4);
+    parlist.sublist("Step").sublist(stepname).sublist("Optimality System Solver").set("Fix Tolerance",true);
+    parlist.sublist("Step").sublist(stepname).sublist("Tangential Subproblem Solver").set("Iteration Limit",20);
+    parlist.sublist("Step").sublist(stepname).sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
+    parlist.sublist("Step").sublist(stepname).set("Output Level",0);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
-
-    // Define Step
-    parlist.set("Nominal SQP Optimality Solver Tolerance", 1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",80);
-    parlist.set("Absolute Krylov Tolerance",1e-4);
-
-    CompositeStepSQP<RealT> step(parlist);
-
-
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT ctol  = 1e-12;  // norm of constraint tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
-
-    // Define Algorithm
-    DefaultAlgorithm<RealT> algo(step,status,false);
-
-    // Run Algorithm
-    std::vector<std::string> output = algo.run(psi, g, lam, c, *obj, *constr, false);
-  
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      *outStream << output[i];
-    }
+    // Run algorithm.
+    algo.run(psi, g, lam, c, *obj, *constr, true, *outStream);
 
     if(algo.getState()->gnorm>1e-6) {
         errorFlag += 1; 

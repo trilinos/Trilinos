@@ -54,12 +54,30 @@ namespace ROL {
 
 template<class Real>
 class Minimax1 : public Objective<Real> {
+
+  typedef std::vector<Real>  vector;
+  typedef Vector<Real>       V;
+  typedef StdVector<Real>    SV;  
+
+private:
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
+
 public:
   Minimax1(void) {}
 
   Real value(const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const std::vector<Real> > xp =
-      (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
+
+    using Teuchos::RCP;
+    RCP<const vector> xp = getVector(x);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);
@@ -67,10 +85,10 @@ public:
   }
 
   void gradient(Vector<Real> &g, const Vector<Real> &x, Real &tol) {
-    Teuchos::RCP<const std::vector<Real> > xp =
-      (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-    Teuchos::RCP<std::vector<Real> > gp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
+
+    using Teuchos::RCP;
+    RCP<const vector> xp = getVector(x);
+    RCP<vector> gp = getVector(g);
     Real f1 = std::pow((*xp)[0],2.0) + std::pow((*xp)[1],4.0);
     Real f2 = std::pow(2.0-(*xp)[0],2.0) + std::pow(2.0-(*xp)[1],2.0);
     Real f3 = 2.0*std::exp(-(*xp)[0] + (*xp)[1]);

@@ -80,14 +80,14 @@ int main(int argc, char *argv[]) {
 
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
     // Define Status Test
-    ROL::StatusTest<RealT> status(*parlist);
+    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(*parlist));
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
@@ -132,17 +132,14 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
 
       // Define Step
-      ROL::LineSearchStep<RealT> step(*parlist);
+      Teuchos::RCP<ROL::LineSearchStep<RealT> > step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
       
       // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+      ROL::Algorithm<RealT> algo(step,status,false);
 
       // Run Algorithm
       x.set(x0);
-      std::vector<std::string> output = algo.run(x, *obj, *con);
-      for ( unsigned i = 0; i < output.size(); i++ ) {
-        std::cout << output[i];
-      }
+      algo.run(x, *obj, *con, true, *outStream);
 
       // Compute Error
       e.set(x);

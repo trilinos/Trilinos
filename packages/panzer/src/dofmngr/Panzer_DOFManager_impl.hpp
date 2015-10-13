@@ -511,7 +511,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   // this bit of code takes the uniquely assigned GIDs and spreads them
   // out for processing by local element ID
   fillGIDsFromOverlappedMV(ownedAccess,elementGIDs_,*overlapmap,*overlap_mv);
-  fillAssociatedElements(ownedAccess);
 
   // if neighbor unknowns are required, then make sure they are included
   // in the elementGIDs_
@@ -529,7 +528,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     overlap_mv_nabor->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
 
     fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlapmap_nabor,*overlap_mv_nabor);
-    fillAssociatedElements(naborAccess);
   }
 
   //////////////////////////////////////////////////////////////////
@@ -1037,58 +1035,6 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
         elementGIDs.resize(thisID+1);
       }
       elementGIDs[thisID]=localOrdering;
-    }
-  }
-}
-
-template <typename LO,typename GO>
-void DOFManager<LO,GO>::fillAssociatedElements(const ElementBlockAccess& access)
-{
-  associatedElements_.resize(elementGIDs_.size());
-  for (size_t b = 0; b < blockOrder_.size(); ++b) {
-    const std::vector<LO>& myElements = access.getElementBlock(blockOrder_[b]);
-    for (size_t l = 0; l < myElements.size(); ++l) {
-      LO e;
-      if (connMngr_->getElementAcrossInterface(myElements[l], e)) {
-        // Right now, associatedElements_[i] can have 0 or 1 elements only.
-        TEUCHOS_ASSERT(associatedElements_[myElements[l]].empty());
-        associatedElements_[myElements[l]].push_back(e);
-      }
-    }
-  }
-}
-
-template <typename LO,typename GO>
-void DOFManager<LO,GO>::
-getElementAndAssociatedLIDs(LO localElmtId, std::vector<LO>& lids) const
-{
-  lids = this->getElementLIDs(localElmtId);
-  const std::vector<LO>& aes = associatedElements_[localElmtId];
-  if ( ! aes.empty()) {
-    for (typename std::vector<LO>::const_iterator aei = aes.begin(); aei != aes.end(); ++aei) {
-      const LO lid = *aei;
-      //todo-ic Figure out parallel case.
-      if (lid >= Teuchos::as<LO>(elementGIDs_.size())) continue;
-      const std::vector<LO>& aelids = this->getElementLIDs(lid);
-      lids.insert(lids.end(), aelids.begin(), aelids.end());
-    }
-  }
-}
-
-template <typename LO,typename GO>
-void DOFManager<LO,GO>::
-getElementAndAssociatedGIDs(LO localElmtId, std::vector<GO>& gids) const
-{
-  getElementGIDs(localElmtId, gids);
-  const std::vector<LO>& aes = associatedElements_[localElmtId];
-  if ( ! aes.empty()) {
-    for (typename std::vector<LO>::const_iterator aei = aes.begin(); aei != aes.end(); ++aei) {
-      const LO lid = *aei;
-      //todo-ic Figure out parallel case.
-      if (lid >= Teuchos::as<LO>(elementGIDs_.size())) continue;
-      std::vector<GO> aegids;
-      getElementGIDs(lid, aegids);
-      gids.insert(gids.end(), aegids.begin(), aegids.end());
     }
   }
 }

@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> out_c_f_p(c, f, p);
       FieldContainer<double> out_c_f_p_d(c, f, p, d1);
       FieldContainer<double> out_c_f_p_d_d(c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (int i=0; i<in_f_p.size(); i++) {
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> outi_c_f_p_d(c, f, p, d1);
       FieldContainer<double> out_c_f_p_d_d(c, f, p, d1, d2);
       FieldContainer<double> outi_c_f_p_d_d(c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with 1's
       for (int i=0; i<in_f_p.size(); i++) {
@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> outi_c_f_p_d(c, f, p, d1);
       FieldContainer<double> out_c_f_p_d_d(c, f, p, d1, d2);
       FieldContainer<double> outi_c_f_p_d_d(c, f, p, d1, d2);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (int i=0; i<out_c_f_p.size(); i++) {

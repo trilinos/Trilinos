@@ -47,6 +47,10 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
+#ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
+#define KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY 2
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
+
 namespace KokkosBlas {
 namespace Impl {
 
@@ -574,6 +578,44 @@ struct MV_Axpby_Unroll_Functor
     // scalar_x and scalar_y are compile-time constants (since they
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_b(k)*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_a(k)*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
+      }
+    }
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL >= 3
+
     if (scalar_x == 0 && scalar_y == 0) {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -697,6 +739,7 @@ struct MV_Axpby_Unroll_Functor
         m_y(i,k) = m_a(k)*m_x(i,k) + m_b(k)*m_y(i,k);
       }
     }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
   }
 };
 
@@ -746,6 +789,44 @@ struct MV_Axpby_Unroll_Functor<typename XMV::non_const_value_type, XMV,
     // scalar_x and scalar_y are compile-time constants (since they
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+    if (scalar_x == 0 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = ATS::zero ();
+      }
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_b*m_y(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_a*m_x(i,k);
+      }
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+      for (int k = 0; k < UNROLL; ++k) {
+        m_y(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
+      }
+    }
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
     if (scalar_x == 0 && scalar_y == 0) {
 #ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
@@ -869,6 +950,8 @@ struct MV_Axpby_Unroll_Functor<typename XMV::non_const_value_type, XMV,
         m_y(i,k) = m_a*m_x(i,k) + m_b*m_y(i,k);
       }
     }
+
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
   }
 };
 
@@ -933,6 +1016,24 @@ struct V_Axpby_Functor {
     // scalar_x and scalar_y are compile-time constants (since they
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+    if (scalar_x == 0 && scalar_y == 0) {
+      m_y(i) = ATS::zero ();
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+      m_y(i) = m_b(0)*m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+      m_y(i) = m_a(0)*m_x(i);
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+      m_y(i) = m_a(0)*m_x(i) + m_b(0)*m_y(i);
+    }
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
     if (scalar_x == 0 && scalar_y == 0) {
       m_y(i) = ATS::zero ();
     }
@@ -981,6 +1082,8 @@ struct V_Axpby_Functor {
     if (scalar_x == 2 && scalar_y == 2) {
       m_y(i) = m_a(0)*m_x(i) + m_b(0)*m_y(i);
     }
+
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
   }
 };
 
@@ -1042,6 +1145,24 @@ struct V_Axpby_Functor<typename XV::non_const_value_type, XV,
     // scalar_x and scalar_y are compile-time constants (since they
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+    if (scalar_x == 0 && scalar_y == 0) {
+      m_y(i) = ATS::zero ();
+    }
+    if (scalar_x == 0 && scalar_y == 2) {
+      m_y(i) = m_b*m_y(i);
+    }
+    if (scalar_x == 2 && scalar_y == 0) {
+      m_y(i) = m_a*m_x(i);
+    }
+    if (scalar_x == 2 && scalar_y == 2) {
+      m_y(i) = m_a*m_x(i) + m_b*m_y(i);
+    }
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
     if (scalar_x == 0 && scalar_y == 0) {
       m_y(i) = ATS::zero ();
     }
@@ -1090,6 +1211,8 @@ struct V_Axpby_Functor<typename XV::non_const_value_type, XV,
     if (scalar_x == 2 && scalar_y == 2) {
       m_y(i) = m_a*m_x(i) + m_b*m_y(i);
     }
+
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
   }
 };
 
@@ -1143,6 +1266,8 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 0 && b == -1) {
     MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 0, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
@@ -1153,11 +1278,15 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
+
   if (a == 0 && b == 2) {
     MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 0, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   // a == -1
   if (a == -1 && b == 0) {
     MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, -1, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
@@ -1200,12 +1329,16 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
   // a == 2
   if (a == 2 && b == 0) {
     MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 2 && b == -1) {
     MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
@@ -1216,6 +1349,7 @@ MV_Axpby_Unrolled (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   // a and b arbitrary (not -1, 0, or 1)
   MV_Axpby_Unroll_Functor<AV, XMV, BV, YMV, 2, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
@@ -1270,6 +1404,8 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 0 && b == -1) {
     MV_Axpby_Functor<AV, XMV, BV, YMV, 0, -1, SizeType> op (x, y, av, bv);
     Kokkos::parallel_for (policy, op);
@@ -1280,11 +1416,15 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
   if (a == 0 && b == 2) {
     MV_Axpby_Functor<AV, XMV, BV, YMV, 0, 2, SizeType> op (x, y, av, bv);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   // a == -1
   if (a == -1 && b == 0) {
     MV_Axpby_Functor<AV, XMV, BV, YMV, -1, 0, SizeType> op (x, y, av, bv);
@@ -1327,12 +1467,16 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
   // a == 2
   if (a == 2 && b == 0) {
     MV_Axpby_Functor<AV, XMV, BV, YMV, 2, 0, SizeType> op (x, y, av, bv);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 2 && b == -1) {
     MV_Axpby_Functor<AV, XMV, BV, YMV, 2, -1, SizeType> op (x, y, av, bv);
     Kokkos::parallel_for (policy, op);
@@ -1343,6 +1487,7 @@ MV_Axpby_Generic (const AV& av, const XMV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   // a and b arbitrary (not -1, 0, or 1)
   MV_Axpby_Functor<AV, XMV, BV, YMV, 2, 2, SizeType> op (x, y, av, bv);
@@ -1385,6 +1530,8 @@ V_Axpby_Generic (const AV& av, const XV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 0 && b == -1) {
     V_Axpby_Functor<AV, XV, BV, YV, 0, -1, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
@@ -1395,11 +1542,15 @@ V_Axpby_Generic (const AV& av, const XV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
   if (a == 0 && b == 2) {
     V_Axpby_Functor<AV, XV, BV, YV, 0, 2, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   // a == -1
   if (a == -1 && b == 0) {
     V_Axpby_Functor<AV, XV, BV, YV, -1, 0, SizeType> op (x, y, av, bv, startingColumn);
@@ -1442,12 +1593,16 @@ V_Axpby_Generic (const AV& av, const XV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
   // a == 2
   if (a == 2 && b == 0) {
     V_Axpby_Functor<AV, XV, BV, YV, 2, 0, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
     return;
   }
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 2 && b == -1) {
     V_Axpby_Functor<AV, XV, BV, YV, 2, -1, SizeType> op (x, y, av, bv, startingColumn);
     Kokkos::parallel_for (policy, op);
@@ -1458,6 +1613,7 @@ V_Axpby_Generic (const AV& av, const XV& x,
     Kokkos::parallel_for (policy, op);
     return;
   }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   // a and b arbitrary (not -1, 0, or 1)
   V_Axpby_Functor<AV, XV, BV, YV, 2, 2, SizeType> op (x, y, av, bv, startingColumn);
@@ -1698,24 +1854,28 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
     if (alpha == ATA::zero ()) {
       a = 0;
     }
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else if (alpha == -ATA::one ()) {
       a = -1;
     }
     else if (alpha == ATA::one ()) {
       a = 1;
     }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else {
       a = 2;
     }
     if (beta == ATB::zero ()) {
       b = 0;
     }
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else if (beta == -ATB::one ()) {
       b = -1;
     }
     else if (beta == ATB::one ()) {
       b = 1;
     }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else {
       b = 2;
     }
@@ -1768,22 +1928,27 @@ struct Axpby<typename XV::non_const_value_type, XV,
     if (alpha == ATA::zero ()) {
       a = 0;
     }
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else if (alpha == -ATA::one ()) {
       a = -1;
     }
     else if (alpha == ATA::one ()) {
       a = 1;
     }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
     int b = 2;
     if (beta == ATB::zero ()) {
       b = 0;
     }
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
     else if (beta == -ATB::one ()) {
       b = -1;
     }
     else if (beta == ATB::one ()) {
       b = 1;
     }
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
     if (numRows < static_cast<size_type> (INT_MAX)) {
       typedef int index_type;
@@ -1942,6 +2107,60 @@ KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DECL( double, Kokkos::LayoutLeft, Kokkos::Cuda, K
 // We use this macro in one or more .cpp files in this directory.
 //
 
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Axpby<SCALAR, \
+      Kokkos::View<const SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      SCALAR, \
+      Kokkos::View<SCALAR**, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      2>:: \
+axpby (const XMV::non_const_value_type& alpha, \
+       const XMV& X, const YMV::non_const_value_type& beta, \
+       const YMV& Y) \
+{ \
+  const size_type numRows = X.dimension_0 (); \
+  const size_type numCols = X.dimension_1 (); \
+  int a, b; \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  else { \
+    a = 2; \
+  } \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+  else { \
+    b = 2; \
+  } \
+  \
+  if (numRows < static_cast<size_type> (INT_MAX) && \
+      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
+      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
+                                                   beta, Y, a, b); \
+  } \
+  else { \
+    typedef XMV::size_type index_type; \
+    MV_Axpby_Invoke_Left<XMV::non_const_value_type, XMV, \
+      YMV::non_const_value_type, YMV, index_type> (alpha, X, \
+                                                   beta, Y, a, b); \
+  } \
+}
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
+
 #define KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
 Axpby<SCALAR, \
@@ -2004,11 +2223,72 @@ axpby (const XMV::non_const_value_type& alpha, \
   } \
 }
 
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
+
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Axpby for rank == 1.  This is NOT for users!!!
 // We use this macro in one or more .cpp files in this directory.
 //
+
+#if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
+
+#define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
+void \
+Axpby<SCALAR, \
+      Kokkos::View<const SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      SCALAR, \
+      Kokkos::View<SCALAR*, \
+                   LAYOUT, \
+                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
+                   Kokkos::Impl::ViewDefault>, \
+      1>:: \
+axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
+{ \
+  static_assert (Kokkos::Impl::is_view<XV>::value, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: X is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_view<YV>::value, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: Y is not a Kokkos::View."); \
+  static_assert (Kokkos::Impl::is_same<YV::value_type, \
+                 YV::non_const_value_type>::value, \
+                 "KokkosBlas::Impl::Axpby<rank-1>::axpby: Y is const.  " \
+                 "It must be nonconst, because it is an output argument " \
+                 "(we have to be able to write to its entries)."); \
+  static_assert ((int) YV::rank == (int) XV::rank, "KokkosBlas::Impl::" \
+                 "Axpby<rank-1>::axpby: X and Y must have the same rank."); \
+  static_assert (YV::rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: " \
+                 "X and Y must have rank 1."); \
+ \
+  const size_type numRows = X.dimension_0 (); \
+  int a = 2; \
+  if (alpha == ATA::zero ()) { \
+    a = 0; \
+  } \
+  int b = 2; \
+  if (beta == ATB::zero ()) { \
+    b = 0; \
+  } \
+ \
+  if (numRows < static_cast<size_type> (INT_MAX)) { \
+    typedef int index_type; \
+    V_Axpby_Generic<XV::non_const_value_type, XV, \
+      YV::non_const_value_type, YV, \
+      index_type> (alpha, X, beta, Y, 0, a, b); \
+  } \
+  else { \
+    typedef XV::size_type index_type; \
+    V_Axpby_Generic<XV::non_const_value_type, XV, \
+      YV::non_const_value_type, YV, \
+      index_type> (alpha, X, beta, Y, 0, a, b); \
+  } \
+}
+
+#else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
 #define KOKKOSBLAS_IMPL_MV_AXPBY_RANK1_DEF( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 void \
@@ -2077,6 +2357,7 @@ axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
   } \
 }
 
+#endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
 } // namespace Impl
 } // namespace KokkosBlas

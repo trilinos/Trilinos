@@ -59,7 +59,7 @@ namespace Test {
 
 #define hard_point(i,m,n,o) { x[i] = m; y[i] = n; z[i] = o; }
 
-double exact[5][5] = {
+static double exact[5][5] = {
    { 1.0,-1.0, 0.0, 0.0, 0.0 },
    {-1.0, 1.12038585308577, 0.0,-0.120385853085769, 0.0 },
    { 0.0, 0.0, 0.141421356237310, 0.0, -0.141421356237310 },
@@ -105,7 +105,7 @@ Teuchos::RCP<Epetra_CrsMatrix> stencil(const Epetra_Comm & comm)
    return mat;
 }
 
-void coords(std::vector<double> & vec)
+static void coords(std::vector<double> & vec)
 {
    int count = 5;
    int dim = 3;
@@ -120,7 +120,7 @@ void coords(std::vector<double> & vec)
    simple_point(4, vec, 0.0, 0.0, 9.0);
 }
 
-void coords(std::vector<double> & x, std::vector<double> & y, std::vector<double> & z)
+static void coords(std::vector<double> & x, std::vector<double> & y, std::vector<double> & z)
 {
    int count = 5;
    // int dim = 3;

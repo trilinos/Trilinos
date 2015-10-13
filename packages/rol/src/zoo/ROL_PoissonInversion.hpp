@@ -57,7 +57,6 @@
 #include "ROL_Objective.hpp"
 #include "ROL_HelperFunctions.hpp"
 
-#include "Teuchos_getConst.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 namespace ROL {
@@ -72,9 +71,11 @@ namespace ZOO {
     typedef Vector<Real>      V;
     typedef StdVector<Real>   SV;
   
+    typedef typename vector::size_type uint;
+
   private:
-    int nu_;
-    int nz_;
+    uint nu_;
+    uint nz_;
 
     Real hu_;
     Real hz_;
@@ -86,8 +87,7 @@ namespace ZOO {
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {
@@ -99,7 +99,7 @@ namespace ZOO {
   public:
 
     /* CONSTRUCTOR */
-    Objective_PoissonInversion(int nz = 32, Real alpha = 1.e-4) : nz_(nz), alpha_(alpha) {
+    Objective_PoissonInversion(uint nz = 32, Real alpha = 1.e-4) : nz_(nz), alpha_(alpha) {
       nu_       = nz_-1;
       hu_       = 1.0/((Real)nu_+1.0);
       hz_       = hu_; 
@@ -114,7 +114,7 @@ namespace ZOO {
       RCP<const vector> zp = getVector(z);
 
       Real val = 0.0;
-      for (int i = 0; i < nz_; i++) {
+      for (uint i = 0; i < nz_; i++) {
         if ( reg_type_ == 2 ) {
           val += alpha_/2.0 * hz_ * (*zp)[i]*(*zp)[i];
         }
@@ -141,7 +141,7 @@ namespace ZOO {
         RCP<const vector> zp = getVector(z);
         RCP<vector >      gp = getVector(g);
 
-        for (int i = 0; i < nz_; i++) {
+        for (uint i = 0; i < nz_; i++) {
           (*gp)[i] = alpha_ * hz_ * (*zp)[i]/std::sqrt(std::pow((*zp)[i],2.0)+eps_);
         }
       }
@@ -150,7 +150,7 @@ namespace ZOO {
         RCP<vector>       gp = getVector(g);
 
         Real diff = 0.0;
-        for (int i = 0; i < nz_; i++) {
+        for (uint i = 0; i < nz_; i++) {
           if ( i == 0 ) {
             diff     = (*zp)[i]-(*zp)[i+1];
             (*gp)[i] = alpha_ * diff/std::sqrt(std::pow(diff,2.0)+eps_);
@@ -182,7 +182,7 @@ namespace ZOO {
         RCP<const vector> vp  = getVector(v);
         RCP<vector>       hvp = getVector(hv);
 
-        for (int i = 0; i < nz_; i++) {
+        for (uint i = 0; i < nz_; i++) {
           (*hvp)[i] = alpha_*hz_*(*vp)[i]*eps_/std::pow(std::pow((*zp)[i],2.0)+eps_,3.0/2.0);
         }
       }
@@ -193,7 +193,7 @@ namespace ZOO {
 
         Real diff1 = 0.0;
         Real diff2 = 0.0;
-        for (int i = 0; i < nz_; i++) {
+        for (uint i = 0; i < nz_; i++) {
           if ( i == 0 ) {
             diff1 = (*zp)[i]-(*zp)[i+1];
             diff1 = eps_/std::pow(std::pow(diff1,2.0)+eps_,3.0/2.0);
@@ -222,7 +222,7 @@ namespace ZOO {
       RCP<const vector> fp  = getVector(f);
       RCP<vector>       Mfp = getVector(Mf);
 
-      for (int i = 0; i < nu_; i++) {
+      for (uint i = 0; i < nu_; i++) {
         if ( i == 0 ) {
           (*Mfp)[i] = hu_/6.0*(4.0*(*fp)[i] + (*fp)[i+1]);
         }
@@ -245,7 +245,7 @@ namespace ZOO {
       // Get Diagonal and Off-Diagonal Entries of PDE Jacobian
       vector d(nu_,1.0);
       vector o(nu_-1,1.0);
-      for ( int i = 0; i < nu_; i++ ) {
+      for ( uint i = 0; i < nu_; i++ ) {
         d[i] = (std::exp((*zp)[i]) + std::exp((*zp)[i+1]))/hu_;
         if ( i < nu_-1 ) {
           o[i] *= -std::exp((*zp)[i+1])/hu_;
@@ -276,7 +276,7 @@ namespace ZOO {
       RCP<const vector> dp  = getVector(d);
       RCP<vector>       Bdp = getVector(Bd);
 
-      for (int i = 0; i < nu_; i++) {
+      for (uint i = 0; i < nu_; i++) {
         if ( i == 0 ) {
           (*Bdp)[i] = 1.0/hu_*( std::exp((*zp)[i])*(*up)[i]*(*dp)[i] 
                                     + std::exp((*zp)[i+1])*((*up)[i]-(*up)[i+1])*(*dp)[i+1] );
@@ -301,7 +301,7 @@ namespace ZOO {
       RCP<const vector> dp  = getVector(d);
       RCP<vector>       Bdp = getVector(Bd);
 
-      for (int i = 0; i < nz_; i++) {
+      for (uint i = 0; i < nz_; i++) {
         if ( i == 0 ) {
           (*Bdp)[i] = std::exp((*zp)[i])/hu_*(*up)[i]*(*dp)[i];
         }
@@ -323,7 +323,7 @@ namespace ZOO {
       RCP<const vector> dp  = getVector(d);
       RCP<vector>       Bdp = getVector(Bd);
 
-      for (int i = 0; i < nz_; i++) {
+      for (uint i = 0; i < nz_; i++) {
         if ( i == 0 ) {
           (*Bdp)[i] = (*vp)[i]*std::exp((*zp)[i])/hu_*(*up)[i]*(*dp)[i];
         }
@@ -346,7 +346,7 @@ namespace ZOO {
       Real k2 = 2.0;
       // Right Hand Side
       RCP<vector> bp = rcp( new vector(nu_, 0.0) );
-      for ( int i = 0; i < nu_; i++ ) {
+      for ( uint i = 0; i < nu_; i++ ) {
         if ( (Real)(i+1)*hu_ < 0.5 ) {
          (*bp)[i] = 2.0*k1*hu_;
         }
@@ -372,7 +372,7 @@ namespace ZOO {
       RCP<vector> rp = rcp( new vector(nu_,0.0) );
       SV res(rp);
 
-      for (int i = 0; i < nu_; i++) {
+      for ( uint i = 0; i < nu_; i++) {
         (*rp)[i] = -((*up)[i]-evaluate_target((Real)(i+1)*hu_));
       }
       StdVector<Real> Mres( Teuchos::rcp( new std::vector<Real>(nu_,0.0) ) );
@@ -417,7 +417,7 @@ namespace ZOO {
       RCP<vector> rp = rcp( new vector(nu_,0.0) );
       SV res( rp );
 
-      for (int i = 0; i < nu_; i++) {
+      for ( uint i = 0; i < nu_; i++) {
         (*rp)[i] = ((*up)[i]-evaluate_target((Real)(i+1)*hu_));
       }
 
@@ -549,6 +549,9 @@ namespace ZOO {
 
     typedef std::vector<Real> vector;
     typedef StdVector<Real>   SV;
+
+    typedef typename vector::size_type uint;
+
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::dyn_cast;
@@ -557,7 +560,7 @@ namespace ZOO {
     RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
     RCP<vector>  xp = dyn_cast<SV>(x).getVector();
 
-    int n = xp->size();
+    uint n = xp->size();
     // Resize Vectors
     n = 128;
     x0p->resize(n);
@@ -565,7 +568,7 @@ namespace ZOO {
     // Instantiate Objective Function
     obj = rcp( new Objective_PoissonInversion<Real>(n,1.e-6) );
     // Get Initial Guess
-    for (int i=0; i<n; i++) {
+    for (uint i=0; i<n; i++) {
       (*x0p)[i] = 1.5;
     }
     // Get Solution
@@ -573,7 +576,7 @@ namespace ZOO {
     Real pt = 0.0;
     Real k1 = 1.0;
     Real k2 = 2.0;
-    for( int i=0; i<n; i++ ) {
+    for( uint i=0; i<n; i++ ) {
       pt = (Real)(i+1)*h;
       if ( pt >= 0.0 && pt < 0.5 ) {
         (*xp)[i] = std::log(k1);

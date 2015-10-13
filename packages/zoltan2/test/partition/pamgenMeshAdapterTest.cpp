@@ -215,6 +215,7 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
+    params.set("compute_metrics","yes");
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
@@ -287,7 +288,12 @@ int main(int narg, char *arg[]) {
 
     problem.solve();
 
-    if (me) problem.printMetrics(cout);
+    if (me) {
+      problem.printMetrics(cout);
+
+      if (action == "scotch")
+	problem.printGraphMetrics(cout);
+    }
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";

@@ -147,11 +147,8 @@ public:
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const 
    { return base_->getElementBlockGIDCount(blockIndex); }
 
-   virtual void getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const
-   { base_->getElementAndAssociatedLIDs(localElmtId,lids); }
-
-   virtual void getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const
-   { base_->getElementAndAssociatedGIDs(localElmtId,gids); }
+   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return base_->getConnManagerBase(); }
 
 private:
 

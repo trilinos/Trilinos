@@ -933,6 +933,8 @@ public:
     fem_->compute_residual(*cp,*up,*zp);
   }
 
+  using ROL::EqualityConstraint_SimOpt<Real>::value;
+
   void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > up =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalStateVector>(u)).getVector());

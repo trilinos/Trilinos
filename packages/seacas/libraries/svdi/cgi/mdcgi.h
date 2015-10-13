@@ -36,6 +36,3 @@
 #include "stdtyp.h"
 void xcoon_ (anything **surface_id); /* which surface to turn output on for*/
 void xcact_ (void (*device_fn)(), anything **p_surface_id);
-void xcooff_ (anything **surface_id);
-void xcdact_ (anything **surface_id);
-void xcsol_ (anything **surface_id);

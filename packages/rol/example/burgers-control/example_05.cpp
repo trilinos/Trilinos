@@ -77,12 +77,12 @@ int main(int argc, char* argv[]) {
     // Get ROL parameterlist
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Build ROL algorithm
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
+    Teuchos::RCP<ROL::Algorithm<double> > algo;
     /**********************************************************************************************/
     /************************* CONSTRUCT VECTORS **************************************************/
     /**********************************************************************************************/
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
     ROL::CVaRVector<double> x1c(x1v,x1p);
     // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     x1c.zero();
     clock_t start = clock();
     algo->run(x1c,*obj,true,*outStream);
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
     ROL::CVaRVector<double> x2c(x2v,x2p);
     // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     x2c.set(x1c);
     start = clock();
     algo->run(x2c,*obj,true,*outStream);
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
     ROL::CVaRVector<double> x3c(x3v,x3p);
     // Run ROL algorithm
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Trust Region",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     x3c.set(x2c);
     start = clock();
     algo->run(x3c,*obj,true,*outStream);
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",10000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
-    algo = Teuchos::rcp(new ROL::DefaultAlgorithm<double>("Bundle",*parlist,false));
+    algo = Teuchos::rcp(new ROL::Algorithm<double>("Bundle",*parlist,false));
     zc.set(x3c);
     start = clock();
     algo->run(zc,*obj,true,*outStream);

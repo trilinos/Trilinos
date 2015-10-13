@@ -642,7 +642,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> vdot_x_x(i0, i1);
       FieldContainer<double> vnorms_x_x(i0, i1);
       FieldContainer<double> vnorms_x(i0);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (int i=0; i<ma_x_x_d_d.size(); i++) {
@@ -821,7 +821,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> vc_x_d(i0, dim);
       FieldContainer<double> vdot_x(i0);
       FieldContainer<double> vnorms_x(i0);
-      double zero = INTREPID_TOL*100.0;
+      double zero = INTREPID2_TOL*100.0;
 
       // fill with random numbers
       for (int i=0; i<ma_x_d_d.size(); i++) {

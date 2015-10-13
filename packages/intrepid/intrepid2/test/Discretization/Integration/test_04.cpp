@@ -145,21 +145,21 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+04 * INTREPID_TOL;
+  double                                   reltol = 1.0e+04 * INTREPID2_TOL;
   int                                      maxDeg[4];
   int                                      maxOffset[4];
   int                                      numPoly[4];
   int                                      numAnalytic[4];
   // max polynomial degree tested, per cell type:
-  maxDeg[0]                              = INTREPID_CUBATURE_TET_DEFAULT_MAX;
-  maxDeg[1]                              = 20; // can be as large as INTREPID_CUBATURE_LINE_GAUSS_MAX, but runtime is excessive
-  maxDeg[2]                              = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_TRI_DEFAULT_MAX);
-  maxDeg[3]                              = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX);
+  maxDeg[0]                              = INTREPID2_CUBATURE_TET_DEFAULT_MAX;
+  maxDeg[1]                              = 20; // can be as large as INTREPID2_CUBATURE_LINE_GAUSS_MAX, but runtime is excessive
+  maxDeg[2]                              = std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX, INTREPID2_CUBATURE_TRI_DEFAULT_MAX);
+  maxDeg[3]                              = std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX, INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX);
   // max polynomial degree recorded in analytic comparison files, per cell type:
-  maxOffset[0]                           = INTREPID_CUBATURE_TET_DEFAULT_MAX;
-  maxOffset[1]                           = INTREPID_CUBATURE_LINE_GAUSS_MAX;
-  maxOffset[2]                           = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_TRI_DEFAULT_MAX);
-  maxOffset[3]                           = std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX, INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX);
+  maxOffset[0]                           = INTREPID2_CUBATURE_TET_DEFAULT_MAX;
+  maxOffset[1]                           = INTREPID2_CUBATURE_LINE_GAUSS_MAX;
+  maxOffset[2]                           = std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX, INTREPID2_CUBATURE_TRI_DEFAULT_MAX);
+  maxOffset[3]                           = std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX, INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX);
   for (int i=0; i<4; i++) {
     numPoly[i] = (maxDeg[i]+1)*(maxDeg[i]+2)*(maxDeg[i]+3)/6;
   }
@@ -186,7 +186,7 @@ Kokkos::initialize();
                                      shards::getCellTopologyData< shards::Wedge<> >(),
                                      shards::getCellTopologyData< shards::Pyramid<> >() };
   // format of data files with analytic values
-  TypeOfExactData dataFormat[] = {INTREPID_UTILS_SCALAR, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION, INTREPID_UTILS_FRACTION};
+  TypeOfExactData dataFormat[] = {INTREPID2_UTILS_SCALAR, INTREPID2_UTILS_FRACTION, INTREPID2_UTILS_FRACTION, INTREPID2_UTILS_FRACTION};
 
   // compute and compare integrals
   try {

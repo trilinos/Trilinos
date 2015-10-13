@@ -90,7 +90,6 @@ namespace SEAMS {
   double do_strtod(char *string);
   double do_option(char *option, double value);
   double do_word_count(char *string, char *delm );
-  double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
   double do_lgamma(double val);
   double do_juldayhms(double mon, double day, double year,
 		      double h, double mi, double se);
@@ -130,11 +129,6 @@ namespace SEAMS {
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_extract(char *string, char *begin, char *end);
   const char *do_print_array(const array *arr);
-
-#if defined(EXODUSII)
-  const char *do_exodus_info(char *filename);
-  const char *do_exodus_meta(char *filename);
-#endif
 
   const char *do_execute(char *string);
   const char *do_getenv(char *string);

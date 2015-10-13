@@ -41,20 +41,21 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STATUSTESTSQP_H
-#define ROL_STATUSTESTSQP_H
+#ifndef ROL_CONSTRAINTSTATUSTEST_H
+#define ROL_CONSTRAINTSTATUSTEST_H
 
 #include "ROL_StatusTest.hpp"
 
-/** \class ROL::StatusTestSQP
-    \brief Provides an interface to check status of optimization algorithms.
+/** \class ROL::ConstraintStatusTest
+    \brief Provides an interface to check status of optimization algorithms
+           for problems with equality constraints.
 */
 
 
 namespace ROL {
 
 template <class Real>
-class StatusTestSQP : public StatusTest<Real> {
+class ConstraintStatusTest : public StatusTest<Real> {
 private:
 
   Real gtol_;
@@ -64,16 +65,16 @@ private:
 
 public:
 
-  virtual ~StatusTestSQP() {}
+  virtual ~ConstraintStatusTest() {}
 
-  StatusTestSQP( Teuchos::ParameterList &parlist ) {
+  ConstraintStatusTest( Teuchos::ParameterList &parlist ) {
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", 1.e-6);
     ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-6);
     stol_     = parlist.sublist("Status Test").get("Step Tolerance", 1.e-6*gtol_);
     max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
   }
 
-  StatusTestSQP( Real gtol = 1e-6, Real ctol = 1e-6, Real stol = 1e-12, int max_iter = 100 ) :  
+  ConstraintStatusTest( Real gtol = 1e-6, Real ctol = 1e-6, Real stol = 1e-12, int max_iter = 100 ) :  
     gtol_(gtol), ctol_(ctol), stol_(stol), max_iter_(max_iter) {}
 
   /** \brief Check algorithm status.
@@ -89,7 +90,7 @@ public:
     }
   }
 
-}; // class StatusTestSQP
+}; // class ConstraintStatusTest
 
 } // namespace ROL
 

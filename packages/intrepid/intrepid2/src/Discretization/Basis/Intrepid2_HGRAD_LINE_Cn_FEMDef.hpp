@@ -1,5 +1,5 @@
-#ifndef INTREPID_HGRAD_LINE_CN_FEMDEF_HPP
-#define INTREPID_HGRAD_LINE_CN_FEMDEF_HPP
+#ifndef INTREPID2_HGRAD_LINE_CN_FEMDEF_HPP
+#define INTREPID2_HGRAD_LINE_CN_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -75,7 +75,7 @@ namespace Intrepid2 {
     }
 
     // copy points int latticePts, correcting endpoints if needed
-    if (std::abs(pts(0,0)+1.0) < INTREPID_TOL) {
+    if (std::abs(pts(0,0)+1.0) < INTREPID2_TOL) {
       latticePts_(0,0) = -1.0;
     }
     else {
@@ -84,7 +84,7 @@ namespace Intrepid2 {
     for (int i=1;i<n;i++) {
       latticePts_(i,0) = pts(i,0);
     }
-    if (std::abs(pts(n,0)-1.0) < INTREPID_TOL) {
+    if (std::abs(pts(n,0)-1.0) < INTREPID2_TOL) {
       latticePts_(n,0) = 1.0;
     }
     else {

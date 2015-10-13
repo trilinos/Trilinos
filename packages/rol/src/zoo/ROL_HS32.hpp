@@ -53,8 +53,6 @@
 #include "ROL_Objective.hpp"
 #include "ROL_EqualityConstraint.hpp"
 
-#include "Teuchos_getConst.hpp"
-
 
 namespace ROL {
 namespace ZOO {
@@ -62,16 +60,28 @@ namespace ZOO {
 template<class Real> 
 class Objective_HS32 : public Objective<Real> {
 
-  typedef StdVector<Real> SV;
+  typedef std::vector<Real> vector;
+  typedef Vector<Real>      V;
+  typedef StdVector<Real>   SV;
+
+private:
+
+  Teuchos::RCP<const vector> getVector( const V& x ) { 
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
 
 public:
   
   Real value( const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
+    using Teuchos::RCP;
+    RCP<const vector> xp = getVector(x);
 
     Real term1 = (*xp)[0]+3*(*xp)[1]+(*xp)[2];
     Real term2 = (*xp)[0]-(*xp)[1];
@@ -80,13 +90,10 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &gs = dyn_cast<SV>(g);
-    RCP<std::vector<Real> > gp = gs.getVector();
- 
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
+    using Teuchos::RCP;
+    
+    RCP<vector> gp = getVector(g);
+    RCP<const vector> xp = getVector(x);
 
     (*gp)[0] = 10*(*xp)[0] -  2*(*xp)[1] + 2*(*xp)[2];
     (*gp)[1] = -2*(*xp)[0] + 26*(*xp)[1] + 6*(*xp)[2];
@@ -95,13 +102,10 @@ public:
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &hvs = dyn_cast<SV>(hv);
-    RCP<std::vector<Real> > hvp = hvs.getVector();
-
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
+    using Teuchos::RCP;
+ 
+    RCP<vector> hvp = getVector(hv);
+    RCP<const vector> vp = getVector(v);
 
     (*hvp)[0] = 10*(*vp)[0] -  2*(*vp)[1] + 2*(*vp)[2];
     (*hvp)[1] = -2*(*vp)[0] + 26*(*vp)[1] + 6*(*vp)[2];
@@ -115,34 +119,40 @@ public:
 template<class Real>
 class EqualityConstraint_HS32 : public EqualityConstraint<Real> {
 
-  typedef StdVector<Real> SV;
+  typedef std::vector<Real> vector;
+  typedef Vector<Real>      V;
+  typedef StdVector<Real>   SV;
+
+private:
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector(); 
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
 
 public:
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
+    using Teuchos::RCP;
+    RCP<vector> cp = getVector(c);
+    RCP<const vector> xp = getVector(x);
 
-    SV &cs = dyn_cast<SV>(c);
-    RCP<std::vector<Real> > cp = cs.getVector();
- 
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
- 
     (*cp)[0] = 1.0 - (*xp)[0] - (*xp)[1] - (*xp)[2];
   }
 
   void applyJacobian( Vector<Real> &jv, const Vector<Real> &v,
                       const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
+    using Teuchos::RCP;
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
 
-    SV &jvs = dyn_cast<SV>(jv);
-    RCP<std::vector<Real> > jvp = jvs.getVector();
-   
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-   
     (*jvp)[0] = - (*vp)[0] - (*vp)[1] - (*vp)[2];
 
   } 
@@ -150,13 +160,10 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
                              const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
+    using Teuchos::RCP;
 
-    SV &ajvs = dyn_cast<SV>(ajv);
-    RCP<std::vector<Real> > ajvp = ajvs.getVector();
-  
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
+    RCP<vector> ajvp = getVector(ajv);
+    RCP<const vector> vp = getVector(v);
      
     (*ajvp)[0] = -(*vp)[0];
     (*ajvp)[1] = -(*vp)[0];
@@ -174,20 +181,30 @@ public:
 
 template<class Real>
 class InequalityConstraint_HS32 : public EqualityConstraint<Real> {
+
+  typedef std::vector<Real> vector;  
+  typedef Vector<Real>      V;
+  typedef StdVector<Real>   SV;
+
+private:
   
-  typedef StdVector<Real> SV;
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector();
+  }
 
 public:
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &cs = dyn_cast<SV>(c);
-    RCP<std::vector<Real> > cp = cs.getVector();
- 
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
+    using Teuchos::RCP;
+    RCP<vector> cp = getVector(c);
+    RCP<const vector> xp = getVector(x);
 
     (*cp)[0] = 6*(*xp)[1]+4*(*xp)[2]-std::pow((*xp)[0],3)-3.0;
     (*cp)[1] = (*xp)[0];
@@ -199,16 +216,10 @@ public:
   void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, 
                       const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &jvs = dyn_cast<SV>(jv);
-    RCP<std::vector<Real> > jvp = jvs.getVector();
- 
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
+    using Teuchos::RCP;
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> xp = getVector(x);
 
     (*jvp)[0] = -3*(*xp)[0]*(*xp)[0]*(*vp)[0]+6*(*vp)[1]+4*(*vp)[2];
     (*jvp)[1] = (*vp)[0];
@@ -220,16 +231,10 @@ public:
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
                              const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &ajvs = dyn_cast<SV>(ajv);
-    RCP<std::vector<Real> > ajvp = ajvs.getVector();
- 
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
+    using Teuchos::RCP;
+    RCP<vector> ajvp = getVector(ajv);
+    RCP<const vector> vp = getVector(v); 
+    RCP<const vector> xp = getVector(x); 
 
     (*ajvp)[0] = -3*(*xp)[0]*(*xp)[0]*(*vp)[0] + (*vp)[1];
     (*ajvp)[1] =  6*(*vp)[0] + (*vp)[2]; 
@@ -240,20 +245,12 @@ public:
   void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u,
                             const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-    using namespace Teuchos;
-
-    SV &ahuvs = dyn_cast<SV>(ahuv);
-    RCP<std::vector<Real> > ahuvp = ahuvs.getVector();
+    using Teuchos::RCP;
+    RCP<vector> ahuvp = getVector(ahuv); 
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> xp = getVector(x);
  
-    const SV &us = dyn_cast<const SV>(getConst(u));
-    RCP<const std::vector<Real> > up = us.getVector();
-
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-
-    const SV &xs = dyn_cast<const SV>(getConst(x));
-    RCP<const std::vector<Real> > xp = xs.getVector();
-
     (*ahuvp)[0] = -6*(*up)[0]*(*vp)[0]*(*xp)[0];
     (*ahuvp)[1] = 0.0;
     (*ahuvp)[2] = 0.0;

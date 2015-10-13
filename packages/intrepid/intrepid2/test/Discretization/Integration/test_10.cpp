@@ -145,7 +145,7 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+03 * INTREPID_TOL;
+  double                                   reltol = 1.0e+03 * INTREPID2_TOL;
   testInt.assign(INTREPID_CUBATURE_LINE_MAX+1, tmparray);
   analyticInt.assign(INTREPID_CUBATURE_LINE_MAX+1, tmparray);
 

@@ -45,6 +45,7 @@
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_ConnManager.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
@@ -693,8 +694,12 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rMap,*cMap,0));
 
    std::vector<std::string> elementBlockIds;
-   
    gidProvider_->getElementBlockIds(elementBlockIds);
+
+   const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> >
+     colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
+   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colGidProvider->getConnManagerBase();
+   const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
  
    // graph information about the mesh
    std::vector<std::string>::const_iterator blockItr;
@@ -710,12 +715,18 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 
       // loop over the elemnts
       for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
 
-         gidProvider_->getElementAndAssociatedGIDs(elements[i],gids);
-         if(hasColProvider_)
-           colGidProvider_->getElementAndAssociatedGIDs(elements[i],col_gids);
-         else
-           col_gids = gids;
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<int> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
 
          for(std::size_t j=0;j<gids.size();j++)
             graph->InsertGlobalIndices(gids[j],col_gids.size(),&col_gids[0]);

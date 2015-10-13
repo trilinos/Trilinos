@@ -2038,73 +2038,108 @@ There are a number of options that you can set in the environment to control
 what this script does.  This set of options can be found by doing::
 
   $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
-      <Project>/cmake/tribits/ctest/TribitsCTestDriverCore.cmake
+      $TRIBITS_DIR/ctest_driver/TribitsCTestDriverCore.cmake
 
-Currently, this options includes::
+Currently, the variables can be set include::
 
-  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
-  SET_DEFAULT_AND_FROM_ENV(<Project>_TRACK "")
-  SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
-  SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
+  SET_DEFAULT_AND_FROM_ENV(<Project>_IGNORE_MISSING_EXTRA_REPOSITORIES ...)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_PRE_REPOSITORIES ...)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_EXTRA_REPOSITORIES ...)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_SOURCE_NAME <Project>)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_CONFIGURATION_UNIT_TESTING OFF)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_TEST_TYPE Experimental)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_TRACK "${<Project>_TRACK_DEFAULT}")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_SITE ${CTEST_SITE_DEFAULT})
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DASHBOARD_ROOT "")
+  SET_DEFAULT_AND_FROM_ENV(BUILD_TYPE NONE)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_VERBOSE_CONFIGURE OFF)
   SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
-  SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "")
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
-  SET_DEFAULT_AND_FROM_ENV( MPI_EXEC_MAX_NUMPROCS 4 )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_WARNINGS_AS_ERRORS_FLAGS "" )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND /usr/local/valgrind )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND_OPTIONS "" )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_ENABLE_SECONDARY_TESTED_CODE OFF )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_ADDITIONAL_PACKAGES "" )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_EXCLUDE_PACKAGES "" )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_BRANCH "" )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
-  SET_DEFAULT_AND_FROM_ENV( <Project>_PACKAGES "${<Project>_PACKAGES_DEFAULT}" )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_SELECT_MODIFIED_PACKAGES_ONLY OFF )
+  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_NAME
+  SET_DEFAULT_AND_FROM_ENV(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_WIPE_CACHE TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_UPDATES TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_ARGS "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_OPTIONS "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_FLAGS "-j2")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_BUILD_FLAGS "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_BUILD TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_TEST TRUE)
+  SET_DEFAULT_AND_FROM_ENV(MPI_EXEC_MAX_NUMPROCS 0)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_PARALLEL_LEVEL 1)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_WARNINGS_AS_ERRORS_FLAGS "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_COVERAGE_TESTING FALSE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_COVERAGE_COMMAND gcov)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_MEMORY_TESTING FALSE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_MEMORYCHECK_COMMAND
+    "${CTEST_MEMORYCHECK_COMMAND_DEFAULT}")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_MEMORYCHECK_COMMAND_OPTIONS "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE TRUE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DO_SUBMIT TRUE)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_SECONDARY_TESTED_CODE OFF)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_SECONDARY_STABLE_CODE OFF)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_ADDITIONAL_PACKAGES "")
+  SET_DEFAULT_AND_FROM_ENV(<Project>_EXCLUDE_PACKAGES "")
+  SET_DEFAULT_AND_FROM_ENV(<Project>_BRANCH "${<Project>_BRANCH_DEFAULT}")
+  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_DEVELOPMENT_MODE
+    "${<Project>_ENABLE_DEVELOPMENT_MODE_DEFAULT}")
+  SET_DEFAULT_AND_FROM_ENV(<Project>_REPOSITORY_LOCATION ...)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_PACKAGES "")
+  SET_DEFAULT_AND_FROM_ENV(<Project>_EXTRAREPOS_FILE ...)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE ...)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES ...)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES ...)
+  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_SITE "")
+  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_LOCATION "")
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DEPENDENCY_HANDLING_UNIT_TESTING FALSE)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_UPDATE_RETURN_VAL 0)
+  SET_DEFAULT_AND_FROM_ENV(<Project>_SOURCE_DIRECTORY ${CTEST_SOURCE_DIRECTORY})
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_SITE_COVERAGE ...)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_LOCATION_COVERAGE ...)
 
-For example, to run an experimental build and in the process change the build
-name and the options to pass to 'make', use::
+For details on what all of these options do, look at the file
+``TribitsCTestDriverCore.cmake`` (more detailed documentation will come in
+time).  The value of all of these variables is printed out when the ``make
+dashboard`` target is run.  From there, one can change and tweak these
+options.  To see the defaults, just run with ``CTEST_DO_SUBMIT=FALSE`` and one
+can see the values used without actually doing the submit.  Just grep for the
+names of the variables in the STDOUT for ``make dashboard``.
+
+For an example of variables one might want to tweak, to run an experimental
+build and in the process change the build, use::
 
   $ env CTEST_BUILD_NAME=MyBuild make dashboard
 
 After this finishes running, look for the build 'MyBuild' (or whatever build
-name you used above) in the <Project> CDash dashboard.
+name you used above) in the <Project> CDash dashboard (the CDash URL is
+printed at the end of STDOUT).
 
-It is useful to set CTEST_BUILD_NAME to some unique name to make it easier to
-find your results in the CDash dashboard.
+It is useful to set ``CTEST_BUILD_NAME`` to some unique name to make it easier
+to find your results in the CDash dashboard.
 
-A number of the defaults set in TribitsCTestDriverCore.cmake are overridden
-from experimental_build_test.cmake (such as CTEST_TEST_TYPE=Experimental) so
-you will want to look at experimental_build_test.cmake to see how these are
-changed.  The script experimental_build_test.cmake sets reasonable values for
-these options in order to use the 'make dashboard' target in iterative
-development for experimental builds.
+A number of the defaults set in ``TribitsCTestDriverCore.cmake`` are
+overridden from ``experimental_build_test.cmake`` (such as
+``CTEST_TEST_TYPE=Experimental``) so you will want to look at
+``experimental_build_test.cmake`` to see how these are changed.  The script
+``experimental_build_test.cmake`` sets reasonable values for these options in
+order to use the `make dashboard` target in iterative development for
+experimental builds.
 
-The target 'dashboard' is not directly related to the built-in CMake targets
+The target ``dashboard`` is not directly related to the built-in CMake targets
 'Experimental*' that run standard dashboards with CTest without the custom
-package-by-package driver in TribitsCTestDriverCore.cmake.  The
-package-by-package extended CTest driver is more appropriate for <Project>.
+package-by-package driver in ``TribitsCTestDriverCore.cmake``.  The
+package-by-package extended CTest driver is more appropriate for the
+TriBITS-based project <Project>.
 
-Once you configure with -D<Project>_ENABLE_COVERAGE_TESTING=ON, the
-environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by
-the target 'dashboard' so you don't have to set this yourself.
+Once you configure with ``-D<Project>_ENABLE_COVERAGE_TESTING=ON``, the
+environment variable ``CTEST_DO_COVERAGE_TESTING=TRUE`` is automatically set
+by the target 'dashboard' so you don't have to set this yourself.
 
 Doing a memory check with Valgrind requires that you set
-CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as::
+``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
 
@@ -2119,10 +2154,46 @@ with::
      ... --suppressions=<abs-path-to-supp-fileN>" \
     make dashboard
 
-The CMake cache variable <Project>_DASHBOARD_CTEST_ARGS can be set on the
+The CMake cache variable ``<Project>_DASHBOARD_CTEST_ARGS`` can be set on the
 cmake configure line in order to pass additional arguments to 'ctest -S' when
 invoking the package-by-package CTest driver.  For example::
 
   -D <Project>_DASHBOARD_CTEST_ARGS="-VV"
 
 will set verbose output with CTest.
+
+.. _TRIBITS_2ND_CTEST_DROP_SITE:
+.. _TRIBITS_2ND_CTEST_DROP_LOCATION:
+
+Also note that one can submit results to a second CDash site as well by
+setting::
+
+  $ env TRIBITS_2ND_CTEST_DROP_SITE=<second-site> \
+    TRIBITS_2ND_CTEST_DROP_LOCATION=<second-location> \
+    ... \
+    make dashboard
+
+If left the same as ``CTEST_DROP_SITE`` or ``CTEST_DROP_LOCATION``, then
+``TRIBITS_2ND_CTEST_DROP_SITE`` and ``TRIBITS_2ND_CTEST_DROP_LOCATION`` can be
+left empty "" and the defaults will be used.  However, the user must set at
+least one of these variables to non-empty in order to trigger the second
+submit.  For example, to submit to an experimental CDash site on the same
+machine, one would run::
+
+  $ env TRIBITS_2ND_CTEST_DROP_LOCATION="/testing/cdash/submit.php?project=<Project>" \
+    ... \
+    make dashboard
+
+and ``TRIBITS_2ND_CTEST_DROP_SITE`` would be used for ``CTEST_DROP_SITE``.
+This is a common use case when upgrading to a new CDash installation or
+testing new features for CDash before impacting the existing CDash site.
+
+Note that if one kills the ``make dashboard`` target before it completes, then
+one must reconfigure from scratch in order to get the build directory back
+into the same state before the command was run.  This is because the
+``dashboard`` target must first reconfigure the project with no enabled
+packages before it does the package-by-package configure/build/test/submit
+which enables each package one at a time.  After the package-by-package
+configure/build/test/submit cycles are complete, then the project is
+reconfigured with the original set of package enables and returning to the
+original configure state.

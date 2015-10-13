@@ -94,7 +94,7 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
     case shards::Quadrilateral<>::key: { 
         std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
         lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-        lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID_CUBATURE_LINE_GAUSS_MAX));
+        lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
         myCub = Teuchos::rcp(new CubatureTensor<double>(lineCubs));
         }
       break;
@@ -102,9 +102,9 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
         std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
         std::vector< Teuchos::RCP< Cubature<double> > > miscCubs(2);
         lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-        lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID_CUBATURE_LINE_GAUSS_MAX));
+        lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
         miscCubs[0] = Teuchos::rcp(new CubatureTensor<double>(lineCubs));
-        miscCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+25) % INTREPID_CUBATURE_LINE_GAUSS_MAX));
+        miscCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+25) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
         myCub = Teuchos::rcp(new CubatureTensor<double>(miscCubs));
         }
       break;
@@ -191,9 +191,9 @@ Kokkos::initialize();
   try {
     /* Line cubature. */
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(-1) );
-    INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(INTREPID_CUBATURE_LINE_GAUSS_MAX+1) );
+    INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectLineGauss<double> lineCub;
-                           std::string testName    = "INTREPID_CUBATURE_LINE_GAUSS";
+                           std::string testName    = "INTREPID2_CUBATURE_LINE_GAUSS";
                            std::string lineCubName = lineCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << lineCubName << "\n\n";
                            TEUCHOS_TEST_FOR_EXCEPTION( (testName != lineCubName), std::logic_error, "Name mismatch!" ) );
@@ -209,9 +209,9 @@ Kokkos::initialize();
                                                "Check member dimension!" ) );
     /* Triangle cubature. */
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(-1) );
-    INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(INTREPID_CUBATURE_TRI_DEFAULT_MAX+1) );
+    INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub(INTREPID2_CUBATURE_TRI_DEFAULT_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectTriDefault<double> triCub;
-                           std::string testName    = "INTREPID_CUBATURE_TRI_DEFAULT";
+                           std::string testName    = "INTREPID2_CUBATURE_TRI_DEFAULT";
                            std::string triCubName = triCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << triCubName << "\n\n";
                            TEUCHOS_TEST_FOR_EXCEPTION( (testName != triCubName), std::logic_error, "Name mismatch!" ) );
@@ -227,9 +227,9 @@ Kokkos::initialize();
                                                "Check member dimension!" ) );
     /* Tetrahedron cubature. */
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(-1) );
-    INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(INTREPID_CUBATURE_TET_DEFAULT_MAX+1) );
+    INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub(INTREPID2_CUBATURE_TET_DEFAULT_MAX+1) );
     INTREPID_TEST_COMMAND( CubatureDirectTetDefault<double> tetCub;
-                           std::string testName    = "INTREPID_CUBATURE_TET_DEFAULT";
+                           std::string testName    = "INTREPID2_CUBATURE_TET_DEFAULT";
                            std::string tetCubName = tetCub.getName();
                            *outStream << "\nComparing strings: " << testName << " and " << tetCubName << "\n\n";
         std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
@@ -325,7 +325,7 @@ Kokkos::initialize();
   << "===============================================================================\n";
 
   double testVol = 0.0;
-  double tol     = 100.0 * INTREPID_TOL;
+  double tol     = 100.0 * INTREPID2_TOL;
 
   // list of analytic volume values, listed in the enumerated reference cell order up to CELL_HEXAPRISM
   double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 1.0, 4.0/3.0, 32.0};
@@ -334,7 +334,7 @@ Kokkos::initialize();
 
   try {
     shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());
-    for (int deg=0; deg<=INTREPID_CUBATURE_LINE_GAUSS_MAX; deg++) {
+    for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
       testVol = computeRefVolume(line, deg);
       *outStream << std::setw(30) << "Line volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[1]) << "\n";
@@ -346,7 +346,7 @@ Kokkos::initialize();
 
     *outStream << "\n\n";
     shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
-    for (int deg=0; deg<=INTREPID_CUBATURE_TRI_DEFAULT_MAX; deg++) {
+    for (int deg=0; deg<=INTREPID2_CUBATURE_TRI_DEFAULT_MAX; deg++) {
       testVol = computeRefVolume(tri, deg);
       *outStream << std::setw(30) << "Triangle volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[2]) << "\n";
@@ -358,7 +358,7 @@ Kokkos::initialize();
 
     *outStream << "\n\n";
     shards::CellTopology quad(shards::getCellTopologyData< shards::Quadrilateral<> >());
-    for (int deg=0; deg<=INTREPID_CUBATURE_LINE_GAUSS_MAX; deg++) {
+    for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
       testVol = computeRefVolume(quad, deg);
       *outStream << std::setw(30) << "Quadrilateral volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[3]) << "\n";
@@ -370,7 +370,7 @@ Kokkos::initialize();
 
     *outStream << "\n\n";
     shards::CellTopology tet(shards::getCellTopologyData< shards::Tetrahedron<> >());
-    for (int deg=0; deg<=INTREPID_CUBATURE_TET_DEFAULT_MAX; deg++) {
+    for (int deg=0; deg<=INTREPID2_CUBATURE_TET_DEFAULT_MAX; deg++) {
       testVol = computeRefVolume(tet, deg);
       *outStream << std::setw(30) << "Tetrahedron volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[4]) << "\n";
@@ -381,7 +381,7 @@ Kokkos::initialize();
     }
     *outStream << "\n\n";
     shards::CellTopology hex(shards::getCellTopologyData< shards::Hexahedron<> >());
-    for (int deg=0; deg<=INTREPID_CUBATURE_LINE_GAUSS_MAX; deg++) {
+    for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
       testVol = computeRefVolume(hex, deg);
       *outStream << std::setw(30) << "Hexahedron volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[5]) << "\n";
@@ -392,7 +392,7 @@ Kokkos::initialize();
     }
     *outStream << "\n\n";
     shards::CellTopology wedge(shards::getCellTopologyData< shards::Wedge<> >());
-    for (int deg=0; deg<=std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX,INTREPID_CUBATURE_TRI_DEFAULT_MAX); deg++) {
+    for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_TRI_DEFAULT_MAX); deg++) {
       testVol = computeRefVolume(wedge, deg);
       *outStream << std::setw(30) << "Wedge volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[6]) << "\n";
@@ -403,7 +403,7 @@ Kokkos::initialize();
     }
     *outStream << "\n\n";
     shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
-    for (int deg=0; deg<=std::min(INTREPID_CUBATURE_LINE_GAUSS_MAX,INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
+    for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
       testVol = computeRefVolume(pyr, deg);
       *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
                     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[7]) << "\n";

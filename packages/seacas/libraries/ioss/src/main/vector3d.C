@@ -127,16 +127,6 @@ vector3d operator* (double scalar, const vector3d& from)
   return tmp *= scalar;
 }
 
-double vector3d::squared_length () const
-{
-    return x*x + y*y + z*z;
-}
-
-double vector3d::dot (const vector3d& from) const
-{
-    return x*from.x + y*from.y + z*from.z;
-}
-
 vector3d operator/ (const vector3d& lhs, double scalar)
 {
   if ( scalar != 0.0 ) {
