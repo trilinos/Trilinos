@@ -1138,6 +1138,82 @@ FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSp
   void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
                                       const ArrayPoint &           points,
                                       const ArrayCell  &           cellWorkset,
+                                      Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis,
+                                      const int &                  whichCell) 
+  {
+   // INTREPID2_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+  
+   ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> jacobianWrap(jacobian);
+   ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
+    int spaceDim  = HGRAD_Basis->getBaseCellTopology().getDimension();
+    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    //points can be rank-2 (P,D), or rank-3 (C,P,D)
+    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+  
+    // Temp (F,P,D) array for the values of basis functions gradients at the reference points
+    int basisCardinality = HGRAD_Basis -> getCardinality();
+    FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
+    
+    
+if(getrank(jacobian)==4){
+Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+}else if(getrank(jacobian)==3){
+Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+}else{
+        TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
+                            ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
+}
+    // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
+    switch(getrank(points)) {
+      
+      // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
+      case 2:
+        {
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (tempPoints,pointsWrap));
+         
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+          
+          // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
+          // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
+          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          
+          if(whichCell == -1) {
+            
+Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+            
+          }
+          else {
+ Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+         } // if whichcell
+        }// case 2
+        break;
+        
+        // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
+      case 3:
+        {
+ Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>, ArrayPoint,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+//	    }
+        }// case 3
+	
+        break;
+        
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) == 3) ), std::invalid_argument,
+                            ">>> ERROR (Intrepid2::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
+    }//switch
+    } 
+
+
+  
+  template<class Scalar>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
                                       const shards::CellTopology & cellTopo,
                                       const int &                  whichCell) 
   {

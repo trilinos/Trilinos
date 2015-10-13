@@ -381,6 +381,13 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
     
+    template<class ArrayJac, class ArrayPoint, class ArrayCell>
+    static void setJacobian(ArrayJac &                   jacobian,
+                            const ArrayPoint &           points,
+                            const ArrayCell  &           cellWorkset,
+                            Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis,
+                            const int &                  whichCell = -1); 
+    
   
     
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
@@ -491,6 +498,9 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                                    const ArrayCell     &         cellWorkset,
                                    const shards::CellTopology &  cellTopo,
                                    const int &                   whichCell = -1);
+    
+                                   
+     /** \brief  Computes \e F, the reference-to-physical frame map.
                                    
      /** \brief  Computes \e F, the reference-to-physical frame map.
       
