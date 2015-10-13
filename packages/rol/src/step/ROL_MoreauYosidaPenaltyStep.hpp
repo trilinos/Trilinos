@@ -268,7 +268,7 @@ public:
     hist << std::setw(15) << std::left << "cnorm";
     hist << std::setw(15) << std::left << "gnorm";
     hist << std::setw(15) << std::left << "snorm";
-    hist << std::setw(15) << std::left << "penalty";
+    hist << std::setw(10) << std::left << "penalty";
     hist << std::setw(8) << std::left << "#fval";
     hist << std::setw(8) << std::left << "#grad";
     hist << std::setw(8) << std::left << "#cval";
@@ -304,7 +304,8 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << " ";
-      hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
+      hist << std::scientific << std::setprecision(2);
+      hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
       hist << "\n";
     }
     else {
@@ -314,7 +315,8 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << algo_state.snorm;
-      hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
+      hist << std::scientific << std::setprecision(2);
+      hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
       hist << std::scientific << std::setprecision(6);
       hist << std::setw(8) << std::left << algo_state.nfval;
       hist << std::setw(8) << std::left << algo_state.ngrad;
