@@ -171,11 +171,18 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const PrimalScaledStdVector & ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
+    Teuchos::RCP<const std::vector<Element> > xval = Teuchos::null;
+    try {
+      const PrimalScaledStdVector & ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
+      xval = ex.getVector();
+    }
+    catch (std::exception &e) {
+      const DualScaledStdVector<Real> & ex = Teuchos::dyn_cast<const DualScaledStdVector<Real> >(x);
+      xval = ex.getVector();
+    }
     uint dimension  = std_vec_->size();
     for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i],xval[i]);
+      (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xval)[i]);
     }
 
   }
@@ -297,11 +304,18 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const DualScaledStdVector & ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
+    Teuchos::RCP<const std::vector<Element> > xval = Teuchos::null;
+    try {
+      const DualScaledStdVector & ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
+      xval = ex.getVector();
+    }
+    catch (std::exception &e) {
+      const PrimalScaledStdVector<Real> & ex = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x);
+      xval = ex.getVector();
+    }
     uint dimension  = std_vec_->size();
     for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i],xval[i]);
+      (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xval)[i]);
     }
 
   }
