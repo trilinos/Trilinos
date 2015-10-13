@@ -536,7 +536,7 @@ class TribitsDependencies:
   #
 
 
-  def createCDashDepsXMLFromRawDepsTable(self, rawTable):
+  def createCDashXML(self):
     
     xmlText = ""
 
@@ -553,24 +553,6 @@ class TribitsDependencies:
       if packageDeps.parentPackage == "":
         
         xmlText += ("  <SubProject name=\""+packageName+"\">\n")
-  
-        row = rawTable[package_i+1]
-  
-        for dep_j in range(numPackages):
-          entry = row[dep_j+1]
-          if entry and entry != "X":
-            depPackageName = self.__packagesList[dep_j].packageName
-            depPackageStruct = self.getPackageByName(depPackageName)
-            if depPackageStruct.parentPackage == "":
-              xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
-                " type=\""+entry+"\"/>\n" )
-            else:
-              # Don't write subpackage depencencies because CDash should not
-              # know about this.  Such dependencies will just not appear but
-              # that only affects what CDash displays (and I don't ever look
-              # at the subproject dependencies list in CDash really and don't
-              # find it very useful given the large number of builds).
-              None
   
         xmlText += \
           "    <EmailAddresses>\n"+\
@@ -591,21 +573,11 @@ class TribitsDependencies:
 
     xmlText += "</Project>\n"
 
-    # rabartl: 2011/07/06: ToDo: Change tha above logic to only write
-    # 'Dependency' elements for actual Project packages in the place of
-    # subpackages.  This will be a little hard to implement and test but we
-    # need to do so at some point if we want CDash to know the correct
-    # dependencies (but I don't really care).
-
     return xmlText
-  
-
-  def createCDashDepsXML(self):
-    return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(False))
 
 
   def writeCDashXmlDepsFile(self, xmlDepsFile):
-    xmlString = self.createCDashDepsXML()
+    xmlString = self.createCDashXML()
     xmlFile = open(xmlDepsFile, 'w')
     xmlFile.write(xmlString)
     xmlFile.close()
