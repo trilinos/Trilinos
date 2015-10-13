@@ -1408,6 +1408,125 @@ template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
 void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
                                            const ArrayRefPoint &        refPoints,
                                            const ArrayCell     &        cellWorkset,
+                                           const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                           const int &                  whichCell)
+{
+//  INTREPID2_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
+
+   ArrayWrapper<Scalar,ArrayPhysPoint, Rank<ArrayPhysPoint >::value, false>physPointsWrap(physPoints);
+   ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
+
+  size_t spaceDim  = (size_t)HGRAD_Basis->getTopology().getDimension();
+  size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+  //points can be rank-2 (P,D), or rank-3 (C,P,D)
+  size_t numPoints = (getrank(refPoints) == 2) ? static_cast<size_t>(refPoints.dimension(0)) : static_cast<size_t>(refPoints.dimension(1));
+
+  // Temp (F,P) array for the values of nodal basis functions at the reference points
+  int basisCardinality = HGRAD_Basis -> getCardinality();
+  FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
+
+//#define HAVE_INTREPID_KOKKOSCORE 
+  // Initialize physPoints
+  if(getrank(physPoints)==3){
+for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
+ for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){
+	for(size_t k = 0; k < static_cast<size_t>(physPoints.dimension(2)); k++){ 
+  physPointsWrap(i,j,k) = 0.0;
+    }
+   }
+}
+ }else if(getrank(physPoints)==2){
+	  for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++){
+	for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){ 
+  physPointsWrap(i,j) = 0.0;
+    }
+   }
+ }
+//#else
+//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
+//#endif
+  // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
+  switch(getrank(refPoints)) {
+    
+    // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
+    case 2:
+      {
+        // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(0)), static_cast<size_t>(refPoints.dimension(1)) );
+        // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+        for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(0)); pt++){
+          for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(1)) ; dm++){
+            tempPoints(pt, dm) = refPointsWrap(pt, dm);
+          }//dm
+        }//pt
+        HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+
+        // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
+        size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                if(whichCell == -1){
+                  physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+                else{
+                  physPointsWrap(pointOrd, dim) += cellWorksetWrap(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd
+      }// case 2
+  
+      break;
+      
+    // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.  
+    case 3:
+      {
+        // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(1)), static_cast<size_t>(refPoints.dimension(2)) );
+        
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+          
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+          for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(1)); pt++){
+            for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(2)) ; dm++){
+              tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
+            }//dm
+          }//pt
+          
+          // Compute basis values for this set of ref. points
+          HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+          
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd        
+      }// case 3
+      break;
+      
+   
+  }
+}	
+
+
+template<class Scalar>
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
+                                           const ArrayRefPoint &        refPoints,
+                                           const ArrayCell     &        cellWorkset,
                                            const shards::CellTopology & cellTopo,
                                            const int &                  whichCell)
 {
