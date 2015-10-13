@@ -68,9 +68,8 @@ class H1VectorDual;
 
 template<class Real>
 class BurgersFEM {
-  typedef typename std::vector<Real>::size_type uint;
 private:
-  uint nx_;
+  int nx_;
   Real dx_;
   Real nu_;
   Real nl_;
@@ -82,32 +81,29 @@ private:
 
 private:
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) const {
-    for (uint i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }
 
   void axpy(std::vector<Real> &out, const Real a, const std::vector<Real> &x, const std::vector<Real> &y) const {
-    for (uint i=0; i < x.size(); i++) {
+    for (unsigned i=0; i < x.size(); i++) {
       out[i] = a*x[i] + y[i];
     }
   }
 
   void scale(std::vector<Real> &u, const Real alpha=0.0) const {
-    for (uint i=0; i<u.size(); i++) {
+    for (unsigned i=0; i<u.size(); i++) {
       u[i] *= alpha;
     }
   }
 
   void linear_solve(std::vector<Real> &u, std::vector<Real> &dl, std::vector<Real> &d, std::vector<Real> &du, 
               const std::vector<Real> &r, const bool transpose = false) const {
-
-    int dim = static_cast<int>(r.size());
-
-    if ( dim == 1 ) {
+    if ( r.size() == 1 ) {
       u.resize(1,r[0]/d[0]);
     }
-    else if ( dim == 2 ) {
+    else if ( r.size() == 2 ) {
       u.resize(2,0.0);
       Real det = d[0]*d[1] - dl[0]*du[0];
       u[0] = (d[1]*r[0] - du[0]*r[1])/det;
@@ -117,10 +113,11 @@ private:
       u.assign(r.begin(),r.end());
       // Perform LDL factorization
       Teuchos::LAPACK<int,Real> lp;
-      std::vector<Real> du2(dim-2,0.0);
-      std::vector<int> ipiv(dim,0);
+      std::vector<Real> du2(r.size()-2,0.0);
+      std::vector<int> ipiv(r.size(),0);
       int info;
-      int ldb  = dim;
+      int dim  = r.size();
+      int ldb  = r.size();
       int nhrs = 1;
       lp.GTTRF(dim,&dl[0],&d[0],&du[0],&du2[0],&ipiv[0],&info);
       char trans = 'N';
@@ -132,14 +129,14 @@ private:
   }
 
 public:
-  BurgersFEM(uint nx = 128, Real nu = 1.e-2, Real nl = 1.0,
+  BurgersFEM(int nx = 128, Real nu = 1.e-2, Real nl = 1.0,
              Real u0 = 1.0, Real u1 = 0.0, Real f = 0.0,
              Real cH1 = 1.0, Real cL2 = 1.0) 
     : nx_(nx), dx_(1.0/((Real)nx+1.0)),
       nu_(nu), nl_(nl), u0_(u0), u1_(u1), f_(f),
       cH1_(cH1), cL2_(cL2) {}
 
-  uint num_dof(void) const {
+  int num_dof(void) const {
     return nx_;
   }
 
@@ -153,8 +150,8 @@ public:
   // Compute L2 inner product
   Real compute_L2_dot(const std::vector<Real> &x, const std::vector<Real> &y) const {
     Real ip = 0.0;
-    Real c = ((x.size()==nx_) ? 4.0 : 2.0);
-    for (uint i=0; i<x.size(); i++) {
+    Real c = (((int)x.size()==nx_) ? 4.0 : 2.0);
+    for (unsigned i=0; i<x.size(); i++) {
       if ( i == 0 ) {
         ip += dx_/6.0*(c*x[i] + x[i+1])*y[i];
       }
@@ -176,8 +173,8 @@ public:
   // Apply L2 Reisz operator
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) const {
     Mu.resize(u.size(),0.0);
-    Real c = ((u.size()==nx_) ? 4.0 : 2.0);
-    for (uint i=0; i<u.size(); i++) {
+    Real c = (((int)u.size()==nx_) ? 4.0 : 2.0);
+    for (unsigned i=0; i<u.size(); i++) {
       if ( i == 0 ) {
         Mu[i] = dx_/6.0*(c*u[i] + u[i+1]);
       }
@@ -192,12 +189,12 @@ public:
 
   // Apply L2 inverse Reisz operator
   void apply_inverse_mass(std::vector<Real> &Mu, const std::vector<Real> &u) const {
-    uint nx = u.size();
+    unsigned nx = u.size();
     // Build mass matrix
     std::vector<Real> dl(nx-1,dx_/6.0);
     std::vector<Real> d(nx,2.0*dx_/3.0);
     std::vector<Real> du(nx-1,dx_/6.0);
-    if ( nx != nx_ ) {
+    if ( (int)nx != nx_ ) {
       d[   0] = dx_/3.0;
       d[nx-1] = dx_/3.0;
     }
@@ -207,7 +204,7 @@ public:
   void test_inverse_mass(std::ostream &outStream = std::cout) {
     // State Mass Matrix
     std::vector<Real> u(nx_,0.0), Mu(nx_,0.0), iMMu(nx_,0.0), diff(nx_,0.0);
-    for (uint i = 0; i < nx_; i++) {
+    for (int i = 0; i < nx_; i++) {
       u[i] = 2.0*(Real)rand()/(Real)RAND_MAX - 1.0;
     }
     apply_mass(Mu,u);
@@ -222,7 +219,7 @@ public:
     outStream << "\n";
     // Control Mass Matrix
     u.resize(nx_+2,0.0); Mu.resize(nx_+2,0.0); iMMu.resize(nx_+2,0.0); diff.resize(nx_+2,0.0);
-    for (uint i = 0; i < nx_+2; i++) {
+    for (int i = 0; i < nx_+2; i++) {
       u[i] = 2.0*(Real)rand()/(Real)RAND_MAX - 1.0;
     }
     apply_mass(Mu,u);
@@ -243,7 +240,7 @@ public:
   // Compute H1 inner product
   Real compute_H1_dot(const std::vector<Real> &x, const std::vector<Real> &y) const {
     Real ip = 0.0;
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       if ( i == 0 ) {
         ip += cL2_*dx_/6.0*(4.0*x[i] + x[i+1])*y[i]; // Mass term
         ip += cH1_*(2.0*x[i] - x[i+1])/dx_*y[i];     // Stiffness term
@@ -268,7 +265,7 @@ public:
   // Apply H2 Reisz operator
   void apply_H1(std::vector<Real> &Mu, const std::vector<Real> &u ) const {
     Mu.resize(nx_,0.0);
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       if ( i == 0 ) {
         Mu[i] = cL2_*dx_/6.0*(4.0*u[i] + u[i+1])
               + cH1_*(2.0*u[i] - u[i+1])/dx_;
@@ -295,7 +292,7 @@ public:
 
   void test_inverse_H1(std::ostream &outStream = std::cout) {
     std::vector<Real> u(nx_,0.0), Mu(nx_,0.0), iMMu(nx_,0.0), diff(nx_,0.0);
-    for (uint i = 0; i < nx_; i++) {
+    for (int i = 0; i < nx_; i++) {
       u[i] = 2.0*(Real)rand()/(Real)RAND_MAX - 1.0;
     }
     apply_H1(Mu,u);
@@ -318,7 +315,7 @@ public:
                   const std::vector<Real> &z) const {
     r.clear();
     r.resize(nx_,0.0);
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       // Contribution from stiffness term
       if ( i==0 ) {
         r[i] = nu_/dx_*(2.0*u[i]-u[i+1]);
@@ -363,7 +360,7 @@ public:
     Real alpha = 1.0, tmp = 0.0;
     std::vector<Real> s(nx_,0.0);
     std::vector<Real> utmp(nx_,0.0);
-    for (uint i=0; i<maxit; i++) {
+    for (int i=0; i<maxit; i++) {
       //std::cout << i << "  " << rnorm << "\n";
       // Get Jacobian
       compute_pde_jacobian(dl,d,du,u);
@@ -407,7 +404,7 @@ public:
     du.clear();
     du.resize(nx_-1,-nu_/dx_);
     // Contribution from nonlinearity
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       if (i<nx_-1) {
         dl[i] += nl_*(-2.0*u[i]-u[i+1])/6.0;
         d[i]  += nl_*u[i+1]/6.0;
@@ -428,7 +425,7 @@ public:
                     const std::vector<Real> &u,
                     const std::vector<Real> &z) const {
     // Fill jv
-    for (uint i = 0; i < nx_; i++) {
+    for (int i = 0; i < nx_; i++) {
       jv[i] = nu_/dx_*2.0*v[i];
       if ( i > 0 ) {
         jv[i] += -nu_/dx_*v[i-1]-nl_*(u[i-1]/6.0*v[i]+(u[i]+2.0*u[i-1])/6.0*v[i-1]);
@@ -461,7 +458,7 @@ public:
                             const std::vector<Real> &u,
                             const std::vector<Real> &z) const {
     // Fill jvp
-    for (uint i = 0; i < nx_; i++) {
+    for (int i = 0; i < nx_; i++) {
       ajv[i] = nu_/dx_*2.0*v[i];
       if ( i > 0 ) {
         ajv[i] += -nu_/dx_*v[i-1]-nl_*(u[i-1]/6.0*v[i]
@@ -498,7 +495,7 @@ public:
                         const std::vector<Real> &v,
                         const std::vector<Real> &u,
                         const std::vector<Real> &z) const {
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       // Contribution from control
       jv[i] = -dx_/6.0*(v[i]+4.0*v[i+1]+v[i+2]);
     }
@@ -509,7 +506,7 @@ public:
                                 const std::vector<Real> &v,
                                 const std::vector<Real> &u,
                                 const std::vector<Real> &z) const {
-    for (uint i=0; i<nx_+2; i++) {
+    for (int i=0; i<nx_+2; i++) {
       if ( i == 0 ) {
         jv[i] = -dx_/6.0*v[i];
       }
@@ -536,7 +533,7 @@ public:
                            const std::vector<Real> &v,
                            const std::vector<Real> &u,
                            const std::vector<Real> &z) const {
-    for (uint i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       // Contribution from nonlinear term
       ahwv[i] = 0.0;
       if (i<nx_-1){
@@ -573,7 +570,6 @@ public:
 
 template<class Real>
 class L2VectorPrimal : public ROL::Vector<Real> {
-  typedef typename std::vector<Real>::size_type uint;
 private:
   Teuchos::RCP<std::vector<Real> > vec_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
@@ -594,15 +590,15 @@ public:
   void plus( const ROL::Vector<Real> &x ) {
     const L2VectorPrimal &ex = Teuchos::dyn_cast<const L2VectorPrimal>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension  = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension  = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] += xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    uint dimension = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] *= alpha;
     }
   }
@@ -639,7 +635,7 @@ public:
   }
 
   int dimension() const {
-    return static_cast<int>(vec_->size());
+    return vec_->size();
   }
 
   const ROL::Vector<Real>& dual() const {
@@ -654,7 +650,6 @@ public:
 
 template<class Real>
 class L2VectorDual : public ROL::Vector<Real> {
-  typedef typename std::vector<Real>::size_type uint;
 private:
   Teuchos::RCP<std::vector<Real> > vec_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
@@ -675,15 +670,15 @@ public:
   void plus( const ROL::Vector<Real> &x ) {
     const L2VectorDual &ex = Teuchos::dyn_cast<const L2VectorDual>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension  = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension  = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] += xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    uint dimension = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] *= alpha;
     }
   }
@@ -691,11 +686,11 @@ public:
   Real dot( const ROL::Vector<Real> &x ) const {
     const L2VectorDual & ex = Teuchos::dyn_cast<const L2VectorDual>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension = vec_->size();
+    unsigned dimension = vec_->size();
     std::vector<Real> Mx(dimension,0.0);
     fem_->apply_inverse_mass(Mx,xval);
     Real val = 0.0;
-    for (uint i = 0; i < dimension; i++) {
+    for (unsigned i = 0; i < dimension; i++) {
       val += Mx[i]*(*vec_)[i];
     }
     return val;
@@ -727,7 +722,7 @@ public:
   }
 
   int dimension() const {
-    return static_cast<int>(vec_->size());
+    return vec_->size();
   }
 
   const ROL::Vector<Real>& dual() const {
@@ -742,7 +737,6 @@ public:
 
 template<class Real>
 class H1VectorPrimal : public ROL::Vector<Real> {
-  typedef typename std::vector<Real>::size_type uint;
 private:
   Teuchos::RCP<std::vector<Real> > vec_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
@@ -763,15 +757,15 @@ public:
   void plus( const ROL::Vector<Real> &x ) {
     const H1VectorPrimal &ex = Teuchos::dyn_cast<const H1VectorPrimal>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension  = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension  = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] += xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    uint dimension = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] *= alpha;
     }
   }
@@ -808,7 +802,7 @@ public:
   }
 
   int dimension() const {
-    return static_cast<int>(vec_->size());
+    return vec_->size();
   }
 
   const ROL::Vector<Real>& dual() const {
@@ -823,7 +817,6 @@ public:
 
 template<class Real>
 class H1VectorDual : public ROL::Vector<Real> {
-  typedef typename std::vector<Real>::size_type uint;
 private:
   Teuchos::RCP<std::vector<Real> > vec_;
   Teuchos::RCP<BurgersFEM<Real> > fem_;
@@ -844,15 +837,15 @@ public:
   void plus( const ROL::Vector<Real> &x ) {
     const H1VectorDual &ex = Teuchos::dyn_cast<const H1VectorDual>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension  = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension  = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] += xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    uint dimension = vec_->size();
-    for (uint i=0; i<dimension; i++) {
+    unsigned dimension = vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
       (*vec_)[i] *= alpha;
     }
   }
@@ -860,11 +853,11 @@ public:
   Real dot( const ROL::Vector<Real> &x ) const {
     const H1VectorDual & ex = Teuchos::dyn_cast<const H1VectorDual>(x);
     const std::vector<Real>& xval = *ex.getVector();
-    uint dimension = vec_->size();
+    unsigned dimension = vec_->size();
     std::vector<Real> Mx(dimension,0.0);
     fem_->apply_inverse_H1(Mx,xval);
     Real val = 0.0;
-    for (uint i = 0; i < dimension; i++) {
+    for (unsigned i = 0; i < dimension; i++) {
       val += Mx[i]*(*vec_)[i];
     }
     return val;
@@ -896,7 +889,7 @@ public:
   }
 
   int dimension() const {
-    return static_cast<int>(vec_->size());
+    return vec_->size();
   }
 
   const ROL::Vector<Real>& dual() const {
@@ -922,22 +915,8 @@ private:
   typedef H1VectorDual<Real> PrimalConstraintVector;
   typedef H1VectorPrimal<Real> DualConstraintVector;
 
-  typedef typename std::vector<Real>::size_type uint;
-
   Teuchos::RCP<BurgersFEM<Real> > fem_;
   bool useHessian_;
-
-
-  template<class VectorType>
-  Teuchos::RCP<const std::vector<Real> > getVector( const ROL::Vector<Real>& x ) {
-    return Teuchos::dyn_cast<const VectorType>(x).getVector();
-  }
-
-  template<class VectorType>
-  Teuchos::RCP<std::vector<Real> > getVector( ROL::Vector<Real>& x ) {
-    return Teuchos::dyn_cast<VectorType>(x).getVector();
-  }
-
 
 public:
   EqualityConstraint_BurgersControl(Teuchos::RCP<BurgersFEM<Real> > &fem, bool useHessian = true)
@@ -945,91 +924,117 @@ public:
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;   
-    RCP<std::vector<Real> > cp = getVector<PrimalConstraintVector>(c);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > cp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalConstraintVector>(c)).getVector());
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->compute_residual(*cp,*up,*zp);
   }
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
 
   void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > up =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalStateVector>(u)).getVector());
+    up->assign(up->size(),z.norm()/up->size());
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->solve(*up,*zp);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > jvp = getVector<PrimalConstraintVector>(jv);
-    RCP<const std::vector<Real> > vp = getVector<PrimalStateVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > jvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalConstraintVector>(jv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_pde_jacobian(*jvp,*vp,*up,*zp);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > jvp = getVector<PrimalConstraintVector>(jv);
-    RCP<const std::vector<Real> > vp = getVector<PrimalControlVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > jvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalConstraintVector>(jv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_control_jacobian(*jvp,*vp,*up,*zp);
   }
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > ijvp = getVector<PrimalStateVector>(ijv);
-    RCP<const std::vector<Real> > vp = getVector<PrimalConstraintVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > ijvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<PrimalStateVector>(ijv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalConstraintVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_inverse_pde_jacobian(*ijvp,*vp,*up,*zp);
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > jvp = getVector<DualStateVector>(ajv);
-    RCP<const std::vector<Real> > vp = getVector<DualConstraintVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > jvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(ajv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_adjoint_pde_jacobian(*jvp,*vp,*up,*zp);
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > jvp = getVector<DualControlVector>(jv);
-    RCP<const std::vector<Real> > vp = getVector<DualConstraintVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > jvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(jv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_adjoint_control_jacobian(*jvp,*vp,*up,*zp);
   }
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > iajvp = getVector<DualConstraintVector>(iajv);
-    RCP<const std::vector<Real> > vp = getVector<DualStateVector>(v);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > iajvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualConstraintVector>(iajv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<DualStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
     fem_->apply_inverse_adjoint_pde_jacobian(*iajvp,*vp,*up,*zp);
   }
 
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      using Teuchos::RCP;
-      RCP<std::vector<Real> > ahwvp = getVector<DualStateVector>(ahwv);
-      RCP<const std::vector<Real> > wp = getVector<DualConstraintVector>(w);
-      RCP<const std::vector<Real> > vp = getVector<PrimalStateVector>(v);
-      RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-      RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+      Teuchos::RCP<std::vector<Real> > ahwvp =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(ahwv)).getVector());
+      Teuchos::RCP<const std::vector<Real> > wp =
+        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
       fem_->apply_adjoint_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1040,12 +1045,16 @@ public:
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      using Teuchos::RCP; 
-      RCP<std::vector<Real> > ahwvp = getVector<DualControlVector>(ahwv);
-      RCP<const std::vector<Real> > wp = getVector<DualConstraintVector>(w);
-      RCP<const std::vector<Real> > vp = getVector<PrimalStateVector>(v);
-      RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-      RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+      Teuchos::RCP<std::vector<Real> > ahwvp =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(ahwv)).getVector());
+      Teuchos::RCP<const std::vector<Real> > wp =
+        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
       fem_->apply_adjoint_control_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1055,12 +1064,16 @@ public:
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      using Teuchos::RCP;
-      RCP<std::vector<Real> > ahwvp = getVector<DualStateVector>(ahwv);
-      RCP<const std::vector<Real> > wp = getVector<DualConstraintVector>(w);
-      RCP<const std::vector<Real> > vp = getVector<PrimalControlVector>(v);
-      RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-      RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+      Teuchos::RCP<std::vector<Real> > ahwvp =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(ahwv)).getVector());
+      Teuchos::RCP<const std::vector<Real> > wp =
+        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
       fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1070,12 +1083,16 @@ public:
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      using Teuchos::RCP;
-      RCP<std::vector<Real> > ahwvp = getVector<DualControlVector>(ahwv);
-      RCP<const std::vector<Real> > wp = getVector<DualConstraintVector>(w);
-      RCP<const std::vector<Real> > vp = getVector<PrimalControlVector>(v);
-      RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-      RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+      Teuchos::RCP<std::vector<Real> > ahwvp =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(ahwv)).getVector());
+      Teuchos::RCP<const std::vector<Real> > wp =
+        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
       fem_->apply_adjoint_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1094,24 +1111,10 @@ private:
   typedef L2VectorPrimal<Real> PrimalControlVector;
   typedef L2VectorDual<Real> DualControlVector;
 
-  typedef typename std::vector<Real>::size_type uint;
-
   Real alpha_; // Penalty Parameter
   Teuchos::RCP<BurgersFEM<Real> > fem_;
   Teuchos::RCP<ROL::Vector<Real> > ud_;
   Teuchos::RCP<ROL::Vector<Real> > diff_;
-
-  template<class VectorType>
-  Teuchos::RCP<const std::vector<Real> > getVector( const ROL::Vector<Real>& x ) {
-    return Teuchos::dyn_cast<const VectorType>(x).getVector();
-  }
-  
-  template<class VectorType>
-  Teuchos::RCP<std::vector<Real> > getVector( ROL::Vector<Real>& x ) { 
-    return Teuchos::dyn_cast<VectorType>(x).getVector();
-  }
-
-
 
 public:
   Objective_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem, 
@@ -1121,45 +1124,54 @@ public:
   }
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
-    RCP<const std::vector<Real> > udp = getVector<PrimalControlVector>(*ud_);
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    Teuchos::RCP<const std::vector<Real> > udp =
+      (Teuchos::dyn_cast<L2VectorPrimal<Real> >(const_cast<ROL::Vector<Real> &>(*ud_))).getVector();
 
     std::vector<Real> diff(udp->size(),0.0);
-    for (uint i = 0; i < udp->size(); i++) {
+    for (unsigned i = 0; i < udp->size(); i++) {
       diff[i] = (*up)[i] - (*udp)[i];
     }
     return 0.5*(fem_->compute_L2_dot(diff,diff) + alpha_*fem_->compute_L2_dot(*zp,*zp));
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > gp = getVector<DualStateVector>(g);
-    RCP<const std::vector<Real> > up = getVector<PrimalStateVector>(u);
-    RCP<const std::vector<Real> > udp = getVector<PrimalControlVector>(*ud_); 
+    Teuchos::RCP<std::vector<Real> > gp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(g)).getVector());
+    Teuchos::RCP<const std::vector<Real> > up =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > udp =
+      (Teuchos::dyn_cast<L2VectorPrimal<Real> >(const_cast<ROL::Vector<Real> &>(*ud_))).getVector();
+
     std::vector<Real> diff(udp->size(),0.0);
-    for (uint i = 0; i < udp->size(); i++) {
+    for (unsigned i = 0; i < udp->size(); i++) {
       diff[i] = (*up)[i] - (*udp)[i];
     }
     fem_->apply_mass(*gp,diff);
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > gp = getVector<DualControlVector>(g);
-    RCP<const std::vector<Real> > zp = getVector<PrimalControlVector>(z);
+    Teuchos::RCP<std::vector<Real> > gp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(g)).getVector());
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
     fem_->apply_mass(*gp,*zp);
-    for (uint i = 0; i < zp->size(); i++) {
+    for (unsigned i = 0; i < zp->size(); i++) {
       (*gp)[i] *= alpha_;
     }
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > hvp = getVector<DualStateVector>(hv);
-    RCP<const std::vector<Real> > vp = getVector<PrimalStateVector>(v);
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(hv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+
     fem_->apply_mass(*hvp,*vp);
   }
 
@@ -1175,11 +1187,13 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<std::vector<Real> > hvp = getVector<DualControlVector>(hv);
-    RCP<const std::vector<Real> > vp = getVector<PrimalControlVector>(v);
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(hv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+
     fem_->apply_mass(*hvp,*vp);
-    for (uint i = 0; i < vp->size(); i++) {
+    for (unsigned i = 0; i < vp->size(); i++) {
       (*hvp)[i] *= alpha_;
     }
   }
