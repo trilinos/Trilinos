@@ -216,16 +216,12 @@ interface (
     }
 
     if (FREE_GRAPH) {		/* Free old graph data structures. */
-        free(start);
-	free(adjacency);
-	if (vwgts != NULL)
-	    free(vwgts);
-	if (ewgts != NULL)
-	    free(ewgts);
+        sfree(start);
+	sfree(adjacency);
+	sfree(vwgts);
+	sfree(ewgts);
 	start = NULL;
 	adjacency = NULL;
-	vwgts = NULL;
-	ewgts = NULL;
     }
 
 
@@ -281,12 +277,14 @@ skip:
     if (flag && FREE_GRAPH) {
 	sfree(start);
 	sfree(adjacency);
-	sfree(vwgts);
-	sfree(ewgts);
+	sfree(vwgts); vwgts = NULL;
+	sfree(ewgts); ewgts = NULL;
     }
 
     if (!Using_Main && params_file != NULL)
 	fclose(params_file);
 
+    if (vwgts) sfree(vwgts);
+    if (ewgts) sfree(ewgts);
     return (flag);
 }

@@ -94,7 +94,6 @@ coarsen (
     double    initshift;	/* initial shift for RQI */
     double    total_vwgt;	/* sum of all the vertex weights */
     double    w1, w2;		/* weights of two sets */
-    double    sigma;		/* norm of rhs in extended eigenproblem */
     double    term_tot;		/* sum of all terminal weights */
     int    *space;		/* room for assignment in Lanczos */
     int      *morespace;	/* room for assignment in Lanczos */
@@ -355,9 +354,7 @@ coarsen (
 	    /* Following only works for bisection. */
 	    w1 = goal[0];
 	    w2 = goal[1];
-	    sigma = sqrt(4*w1*w2/(w1+w2));
 	    gvec = smalloc((nvtxs+1)*sizeof(double));
-	    term_tot = sigma;	/* Avoids lint warning for now. */
 	    term_tot = 0;
 	    for (j=1; j<=nvtxs; j++) term_tot += (real_term_wgts[1])[j];
 	    term_tot /= (w1+w2);

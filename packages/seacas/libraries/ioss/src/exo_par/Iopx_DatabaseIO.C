@@ -104,8 +104,6 @@ namespace {
 
   const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
   const std::string SCALAR()     {return std::string("scalar");}
-  const std::string VECTOR3D()   {return std::string("vector_3d");}
-  const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
 
   const char *complex_suffix[] = {".re", ".im"};
 
@@ -163,10 +161,6 @@ namespace {
     if (ierr < 0)
       Ioex::exodus_error(exoid, __LINE__, -1);
   }
-
-  void check_variable_consistency(const ex_var_params &exo_params,
-                                  int my_processor, const std::string &filename,
-                                  const Ioss::ParallelUtils &util);
 
   template <typename T>
   void compute_internal_border_maps(T* entities, T* internal, size_t count, size_t entity_count)
@@ -2388,20 +2382,20 @@ namespace Iopx {
             Ioss::Field df_field("distribution_factor", Ioss::Field::REAL, "scalar", Ioss::Field::MESH, num_to_get);
             decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
 
-            if (field.get_type() == Ioss::Field::INTEGER) {
-              // Need to convert 'double' to 'int' for Sierra use...
-              int* ids = static_cast<int*>(data);
-              for (ssize_t i = 0; i < num_to_get; i++) {
-                ids[i] = static_cast<int>(real_ids[i]);
-              }
-            }
-            else {
-              // Need to convert 'double' to 'int' for Sierra use...
-              int64_t* ids = static_cast<int64_t*>(data);
-              for (ssize_t i = 0; i < num_to_get; i++) {
-                ids[i] = static_cast<int64_t>(real_ids[i]);
-              }
-            }
+	    if (field.get_type() == Ioss::Field::INTEGER) {
+	      // Need to convert 'double' to 'int' for Sierra use...
+	      int* ids = static_cast<int*>(data);
+	      for (ssize_t i = 0; i < num_to_get; i++) {
+		ids[i] = static_cast<int>(real_ids[i]);
+	      }
+	    }
+	    else {
+	      // Need to convert 'double' to 'int' for Sierra use...
+	      int64_t* ids = static_cast<int64_t*>(data);
+	      for (ssize_t i = 0; i < num_to_get; i++) {
+		ids[i] = static_cast<int64_t>(real_ids[i]);
+	      }
+	    }
           }
         }
 
@@ -4150,27 +4144,27 @@ namespace Iopx {
           // Need to convert 'ints' to 'double' for storage on mesh...
           // FIX 64
           if (field.get_type() == Ioss::Field::INTEGER) {
-            int* ids = static_cast<int*>(data);
-            std::vector<double> real_ids(num_to_get);
-            for (size_t i = 0; i < num_to_get; i++) {
-              real_ids[i] = static_cast<double>(ids[i]);
-            }
-            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-                                                  offset+1, entity_count, TOPTR(real_ids));
-            if (ierr < 0)
-              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
-          else {
-            int64_t* ids = static_cast<int64_t*>(data);
-            std::vector<double> real_ids(num_to_get);
-            for (size_t i = 0; i < num_to_get; i++) {
-              real_ids[i] = static_cast<double>(ids[i]);
-            }
-            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
-                                                  offset+1, entity_count, TOPTR(real_ids));
-            if (ierr < 0)
-              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
+	    int* ids = static_cast<int*>(data);
+	    std::vector<double> real_ids(num_to_get);
+	    for (size_t i = 0; i < num_to_get; i++) {
+	      real_ids[i] = static_cast<double>(ids[i]);
+	    }
+	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+						  offset+1, entity_count, TOPTR(real_ids));
+	    if (ierr < 0)
+	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+	  else {
+	    int64_t* ids = static_cast<int64_t*>(data);
+	    std::vector<double> real_ids(num_to_get);
+	    for (size_t i = 0; i < num_to_get; i++) {
+	      real_ids[i] = static_cast<double>(ids[i]);
+	    }
+	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+						  offset+1, entity_count, TOPTR(real_ids));
+	    if (ierr < 0)
+	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
         }
 
         else if (field.get_name() == "side_ids") {
@@ -4328,14 +4322,6 @@ namespace Iopx {
       assert(node_blocks.size() == 1);
       nodeCount =        node_blocks[0]->get_property("entity_count").get_int();
       spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
-
-      // See if the nodeOwningProcessor vector has been populated...
-      size_t locally_owned = nodeCount;
-      if (node_blocks[0]->property_exists("locally_owned_count")) {
-        locally_owned = node_blocks[0]->get_property("locally_owned_count").get_int();
-      } else if (!nodeOwningProcessor.empty()) {
-        locally_owned = std::count(nodeOwningProcessor.begin(), nodeOwningProcessor.end(), myProcessor);
-      } 
 
       char the_title[max_line_length+1];
 

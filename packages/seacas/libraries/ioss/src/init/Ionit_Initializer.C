@@ -41,6 +41,10 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
+#if defined(USE_CGNS)
+#include <cgns/Iocgns_IOFactory.h>
+#endif
+
 // DO NOT REMOVE THE IF !DEFINED UNLESS GREG SJAARDEMA SAYS IT IS OK!!!!
 // with introduction of paraview sierra catalyst plugin, the Iovs stuff is
 // always included and NO_PARAVIEWMESH_SUPPORT is never defined.  With the
@@ -82,6 +86,9 @@ namespace Ioss {
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Iovs::IOFactory::factory(); // Visualization
 #endif      
+#if defined(USE_CGNS)
+      Iocgns::IOFactory::factory();
+#endif
       Ioss::StorageInitializer();
       Ioss::Initializer();
       Iotr::Initializer();

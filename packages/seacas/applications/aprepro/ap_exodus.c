@@ -81,7 +81,7 @@ char *do_exodus_info(char *filename)
   exoid = open_exodus_file(filename);
   if (exoid < 0) return "";
 
-  ex_inquire(exoid, EX_INQ_INFO, &count, (float *) NULL, (char *) NULL);
+  count = ex_inquire_int(exoid, EX_INQ_INFO);
   
   if (count > 0) {
     info = (char**)malloc(count * sizeof(char*));
@@ -229,6 +229,7 @@ char *do_exodus_meta(char *filename)
 	sprintf(cid, "%d ", ids[i]);
 	if (strlen(buffer) + strlen(cid) +1 > size) {
 	  if (realloc(buffer, size *=2) == NULL) {
+	    free(buffer);
 	    yyerror("Error allocating memory.");
 	  }
 	  memset(&buffer[size/2], 0, size/2);
@@ -289,8 +290,7 @@ char *do_exodus_meta(char *filename)
 
   {
     /* Get timestep count */
-    int ts_count;
-    ex_inquire(exoid, EX_INQ_TIME, &ts_count, (float *) NULL, (char *) NULL);
+    int ts_count = ex_inquire_int(exoid, EX_INQ_TIME);
     ptr = putsym("ex_timestep_count", VAR, 0);
     ptr->value.var = ts_count;
     
@@ -312,6 +312,7 @@ char *do_exodus_meta(char *filename)
 	  sprintf(cid, format->value.svar, timesteps[i]);
 	  if (strlen(buffer) + strlen(cid) +2 > size) {
 	    if (realloc(buffer, size *=2) == NULL) {
+	      free(buffer);
 	      yyerror("Error allocating memory.");
 	    }
 	    memset(&buffer[size/2], 0, size/2);

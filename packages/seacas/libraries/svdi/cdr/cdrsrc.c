@@ -483,8 +483,9 @@ unsigned ibuf[], *next;
 {
     int idx, i;
     unsigned temp, mask;
+#if defined(DEC) || defined(linux) || defined(interix)
     unsigned char *p_temp, ctemp;
-
+#endif
     /* check boundries */
     if (*iwidth > cdrcom_.KWRDSZ) return;
 

@@ -36,6 +36,7 @@ C
 
 #ifdef Build64
         SUBROUTINE EXCLOS (IDEXO, IERR)
+C> \sa ex_close()        
 C
 C       CLOSE EXODUS II FILE
 C
@@ -54,6 +55,7 @@ C
 
         SUBROUTINE EXCN2S (IDEXO, NSESS, NDESS, IXEESS, IXNESS,
      &          LTEESS, LTNESS, LTSESS, IERR)
+C> \sa ex_cvt_nodes_to_sides()
 C
 C       CONVERT SIDE SET NODES TO SIDES
 C
@@ -79,6 +81,7 @@ C
         END
 
         INTEGER FUNCTION EXCRE (PATH, ICMODE, ICOMPWS, IOWS, IERR)
+C> \sa ex_create()
 C
 C       CREATE EXODUS II FILE
 C
@@ -131,6 +134,7 @@ C     are passing REAL*8 and the exo_jack.c routines all take double*
         END
 
         SUBROUTINE EXERR (MODNAM, MSG, ERRNUM)
+C> \sa ex_error()
 C
 C       ERROR REPORTING
 C
@@ -145,6 +149,7 @@ C
         END
 
         SUBROUTINE EXGATM (IDEXO, TIME, IERR)
+C> \sa ex_get_all_times()
 C
 C       READ ALL TIME VALUES
 C
@@ -164,6 +169,7 @@ C
 
         SUBROUTINE EXGCNS (IDEXO, IDNPSS, NNNPS, NDNPS, IXNNPS,
      &          IXDNPS, LTNNPS, FACNPS, IERR)
+C> \sa ex_get_concat_node_sets()
 C
 C       READ CONCATENATED NODE SETS
 C
@@ -191,6 +197,7 @@ C
         END
 
         SUBROUTINE EXGFRM (IDEXO, NFRAME, IDSCF, COORD, ITAGS, IERR)
+C> \sa ex_get_coordinate_frames()
 C
 C       READ COORDINATE FRAMES
 C
@@ -227,6 +234,8 @@ C
         END
 
         SUBROUTINE EXPFRM (IDEXO, NFRAME, IDSCF, COORD, ITAGS, IERR)
+C> \sa ex_put_coordinate_frames()
+        
 C
 C       DEFINE/WRITE COORDINATE FRAMES
 C
@@ -261,6 +270,8 @@ C
         END
 
         SUBROUTINE EXGCON (IDEXO, NAMECO, IERR)
+C> \sa ex_get_coord_names()
+        
 C
 C       READ COORDINATE NAMES
 C
@@ -279,6 +290,7 @@ C
         END
 
         SUBROUTINE EXGCOR (IDEXO, XN, YN, ZN, IERR)
+C> \sa ex_get_coord()
 C
 C       READ NODAL COORDINATES
 C
@@ -301,6 +313,7 @@ C
 
         SUBROUTINE EXGCSS (IDEXO, IDESSS, NSESS, NDESS, IXEESS,
      &          IXDESS, LTEESS, LTSESS, FACESS, IERR)
+C> \sa ex_get_concat_side_sets()
 C
 C       READ CONCATENATED SIDE SETS
 C
@@ -330,8 +343,9 @@ C
 
         SUBROUTINE EXGCSSF (IDEXO, IDESSS, NSESS, NDESS, IXEESS,
      &          IXDESS, LTEESS, LTSESS, IERR)
+C> \sa ex_get_concat_side_sets()
 C
-C       READ CONCATENATED SIDE SETS
+C>       READ CONCATENATED SIDE SETS, no distribution factors
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -357,8 +371,9 @@ C
         END
 
         SUBROUTINE EXGEAT (IDEXO, IDELB, ATRIB, IERR)
+C> \sa ex_get_elem_attr()
 C
-C       READ ELEMENT BLOCK ATTRIBUTES
+C>       READ ELEMENT BLOCK ATTRIBUTES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -376,8 +391,9 @@ C
         END
 
         SUBROUTINE EXGEAN (IDEXO, IDELB, NATTR, NAMES, IERR)
+C> \sa ex_get_elem_attr_names()
 C
-C       READ ELEMENT BLOCK ATTRIBUTES
+C>       READ ELEMENT BLOCK ATTRIBUTES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -398,8 +414,9 @@ C
         END
 
         SUBROUTINE EXGEBI (IDEXO, IDELBS, IERR)
+C> \sa ex_get_elem_blk_ids
 C
-C       READ ELEMENT BLOCK IDS
+C>       READ ELEMENT BLOCK IDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -417,8 +434,9 @@ C
 
         SUBROUTINE EXGELB (IDEXO, IDELB, NAMELB, NUMELB, NUMLNK,
      &          NUMATR, IERR)
+C> \sa ex_get_elem_block()
 C
-C       READ ELEMENT BLOCK PARAMETERS
+C>       READ ELEMENT BLOCK PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -440,8 +458,9 @@ C
         END
 
         SUBROUTINE EXGELC (IDEXO, IDELB, LINK, IERR)
+C> \sa ex_get_elem_conn()
 C
-C       READ ELEMENT BLOCK CONNECTIVITY
+C>       READ ELEMENT BLOCK CONNECTIVITY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -459,8 +478,9 @@ C
         END
 
         SUBROUTINE EXGECPP (IDEXO, ITYPE, IDELB, COUNTS, IERR)
+C> \sa ex_get_entity_count_per_polyhedra()
 C
-C       READ ENTITY_COUNT-PER-POLYHEDRA
+C>       READ ENTITY_COUNT-PER-POLYHEDRA
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -494,8 +514,9 @@ C
         END
 
         SUBROUTINE EXGENM (IDEXO, MAPEL, IERR)
+C> \sa ex_get_id_map()
 C
-C       READ ELEMENT NUMBER MAP
+C>       READ ELEMENT NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -512,8 +533,9 @@ C
         END
 
         SUBROUTINE EXGEM (IDEXO, MAPID, MAPEL, IERR)
+C> \sa ex_get_num_map()
 C
-C       READ ELEMENT ORDER MAP
+C>       READ ELEMENT ORDER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -531,8 +553,9 @@ C
         END
 
         SUBROUTINE EXGPEM (IDEXO, MAPID, ISTART, ICOUNT, MAPEL, IERR)
+C> \sa ex_get_partial_num_map()
 C
-C       READ ELEMENT ORDER MAP
+C>       READ ELEMENT ORDER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -553,8 +576,9 @@ C
 
         SUBROUTINE EXGEV (IDEXO, ISTEP, IXELEV, IDELB, NUMELB,
      &          VALEV, IERR)
+C> \sa ex_get_elem_var()
 C
-C       READ ELEMENT VARIABLE VALUES AT A TIME STEP
+C>       READ ELEMENT VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -581,8 +605,9 @@ C
 
         SUBROUTINE EXGEVT (IDEXO, IXELEV, IELNUM, ISTPB, ISTPE,
      &          VALEV, IERR)
+C> \sa ex_get_elem_var_time()
 C
-C       READ ELEMENT VARIABLE VALUES THROUGH TIME
+C>       READ ELEMENT VARIABLE VALUES THROUGH TIME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -611,8 +636,9 @@ C
         END
 
         SUBROUTINE EXGNSV (IDEXO, ISTEP, IXV, ID, NUM, VAL, IERR)
+C> \sa ex_get_nset_var()
 C
-C       READ NODESET VARIABLE VALUES AT A TIME STEP
+C>       READ NODESET VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -637,8 +663,9 @@ C
         END
 
         SUBROUTINE EXGSSV (IDEXO, ISTEP, IXV, ID, NUM, VAL, IERR)
+C> \sa ex_get_sset_var()
 C
-C       READ SIDESET VARIABLE VALUES AT A TIME STEP
+C>       READ SIDESET VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -663,8 +690,9 @@ C
         END
 
         SUBROUTINE EXGGV (IDEXO, ISTEP, NVARGL, VALGV, IERR)
+C> \sa ex_get_glob_vars()
 C
-C       READ GLOBAL VARIABLE VALUES AT A TIME STEP
+C>       READ GLOBAL VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -687,8 +715,9 @@ C
         END
 
         SUBROUTINE EXGGVT (IDEXO, IXGLOV, ISTPB, ISTPE, VALGV, IERR)
+C> \sa ex_get_glob_var_time()
 C
-C       READ GLOBAL VARIABLE VALUES THROUGH TIME
+C>       READ GLOBAL VARIABLE VALUES THROUGH TIME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -714,8 +743,9 @@ C
         END
 
         SUBROUTINE EXGINF (IDEXO, INFO, IERR)
+C> \sa ex_get_info()
 C
-C       READ INFORMATION RECORDS
+C>       READ INFORMATION RECORDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -733,8 +763,9 @@ C
 
         SUBROUTINE EXGINI (IDEXO, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &          NUMNPS, NUMESS, IERR)
+C> \sa ex_get_init()
 C
-C       READ INITIALIZATION PARAMETERS
+C>       READ INITIALIZATION PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -758,8 +789,9 @@ C
         END
 
         SUBROUTINE EXGMP (IDEXO, NNMAP, NEMAP, IERR)
+C> \sa ex_get_map_param()
 C
-C       GET MAP PARAMETERS
+C>       GET MAP PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -781,6 +813,7 @@ C
         END
 
         SUBROUTINE EXPMP (IDEXO, NNMAP, NEMAP, IERR)
+C> \sa ex_put_map_param()
 C
 C       PUT MAP PARAMETERS
 C
@@ -804,8 +837,9 @@ C
         END
 
         SUBROUTINE EXGMAP (IDEXO, MAPEL, IERR)
+C> \sa ex_get_map()
 C
-C       READ ELEMENT ORDER MAP
+C>       READ ELEMENT ORDER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -822,8 +856,9 @@ C
         END
 
         SUBROUTINE EXGNNM (IDEXO, MAPNOD, IERR)
+C> \sa ex_get_id_map()
 C
-C       READ NODE NUMBER MAP
+C>       READ NODE NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -840,8 +875,9 @@ C
         END
 
         SUBROUTINE EXGNM (IDEXO, MAPID, MAPNOD, IERR)
+C> \sa ex_get_num_map()
 C
-C       READ NODE ORDER MAP
+C>       READ NODE ORDER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -859,8 +895,9 @@ C
         END
 
         SUBROUTINE EXGNP (IDEXO, IDNPS, NNNPS, NDNPS, IERR)
+C> \sa ex_get_node_set_param()
 C
-C       READ NODE SET PARAMETERS
+C>       READ NODE SET PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -879,8 +916,9 @@ C
         END
 
         SUBROUTINE EXGNS (IDEXO, IDNPS, LTNNPS, IERR)
+C> \sa ex_get_node_set()
 C
-C       READ NODE SET
+C>       READ NODE SET
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -898,8 +936,9 @@ C
         END
 
         SUBROUTINE EXGNSD (IDEXO, IDNPS, FACNPS, IERR)
+C> \sa ex_get_node_set_dist_fact()
 C
-C       READ NODE SET DISTRIBUTION FACTORS
+C>       READ NODE SET DISTRIBUTION FACTORS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -918,8 +957,9 @@ C
         END
 
         SUBROUTINE EXGNSI (IDEXO, IDNPSS, IERR)
+C> \sa ex_get_node_set_ids()
 C
-C       READ NODE SET IDS
+C>       READ NODE SET IDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -936,8 +976,9 @@ C
         END
 
         SUBROUTINE EXGNV (IDEXO, ISTEP, IXNODV, NUMNP, VALNV, IERR)
+C> \sa ex_get_nodal_var()
 C
-C       READ NODAL VARIABLE VALUES AT A TIME STEP
+C>       READ NODAL VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -962,8 +1003,9 @@ C
 
         SUBROUTINE EXGNVT (IDEXO, IXNODV, NODNUM, ISTPB, ISTPE,
      &          VALNV, IERR)
+C> \sa ex_get_nodal_var_time()
 C
-C       READ NODAL VARIABLE VALUES THROUGH TIME
+C>       READ NODAL VARIABLE VALUES THROUGH TIME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -991,8 +1033,9 @@ C
         END
 
         SUBROUTINE EXGP (IDEXO, ITYPE, ID, NAMEPR, IVAL, IERR)
+C> \sa ex_get_prop()
 C
-C       READ OBJECT PROPERTY
+C>       READ OBJECT PROPERTY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1014,8 +1057,9 @@ C
         END
 
         SUBROUTINE EXGPA (IDEXO, ITYPE, NAMEPR, IVAL, IERR)
+C> \sa ex_get_prop_array()
 C
-C       READ OBJECT PROPERTY ARRAY
+C>       READ OBJECT PROPERTY ARRAY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1036,8 +1080,9 @@ C
         END
 
         SUBROUTINE EXGPN (IDEXO, ITYPE, NAMEPR, IERR)
+C> \sa ex_get_prop_names()
 C
-C       READ PROPERTY ARRAY NAMES
+C>       READ PROPERTY ARRAY NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1057,8 +1102,9 @@ C
         END
 
         SUBROUTINE EXGQA (IDEXO, QAREC, IERR)
+C> \sa ex_get_qa()
 C
-C       READ QA RECORDS
+C>       READ QA RECORDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1075,8 +1121,9 @@ C
         END
 
         SUBROUTINE EXGSP (IDEXO, IDESS, NSESS, NDESS, IERR)
+C> \sa ex_get_side_set_param()
 C
-C       READ SIDE SET PARAMETERS
+C>       READ SIDE SET PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1095,8 +1142,9 @@ C
         END
 
         SUBROUTINE EXGSNL (IDEXO, IDESS, NNESS, IERR)
+C> \sa ex_get_side_set_node_list_len()
 C
-C       GET SIDE SET NODELIST LENGTH
+C>       GET SIDE SET NODELIST LENGTH
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1114,8 +1162,9 @@ C
         END
 
         SUBROUTINE EXGSS (IDEXO, IDESS, LTEESS, LTSESS, IERR)
+C> \sa ex_get_side_set()
 C
-C       READ SIDE SET
+C>       READ SIDE SET
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1134,8 +1183,9 @@ C
         END
 
         SUBROUTINE EXGSSD (IDEXO, IDESS, FACESS, IERR)
+C> \sa ex_get_side_set_dist_fact()
 C
-C       READ SIDE SET DISTRIBUTION FACTORS
+C>       READ SIDE SET DISTRIBUTION FACTORS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1153,8 +1203,9 @@ C
         END
 
         SUBROUTINE EXGSSI (IDEXO, IDESSS, IERR)
+C> \sa ex_get_side_set_ids()
 C
-C       READ SIDE SET IDS
+C>       READ SIDE SET IDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1171,8 +1222,9 @@ C
         END
 
         SUBROUTINE EXGSSN (IDEXO, IDESS, INCNT, LTNESS, IERR)
+C> \sa ex_get_side_set_node_list()
 C
-C       READ SIDE SET NODE LIST
+C>       READ SIDE SET NODE LIST
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1191,8 +1243,9 @@ C
         END
 
         SUBROUTINE EXGSSC (IDEXO, IDESS, INCNT, IERR)
+C> \sa ex_get_side_set_node_count()
 C
-C       READ SIDE SET NODE LIST COUNT
+C>       READ SIDE SET NODE LIST COUNT
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1222,9 +1275,10 @@ C
         END
 
         SUBROUTINE EXGCSSC (IDEXO, INCNT, IERR)
+C> \sa ex_get_concat_side_set_node_count()
 C
-C       READ CONCATENATED SIDE SET NODE COUNT LIST
-C       (nodes/face for all faces)
+C>       READ CONCATENATED SIDE SET NODE COUNT LIST
+C>       (nodes/face for all faces)
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1251,8 +1305,9 @@ C
         END
 
         SUBROUTINE EXGTIM (IDEXO, NSTEP, TIME, IERR)
+C> \sa ex_get_time()
 C
-C       READ TIME VALUE FOR A TIME STEP
+C>       READ TIME VALUE FOR A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1272,8 +1327,9 @@ C
         END
 
         SUBROUTINE EXGVAN (IDEXO, VARTYP, NVAR, NAMES, IERR)
+C> \sa ex_get_var_names()
 C
-C       READ RESULTS VARIABLE NAMES
+C>       READ RESULTS VARIABLE NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1294,8 +1350,9 @@ C
         END
 
         SUBROUTINE EXGVNM (IDEXO, VARTYP, NVAR, NAME, IERR)
+C> \sa ex_get_var_name()
 C
-C       READ RESULTS VARIABLE NAME
+C>       READ RESULTS VARIABLE NAME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1316,8 +1373,9 @@ C
         END
 
         SUBROUTINE EXPVNM (IDEXO, VARTYP, NVAR, NAME, IERR)
+C> \sa ex_put_var_name()
 C
-C       WRITE RESULTS VARIABLE NAME
+C>       WRITE RESULTS VARIABLE NAME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1338,8 +1396,9 @@ C
         END
 
         SUBROUTINE EXGVP (IDEXO, VARTYP, NVAR, IERR)
+C> \sa ex_get_var_param()
 C
-C       READ RESULTS VARIABLE PARAMETERS
+C>       READ RESULTS VARIABLE PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1359,8 +1418,9 @@ C
         END
 
         SUBROUTINE EXGVTT (IDEXO, NELBLK, NVAREL, ISEVOK, IERR)
+C> \sa ex_get_elem_var_tab()
 C
-C       READ ELEMENT VARIABLE TRUTH TABLE
+C>       READ ELEMENT VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1387,8 +1447,9 @@ C
         END
 
         SUBROUTINE EXGNSTT (IDEXO, NBLK, NVAR, ISVOK, IERR)
+C> \sa ex_get_nset_var_tab()
 C
-C       READ NODESET VARIABLE TRUTH TABLE
+C>       READ NODESET VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1415,8 +1476,9 @@ C
         END
 
         SUBROUTINE EXGSSTT (IDEXO, NBLK, NVAR, ISVOK, IERR)
+C> \sa ex_get_nset_var_tab()
 C
-C       READ SIDESET VARIABLE TRUTH TABLE
+C>       READ SIDESET VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1443,8 +1505,9 @@ C
         END
 
         SUBROUTINE EXINQ (IDEXO, INFREQ, INTRET, RELRET, CHRRET, IERR)
+C> \sa ex_inquire()
 C
-C       INQUIRE EXODUS PARAMETERS
+C>       INQUIRE EXODUS PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1468,8 +1531,9 @@ C
         END
 
         INTEGER FUNCTION EXINQI (IDEXO, INFREQ)
+C> \sa ex_inquire_int()
 C
-C       INQUIRE EXODUS PARAMETERS
+C>       INQUIRE EXODUS PARAMETERS -- Integer only
 C
         IMPLICIT NONE
         INTEGER IDEXO           ! (R)
@@ -1487,8 +1551,9 @@ C
         END
 
         INTEGER FUNCTION EXOPEN (PATH, IMODE, ICOMPWS, IOWS, VERS, IERR)
+C> \sa ex_open()
 C
-C       OPEN EXODUS II FILE
+C>       OPEN EXODUS II FILE
 C
         IMPLICIT NONE
         CHARACTER* (*) PATH     ! (R)
@@ -1543,6 +1608,7 @@ C     time, only the maps are supported...
         END
 
         INTEGER FUNCTION EXLGMD (IDEXO)
+C> \sa ex_large_model()
         IMPLICIT NONE
         INTEGER IDEXO           ! (R)
         INTEGER IRET
@@ -1560,8 +1626,9 @@ C     time, only the maps are supported...
         END
 
         SUBROUTINE EXOPTS (OPTVAL, IERR)
+C> \sa ex_opts()
 C
-C       SET ERROR REPORTING LEVEL
+C>       SET ERROR REPORTING LEVEL
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1578,8 +1645,9 @@ C
 
 
         SUBROUTINE EXMXNM (IDEXO, LENGTH, IERR)
+C> \sa ex_set_max_name_length()
 C
-C       SET MAXIMUM NAME LENGTH
+C>       SET MAXIMUM NAME LENGTH
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1600,8 +1668,9 @@ C
 
         SUBROUTINE EXPCNS (IDEXO, IDNPSS, NNNPS, NDNPS, IXNNPS,
      &          IXDNPS, LTNNPS, FACNPS, IERR)
+C> \sa ex_put_concat_node_sets()
 C
-C       WRITE CONCATENATED NODE SETS
+C>       WRITE CONCATENATED NODE SETS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1627,8 +1696,9 @@ C
         END
 
         SUBROUTINE EXPCON (IDEXO, NAMECO, IERR)
+C> \sa ex_put_coord_names()
 C
-C       WRITE COORDINATE NAMES
+C>       WRITE COORDINATE NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1647,8 +1717,9 @@ C
         END
 
         SUBROUTINE EXPCOR (IDEXO, XN, YN, ZN, IERR)
+C> \sa ex_put_coord()
 C
-C       WRITE NODAL COORDINATES
+C>       WRITE NODAL COORDINATES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1670,8 +1741,9 @@ C
 
         SUBROUTINE EXPCSS (IDEXO, IDESSS, NSESS, NDESS, IXEESS,
      &          IXDESS, LTEESS, LTSESS, FACESS, IERR)
+C> \sa ex_put_concat_side_sets()
 C
-C       WRITE CONCATENATED SIDE SETS
+C>       WRITE CONCATENATED SIDE SETS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1698,8 +1770,9 @@ C
         END
 
         SUBROUTINE EXPEAT (IDEXO, IDELB, ATRIB, IERR)
+C> \sa ex_put_elem_attr()
 C
-C       WRITE ELEMENT BLOCK ATTRIBUTES
+C>       WRITE ELEMENT BLOCK ATTRIBUTES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1719,8 +1792,9 @@ C
         END
 
         SUBROUTINE EXPEAN (IDEXO, IDELB, NATTR, NAMES, IERR)
+C> \sa ex_put_elem_attr_names()
 C
-C       WRITE ELEMENT BLOCK ATTRIBUTE NAMES
+C>       WRITE ELEMENT BLOCK ATTRIBUTE NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1744,8 +1818,9 @@ C
 
         SUBROUTINE EXPCLB (IDEXO, IDELB, NAMELB, NUMELB, NUMLNK,
      &          NUMATR, MKMAP, IERR)
+C> \sa ex_put_concat_elem_block()
 C
-C       WRITE ELEMENT BLOCK PARAMETERS
+C>       WRITE CONCATENATED ELEMENT BLOCK PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1772,8 +1847,9 @@ C
 
         SUBROUTINE EXPELB (IDEXO, IDELB, NAMELB, NUMELB, NUMLNK,
      &          NUMATR, IERR)
+C> \sa ex_put_elem_block()
 C
-C       WRITE ELEMENT BLOCK PARAMETERS
+C>       WRITE ELEMENT BLOCK PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1797,8 +1873,9 @@ C
         END
 
         SUBROUTINE EXPELC (IDEXO, IDELB, LINK, IERR)
+C> \sa ex_put_elem_conn()
 C
-C       WRITE ELEMENT BLOCK CONNECTIVITY
+C>       WRITE ELEMENT BLOCK CONNECTIVITY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1818,8 +1895,9 @@ C
         END
 
         SUBROUTINE EXPECPP (IDEXO, ITYPE, IDELB, COUNTS, IERR)
+C> ex_put_entity_count_per_polyhedra()
 C
-C       WRITE ELEMENT BLOCK ELEMENT COUNT PER POLYHEDRA
+C>       WRITE ELEMENT BLOCK ELEMENT COUNT PER POLYHEDRA
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1854,8 +1932,9 @@ C
         END
 
         SUBROUTINE EXPENM (IDEXO, MAPEL, IERR)
+C> ex_put_id_map()
 C
-C       WRITE ELEMENT NUMBER MAP
+C>       WRITE ELEMENT NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1872,8 +1951,9 @@ C
         END
 
         SUBROUTINE EXPEM (IDEXO, MAPID, MAPEL, IERR)
+C> ex_put_processor_elem_maps()
 C
-C       WRITE ELEMENT NUMBER MAP
+C>       WRITE ELEMENT NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1891,8 +1971,9 @@ C
         END
 
         SUBROUTINE EXPPEM (IDEXO, MAPID, ISTART, ICOUNT, MAPEL, IERR)
+C> ex_put_partial_num_map()
 C
-C       WRITE ELEMENT NUMBER MAP
+C>       WRITE ELEMENT NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1915,8 +1996,9 @@ C
 
         SUBROUTINE EXPEV (IDEXO, ISTEP, IXELEV, IDELB, NUMELB,
      &          VALEV, IERR)
+C> ex_put_elem_var()
 C
-C       WRITE ELEMENT VARIABLE VALUES AT A TIME STEP
+C>       WRITE ELEMENT VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1942,8 +2024,9 @@ C
         END
 
         SUBROUTINE EXPNSV (IDEXO, ISTEP, IXV, ID, NUM, VAL, IERR)
+C> ex_put_nset_var()
 C
-C       WRITE NODESET VARIABLE VALUES AT A TIME STEP
+C>       WRITE NODESET VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1968,8 +2051,9 @@ C
         END
 
         SUBROUTINE EXPSSV (IDEXO, ISTEP, IXV, ID, NUM, VAL, IERR)
+C> ex_put_sset_var()
 C
-C       WRITE SIDESET VARIABLE VALUES AT A TIME STEP
+C>       WRITE SIDESET VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -1994,8 +2078,9 @@ C
         END
 
         SUBROUTINE EXPGV (IDEXO, ISTEP, NVARGL, VALGV, IERR)
+C> ex_put_glob_vars()
 C
-C       WRITE GLOBAL VARIABLE VALUES AT A TIME STEP
+C>       WRITE GLOBAL VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2018,8 +2103,9 @@ C
         END
 
         SUBROUTINE EXPINF (IDEXO, NINFO, INFO, IERR)
+C> ex_put_info()
 C
-C       WRITE INFORMATION RECORDS
+C>       WRITE INFORMATION RECORDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2040,8 +2126,9 @@ C
 
         SUBROUTINE EXPINI (IDEXO, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &          NUMNPS, NUMESS, IERR)
+C> ex_put_init()
 C
-C       WRITE INITIALIZATION PARAMETERS
+C>       WRITE INITIALIZATION PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2065,8 +2152,9 @@ C
         END
 
         SUBROUTINE EXPMAP (IDEXO, MAPEL, IERR)
+C> ex_put_map()
 C
-C       WRITE ELEMENT ORDER MAP
+C>       WRITE ELEMENT ORDER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2083,8 +2171,9 @@ C
         END
 
         SUBROUTINE EXPNNM (IDEXO, MAPNOD, IERR)
+C> ex_put_id_map()
 C
-C       WRITE NODE NUMBER MAP
+C>       WRITE NODE NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2101,8 +2190,9 @@ C
         END
 
         SUBROUTINE EXPNM (IDEXO, MAPID, MAPNOD, IERR)
+C> ex_put_num_map()
 C
-C       WRITE NODE NUMBER MAP
+C>       WRITE NODE NUMBER MAP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2120,8 +2210,9 @@ C
         END
 
         SUBROUTINE EXPNP (IDEXO, IDNPS, NNNPS, NDNPS, IERR)
+C> ex_put_node_set_param()
 C
-C       WRITE NODE SET PARAMETERS
+C>       WRITE NODE SET PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2140,8 +2231,9 @@ C
         END
 
         SUBROUTINE EXPNS (IDEXO, IDNPS, LTNNPS, IERR)
+C> ex_put_node_set()
 C
-C       WRITE NODE SET
+C>       WRITE NODE SET
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2159,8 +2251,9 @@ C
         END
 
         SUBROUTINE EXPNSD (IDEXO, IDNPS, FACNPS, IERR)
+C> ex_put_node_set_dist_fact()
 C
-C       WRITE NODE SET DISTRIBUTION FACTORS
+C>       WRITE NODE SET DISTRIBUTION FACTORS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2178,8 +2271,9 @@ C
         END
 
         SUBROUTINE EXPNV (IDEXO, ISTEP, IXNODV, NUMNP, VALNV, IERR)
+C> ex_put_nodal_var()
 C
-C       WRITE NODAL VARIABLE VALUES AT A TIME STEP
+C>       WRITE NODAL VARIABLE VALUES AT A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2203,8 +2297,9 @@ C
         END
 
         SUBROUTINE EXPP (IDEXO, ITYPE, ID, NAMEPR, IVAL, IERR)
+C> ex_put_prop()
 C
-C       WRITE OBJECT PROPERTY
+C>       WRITE OBJECT PROPERTY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2226,8 +2321,9 @@ C
         END
 
         SUBROUTINE EXPPA (IDEXO, ITYPE, NAMEPR, IVAL, IERR)
+C> ex_put_prop_array()
 C
-C       WRITE OBJECT PROPERTY ARRAY
+C>       WRITE OBJECT PROPERTY ARRAY
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2248,8 +2344,9 @@ C
         END
 
         SUBROUTINE EXPPN (IDEXO, ITYPE, NPROPS, NAMEPR, IERR)
+C> ex_put_prop_names()
 C
-C       WRITE PROPERTY ARRAY NAMES
+C>       WRITE PROPERTY ARRAY NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2272,8 +2369,9 @@ C
         END
 
         SUBROUTINE EXPQA (IDEXO, NQAREC, QAREC, IERR)
+C> ex_put_qa()
 C
-C       WRITE QA RECORDS
+C>       WRITE QA RECORDS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2293,8 +2391,9 @@ C
         END
 
         SUBROUTINE EXPSP (IDEXO, IDESS, NSESS, NDESS, IERR)
+C> ex_put_side_set_param()
 C
-C       WRITE SIDE SET PARAMETERS
+C>       WRITE SIDE SET PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2313,8 +2412,9 @@ C
         END
 
         SUBROUTINE EXPSS (IDEXO, IDESS, LTEESS, LTSESS, IERR)
+C> ex_put_side_set()
 C
-C       WRITE SIDE SET
+C>       WRITE SIDE SET
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2333,8 +2433,9 @@ C
         END
 
         SUBROUTINE EXPSSD (IDEXO, IDESS, FACESS, IERR)
+C> ex_put_side_set_dist_fact()
 C
-C       WRITE SIDE SET DISTRIBUTION FACTORS
+C>       WRITE SIDE SET DISTRIBUTION FACTORS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2352,8 +2453,9 @@ C
         END
 
         SUBROUTINE EXPTIM (IDEXO, NSTEP, TIME, IERR)
+C> ex_put_time()
 C
-C       WRITE TIME VALUE FOR A TIME STEP
+C>       WRITE TIME VALUE FOR A TIME STEP
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2373,8 +2475,9 @@ C
         END
 
         SUBROUTINE EXPVAN (IDEXO, VARTYP, NVAR, NAMES, IERR)
+C> ex_put_var_names()
 C
-C       WRITE RESULTS VARIABLE NAMES
+C>       WRITE RESULTS VARIABLE NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2395,8 +2498,9 @@ C
         END
 
         SUBROUTINE EXPVP (IDEXO, VARTYP, NVAR, IERR)
+C> ex_put_var_param()
 C
-C       WRITE RESULTS VARIABLE PARAMETERS
+C>       WRITE RESULTS VARIABLE PARAMETERS
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2416,8 +2520,9 @@ C
         END
 
         SUBROUTINE EXPVTT (IDEXO, NELBLK, NVAREL, ISEVOK, IERR)
+C> ex_put_elem_var_tab()
 C
-C       WRITE ELEMENT VARIABLE TRUTH TABLE
+C>       WRITE ELEMENT VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2444,8 +2549,9 @@ C
         END
 
         SUBROUTINE EXPNSTT (IDEXO, NBLK, NVAR, ISVOK, IERR)
+C> ex_put_nset_var_tab()
 C
-C       WRITE NODESET VARIABLE TRUTH TABLE
+C>       WRITE NODESET VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2472,8 +2578,9 @@ C
         END
 
         SUBROUTINE EXPSSTT (IDEXO, NBLK, NVAR, ISVOK, IERR)
+C> ex_put_sset_var_tab()
 C
-C       WRITE SIDESET VARIABLE TRUTH TABLE
+C>       WRITE SIDESET VARIABLE TRUTH TABLE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2500,8 +2607,9 @@ C
         END
 
         SUBROUTINE EXGNAMS (IDEXO, ITYPE, NVAR, NAMES, IERR)
+C> ex_get_names()
 C
-C       READ OBJECT NAMES
+C>       READ OBJECT NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2524,8 +2632,9 @@ C
         END
 
         SUBROUTINE EXGNAM (IDEXO, ITYPE, ID, NAME, IERR)
+C> ex_get_name()
 C
-C       READ OBJECT NAME
+C>       READ OBJECT NAME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2546,8 +2655,9 @@ C
         END
 
         SUBROUTINE EXPNAMS (IDEXO, ITYPE, NVAR, NAMES, IERR)
+C> ex_put_names()
 C
-C       WRITE OBJECT NAMES
+C>       WRITE OBJECT NAMES
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2570,8 +2680,9 @@ C
         END
 
         SUBROUTINE EXPNAM (IDEXO, ITYPE, ID, NAME, IERR)
+C> ex_put_name()
 C
-C       WRITE OBJECT NAME
+C>       WRITE OBJECT NAME
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2592,8 +2703,9 @@ C
         END
 
         SUBROUTINE EXUPDA (IDEXO, IERR)
+C> ex_update()
 C
-C       UPDATE EXODUS II FILE
+C>       UPDATE EXODUS II FILE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2609,8 +2721,9 @@ C
         END
 
         SUBROUTINE EXCOPY (IDEXO1, IDEXO2, IERR)
+C> ex_copy()
 C
-C       COPY EXODUS II FILE
+C>       COPY EXODUS II FILE
 C
         IMPLICIT NONE
         INCLUDE 'exodusII.inc'
@@ -2634,6 +2747,7 @@ C
 C   Get initial information from nemesis file
 C
       subroutine exgii (idexo, nproc, nproc_in_f, ftype, ierr)
+C> ex_get_init_info()
       implicit none
       integer idexo 
       integer nproc 
@@ -2659,6 +2773,7 @@ C
 C   Write initial information from nemesis file
 C
       subroutine expii (idexo, nproc, nproc_in_f, ftype, ierr)
+C> ex_put_init_info()
       implicit none
       integer idexo 
       integer nproc 
@@ -2685,6 +2800,7 @@ C  Read initial global information
 C
       subroutine exgig (idexo, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr)
+C> ex_get_init_global()
       implicit none
       integer idexo 
       integer nnodes_g 
@@ -2710,6 +2826,7 @@ C  Write initial global information
 C
       subroutine expig (idexo, nnodes_g, nelems_g, nelem_blks_g,
      $  nnode_sets_g, nside_sets_g, ierr)
+C> ex_put_init_global()
       implicit none
       integer idexo 
       integer nnodes_g 
@@ -2736,6 +2853,7 @@ C
       subroutine exglbp (idexo, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor, ierr)
+C> ex_get_loadbal_param()
       implicit none
       integer idexo 
       integer nint_nodes 
@@ -2768,6 +2886,7 @@ C
       subroutine explbp (idexo, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps,
      $  processor, ierr)
+C> ex_put_loadbal_param()
       implicit none
       integer idexo 
       integer nint_nodes 
@@ -2799,6 +2918,7 @@ C  Write concatenated load balance parameters
 C
       subroutine explbpc (idexo, nint_nodes, nbor_nodes, next_nodes,
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, ierr)
+C> ex_put_loadbal_param_cc()
       implicit none
       integer idexo 
       integer nint_nodes(*) 
@@ -2827,6 +2947,7 @@ C  Read global node set parameters
 C
       subroutine exgnspg (idexo, ns_ids_glob, ns_n_cnt_glob,
      $  ns_df_cnt_glob, ierr)
+C> ex_get_ns_param_global()
       implicit none
       integer idexo 
       integer ns_ids_glob(*) 
@@ -2850,6 +2971,7 @@ C  Write global node set parameters
 C
       subroutine expnspg (idexo, global_ids, global_n_cnts,
      $  global_df_cnts, ierr)
+C> ex_put_ns_param_global()
       integer idexo 
       integer global_ids(*) 
       integer global_n_cnts(*) 
@@ -2872,6 +2994,7 @@ C  Read global side set parameters
 C
       subroutine exgsspg (idexo, ss_ids_glob, ss_n_cnt_glob,
      $  ss_df_cnt_glob, ierr)
+C> ex_get_ss_param_global()
       implicit none
       integer idexo 
       integer ss_ids_glob(*) 
@@ -2895,6 +3018,7 @@ C  Write global side set parameters
 C
       subroutine expsspg (idexo, global_ids, global_el_cnts,
      $  global_df_cnts, ierr)
+C> ex_put_ss_param_global()
       implicit none
       integer idexo 
       integer global_ids(*) 
@@ -2917,6 +3041,7 @@ C
 C  Read global element block information
 C
       subroutine exgebig (idexo, el_blk_ids, el_blk_cnts, ierr)
+C> ex_get_eb_info_global()
       implicit none
       integer idexo 
       integer el_blk_ids(*) 
@@ -2937,6 +3062,7 @@ C
 C  Write global element block information
 C
       subroutine expebig (idexo, el_blk_ids, el_blk_cnts, ierr)
+C> ex_put_eb_info_global()
       implicit none
       integer idexo 
       integer el_blk_ids(*) 
@@ -2958,6 +3084,7 @@ C  Read side set element list and side set side list
 C
       subroutine exgnss (idexo, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr)
+C> ex_get_n_side_set()
       implicit none
       integer idexo 
       integer ss_id 
@@ -2983,6 +3110,7 @@ C  Write side set element list and side set side list
 C
       subroutine expnss (idexo, ss_id, start_side_num, num_sides,
      $  ss_elem_list, ss_side_list, ierr)
+C> ex_put_n_side_set()
       implicit none
       integer idexo 
       integer ss_id 
@@ -3008,6 +3136,7 @@ C  Read side set distribution factor
 C
       subroutine exgnssd (idexo, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr)
+C> ex_get_n_side_set_df()
       implicit none
       integer idexo 
       integer ss_id 
@@ -3032,6 +3161,7 @@ C  Write side set distribution factor
 C
       subroutine expnssd (idexo, ss_id, start_num, num_df_to_get,
      $  ss_df, ierr)
+C> ex_put_n_side_set_df()
       implicit none
       integer idexo 
       integer ss_id 
@@ -3056,6 +3186,7 @@ C  Read node set list for a single node set
 C
       subroutine exgnns (idexo, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr)
+C> ex_get_n_node_set()
       implicit none
       integer idexo 
       integer ns_id 
@@ -3080,6 +3211,7 @@ C  Write node set list for a single node set
 C
       subroutine expnns (idexo, ns_id, start_node_num, num_node,
      $  ns_node_list, ierr)
+C> ex_put_n_node_set()
       implicit none
       integer idexo 
       integer ns_id 
@@ -3104,6 +3236,7 @@ C  Read node set distribution factor
 C
       subroutine exgnnsd (idexo, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr)
+C> ex_get_n_node_set_df()
       implicit none
       integer idexo 
       integer ns_id 
@@ -3128,6 +3261,7 @@ C  Write node set distribution factor
 C
       subroutine expnnsd (idexo, ns_id, start_num, num_df_to_get,
      $  ns_df, ierr)
+C> ex_put_n_node_set_df()
       implicit none
       integer idexo 
       integer ns_id 
@@ -3152,6 +3286,7 @@ C  Read coordinates of the nodes
 C
       subroutine exgncor (idexo, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr)
+C> ex_get_n_coord()
       implicit none
       integer idexo 
       integer start_node_num 
@@ -3177,6 +3312,7 @@ C  Write coordinates of the nodes
 C
       subroutine expncor (idexo, start_node_num, num_nodes, x_coor,
      $  y_coor, z_coor, ierr)
+C> ex_put_n_coord()
       implicit none
       integer idexo 
       integer start_node_num 
@@ -3202,6 +3338,7 @@ C  Read an element blocks connectivity list
 C
       subroutine exgnec (idexo, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr)
+C> ex_get_n_elem_conn()
       implicit none
       integer idexo 
       integer elem_blk_id 
@@ -3226,6 +3363,7 @@ C  Write an element blocks connectivity list
 C
       subroutine expnec (idexo, elem_blk_id, start_elem_num,
      $  num_elems, connect, ierr)
+C> ex_put_n_elem_conn()
       implicit none
       integer idexo 
       integer elem_blk_id 
@@ -3250,6 +3388,7 @@ C  Read an element blocks attributes
 C
       subroutine exgneat (idexo, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr)
+C> ex_get_n_elem_attr()
       implicit none
       integer idexo 
       integer elem_blk_id 
@@ -3274,6 +3413,7 @@ C  Write an element blocks attributes
 C
       subroutine expneat (idexo, elem_blk_id, start_elem_num,
      $  num_elems, attrib, ierr)
+C> ex_put_n_elem_attr()
       implicit none
       integer idexo 
       integer elem_blk_id 
@@ -3296,6 +3436,7 @@ C-----------------------------------------------------------------------
 C  Read the element type for a specific element block
 C
       subroutine exgelt (idexo, elem_blk_id, elem_type, ierr)
+C> ex_get_elem_type()
       implicit none
       integer idexo 
       integer elem_blk_id 
@@ -3318,6 +3459,7 @@ C
       subroutine exgnev (idexo, time_step, elem_var_index,
      $  elem_blk_id, num_elem_this_blk, start_elem_num,
      $  num_elem, elem_var_vals, ierr)
+C> ex_get_n_var()
       implicit none
       integer idexo 
       integer time_step 
@@ -3351,6 +3493,7 @@ C
       subroutine expevs (idexo, time_step, elem_var_index,
      $  elem_blk_id, start_pos, num_vals, elem_var_vals,
      $  ierr)
+C> ex_put_elem_var_slab()
       implicit none
       integer idexo 
       integer time_step 
@@ -3382,6 +3525,7 @@ C  Read the values of a single nodal variable for a single time step
 C
       subroutine exgnnv (idexo, time_step, nodal_var_index,
      $  start_node_num, num_nodes, nodal_vars, ierr)
+C> ex_get_n_var()
       implicit none
       integer idexo 
       integer time_step 
@@ -3411,6 +3555,7 @@ C  Write nodal variable slab
 C
       subroutine expnvs (idexo, time_step, nodal_var_index,
      $  start_pos, num_vals, nodal_var_vals, ierr)
+C> ex_put_nodal_var_slab()
       implicit none
       integer idexo 
       integer time_step 
@@ -3439,6 +3584,7 @@ C
 C  Read the element numbering map
 C
       subroutine exgnenm (idexo, starte, num_ent, elem_map, ierr)
+C> ex_get_n_elem_num_map()
       implicit none
       integer idexo 
       integer starte 
@@ -3460,6 +3606,7 @@ C
 C  Write the element numbering map
 C
       subroutine expnenm (idexo, starte, num_ent, elem_map, ierr)
+C> ex_put_partial_id_map()
       implicit none
       integer idexo 
       integer starte 
@@ -3481,6 +3628,7 @@ C
 C  Read the node numbering map
 C
       subroutine exgnnnm (idexo, startn, num_ent, node_map, ierr)
+C> ex_get_n_node_num_map()
       implicit none
       integer idexo 
       integer startn 
@@ -3502,6 +3650,7 @@ C
 C  Write the node numbering map
 C
       subroutine expnnnm (idexo, startn, num_ent, node_map, ierr)
+C> ex_put_partial_id_map()
       implicit none
       integer idexo 
       integer startn 
@@ -3524,6 +3673,7 @@ C  Read the node map for a processor
 C
       subroutine exgnmp (idexo, node_mapi, node_mapb, node_mape,
      $  processor, ierr)
+C> ex_get_processor_node_maps()
       implicit none
       integer idexo 
       integer node_mapi(*) 
@@ -3550,6 +3700,7 @@ C  Write a node map for a processor
 C
       subroutine expnmp (idexo, node_mapi, node_mapb, node_mape,
      $  processor, ierr)
+C> ex_put_processor_node_maps()
       implicit none
       integer idexo 
       integer node_mapi(*) 
@@ -3575,6 +3726,7 @@ C
 C  Read the element map for a processor
 C
       subroutine exgemp (idexo, elem_mapi, elem_mapb, processor, ierr)
+C> ex_get_processor_elem_maps()
       implicit none
       integer idexo 
       integer elem_mapi(*) 
@@ -3598,6 +3750,7 @@ C
 C  Write the element map for a processor
 C
       subroutine expemp (idexo, elem_mapi, elem_mapb, processor, ierr)
+C> ex_put_processor_elem_maps()
       implicit none
       integer idexo 
       integer elem_mapi(*) 
@@ -3622,6 +3775,7 @@ C  Read the communications map parameters for a single processor
 C
       subroutine exgcmp (idexo, ncmap_ids, ncmap_node_cnts,
      $  ecmap_ids, ecmap_elem_cnts, processor, ierr)
+C> ex_get_cmap_params()
       implicit none
       integer idexo 
       integer ncmap_ids(*) 
@@ -3649,6 +3803,7 @@ C  Write the communications map parameters for a single processor
 C
       subroutine expcmp (idexo, nmap_ids, nmap_node_cnts, emap_ids,
      $  emap_elem_cnts, processor, ierr)
+C> ex_put_cmap_params()
       implicit none
       integer idexo 
       integer nmap_ids(*) 
@@ -3676,6 +3831,7 @@ C  Write the communications map parameters for all processors
 C
       subroutine expcmpc (idexo, nmap_ids, nmap_node_cnts,
      $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr)
+C> ex_put_cmap_params()
       implicit none
       integer idexo 
       integer nmap_ids(*) 
@@ -3702,6 +3858,7 @@ C  Read the nodal communications map for a single processor
 C
       subroutine exgncm (idexo, map_id, node_ids, proc_ids,
      $  processor, ierr)
+C> ex_get_node_cmap()
       implicit none
       integer idexo 
       integer map_id 
@@ -3728,6 +3885,7 @@ C  Write the nodal communications map for a single processor
 C
       subroutine expncm (idexo, map_id, node_ids, proc_ids,
      $  processor, ierr)
+C> ex_put_node_cmap()
       implicit none
       integer idexo 
       integer map_id 
@@ -3754,6 +3912,7 @@ C  Read the elemental communications map for a single processor
 C
       subroutine exgecm (idexo, map_id, elem_ids, side_ids,
      $  proc_ids, processor, ierr)
+C> ex_get_elem_cmap()
       implicit none
       integer idexo 
       integer map_id 
@@ -3781,6 +3940,7 @@ C  Write the elemental communications map for a single processor
 C
       subroutine expecm (idexo, map_id, elem_ids, side_ids,
      $  proc_ids, processor, ierr)
+C> ex_put_elem_cmap()
       implicit none
       integer idexo 
       integer map_id 

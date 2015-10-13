@@ -2567,7 +2567,7 @@ YY_RULE_SETUP
     if(aprepro.ap_options.keep_history &&
        strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0)
     {
-      if (curr_index > yyleng) 
+      if (curr_index > (size_t)yyleng) 
 	hist_start = curr_index - yyleng;
       else
         hist_start = 0;

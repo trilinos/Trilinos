@@ -212,14 +212,14 @@ C ... Find the step
           
           IEL = 0
           DO IELB = 1, NELBLK
-            IDEB = iarray(a(kidelb), ielb)
-            NELEM = iarray(a(knelb), ielb)
+            IDEB = iarray(ia(kidelb), ielb)
+            NELEM = iarray(ia(knelb), ielb)
             IF (i2array(ia(kievok), nelblk, ielb, idxflt) .eq. 1) THEN
               call exgev(ndbin, istep, idxflt, IDEB, NELEM,
      *          a(kelvar+iel), ierr)
             ELSE
 C                  --Make sure values for undefined elements are zero
-              DO I = IEL, IEL+iarray(a(knelb), ielb) - 1
+              DO I = IEL, IEL+iarray(ia(knelb), ielb) - 1
                 a(kelvar+i) = 0.0
               end do
             END IF
@@ -476,7 +476,7 @@ C ****************************************************************
      &  (NUMEL .EQ. NUMELO), C(KNMLB), A(KNLNK), A(KNATR), 
      &  A(KLINK), A(KATRIB), A(KNELB), A(KIXELB), A(KIXEBO),
      &  A(KXELEM),(NUMNP .NE. NUMNPO), A(KNODIX),
-     &  A(KIDELB), A, C, MERR)
+     &  A(KIDELB), A, IA, C, MERR)
 
       IF (NUMNP .NE. NUMNPO) CALL MDDEL ('NODIX')
       CALL MDDEL ('LINK')
@@ -809,7 +809,7 @@ C      --Write the variables for the time step
           WRITE (*, 10000) 1
       else
         DO 110 NPT = 1, NPTIMS
-          istep = iarray(A(KPTIMS), NPT)
+          istep = iarray(iA(KPTIMS), NPT)
           STEP1 = (NPT .EQ. 1)
 
 c         WSTEP1 = (WHOTIM(ISTEP) .AND. (NWHOL .LE. 0))
@@ -819,7 +819,7 @@ C        whole and history time steps
 
 C      --Read variables for one time step
 
-          CALL RDSTEP (ISTEP, IARRAY(A(KTIMES), ISTEP), A(KNELB),
+          CALL RDSTEP (ISTEP, IARRAY(iA(KTIMES), ISTEP), A(KNELB),
      &      A(KIDELB), A(KIEVOK), A(KVISEB),MAXNE, A(KVVAL), MERR)
           IF (MERR .EQ. 1) RETURN
 

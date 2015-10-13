@@ -320,7 +320,7 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
   if(lb.type == INERTIAL || lb.type == ZPINCH ||
      lb.type == BRICK || lb.type == ZOLTAN_RCB ||
      lb.type == ZOLTAN_RIB || lb.type == ZOLTAN_HSFC ||
-     problem.vis_out == ELB_TRUE)
+     problem.vis_out == 1 || problem.vis_out == 2)
     problem.read_coords = ELB_TRUE;
   else
     problem.read_coords = ELB_FALSE;
@@ -446,7 +446,7 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
   printf("Time to generate load-balance maps: %fs\n", time2-time1);
 
   /* Output the visualization file */
-  if(problem.vis_out == ELB_TRUE)
+  if(problem.vis_out == 1 || problem.vis_out == 2)
   {
     time1 = get_time();
     if(!write_vis(nemI_out_file, exoII_inp_file, &machine, &problem,

@@ -2009,6 +2009,11 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_NULLENTITY   -1006   /**< null entity found                        */
 /* @} */
 
+/* Exodus error return codes - function return values:                      */
+#define EX_FATAL        -1      /* fatal error flag def                     */
+#define EX_NOERR         0      /* no error flag def                        */
+#define EX_WARN          1      /* warning flag def                         */
+
 #ifdef __cplusplus
 }                               /* close brackets on extern "C" declaration */
 #endif

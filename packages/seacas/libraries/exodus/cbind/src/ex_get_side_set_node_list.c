@@ -87,7 +87,6 @@ int ex_get_side_set_node_list(int exoid,
 			      void_int *side_set_node_cnt_list,
 			      void_int *side_set_node_list)
 {
-  size_t m;
   size_t i, j; 
   int64_t elem, side;
   int64_t num_side_sets, num_elem_blks, num_df, ndim;
@@ -138,18 +137,18 @@ int ex_get_side_set_node_list(int exoid,
   };
 
   /* shell */
-  static int shell_table[6][8] = {
-    /*        1                  2                                       side   */
-    {1,2,3,4,5,6,7,8}, {1,4,3,2,8,7,6,5} ,                          /* nodes  */
-    /*        3                  4                                       side   */
-    {1,2,5,0,0,0,0,0}, {2,3,6,0,0,0,0,0} ,                          /* nodes  */
-    /*        5                  6                                       side   */
-    {3,4,7,0,0,0,0,0}, {4,1,8,0,0,0,0,0}                            /* nodes  */
+  static int shell_table[6][9] = {
+    /*        1                  2                                 side   */
+    {1,2,3,4,5,6,7,8,9}, {1,4,3,2,8,7,6,5,9} ,                     /* nodes  */
+    /*        3                  4                                 side   */
+    {1,2,5,0,0,0,0,0,0}, {2,3,6,0,0,0,0,0,0} ,                     /* nodes  */
+    /*        5                  6                                 side   */
+    {3,4,7,0,0,0,0,0,0}, {4,1,8,0,0,0,0,0,0}                       /* nodes  */
   };
 
   /* tetra */
   static int tetra_table[4][6] = {
-    /*      1              2               3               4            side   */
+    /*      1              2               3               4       side   */
     {1,2,4,5,9,8}, {2,3,4,6,10,9}, {1,4,3,8,10,7}, {1,3,2,7,6,5}   /* nodes  */
   };
 
@@ -645,45 +644,53 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_SHELL:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 6) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid shell face number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (side_num+1 < 1 || side_num+1 > 6) {/* side number range check */
+	    exerrval = EX_BADPARAM;
+	    sprintf(errmsg,
+		    "Error: Invalid shell face number %"ST_ZU" in file id %d",
+		    side_num+1, exoid);
+	    ex_err("ex_get_side_set_node_list",errmsg,exerrval);
+	    err_stat = EX_FATAL;
+	    goto cleanup;
+	  }
 
 	  get_nodes(exoid, side_set_node_list, node_pos+0, connect, connect_offset+shell_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+shell_table[side_num][1]-1);
 	  set_count(exoid, side_set_node_cnt_list, elem_ndx, 2);   /* 2 node object */
-	  if (num_nodes_per_elem > 2) /*** KLUDGE for 2D shells ***/
-	    {
-	      if (side_num+1 <= 2)  /* 4-node face */
-		{
-		  set_count(exoid, side_set_node_cnt_list, elem_ndx, 4);   /* 4 node object */
-		  get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+shell_table[side_num][2]-1);
-		  get_nodes(exoid, side_set_node_list, node_pos+3, connect, connect_offset+shell_table[side_num][3]-1);
-		}
+	  if (num_nodes_per_elem > 2) { /*** KLUGE for 2D shells ***/
+	    if (side_num+1 <= 2) { /* 4-node face */
+	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 4);   /* 4 node object */
+	      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+shell_table[side_num][2]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+3, connect, connect_offset+shell_table[side_num][3]-1);
 	    }
-	  if (num_nodes_per_elem == 8)
-	    {
-	      if (side_num+1 <= 2)  /* 8-node face */
-		{
-		  set_count(exoid, side_set_node_cnt_list, elem_ndx, 8); /* 8 node object */
-		  get_nodes(exoid, side_set_node_list, node_pos+4, connect, connect_offset+shell_table[side_num][4]-1);
-		  get_nodes(exoid, side_set_node_list, node_pos+5, connect, connect_offset+shell_table[side_num][5]-1);
-		  get_nodes(exoid, side_set_node_list, node_pos+6, connect, connect_offset+shell_table[side_num][6]-1);
-		  get_nodes(exoid, side_set_node_list, node_pos+7, connect, connect_offset+shell_table[side_num][7]-1);
-		}
-	      else 
-		{
-		  set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node edge */
-		  get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+shell_table[side_num][2]-1);
-		}
+	  }
+	  if (num_nodes_per_elem == 8) {
+	    if (side_num+1 <= 2) {  /* 8-node face */
+	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 8); /* 8 node object */
+	      get_nodes(exoid, side_set_node_list, node_pos+4, connect, connect_offset+shell_table[side_num][4]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+5, connect, connect_offset+shell_table[side_num][5]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+6, connect, connect_offset+shell_table[side_num][6]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+7, connect, connect_offset+shell_table[side_num][7]-1);
 	    }
+	    else {
+	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node edge */
+	      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+shell_table[side_num][2]-1);
+	    }
+	  }
+	  if (num_nodes_per_elem == 9) {
+	    if (side_num+1 <= 2) {  /* 9-node face */
+	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 9); /* 9 node object */
+	      get_nodes(exoid, side_set_node_list, node_pos+4, connect, connect_offset+shell_table[side_num][4]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+5, connect, connect_offset+shell_table[side_num][5]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+6, connect, connect_offset+shell_table[side_num][6]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+7, connect, connect_offset+shell_table[side_num][7]-1);
+	      get_nodes(exoid, side_set_node_list, node_pos+8, connect, connect_offset+shell_table[side_num][8]-1);
+	    }
+	    else {
+	      set_count(exoid, side_set_node_cnt_list, elem_ndx, 3); /* 3 node edge */
+	      get_nodes(exoid, side_set_node_list, node_pos+2, connect, connect_offset+shell_table[side_num][2]-1);
+	    }
+	  }
 	  break;
 	}
       case EX_EL_TETRA:

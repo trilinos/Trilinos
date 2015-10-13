@@ -73,7 +73,6 @@ int ex_get_side_set_node_list_len(int exoid,
 				  void_int *side_set_node_list_len)
 {
   size_t i, j;
-  size_t m;
   int64_t num_side_sets, num_elem_blks, num_df, ndim;
   size_t list_len = 0;
   int64_t tot_num_elem = 0, tot_num_ss_elem = 0; 

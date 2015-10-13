@@ -628,7 +628,6 @@ int *justif;
   unsigned long valuemask;
   unsigned int d_width, d_height;
   char *geometry = NULL, *bufferpic = NULL, *allcolors = NULL;
-  int geom_result;
   XSetWindowAttributes setwinattr;
   XWindowAttributes winattr;
   XWMHints wmhints;
@@ -696,7 +695,7 @@ int *justif;
   /* use user-supplied default geometry if available */
   geometry = XGetDefault(display,"svdi","Geometry");
   if (geometry) 
-    geom_result = XParseGeometry(geometry,&xpos,&ypos,&x_width,&x_height);
+    XParseGeometry(geometry,&xpos,&ypos,&x_width,&x_height);
 
   /* setup colors */
   /* first try for a 24 bit visual */
@@ -1444,6 +1443,7 @@ void vdstfc(int *color_index)
    /* check valid color index */
    if (loc_index < 0 || loc_index > 255) {
      fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n",724,5);
+     loc_index = def_fc_index;
    }
 
    if (loc_index > ncolors-1) loc_index = def_fc_index;
@@ -1461,6 +1461,7 @@ int *color_index;
 
    if (loc_index < 0 || loc_index > 255)
       { fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n",724,5);
+	loc_index = def_bc_index;
       }
 
    if (loc_index > ncolors-1) loc_index = def_bc_index;

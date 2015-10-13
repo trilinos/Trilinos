@@ -1,19 +1,19 @@
-/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
-   
+
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -26,13 +26,13 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
 #ifndef YY_YY_Y_TAB_H_INCLUDED
 # define YY_YY_Y_TAB_H_INCLUDED
-/* Enabling traces.  */
+/* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
@@ -40,41 +40,40 @@
 extern int yydebug;
 #endif
 
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     NUM = 258,
-     QSTRING = 259,
-     UNDVAR = 260,
-     VAR = 261,
-     SVAR = 262,
-     IMMVAR = 263,
-     IMMSVAR = 264,
-     AVAR = 265,
-     FNCT = 266,
-     SFNCT = 267,
-     AFNCT = 268,
-     EQ_MINUS = 269,
-     EQ_PLUS = 270,
-     EQ_DIV = 271,
-     EQ_TIME = 272,
-     EQ_POW = 273,
-     LOR = 274,
-     LAND = 275,
-     NE = 276,
-     EQ = 277,
-     GE = 278,
-     LE = 279,
-     NOT = 280,
-     UNARY = 281,
-     POW = 282,
-     DEC = 283,
-     INC = 284,
-     CONCAT = 285
-   };
+  enum yytokentype
+  {
+    NUM = 258,
+    QSTRING = 259,
+    UNDVAR = 260,
+    VAR = 261,
+    SVAR = 262,
+    IMMVAR = 263,
+    IMMSVAR = 264,
+    AVAR = 265,
+    FNCT = 266,
+    SFNCT = 267,
+    AFNCT = 268,
+    EQ_PLUS = 269,
+    EQ_MINUS = 270,
+    EQ_TIME = 271,
+    EQ_DIV = 272,
+    EQ_POW = 273,
+    LOR = 274,
+    LAND = 275,
+    LE = 276,
+    GE = 277,
+    EQ = 278,
+    NE = 279,
+    UNARY = 280,
+    NOT = 281,
+    POW = 282,
+    INC = 283,
+    DEC = 284,
+    CONCAT = 285
+  };
 #endif
 /* Tokens.  */
 #define NUM 258
@@ -88,60 +87,47 @@ extern int yydebug;
 #define FNCT 266
 #define SFNCT 267
 #define AFNCT 268
-#define EQ_MINUS 269
-#define EQ_PLUS 270
-#define EQ_DIV 271
-#define EQ_TIME 272
+#define EQ_PLUS 269
+#define EQ_MINUS 270
+#define EQ_TIME 271
+#define EQ_DIV 272
 #define EQ_POW 273
 #define LOR 274
 #define LAND 275
-#define NE 276
-#define EQ 277
-#define GE 278
-#define LE 279
-#define NOT 280
-#define UNARY 281
+#define LE 276
+#define GE 277
+#define EQ 278
+#define NE 279
+#define UNARY 280
+#define NOT 281
 #define POW 282
-#define DEC 283
-#define INC 284
+#define INC 283
+#define DEC 284
 #define CONCAT 285
 
-
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
+
+union YYSTYPE
 {
-/* Line 2053 of yacc.c  */
-#line 53 "aprepro.y"
+#line 53 "aprepro.y" /* yacc.c:1909  */
 
   double  val;          /* For returning numbers.               */
   symrec *tptr;         /* For returning symbol-table pointers  */
   char   *string;       /* For returning quoted strings         */
   array  *array;
 
+#line 121 "y.tab.h" /* yacc.c:1909  */
+};
 
-/* Line 2053 of yacc.c  */
-#line 125 "y.tab.h"
-} YYSTYPE;
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+
 extern YYSTYPE yylval;
 
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void *YYPARSE_PARAM);
-#else
-int yyparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
 int yyparse (void);
-#else
-int yyparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
 #endif /* !YY_YY_Y_TAB_H_INCLUDED  */

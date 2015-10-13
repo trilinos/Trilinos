@@ -202,7 +202,7 @@ void Side_Set<INT>::load_df() const
   }
 
   // Convert raw counts to index...
-  INT index = 0;
+  size_t index = 0;
   for (size_t i=0; i < numEntity; i++) {
     dfIndex[i] = index;
     index += count[i];
@@ -261,8 +261,14 @@ const double* Side_Set<INT>::Distribution_Factors() const
 template <typename INT>
 std::pair<INT,INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
 {
-  if (dfIndex == NULL)
+  if (dfIndex == NULL) {
     load_df();
+  }
+  if (dfIndex == NULL) {
+    std::cout << "ERROR: Failed to get distribution factors for sideset " << id_
+	      << ". !  Aborting..." << std::endl;
+    exit(1);
+  }
   size_t side_index = sideIndex[side];
   return std::make_pair(dfIndex[side_index], dfIndex[side_index+1]);
 }

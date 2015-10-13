@@ -87,7 +87,7 @@ C   --It is connected to unit 90.
       REAL VAR(*)
 
       IF (IVAR .LE. 0) RETURN
-      CALL RNDVAR (A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
+      CALL RNDVAR (A, A, A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
 
       RETURN
       END

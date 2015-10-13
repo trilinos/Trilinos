@@ -58,7 +58,7 @@ C   --   KHEXID - IN  - array storing HEXSHELL element block ids
       DIMENSION A(*),IA(*)
       INTEGER NELBLK
       CHARACTER*(*) NAMELB(*)
-      INTEGER IDELB(*), NELB(*), NLNK(*), NATR(*)
+      INTEGER IDELB(*), IDSCR(*), NELB(*), NLNK(*), NATR(*)
       INTEGER KLINKE, KATRIB
       INTEGER LPTR(*)
       INTEGER ISHEX, HEXID(*)

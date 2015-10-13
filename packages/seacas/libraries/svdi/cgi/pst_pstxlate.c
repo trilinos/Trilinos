@@ -624,7 +624,7 @@ anything *surf_list[];
   int   index;          /* which state is this surface linked to */
 
    index = ((surf_statelist *) surf_list[0] ) -> this_index; 
-   if ( (index >= 0) && (index <= MAX_DEVICE_SURFACES) ) {
+   if ( (index >= 0) && (index < MAX_DEVICE_SURFACES) ) {
       surf_states [index]. next_free_state = first_free_state;
       first_free_state = index;
    } /* end if */
@@ -1571,7 +1571,7 @@ anything *surf_list[];
   float cur_x, cur_y;           /* line end points */
   float save_x, save_y;         /* used for clipping */
   int prev_code, cur_code;      /* encoded endpoints - for clipping */
-  int mode, done;               /* stuff used for clipping */
+  int mode=0, done;               /* stuff used for clipping */
   static unsigned mask = ~(~0 << 1);  /* for masking off bits */
 
    for (i = 0; i < num_surfaces; ++i) {
@@ -2346,7 +2346,6 @@ anything *surf_list[];
   int   index,index_inc,count;  /* array indices */ 
   int   nx,ny;                  /* number of cells in x,y */
   int   nx1,ny1;                /* number of cells in x,y after clipping */
-  int   lcp;                    /* local color precision -ignored for now */
   int   *cells;                 /* color values */
   int   ix,iy,yinc;             /* SVDI logical raster coordinates */
   float x1,x2,y1,y2;            /* corners of rectangle in NDC */
@@ -2364,7 +2363,6 @@ anything *surf_list[];
    nx = nx1 = abs(*(int *)params[7]);
    ny = ny1 = abs(*(int *)params[8]);
 
-   lcp = *(int *)params[9];
    cells = (int *)params[10];
 
    for (i = 0; i < num_surfaces; ++i) {
@@ -4943,6 +4941,7 @@ set_clipping( cur_state )
 surf_statelist *cur_state;
 {
   point clip1, clip2;                   /* temp clip values */
+  clip1.x = clip1.y = clip2.x = clip2.y = 0;
 
   /* The clip region depends on clip indicator and drawing surface 
    * clip indicator. 
@@ -5154,7 +5153,7 @@ surf_statelist *surf_state;
 int colors[3];
 {
   int   i;                      /* loop index */
-  int   index;                  /* color index */
+  int   index=0;                /* color index */
   float dr,dg,db,dmin,dist;     /* for finding the closet index */
   int   one = 1;
   float epsilon = .001;
@@ -5495,34 +5494,31 @@ point *bmin, *bmax;
 int bound_num;
 {
   point temp;
-
+  temp.x = temp.y = 0;
+  
    switch( bound_num ) {
      case 0: /* top */
       temp.x =
        p1->x + (p2->x - p1->x ) * (bmax->y - p1->y ) / (p2->y - p1->y );
       temp.y = bmax->y;
-      return( temp );
       break;
 
      case 1: /* right */
       temp.y = 
        p1->y + (p2->y - p1->y ) * (bmax->x - p1->x ) / (p2->x - p1->x );
       temp.x = bmax->x;
-      return( temp );
       break;
 
      case 2: /* bottom */
       temp.x = 
        p1->x + (p2->x - p1->x ) * (bmin->y - p1->y ) / (p2->y - p1->y );
       temp.y = bmin->y;
-      return( temp );
       break;
 
      case 3: /* left */
       temp.y = 
        p1->y + (p2->y - p1->y ) * (bmin->y - p1->x ) / (p2->x - p1->x );
       temp.x = bmin->x;
-      return( temp );
       break;
 
     default:
@@ -5530,6 +5526,8 @@ int bound_num;
       break;
 
    } /* end switch */
+
+   return( temp );
 } /* end intersect_bnd */
 
 
@@ -5696,18 +5694,12 @@ char *outary;  /* data to be buffered */
 {
    int i;		/* loop variable */
    int istat;		/* error reporting */
-   int zero = 0;
 
    /* cur_state is global and points to the current state */
    
    /* check for buffer flush and if there is something to flush */
    if( *numwds <= 0 && cur_state -> buff_ptr > 0 ){
 
-#if 0
-      /* pad with noops */
-      while( cur_state -> buff_ptr < BUFFER_SIZE )
-         cur_state -> buffer[cur_state -> buff_ptr++] = (char)zero;
-#endif     
       /* write out the data as a byte stream. */
       if(istat = write(cur_state-> file_d, cur_state-> buffer,
                                    cur_state -> buff_ptr ) == -1) 

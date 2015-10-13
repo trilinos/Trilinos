@@ -12,10 +12,7 @@
 namespace {
   const size_t max_line_length   = MAX_LINE_LENGTH;
 
-  const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
   const std::string SCALAR()     {return std::string("scalar");}
-  const std::string VECTOR3D()   {return std::string("vector_3d");}
-  const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
 
   template <typename INT>
   void internal_write_coordinate_frames(int exoid, const Ioss::CoordinateFrameContainer &frames, INT /*dummy*/)

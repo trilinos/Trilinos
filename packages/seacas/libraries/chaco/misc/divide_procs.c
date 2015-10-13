@@ -60,7 +60,7 @@ divide_procs (
 {
     int       nsets_real=-1;	/* number of sets to divide into */
     int       ndims_real=-1;	/* number of eigenvectors to use */
-    int       striping;		/* cut in single direction? */
+    int       striping=-1;	/* cut in single direction? */
     int       flag=-1;		/* unusual partition => use special hops */
     int       ndim_poss;	/* largest dimensionality possible */
     int       idims;		/* true dimensionality of subgrid */

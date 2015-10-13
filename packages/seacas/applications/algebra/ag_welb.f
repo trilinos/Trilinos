@@ -33,7 +33,7 @@ C
 C=======================================================================
       SUBROUTINE WELB (NDBOUT, NELBLK, VISELB, ALLELE, BLKTYP,
      &           NUMLNK, NUMATR, LINK, ATRIB, NUMELB, IXELB, IXELBO,
-     &           IXELEM, NEWNOD, NODIX, IDELB, A, C, MERR)
+     &           IXELEM, NEWNOD, NODIX, IDELB, A, IA, C, MERR)
 C=======================================================================
 
 C   --The original version of this code was written by
@@ -85,6 +85,7 @@ C   --   MERR     - OUT - memory error flag
       INTEGER NODIX(*)
       INTEGER IDELB(*)
       DIMENSION A(1)
+      INTEGER IA(1)
       CHARACTER*1 C(1)
       INTEGER MERR
 
@@ -133,17 +134,17 @@ C     Loop from 1 to number of element blocks
         DO IELB = 1, NELBLK
           if (viselb(ielb)) then
             ielbo = ielbo + 1
-            itmp = isetarr(a(kidscr),  ielbo, idelb(ielb))
-            itmp = isetarr(a(knatscr), ielbo, numatr(ielb))
-            itmp = isetarr(a(klnkscr), ielbo, numlnk(ielb))
+            itmp = isetarr(ia(kidscr),  ielbo, idelb(ielb))
+            itmp = isetarr(ia(knatscr), ielbo, numatr(ielb))
+            itmp = isetarr(ia(klnkscr), ielbo, numlnk(ielb))
             call cpynam(blktyp(ielb), c(knamscr), ielbo)
             NELBO = IXELBO(IELB) - IXELBO(IELB-1)
-            itmp = isetarr(a(knumscr), ielbo, nelbo)
+            itmp = isetarr(ia(knumscr), ielbo, nelbo)
           end if
         end do
 C ... Wrap this call to handle character*(1) vs character*(mxstln) wierdness
-        call blkout(ndbout, a(kidscr), c(knamscr), a(knumscr),
-     *    a(klnkscr), a(knatscr))
+        call blkout(ndbout, ia(kidscr), c(knamscr), ia(knumscr),
+     *    ia(klnkscr), ia(knatscr))
         call mddel('IDSCR')
         call mddel('NUMSCR')
         call mddel('LNKSCR')

@@ -132,6 +132,7 @@ assign_out_inv (
     if (outname != NULL) {
         fclose(fout);
     }
+    sfree(size);
 }
 
 void 

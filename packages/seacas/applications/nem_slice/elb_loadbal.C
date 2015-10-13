@@ -143,7 +143,7 @@ namespace {
 
   int extract_connected_lists( int nrow, const int* columns,  
 			       const int* rows, int* list, 
-			       int** list_ptr );
+			       std::vector<int> &list_ptr );
 }
 
 /*****************************************************************************/
@@ -185,16 +185,16 @@ int generate_loadbal(Machine_Description* machine,
   INT    *tmp_start=NULL, *tmp_adj=NULL;
   int    *tmp_vwgts=NULL;
   size_t tmp_nv;
-  int    *nprocg=NULL, *nelemg=NULL, *nadjg=NULL;
+  std::vector<int> nprocg, nelemg, nadjg;
   size_t  max_vtx, max_adj;
   int    group;
-  INT    *elem_map=NULL;
+  std::vector<INT> elem_map;
   int     dim[1], tmpdim[3], tmp_arch, tmp_lev;
   int    *tmp_v2p=NULL;
 
   float  *x_ptr=NULL, *y_ptr=NULL, *z_ptr=NULL;
   float  *x_node_ptr=NULL, *y_node_ptr=NULL, *z_node_ptr=NULL;
-  float  *x_elem_ptr=NULL, *y_elem_ptr=NULL, *z_elem_ptr=NULL;
+  std::vector<float>  x_elem_ptr, y_elem_ptr, z_elem_ptr;
   float  *tmp_x=NULL, *tmp_y=NULL, *tmp_z=NULL;
   float  *tmp_ewgts=NULL;
 
@@ -280,14 +280,9 @@ int generate_loadbal(Machine_Description* machine,
       /* just check to make sure that there are vertices to get coords for */
       if (problem->num_vertices > 0) {
 	/* allocate memory for element coordinates */
-	x_elem_ptr = (float*)malloc(problem->num_vertices * sizeof(float));
-	y_elem_ptr = (float*)malloc(problem->num_vertices * sizeof(float));
-	z_elem_ptr = (float*)malloc(problem->num_vertices * sizeof(float));
-	if (!(x_elem_ptr) || !(y_elem_ptr) || !(z_elem_ptr))
-	  {
-	    Gen_Error(0, "fatal: insufficient memory");
-	    return 0;
-	  }
+	x_elem_ptr.resize(problem->num_vertices);
+	y_elem_ptr.resize(problem->num_vertices);
+	z_elem_ptr.resize(problem->num_vertices);
 
 	size_t cnt = 0;
 	for (size_t ecnt=0; ecnt < mesh->num_elems; ecnt++)
@@ -301,9 +296,6 @@ int generate_loadbal(Machine_Description* machine,
 		 * be the average of the coordinates of the nodes that make
 		 * up that element
 		 */
-		x_elem_ptr[cnt] = 0.0;
-		y_elem_ptr[cnt] = 0.0;
-		z_elem_ptr[cnt] = 0.0;
 		size_t nnodes = get_elem_info(NNODES, mesh->elem_type[cnt]);
 		for (size_t ncnt=0; ncnt < nnodes; ncnt++)
 		  {
@@ -311,18 +303,18 @@ int generate_loadbal(Machine_Description* machine,
 		    y_elem_ptr[cnt] += y_ptr[(mesh->connect[ecnt][ncnt])];
 		    z_elem_ptr[cnt] += z_ptr[(mesh->connect[ecnt][ncnt])];
 		  }
-		x_elem_ptr[cnt] = x_elem_ptr[cnt] / nnodes;
-		y_elem_ptr[cnt] = y_elem_ptr[cnt] / nnodes;
-		z_elem_ptr[cnt] = z_elem_ptr[cnt] / nnodes;
+		x_elem_ptr[cnt] /= nnodes;
+		y_elem_ptr[cnt] /= nnodes;
+		z_elem_ptr[cnt] /= nnodes;
 		cnt++;
 	      }
 
 	  } /* End "for (cnt=0; cnt < mesh->num_elem; cnt++)" */
 
 	/* and use different pointers for Chaco */
-	x_ptr = x_elem_ptr;
-	y_ptr = y_elem_ptr;
-	z_ptr = z_elem_ptr;
+	x_ptr = TOPTR(x_elem_ptr);
+	y_ptr = TOPTR(y_elem_ptr);
+	z_ptr = TOPTR(z_elem_ptr);
 
       } /* End "if (problem->num_vertices > 0)" */
     } /* End "if ((problem->type == ELEMENTAL) && 
@@ -420,18 +412,13 @@ int generate_loadbal(Machine_Description* machine,
   size_t nloops = 1;
   if (problem->num_groups > 1) {
     /* allocate space to hold number of procs and elem per group */
-    nprocg = (int *) (int*)malloc(2 * problem->num_groups * sizeof(int));
-    if (!nprocg) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
-    nelemg = nprocg + problem->num_groups;
+    nprocg.resize(problem->num_groups);
+    nelemg.resize(problem->num_groups);
 
-
-    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc, nprocg,
-                        nelemg, &max_vtx, &max_adj)) {
+    if (!get_group_info(machine, problem, mesh, graph, lb->vertex2proc,
+			TOPTR(nprocg), TOPTR(nelemg), &max_vtx, &max_adj)) {
       Gen_Error(0, "fatal: Error obtaining group information.");
-      return 0;
+      goto cleanup;
     }
 
     nloops = problem->num_groups;
@@ -439,13 +426,9 @@ int generate_loadbal(Machine_Description* machine,
 
   if (machine->num_boxes > 1) {
     /* allocate space to hold number of procs and elem per box */
-    nprocg = (int *) malloc(3 * machine->num_boxes * sizeof(int));
-    if (!nprocg) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
-    }
-    nelemg = nprocg + machine->num_boxes;
-    nadjg = nelemg + machine->num_boxes;
+    nprocg.resize(machine->num_boxes);
+    nelemg.resize(machine->num_boxes);
+    nadjg.resize(machine->num_boxes);
 
     /*
      * Call Chaco to get the initial breakdown of the verticies
@@ -486,7 +469,7 @@ int generate_loadbal(Machine_Description* machine,
     if(flag != 0)
       {
 	Gen_Error(0, "fatal: Chaco returned an error");
-	return 0;
+	goto cleanup;
       }
 
     nloops = machine->num_boxes;
@@ -529,56 +512,51 @@ int generate_loadbal(Machine_Description* machine,
       tmp_adj = (INT *) malloc(max_adj * sizeof(INT));
       if (!tmp_start || !tmp_adj) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
       /* and need a group map for the elements */
-      elem_map = (INT *) malloc(problem->num_vertices * sizeof(INT));
-      if (!elem_map) {
-        Gen_Error(0, "fatal: insufficient memory");
-        return 0;
-      }
+      elem_map.resize(problem->num_vertices);
     }
     if (!weight->vertices.empty()) {
       tmp_vwgts = (int *) malloc(max_adj * sizeof(int));
       if (!tmp_vwgts) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
     }
     if (!weight->edges.empty()) {
       tmp_ewgts = (float *) malloc(max_adj * sizeof(float));
       if (!tmp_ewgts) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
     }
     if (x_ptr != NULL) {
       tmp_x = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_x) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
     }
     if (y_ptr != NULL) {
       tmp_y = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_y) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
     }
     if (z_ptr != NULL) {
       tmp_z = (float *) malloc(max_vtx * sizeof(float));
       if (!tmp_z) {
         Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+	goto cleanup;
       }
     }
     tmp_v2p = (int *) malloc(max_vtx * sizeof(int));
     if (!tmp_v2p) {
       Gen_Error(0, "fatal: insufficient memory");
-      return 0;
+      goto cleanup;
     }
-
     start_proc = 0; /* counter to keep track of proccessors for each group */
   }
 
@@ -789,7 +767,7 @@ int generate_loadbal(Machine_Description* machine,
       if(flag != 0)
 	{
 	  Gen_Error(0, "fatal: Partitioner returned an error");
-	  return 0;
+	  goto cleanup;
 	}
 
       if (nloops > 1) {
@@ -807,40 +785,21 @@ int generate_loadbal(Machine_Description* machine,
   } /* End: "if (sphere->num < mesh->num_elems)" */
 
   /* Free up coordinates if used */
-  if(problem->read_coords == ELB_TRUE)
-    {
-      switch(mesh->num_dims)
-	{
-	case 2:
-	  free(z_node_ptr);
-	  break;
-	case 1:
-	  free(y_node_ptr);
-	  free(z_node_ptr);
-	}
+  if(problem->read_coords == ELB_TRUE) {
+    switch(mesh->num_dims) {
+    case 2:
+      free(z_node_ptr); z_node_ptr = NULL; /* fall through */
+    case 1:
+      free(y_node_ptr); y_node_ptr = NULL;
     }
-
-  /* free up element coordinate memory, if used */
-  if (problem->type == ELEMENTAL)
-    {
-      if(lb->type == INERTIAL || lb->type == ZPINCH || lb->type == BRICK ||
-	 lb->type == ZOLTAN_RCB || lb->type == ZOLTAN_RIB || 
-	 lb->type == ZOLTAN_HSFC)
-	{
-	  if (x_elem_ptr) free(x_elem_ptr);
-	  if (y_elem_ptr) free(y_elem_ptr);
-	  if (z_elem_ptr) free(z_elem_ptr);
-	}
-    }
+  }
 
   /* free up memory for groups */
   if (nloops > 1) {
     if (problem->alloc_graph == ELB_TRUE) {
       free(tmp_start);
       free(tmp_adj);
-      free (elem_map);
     }
-    free (nprocg);
     free (tmp_v2p);
     if (tmp_vwgts) free (tmp_vwgts);
     if (tmp_ewgts) free (tmp_ewgts);
@@ -977,6 +936,40 @@ int generate_loadbal(Machine_Description* machine,
   }
   return 1;
 
+ cleanup:
+  if(problem->read_coords == ELB_TRUE) {
+    switch(mesh->num_dims) {
+    case 2:
+      if (z_node_ptr) free(z_node_ptr); /* fall through */
+    case 1:
+      if (y_node_ptr) free(y_node_ptr);
+    }
+  }
+  
+  if(lb->type == INFILE) {
+    fclose(fp);
+  }
+  
+  if (nloops > 1) {
+    if (problem->alloc_graph == ELB_TRUE) {
+      free(tmp_start);
+      free(tmp_adj);
+    }
+    free (tmp_v2p);
+    if (tmp_vwgts) free (tmp_vwgts);
+    if (tmp_ewgts) free (tmp_ewgts);
+    if (tmp_x)     free (tmp_x);
+    if (tmp_y)     free (tmp_y);
+    if (tmp_z)     free (tmp_z);
+    free (problem->group_no);
+    free (mesh->eb_cnts);
+    /* since Chaco didn't free the graph, need to do it here */
+    vec_free(graph->start);
+    vec_free(graph->adj);
+    vec_free(weight->vertices);
+    vec_free(weight->edges);
+  }
+  return 0;
 } /*---------------------- End generate_loadbal() ---------------------------*/
 
 
@@ -1063,17 +1056,15 @@ namespace {
 			  Graph_Description<INT>* graph,
 			  int            check_type)
   {
-    INT   *pt_list = NULL;
+    std::vector<INT> pt_list;
     size_t nelem;
-    INT   *hold_elem = NULL;
     size_t nhold;
     size_t count;
     size_t num_found = 0;
 
-    int   *problems;
     int nhold2, nsides2;
 
-    int *list_ptr;
+    std::vector<int> list_ptr;
     int end;
 
     /*
@@ -1084,13 +1075,8 @@ namespace {
     if(problem->find_cnt_domains == 1) {
       if(check_type == GLOBAL_ISSUES) {
 	size_t nrow = mesh->num_elems;
-	int *rows = (int *) malloc((nrow+1)*sizeof(int));
-	int *list = (int *) malloc(nrow*sizeof(int)) ;
-
-	if (list == NULL || rows == NULL) {
-	  Gen_Error(0, "fatal: insufficient memory");
-	  return 0;
-	}
+	std::vector<int> rows(nrow+1);
+	std::vector<int> list(nrow);
 
 	rows[0] = 1;
 	for(size_t ecnt=1; ecnt < mesh->num_elems; ecnt++) {
@@ -1099,17 +1085,8 @@ namespace {
 	}
 	rows[nrow] = graph->nadj + mesh->num_elems + 1;
 	size_t nedges = rows[nrow] - 1;
-	int *columns  = (int *) malloc(nedges*sizeof(int));
+	std::vector<int> columns(nedges);
 
-	if (columns == NULL) {
-	  Gen_Error(0, "fatal: insufficient memory");
-	  return 0;
-	}
-
-	for (size_t i=0; i < nedges; i++) {
-	  columns[i] = 0;
-	}
-	
 	size_t ki = 0;
 	size_t kf = 0;
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
@@ -1120,41 +1097,29 @@ namespace {
 	  }
 	}
 
-	size_t components = extract_connected_lists(nrow, columns, rows, list, &list_ptr);
+	size_t components = extract_connected_lists(nrow, TOPTR(columns), TOPTR(rows),
+						    TOPTR(list), list_ptr);
 
 	if (components) {
-    
 	  printf("There are " ST_ZU " connected components.\n",components);
 	  for(size_t i=0; i <components; i++){
-	    ki = (list_ptr)[i];
-	    kf = (list_ptr)[i+1]-1;
+	    ki = list_ptr[i];
+	    kf = list_ptr[i+1]-1;
 	    size_t distance = kf - ki + 1;
 	    printf("Connection " ST_ZU " #elements " ST_ZU "\n",i+1, distance);
 	  }
 	}
-
-	free((char *)list_ptr);
-	free(columns);
-	free(rows);
-	free(list);
       }
 
       if(check_type == LOCAL_ISSUES) {
 
-	int *proc_cnt     = (int*)malloc(machine->num_procs * sizeof(int));
-	INT *local_number = (INT*)malloc(mesh->num_elems * sizeof(INT));
-
-	if((!(proc_cnt) || !(local_number))) {
-	  Gen_Error(0, "fatal: insufficient memory");
-	  return 0;
-	}
+	std::vector<int> proc_cnt(machine->num_procs);
+	std::vector<INT> local_number(mesh->num_elems);
 
 	/*
 	 * after running through chaco, the adjacency graph entries have
 	 * been changed to 1 based
 	 */
-	for(int pcnt=0; pcnt < machine->num_procs; pcnt++) proc_cnt[pcnt] = 0;
-
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
 	  int proc = lb->vertex2proc[ecnt];
 	  proc_cnt[proc]++;
@@ -1165,15 +1130,9 @@ namespace {
 	for(int pcnt=0; pcnt < tmp_procs; pcnt++) {
 	  if(proc_cnt[pcnt]) {
 	    int nrow         = proc_cnt[pcnt];
-	    int *rows         = (int *) malloc((nrow+1)*sizeof(int));
-	    int *global_index = (int *) malloc((nrow)*sizeof(int));
-	    int *list         = (int *) malloc(nrow*sizeof(int)) ;
-
-	    if (list == NULL || rows == NULL || global_index == NULL) {
-	      Gen_Error(0, "fatal: insufficient memory");
-	      return 0;
-	    }
-
+	    std::vector<int> rows(nrow+1);
+	    std::vector<int> global_index(nrow);
+	    std::vector<int> list(nrow);
 
 	    rows[0] = 1;
 	    size_t cnt = 0;
@@ -1201,13 +1160,7 @@ namespace {
 	    }
 	    rows[nrow] = tcnt + 1;
 	    size_t nedges = rows[nrow] - 1;
-	    int *columns  = (int *) malloc(nedges*sizeof(int));
-
-	    if (columns == NULL) {
-	      Gen_Error(0, "fatal: insufficient memory");
-	      return 0;
-	    }
-
+	    std::vector<int> columns(nedges);
 	    {
 	      size_t kf = 0;
 	      size_t ki = 0;
@@ -1232,21 +1185,22 @@ namespace {
 	      }
 	    }
 	    
-	    int components = extract_connected_lists(nrow, columns, rows, list, &list_ptr);
+	    int components = extract_connected_lists(nrow, TOPTR(columns), TOPTR(rows),
+						     TOPTR(list), list_ptr);
 
 	    if (components > 0) {
-    
-	      printf("For Processor %d there are %d connected components.\n",pcnt, components);
+	      printf("For Processor %d there are %d connected components.\n",
+		     pcnt, components);
 	      for(int i=0; i <components; i++){
-		int ki = (list_ptr)[i];
-		int kf = (list_ptr)[i+1]-1;
+		int ki = list_ptr[i];
+		int kf = list_ptr[i+1]-1;
 		int distance = kf - ki + 1;
 		printf("Connection %d #elements %d\n",i+1, distance);
 	      }
 	      if(problem->dsd_add_procs == 1) {
 		for(int i=1; i <components; i++){
-		  int ki = (list_ptr)[i];
-		  int kf = (list_ptr)[i+1]-1;
+		  int ki = list_ptr[i];
+		  int kf = list_ptr[i+1]-1;
 		  for(int k=ki; k <=kf; k++){
 		    lb->vertex2proc[global_index[list[k]-1]] = machine->num_procs;
 		  }
@@ -1254,19 +1208,11 @@ namespace {
 		}
 	      }
 	    }
-
-	    free((char *)list_ptr);
-	    free(columns);
-	    free(rows);
-	    free(list);
-	    free(global_index);
 	  }
 	}
-	free(proc_cnt);
-	free(local_number);
-
 	if(tmp_procs != machine->num_procs) {
-	  printf("\n!!! Processor count increased to %d processors\n", machine->num_procs);
+	  printf("\n!!! Processor count increased to %d processors\n",
+		 machine->num_procs);
 	  printf("!!! in order to make connected subdomains\n\n");
 	} 
       }
@@ -1280,48 +1226,13 @@ namespace {
 
     if(problem->global_mech == 1 || problem->local_mech == 1) {
 
-      pt_list   = (INT*)malloc(graph->max_nsur * sizeof(INT));
-      if (pt_list == NULL) {
-	Gen_Error(0, "fatal: insufficient memory for pt_list");
-	return 0;
-      }
-      hold_elem = (INT*)malloc(graph->max_nsur * sizeof(INT));
-      if (hold_elem == NULL) {
-	Gen_Error(0, "fatal: insufficient memory for hold_elem");
-	free(pt_list);
-	return 0;
-      }
-
-      problems  = (int*)malloc(mesh->num_nodes * sizeof(int));
-      if (problems == NULL) {
-	Gen_Error(0, "fatal: insufficient memory for problems");
-	free(pt_list);
-	free(hold_elem);
-	return 0;
-      }
-
-      int *proc_cnt     = (int*)malloc(machine->num_procs * sizeof(int));
-      if (proc_cnt == NULL) {
-	Gen_Error(0, "fatal: insufficient memory for proc_cnt");
-	free(pt_list);
-	free(hold_elem);
-	free(problems);
-	return 0;
-      }
-
-      INT *local_number = (INT*)malloc(mesh->num_elems * sizeof(INT));
-      if (local_number == NULL) {
-	Gen_Error(0, "fatal: insufficient memory for local_number");
-	free(pt_list);
-	free(hold_elem);
-	free(problems);
-	free(proc_cnt);
-	return 0;
-      }
+      pt_list.resize(graph->max_nsur);
+      std::vector<INT> hold_elem(graph->max_nsur);
+      std::vector<int> problems(mesh->num_nodes);
+      std::vector<int> proc_cnt(machine->num_procs);
+      std::vector<INT> local_number(mesh->num_elems);
 
       if(check_type == LOCAL_ISSUES) {
-	for(int pcnt=0; pcnt < machine->num_procs; pcnt++)
-	  proc_cnt[pcnt] = 0;
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
 	  int proc = lb->vertex2proc[ecnt];
 	  assert(proc < machine->num_procs);
@@ -1329,7 +1240,6 @@ namespace {
 	  local_number[ecnt] = proc_cnt[proc];
 	}
       }
-
 
       for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
 	E_Type etype    = mesh->elem_type[ecnt];
@@ -1410,16 +1320,16 @@ namespace {
 					    TOPTR(graph->sur_elem[side_nodes2[1]]),
 					    graph->sur_elem[side_nodes2[0]].size(),
 					    graph->sur_elem[side_nodes2[1]].size(),
-					    pt_list);
+					    TOPTR(pt_list));
         
 			for(int i = 0; i < nhold2; i++) 
 			  hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
 
-			nelem = find_inter(hold_elem,
+			nelem = find_inter(TOPTR(hold_elem),
 					   TOPTR(graph->sur_elem[side_nodes2[2]]),
 					   nhold2,
 					   graph->sur_elem[side_nodes2[2]].size(),
-					   pt_list);
+					   TOPTR(pt_list));
 
 			if(nelem >= 1) {
 			  count++;
@@ -1468,12 +1378,6 @@ namespace {
 	  }
 	}
       }
-
-      free(pt_list);
-      free(hold_elem);
-      free(problems);
-      free(proc_cnt);
-      free(local_number);
 
       if(num_found) {
 	printf("Total mechanisms found = " ST_ZU "\n", num_found);
@@ -1601,8 +1505,7 @@ namespace {
     int    hflag1, hflag2, tflag1, tflag2;
     int    dflag;
 
-    INT   *pt_list, nelem;
-    INT   *hold_elem = NULL;
+    INT    nelem;
     INT    side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
     int    side_cnt;
 
@@ -1629,18 +1532,8 @@ namespace {
     lb->e_cmap_neigh.resize(machine->num_procs);
 
     /* allocate space to hold info about surounding elements */
-    pt_list   = (INT*)malloc(graph->max_nsur * sizeof(INT));
-    if (pt_list == NULL) {
-      Gen_Error(0, "fatal: insufficient memory for pt_list");
-      return 0;
-    }
-
-    hold_elem = (INT*)malloc(graph->max_nsur * sizeof(INT));
-    if (hold_elem == NULL) {
-      Gen_Error(0, "fatal: insufficient memory for hold_elem");
-      free(pt_list);
-      return 0;
-    }
+    std::vector<INT> pt_list(graph->max_nsur);
+    std::vector<INT> hold_elem(graph->max_nsur);
 
     /* Find the internal and border elements */
     time1 = get_time();
@@ -1702,10 +1595,10 @@ namespace {
 
 	    for (int ncnt = 0; ncnt < nnodes; ncnt++) {
 	      /* Find elements connnected to both node '0' and node 'ncnt+1' */
-	      nelem = find_inter(hold_elem,
+	      nelem = find_inter(TOPTR(hold_elem),
 				 TOPTR(graph->sur_elem[side_nodes[(ncnt+1)]]),
 				 nhold, graph->sur_elem[side_nodes[(ncnt+1)]].size(),
-				 pt_list);
+				 TOPTR(pt_list));
 
 	      if (nelem < 2)
 		break;
@@ -1768,7 +1661,7 @@ namespace {
 				 TOPTR(graph->sur_elem[side_nodes[node]]),
 				 graph->sur_elem[side_nodes[inode]].size(),
 				 graph->sur_elem[side_nodes[node]].size(),
-				 pt_list);
+				 TOPTR(pt_list));
 
 	      if (nelem > 1) {
 		if (ncnt == 0) {
@@ -1988,10 +1881,6 @@ namespace {
 	lb->int_elems[proc].push_back(ecnt);
       }
     } /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
-
-    /* free up memory */
-    free (pt_list);
-    free (hold_elem);
 
     time2 = get_time();
     printf("Time for elemental categorization: %fs\n", time2-time1);
@@ -2255,7 +2144,7 @@ namespace {
 
   int extract_connected_lists( int nrow, const int* columns,  
 			       const int* rows, int* list, 
-			       int** list_ptr )
+			       std::vector<int> &list_ptr )
   {
     int root, nordered, ni, nf, nni, nnf, i, ki, kf, k, j,
       components, too_many_components = 0;
@@ -2263,28 +2152,22 @@ namespace {
 
     /* Reasonable guess for number of components */
     int pieces = 10 +  (nrow/10);
-    *list_ptr = (int *) malloc(pieces*sizeof(int));
-    int *mask = (int *) malloc(nrow*sizeof(int));
-    if (mask == NULL) {
-      fprintf(stderr,"Memory exhausted in extract_connected_lists\n");
-      return(0);
-    }
+    list_ptr.resize(pieces);
+    std::vector<int> mask(nrow,1);
     root = 1;
-    for(i=0; i<nrow; i++)
-      mask[i] = 1;
 	
-    components                  = 1;
-    nordered                    = 1;
-    (*list_ptr)[ components - 1 ] = nordered-1;
-    list[ nordered-1 ]          = root;
-    mask[root-1]                = 0;
+    components             = 1;
+    nordered               = 1;
+    list_ptr[components-1] = nordered-1;
+    list[ nordered-1 ]     = root;
+    mask[root-1]           = 0;
     ni = 1;
     nf = 1;
     while( nordered < nrow ){
       if( nf == ni - 1 ){
 	++components;
 	if( components < pieces ){
-	  (*list_ptr)[ components - 1 ] = nordered;
+	  list_ptr[ components - 1 ] = nordered;
 	}
 	else{
 	  too_many_components = 1;
@@ -2318,24 +2201,19 @@ namespace {
       nf = nnf;
     }
     if( too_many_components == 0 ){
-      (*list_ptr)[ components ] = nordered;
-      free((char *)mask);
+      list_ptr[ components ] = nordered;
       return(components);
     }
 
-    /* Start over with *list_ptr correctly allocated */
-    free((char *)(*list_ptr));
-    *list_ptr = (int *) malloc(components*sizeof(int));
-    if ( *list_ptr == NULL) {
-      fprintf(stderr,"Memory exhausted in extract_connected_lists\n");
-      return(0);
-    }
+    /* Start over with list_ptr correctly allocated */
+    list_ptr.resize(components);
+    std::vector<int>(list_ptr).swap(list_ptr);
     for(i=0; i<nrow; i++)
       mask[i] = 1;
 
     components                  = 1;
     nordered                    = 1;
-    (*list_ptr)[ components - 1 ] = nordered-1;
+    list_ptr[ components - 1 ] = nordered-1;
     list[ nordered-1 ]          = root;
     mask[root-1]                = 0;
     ni = 1;
@@ -2343,7 +2221,7 @@ namespace {
     while( nordered < nrow ){
       if( nf == ni - 1 ){
 	++components;
-	(*list_ptr)[ components - 1 ] = nordered;
+	list_ptr[ components - 1 ] = nordered;
 	for(i=0;i<nrow;i++){
 	  if( mask[i] == 1 ){
 	    ++nordered;
@@ -2372,8 +2250,7 @@ namespace {
       ni = nni;
       nf = nnf;
     }
-    (*list_ptr)[ components ] = nordered;
-    free((char *)mask);
+    list_ptr[ components ] = nordered;
     return(components);
   }
 
@@ -2411,8 +2288,6 @@ namespace {
     float zmax = -FLT_MAX;
     double dz;                 /* zmax - zmin */
     double theta;              /* angle of (x,y) (polar coordinates) */
-    double *wedge_max_theta;   /* max angle in each wedge. */
-    double *slice_max_z;       /* max z value in each slice. */
     double epsilon = 1e-07;    /* tolerance that allows a point to be in wedge */
 
     if (ndot > 0 && (x == NULL || y == NULL || z == NULL || part == NULL)) {
@@ -2444,12 +2319,12 @@ namespace {
     dz = zmax - zmin;
 
     /* Compute maximum z for each slice, using uniform partition of zmin - zmax */
-    slice_max_z = (double*)malloc(nslice * sizeof(double));
+    std::vector<double> slice_max_z(nslice);
     for (i = 0; i < nslice; i++)
       slice_max_z[i] = zmin + (double) (i+1) * dz / (double) nslice;
 
     /* Compute maximum angle for each wedge, using uniform partition of 2*M_PI */
-    wedge_max_theta = (double*)malloc(nwedge * sizeof(double));
+    std::vector<double> wedge_max_theta(nwedge);
     for (i = 0; i < nwedge; i++)
       wedge_max_theta[i] = (double) (i+1) * (2. * M_PI) / (double) nwedge;
 
@@ -2495,10 +2370,6 @@ namespace {
       part[i] = (int) (slice * nwedge + wedge);
 
     }
-
-    free(wedge_max_theta);
-    free(slice_max_z);
-
     return 0;
   }
 
@@ -2510,7 +2381,7 @@ namespace {
 		    float *dmin,        /* Output:  Smallest value in d[] */
 		    float *dmax,        /* Output:  Largest value in d[] */
 		    double *delta,      /* Output:  dmax - dmin */
-		    double **slices_d   /* Output:  maximum d for each slice in dimension using
+		    std::vector<double> &slices_d   /* Output:  maximum d for each slice in dimension using
 					   uniform partition of dmax - dmin */
 		    )
   {
@@ -2531,9 +2402,9 @@ namespace {
 
     /* Compute maximum coordinate value for each slice, 
        using uniform partition of dmax - dmin */
-    *slices_d = (double*)malloc(nslices_d * sizeof(double));
+    slices_d.reserve(nslices_d);
     for (i = 0; i < nslices_d; i++)
-      (*slices_d)[i] = *dmin + (double) (i+1) * *delta / (double) nslices_d;
+      slices_d.push_back(*dmin + (double)(i+1) * *delta / (double)nslices_d);
   }
 
   /*****************************************************************************/
@@ -2542,7 +2413,7 @@ namespace {
 			float d,           /* Coordinate of dot in this dimension */
 			float dmin,        /* Smallest value in d[] */
 			double delta,      /* dmax - dmin */
-			double *slices_d   /* Maximum d for each slice in dimension using
+			std::vector<double> &slices_d   /* Maximum d for each slice in dimension using
 					      uniform partition of dmax - dmin */
 			)
   {
@@ -2623,14 +2494,14 @@ namespace {
     double dx;                 /* xmax - xmin */
     double dy;                 /* ymax - ymin */
     double dz;                 /* zmax - zmin */
-    double *slices_x=NULL;     /* max x value in each slice. */
-    double *slices_y=NULL;     /* max y value in each slice. */
-    double *slices_z=NULL;     /* max z value in each slice. */
+    std::vector<double> slices_x;     /* max x value in each slice. */
+    std::vector<double> slices_y;     /* max y value in each slice. */
+    std::vector<double> slices_z;     /* max z value in each slice. */
 
     /* Compute bounds of subdomains in each dimension */
-    BRICK_slices(nx, ndot, x, &xmin, &xmax, &dx, &slices_x);
-    BRICK_slices(ny, ndot, y, &ymin, &ymax, &dy, &slices_y);
-    BRICK_slices(nz, ndot, z, &zmin, &zmax, &dz, &slices_z);
+    BRICK_slices(nx, ndot, x, &xmin, &xmax, &dx, slices_x);
+    BRICK_slices(ny, ndot, y, &ymin, &ymax, &dy, slices_y);
+    BRICK_slices(nz, ndot, z, &zmin, &zmax, &dz, slices_z);
 
     /* Compute the partition assignment for each set of coordinates */
     for (int i = 0; i < ndot; i++) {
@@ -2643,11 +2514,6 @@ namespace {
       /* Compute the part that the element is in. */
       part[i] = (int) (z_slice * (nx * ny) + y_slice * nx + x_slice);
     }
-
-    free(slices_x);
-    free(slices_y);
-    free(slices_z);
-
     return 0;
   }
 
@@ -2835,12 +2701,12 @@ namespace {
     /* Routine to print some info about the ZPINCH, BRICK or ZOLTAN_RCB 
        decompositions */
     int npart = machine->dim[0] * machine->dim[1] * machine->dim[2];
-    int* cntwgt=NULL;
+    std::vector<int> cntwgt;
 
     int minwgt, maxwgt, sumwgt;
     
-    int *cnts       = (int*)calloc(npart, sizeof(int));
-    if (wgt) cntwgt = (int*)calloc(npart, sizeof(int));
+    std::vector<int> cnts(npart);
+    if (wgt) cntwgt.resize(npart);
     for (size_t i = 0; i < ndot; i++) {
       cnts[part[i]]++;
       if (wgt) cntwgt[part[i]] += wgt[i];
@@ -2872,7 +2738,5 @@ namespace {
     if (wgt)
       printf("WGT STATS:  min = %d  max = %d  avg = %f\n", minwgt, maxwgt,
 	     (float)sumwgt/(float)npart);
-    free(cnts);
-    if (wgt) free(cntwgt);
   }
 }

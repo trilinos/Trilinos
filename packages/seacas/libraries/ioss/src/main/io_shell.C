@@ -103,7 +103,6 @@ namespace {
   double time_read = 0.0;
   double time_write = 0.0;
 
-  void show_usage(const std::string &prog);
   void show_step(int istep, double time);
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);

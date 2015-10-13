@@ -36,9 +36,12 @@ DEFINES = -DNO_XDMF_SUPPORT -DNO_MPI
 #if defined(BuildParallelAwareExodus)
 IOPX_DEP = ../libIopx.a
 #endif
+#if UseCGNS
+IOCGNS_DEP = ../libIocgns.a
+#endif
 
 LIBS = -L.. ${IOSS} $(EXOIIV2C) $(NETCDF)
-DEPLIBS = ../libIoex.a ../libIofx.a ${IOPX_DEP} ../libIogn.a ../libIotr.a ../libIoss.a ../libIonit.a ../libIohb.a
+DEPLIBS = ../libIoex.a ../libIofx.a ${IOPX_DEP} ../libIogn.a ../libIotr.a ../libIoss.a ../libIonit.a ../libIohb.a ${IOCGNS_DEP}
 
 PROGS = cth_pressure_map io_info io_shell shell_to_hex sphgen
 

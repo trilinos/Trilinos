@@ -87,8 +87,6 @@ namespace {
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
-  void show_step(int istep, double time);
-
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interface, bool summary);
   void info_edgeblock(Ioss::Region &region, bool summary);
   void info_faceblock(Ioss::Region &region, bool summary);
@@ -109,14 +107,7 @@ namespace {
 		   Ioss::Field::RoleType role,
 		   const std::string &header);
 
-  void info_field_data(Ioss::GroupingEntity *ige,
-		       Ioss::Field::RoleType role,
-		       bool do_connectivity = true);
-
   void info_properties(Ioss::GroupingEntity *ige);
-
-  void info_field_data_internal(Ioss::GroupingEntity *ige,
-				const std::string &field_name);
 
   void file_info(Info::Interface& interface);
   void group_info(Info::Interface& interface);
@@ -325,16 +316,22 @@ namespace {
   {
     Ioss::NodeBlockContainer    nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i = nbs.begin();
-    while (i != nbs.end()) {
-      //      std::string name      = (*i)->name();
-      int64_t    num_nodes = (*i)->get_property("entity_count").get_int();
-      int64_t    degree    = (*i)->get_property("component_degree").get_int();
-      int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
-      if (summary) {
-	OUTPUT << " Number of spatial dimensions =" << std::setw(12) << degree << "\n";
-	OUTPUT << " Number of nodeblocks         =" << std::setw(12) << 1 << "\t";
-	OUTPUT << " Number of nodes            =" << std::setw(12) << num_nodes << "\n";
-      } else {
+    int64_t total_num_nodes = 0;
+    if (summary) {
+      int64_t    degree    = 0;
+      while (i != nbs.end()) {
+	int64_t    num_nodes = (*i)->get_property("entity_count").get_int();
+	total_num_nodes += num_nodes;
+	degree    = (*i)->get_property("component_degree").get_int();
+	++i;
+      }
+      OUTPUT << " Number of spatial dimensions =" << std::setw(12) << degree << "\n";
+      OUTPUT << " Number of nodeblocks         =" << std::setw(12) << nbs.size() << "\t";
+      OUTPUT << " Number of nodes            =" << std::setw(12) << total_num_nodes << "\n";
+    } else {
+      while (i != nbs.end()) {
+	int64_t    num_nodes = (*i)->get_property("entity_count").get_int();
+	int64_t    num_attrib= (*i)->get_property("attribute_count").get_int();
 	OUTPUT << '\n' << name(*i) 
 	       << std::setw(12) << num_nodes << " nodes, "
 	       << std::setw(3) << num_attrib << " attributes.\n";
@@ -360,8 +357,8 @@ namespace {
 	info_aliases(region, *i, false, true);
 	info_fields(*i, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 	info_fields(*i, Ioss::Field::TRANSIENT, "\tTransient: ");
+	++i;
       }
-      ++i;
     }
   }
 
@@ -748,38 +745,6 @@ namespace {
     }
   }
 
-  void info_field_data(Ioss::GroupingEntity *ige,
-		       Ioss::Field::RoleType role,
-		       bool do_connectivity)
-  {
-    // Iterate through the TRANSIENT-role fields of the input
-    // database and transfer to output database.
-    Ioss::NameList state_fields;
-    Ioss::NameList::const_iterator IF;
-    ige->field_describe(role, &state_fields);
-
-    for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
-      std::string field_name = *IF;
-      // All of the 'Ioss::EntityBlock' derived classes have a
-      // 'connectivity' field, but it is only interesting on the
-      // Ioss::ElementBlock class. On the other classes, it just
-      // generates overhead...
-      if (!do_connectivity && field_name == "connectivity")
-	continue;
-
-      info_field_data_internal(ige, field_name);
-    }
-  }
-
-  void info_field_data_internal(Ioss::GroupingEntity *ige, const std::string &field_name)
-  {
-#if 0
-    size_t isize = ige->get_field(field_name).get_size();
-    ige->get_field_data(field_name, &data[0], isize);
-    OUTPUT << "Field: " << field_name << " has a data storage size of " << isize << " bytes.\n";
-#endif
-  }
-
   void info_properties(Ioss::GroupingEntity *ige)
   {
 #if 0
@@ -794,11 +759,4 @@ namespace {
 #endif
   }
 
-  void show_step(int istep, double time)
-  {
-    OUTPUT.setf(std::ios::scientific);
-    OUTPUT.setf(std::ios::showpoint);
-    OUTPUT << "     Time step " << std::setw(5) << istep
-	   << " at time " << std::setprecision(5) << time << '\n';
-  }
 }

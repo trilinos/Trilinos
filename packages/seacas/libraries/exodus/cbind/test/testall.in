@@ -37,12 +37,12 @@
 # following line. Can also define other prefixes if wanted.
 
 #set PREFIX = "valgrind --tool=memcheck"
-set PREFIX = ""
-set SUFFIX = ""
-set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
-set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @NETCDF_NCDUMP@
-set DIFF = "diff -w"
+PREFIX=""
+SUFFIX=""
+BINDIR=@CMAKE_CURRENT_BINARY_DIR@
+SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
+NCDUMP=@NETCDF_NCDUMP@
+DIFF="diff -w"
 
 echo "************************************************************************"
 echo "************************************************************************"

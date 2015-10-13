@@ -50,6 +50,10 @@ int       input_int(void)
     int       i;		/* loop counter */
     int       isdigit(int);
 
+    for (i=0; i < LINE_LENGTH; i++) {
+      line[i] = '\0';
+    }
+
     i = 0;
     done = FALSE;
     while (!done) {

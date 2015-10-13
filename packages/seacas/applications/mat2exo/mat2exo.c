@@ -90,6 +90,8 @@ int main (int argc, char *argv[]){
     
   const char* ext=".exo";
 
+  size_t line_size = 0;
+  
   int   
     i,j,k,n,n1,cpu_word_size,io_word_size,exo_file,
     num_axes,num_nodes,num_elements,num_blocks,
@@ -129,7 +131,10 @@ int main (int argc, char *argv[]){
   io_word_size=sizeof(double);
   /* QA records */
   ext=".exo";
-  line = (char *) calloc (2049,sizeof(char));
+
+  /* Possibly overestimates size, but that is ok */
+  line_size = strlen(argv[1]) + strlen(ext) + 1;
+  line = (char *) calloc (line_size,sizeof(char));
   strcpy(line,argv[1]);
   strtok(line,".");  
   strcat(line,ext);
