@@ -46,16 +46,17 @@
     \brief  Test of the CellTools class.
     \author Created by P. Bochev, D. Ridzal and K. Peterson
 */
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include <Kokkos_Core.hpp>
 
 using namespace std;
-using namespace Intrepid;
+using namespace Intrepid2;
 
 
 /** \brief  Maps the vertices of the subcell parametrization domain to that subcell. 
@@ -78,85 +79,84 @@ using namespace Intrepid;
 */
 void testSubcellParametrizations(int&                               errorFlag,
                                  const shards::CellTopology&        parentCell,
-                                 const FieldContainer<double>&      subcParamVert_A,
-                                 const FieldContainer<double>&      subcParamVert_B,
+                                 const Kokkos::View<double**>&      subcParamVert_A,
+                                 const Kokkos::View<double**>&      subcParamVert_B,
                                  const int                          subcDim,
                                  const Teuchos::RCP<std::ostream>&  outStream);
   
-
 //IKT, 10/8/15: The following is a helper function that takes in a shards::CellTopology
-//and returns a pointer to the Intrepid::Basis associated with this topology. 
-Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double> > >
+//and returns a pointer to the Intrepid::Basis associated with this topology.
+Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
 getIntrepidBasis(const shards::CellTopology &cellTopo)
 {
-  Teuchos::RCP< Basis< double, FieldContainer<double> > > HGRAD_Basis;
+  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > > HGRAD_Basis;
   // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
   switch( cellTopo.getKey() ){
       
     // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Triangle<3>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Quadrilateral<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<8>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<6>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<5>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     // Standard Extended topologies
     case shards::Triangle<6>::key:    
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Quadrilateral<9>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<10>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Tetrahedron<11>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Hexahedron<20>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<27>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Wedge<15>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<18>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<13>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
        
     // These extended topologies are not used for mapping purposes
@@ -186,10 +186,11 @@ getIntrepidBasis(const shards::CellTopology &cellTopo)
   return HGRAD_Basis;  
 }
 
+
 int main(int argc, char *argv[]) {
  
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   typedef CellTools<double>       CellTools;
   typedef shards::CellTopology    CellTopology;
   
@@ -231,20 +232,20 @@ int main(int argc, char *argv[]) {
 
     
   // Vertices of the parametrization domain for 1-subcells: standard 1-cube [-1,1]
-  FieldContainer<double> cube_1(2, 1);
+  Kokkos::View<double**> cube_1("cube_1",2, 1);
   cube_1(0,0) = -1.0; 
   cube_1(1,0) = 1.0;
 
   
   // Vertices of the parametrization domain for triangular faces: the standard 2-simplex
-  FieldContainer<double> simplex_2(3, 2);
+  Kokkos::View<double**> simplex_2("simplex_2",3, 2);
   simplex_2(0, 0) = 0.0;   simplex_2(0, 1) = 0.0;
   simplex_2(1, 0) = 1.0;   simplex_2(1, 1) = 0.0;
   simplex_2(2, 0) = 0.0;   simplex_2(2, 1) = 1.0;
   
   
   // Vertices of the parametrization domain for quadrilateral faces: the standard 2-cube
-  FieldContainer<double> cube_2(4, 2);
+  Kokkos::View<double**> cube_2("cube_2",4, 2);
   cube_2(0, 0) =  -1.0;    cube_2(0, 1) =  -1.0;
   cube_2(1, 0) =   1.0;    cube_2(1, 1) =  -1.0;
   cube_2(2, 0) =   1.0;    cube_2(2, 1) =   1.0;
@@ -345,15 +346,16 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> paramEdgeWeights(numCubPoints);
     edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
+
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
       // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
       if( ( (*cti).getDimension() >= 2) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
-    
+        
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
-        FieldContainer<double> refCellVertices(vCount, cellDim);
+        Kokkos::View<double**> refCellVertices("refCellVertices",vCount, cellDim);
         CellTools::getReferenceSubcellVertices(refCellVertices, cellDim, 0, (*cti) );
         
         *outStream << " Testing edge tangents";
@@ -362,7 +364,7 @@ int main(int argc, char *argv[]) {
         
         
         // Array for physical cell vertices ( must have rank 3 for setJacobians)
-        FieldContainer<double> physCellVertices(1, vCount, cellDim);
+         Kokkos::View<double***> physCellVertices("physCellVertices",1, vCount, cellDim);
 
         // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
         // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
@@ -374,10 +376,10 @@ int main(int argc, char *argv[]) {
         }// for v     
         
         // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals
-        FieldContainer<double> refEdgePoints(numCubPoints, cellDim);        
-        FieldContainer<double> edgePointsJacobians(1, numCubPoints, cellDim, cellDim);
-        FieldContainer<double> edgePointTangents(1, numCubPoints, cellDim);
-        FieldContainer<double> edgePointNormals(1, numCubPoints, cellDim);        
+        Kokkos::View<double**> refEdgePoints("refEdgePoints",numCubPoints, cellDim);        
+        Kokkos::View<double****> edgePointsJacobians("edgePointsJacobians",1, numCubPoints, cellDim, cellDim);
+        Kokkos::View<double***> edgePointTangents("edgePointTangents",1, numCubPoints, cellDim);
+        Kokkos::View<double***> edgePointNormals("edgePointNormals",1, numCubPoints, cellDim);        
 
         // Loop over edges:
         for(int edgeOrd = 0; edgeOrd < (int)(*cti).getEdgeCount(); edgeOrd++){
@@ -403,13 +405,13 @@ int main(int argc, char *argv[]) {
           for(int pt = 0; pt < numCubPoints; pt++){
 
             // Temp storage for directly computed edge tangents
-            FieldContainer<double> edgeBenchmarkTangents(3);
+            Kokkos::View<double*> edgeBenchmarkTangents("edgeBenchmarkTangents",3);
             
             for(int d = 0; d < cellDim; d++){
               edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
               
               // Compare with d-component of edge tangent by CellTools
-              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -426,7 +428,7 @@ int main(int argc, char *argv[]) {
             // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
             if(cellDim == 2) {
               CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
-              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -438,7 +440,7 @@ int main(int argc, char *argv[]) {
                   << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
                   << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
               }
-              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -474,14 +476,17 @@ int main(int argc, char *argv[]) {
     int numQuadFaceCubPoints = quadFaceCubature -> getNumPoints();    
         
     // Allocate storage for cubature points and weights on face parameter domain and fill with points:
-    FieldContainer<double> paramTriFacePoints(numTriFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramTriFaceWeights(numTriFaceCubPoints);
-    FieldContainer<double> paramQuadFacePoints(numQuadFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramQuadFaceWeights(numQuadFaceCubPoints);
+    FieldContainer<double> paramTriFacePointsFC(numTriFaceCubPoints, faceCubDim);
+    FieldContainer<double> paramTriFaceWeightsFC(numTriFaceCubPoints);
+    FieldContainer<double> paramQuadFacePointsFC(numQuadFaceCubPoints, faceCubDim);
+    FieldContainer<double> paramQuadFaceWeightsFC(numQuadFaceCubPoints);
     
-    triFaceCubature -> getCubature(paramTriFacePoints, paramTriFaceWeights);
-    quadFaceCubature -> getCubature(paramQuadFacePoints, paramQuadFaceWeights);
-    
+    triFaceCubature -> getCubature(paramTriFacePointsFC, paramTriFaceWeightsFC);
+    quadFaceCubature -> getCubature(paramQuadFacePointsFC, paramQuadFaceWeightsFC);
+    Kokkos::View<double**> paramTriFacePoints(&paramTriFacePointsFC[0],paramTriFacePointsFC.dimension(0),paramTriFacePointsFC.dimension(1));
+    Kokkos::View<double*> paramTriFaceWeights(&paramTriFaceWeightsFC[0],paramTriFaceWeightsFC.dimension(0));
+    Kokkos::View<double**> paramQuadFacePoints(&paramQuadFacePointsFC[0],paramQuadFacePointsFC.dimension(0),paramQuadFacePointsFC.dimension(1));
+    Kokkos::View<double*> paramQuadFaceWeights(&paramQuadFaceWeightsFC[0],paramQuadFaceWeightsFC.dimension(0));
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
@@ -490,13 +495,13 @@ int main(int argc, char *argv[]) {
         
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
-        FieldContainer<double> refCellVertices(vCount, cellDim);
+        Kokkos::View<double**> refCellVertices("refCellVertices",vCount, cellDim);
         CellTools::getReferenceSubcellVertices(refCellVertices, cellDim, 0, (*cti) );
         
         *outStream << " Testing face/side normals for cell topology " <<  (*cti).getName() <<"\n";
         
         // Array for physical cell vertices ( must have rank 3 for setJacobians)
-        FieldContainer<double> physCellVertices(1, vCount, cellDim);
+        Kokkos::View<double***> physCellVertices("physCellVertices",1, vCount, cellDim);
         
         // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
         // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
@@ -509,14 +514,14 @@ int main(int argc, char *argv[]) {
         
         // Allocate storage for cub. points on a ref. face; Jacobians, phys. face normals and 
         // benchmark normals.
-        FieldContainer<double> refTriFacePoints(numTriFaceCubPoints, cellDim);        
-        FieldContainer<double> refQuadFacePoints(numQuadFaceCubPoints, cellDim);        
-        FieldContainer<double> triFacePointsJacobians(1, numTriFaceCubPoints, cellDim, cellDim);
-        FieldContainer<double> quadFacePointsJacobians(1, numQuadFaceCubPoints, cellDim, cellDim);
-        FieldContainer<double> triFacePointNormals(1, numTriFaceCubPoints, cellDim);
-        FieldContainer<double> triSidePointNormals(1, numTriFaceCubPoints, cellDim);
-        FieldContainer<double> quadFacePointNormals(1, numQuadFaceCubPoints, cellDim);
-        FieldContainer<double> quadSidePointNormals(1, numQuadFaceCubPoints, cellDim);
+        Kokkos::View<double**> refTriFacePoints("refTriFacePoints",numTriFaceCubPoints, cellDim);        
+        Kokkos::View<double**> refQuadFacePoints("refQuadFacePoints",numQuadFaceCubPoints, cellDim);        
+        Kokkos::View<double****> triFacePointsJacobians("triFacePointsJacobians",1, numTriFaceCubPoints, cellDim, cellDim);
+        Kokkos::View<double****> quadFacePointsJacobians("quadFacePointsJacobians",1, numQuadFaceCubPoints, cellDim, cellDim);
+        Kokkos::View<double***> triFacePointNormals("triFacePointNormals",1, numTriFaceCubPoints, cellDim);
+        Kokkos::View<double***> triSidePointNormals("triSidePointNormals",1, numTriFaceCubPoints, cellDim);
+        Kokkos::View<double***> quadFacePointNormals("quadFacePointNormals",1, numQuadFaceCubPoints, cellDim);
+        Kokkos::View<double***> quadSidePointNormals("quadSidePointNormals",1, numQuadFaceCubPoints, cellDim);
         
         
         // Loop over faces:
@@ -525,7 +530,7 @@ int main(int argc, char *argv[]) {
           // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
           // cells with extended topologies we will add their faces as well.
           switch( (*cti).getCellTopologyData(2, faceOrd) -> key ) {
-        
+            
             case shards::Triangle<3>::key: 
               {
                 // Compute face normals using CellTools
@@ -546,7 +551,7 @@ int main(int argc, char *argv[]) {
                 // Loop over face points: redundant for affine faces, but CellTools gives one vector 
                 // per point so need to check all points anyways.
                 for(int pt = 0; pt < numTriFaceCubPoints; pt++){
-                  FieldContainer<double> tanX(3), tanY(3), faceNormal(3);
+                  Kokkos::View<double*> tanX("tanX",3), tanY("tanY",3), faceNormal("faceNormal",3);
                   for(int d = 0; d < cellDim; d++){
                     tanX(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d));
                     tanY(d) = (physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d));
@@ -558,7 +563,7 @@ int main(int argc, char *argv[]) {
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -572,7 +577,7 @@ int main(int argc, char *argv[]) {
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -612,7 +617,7 @@ int main(int argc, char *argv[]) {
                 
                 // Loop over face points (redundant for affine faces, but needed for later when we handle non-affine ones)
                 for(int pt = 0; pt < numTriFaceCubPoints; pt++){
-                  FieldContainer<double> tanX(3), tanY(3), faceNormal(3);
+                  Kokkos::View<double*> tanX("tanX",3), tanY("tanY",3), faceNormal("faceNormal",3);
                   for(int d = 0; d < cellDim; d++){
                     tanX(d) = (physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,1) )  +
                                physCellVertices(0, v1ord, d)*( 1.0 - paramQuadFacePoints(pt,1) ) + 
@@ -630,7 +635,7 @@ int main(int argc, char *argv[]) {
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -644,7 +649,7 @@ int main(int argc, char *argv[]) {
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -686,7 +691,7 @@ int main(int argc, char *argv[]) {
   
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-  
+  Kokkos::finalize();
   return errorFlag;
 }
 
@@ -694,8 +699,8 @@ int main(int argc, char *argv[]) {
 
 void testSubcellParametrizations(int&                               errorFlag,
                                  const shards::CellTopology&        parentCell,
-                                 const FieldContainer<double>&      subcParamVert_A,
-                                 const FieldContainer<double>&      subcParamVert_B,
+                                 const Kokkos::View<double**>&      subcParamVert_A,
+                                 const Kokkos::View<double**>&      subcParamVert_B,
                                  const int                          subcDim,
                                  const Teuchos::RCP<std::ostream>&  outStream){
   
@@ -710,8 +715,8 @@ void testSubcellParametrizations(int&                               errorFlag,
     
     
     // Storage for correct reference subcell vertices and for the images of the parametrization domain points
-    FieldContainer<double> refSubcellVertices(subcVertexCount, cellDim);
-    FieldContainer<double> mappedParamVertices(subcVertexCount, cellDim);
+    Kokkos::View<double**> refSubcellVertices("refSubcellVertices",subcVertexCount, cellDim);
+    Kokkos::View<double**> mappedParamVertices("mappedParamVertices",subcVertexCount, cellDim);
     
     
     // Retrieve correct reference subcell vertices

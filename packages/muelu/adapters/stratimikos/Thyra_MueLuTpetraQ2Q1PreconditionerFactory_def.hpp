@@ -489,7 +489,7 @@ namespace Thyra {
     H->Keep("Ptent", M.GetFactory("Ptent").get());
     H->Setup(M, 0, MUELU_GPD("max levels", int, 3));
 
-#if 1
+#if 0
     for (int i = 1; i < H->GetNumLevels(); i++) {
       RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
       RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
@@ -787,11 +787,13 @@ namespace Thyra {
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
-      SC omega = MUELU_GPD("bs: omega", double, 1.0);
+      SC   omega   = MUELU_GPD("bs: omega",     double, 1.0);
+      bool lumping = MUELU_GPD("bs: lumping",   bool,   false);
 
       RCP<SchurComplementFactory> schurFact = rcp(new SchurComplementFactory());
-      schurFact->SetParameter("omega",  ParameterEntry(omega));
-      schurFact->SetFactory  ("A",      MueLu::NoFactory::getRCP());
+      schurFact->SetParameter("omega",      ParameterEntry(omega));
+      schurFact->SetParameter("lumping",    ParameterEntry(lumping));
+      schurFact->SetFactory  ("A",          MueLu::NoFactory::getRCP());
 
       // Schur complement solver
       RCP<SmootherPrototype> schurSmootherPrototype;
@@ -817,6 +819,7 @@ namespace Thyra {
 
       smootherPrototype = rcp(new BraessSarazinSmoother());
       smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
+      smootherPrototype->SetParameter("lumping",        ParameterEntry(lumping));
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }

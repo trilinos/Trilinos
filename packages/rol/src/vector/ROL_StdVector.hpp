@@ -59,6 +59,8 @@ namespace ROL {
 template <class Real, class Element=Real>
 class StdVector : public Vector<Real> {
 
+  typedef typename std::vector<Real>::size_type uint;
+
 private:
 
   Teuchos::RCP<std::vector<Element> >  std_vec_;
@@ -85,15 +87,15 @@ public:
   void axpy( const Real alpha, const Vector<Real> &x ) {
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    unsigned dimension  = std_vec_->size();
-    for (unsigned i=0; i<dimension; i++) {
+    uint dimension  = std_vec_->size();
+    for (uint i=0; i<dimension; i++) {
       (*std_vec_)[i] += alpha*xval[i];
     }
   }
 
   void scale( const Real alpha ) {
-    unsigned dimension = std_vec_->size();
-    for (unsigned i=0; i<dimension; i++) {
+    uint dimension = std_vec_->size();
+    for (uint i=0; i<dimension; i++) {
       (*std_vec_)[i] *= alpha;
     }
   }
@@ -101,9 +103,9 @@ public:
   Real dot( const Vector<Real> &x ) const {
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    unsigned dimension  = std_vec_->size();
+    uint dimension  = std_vec_->size();
     Real val = 0;
-    for (unsigned i=0; i<dimension; i++) {
+    for (uint i=0; i<dimension; i++) {
       val += (*std_vec_)[i]*xval[i];
     }
     return val;
@@ -134,12 +136,12 @@ public:
   }
 
   int dimension() const {
-    return std_vec_->size();
+    return static_cast<int>(std_vec_->size());
   }
 
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    unsigned dimension  = std_vec_->size();
-    for(unsigned i=0; i<dimension; ++i) {
+    uint dimension  = std_vec_->size();
+    for(uint i=0; i<dimension; ++i) {
       (*std_vec_)[i] = f.apply((*std_vec_)[i]);
     }
 
@@ -148,8 +150,8 @@ public:
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    unsigned dimension  = std_vec_->size();
-    for (unsigned i=0; i<dimension; i++) {
+    uint dimension  = std_vec_->size();
+    for (uint i=0; i<dimension; i++) {
       (*std_vec_)[i] = f.apply((*std_vec_)[i],xval[i]);
     }
 
@@ -157,8 +159,8 @@ public:
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     Real result = r.initialValue();
-    unsigned dimension  = std_vec_->size();
-    for(unsigned i=0; i<dimension; ++i) {
+    uint dimension  = std_vec_->size();
+    for(uint i=0; i<dimension; ++i) {
       r.reduce((*std_vec_)[i],result);
     }
     return result;

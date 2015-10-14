@@ -3127,6 +3127,29 @@ namespace Tpetra {
     /// CrsMatrix.
     Teuchos::ArrayView<impl_scalar_type> getViewNonConst (RowInfo rowinfo);
 
+  private:
+    /// \brief Constant view of all entries (including extra space) in
+    ///   the given row.
+    ///
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    Kokkos::View<const impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
+    getRowView (const RowInfo& rowInfo) const;
+
+    /// \brief Nonconst view of all entries (including extra space) in
+    ///   the given row.
+    ///
+    /// Unlike getGlobalRowView(), this method returns
+    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
+    /// this method is <i>not</i> part of the public interface of
+    /// CrsMatrix.
+    Kokkos::View<impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
+    getRowViewNonConst (const RowInfo& rowInfo);
+
+  protected:
+
     /// \brief Fill data into the local matrix.
     ///
     /// This method is only called in fillComplete(), and it is only

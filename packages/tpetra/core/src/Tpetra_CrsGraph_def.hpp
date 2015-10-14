@@ -1252,6 +1252,70 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Kokkos::View<const LocalOrdinal*,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
+               Kokkos::MemoryUnmanaged>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalKokkosRowView (const RowInfo& rowinfo) const
+  {
+    typedef LocalOrdinal LO;
+    typedef Kokkos::View<const LO*, execution_space,
+      Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) {
+      return row_view_type ();
+    }
+    else { // nothing in the row to view
+      if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        return Kokkos::subview (k_lclInds1D_, rng);
+      }
+      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
+        Teuchos::ArrayView<const LO> rowAv = lclInds2D_[rowinfo.localRow] ();
+        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+      }
+      else {
+        return row_view_type (); // nothing in the row to view
+      }
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Kokkos::View<LocalOrdinal*,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
+               Kokkos::MemoryUnmanaged>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalKokkosRowViewNonConst (const RowInfo& rowinfo)
+  {
+    typedef LocalOrdinal LO;
+    typedef Kokkos::View<LO*, execution_space,
+      Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) {
+      return row_view_type ();
+    }
+    else { // nothing in the row to view
+      if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        return Kokkos::subview (k_lclInds1D_, rng);
+      }
+      else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
+        Teuchos::ArrayView<LO> rowAv = lclInds2D_[rowinfo.localRow] ();
+        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+      }
+      else {
+        return row_view_type (); // nothing in the row to view
+      }
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalView (const RowInfo rowinfo) const
@@ -1870,10 +1934,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (RowInfo rowinfo, LocalOrdinal ind, size_t hint) const
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const size_t hint) const
   {
     using Teuchos::ArrayView;
-    ArrayView<const LocalOrdinal> colInds = this->getLocalView (rowinfo);
+    auto colInds = this->getLocalKokkosRowView (rowinfo);
     return this->findLocalIndex (rowinfo, ind, colInds, hint);
   }
 
@@ -1881,9 +1947,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (RowInfo rowinfo,
-                  LocalOrdinal ind,
-                  Teuchos::ArrayView<const LocalOrdinal> colInds,
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const Teuchos::ArrayView<const LocalOrdinal>& colInds,
                   size_t hint) const
   {
     typedef typename Teuchos::ArrayView<const LocalOrdinal>::iterator IT;
@@ -1924,6 +1990,60 @@ namespace Tpetra {
       return Teuchos::OrdinalTraits<size_t>::invalid ();
     }
   }
+
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  findLocalIndex (const RowInfo& rowinfo,
+                  const LocalOrdinal ind,
+                  const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                  const size_t hint) const
+  {
+    typedef const LocalOrdinal* IT;
+
+    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  We could
+    // imagine templating this method on the memory space, but makes
+    // more sense to let UVM work.
+
+    // If the hint was correct, then the hint is the offset to return.
+    if (hint < rowinfo.numEntries && colInds(hint) == ind) {
+      return hint;
+    }
+
+    // The hint was wrong, so we must search for the given column
+    // index in the column indices for the given row.  How we do the
+    // search depends on whether the graph's column indices are
+    // sorted.
+    IT beg = colInds.ptr_on_device ();
+    IT end = beg + rowinfo.numEntries;
+    IT ptr = beg + rowinfo.numEntries; // "null"
+    bool found = true;
+
+    if (isSorted ()) {
+      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
+      if (p.first == p.second) {
+        found = false;
+      } else {
+        ptr = p.first;
+      }
+    }
+    else {
+      ptr = std::find (beg, end, ind); // direct search
+      if (ptr == end) {
+        found = false;
+      }
+    }
+
+    if (found) {
+      return static_cast<size_t> (ptr - beg);
+    }
+    else {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+  }
+
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
