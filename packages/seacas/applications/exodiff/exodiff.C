@@ -1487,6 +1487,9 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  global_elmt_index += eblock1->Size();
 	  continue;
 	}
+	if (eblock1->Size() == 0) {
+	  continue;
+	}
         
 	Exo_Block<INT>* eblock2 = NULL;
 	int b2 = b;
@@ -1683,6 +1686,9 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 
       for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
 	Node_Set<INT>* nset1 = file1.Get_Node_Set_by_Index(b);
+	if (nset1->Size() == 0) {
+	  continue;
+	}
 	if (!nset1->is_valid_var(vidx1)) {
 	  continue;
 	}
@@ -1866,6 +1872,9 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* sset1 = file1.Get_Side_Set_by_Index(b);
 	SMART_ASSERT(sset1 != NULL);	
+	if (sset1->Size() == 0) {
+	  continue;
+	}
 	if (!sset1->is_valid_var(vidx1)) {
 	  continue;
 	}
@@ -1998,8 +2007,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	  Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
 	  sprintf(buf,
 		  "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU ".%d)",
-		  name_length,
-		  name.c_str(),
+		  name_length, name.c_str(),
 		  interface.ss_var[e_idx].abrstr(),
 		  max_diff.val1, max_diff.val2,
 		  max_diff.diff, max_diff.blk,

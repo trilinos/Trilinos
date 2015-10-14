@@ -787,10 +787,10 @@ int generate_loadbal(Machine_Description* machine,
   /* Free up coordinates if used */
   if(problem->read_coords == ELB_TRUE) {
     switch(mesh->num_dims) {
-    case 2:
-      free(z_node_ptr); z_node_ptr = NULL; /* fall through */
     case 1:
-      free(y_node_ptr); y_node_ptr = NULL;
+      free(y_node_ptr); y_node_ptr = NULL; /* fall through */
+    case 2:
+      free(z_node_ptr); z_node_ptr = NULL;
     }
   }
 
@@ -939,10 +939,10 @@ int generate_loadbal(Machine_Description* machine,
  cleanup:
   if(problem->read_coords == ELB_TRUE) {
     switch(mesh->num_dims) {
-    case 2:
-      if (z_node_ptr) free(z_node_ptr); /* fall through */
     case 1:
-      if (y_node_ptr) free(y_node_ptr);
+      if (y_node_ptr) free(y_node_ptr); /* fall through */
+    case 2:
+      if (z_node_ptr) free(z_node_ptr); 
     }
   }
   
