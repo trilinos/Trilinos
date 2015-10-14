@@ -103,6 +103,7 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/status)
 APPEND_SET(HEADERS
   status/ROL_StatusTest.hpp
+  status/ROL_ConstraintStatusTest.hpp
   status/ROL_BundleStatusTest.hpp
   status/ROL_StatusTestFactory.hpp
   )
