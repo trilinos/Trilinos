@@ -147,8 +147,9 @@ SET(MUELUADAPTERS_ETI_CPP_SOURCES "")
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
+  GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
   IF (${PACKAGE_NAME}_ENABLE_Belos AND TPETRA_INST_INT_INT)
-    GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+    APPEND_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::RefMaxwell
       )
   ENDIF()
