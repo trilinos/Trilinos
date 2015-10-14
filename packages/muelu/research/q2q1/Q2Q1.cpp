@@ -313,6 +313,8 @@ int main(int argc, char *argv[]) {
 
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&Q2Q1List), *comm);
 
+    std::cout << "Input parameters: " << *stratimikosList << std::endl;
+
     // Stratimikos vodou
     typedef Thyra::PreconditionerFactoryBase<SC>         Base;
     typedef Thyra::Ifpack2PreconditionerFactory<tCrsMatrix > Impl;
