@@ -1934,7 +1934,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     }
     
     // Stopping criterion:
-    if (totalError < INTREPID2_TOL) {
+    if (totalError < INTREPID_TOL) {
       break;
     } 
     else if ( iter > INTREPID2_MAX_NEWTON) {
