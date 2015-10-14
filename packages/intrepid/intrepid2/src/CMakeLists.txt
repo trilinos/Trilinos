@@ -132,6 +132,10 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid2_AdaptiveSparseGridDef.hpp
   Discretization/Integration/Intrepid2_AdaptiveSparseGrid.hpp
   Discretization/Integration/Intrepid2_Cubature.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolumeDef.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolume.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolumeSideDef.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolumeSide.hpp
   Discretization/Integration/Intrepid2_CubatureDirectDef.hpp
   Discretization/Integration/Intrepid2_CubatureDirect.hpp
   Discretization/Integration/Intrepid2_CubatureDirectLineGaussDef.hpp

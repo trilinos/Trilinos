@@ -86,9 +86,9 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
                                                                            ArrayPoint& cellCoords) const
 {
   // get array dimensions
-  int numCells         = cellCoords.dimension(0);
-  int numNodesPerCell  = cellCoords.dimension(1);
-  int spaceDim         = cellCoords.dimension(2);
+  std::size_t numCells         = static_cast<std::size_t>(cellCoords.dimension(0));
+  std::size_t numNodesPerCell  = static_cast<std::size_t>(cellCoords.dimension(1));
+  std::size_t spaceDim         = static_cast<std::size_t>(cellCoords.dimension(2));
   int numNodesPerSubCV = subCVCellTopo_->getNodeCount();
 
   // get sub-control volume coordinates (one sub-control volume per node of primary cell)
@@ -99,7 +99,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
   int numEdgesPerCell = primaryCellTopo_->getEdgeCount();
 
   // Loop over cells
-  for (int icell = 0; icell < numCells; icell++){
+  for (std::size_t icell = 0; icell < numCells; icell++){
 
      // Get subcontrol volume side midpoints and normals
       int iside = 1;
@@ -116,8 +116,8 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
       //   points. In 3d this loop computes the side points for all
       //   subcontrol volume sides for iside = 1. Additional code below
       //   computes the remaining points for particular 3d topologies.
-       for (int inode=0; inode < numNodesPerCell; inode++){
-          for(int idim=0; idim < spaceDim; idim++){
+       for (std::size_t inode=0; inode < numNodesPerCell; inode++){
+          for(std::size_t idim=0; idim < spaceDim; idim++){
              Scalar midpt = 0.0;
              for (int i=0; i<numNodesPerSide; i++){
                   midpt += subCVCoords(icell,inode,sideNodes(i),idim);
@@ -129,7 +129,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
       // Map side center to reference subcell
        //Intrepid2::FieldContainer<Scalar> sideCenterLocal(1,spaceDim-1);
        Intrepid2::FieldContainer<double> sideCenterLocal(1,spaceDim-1);
-       for (int idim = 0; idim < spaceDim-1; idim++){
+       for (std::size_t idim = 0; idim < spaceDim-1; idim++){
           sideCenterLocal(0,idim) = 0.0;
        }
 
@@ -141,7 +141,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
 
       // Array of cell control volume coordinates
        Intrepid2::FieldContainer<Scalar> cellCVCoords(numNodesPerCell, numNodesPerSubCV, spaceDim);
-       for (int isubcv = 0; isubcv < numNodesPerCell; isubcv++) {
+       for (std::size_t isubcv = 0; isubcv < numNodesPerCell; isubcv++) {
          for (int inode = 0; inode < numNodesPerSubCV; inode++){
            for (int idim = 0; idim < spaceDim; idim++){
                cellCVCoords(isubcv,inode,idim) = subCVCoords(icell,isubcv,inode,idim);
@@ -157,8 +157,8 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
        Intrepid2::FieldContainer<Scalar> normals(numNodesPerCell, 1, spaceDim);
        Intrepid2::CellTools<Scalar>::getPhysicalSideNormals(normals,subCVsideJacobian,iside,*(subCVCellTopo_));
 
-       for (int inode = 0; inode < numNodesPerCell; inode++) {
-          for (int idim = 0; idim < spaceDim; idim++){
+       for (std::size_t inode = 0; inode < numNodesPerCell; inode++) {
+          for (std::size_t idim = 0; idim < spaceDim; idim++){
              cubWeights(icell,inode,idim) = normals(inode,0,idim)*pow(2,spaceDim-1);
           }
        }
@@ -179,7 +179,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
            int numExtraSides = numEdgesPerCell - numNodesPerCell;
              for (int icount=0; icount < numExtraSides; icount++){
                 int iedge = icount + numNodesPerCell;
-                for(int idim=0; idim < spaceDim; idim++){
+                for(std::size_t idim=0; idim < spaceDim; idim++){
                     Scalar midpt = 0.0;
                     for (int i=0; i<numNodesPerSide; i++){
                         midpt += subCVCoords(icell,icount,sideNodes(i),idim)/numNodesPerSide;
@@ -202,7 +202,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
 
            for (int icount = 0; icount < numExtraSides; icount++) {
               int iedge = icount + numNodesPerCell;
-              for (int idim = 0; idim < spaceDim; idim++){
+              for (std::size_t idim = 0; idim < spaceDim; idim++){
                   cubWeights(icell,iedge,idim) = normals(icount,0,idim)*pow(2,spaceDim-1);
               }
            }
@@ -224,7 +224,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
            }
            for (int icount=0; icount < 3; icount++){
                 int iedge = icount + 3;
-                for(int idim=0; idim < spaceDim; idim++){
+                for(std::size_t idim=0; idim < spaceDim; idim++){
                     Scalar midpt = 0.0;
                     for (int i=0; i<numNodesPerSide; i++){
                         midpt += subCVCoords(icell,icount,sideNodes(i),idim)/numNodesPerSide;
@@ -247,7 +247,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
 
            for (int icount = 0; icount < 3; icount++) {
               int iedge = icount + 3;
-              for (int idim = 0; idim < spaceDim; idim++){
+              for (std::size_t idim = 0; idim < spaceDim; idim++){
                   cubWeights(icell,iedge,idim) = normals(icount,0,idim)*pow(2,spaceDim-1);
               }
            }

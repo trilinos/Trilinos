@@ -1401,7 +1401,101 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                                     const int&                    subcellDim,
                                     const int&                    subcellOrd,
                                     const int&                    fieldWidth = 3);
-    
+
+    //============================================================================================//
+    //                                                                                            //
+    //                             Control Volume Coordinates                                     //
+    //                                                                                            //
+    //============================================================================================//
+
+    /** \brief Computes coordinates of sub-control volumes in each primary cell.
+
+      To build the system of equations for the control volume finite element method we
+      need to compute geometric data for integration over control volumes. A control
+      volume is polygon or polyhedron that surrounds a primary cell node and has
+      vertices that include the surrounding primary cells' barycenter, edge midpoints,
+      and face midpoints if in 3-d.
+
+      When using element-based assembly of the discrete equations over the primary mesh,
+      a single element will contain a piece of each control volume surrounding each of
+      the primary cell nodes. This piece of control volume (sub-control volume) is
+      always a quadrilateral in 2-d and a hexahedron in 3-d.
+
+      In 2-d the sub-control volumes are defined in the following way:
+
+      \verbatim
+
+       Quadrilateral primary element:
+
+           O________M________O
+           |        |        |
+           |   3    |   2    |     B = cell barycenter
+           |        |        |     O = primary cell nodes
+           M________B________M     M = cell edge midpoints
+           |        |        |
+           |   0    |   1    |     sub-control volumes 0, 1, 2, 3
+           |        |        |
+           O________M________O
+
+
+       Triangle primary element:
+
+                    O
+                   / \
+                  /   \             B = cell barycenter
+                 /     \            O = primary cell nodes
+                M   2   M           M = cell edge midpoints
+               / \     / \
+              /   \ B /   \         sub-control volumes 0, 1, 2
+             /      |      \
+            /   0   |   1   \
+           O________M________O
+
+      \endverbatim
+
+      In 3-d the sub-control volumes are defined by the primary cell face
+      centers and edge midpoints. The eight sub-control volumes for a
+      hexahedron are shown below:
+
+      \verbatim
+             O__________E__________O
+            /|         /|         /|
+           E_|________F_|________E |
+          /| |       /| |       /| |
+         O_|_|______E_|_|______O | |      O = primary cell nodes
+         | | E------|-|-F------|-|-E      B = cell barycenter
+         | |/|      | |/|      | |/|      F = cell face centers
+         | F-|------|-B-|------|-F |      E = cell edge midpoints
+         |/| |      |/| |      |/| |
+         E_|_|______F_|_|______E | |
+         | | O------|-|-E------|-|-O
+         | |/       | |/       | |/
+         | E--------|-F--------|-E
+         |/         |/         |/
+         O__________E__________O
+
+      \endverbatim
+
+    \param subCVCoords     [out] - array containing sub-control volume coordinates
+    \param cellCoords       [in] - array containing coordinates of primary cells
+    \param primaryCell      [in] - primary cell topology
+
+ */
+
+  template<class ArrayCVCoord, class ArrayCellCoord>
+  static void getSubCVCoords(ArrayCVCoord & subCVcoords, const ArrayCellCoord & cellCoords,
+                             const shards::CellTopology& primaryCell);
+
+  /** \brief Compute cell barycenters.
+
+    \param barycenter      [out] - array containing cell baycenters
+    \param cellCoords       [in] - array containing cell coordinates
+
+ */
+  template<class ArrayCent, class ArrayCellCoord>
+  static void getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords);
+
+
   }; // class CellTools
 
 } // namespace Intrepid2
