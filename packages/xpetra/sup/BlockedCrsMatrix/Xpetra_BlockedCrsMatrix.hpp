@@ -139,7 +139,7 @@ namespace Xpetra {
      * \param pftype Xpetra profile type
      * TODO: create a new constructor which accepts striding information!!!
      */
-    BlockedCrsMatrix(const Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : thyraOp_(thyraOp)
     {
       // extract information from Thyra blocked operator and rebuilt information
@@ -950,7 +950,7 @@ namespace Xpetra {
 
     std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
-    Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
 #endif
 };
 
