@@ -784,29 +784,31 @@ c      NWHOL = 0
 
 C     Loop from 1 to the number of selected times
       if (nptims .eq. 0) then
-          istep = 1
-          STEP1 = (NPT .EQ. 1)
+         if (numeqn .gt. 0) then
+            istep = 1
+            STEP1 = (NPT .EQ. 1)
 
-C      --Evaluate the equations to get the output variables
+C     --Evaluate the equations to get the output variables
 
-          DO NEQN = 1, NUMEQN
-            CALL EVAL (STEP1, WSTEP1, MAXNE, MAXSTK,
-     &        A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM), A(KIEVOK),
-     &        NEQN, NUMENT(NEQN), NAMENT(1,NEQN), TYPENT(1,NEQN),
-     &        INXENT(1,NEQN), VALENT(1,NEQN),
-     &        ITMENT(1,NEQN), IEVENT(1,NEQN), VSZENT(1,NEQN),
-     &        A(KVVAL), A(KSTACK), MERR)
+            DO NEQN = 1, NUMEQN
+               CALL EVAL (STEP1, WSTEP1, MAXNE, MAXSTK,
+     &            A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM), A(KIEVOK),
+     &            NEQN, NUMENT(NEQN), NAMENT(1,NEQN), TYPENT(1,NEQN),
+     &            INXENT(1,NEQN), VALENT(1,NEQN),
+     &            ITMENT(1,NEQN), IEVENT(1,NEQN), VSZENT(1,NEQN),
+     &            A(KVVAL), A(KSTACK), MERR)
+               IF (MERR .EQ. 1) RETURN
+            END DO
+
+C     --Write the variables for the time step
+
+            CALL WRSTEP (NDBOUT, 1, MAXNE, A(KVVAL), A(KVISEB), 
+     *           A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM),
+     *           A(KIDELB), A(KIEVOK), A(KGVSCR), A(KVARSC), MERR)
             IF (MERR .EQ. 1) RETURN
-          END DO
 
-C      --Write the variables for the time step
-
-          CALL WRSTEP (NDBOUT, 1, MAXNE, A(KVVAL), A(KVISEB), 
-     *      A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM),
-     *      A(KIDELB), A(KIEVOK), A(KGVSCR), A(KVARSC), MERR)
-          IF (MERR .EQ. 1) RETURN
-
-          WRITE (*, 10000) 1
+            WRITE (*, 10000) 1
+         end if
       else
         DO 110 NPT = 1, NPTIMS
           istep = iarray(iA(KPTIMS), NPT)
