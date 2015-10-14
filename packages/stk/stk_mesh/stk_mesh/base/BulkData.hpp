@@ -902,14 +902,18 @@ protected: //functions
   void entity_comm_map_clear_ghosting(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear_ghosting(key);
-      m_entity_comm_map.comm_clear_ghosting(key);
-      notifier.notify_local_entity_comm_info_changed(key.rank());
+      bool didClear = m_entity_comm_map.comm_clear_ghosting(key);
+      if (didClear) {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
   }
   void entity_comm_map_clear(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear(key);
-      m_entity_comm_map.comm_clear(key);
-      notifier.notify_local_entity_comm_info_changed(key.rank());
+      bool didClear = m_entity_comm_map.comm_clear(key);
+      if (didClear){
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
   }
 
   /** \brief  Regenerate the shared-entity aura,

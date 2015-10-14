@@ -8,10 +8,10 @@
 namespace
 {
 
-class CommInfoObserver : public stk::mesh::ModificationObserver
+class MockCommInfoObserver : public stk::mesh::ModificationObserver
 {
 public:
-    CommInfoObserver()
+    MockCommInfoObserver()
     : commInfoWasChangedByRank(stk::topology::NUM_RANKS, false)
     {
     }
@@ -45,7 +45,7 @@ protected:
     {
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk, MPI_COMM_WORLD);
 
-        observer = new CommInfoObserver();
+        observer = new MockCommInfoObserver();
         bulk.register_observer(observer);
 
         bulk.modification_begin();
@@ -129,7 +129,7 @@ private:
 private:
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk;
-    CommInfoObserver *observer;
+    MockCommInfoObserver *observer;
     stk::mesh::Ghosting *ghost;
 };
 

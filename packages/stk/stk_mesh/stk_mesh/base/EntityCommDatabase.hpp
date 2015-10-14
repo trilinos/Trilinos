@@ -94,8 +94,8 @@ public:
   bool insert( const EntityKey & key, const EntityCommInfo & val, int owner );
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
-  void comm_clear_ghosting(const EntityKey & key );
-  void comm_clear(const EntityKey & key );
+  bool comm_clear_ghosting(const EntityKey & key );
+  bool comm_clear(const EntityKey & key );
   bool change_owner_rank(const EntityKey& key, int owner);
 
   const EntityComm* entity_comm(const EntityKey& key) const;

@@ -4071,6 +4071,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
+    notifier.notify_finished_modification_end();
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4097,6 +4098,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
+    notifier.notify_finished_modification_end();
     return true;
 }
 
