@@ -46,16 +46,16 @@
     \brief  Test of the CellTools class.
     \author Created by P. Bochev, D. Ridzal and K. Peterson
 */
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 using namespace std;
-using namespace Intrepid;
+using namespace Intrepid2;
 
 
 /** \brief  Maps the vertices of the subcell parametrization domain to that subcell. 
@@ -86,77 +86,78 @@ void testSubcellParametrizations(int&                               errorFlag,
 
 //IKT, 10/8/15: The following is a helper function that takes in a shards::CellTopology
 //and returns a pointer to the Intrepid::Basis associated with this topology. 
-Teuchos::RCP<Intrepid::Basis<double, Intrepid::FieldContainer<double> > >
+Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
 getIntrepidBasis(const shards::CellTopology &cellTopo)
 {
-  Teuchos::RCP< Basis< double, FieldContainer<double> > > HGRAD_Basis;
+  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
+  HGRAD_Basis;
   // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
   switch( cellTopo.getKey() ){
       
     // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Triangle<3>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Quadrilateral<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<8>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<6>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<5>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     // Standard Extended topologies
     case shards::Triangle<6>::key:    
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Quadrilateral<9>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<10>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Tetrahedron<11>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Hexahedron<20>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<27>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Wedge<15>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<18>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<13>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer<double> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
        
     // These extended topologies are not used for mapping purposes
@@ -182,7 +183,7 @@ getIntrepidBasis(const shards::CellTopology &cellTopo)
     default:
         TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                             ">>> ERROR (getIntrepidBasis): Cell topology not supported.");        
-    }// switch  
+    }// switch  */
   return HGRAD_Basis;  
 }
 
@@ -345,12 +346,14 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> paramEdgeWeights(numCubPoints);
     edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
+
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
       // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
       if( ( (*cti).getDimension() >= 2) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
     
+        //Get basis corresponding to the cell topology being iterated over
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
         FieldContainer<double> refCellVertices(vCount, cellDim);
@@ -409,7 +412,7 @@ int main(int argc, char *argv[]) {
               edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
               
               // Compare with d-component of edge tangent by CellTools
-              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -426,7 +429,7 @@ int main(int argc, char *argv[]) {
             // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
             if(cellDim == 2) {
               CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
-              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -438,7 +441,7 @@ int main(int argc, char *argv[]) {
                   << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
                   << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
               }
-              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -487,6 +490,8 @@ int main(int argc, char *argv[]) {
       
       // Exclude 2D and Pyramid<5> cells
       if( ( (*cti).getDimension() == 3) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
+        
+        //Get inrepid basis corresponding to cell topology    
         
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
@@ -558,7 +563,7 @@ int main(int argc, char *argv[]) {
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -572,7 +577,7 @@ int main(int argc, char *argv[]) {
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -630,7 +635,7 @@ int main(int argc, char *argv[]) {
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -644,7 +649,7 @@ int main(int argc, char *argv[]) {
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"

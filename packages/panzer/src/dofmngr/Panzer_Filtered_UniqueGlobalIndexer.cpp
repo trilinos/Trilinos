@@ -40,35 +40,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_PRODUCT_HPP
-#define PANZER_PRODUCT_HPP
+#include "Panzer_ConfigDefs.hpp"
+#include "Panzer_Traits.hpp"
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer_impl.hpp"
 
-#include "Panzer_Evaluator_Macros.hpp"
+template class panzer::Filtered_UniqueGlobalIndexer<int,int>;
 
-namespace panzer {
-    
-/** Product of entries on a single data layout
- 
-    \verbatim
-    <ParameterList>
-      <ParameterList name="Product Name" type="string" value="<destination field name>"/>
-      <ParameterList name="Values Names" type="Teuchos::RCP<std::vector<std::string> >" value="<Source field names>"/>
-      <ParameterList name="Data Layout" type="Teuchos::RCP<PHX::DataLayout>" value="<data layout of all associated fields>"/>
-      <ParameterList name="Scaling" type="double" value="<data of the scaling>/> <!-- Optional -->
-    </ParameterList>
-    \endverbatim
-  */
-PANZER_EVALUATOR_CLASS(Product)
-  
-  double scaling;
-  PHX::MDField<ScalarT> product;
-  std::vector< PHX::MDField<const ScalarT> > values;
-
-PANZER_EVALUATOR_CLASS_END
-
-}
-
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::Filtered_UniqueGlobalIndexer<int,panzer::Ordinal64>;
 #endif

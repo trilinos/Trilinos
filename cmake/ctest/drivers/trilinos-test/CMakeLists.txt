@@ -29,7 +29,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_mpi_development_debug_trilinos-test.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
-    TIMEOUT_MINUTES 300
+    TIMEOUT_MINUTES 420
   )
 
   #TRILINOS_DRIVER_ADD_DASHBOARD(
