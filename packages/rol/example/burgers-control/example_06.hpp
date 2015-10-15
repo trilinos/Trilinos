@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
+/*! \file  example_06.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
            full-space methods.
 */
@@ -138,10 +138,6 @@ public:
     f_  = 0.01*f;
     u0_ = 1.0+0.001*u0;
     u1_ = 0.001*u1;
-  }
-
-  Real get_viscosity(void) const {
-    return nu_;
   }
 
   int num_dof(void) const {
@@ -924,8 +920,6 @@ private:
   typedef H1VectorDual<Real> PrimalConstraintVector;
   typedef H1VectorPrimal<Real> DualConstraintVector;
 
-  typedef typename std::vector<Real>::size_type uint;
-
   Teuchos::RCP<BurgersFEM<Real> > fem_;
   bool useHessian_;
 
@@ -1180,39 +1174,31 @@ private:
   typedef L2VectorPrimal<Real> PrimalControlVector;
   typedef L2VectorDual<Real> DualControlVector;
 
+  Real alpha_; // Penalty Parameter
   Teuchos::RCP<BurgersFEM<Real> > fem_;
-
-  Real x_;
-  std::vector<int> indices_; 
+  Teuchos::RCP<ROL::Vector<Real> > ud_;
+  Teuchos::RCP<ROL::Vector<Real> > diff_;
 
 public:
   Objective_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem, 
-                           Real x = 0.0) : fem_(fem), x_(x) {
-    for (int i = 1; i < fem_->num_dof()+1; i++) {
-      if ( (Real)i*(fem_->mesh_spacing()) >= x_ ) {
-        indices_.push_back(i-1);
-      }
-    }
+                           const Teuchos::RCP<ROL::Vector<Real> > &ud,
+                           Real alpha = 1.e-4) : alpha_(alpha), fem_(fem), ud_(ud) {
+    diff_ = ud_->clone();
   }
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     Teuchos::RCP<const std::vector<Real> > up =
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    Teuchos::RCP<const std::vector<Real> > udp =
+      (Teuchos::dyn_cast<L2VectorPrimal<Real> >(const_cast<ROL::Vector<Real> &>(*ud_))).getVector();
 
-//    const std::vector<Real> param
-//      = ROL::ParametrizedObjective_SimOpt<Real>::getParameter();
-//    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
-//    Real nu = fem_->get_viscosity();
-//
-//    return 0.5*nu*fem_->compute_H1_dot(*up,*up);
-
-    Real val = 0.5*((((Real)indices_[0]+1.)*(fem_->mesh_spacing())-x_)
-                    *(x_+(2.-((Real)indices_[0]+1.))*(fem_->mesh_spacing()))/(fem_->mesh_spacing())
-                    +(fem_->mesh_spacing())) * (*up)[indices_[0]];
-    for (uint i = 1; i < indices_.size(); i++) {
-      val += (fem_->mesh_spacing())*(*up)[indices_[i]];
+    std::vector<Real> diff(udp->size(),0.0);
+    for (unsigned i = 0; i < udp->size(); i++) {
+      diff[i] = (*up)[i] - (*udp)[i];
     }
-    return -val;
+    return 0.5*(fem_->compute_L2_dot(diff,diff) + alpha_*fem_->compute_L2_dot(*zp,*zp));
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
@@ -1220,46 +1206,36 @@ public:
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(g)).getVector());
     Teuchos::RCP<const std::vector<Real> > up =
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+    Teuchos::RCP<const std::vector<Real> > udp =
+      (Teuchos::dyn_cast<L2VectorPrimal<Real> >(const_cast<ROL::Vector<Real> &>(*ud_))).getVector();
 
-//    const std::vector<Real> param
-//      = ROL::ParametrizedObjective_SimOpt<Real>::getParameter();
-//    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
-//    Real nu = fem_->get_viscosity();
-//
-//    fem_->apply_H1(*gp,*up);
-//    g.scale(nu);
-
-    g.zero();
-    (*gp)[indices_[0]] = -0.5*((((Real)indices_[0]+1.)*(fem_->mesh_spacing())-x_)
-                    *(x_+(2.-((Real)indices_[0]+1.))*(fem_->mesh_spacing()))/(fem_->mesh_spacing())
-                    +(fem_->mesh_spacing()));
-
-
-    for (uint i = 1; i < indices_.size(); i++) {
-      (*gp)[indices_[i]] = -(fem_->mesh_spacing());
+    std::vector<Real> diff(udp->size(),0.0);
+    for (unsigned i = 0; i < udp->size(); i++) {
+      diff[i] = (*up)[i] - (*udp)[i];
     }
+    fem_->apply_mass(*gp,diff);
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    g.zero();
+    Teuchos::RCP<std::vector<Real> > gp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(g)).getVector());
+    Teuchos::RCP<const std::vector<Real> > zp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    fem_->apply_mass(*gp,*zp);
+    for (unsigned i = 0; i < zp->size(); i++) {
+      (*gp)[i] *= alpha_;
+    }
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-//    Teuchos::RCP<std::vector<Real> > hvp =
-//      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(hv)).getVector());
-//    Teuchos::RCP<const std::vector<Real> > vp =
-//      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
-//
-//    const std::vector<Real> param
-//      = ROL::ParametrizedObjective_SimOpt<Real>::getParameter();
-//    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
-//    Real nu = fem_->get_viscosity();
-//
-//    fem_->apply_H1(*hvp,*vp);
-//    hv.scale(nu);
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(hv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
 
-    hv.zero();
+    fem_->apply_mass(*hvp,*vp);
   }
 
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
@@ -1274,7 +1250,15 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    hv.zero();
+    Teuchos::RCP<std::vector<Real> > hvp =
+      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(hv)).getVector());
+    Teuchos::RCP<const std::vector<Real> > vp =
+      (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+
+    fem_->apply_mass(*hvp,*vp);
+    for (unsigned i = 0; i < vp->size(); i++) {
+      (*hvp)[i] *= alpha_;
+    }
   }
 };
 

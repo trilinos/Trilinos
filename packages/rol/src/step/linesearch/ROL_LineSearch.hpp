@@ -149,7 +149,7 @@ public:
         d_->set(s);
         d_->scale(-1.0);
         con.pruneActive(*d_,*(grad_),x,eps_);
-        gs = alpha*(grad_)->dot(*d_);
+        gs = alpha*(grad_)->dot(d_->dual());
         d_->zero();
         updateIterate(*d_,x,s,alpha,con);
         d_->scale(-1.0);

@@ -89,7 +89,8 @@ ROL Parameter List Hierarchy
         - Fletcher Conjugate Descent
         - Liu-Storey
         - Dai-Yuan
-        - Hagar-Zhang
+        - Hager-Zhang
+        - Oren-Luenberger
     - Quasi-Newton Method
         - Secant Type
             - Limited-Memory BFGS

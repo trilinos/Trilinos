@@ -96,19 +96,23 @@ void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<Sca
 
     // Data type which supports automatic differentiation 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
+
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  
 
     // Get a pointer to the optimization vector
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the gradient vector
-    Teuchos::RCP<std::vector<ScalarT> > gp =
-        Teuchos::rcp_const_cast<std::vector<ScalarT> > ((Teuchos::dyn_cast<StdVector<ScalarT> > (g)).getVector());
+    RCP<vector> gp = dyn_cast<SV>(g).getVector();
     
     int n = xp->size();
  
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > x_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
     x_fad_rcp->reserve(n);
    
     // Initialize constructor for each element
@@ -133,28 +137,33 @@ template <class Real, template<class> class Obj>
 template <class ScalarT>
 void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<ScalarT> &v, 
                                             const Vector<ScalarT> &x, Real &tol ) {
-  
+
+    // Data type which supports automatic differentiation 
+    typedef Sacado::Fad::SFad<ScalarT,1> FadType;
+    typedef std::vector<FadType>         Fadvector;
+    typedef std::vector<ScalarT>         vector;
+    typedef StdVector<ScalarT>           SV;
+
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  
+ 
     // Get a pointer to the optimization vector 
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    RCP<const vector> xp = dyn_cast<const SV>(x).getVector();
 
     // Get a pointer to the direction vector
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
 
-    Teuchos::RCP<std::vector<ScalarT> > hvp =
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(hv)).getVector());
+    RCP<vector> hvp = dyn_cast<SV>(hv).getVector();
 
-    typedef Sacado::Fad::SFad<ScalarT,1> FadType;
 
     int n = xp->size();
    
     // Create a vector of independent variables
-    Teuchos::RCP<std::vector<FadType> > x_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> x_fad_rcp = rcp( new Fadvector );
     x_fad_rcp->reserve(n);
  
     // Allocate for gradient   
-    Teuchos::RCP<std::vector<FadType> > g_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> g_fad_rcp = rcp( new Fadvector );
     g_fad_rcp->reserve(n);
 
     for(int i=0; i<n; ++i) {

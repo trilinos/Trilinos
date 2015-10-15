@@ -41,44 +41,57 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_ALGORITHMFACTORY_H
-#define ROL_ALGORITHMFACTORY_H
+#ifndef ROL_CONSTRAINTSTATUSTEST_H
+#define ROL_CONSTRAINTSTATUSTEST_H
 
-#include "ROL_Types.hpp"
+#include "ROL_StatusTest.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+/** \class ROL::ConstraintStatusTest
+    \brief Provides an interface to check status of optimization algorithms
+           for problems with equality constraints.
+*/
 
-#include "ROL_StatusTestFactory.hpp"
-#include "ROL_StepFactory.hpp"
-#include "ROL_Algorithm.hpp"
 
 namespace ROL {
 
-template<class Real>
-class DefaultAlgorithmFactory {
+template <class Real>
+class ConstraintStatusTest : public StatusTest<Real> {
 private:
-  Teuchos::RCP<Step<Real> > step_;
-  Teuchos::RCP<StatusTest<Real> > status_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+
+  Real gtol_;
+  Real ctol_;
+  Real stol_;
+  int  max_iter_;
 
 public:
-  DefaultAlgorithmFactory(const std::string &name,
-                          Teuchos::ParameterList &parlist,
-                          bool printHeader = false) {
-    EStep els = StringToEStep(name);
-    if ( !(isValidStep(els)) ) {
-      algo_ = Teuchos::null;
-    }
-    step_   = StepFactory<Real>(name,parlist);
-    status_ = StatusTestFactory<Real>(name,parlist);
-    algo_   = Teuchos::rcp( new DefaultAlgorithm<Real>(*step_,*status_,printHeader) );
+
+  virtual ~ConstraintStatusTest() {}
+
+  ConstraintStatusTest( Teuchos::ParameterList &parlist ) {
+    gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", 1.e-6);
+    ctol_     = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-6);
+    stol_     = parlist.sublist("Status Test").get("Step Tolerance", 1.e-6*gtol_);
+    max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
   }
 
-  const Teuchos::RCP<DefaultAlgorithm<Real> >& get(void) {
-    return algo_;
+  ConstraintStatusTest( Real gtol = 1e-6, Real ctol = 1e-6, Real stol = 1e-12, int max_iter = 100 ) :  
+    gtol_(gtol), ctol_(ctol), stol_(stol), max_iter_(max_iter) {}
+
+  /** \brief Check algorithm status.
+  */
+  virtual bool check( AlgorithmState<Real> &state ) {
+    if ( ((state.gnorm > gtol_) || (state.cnorm > ctol_)) && 
+          (state.snorm > stol_) && 
+          (state.iter  < max_iter_) ) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-};
-}
+
+}; // class ConstraintStatusTest
+
+} // namespace ROL
 
 #endif
