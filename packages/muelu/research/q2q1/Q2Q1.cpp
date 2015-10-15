@@ -361,6 +361,17 @@ int main(int argc, char *argv[]) {
 
     tX->putScalar(0.0);
 
+    // Set the initial guess Dirichlet points to the proper value.
+    // This step is pretty important as the preconditioner may return zero at Dirichlet points
+    ArrayRCP<const bool> dirBCs = Utils::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
+    ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
+    ArrayRCP<const SC>  tBdata = tB->getData(0);
+    for (LO i = 0; i < tXdata.size(); i++)
+      if (dirBCs[i]) {
+        tXdata[i] = tBdata[i];
+        std::cout << "Dir BC @ " << i << std::endl;
+      }
+
     RCP<TH_Mvb> sX = Thyra::createMultiVector(tX);
     RCP<TH_Mvb> sB = Thyra::createMultiVector(tB);
 
