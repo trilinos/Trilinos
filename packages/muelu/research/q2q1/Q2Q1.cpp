@@ -367,10 +367,8 @@ int main(int argc, char *argv[]) {
     ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
     ArrayRCP<const SC>  tBdata = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)
-      if (dirBCs[i]) {
+      if (dirBCs[i])
         tXdata[i] = tBdata[i];
-        std::cout << "Dir BC @ " << i << std::endl;
-      }
 
     RCP<TH_Mvb> sX = Thyra::createMultiVector(tX);
     RCP<TH_Mvb> sB = Thyra::createMultiVector(tB);
