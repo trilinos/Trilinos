@@ -84,10 +84,6 @@ public:
   size_t  Num_Elmts()       const { return num_elmts;     }
   int     Num_Node_Sets()   const { return num_node_sets; }
   int     Num_Side_Sets()   const { return num_side_sets; }
-  float Data_Base_Version() const { return db_version;    }
-  float Library_Version()   const { return api_version;   }
-  const std::vector<std::string>& Coordinate_Names() const { return coord_names; }
-        std::string               Coordinate_Name (unsigned i) const;
   
   // Times:
   
@@ -134,10 +130,6 @@ public:
   std::string Load_Elmt_Map();
   std::string Free_Elmt_Map();
   const INT*  Get_Elmt_Map() { return elmt_map; }
-  std::string Load_Elmt_Order();
-  std::string Free_Elmt_Order();
-  const INT*  Get_Elmt_Order() { return elmt_order; }
-  void Free_All_Maps();
   inline INT Node_Map  (size_t node_num) const;  // numbers are global, 1-offset
   inline INT Elmt_Map  (size_t elmt_num) const;  // numbers are global, 1-offset
   inline INT Elmt_Order(size_t elmt_num) const;  // numbers are global, 1-offset
@@ -174,28 +166,22 @@ public:
   Exo_Entity* Get_Entity_by_Id   (EXOTYPE type, size_t id)    const;
   Exo_Entity* Get_Entity_by_Name (EXOTYPE type, const std::string &name)    const;
   
-  int        Block_Index            (size_t block_id) const;  // Returns associated block index.
   size_t        Block_Id               (size_t block_index) const;  // Returns associated block id.
   Exo_Block<INT>* Get_Elmt_Block_by_Id   (size_t block_id)    const;
   Exo_Block<INT>* Get_Elmt_Block_by_Index(size_t block_index) const;
   Exo_Block<INT>* Get_Elmt_Block_by_Name (const std::string &name)    const;
   
 
-  int       Side_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
-  size_t       Side_Set_Id          (size_t set_index)      const;
   Side_Set<INT>* Get_Side_Set_by_Id   (size_t set_id)         const;
   Side_Set<INT>* Get_Side_Set_by_Index(size_t side_set_index) const;
   Side_Set<INT>* Get_Side_Set_by_Name (const std::string &name)    const;
 
-  int       Node_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
-  size_t       Node_Set_Id          (size_t set_index)      const;
   Node_Set<INT>* Get_Node_Set_by_Id   (size_t set_id)         const;
   Node_Set<INT>* Get_Node_Set_by_Index(size_t side_set_index) const;
   Node_Set<INT>* Get_Node_Set_by_Name (const std::string &name)    const;
   
   // Misc functions:
   
-  virtual void Display_Stats(std::ostream& = std::cout) const;
   virtual void Display      (std::ostream& = std::cout) const;
   virtual void Display_Maps (std::ostream& = std::cout) const;
   virtual int  Check_State() const;  // Checks state of obj (not the file).
@@ -256,11 +242,7 @@ protected:
   
   void Get_Init_Data();         // Gets bunch of initial data.
   
-  int Elmt_Block_Index(size_t eblock_id) const;  // Returns index of element block.
-  int NSet_Index(size_t node_set_id) const;      // Returns index of node set.
-  int SSet_Index(size_t side_set_id) const;      // Returns index of side set.
   
-  int File_Exists(const char* fname);
 
  private:
   ExoII_Read(const ExoII_Read&);  // Not written.

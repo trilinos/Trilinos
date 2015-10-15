@@ -76,9 +76,8 @@ namespace ZOO {
 
     template<class VectorType>
     Teuchos::RCP<const vector> getVector( const V& x ) {
-      using Teuchos::getConst; 
       using Teuchos::dyn_cast;
-      return dyn_cast<const VectorType>(getConst(x)).getVector();
+      return dyn_cast<const VectorType>(x).getVector();
     }
 
     template<class VectorType>
@@ -223,8 +222,7 @@ namespace ZOO {
     template<class VectorType>
     Teuchos::RCP<const vector> getVector( const V& x ) {
       using Teuchos::dyn_cast;
-      using Teuchos::getConst;
-      return dyn_cast<const VectorType>(getConst(x)).getVector();
+      return dyn_cast<const VectorType>(x).getVector();
     }
 
     template<class VectorType> 
@@ -449,7 +447,7 @@ namespace ZOO {
     typedef typename vector::size_type uint;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
     // Cast initial guess and solution vectors.
     RCP<vector> x0p  = dyn_cast<XPrim>(x0).getVector(); 

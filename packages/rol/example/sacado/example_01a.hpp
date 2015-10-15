@@ -83,8 +83,9 @@ template<class Real>
 template<class ScalarT>
 ScalarT Zakharov<Real>::value(const Vector<ScalarT>& x, Real &tol) {
 
-    Teuchos::RCP<const std::vector<ScalarT> > xp =
-        (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(x))).getVector();
+    using Teuchos::RCP;  using Teuchos::dyn_cast;
+
+    RCP<const std::vector<ScalarT> > xp = (dyn_cast<const StdVector<ScalarT> >(x)).getVector();
 
     int n = xp->size();
 

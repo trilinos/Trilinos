@@ -81,15 +81,6 @@ int Excn::ParallelDisks::Raid_Offset() const
 
 
 /*****************************************************************************/
-void Excn::ParallelDisks::rename_single_file_for_mp(const std::string& curdir,
-					      std::string& name) const
-{
-  // Possible to have node layout without parallel disks 
-  if(curdir.length() && name[0] != '/') {
-    name = curdir + "/" + name;
-  }
-  return;
-}
 
 /*****************************************************************************/
 void Excn::ParallelDisks::rename_file_for_mp(const std::string& rootdir,

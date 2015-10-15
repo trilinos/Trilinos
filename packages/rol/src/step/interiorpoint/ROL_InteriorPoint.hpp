@@ -74,8 +74,7 @@ private:
   // Downcast const ROL::Vector to const ROL::PartitionedVector
   const PV& partition(const V& x) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst; 
-    return dyn_cast<const PV>(getConst(x));
+    return dyn_cast<const PV>(x);
   }
   
   // Downcast ROL::Vector to ROL::PartitionedVector
@@ -186,8 +185,7 @@ private:
   // Downcast const ROL::Vector to const ROL::PartitionedVector
   const PV& partition(const V& x) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst; 
-    return dyn_cast<const PV>(getConst(x));
+    return dyn_cast<const PV>(x);
   }
   
   // Downcast ROL::Vector to ROL::PartitionedVector

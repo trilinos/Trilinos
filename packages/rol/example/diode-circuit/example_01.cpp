@@ -155,8 +155,18 @@ int main(int argc, char *argv[]) {
     else{ scale = 1.0;}
      *outStream << std::scientific << "Scaling: " << scale << "\n";
 
-    /// Define constraints on Is and Rs
-    ROL::ZOO::BoundConstraint_DiodeCircuit<RealT> con(scale,lo_Is,up_Is,lo_Rs,up_Rs);
+    /// Define constraints on Is and Rs.
+    // Bound vectors.
+    Teuchos::RCP<std::vector<RealT> > IsRs_lower_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    (*IsRs_lower_rcp)[0] = lo_Is; /// Is lower bound
+    (*IsRs_lower_rcp)[1] = lo_Rs; /// Rs lower bound
+    Teuchos::RCP<std::vector<RealT> > IsRs_upper_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    (*IsRs_upper_rcp)[0] = up_Is; /// Is upper bound
+    (*IsRs_upper_rcp)[1] = up_Rs; /// Rs upper bound
+    Teuchos::RCP<ROL::PrimalScaledStdVector<RealT> > lo_IsRs = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(IsRs_lower_rcp, scaling_rcp));
+    Teuchos::RCP<ROL::PrimalScaledStdVector<RealT> > up_IsRs = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(IsRs_upper_rcp, scaling_rcp));
+    // Bound constraint.
+    ROL::BoundConstraint<RealT> con2(lo_IsRs, up_IsRs, scale);
 
     // Gradient and Hessian check
     // direction for gradient check
@@ -172,7 +182,7 @@ int main(int argc, char *argv[]) {
     (*obj).checkHessVec(x, g0p, d, true, *outStream);
 
     // Run Algorithm
-    algo.run(x, *obj, con, true, *outStream);
+    algo.run(x, *obj, con2, true, *outStream);
     
     Teuchos::RCP<std::vector<RealT> > gf_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
     ROL::DualScaledStdVector<RealT> gfp(gf_rcp,scaling_rcp);

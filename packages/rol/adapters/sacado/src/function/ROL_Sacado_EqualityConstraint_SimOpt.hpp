@@ -156,11 +156,11 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<Sca
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(getConst(z)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
     RCP<vector> jvp = dyn_cast<SV>(jv).getVector(); 
 
     int n = up->size();
@@ -211,12 +211,12 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<Sca
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;
 
     RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(getConst(z)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size(); 
@@ -268,7 +268,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;  
 
     RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
     RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
@@ -329,7 +329,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;  
 
     RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
     RCP<const vector> vp = dyn_cast<const SV>(v).getVector();   
@@ -389,13 +389,13 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_11AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
     RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(getConst(w)).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(getConst(z)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
@@ -454,7 +454,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_12AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast;  
 
     RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
     RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
@@ -517,13 +517,13 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_21AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
     RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
-    RCP<const vector> vp = dyn_cast<const SV>(getConst(v)).getVector();
-    RCP<const vector> wp = dyn_cast<const SV>(getConst(w)).getVector();
-    RCP<const vector> up = dyn_cast<const SV>(getConst(u)).getVector();
-    RCP<const vector> zp = dyn_cast<const SV>(getConst(z)).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
@@ -580,7 +580,7 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vec
     typedef StdVector<ScalarT>         SV;
 
     using Teuchos::RCP;       using Teuchos::rcp;
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
+    using Teuchos::dyn_cast; 
 
     RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
     RCP<const vector> vp = dyn_cast<const SV>(v).getVector();

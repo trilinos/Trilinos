@@ -446,8 +446,8 @@ private:
   Teuchos::RCP<FEM<Real> > FEM_;
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
   }
   
   Teuchos::RCP<vector> getVector( V& x ) {
@@ -692,8 +692,8 @@ private:
   bool useLC_; // Use linear form of compliance.  Otherwise use quadratic form.
 
   Teuchos::RCP<const vector> getVector( const V& x ) {
-    using Teuchos::dyn_cast;  using Teuchos::getConst;
-    return dyn_cast<const SV>(getConst(x)).getVector();
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
   }
 
   Teuchos::RCP<vector> getVector( V& x ) {

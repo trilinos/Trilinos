@@ -18,6 +18,9 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --filename=mhd1280b.cua"
         "--verbose --filename=mhd1280b.cua --pseudo"
         "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
+        "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=0"
+        "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=1"
+        "--verbose --filename=mhd1280a.cua --pseudo --user-defined-iterations=10"
       STANDARD_PASS_OUTPUT 
       XHOST KALLIKRATES
       )

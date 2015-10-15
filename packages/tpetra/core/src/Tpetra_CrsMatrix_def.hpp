@@ -2002,7 +2002,6 @@ namespace Tpetra {
     typedef Tpetra::project2nd<ST, ST> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
-    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
@@ -2031,15 +2030,25 @@ namespace Tpetra {
         return static_cast<LO> (0);
       }
 
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
-        return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,
-                                                                        curVals,
-                                                                        indices,
-                                                                        valsIn,
-                                                                        f_type ());
+        using Kokkos::MemoryUnmanaged;
+        using Kokkos::View;
+        typedef device_type DD;
+        typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
+        auto curVals = this->getRowViewNonConst (rowInfo);
+        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
+        View<const LO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
+                                                     indices.size ());
+        return staticGraph_->template replaceLocalValues<ST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+
         // Convert the given local indices to global indices.
         //
         // FIXME (mfh 27 Jun 2014) Why can't we ask the graph to do
@@ -2062,6 +2071,7 @@ namespace Tpetra {
             ++numValid; // sanity check count of # valid indices
           }
         }
+        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
         const LO numXformed =
           staticGraph_->template transformGlobalValues<ST, f_type> (rowInfo,
                                                                     curVals, // target
@@ -2105,7 +2115,6 @@ namespace Tpetra {
     typedef Tpetra::project2nd<ST, ST> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
-    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
@@ -2131,8 +2140,17 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
+        using Kokkos::MemoryUnmanaged;
+        using Kokkos::View;
+        typedef device_type DD;
+        // Don't use Kokkos::HostSpace here, because we have to
+        // allocate, and we need to specify an execution space as well
+        // as a memory space in order to do that correctly.
+        typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
+        auto curVals = this->getRowViewNonConst (rowInfo);
+
         // Convert the given global indices to local indices.
         //
         // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
@@ -2140,21 +2158,26 @@ namespace Tpetra {
         // wouldn't need temporary storage.
         const map_type& colMap = * (this->getColMap ());
         const size_type numInds = indices.size ();
-        Array<LO> lclInds (numInds);
+
+        View<LO*, HD> lclInds ("lclInds", numInds);
         for (size_type k = 0; k < numInds; ++k) {
           // There is no need to filter out indices not in the
           // column Map.  Those that aren't will be mapped to
           // invalid(), which the graph's transformGlobalValues()
           // will filter out (but not count in its return value).
-          lclInds[k] = colMap.getLocalElement (indices[k]);
+          lclInds(k) = colMap.getLocalElement (indices[k]);
         }
-        return graph.template transformLocalValues<ST, f_type> (rowInfo,
-                                                                curVals,
-                                                                lclInds (),
-                                                                valsIn,
-                                                                f_type ());
+
+        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
+        return graph.template replaceLocalValues<ST, HD, DD> (rowInfo,
+                                                              curVals,
+                                                              lclInds,
+                                                              valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
         return graph.template transformGlobalValues<ST, f_type> (rowInfo,
                                                                  curVals,
                                                                  indices,
@@ -2189,7 +2212,6 @@ namespace Tpetra {
     typedef std::plus<Scalar> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
-    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
@@ -2224,8 +2246,15 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
+        using Kokkos::MemoryUnmanaged;
+        using Kokkos::View;
+        typedef device_type DD;
+        // Don't use Kokkos::HostSpace here, because we have to
+        // allocate, and we need to specify an execution space as well
+        // as a memory space in order to do that correctly.
+        typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
         // Convert the given global indices to local indices.
         //
         // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
@@ -2233,21 +2262,25 @@ namespace Tpetra {
         // wouldn't need temporary storage.
         const map_type& colMap = * (this->getColMap ());
         const size_type numInds = indices.size ();
-        Array<LO> lclInds (numInds);
+
+        View<LO*, HD> lclInds ("tmp lclInds", numInds);
         for (size_type k = 0; k < numInds; ++k) {
           // There is no need to filter out indices not in the
           // column Map.  Those that aren't will be mapped to
           // invalid(), which the graph's transformGlobalValues()
           // will filter out (but not count in its return value).
-          lclInds[k] = colMap.getLocalElement (indices[k]);
+          lclInds(k) = colMap.getLocalElement (indices[k]);
         }
-        return graph.template transformLocalValues<ST, f_type> (rowInfo,
-                                                                curVals,
-                                                                lclInds (),
-                                                                valsIn,
-                                                                f_type ());
+        auto curVals = this->getRowViewNonConst (rowInfo);
+
+        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
+        return graph.template sumIntoLocalValues<ST, HD, DD> (rowInfo, curVals,
+                                                              lclInds, valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
         return graph.template transformGlobalValues<ST, f_type> (rowInfo,
                                                                  curVals,
                                                                  indices,
@@ -2281,7 +2314,6 @@ namespace Tpetra {
     typedef std::plus<Scalar> f_type;
     typedef typename ArrayView<GO>::size_type size_type;
 
-    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
@@ -2303,22 +2335,32 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+      const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
       if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
         // The input local row is invalid on the calling process,
         // which means that the calling process summed 0 entries.
         return static_cast<LO> (0);
       }
 
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
       if (isLocallyIndexed ()) {
-        return staticGraph_->template transformLocalValues<ST, f_type> (rowInfo,
-                                                                        curVals,
-                                                                        indices,
-                                                                        valsIn,
-                                                                        f_type ());
+        using Kokkos::MemoryUnmanaged;
+        using Kokkos::View;
+        typedef device_type DD;
+        typedef typename View<LO*, DD>::HostMirror::device_type HD;
+
+        auto curVals = this->getRowViewNonConst (rowInfo);
+        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
+        View<const LO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
+                                                     indices.size ());
+        return staticGraph_->template sumIntoLocalValues<ST, HD, DD> (rowInfo,
+                                                                      curVals,
+                                                                      indsIn,
+                                                                      valsIn);
       }
       else if (isGloballyIndexed ()) {
+        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+
         // Convert the given local indices to global indices.
         //
         // FIXME (mfh 27 Jun 2014) Why can't we ask the graph to do
@@ -2341,6 +2383,7 @@ namespace Tpetra {
             ++numValid; // sanity check count of # valid indices
           }
         }
+        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
         const LO numXformed =
           staticGraph_->template transformGlobalValues<ST, f_type> (rowInfo,
                                                                     curVals, // target
@@ -2396,6 +2439,74 @@ namespace Tpetra {
     }
     else {
       return ArrayView<impl_scalar_type> ();
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Kokkos::View<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type*,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
+               Kokkos::MemoryUnmanaged>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getRowView (const RowInfo& rowInfo) const
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type ST;
+    typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef std::pair<size_t, size_t> range_type;
+
+    if (k_values1D_.dimension_0 () != 0 && rowInfo.allocSize > 0) {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rowInfo.offset1D + rowInfo.allocSize > k_values1D_.dimension_0 (),
+        std::range_error, "Tpetra::CrsMatrix::getRowView: Invalid access "
+        "to 1-D storage of values." << std::endl << "rowInfo.offset1D (" <<
+        rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize <<
+        ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
+#endif // HAVE_TPETRA_DEBUG
+      range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
+      return Kokkos::subview (k_values1D_, range);
+    }
+    else if (values2D_ != null) {
+      Teuchos::ArrayView<const ST> rowView = values2D_[rowInfo.localRow] ();
+      return subview_type (rowView.getRawPtr (), rowView.size ());
+    }
+    else {
+      return subview_type ();
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type*,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
+               Kokkos::MemoryUnmanaged>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getRowViewNonConst (const RowInfo& rowInfo)
+  {
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
+    typedef impl_scalar_type ST;
+    typedef View<ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef std::pair<size_t, size_t> range_type;
+
+    if (k_values1D_.dimension_0 () != 0 && rowInfo.allocSize > 0) {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        rowInfo.offset1D + rowInfo.allocSize > k_values1D_.dimension_0 (),
+        std::range_error, "Tpetra::CrsMatrix::getRowViewNonConst: Invalid access "
+        "to 1-D storage of values." << std::endl << "rowInfo.offset1D (" <<
+        rowInfo.offset1D << ") + rowInfo.allocSize (" << rowInfo.allocSize <<
+        ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
+#endif // HAVE_TPETRA_DEBUG
+      range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
+      return Kokkos::subview (k_values1D_, range);
+    }
+    else if (values2D_ != null) {
+      Teuchos::ArrayView<ST> rowView = values2D_[rowInfo.localRow] ();
+      return subview_type (rowView.getRawPtr (), rowView.size ());
+    }
+    else {
+      return subview_type ();
     }
   }
 
@@ -2821,7 +2932,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        RowInfo rowinfo = staticGraph_->getRowInfo (r);
+        const RowInfo rowinfo = staticGraph_->getRowInfo (r);
         if (rowinfo.numEntries > 0) {
           offsets[r] = staticGraph_->findLocalIndex (rowinfo, rlid);
         }
@@ -2931,7 +3042,7 @@ namespace Tpetra {
       const LocalOrdinal rlid = colMap.getLocalElement (rgid);
 
       if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-        RowInfo rowinfo = staticGraph_->getRowInfo (r);
+        const RowInfo rowinfo = staticGraph_->getRowInfo (r);
         if (rowinfo.numEntries > 0) {
           const size_t j = staticGraph_->findLocalIndex (rowinfo, rlid);
           if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {

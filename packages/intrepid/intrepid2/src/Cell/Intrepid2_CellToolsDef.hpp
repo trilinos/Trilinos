@@ -1138,6 +1138,82 @@ FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSp
   void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
                                       const ArrayPoint &           points,
                                       const ArrayCell  &           cellWorkset,
+                                      Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis,
+                                      const int &                  whichCell) 
+  {
+   // INTREPID2_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+  
+   ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> jacobianWrap(jacobian);
+   ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
+    int spaceDim  = HGRAD_Basis->getBaseCellTopology().getDimension();
+    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    //points can be rank-2 (P,D), or rank-3 (C,P,D)
+    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+  
+    // Temp (F,P,D) array for the values of basis functions gradients at the reference points
+    int basisCardinality = HGRAD_Basis -> getCardinality();
+    FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
+    
+    
+if(getrank(jacobian)==4){
+Kokkos::parallel_for (jacobian.dimension(0), setJacZeros4<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+}else if(getrank(jacobian)==3){
+Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false> > (jacobianWrap));
+}else{
+        TEUCHOS_TEST_FOR_EXCEPTION( (true), std::invalid_argument,
+                            ">>> ERROR (Intrepid2::CellTools::setJacobian): Rank of Jacobian is Not Supported.");
+}
+    // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
+    switch(getrank(points)) {
+      
+      // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
+      case 2:
+        {
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (tempPoints,pointsWrap));
+         
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+          
+          // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
+          // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
+          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          
+          if(whichCell == -1) {
+            
+Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality));
+            
+          }
+          else {
+ Kokkos::parallel_for (cellLoop, setJacref2Which<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,basisGrads,spaceDim,numPoints,basisCardinality,whichCell));
+         } // if whichcell
+        }// case 2
+        break;
+        
+        // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
+      case 3:
+        {
+ Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>, ArrayPoint,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+//	    }
+        }// case 3
+	
+        break;
+        
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) == 3) ), std::invalid_argument,
+                            ">>> ERROR (Intrepid2::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
+    }//switch
+    } 
+
+
+  
+  template<class Scalar>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
                                       const shards::CellTopology & cellTopo,
                                       const int &                  whichCell) 
   {
@@ -1326,6 +1402,125 @@ void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
 //                      Reference-to-physical frame mapping and its inverse                   //
 //                                                                                            //
 //============================================================================================//
+
+template<class Scalar>
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
+                                           const ArrayRefPoint &        refPoints,
+                                           const ArrayCell     &        cellWorkset,
+                                           const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                           const int &                  whichCell)
+{
+//  INTREPID2_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
+
+   ArrayWrapper<Scalar,ArrayPhysPoint, Rank<ArrayPhysPoint >::value, false>physPointsWrap(physPoints);
+   ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
+
+  size_t spaceDim  = (size_t)HGRAD_Basis->getTopology().getDimension();
+  size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+  //points can be rank-2 (P,D), or rank-3 (C,P,D)
+  size_t numPoints = (getrank(refPoints) == 2) ? static_cast<size_t>(refPoints.dimension(0)) : static_cast<size_t>(refPoints.dimension(1));
+
+  // Temp (F,P) array for the values of nodal basis functions at the reference points
+  int basisCardinality = HGRAD_Basis -> getCardinality();
+  FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
+
+//#define HAVE_INTREPID_KOKKOSCORE 
+  // Initialize physPoints
+  if(getrank(physPoints)==3){
+for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
+ for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){
+	for(size_t k = 0; k < static_cast<size_t>(physPoints.dimension(2)); k++){ 
+  physPointsWrap(i,j,k) = 0.0;
+    }
+   }
+}
+ }else if(getrank(physPoints)==2){
+	  for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++){
+	for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){ 
+  physPointsWrap(i,j) = 0.0;
+    }
+   }
+ }
+//#else
+//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
+//#endif
+  // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
+  switch(getrank(refPoints)) {
+    
+    // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
+    case 2:
+      {
+        // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(0)), static_cast<size_t>(refPoints.dimension(1)) );
+        // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+        for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(0)); pt++){
+          for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(1)) ; dm++){
+            tempPoints(pt, dm) = refPointsWrap(pt, dm);
+          }//dm
+        }//pt
+        HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+
+        // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
+        size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                if(whichCell == -1){
+                  physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+                else{
+                  physPointsWrap(pointOrd, dim) += cellWorksetWrap(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd
+      }// case 2
+  
+      break;
+      
+    // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.  
+    case 3:
+      {
+        // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(1)), static_cast<size_t>(refPoints.dimension(2)) );
+        
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+          
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+          for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(1)); pt++){
+            for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(2)) ; dm++){
+              tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
+            }//dm
+          }//pt
+          
+          // Compute basis values for this set of ref. points
+          HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+          
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd        
+      }// case 3
+      break;
+      
+   
+  }
+}	
+
 
 template<class Scalar>
 template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
@@ -1647,6 +1842,132 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
 }
   
   
+template<class Scalar>
+template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                                     const ArrayInitGuess &        initGuess,
+                                                     const ArrayPhysPoint &        physPoints,
+                                                     const ArrayCell      &        cellWorkset,
+                                                     const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                                     const int &                   whichCell)
+{
+ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
+ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
+// INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+  size_t spaceDim  = (size_t)HGRAD_Basis->cellTopology().getDimension();
+  size_t numPoints;
+  size_t numCells=0;
+  
+  // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
+  FieldContainer<Scalar> xOld;
+  FieldContainer<Scalar> xTem;  
+  FieldContainer<Scalar> jacobian;
+  FieldContainer<Scalar> jacobInv;
+  FieldContainer<Scalar> error; 
+  FieldContainer<Scalar> cellCenter(spaceDim);
+  
+  // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
+  if(whichCell == -1){
+    numPoints = static_cast<size_t>(physPoints.dimension(1));
+    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    xOld.resize(numCells, numPoints, spaceDim);
+    xTem.resize(numCells, numPoints, spaceDim);  
+    jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
+    error.resize(numCells,numPoints); 
+    // Set initial guess to xOld
+    for(size_t c = 0; c < numCells; c++){
+      for(size_t p = 0; p < numPoints; p++){
+        for(size_t d = 0; d < spaceDim; d++){
+          xOld(c, p, d) = initGuessWrap(c, p, d);
+        }// d
+      }// p
+    }// c
+  }
+  // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
+  else {
+    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    xOld.resize(numPoints, spaceDim);
+    xTem.resize(numPoints, spaceDim);  
+    jacobian.resize(numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numPoints, spaceDim, spaceDim);
+    error.resize(numPoints); 
+    // Set initial guess to xOld
+    for(size_t p = 0; p < numPoints; p++){
+      for(size_t d = 0; d < spaceDim; d++){
+        xOld(p, d) = initGuessWrap(p, d);
+      }// d
+    }// p
+  }
+  
+  // Newton method to solve the equation F(refPoints) - physPoints = 0:
+  // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
+  for(int iter = 0; iter < INTREPID2_MAX_NEWTON; ++iter) {
+    
+    // Jacobians at the old iterates and their inverses. 
+    setJacobian(jacobian, xOld, cellWorkset, HGRAD_Basis, whichCell);
+    setJacobianInv(jacobInv, jacobian);
+    // The Newton step.
+    mapToPhysicalFrame( xTem, xOld, cellWorkset, HGRAD_Basis->cellTopology(), whichCell );      // xTem <- F(xOld)
+    RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
+    RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
+    RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
+
+    // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
+    RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
+    RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
+
+    // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
+    double totalError;
+    if(whichCell == -1) {
+      FieldContainer<Scalar> cellWiseError(numCells);
+      // error(C,P) -> cellWiseError(P)
+
+      RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
+      totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
+    }
+    //Average L2 error for a single set of physical points: error is rank-1 (P) array
+    else{
+
+      totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
+      totalError = totalError;
+    }
+    
+    // Stopping criterion:
+    if (totalError < INTREPID2_TOL) {
+      break;
+    } 
+    else if ( iter > INTREPID2_MAX_NEWTON) {
+      INTREPID2_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
+                      << INTREPID2_MAX_NEWTON  << " iterations\n" );
+      break;
+    }
+
+    // initialize next Newton step
+//    xOld = refPoints;
+int refPointsRank=getrank(refPoints);
+if (refPointsRank==3){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         for(size_t k=0;k<static_cast<size_t>(refPoints.dimension(2));k++){
+            xOld(i,j,k) = refPointsWrap(i,j,k);
+         }
+      }
+   }
+}else if(refPointsRank==2){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         xOld(i,j) = refPointsWrap(i,j);
+      }
+   }
+
+}
+
+
+
+  } // for(iter)
+}
+
 
 template<class Scalar>
 template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
@@ -2981,7 +3302,288 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
   std::cout << ")\n\n";
 }
 
+//============================================================================================//
+//                                                                                            //
+//                             Control Volume Coordinates                                     //
+//                                                                                            //
+//============================================================================================//
 
+  template<class Scalar>
+  template<class ArrayCVCoord, class ArrayCellCoord>
+  void CellTools<Scalar>::getSubCVCoords(ArrayCVCoord & subCVCoords,
+                                         const ArrayCellCoord & cellCoords,
+                                         const shards::CellTopology& primaryCell)
+  {
 
+  // get array dimensions
+   std::size_t numCells        = static_cast<std::size_t>(cellCoords.dimension(0));
+   std::size_t numNodesPerCell = static_cast<std::size_t>(cellCoords.dimension(1));
+   std::size_t spaceDim        = static_cast<std::size_t>(cellCoords.dimension(2));
+
+   // num edges per primary cell
+   int numEdgesPerCell = primaryCell.getEdgeCount();
+
+   // num faces per primary cell
+   int numFacesPerCell = 0;
+   if (spaceDim > 2){
+      numFacesPerCell = primaryCell.getFaceCount();
+   }
+
+   // get cell centroids
+   FieldContainer<Scalar> barycenter(numCells,spaceDim);
+   getBarycenter(barycenter,cellCoords);
+
+   // loop over cells
+   for (std::size_t icell = 0; icell < numCells; icell++){
+
+       // get primary edge midpoints
+        FieldContainer<Scalar> edgeMidpts(numEdgesPerCell,spaceDim);
+        for (int iedge = 0; iedge < numEdgesPerCell; iedge++){
+          for (std::size_t idim = 0; idim < spaceDim; idim++){
+
+               int node0 = primaryCell.getNodeMap(1,iedge,0);
+               int node1 = primaryCell.getNodeMap(1,iedge,1);
+               edgeMidpts(iedge,idim) = (cellCoords(icell,node0,idim) +
+                                         cellCoords(icell,node1,idim))/2.0;
+
+          } // end loop over dimensions
+       } // end loop over cell edges
+
+       // get primary face midpoints in 3-D
+        int numNodesPerFace;
+        FieldContainer<Scalar> faceMidpts(numFacesPerCell,spaceDim);
+        if (spaceDim > 2) {
+           for (int iface = 0; iface < numFacesPerCell; iface++){
+               numNodesPerFace = primaryCell.getNodeCount(2,iface);
+
+               for (int idim = 0; idim < spaceDim; idim++){
+
+                  for (int inode0 = 0; inode0 < numNodesPerFace; inode0++) {
+                      int node1 = primaryCell.getNodeMap(2,iface,inode0);
+                      faceMidpts(iface,idim) += cellCoords(icell,node1,idim)/numNodesPerFace;
+                  }
+
+               } // end loop over dimensions
+           } // end loop over cell faces
+         }
+        // define coordinates for subcontrol volumes
+         switch(primaryCell.getKey() ) {
+
+          // 2-d  parent cells
+           case shards::Triangle<3>::key:
+           case shards::Quadrilateral<4>::key:
+
+            for (int inode = 0; inode < numNodesPerCell; inode++){
+              for (std::size_t idim = 0; idim < spaceDim; idim++){
+
+                // set first node to primary cell node
+                 subCVCoords(icell,inode,0,idim) = cellCoords(icell,inode,idim);
+
+                // set second node to adjacent edge midpoint
+                 subCVCoords(icell,inode,1,idim) = edgeMidpts(inode,idim);
+
+                // set third node to cell barycenter
+                 subCVCoords(icell,inode,2,idim) = barycenter(icell,idim);
+
+                // set fourth node to other adjacent edge midpoint
+                 int jnode = numNodesPerCell-1;
+                 if (inode > 0) jnode = inode - 1;
+                 subCVCoords(icell,inode,3,idim) = edgeMidpts(jnode,idim);
+
+              } // dim loop
+             } // node loop
+
+           break;
+
+        case shards::Hexahedron<8>::key:
+
+           for (std::size_t idim = 0; idim < spaceDim; idim++){
+
+             // loop over the horizontal quads that define the subcontrol volume coords
+              for (int icount = 0; icount < 4; icount++){
+
+                // set first node of bottom hex to primary cell node
+                // and fifth node of upper hex
+                subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
+                subCVCoords(icell,icount+4,4,idim) = cellCoords(icell,icount+4,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                // and sixth node of upper hex
+                subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
+                subCVCoords(icell,icount+4,5,idim) = edgeMidpts(icount+4,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 4)
+                // and seventh node of upper hex to top face midpoint
+                subCVCoords(icell,icount,2,idim) = faceMidpts(4,idim);
+                subCVCoords(icell,icount+4,6,idim) = faceMidpts(5,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                // and eight node of upper hex to other adjacent edge midpoint
+                 int jcount = 3;
+                 if (icount > 0) jcount = icount - 1;
+                 subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
+                 subCVCoords(icell,icount+4,7,idim) = edgeMidpts(jcount+4,idim);
+
+                // set fifth node to vertical edge
+                // same as first node of upper hex
+                subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+numNodesPerCell,idim);
+                subCVCoords(icell,icount+4,0,idim) = edgeMidpts(icount+numNodesPerCell,idim);
+
+                // set sixth node to adjacent face midpoint
+                // same as second node of upper hex
+                subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
+                subCVCoords(icell,icount+4,1,idim) = faceMidpts(icount,idim);
+
+                // set seventh node to barycenter
+                // same as third node of upper hex
+                subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
+                subCVCoords(icell,icount+4,2,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                // same as fourth node of upper hex
+               jcount = 3;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
+                subCVCoords(icell,icount+4,3,idim) = faceMidpts(jcount,idim);
+
+             } // count loop
+
+           } // dim loop
+
+           break;
+
+         case shards::Tetrahedron<4>::key:
+
+           for (std::size_t idim = 0; idim < spaceDim; idim++){
+
+             // loop over the three bottom nodes
+              for (int icount = 0; icount < 3; icount++){
+
+                // set first node of bottom hex to primary cell node
+                subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 3)
+                subCVCoords(icell,icount,2,idim) = faceMidpts(3,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                int jcount = 2;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
+
+                // set fifth node to vertical edge
+                subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+3,idim);
+
+               // set sixth node to adjacent face midpoint
+                subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
+
+                // set seventh node to barycenter
+                subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                jcount = 2;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
+
+              } //count loop
+
+            // Control volume attached to fourth node
+                // set first node of bottom hex to primary cell node
+                subCVCoords(icell,3,0,idim) = cellCoords(icell,3,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                subCVCoords(icell,3,1,idim) = edgeMidpts(3,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 3)
+                subCVCoords(icell,3,2,idim) = faceMidpts(2,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                subCVCoords(icell,3,3,idim) = edgeMidpts(5,idim);
+
+                // set fifth node to vertical edge
+                subCVCoords(icell,3,4,idim) = edgeMidpts(4,idim);
+
+                // set sixth node to adjacent face midpoint
+                subCVCoords(icell,3,5,idim) = faceMidpts(0,idim);
+
+                // set seventh node to barycenter
+                subCVCoords(icell,3,6,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                subCVCoords(icell,3,7,idim) = faceMidpts(1,idim);
+
+         } // dim loop
+
+           break;
+
+       default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                            ">>> ERROR (getSubCVCoords: invalid cell topology.");
+       } // cell key
+
+     } // cell loop
+
+} // getSubCVCoords
+
+ template<class Scalar>
+ template<class ArrayCent, class ArrayCellCoord>
+ void CellTools<Scalar>::getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords)
+{
+   // get array dimensions
+   std::size_t numCells        = static_cast<std::size_t>(cellCoords.dimension(0));
+   std::size_t numVertsPerCell = static_cast<std::size_t>(cellCoords.dimension(1));
+   std::size_t spaceDim        = static_cast<std::size_t>(cellCoords.dimension(2));
+
+   if (spaceDim == 2)
+   {
+    // Method for general polygons
+     for (std::size_t icell = 0; icell < numCells; icell++){
+
+        FieldContainer<Scalar> cell_centroid(spaceDim);
+        Scalar area = 0;
+
+        for (std::size_t inode = 0; inode < numVertsPerCell; inode++){
+
+            std::size_t jnode = inode + 1;
+            if (jnode >= numVertsPerCell) {
+                 jnode = 0;
+            }
+
+            Scalar area_mult = cellCoords(icell,inode,0)*cellCoords(icell,jnode,1)
+                                 - cellCoords(icell,jnode,0)*cellCoords(icell,inode,1);
+            cell_centroid(0) += (cellCoords(icell,inode,0) + cellCoords(icell,jnode,0))*area_mult;
+            cell_centroid(1) += (cellCoords(icell,inode,1) + cellCoords(icell,jnode,1))*area_mult;
+
+            area += 0.5*area_mult;
+       }
+
+       barycenter(icell,0) = cell_centroid(0)/(6.0*area);
+       barycenter(icell,1) = cell_centroid(1)/(6.0*area);
+   }
+
+  }
+  else
+  {
+     // This method works fine for simplices, but for other 3-d shapes
+     // is not precisely accurate. Could replace with approximate integration
+     // perhaps.
+     for (std::size_t icell = 0; icell < numCells; icell++){
+
+        FieldContainer<Scalar> cell_centroid(spaceDim);
+
+        for (std::size_t inode = 0; inode < numVertsPerCell; inode++){
+            for (std::size_t idim = 0; idim < spaceDim; idim++){
+                cell_centroid(idim) += cellCoords(icell,inode,idim)/numVertsPerCell;
+            }
+        }
+        for (std::size_t idim = 0; idim < spaceDim; idim++){
+             barycenter(icell,idim) = cell_centroid(idim);
+        }
+     }
+  }
+
+ } // get Barycenter
 } // namespace Intrepid2
 #endif

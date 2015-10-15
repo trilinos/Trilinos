@@ -85,8 +85,6 @@ size_t size(){return sizeValue;}
 size_t size() const {return sizeValue;}
 
 
-size_t size()const{return sizeValue;}
-
 size_t dimension(size_t num){return dim[num];}
 size_t dimension(size_t num)const{return dim[num];}
 
