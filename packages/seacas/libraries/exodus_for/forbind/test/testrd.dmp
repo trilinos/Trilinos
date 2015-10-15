@@ -150,8 +150,6 @@ num_elem_in_block =  1
 num_nodes_per_elem =  6
 num_attr =  1
 
-after exinq, error =   0
-
 There are  3 properties for each element block
 after exgpn, error =   0
 elem block  1 property( 1): ID                               =    10
@@ -294,8 +292,6 @@ after exgnams, error =   0
 node set  1 name: nodeset_a1                      
 node set  2 name: nodeset_b2                      
 
-after exinq, error =   0
-
 There are  3 properties for each node set
 after exgpn, error =   0
 node set  1 property( 1): ID                               =    20
@@ -304,8 +300,6 @@ node set  1 property( 2): FACE                             =     4
 node set  2 property( 2): FACE                             =     5
 node set  1 property( 3): VELOCITY                         =  1000
 node set  2 property( 3): VELOCITY                         =  2000
-
-after exinq, error =   0
 
 after EXNSNL =  8 exinq, error =   0
 
@@ -539,8 +533,6 @@ side set  3 name: surf_third
 side set  4 name: surf_fourth                     
 side set  5 name: surf_fifth                      
 
-after exinq, error =   0
-
 There are  2 properties for each side set
 after exgpn, error =   0
 side set  1 property( 1): ID                               =    30
@@ -646,8 +638,6 @@ dist_fact =
 31.200
 31.300
 
-after exinq, error =   0
-
 after exgqa, error =   0
 QA records = 
 testwt                          
@@ -657,8 +647,6 @@ FASTQ
 fastq                           
 07/07/93                        
 16:41:33                        
-
-after exinq, error =   0
 
 after exginf, error =   0
 info records = 
@@ -704,8 +692,6 @@ This is the element variable truth table:
  1
  1
  1
-
-after exinq, error =   0
 There are 10 time steps in the database.
 
 after exgtim, error =   0

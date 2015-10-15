@@ -103,9 +103,9 @@ c
       mod_sz = exlgmd(exoid)
       write (iout, '("  Model Size",i2)') mod_sz
 
-      call exinq (exoid, EXNEBP, num_props, fdum, cdum, ierr)
-      call exinq (exoid, EXDBMXALNM, mxalnmlen, fdum, cdum, ierr)
-      call exinq (exoid, EXDBMXUSNM, mxusnmlen, fdum, cdum, ierr)
+      num_props = exinqi (exoid, EXNEBP)
+      mxalnmlen = exinqi (exoid, EXDBMXALNM)
+      mxusnmlen = exinqi (exoid, EXDBMXUSNM)
       write (iout, '("  Maximum Allowed/Used DB Name Size ",i2,i2)')
      *  mxalnmlen, mxusnmlen
       
@@ -198,8 +198,7 @@ c
 
 c     read element block properties */
 
-      call exinq (exoid, EXNEBP, num_props, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
+      num_props = exinqi (exoid, EXNEBP)
       write (iout,
      1	'(/"There are ",i2," properties for each element block")')
      2	num_props
@@ -327,8 +326,7 @@ c
 
 c     read node set properties
 
-      call exinq (exoid, EXNNSP, num_props, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
+      num_props = exinqi (exoid, EXNNSP)
       write (iout,
      1	'(/"There are ",i2," properties for each node set")')
      2	num_props
@@ -354,15 +352,14 @@ c
 c read concatenated node sets; this produces the same information as
 c the above code which reads individual node sets
 c
-      call exinq (exoid, EXNODS, num_node_sets, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
-      
+      num_node_sets = exinqi (exoid, EXNODS)
+
       if (num_node_sets .gt. 0) then
-        call exinq (exoid, EXNSNL, list_len, fdum, cdum, ierr)
+        list_len = exinqi (exoid, EXNSNL)
         write(iout,'(/"after EXNSNL =",i3," exinq, error = ",i3)')
      1    list_len,ierr
         
-        call exinq (exoid, EXNSDF, list_len, fdum, cdum, ierr)
+        list_len = exinqi (exoid, EXNSDF)
         write(iout,'(/"after EXNSDF =",i3," exinq, error = ",i3)')
      1    list_len,ierr
         
@@ -478,8 +475,7 @@ c
 
 c     read side set properties
 
-      call exinq (exoid, EXNSSP, num_props, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
+      num_props = exinqi (exoid, EXNSSP)
       write (iout,
      1	'(/"There are ",i2," properties for each side set")')
      2	num_props
@@ -501,20 +497,20 @@ c     read side set properties
  195    continue
  197  continue
 
-      call exinq (exoid, EXSIDS, num_side_sets, fdum, cdum, ierr)
+      num_side_sets = exinqi (exoid, EXSIDS)
       write (iout, '(/"after exinq: EXSIDS =",i3,", error = ",i3)')
      1  num_side_sets,ierr
       
       if (num_side_sets .gt. 0) then
-        call exinq (exoid, EXSSEL, elem_list_len, fdum, cdum, ierr)
+        elem_list_len = exinqi (exoid, EXSSEL)
         write (iout, '(/"after exinq: EXSSEL =",i3,", error = ",i3)')
      1    elem_list_len,ierr
         
-        call exinq (exoid, EXSSNL, node_list_len, fdum, cdum, ierr)
+        node_list_len = exinqi (exoid, EXSSNL)
         write (iout, '(/"after exinq: EXSSNL =",i3,", error = ",i3)')
      1    node_list_len,ierr
         
-        call exinq (exoid, EXSSDF, df_list_len, fdum, cdum, ierr)
+        df_list_len = exinqi (exoid, EXSSDF)
         write (iout, '(/"after exinq: EXSSDF =",i3,", error = ",i3)')
      1    df_list_len,ierr
 c
@@ -580,9 +576,7 @@ c
 c
 c read QA records
 c
-      call exinq (exoid, EXQA, num_qa_rec, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
-
+      num_qa_rec = exinqi (exoid, EXQA)
       call exgqa (exoid, qa_record, ierr) 
       write (iout, '(/"after exgqa, error = ", i3)' ) ierr
       
@@ -597,9 +591,7 @@ c
 c
 c read information records
 c
-      call exinq (exoid, EXINFO, num_info, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
-      
+      num_info = exinqi (exoid, EXINFO)
       call exginf (exoid, inform, ierr) 
       write (iout, '(/"after exginf, error = ", i3)' ) ierr
 
@@ -674,9 +666,7 @@ c
 c
 c determine how many time steps are stored
 c
-      call exinq (exoid, EXTIMS, num_time_steps, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
-
+      num_time_steps = exinqi (exoid, EXTIMS)
       write (iout, '("There are ",i2," time steps in the database.")') 
      1  num_time_steps
 c
