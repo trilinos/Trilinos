@@ -1,7 +1,6 @@
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(CheckIncludeFile)
-INCLUDE(FortranSettings)
 
 SEACAS_PACKAGE(Nemslice)
 if(${CMAKE_PROJECT_NAME} STREQUAL "SEACAS")

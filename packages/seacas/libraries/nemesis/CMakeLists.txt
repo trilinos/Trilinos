@@ -1,6 +1,5 @@
 INCLUDE(TribitsLibraryMacros)
 INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(FortranSettings)
 
 SEACAS_PACKAGE(Nemesis)
 

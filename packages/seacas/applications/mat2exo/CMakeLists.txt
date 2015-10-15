@@ -1,7 +1,6 @@
 IF (TPL_ENABLE_Matio)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsLibraryMacros)
-INCLUDE(FortranSettings)
 SEACAS_PACKAGE(Mat2exo)
 
 LINK_DIRECTORIES(${Matio_LIBRARY_DIRS})

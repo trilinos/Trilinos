@@ -1,4 +1,5 @@
 INCLUDE(TribitsAddExecutable)
+INCLUDE(FortranSettings)
 SEACAS_PACKAGE(Txtexo)
 
 INCLUDE_DIRECTORIES(

@@ -1,6 +1,5 @@
 IF (TPL_ENABLE_Matio)
 INCLUDE(TribitsAddExecutable)
-INCLUDE(FortranSettings)
 
 SEACAS_PACKAGE(Exo2mat)
 

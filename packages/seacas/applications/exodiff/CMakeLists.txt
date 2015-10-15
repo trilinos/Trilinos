@@ -1,5 +1,4 @@
 INCLUDE(TribitsAddExecutable)
-INCLUDE(FortranSettings)
 SEACAS_PACKAGE(Exodiff)
 
 INCLUDE_DIRECTORIES(

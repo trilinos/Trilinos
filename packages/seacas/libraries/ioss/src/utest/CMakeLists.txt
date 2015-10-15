@@ -39,7 +39,6 @@ IF (${PREFIX}_ENABLE_${ENABLED})
   TRIBITS_ADD_EXECUTABLE(
     Utst_superelement
     SOURCES Utst_superelement.C
-    NOEXEPREFIX NOEXESUFFIX
   )
 
   TRIBITS_ADD_TEST(
