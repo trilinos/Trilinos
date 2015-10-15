@@ -387,12 +387,14 @@ int cmd_line_arg_parse(
 
     case 'a':
       /* Only an ASCII input file name */
-      ascii_inp_file = (optarg == NULL) ? '\0' : optarg;
+      if (optarg != NULL)
+	ascii_inp_file = optarg;
       break;
 
     case 'o':
       /* Output NemesisI file name */
-      nemI_out_file = (optarg == NULL) ? '\0' : optarg;
+      if (optarg != NULL)
+	nemI_out_file = optarg;
       break;
 
     case 'n':
