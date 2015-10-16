@@ -39,10 +39,10 @@ ENDIF()
 # behavior.
 #
 
-# Tpetra ETI type fields.  S, LO, N correspond to the following Tpetra
-# template parameters: Scalar, LocalOrdinal, and Node.  TpetraKernels
+# Tpetra ETI type fields.  S, LO, EX correspond to the template
+# parameters Scalar, LocalOrdinal, and ExecutionSpace.  TpetraKernels
 # does not need to know about GlobalOrdinal so we omit that.
-SET(${PACKAGE_NAME}_ETI_FIELDS "S|LO|N")
+SET(${PACKAGE_NAME}_ETI_FIELDS "S|LO|EX")
 
 # Set up a pattern that excludes all Scalar types that are also
 # possible GlobalOrdinal types, but includes all other types.
@@ -51,7 +51,7 @@ SET(${PACKAGE_NAME}_ETI_FIELDS "S|LO|N")
 # FIXME (mfh 17 Aug 2015, 16 Oct 2015) A better way to do this would
 # be to subtract away all enabled GlobalOrdinal types.  Plus, what if
 # someone really wants a CrsMatrix<int,...>?
-TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=short|short int|unsigned short|unsigned short int|int|unsigned|unsigned int|long|long int|unsigned long|unsigned long int|long long|long long int|unsigned long long|unsigned long long int|int16_t|uint16_t|int32_t|uint32_t|int64_t|uint64_t|size_t|ptrdiff_t" "LO=.*" "N=.*")
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=short|short int|unsigned short|unsigned short int|int|unsigned|unsigned int|long|long int|unsigned long|unsigned long int|long long|long long int|unsigned long long|unsigned long long int|int16_t|uint16_t|int32_t|uint32_t|int64_t|uint64_t|size_t|ptrdiff_t" "LO=.*" "EX=.*")
 
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has
@@ -60,18 +60,18 @@ TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=sho
 #
 # Scalar: ${PACKAGE_NAME}_ETI_SCALARS
 # LocalOrdinal: ${PACKAGE_NAME}_ETI_LORDS
-# Node: ${PACKAGE_NAME}_ETI_NODES 
+# ExecutionSpace: ${PACKAGE_NAME}_ETI_EXECUTION_SPACES
 #
 # Note that the Scalar set from Tpetra includes the Scalar =
 # GlobalOrdinal case.  We have to exclude that explicitly in what
 # follows.
 JOIN(${PACKAGE_NAME}_ETI_SCALARS "|" FALSE ${${PACKAGE_NAME}_ETI_SCALARS})
-JOIN(${PACKAGE_NAME}_ETI_LORDS   "|" FALSE ${${PACKAGE_NAME}_ETI_LORDS}  )
-JOIN(${PACKAGE_NAME}_ETI_NODES   "|" FALSE ${${PACKAGE_NAME}_ETI_NODES}  )
+JOIN(${PACKAGE_NAME}_ETI_LORDS "|" FALSE ${${PACKAGE_NAME}_ETI_LORDS})
+JOIN(${PACKAGE_NAME}_ETI_EXECUTION_SPACES "|" FALSE ${${PACKAGE_NAME}_ETI_EXECUTION_SPACES})
 
-MESSAGE(STATUS "Enabled Scalar types:        ${${PACKAGE_NAME}_ETI_SCALARS}")
-MESSAGE(STATUS "Enabled LocalOrdinal types:  ${${PACKAGE_NAME}_ETI_LORDS}")
-MESSAGE(STATUS "Enabled Node types:          ${${PACKAGE_NAME}_ETI_NODES}")
+MESSAGE(STATUS "Enabled Scalar types:         ${${PACKAGE_NAME}_ETI_SCALARS}")
+MESSAGE(STATUS "Enabled LocalOrdinal types:   ${${PACKAGE_NAME}_ETI_LORDS}")
+MESSAGE(STATUS "Enabled ExecutionSpace types: ${${PACKAGE_NAME}_ETI_EXECUTION_SPACES}")
 
 # Construct the "type expansion" string that TriBITS' ETI system
 # expects.  Even if ETI is OFF, we will use this to generate macros
@@ -79,7 +79,7 @@ MESSAGE(STATUS "Enabled Node types:          ${${PACKAGE_NAME}_ETI_NODES}")
 TRIBITS_ETI_TYPE_EXPANSION(SingleScalarInsts 
   "S=${${PACKAGE_NAME}_ETI_SCALARS}"
   "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
-  "N=${${PACKAGE_NAME}_ETI_NODES}")
+  "EX=${${PACKAGE_NAME}_ETI_EXECUTION_SPACES}")
 
 # Set up the set of enabled type combinations, in a format that
 # TriBITS understands.
@@ -96,10 +96,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "Excluded type combinations: ${${PACKAGE_NAME}_ETI_EXCLUDE_SET}:${${PACKAGE_NAME}_ETI_EXCLUDE_SET_INT}")
 ELSE()
   TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_LIBRARYSET 
-    "S=${${PACKAGE_NAME}_ETI_SCALARS}" 
-    "N=${${PACKAGE_NAME}_ETI_NODES}" 
+    "S=${${PACKAGE_NAME}_ETI_SCALARS}"
     "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
-    "GO=${${PACKAGE_NAME}_ETI_GORDS}")
+    "EX=${${PACKAGE_NAME}_ETI_EXECUTION_SPACES}")
 ENDIF()
 MESSAGE(STATUS "Set of enabled types, before exclusions: ${${PACKAGE_NAME}_ETI_LIBRARYSET}")
 
@@ -115,9 +114,9 @@ TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
     "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};${${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR}"  
     list_of_manglings eti_typedefs
-    "TPETRAKERNELS_INSTANTIATE_SLN_NO_ORDINAL_SCALAR(S,LO,N)"  TPETRAKERNELS_INSTANTIATE_SLN_NO_ORDINAL_SCALAR
+    "TPETRAKERNELS_INSTANTIATE_SLX_NO_ORDINAL_SCALAR(S,LO,EX)"  TPETRAKERNELS_INSTANTIATE_SLX_NO_ORDINAL_SCALAR
     "TPETRAKERNELS_INSTANTIATE_SL_NO_ORDINAL_SCALAR(S,LO)"     TPETRAKERNELS_INSTANTIATE_SL_NO_ORDINAL_SCALAR
-    "TPETRAKERNELS_INSTANTIATE_SN_NO_ORDINAL_SCALAR(S,N)"      TPETRAKERNELS_INSTANTIATE_SN_NO_ORDINAL_SCALAR
+    "TPETRAKERNELS_INSTANTIATE_SX_NO_ORDINAL_SCALAR(S,EX)"      TPETRAKERNELS_INSTANTIATE_SX_NO_ORDINAL_SCALAR
     "TPETRAKERNELS_INSTANTIATE_S_NO_ORDINAL_SCALAR(S)"         TPETRAKERNELS_INSTANTIATE_S_NO_ORDINAL_SCALAR)
 
 # Generate macros that include all Scalar types (if applicable),
@@ -126,13 +125,13 @@ TRIBITS_ETI_GENERATE_MACROS(
     "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
     "${${PACKAGE_NAME}_ETI_EXCLUDE_SET};${${PACKAGE_NAME}_ETI_EXCLUDE_SET_INT}"  
     list_of_manglings eti_typedefs
-    "TPETRAKERNELS_INSTANTIATE_SLN(S,LO,N)"   TPETRAKERNELS_INSTANTIATE_SLN
+    "TPETRAKERNELS_INSTANTIATE_SLX(S,LO,EX)"  TPETRAKERNELS_INSTANTIATE_SLX
     "TPETRAKERNELS_INSTANTIATE_SL(S,LO)"      TPETRAKERNELS_INSTANTIATE_SL
-    "TPETRAKERNELS_INSTANTIATE_SN(S,N)"       TPETRAKERNELS_INSTANTIATE_SN
+    "TPETRAKERNELS_INSTANTIATE_SN(S,EX)"      TPETRAKERNELS_INSTANTIATE_SX
     "TPETRAKERNELS_INSTANTIATE_S(S)"          TPETRAKERNELS_INSTANTIATE_S
-    "TPETRAKERNELS_INSTANTIATE_LN(LO,N)"      TPETRAKERNELS_INSTANTIATE_LN
+    "TPETRAKERNELS_INSTANTIATE_LX(LO,EX)"     TPETRAKERNELS_INSTANTIATE_LX
     "TPETRAKERNELS_INSTANTIATE_L(LO)"         TPETRAKERNELS_INSTANTIATE_L
-    "TPETRAKERNELS_INSTANTIATE_N(N)"          TPETRAKERNELS_INSTANTIATE_N)
+    "TPETRAKERNELS_INSTANTIATE_X(EX)"         TPETRAKERNELS_INSTANTIATE_X)
 
 # Generate "mangled" typedefs.  Macros sometimes get grumpy when types
 # have spaces, colons, or angle brackets in them.  This includes types

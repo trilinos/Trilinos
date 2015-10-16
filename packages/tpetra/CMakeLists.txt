@@ -74,9 +74,10 @@ ENDIF ()
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
-SET(${PACKAGE_NAME}_ETI_LORDS   "")
-SET(${PACKAGE_NAME}_ETI_GORDS   "")
-SET(${PACKAGE_NAME}_ETI_NODES   "")
+SET(${PACKAGE_NAME}_ETI_LORDS "")
+SET(${PACKAGE_NAME}_ETI_GORDS "")
+SET(${PACKAGE_NAME}_ETI_EXECUTION_SPACES "")
+SET(${PACKAGE_NAME}_ETI_NODES "")
 
 # ============================================================
 # Kokkos execution space types
@@ -238,23 +239,27 @@ ENDIF () # Tpetra_INST_CUDA
 #
 IF(Tpetra_INST_SERIAL) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Serial")
 ENDIF()
 IF(Tpetra_INST_PTHREAD) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Threads")
 ENDIF()
 IF(Tpetra_INST_OPENMP) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::OpenMP")
 ENDIF()
 IF(Tpetra_INST_CUDA) 
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Cuda")
 ENDIF()
 
 # Tell users what Nodes are enabled.
-MESSAGE(STATUS "Tpetra Node availability (ON means available): ")
-MESSAGE(STATUS "   KokkosSerialWrapperNode:  ${HAVE_TPETRA_SERIAL}")
-MESSAGE(STATUS "   KokkosThreadsWrapperNode: ${HAVE_TPETRA_PTHREAD}")
-MESSAGE(STATUS "   KokkosOpenMPWrapperNode:  ${HAVE_TPETRA_OPENMP}")
-MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_CUDA}")
+MESSAGE(STATUS "Tpetra execution space availability (ON means available): ")
+MESSAGE(STATUS "  - Serial:  ${HAVE_TPETRA_SERIAL}")
+MESSAGE(STATUS "  - Threads: ${HAVE_TPETRA_PTHREAD}")
+MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
+MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 
 # ============================================================
 # LocalOrdinal types
@@ -775,6 +780,7 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_EXECUTION_SPACES   ${${PACKAGE_NAME}_ETI_EXECUTION_SPACES})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
 
 
