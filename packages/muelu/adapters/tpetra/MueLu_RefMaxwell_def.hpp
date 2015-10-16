@@ -352,7 +352,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
@@ -380,21 +380,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const X
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (1,1)-block
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -411,21 +411,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const X
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (2,2)-block
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);

@@ -257,6 +257,9 @@ typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Trilinos
 #ifdef MUELU_USERPFACTORY_SHORT
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UserPFactory;
 #endif
+#ifdef MUELU_UTILITIES_SHORT
+typedef MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utilities;
+#endif
 #ifdef MUELU_UTILITIESBASE_SHORT
 typedef MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilitiesBase;
 #endif
@@ -271,13 +274,6 @@ typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> Visu
 #endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
-#endif
-#ifdef MUELU_UTILITIES_KOKKOS_SHORT
-typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;
-typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokkos;
-#endif
-#ifdef MUELU_UTILITIES_SHORT
-typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 #endif
 #ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
 typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;

@@ -65,8 +65,6 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
-#include <MueLu_Utilities.hpp>
-
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 

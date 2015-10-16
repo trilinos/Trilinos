@@ -220,7 +220,7 @@ namespace MueLuTests {
       out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
         std::setprecision(10) << norms[0] << std::endl;
 
-      norms = Utils::ResidualNorm(*Op, *X, *RHS);
+      norms = Utilities::ResidualNorm(*Op, *X, *RHS);
       out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
       TEST_EQUALITY(norms[0]<1e-10, true);
 
@@ -317,7 +317,7 @@ namespace MueLuTests {
       out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
         std::setprecision(10) << norms[0] << std::endl;
 
-      norms = Utils::ResidualNorm(*Op, *X, *RHS);
+      norms = Utilities::ResidualNorm(*Op, *X, *RHS);
       out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
       TEST_EQUALITY(norms[0]<1e-10, true);
 

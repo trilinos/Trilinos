@@ -80,7 +80,7 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  typedef MueLu::Utils<SC,LO,GO,NO> Utils;
+  typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
 
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
   {
@@ -126,7 +126,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_TPETRA
       std::string xmlFileName = "test.xml";
 
-      RCP<tpetra_crsmatrix_type> tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      RCP<tpetra_crsmatrix_type> tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -194,7 +194,7 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_EPETRA
       std::string xmlFileName = "test.xml";
 
-      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(Op);
 
       RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
 
@@ -275,7 +275,7 @@ namespace MueLuTests {
       Teuchos::ParameterList mylist;
       mylist.set("xml parameter file","test.xml");
 
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA),mylist);
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -331,7 +331,7 @@ namespace MueLuTests {
       mylist.set("xml parameter file","test.xml");
 
 
-      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(Op);
 
       RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, mylist);
 
@@ -416,7 +416,7 @@ namespace MueLuTests {
 
       if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
@@ -449,7 +449,7 @@ namespace MueLuTests {
 
       } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+        RCP<Epetra_CrsMatrix>   epA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
         RCP<Epetra_MultiVector> epcoordinates = Utils::MV2NonConstEpetraMV(coordinates);
         RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
@@ -506,7 +506,7 @@ namespace MueLuTests {
     std::string xmlFileName = "testReuse.xml";
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -532,7 +532,7 @@ namespace MueLuTests {
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      RCP<Epetra_CrsMatrix> epA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
+      RCP<Epetra_CrsMatrix> epA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
 
       RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName);
 

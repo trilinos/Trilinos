@@ -97,13 +97,21 @@ namespace MueLu {
   public:
 #undef MUELU_UTILITIESBASE_SHORT
 //#include "MueLu_UseShortNames.hpp"
+  private:
+    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
+    typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
+    typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+    typedef Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+    typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
+    typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+  public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
 
-    static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >                Crs2Op(RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op) {
+    static RCP<Matrix>                Crs2Op(RCP<CrsMatrix> Op) {
       if (Op.is_null())
         return Teuchos::null;
-      return rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Op));
+      return rcp(new CrsMatrixWrap(Op));
     }
 
     /*! @brief Extract Matrix Diagonal
@@ -112,7 +120,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) {
+    static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal(const Matrix& A) {
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -140,9 +148,9 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) {
-      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) {
+      RCP<const Map> rowMap = A.getRowMap();
+      RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
       ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
       size_t numRows = rowMap->getNodeNumElements();
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -176,7 +184,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) {
+    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -198,12 +206,12 @@ namespace MueLu {
     The local overlapped diagonal has an entry for each index in A's column map.
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetMatrixOverlappedDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) {
-      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap(), colMap = A.getColMap();
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > localDiag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+    static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
+      RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
+      RCP<Vector> localDiag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
 
       try {
-         const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>* crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>*>(&A);
+         const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
          if (crsOp == NULL) {
            throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
          }
@@ -219,7 +227,7 @@ namespace MueLu {
         localDiagVals = diagVals = null;
       }
 
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagonal = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap);
+      RCP<Vector> diagonal = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap);
       RCP< const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer;
       importer = A.getCrsGraph()->getImporter();
       if (importer == Teuchos::null) {
@@ -234,20 +242,20 @@ namespace MueLu {
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
     // or
     // - void ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS, Array &)
-    static Teuchos::Array<Magnitude> ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) {
+    static Teuchos::Array<Magnitude> ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS) {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
        const size_t numVecs = X.getNumVectors();
-       RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RES = Residual(Op, X, RHS);
+       RCP<MultiVector> RES = Residual(Op, X, RHS);
        Teuchos::Array<Magnitude> norms(numVecs);
        RES->norm2(norms);
        return norms;
     }
 
-    static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) {
+    static RCP<MultiVector> Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const MultiVector& X, const MultiVector& RHS) {
       TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != RHS.getNumVectors(), Exceptions::RuntimeError, "Number of solution vectors != number of right-hand sides")
         const size_t numVecs = X.getNumVectors();
         Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RES = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRangeMap(), numVecs, false); // no need to initialize to zero
+        RCP<MultiVector> RES = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRangeMap(), numVecs, false); // no need to initialize to zero
         Op.apply(X, *RES, Teuchos::NO_TRANS, one, zero);
         RES->update(one, RHS, negone);
         return RES;
@@ -297,15 +305,15 @@ namespace MueLu {
 
     (Shamelessly grabbed from tpetra/examples.)
     */
-    static Scalar PowerMethod(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool scaleByDiag = true,
+    static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
           "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
       // Create three vectors, fill z with random numbers
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > q = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getDomainMap());
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > r = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > z = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+      RCP<Vector> q = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getDomainMap());
+      RCP<Vector> r = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
+      RCP<Vector> z = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRangeMap());
 
       z->setSeed(seed);  // seed random number generator
       z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
@@ -320,9 +328,9 @@ namespace MueLu {
       Magnitude residual = STS::magnitude(zero);
 
       // power iteration
-      RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagInvVec;
+      RCP<Vector> diagInvVec;
       if (scaleByDiag) {
-        RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+        RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
         A.getLocalDiagCopy(*diagVec);
         diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
         diagInvVec->reciprocal(*diagVec);
@@ -438,136 +446,6 @@ namespace MueLu {
 
 
   ///////////////////////////////////////////
-
-
-#if 0 // not sure whether we want to have the MueMex routines here!
-  /*! Removes the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublists from inList
-    and moves it to nonSerialList.  Everything else is copied to serialList.  This function returns the level number of the highest level
-    for which non-serializable data was provided.
-  */
-  long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
-    using Teuchos::ParameterList;
-
-    ParameterList dummy;
-    long maxLevel = 0;
-
-    for (ParameterList::ConstIterator it = inList.begin(); it != inList.end(); it++) {
-      const std::string& levelName = it->first;
-
-      // Check for mach of the form "level X" where X is a positive integer
-      if (inList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
-        int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
-        if (maxLevel < levelID)
-          maxLevel = levelID;
-
-        // Split the sublist
-        const ParameterList& levelList = inList.sublist(levelName);
-        for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
-          const std::string& name = it2->first;
-          if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
-            nonSerialList.sublist(levelName).setEntry(name, it2->second);
-          #ifdef HAVE_MUELU_MATLAB
-          else if(IsParamMuemexVariable(name))
-          {
-            nonSerialList.sublist(levelName).setEntry(name, it2->second);
-          }
-          #endif
-          else
-            serialList.sublist(levelName).setEntry(name, it2->second);
-        }
-
-      } else {
-        serialList.setEntry(it->first, it->second);
-      }
-    }
-
-    return maxLevel;
-  }
-
-  /*! Tokenizes a (comma)-separated string, removing all leading and trailing whitespace
-    WARNING: This routine is not threadsafe on most architectures
-  */
-  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* delimChars = ",") {
-    //note: default delimiter string is ","
-    // Take a comma-separated list and tokenize it, stripping out leading & trailing whitespace.  Then add to tokenList
-    char* buf = (char*) malloc(stream.size() + 1);
-    strcpy(buf, stream.c_str());
-    char* token = strtok(buf, delimChars);
-    if(token == NULL) {
-      free(buf);
-      return;
-    }
-    while(token) {
-      //token points to start of string to add to tokenList
-      //remove front whitespace...
-      char* tokStart = token;
-      char* tokEnd = token + strlen(token) - 1;
-      while(*tokStart == ' ' && tokStart < tokEnd)
-        tokStart++;
-      while(*tokEnd == ' ' && tokStart < tokEnd)
-        tokEnd--;
-      tokEnd++;
-      if(tokStart < tokEnd) {
-        std::string finishedToken(tokStart, tokEnd - tokStart); //use the constructor that takes a certain # of chars
-        tokenList.push_back(finishedToken);
-      }
-      token = strtok(NULL, delimChars);
-    }
-    free(buf);
-  }
-
-  /*! Returns true if a parameter name is a valid Muemex custom level variable, e.g. "MultiVector myArray"
-  */
-  bool IsParamMuemexVariable(const std::string& name) {
-    //see if paramName is exactly two "words" - like "OrdinalVector myNullspace" or something
-    char* str = (char*) malloc(name.length() + 1);
-    strcpy(str, name.c_str());
-    //Strip leading and trailing whitespace
-    char* firstWord = strtok(str, " ");
-    if(!firstWord)
-      return false;
-    char* secondWord = strtok(NULL, " ");
-    if(!secondWord)
-      return false;
-    char* thirdWord = strtok(NULL, " ");
-    if(thirdWord)
-      return false;
-    //convert first word to all lowercase for case insensitive compare
-    char* tolowerIt = firstWord;
-    while(*tolowerIt) {
-      *tolowerIt = (char) tolower(*tolowerIt);
-      tolowerIt++;
-    }
-    //See if the first word is one of the custom variable names
-    if(strstr(firstWord, "matrix") ||
-        strstr(firstWord, "multivector") ||
-        strstr(firstWord, "map") ||
-        strstr(firstWord, "ordinalvector") ||
-        strstr(firstWord, "int") ||
-        strstr(firstWord, "scalar") ||
-        strstr(firstWord, "double") ||
-        strstr(firstWord, "complex") ||
-        strstr(firstWord, "string")) {
-      //Add name to list of keys to remove
-      free(str);
-      return true;
-    }
-    else {
-      free(str);
-      return false;
-    }
-  }
-
-  //! Little helper function to convert non-string types to strings
-  template<class T>
-  std::string toString(const T& what) {
-    std::ostringstream buf;
-    buf << what;
-    return buf.str();
-  }
-#endif
-
-
 
 } //namespace MueLu
 

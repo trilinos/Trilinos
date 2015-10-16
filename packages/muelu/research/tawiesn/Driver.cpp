@@ -330,11 +330,11 @@ int main(int argc, char *argv[]) {
 
       H->IsPreconditioner(false);
       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
-      norms = Utils::ResidualNorm(*A,*X,*B);
+      norms = Utilities::ResidualNorm(*A,*X,*B);
       std::cout << "                iter:    0           residual = " << norms[0] << std::endl;
       for (int i=0; i< maxIts; ++i) {
         H->Iterate(*B, *X);
-        norms = Utils::ResidualNorm(*A,*X,*B);
+        norms = Utilities::ResidualNorm(*A,*X,*B);
         std::cout << "                iter:    " << i+1 << "           residual = " << norms[0] << std::endl;
       }
 

@@ -74,7 +74,7 @@ namespace MueLu {
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   CrsMatrix;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    OP;
-    typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>        MUtils;
+    typedef MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>        MUtils;
   public:
 
     //! @name Constructor/Destructor

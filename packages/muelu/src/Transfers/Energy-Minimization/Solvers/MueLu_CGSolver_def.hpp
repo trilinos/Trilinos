@@ -49,11 +49,14 @@
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_CGSolver_decl.hpp"
-
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
+
+
+#include "MueLu_CGSolver.hpp"
+
+
 
 namespace MueLu {
 
@@ -96,7 +99,7 @@ namespace MueLu {
 
     SC one = Teuchos::ScalarTraits<SC>::one();
 
-    Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<const SC> D = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(*A);
 
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
@@ -113,7 +116,7 @@ namespace MueLu {
 #if 0 // TAW: what is this????
 #ifdef HAVE_MUELU_TPETRA
     if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(R)->resumeFill();
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(R)->resumeFill();
 #endif
 #else
     R->resumeFill();
@@ -124,7 +127,7 @@ namespace MueLu {
 
     // Z_0 = M^{-1}R_0
     Z = MatrixFactory2::BuildCopy(R);
-    Utils::MyOldScaleMatrix(*Z, D, true, true, false);
+    MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(*Z, D, true, true, false);
 
     // P_0 = Z_0
     P = MatrixFactory2::BuildCopy(Z);
@@ -185,7 +188,7 @@ namespace MueLu {
 
       // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory2::BuildCopy(R);
-      Utils::MyOldScaleMatrix(*Z, D, true, true, false);
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
       newRZ = Frobenius(*R, *Z);

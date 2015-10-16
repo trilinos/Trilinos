@@ -124,7 +124,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setProblemMatrix(
 
   A_=A;
   if(A_!=Teuchos::null)
-    TpetraA_ = Utils::Op2NonConstTpetraCrs(A_);
+    TpetraA_ = Utilities::Op2NonConstTpetraCrs(A_);
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   if(LinearProblem_!=Teuchos::null)
     LinearProblem_ -> setOperator ( TpetraA_ );

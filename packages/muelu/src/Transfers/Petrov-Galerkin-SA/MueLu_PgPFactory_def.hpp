@@ -140,7 +140,7 @@ namespace MueLu {
     /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils::Transpose(*A, true); // build transpose of A explicitely
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitely
     }
 
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
@@ -150,8 +150,8 @@ namespace MueLu {
 
     doFillComplete=true;
     optimizeStorage=false;
-    Teuchos::ArrayRCP<Scalar> diag = Utils::GetMatrixDiagonal(*A);
-    Utils::MyOldScaleMatrix(*DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+    Teuchos::ArrayRCP<Scalar> diag = Utilities::GetMatrixDiagonal(*A);
+    Utilities::MyOldScaleMatrix(*DinvAP0, diag, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     /////////////////// calculate local damping factors omega
 
@@ -196,7 +196,7 @@ namespace MueLu {
 
     /////////////////// prolongator smoothing using local damping parameters omega
     RCP<Matrix> P_smoothed = Teuchos::null;
-    Utils::MyOldScaleMatrix(*DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+    Utilities::MyOldScaleMatrix(*DinvAP0, RowBasedOmega_local, false, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
     Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
                          *DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
@@ -222,7 +222,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils::Transpose(*P_smoothed, true);
+      RCP<Matrix> R = Utilities::Transpose(*P_smoothed, true);
       Set(coarseLevel, "R", R);
 
       if (IsPrint(Statistics1))
@@ -303,9 +303,9 @@ namespace MueLu {
         // compute D^{-1} * A * D^{-1} * A * P0
         bool doFillComplete=true;
         bool optimizeStorage=false;
-        Teuchos::ArrayRCP<Scalar> diagA = Utils::GetMatrixDiagonal(*A);
+        Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
-        Utils::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+        Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(), true);

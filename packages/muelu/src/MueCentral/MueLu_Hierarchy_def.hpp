@@ -182,7 +182,7 @@ namespace MueLu {
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
     TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup (total)");
-    TimeMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::Utils::toString(coarseLevelID) + ")");
+    TimeMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
 
     // TODO: pass coarseLevelManager by reference
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError,
@@ -211,7 +211,7 @@ namespace MueLu {
       RCP<const Teuchos::Comm<int> > comm      = domainMap->getComm();
 
       // Initialize random seed for reproducibility
-      Utils::SetRandomSeed(*comm);
+      Utilities::SetRandomSeed(*comm);
 
       // Record the communicator on the level (used for timers sync)
       level.SetComm(comm);
@@ -292,7 +292,7 @@ namespace MueLu {
       level.Request(*coarseFact);
     }
 
-    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
+    PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
     RCP<Operator> Ac = Teuchos::null;
@@ -563,7 +563,7 @@ namespace MueLu {
       // We calculate the residual only if we want to print it out, or if we
       // want to stop once we achive the tolerance
       Teuchos::Array<MagnitudeType> rn;
-      rn = Utils::ResidualNorm(*A, X, B);
+      rn = Utilities::ResidualNorm(*A, X, B);
 
       if (tol > 0) {
         bool passed = true;
@@ -642,7 +642,7 @@ namespace MueLu {
         {
           RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
-          residual = Utils::Residual(*A, X, B);
+          residual = Utilities::Residual(*A, X, B);
         }
 
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
@@ -749,7 +749,7 @@ namespace MueLu {
         // We calculate the residual only if we want to print it out, or if we
         // want to stop once we achive the tolerance
         Teuchos::Array<MagnitudeType> rn;
-        rn = Utils::ResidualNorm(*A, X, B);
+        rn = Utilities::ResidualNorm(*A, X, B);
 
         prevNorm = curNorm;
         curNorm  = rn[0];

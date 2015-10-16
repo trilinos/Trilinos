@@ -374,8 +374,8 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i <= numRebuilds; i++) {
           if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utils::Op2NonConstTpetraCrs(A);
-            RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utils::MV2NonConstTpetraMV(coordinates));
+            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
+            RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utilities::MV2NonConstTpetraMV(coordinates));
 
             if (useAMGX) {
 #ifdef HAVE_MUELU_AMGX
@@ -388,8 +388,8 @@ int main(int argc, char *argv[]) {
 
           } else {
 #ifdef HAVE_MUELU_EPETRA
-            RCP<Epetra_CrsMatrix> eA = Utils::Op2NonConstEpetraCrs(A);
-            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utils::MV2NonConstEpetraMV(coordinates));
+            RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
+            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
             H = eH->GetHierarchy();
 #endif
           }
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
 
         {
           // we set seed for reproducibility
-          Utils::SetRandomSeed(*comm);
+          Utilities::SetRandomSeed(*comm);
           X->randomize();
           A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
 
           if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-            aH->apply(*(Utils::MV2TpetraMV(B)), *(Utils::MV2NonConstTpetraMV(X)));
+            aH->apply(*(Utilities::MV2TpetraMV(B)), *(Utilities::MV2NonConstTpetraMV(X)));
 #endif
           } else {
             H->IsPreconditioner(false);

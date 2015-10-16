@@ -291,7 +291,7 @@ namespace Thyra {
     typedef Xpetra::StridedMapFactory   <LO,GO,NO>    StridedMapFactory;
 
     typedef MueLu::Hierarchy            <SC,LO,GO,NO> Hierarchy;
-    typedef MueLu::Utils                <SC,LO,GO,NO> Utils;
+    typedef MueLu::Utilities            <SC,LO,GO,NO> Utils;
 
     const RCP<const Teuchos::Comm<int> > comm = velCoords->getMap()->getComm();
 

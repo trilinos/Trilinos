@@ -181,10 +181,10 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    A00_ = Utils::Crs2Op(bA->getMatrix(0,0));
-    A01_ = Utils::Crs2Op(bA->getMatrix(0,1));
-    A10_ = Utils::Crs2Op(bA->getMatrix(1,0));
-    A11_ = Utils::Crs2Op(bA->getMatrix(1,1));
+    A00_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(0,0));
+    A01_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(0,1));
+    A10_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(1,0));
+    A11_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(1,1));
 
     // TODO move this to BlockedCrsMatrix->getMatrix routine...
     A00_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
@@ -201,9 +201,9 @@ namespace MueLu {
 
     ArrayRCP<SC> diag;
     if (pL.get<bool>("lumping") == false)
-      diag = Utils::GetMatrixDiagonal      (*A00_);
+      diag = Utilities::GetMatrixDiagonal      (*A00_);
     else
-      diag = Utils::GetLumpedMatrixDiagonal(*A00_);
+      diag = Utilities::GetLumpedMatrixDiagonal(*A00_);
 
     SC one = Teuchos::ScalarTraits<SC>::one();
 
@@ -244,7 +244,7 @@ namespace MueLu {
       R = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
       R->update(one, B, zero);
     } else {
-      R = Utils::Residual(*A_, X, B);
+      R = Utilities::Residual(*A_, X, B);
     }
 
     for (LO run = 0; run < nSweeps; ++run) {
@@ -281,7 +281,7 @@ namespace MueLu {
       domainMapExtractor_->InsertVector(X1, 1, rcpX);
 
       if (run < nSweeps-1)
-        R = Utils::Residual(*A_, X, B);
+        R = Utilities::Residual(*A_, X, B);
     }
   }
 

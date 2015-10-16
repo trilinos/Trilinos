@@ -349,7 +349,7 @@ printf("after level print\n");
   // use any initial guess you like.
   {
     // We set seed for reproducibility
-    Utils::SetRandomSeed(*comm);
+    Utilities::SetRandomSeed(*comm);
     X->randomize();
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
