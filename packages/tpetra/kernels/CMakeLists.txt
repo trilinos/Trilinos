@@ -1,7 +1,17 @@
+INCLUDE(TribitsETISupport)
+
 #
 # Define the subpackage
 #
 TRIBITS_SUBPACKAGE(Kernels)
+
+# Define ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION,
+# which defaults to ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION.
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+# Add this subpackage to the list of subpackages that do explicit
+# template instantiation (ETI).
+TRIBITS_ADD_ETI_SUPPORT()
 
 # If building in debug mode, define the HAVE_TPETRAKERNELS_DEBUG macro.
 TRIBITS_ADD_DEBUG_OPTION()

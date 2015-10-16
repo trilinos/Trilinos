@@ -6,9 +6,12 @@ INCLUDE(TribitsETISupport)
 #
 TRIBITS_SUBPACKAGE(Core)
 
+# Define ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION,
+# which defaults to ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION.
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
-# Enable Explicit Template Instantiation (ETI) support for Tpetra.
+# Add this subpackage to the list of packages that do explicit
+# template instantiation (ETI).
 TRIBITS_ADD_ETI_SUPPORT()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
