@@ -257,6 +257,9 @@ typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Trilinos
 #ifdef MUELU_USERPFACTORY_SHORT
 typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> UserPFactory;
 #endif
+#ifdef MUELU_UTILITIESBASE_SHORT
+typedef MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilitiesBase;
+#endif
 #ifdef MUELU_SEMICOARSENPFACTORY_SHORT
 typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory;
 #endif
@@ -275,7 +278,6 @@ typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokk
 #endif
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
-typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;
 #endif
 #ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
 typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;

@@ -43,61 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_TRANSPFACTORY_DEF_HPP
-#define MUELU_TRANSPFACTORY_DEF_HPP
+#ifndef MUELU_UTILITIESBASE_FWD_HPP
+#define MUELU_UTILITIESBASE_FWD_HPP
 
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Time.hpp>
 
-#include <Xpetra_Matrix.hpp>
 
-#include "MueLu_TransPFactory_decl.hpp"
-
-#include "MueLu_DisableMultipleCallCheck.hpp"
-
-#include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
-    validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory of the matrix P");
-    return validParamList;
-  }
+  class UtilitiesBase;
+}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-    Input(coarseLevel, "P");
-  }
+#ifndef MUELU_UTILITIESBASE_SHORT
+#define MUELU_UTILITIESBASE_SHORT
+#endif
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
-    FactoryMonitor m(*this, "Transpose P", coarseLevel);
-    std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 
-    RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    RCP<Matrix> R = Utils::Transpose(*P, true,label);
-
-    RCP<ParameterList> params = rcp(new ParameterList());;
-    params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
-
-    Set(coarseLevel, "R", R);
-
-    ///////////////////////// EXPERIMENTAL
-    if (P->IsView("stridedMaps"))
-      R->CreateView("stridedMaps", P, true);
-    ///////////////////////// EXPERIMENTAL
-
-  }
-
-} //namespace MueLu
-
-#endif // MUELU_TRANSPFACTORY_DEF_HPP
+#endif // MUELU_UTILITIESBASE_FWD_HPP

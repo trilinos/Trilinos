@@ -115,7 +115,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
+      A = Utils::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -167,7 +167,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utils::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL

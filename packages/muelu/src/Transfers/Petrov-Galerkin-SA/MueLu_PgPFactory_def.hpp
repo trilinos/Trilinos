@@ -140,7 +140,7 @@ namespace MueLu {
     /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
+      A = Utils::Transpose(*A, true); // build transpose of A explicitely
     }
 
     /////////////////// calculate D^{-1} A Ptent (needed for smoothing)
@@ -222,7 +222,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(*P_smoothed, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utils::Transpose(*P_smoothed, true);
       Set(coarseLevel, "R", R);
 
       if (IsPrint(Statistics1))

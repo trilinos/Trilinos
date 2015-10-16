@@ -211,7 +211,7 @@ namespace MueLu {
     permPTmatrix->fillComplete();
     permQTmatrix->fillComplete();
 
-    Teuchos::RCP<Matrix> permPmatrix = Utils2::Transpose(*permPTmatrix,true);
+    Teuchos::RCP<Matrix> permPmatrix = Utils::Transpose(*permPTmatrix,true);
 
     /*for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)

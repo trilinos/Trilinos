@@ -94,6 +94,3 @@
     #endif
   #endif // HAVE_MUELU_TPETRA
 #endif // end ifdef HAVE_MUELU_EPETRA
-
-#endif // end ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-#endif // end ifdef HAVE_MUELU_EPETRA
