@@ -76,7 +76,7 @@ namespace MueLu {
 
   ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Aggregates_kokkos(const RCP<const Map> & map) {
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Aggregates_kokkos(const RCP<const Map>& map) {
     nAggregates_ = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(map);
