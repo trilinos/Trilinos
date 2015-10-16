@@ -366,16 +366,24 @@ namespace Xpetra {
     //@{
 
     //! Constructor specifying fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+    }
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+    }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+    }
 
     //! Constructor specifying column Map and number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraCrsGraph<int,int>", "TpetraCrsGraph<int,int>", "int");
+    }
 
     //! Destructor.
     virtual ~TpetraCrsGraph() {  }
