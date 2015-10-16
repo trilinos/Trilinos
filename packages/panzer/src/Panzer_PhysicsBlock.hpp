@@ -91,6 +91,16 @@ namespace panzer {
                           const bool build_transient_support,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
 
+  /** \brief Nonmember function for reading and constructing physics blocks from a Teuchos::ParameterList for a given list of element blocks.
+    *        A unique physics block object is built for each element block even if multiple element blocks point to the same physics block.
+    *        The <code>intialize</code> method must be called before the physics blocks are used.
+    *
+    * \relates panzer::PhysicsBlock 
+    */
+  void readPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                         const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
+                         std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+
   /** \brief Nonmember function for searching and returning a spcific physics block given an element block id. Throws an erro if the physics block is not found.
       \relates panzer::PhysicsBlock
 
@@ -111,6 +121,8 @@ namespace panzer {
        : m_build_transient_support(false), m_global_data(Teuchos::null)
     { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; } 
 
+    /** This constructor call initialize.
+      */
     PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
                  const std::string & element_block_id,
                  const int default_integration_order,
@@ -118,6 +130,14 @@ namespace panzer {
                  const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                  const bool build_transient_support);
+
+    /** This constructor allows a bare bones physics block to be initialized
+      * that only knows meta data about the mesh (excepting the cell type).
+      * This allows a read in from an input deck and then initializtion
+      * further into the code.
+      */
+    PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
+                 const std::string & element_block_id);
 
     PhysicsBlock(const panzer::PhysicsBlock & pb,
                  const panzer::CellData & cell_data);
@@ -132,6 +152,15 @@ namespace panzer {
                  const panzer::CellData & cell_data,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                  const Teuchos::RCP<panzer::PureBasis> & fields);
+
+    /** Initialize with cell data, equation set and global data. This is required before
+      * the physics blocks can be used.
+      */
+    void initialize(const int default_integration_order,
+                    const bool build_transient_support,
+                    const panzer::CellData & cell_data,
+                    const Teuchos::RCP<const panzer::EquationSetFactory>& factory,
+                    const Teuchos::RCP<panzer::GlobalData>& global_data);
 
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                const Teuchos::ParameterList& user_data) const;
@@ -248,8 +277,8 @@ namespace panzer {
     panzer::CellData m_cell_data;
     //! store the input parameter list for copy ctors
     Teuchos::RCP<Teuchos::ParameterList> m_input_parameters;
-    const bool m_build_transient_support;
-    const Teuchos::RCP<panzer::GlobalData> m_global_data;
+    bool m_build_transient_support;
+    Teuchos::RCP<panzer::GlobalData> m_global_data;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
