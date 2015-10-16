@@ -288,7 +288,7 @@ namespace MueLu {
 
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
-    static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero()); // FIXME
+    static Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
 
     /*! @brief Set seed for random number generator.
 

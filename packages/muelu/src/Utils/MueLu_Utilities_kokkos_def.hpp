@@ -57,6 +57,10 @@
 # endif
 #endif
 
+#include <Kokkos_ArithTraits.hpp>
+#include <Kokkos_Core.hpp>
+#include <Kokkos_CrsMatrix.hpp>
+
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_RowMatrixOut.h>
@@ -360,25 +364,26 @@ namespace MueLu {
   } //MyOldScaleMatrix_Tpetra()
 
   template <class SC, class LO, class GO, class NO>
-  ArrayRCP<const bool> Utils_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+  Kokkos::View<const bool*, typename NO::device_type> Utils_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+    typedef Kokkos::ArithTraits<SC> ATS;
+
     LO numRows = A.getNodeNumRows();
 
-    typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+    auto kokkosMatrix = A.getLocalMatrix();
 
-    ArrayRCP<bool> boundaryNodes(numRows, true);
-    for (LO row = 0; row < numRows; row++) {
-      ArrayView<const LO> indices;
-      ArrayView<const SC> vals;
-      A.getLocalRowView(row, indices, vals);
+    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+    Kokkos::parallel_for("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row) {
+      // KokkosSparse::SparseRowView<local_matrix_type, typename local_matrix_type::size_type> rowView = kokkosMatrix.row(row);
+      auto rowView = kokkosMatrix.template row<LO>(row);
 
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      if (nnz > 1)
-        for (size_t col = 0; col < nnz; col++)
-          if ( (indices[col] != row) && STS::magnitude(vals[col]) > tol) {
-            boundaryNodes[row] = false;
-            break;
-          }
-    }
+      boundaryNodes[row] = true;
+      for (size_t col = 0; col < rowView.length; col++)
+        if ((rowView.colidx(col) != row) && (ATS::magnitude(rowView.value(col)) > tol)) {
+          boundaryNodes[row] = false;
+          break;
+        }
+    });
 
     return boundaryNodes;
   }

@@ -93,12 +93,12 @@ public:
   }
 
 /***********************************************************************************************/
-/***************** DUAL CUTTUING PLANE SUBPROBLEM ROUTINES *************************************/
+/****************** DUAL CUTTING PLANE SUBPROBLEM ROUTINES *************************************/
 /***********************************************************************************************/
 private:
   int QPStatus_;
-  Real INF = DBL_MAX;
-  int maxind = INT_MAX;
+  const Real INF = std::numeric_limits<double>::max();
+  const int maxind = std::numeric_limits<int>::max();
   int entering_; // index of entering item
   std::vector<int> taboo_; // list of "taboo" items
   bool optimal_; // flag for optimality of restricted solution

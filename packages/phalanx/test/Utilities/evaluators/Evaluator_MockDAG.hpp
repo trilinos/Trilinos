@@ -41,74 +41,28 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_MOCK_DAG_EVALUATOR_HPP
+#define PHX_MOCK_DAG_EVALUATOR_HPP
 
-#ifndef PHX_SCALAR_CONTAINER_HPP
-#define PHX_SCALAR_CONTAINER_HPP
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_EvaluationContainer_Base.hpp"
-#include "Phalanx_FieldTag.hpp"
-#include "Phalanx_Evaluator.hpp"
-#include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
-#include <string>
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
 
 namespace PHX {
 
-  /*! \brief Container that holds all data associated with an evaluation type.
-
-
-  */
-  template <typename EvalT, typename Traits>
-  class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
-    
+  //! Mock evaluator to checking DAG construction
+  template<typename EvalT, typename Traits>
+  class MockDAG : public PHX::EvaluatorWithBaseImpl<Traits>,
+		  public PHX::EvaluatorDerived<EvalT, Traits>  {
   public:
-    
-    EvaluationContainer();
-    
-    ~EvaluationContainer();
-    
-    //! Requests that the container must compute this field.
-    void requireField(const PHX::FieldTag& f);
-
-    void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
-
-    boost::any getFieldData(const PHX::FieldTag& f);
-
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm);
-
     void evaluateFields(typename Traits::EvalData d);
-
-    void preEvaluate(typename Traits::PreEvalData d);
-
-    void postEvaluate(typename Traits::PostEvalData d);
-
-    void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims);
-
-    const std::vector<PHX::index_size_type> & getKokkosExtendedDataTypeDimensions() const;
-
-    //! Return true if the postRegistrationSetupMethod has been called
-    bool setupCalled() const;
-
-    const std::string evaluationType() const;
-
-    void print(std::ostream& os) const;
-
-  protected:
-
-    bool post_registration_setup_called_;
-
-    boost::unordered_map<std::string,boost::any> fields_;
-
-    std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
+    void evaluates(const std::string& field_name);
+    void requires(const std::string& field_name);
   };
   
-} 
+}
 
-#include "Phalanx_EvaluationContainer_Def.hpp"
+#include "Evaluator_MockDAG_Def.hpp"
 
-#endif 
+#endif

@@ -122,15 +122,16 @@ namespace MueLu {
     GO numDropped = 0, numTotal = 0;
     std::string graphType = "unamalgamated"; //for description purposes only
 
+    RCP<LWGraph_kokkos> graph;
     if (algo == "classical") {
       if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
         //
-        // Case 1:  scalar problem, no dropping => just use matrix graph
+        // Case 1:  scalar problem without dropping
         //
-        RCP<LWGraph_kokkos> graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getDomainMap(), A->getRangeMap(), "graph of A"));
+        graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getDomainMap(), A->getRangeMap(), "graph of A"));
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        ArrayRCP<const bool> boundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        auto boundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
         graph->SetBoundaryNodeMap(boundaryNodes);
 
         numTotal = A->getNodeNumEntries();
@@ -138,10 +139,10 @@ namespace MueLu {
         if (GetVerbLevel() & Statistics0) {
           GO numLocalBoundaryNodes  = 0;
           GO numGlobalBoundaryNodes = 0;
-          Kokkos::parallel_reduce(boundaryNodes.size(), KOKKOS_LAMBDA(const LO i, GO& n) {
+          Kokkos::parallel_reduce("CoalesceDropF:Build:case1_bnd", boundaryNodes.dimension_0(), KOKKOS_LAMBDA(const LO i, GO& n) {
             if (boundaryNodes[i])
               n++;
-          }, numLocalBoundaryNodes, "CoalesceDropF:Build:case1_bnd");
+          }, numLocalBoundaryNodes);
 
           RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
           MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
@@ -150,6 +151,89 @@ namespace MueLu {
 
         Set(currentLevel, "DofsPerNode",  1);
         Set(currentLevel, "Graph",        graph);
+
+      } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
+
+        Set(currentLevel, "DofsPerNode",  1);
+        Set(currentLevel, "Graph",        graph);
+
+        //
+        // Case 2:  scalar problem with dropping
+        //
+#if 0
+        Kokkos::View rows;
+        Kokkos::View cols;
+
+        RCP<Vector>  ghostedDiagVec = Utils_kokkos:GetMatrixOverlappedDiagonal(*A);
+        Kokkos::View ghostedDiag    = ghostedDiag->getData(0);
+
+          // allocate space for the local graph
+          ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
+          ArrayRCP<LO> columns(A->getNodeNumEntries());
+
+          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+          const ArrayRCP<bool>     boundaryNodes(A->getNodeNumRows(), false);
+
+          LO realnnz = 0;
+
+          rows[0] = 0;
+          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+            size_t nnz = A->getNumEntriesInLocalRow(row);
+            ArrayView<const LO> indices;
+            ArrayView<const SC> vals;
+            A->getLocalRowView(row, indices, vals);
+
+            //FIXME the current predrop function uses the following
+            //FIXME    if(std::abs(vals[k]) > std::abs(threshold_) || grow == gcid )
+            //FIXME but the threshold doesn't take into account the rows' diagonal entries
+            //FIXME For now, hardwiring the dropping in here
+
+            LO rownnz = 0;
+            for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+              LO col = indices[colID];
+
+              // we avoid a square root by using squared values
+              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+              typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
+
+              if (aij > aiiajj || row == col) {
+                columns[realnnz++] = col;
+                rownnz++;
+              } else
+                numDropped++;
+            }
+            if (rownnz == 1) {
+              // If the only element remaining after filtering is diagonal, mark node as boundary
+              // FIXME: this should really be replaced by the following
+              //    if (indices.size() == 1 && indices[0] == row)
+              //        boundaryNodes[row] = true;
+              // We do not do it this way now because there is no framework for distinguishing isolated
+              // and boundary nodes in the aggregation algorithms
+              boundaryNodes[row] = true;
+            }
+            rows[row+1] = realnnz;
+          }
+          columns.resize(realnnz);
+
+          numTotal = A->getNodeNumEntries();
+
+          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
+          graph->SetBoundaryNodeMap(boundaryNodes);
+          if (GetVerbLevel() & Statistics0) {
+            GO numLocalBoundaryNodes  = 0;
+            GO numGlobalBoundaryNodes = 0;
+            for (LO i = 0; i < boundaryNodes.size(); ++i)
+              if (boundaryNodes[i])
+                numLocalBoundaryNodes++;
+            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+          }
+          Set(currentLevel, "Graph",       graph);
+          Set(currentLevel, "DofsPerNode", 1);
+
+#endif
       }
     }
 

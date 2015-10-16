@@ -167,6 +167,7 @@ namespace MueLu {
     RCP<Matrix>                         A01_;                 //!< Block (0,1) [typically, pressure gradient operator]
     RCP<Matrix>                         A10_;                 //!< Block (1,0) [typically, divergence operator]
     RCP<Matrix>                         A11_;                 //!< Block (1,1) [typically, pressure stabilization term or null block]
+    RCP<Matrix>                         S_;                   //!< Schur complement
     RCP<Vector>                         D_;                   //!< Inverse to approximation to block (0,0). Here, D_ = omega*inv(diag(A(0,0)))
 
     Teuchos::RCP<SmootherBase>          smoo_;                //!< Smoother for SchurComplement equation
