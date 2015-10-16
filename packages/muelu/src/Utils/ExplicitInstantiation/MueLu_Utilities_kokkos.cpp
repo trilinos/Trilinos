@@ -97,5 +97,4 @@
   #endif // HAVE_MUELU_TPETRA
 #endif // end ifdef HAVE_MUELU_EPETRA
 
-
 #endif

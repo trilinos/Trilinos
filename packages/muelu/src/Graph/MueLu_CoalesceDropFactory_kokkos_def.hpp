@@ -132,7 +132,7 @@ namespace MueLu {
         graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getDomainMap(), A->getRangeMap(), "graph of A"));
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        auto boundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        auto boundaryNodes = MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DetectDirichletRows(*A, dirichletThreshold);
         graph->SetBoundaryNodeMap(boundaryNodes);
 
         numTotal = A->getNodeNumEntries();
