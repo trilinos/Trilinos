@@ -117,13 +117,13 @@ namespace MueLu {
     bool isLocalNeighborVertex(LO i) const                      { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
 
     //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
-    void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry)  { dirichletBoundaries_ = bndry; }
+    void SetBoundaryNodeMap(const Kokkos::View<const bool*, typename NO::device_type> bndry)  { dirichletBoundaries_ = bndry; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
     size_t getNodeMaxNumRowEntries () const                     { return maxNumRowEntries_; }
 
     //! Returns map with global ids of boundary nodes.
-    const ArrayRCP<const bool> GetBoundaryNodeMap() const       { return dirichletBoundaries_; }
+    const Kokkos::View<const bool*, typename NO::device_type> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }
 
     /// Return a simple one-line description of the Graph.
     std::string description() const                             { return "MueLu.description()"; } //FIXME use object's label
@@ -141,7 +141,7 @@ namespace MueLu {
     const RCP<const map_type>   importMap_;
 
     //! Boolean array marking Dirichlet rows.
-    ArrayRCP<const bool>        dirichletBoundaries_;
+    Kokkos::View<const bool*, typename NO::device_type>         dirichletBoundaries_;
 
     //! Local index boundaries (cached from domain map)
     LO     minLocalIndex_, maxLocalIndex_;
