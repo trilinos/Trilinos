@@ -190,6 +190,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::mag_type
+  TPETRA_DEPRECATED
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights) const
   {
