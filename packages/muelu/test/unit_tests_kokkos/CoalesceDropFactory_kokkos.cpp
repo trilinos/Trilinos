@@ -110,6 +110,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  36);
   }
 
+#if 0
   TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ScalarDropping)
   {
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
@@ -171,7 +172,6 @@ namespace MueLuTests {
     TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==3), true);
   }
 
-#if 0
   TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, AmalgamationLightweight)
   {
     // unit test for block size 3

@@ -100,14 +100,13 @@ namespace MueLu {
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  ArrayView<const LocalOrdinal>
+  const Kokkos::View<const LocalOrdinal*, DeviceType>
   LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   getNeighborVertices(LocalOrdinal i) const {
     auto rowPointers = graph_.row_map;
     auto colIndices  = graph_.entries;
 
-    // FIXME: need to use column indices
-    return ArrayView<const LO>(reinterpret_cast<const LO*>(&colIndices(rowPointers(i))), rowPointers(i+1) - rowPointers(i));
+    return Kokkos::subview(colIndices, std::pair<size_t,size_t>(rowPointers(i), rowPointers(i+1)));
   }
 
 }

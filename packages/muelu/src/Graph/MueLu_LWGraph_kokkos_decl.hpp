@@ -111,19 +111,19 @@ namespace MueLu {
     const RCP<const Map>                 GetImportMap() const   { return importMap_; }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    ArrayView<const LO> getNeighborVertices(LO i) const;
+    const Kokkos::View<const LO*, DeviceType> getNeighborVertices(LO i) const;
 
     //! Return true if vertex with local id 'v' is on current process.
     bool isLocalNeighborVertex(LO i) const                      { return i >= minLocalIndex_ && i <= maxLocalIndex_; }
 
     //! Set boolean array indicating which rows correspond to Dirichlet boundaries.
-    void SetBoundaryNodeMap(const Kokkos::View<const bool*, typename NO::device_type> bndry)  { dirichletBoundaries_ = bndry; }
+    void SetBoundaryNodeMap(const Kokkos::View<const bool*, DeviceType> bndry)  { dirichletBoundaries_ = bndry; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
     size_t getNodeMaxNumRowEntries () const                     { return maxNumRowEntries_; }
 
     //! Returns map with global ids of boundary nodes.
-    const Kokkos::View<const bool*, typename NO::device_type> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }
+    const Kokkos::View<const bool*, DeviceType> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }
 
     /// Return a simple one-line description of the Graph.
     std::string description() const                             { return "MueLu.description()"; } //FIXME use object's label
