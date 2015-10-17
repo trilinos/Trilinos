@@ -152,6 +152,9 @@ namespace MueLu {
 
       // request "Smoother" for current subblock row.
       currentLevel.DeclareInput("PreSmoother", FactManager_->GetFactory("Smoother").get());
+
+      // request Schur matrix just in case
+      currentLevel.DeclareInput("A", FactManager_->GetFactory("A").get());
     }
   }
 
@@ -212,7 +215,8 @@ namespace MueLu {
     // carefully switch to the SubFactoryManagers (defined by the users)
     {
       SetFactoryManager currentSFM(rcpFromRef(currentLevel), FactManager_);
-      smoo_ = currentLevel.Get< RCP<SmootherBase> >("PreSmoother", FactManager_->GetFactory("Smoother").get());
+      smoo_ = currentLevel.Get<RCP<SmootherBase> >("PreSmoother", FactManager_->GetFactory("Smoother").get());
+      S_    = currentLevel.Get<RCP<Matrix> >      ("A",           FactManager_->GetFactory("A").get());
     }
 
     SmootherPrototype::IsSetup(true);

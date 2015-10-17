@@ -156,8 +156,8 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
          << "Running on " << comm_epetra.NumProc() << " processors");
 
    // pick 
-   int nx = 3 * 25 * comm_epetra.NumProc();
-   int ny = 3 * 50 * comm_epetra.NumProc();
+   int nx = 3 * comm_epetra.NumProc();//3 * 25 * comm_epetra.NumProc();
+   int ny = 3 * comm_epetra.NumProc();//3 * 50 * comm_epetra.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided
@@ -179,7 +179,7 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    Teko::TpetraHelpers::StridedTpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
-   int numtests = 100;
+   int numtests = 10;
    ST max = 0.0;
    ST min = 1.0;
    for(int i=0;i<numtests;i++) {
@@ -221,7 +221,7 @@ bool tStridedTpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    shell.RebuildOps();
 
    // test the operator against a lot of random vectors
-   numtests = 50;
+   numtests = 10;
    max = 0.0;
    min = 1.0;
    for(int i=0;i<numtests;i++) {
@@ -265,8 +265,8 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
          << "Running on " << comm_epetra.NumProc() << " processors");
 
    // pick 
-   int nx = 3 * 25 * comm_epetra.NumProc();
-   int ny = 3 * 50 * comm_epetra.NumProc();
+   int nx = 3 * comm_epetra.NumProc();//3 * 25 * comm_epetra.NumProc();
+   int ny = 3 * comm_epetra.NumProc();//3 * 50 * comm_epetra.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided
@@ -290,7 +290,7 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    Teko::TpetraHelpers::StridedTpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
-   int numtests = 50;
+   int numtests = 10;
    ST max = 0.0;
    ST min = 1.0;
    for(int i=0;i<numtests;i++) {
@@ -333,7 +333,7 @@ bool tStridedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
 
    // test the operator against a lot of random vectors
    
-   numtests = 50;
+   numtests = 10;
    max = 0.0;
    min = 1.0;
    for(int i=0;i<numtests;i++) {
@@ -379,8 +379,8 @@ bool tStridedTpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
          << "Running on " << comm_epetra.NumProc() << " processors");
 
    // pick 
-   int nx = 3 * 25 * comm_epetra.NumProc();
-   int ny = 3 * 50 * comm_epetra.NumProc();
+   int nx = 3 * comm_epetra.NumProc();//3 * 25 * comm_epetra.NumProc();
+   int ny = 3 * comm_epetra.NumProc();//3 * 50 * comm_epetra.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided

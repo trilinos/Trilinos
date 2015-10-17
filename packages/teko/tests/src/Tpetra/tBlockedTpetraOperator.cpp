@@ -181,8 +181,8 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
          << "Running on " << comm_epetra.NumProc() << " processors");
 
    // pick 
-   int nx = 5 * comm_epetra.NumProc();
-   int ny = 5 * comm_epetra.NumProc();
+   int nx = 5;// * comm_epetra.NumProc();
+   int ny = 5;// * comm_epetra.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided
@@ -294,8 +294,8 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
          << "Running on " << comm_epetra.NumProc() << " processors");
 
    // pick 
-   int nx = 3 * 25 * comm_epetra.NumProc();
-   int ny = 3 * 50 * comm_epetra.NumProc();
+   int nx = 5;//3 * 25 * comm_epetra.NumProc();
+   int ny = 5;//3 * 50 * comm_epetra.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided

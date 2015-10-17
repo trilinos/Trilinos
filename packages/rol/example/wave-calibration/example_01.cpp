@@ -58,7 +58,6 @@
 #include <iostream>
 #include <complex>
 #include <valarray>
-#include <unordered_map>
 
 typedef double RealT;
 
@@ -401,7 +400,8 @@ int main(int argc, char *argv[]) {
       // Compute r_k based on the domain volume ... this would have to be generalized.
       int nsamples = vec_sample.size();
       //r_k = (1.0/M_PI)*pow(std::tgamma(1.0+dim/2.0)*volumeD*sigma*log10(nsamples)/nsamples, 1.0/dim);
-        r_k = (1.0/sqrt(M_PI))*pow(std::tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
+      //r_k = (1.0/sqrt(M_PI))*pow(std::tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
+        r_k = (1.0/sqrt(M_PI))*pow(tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
 
       // Start local optimization runs.
       for (std::vector<Teuchos::RCP<ROL::Vector<RealT > > >::iterator itsam = vec_sample.begin(); itsam != vec_sample.end(); ++itsam) {

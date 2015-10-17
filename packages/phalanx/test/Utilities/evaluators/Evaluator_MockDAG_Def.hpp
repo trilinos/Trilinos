@@ -42,73 +42,48 @@
 // @HEADER
 
 
-#ifndef PHX_SCALAR_CONTAINER_HPP
-#define PHX_SCALAR_CONTAINER_HPP
+//**********************************************************************
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_EvaluationContainer_Base.hpp"
-#include "Phalanx_FieldTag.hpp"
-#include "Phalanx_Evaluator.hpp"
-#include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
-#include <string>
+struct CELL;
+struct BASIS;
 
 namespace PHX {
 
-  /*! \brief Container that holds all data associated with an evaluation type.
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::
+  postRegistrationSetup(typename Traits::SetupData ,
+			PHX::FieldManager<Traits>& )
+  {
+    //this->utils.setFieldData(flux,fm);
+  }
 
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::evaluateFields(typename Traits::EvalData d){}
 
-  */
-  template <typename EvalT, typename Traits>
-  class EvaluationContainer : public PHX::EvaluationContainerBase<Traits> {
-    
-  public:
-    
-    EvaluationContainer();
-    
-    ~EvaluationContainer();
-    
-    //! Requests that the container must compute this field.
-    void requireField(const PHX::FieldTag& f);
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::evaluates(const std::string& n)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-    void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+    PHX::Tag<typename EvalT::ScalarT> tag(n,dl);
+    this->addEvaluatedField(tag);
+  }
 
-    boost::any getFieldData(const PHX::FieldTag& f);
+  template<typename EvalT,typename Traits>
+  void MockDAG<EvalT,Traits>::requires(const std::string& n)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-    void postRegistrationSetup(typename Traits::SetupData d,
-			       PHX::FieldManager<Traits>& fm);
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+    PHX::Tag<typename EvalT::ScalarT> tag(n,dl);
+    this->addDependentField(tag);
+  }
 
-    void evaluateFields(typename Traits::EvalData d);
-
-    void preEvaluate(typename Traits::PreEvalData d);
-
-    void postEvaluate(typename Traits::PostEvalData d);
-
-    void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims);
-
-    const std::vector<PHX::index_size_type> & getKokkosExtendedDataTypeDimensions() const;
-
-    //! Return true if the postRegistrationSetupMethod has been called
-    bool setupCalled() const;
-
-    const std::string evaluationType() const;
-
-    void print(std::ostream& os) const;
-
-  protected:
-
-    bool post_registration_setup_called_;
-
-    boost::unordered_map<std::string,boost::any> fields_;
-
-    std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
-  };
-  
 } 
-
-#include "Phalanx_EvaluationContainer_Def.hpp"
-
-#endif 
