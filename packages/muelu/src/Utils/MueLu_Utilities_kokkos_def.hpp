@@ -350,7 +350,7 @@ namespace MueLu {
 
     LO numRows = A.getNodeNumRows();
 
-    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+    typedef typename Matrix::local_matrix_type local_matrix_type;
     auto kokkosMatrix = A.getLocalMatrix();
 
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
@@ -359,8 +359,8 @@ namespace MueLu {
       auto rowView = kokkosMatrix.template row<LO>(row);
 
       boundaryNodes[row] = true;
-      for (size_t col = 0; col < rowView.length; col++)
-        if ((rowView.colidx(col) != row) && (ATS::magnitude(rowView.value(col)) > tol)) {
+      for (size_t colID = 0; colID < rowView.length; colID++)
+        if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > tol)) {
           boundaryNodes[row] = false;
           break;
         }
