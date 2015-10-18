@@ -13,11 +13,7 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-
-# mfh 14 Apr 2015: We don't have a test build for Kokkos or Tpetra
-# with C++11 disabled, so I am REQUIRING C++11.  If you don't like
-# this, set me up a test machine with C++11 OFF.  I don't have time to
-# do it myself.
+# Kokkos and Tpetra require C++11 as of the 12.0 release.
 #
 # I left a special case for CUDA because I'm not sure whether TriBITS
 # counts C++11 as enabled in that case; please feel free to revise if
@@ -35,16 +31,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(FATAL_ERROR "The 'classic' version of Tpetra has been deprecated for a long time, and is not longer available.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you do not have to set it explicitly.)")
+  MESSAGE(FATAL_ERROR "The 'classic' version of Tpetra has been deprecated for a long time, and is not longer available.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you should not set it explicitly.)")
 ENDIF ()
 
 ######################################################################
 # Explicit template instantiation (ETI) and test instantiation logic
 ######################################################################
 
-# For Scalar types, Node types, and (LocalOrdinal, GlobalOrdinal) type
-# pairs, Tpetra defines macros which say
+# For
+#   - Scalar types,
+#   - (LocalOrdinal, GlobalOrdinal) type pairs, and
+#   - Node types,
 #
+# Tpetra defines macros which say
 #   1. Whether Tpetra instantiates (if ETI is enabled) and/or tests
 #      its objects for that type (or type pair)
 #   2. Whether the type (or type pair) is available
@@ -70,13 +69,26 @@ ENDIF ()
 #
 # Note on (2) above: some of the types can only be enabled if certain
 # requirements are fulfilled.
+#
+# Tpetra also keeps a list of the Kokkos Device types (specializations
+# of Kokkos::Device) over which it does instantiations and/or tests.
+# This is the Tpetra_ETI_DEVICES CMake variable.  Eventually, we will
+# deprecate and remove the above Node instantiation list, and just use
+# the list of enabled Devices.  We use devices rather than execution
+# spaces, because a Kokkos::Device is an (execution space, memory
+# space) pair.  This means that it is more general.  For example,
+# Device<Cuda, CudaSpace> != Device<Cuda, CudaUVMSpace>, yet some
+# users may want both represented.  The particular use case I have in
+# mind here is Device<OpenMP, $MEM_SPACE> where $MEM_SPACE could be
+# either HostSpace or the HBM (high-bandwidth memory) memory space.
+#
 
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
 SET(${PACKAGE_NAME}_ETI_LORDS "")
 SET(${PACKAGE_NAME}_ETI_GORDS "")
-SET(${PACKAGE_NAME}_ETI_EXECUTION_SPACES "")
+SET(${PACKAGE_NAME}_ETI_DEVICES "")
 SET(${PACKAGE_NAME}_ETI_NODES "")
 
 # ============================================================
@@ -235,23 +247,26 @@ ELSE () # NOT Tpetra_INST_CUDA
 ENDIF () # Tpetra_INST_CUDA
 
 #
-# Construct the list of enabled Node types.
+# Construct the list of enabled Device and Node types.
 #
 IF(Tpetra_INST_SERIAL) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Serial")
 ENDIF()
 IF(Tpetra_INST_PTHREAD) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Threads")
 ENDIF()
 IF(Tpetra_INST_OPENMP) 
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::OpenMP")
 ENDIF()
 IF(Tpetra_INST_CUDA) 
+  # TpetraCore currently requires UVM, so it doesn't make sense to
+  # instantiate over Kokkos::CudaSpace as well as
+  # Kokkos::CudaUVMSpace.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_EXECUTION_SPACES "Kokkos::Cuda")
 ENDIF()
 
 # Tell users what Nodes are enabled.
@@ -780,7 +795,7 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
-GLOBAL_SET(${PACKAGE_NAME}_ETI_EXECUTION_SPACES   ${${PACKAGE_NAME}_ETI_EXECUTION_SPACES})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
 
 
