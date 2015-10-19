@@ -58,7 +58,7 @@ Infrastructure:
   x  In ROL_ScaledStdVector.hpp, added a variant of ROL::StdVector that
      supports constant (positive) diagonal scalings in the dot product.  This
      variant comprises the pair of classes ROL::PrimalScaledStdVector and
-     ROL::DualScaledStdVector; changed the examplesin example/diode-circuit
+     ROL::DualScaledStdVector; changed the examples in example/diode-circuit
      to use variable scalings through these new classes.
   x  Distribution Factory, to enable general sampling for stochastic problems;
      demonstrated in example/burgers-control/example_05 through _07.
