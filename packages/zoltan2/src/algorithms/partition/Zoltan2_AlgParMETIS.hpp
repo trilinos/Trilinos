@@ -195,16 +195,16 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets, env);
+  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets,
+                                                       env);
   pm_idx_t *pm_adjs;  
-  TPL_Traits<pm_idx_t,gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, env);
+  TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, env);
 
   // Build vtxdist
-  pm_idx_t *pm_vtxdist = new pm_idx_t[np+1];
-  pm_vtxdist[0] = 0;
-  Teuchos::gatherAll(*problemComm, 1, &pm_nVtx, np, &(pm_vtxdist[1]));
-  for (int i = 2; i <= np; i++)
-    pm_vtxdist[i] += pm_vtxdist[i-1];
+  pm_idx_t *pm_vtxdist;
+  ArrayView<size_t> vtxdist; 
+  model->getVertexDist(vtxdist);
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T_ARRAY(&pm_vtxdist, vtxdist, env);
 
   // Create array for ParMETIS to return results in.
   // Note:  ParMETIS does not like NULL arrays,
@@ -253,10 +253,17 @@ void AlgParMETIS<Adapter>::partition(
       pm_options[i] = 0; // Default options
     pm_options[2] = 15;  // Matches default value used in Zoltan
 
+int me = problemComm->getRank();
+std::cout << me << " KDDKDD vtxdist: ";
+for (int kdd = 0; kdd <= np; kdd++) std::cout << pm_vtxdist[kdd] << " ";
+std::cout << std::endl;
+
+std::cout << me << " KDDKDD Calling PARTKWAY" << std::endl;
     ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
                          &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
                          pm_partsizes, pm_imbTols, pm_options,
                          &pm_edgecut, pm_partList, &mpicomm);
+std::cout << me << " KDDKDD DONE" << std::endl;
   }
   else if (parmetis_method == "ADAPTIVE_REPART") {
     // Get object sizes
@@ -270,7 +277,6 @@ void AlgParMETIS<Adapter>::partition(
   }
 
   // Clean up 
-  delete [] pm_vtxdist;
   delete [] pm_partsizes;
   delete [] pm_imbTols;
 
@@ -294,8 +300,9 @@ void AlgParMETIS<Adapter>::partition(
   env->memory("Zoltan2-ParMETIS: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<pm_idx_t,lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
-  TPL_Traits<pm_idx_t,gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
+  TPL_Traits<pm_idx_t,const lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
+  TPL_Traits<pm_idx_t,const gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
+  TPL_Traits<pm_idx_t,size_t>::DELETE_TPL_T_ARRAY(&pm_vtxdist);
 
   if (nVwgt) delete [] pm_vwgts;
   if (nEwgt) delete [] pm_ewgts;
