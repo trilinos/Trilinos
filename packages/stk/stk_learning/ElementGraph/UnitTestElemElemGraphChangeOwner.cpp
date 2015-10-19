@@ -101,7 +101,7 @@ protected:
         stk::mesh::EntityId elemId = get_bulk().identifier(elem);
         ASSERT_TRUE(get_elem_graph().is_connected_elem_locally_owned(elem, connectedIndex))
                 << "elem " << elemId << " expected local elem " << connectedId;
-        EXPECT_EQ(connectedId, get_bulk().identifier(get_elem_graph().get_connected_element(elem, connectedIndex)))
+        EXPECT_EQ(connectedId, get_bulk().identifier(get_elem_graph().get_connected_element_via_side(elem, connectedIndex).first))
                 << "elem " << elemId;
     }
 
@@ -510,7 +510,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_2));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element(elem_2, 1);
+            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_2, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_2, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 
@@ -634,7 +634,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_2));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element(elem_2, 1);
+            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_2, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_2, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 
@@ -965,7 +965,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_to_move));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element(elem_to_move, 1);
+            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_to_move, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 

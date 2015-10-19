@@ -47,7 +47,7 @@ public:
 
     bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    stk::mesh::Entity get_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
+    impl::ElementViaSidePair get_connected_element_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     stk::mesh::EntityId get_entity_id_of_remote_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
 

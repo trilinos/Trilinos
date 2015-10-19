@@ -98,6 +98,7 @@ struct DeletedElementData
 };
 
 typedef std::pair<LocalId,int> ElementSidePair;
+typedef std::pair<stk::mesh::Entity,int> ElementViaSidePair;
 typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
