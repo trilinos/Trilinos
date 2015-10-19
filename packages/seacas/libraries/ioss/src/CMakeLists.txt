@@ -47,7 +47,8 @@ else()
     ENDIF()
   ENDIF()
 
-  IF (${${PACKAGE_NAME}_ENABLE_Pamgen}})
+  ASSERT_DEFINED(${CMAKE_PROJECT_NAME}_ENABLE_Pamgen)
+  IF (${CMAKE_PROJECT_NAME}_ENABLE_Pamgen)
     ADD_SUBDIRECTORY(pamgen)
   ENDIF()
 

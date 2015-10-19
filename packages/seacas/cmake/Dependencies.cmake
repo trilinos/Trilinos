@@ -1,3 +1,13 @@
+if(NOT CMAKE_PROJECT_NAME OR "${CMAKE_PROJECT_NAME}" STREQUAL "SEACAS")
+  # Used for dependencies SEACASExodus vs Exodus
+  SET(SEACAS_PREFIX "")  
+  SET(IOSS_PREFIX "IOSS")
+else()
+  # Used for dependencies SEACASExodus vs Exodus
+  SET(SEACAS_PREFIX "SEACAS")
+  SET(IOSS_PREFIX "SEACAS")
+endif()
+
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodus      libraries/exodus        SS  REQUIRED
   Exodus_for  libraries/exodus_for    SS  REQUIRED

@@ -29,6 +29,7 @@ TRIBITS_ADD_EXECUTABLE(blot_xcps NOEXEPREFIX NOEXESUFFIX
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
 					${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdx11cps.F
 					${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps_dual.f
+					${CMAKE_CURRENT_SOURCE_DIR}/cgi/cgi_dummy.c
 			        COMM serial mpi)
 install_executable(blot_xcps)
 
@@ -36,6 +37,7 @@ TRIBITS_ADD_EXECUTABLE(blot_cps NOEXEPREFIX NOEXESUFFIX
 				LINKER_LANGUAGE Fortran
 			        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/blot.f
 					${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps.f
+					${CMAKE_CURRENT_SOURCE_DIR}/cgi/cgi_dummy.c
 			        COMM serial mpi)
 install_executable(blot_cps)
 
