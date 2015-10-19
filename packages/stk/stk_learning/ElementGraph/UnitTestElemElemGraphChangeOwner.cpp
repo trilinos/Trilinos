@@ -101,7 +101,7 @@ protected:
         stk::mesh::EntityId elemId = get_bulk().identifier(elem);
         ASSERT_TRUE(get_elem_graph().is_connected_elem_locally_owned(elem, connectedIndex))
                 << "elem " << elemId << " expected local elem " << connectedId;
-        EXPECT_EQ(connectedId, get_bulk().identifier(get_elem_graph().get_connected_element_via_side(elem, connectedIndex).first))
+        EXPECT_EQ(connectedId, get_bulk().identifier(get_elem_graph().get_connected_element_and_via_side(elem, connectedIndex).first))
                 << "elem " << elemId;
     }
 
@@ -112,7 +112,7 @@ protected:
         stk::mesh::EntityId elemId = get_bulk().identifier(elem);
         ASSERT_TRUE(!get_elem_graph().is_connected_elem_locally_owned(elem, connectedIndex))
                 << "elem " << elemId << " expected remote elem " << connectedId;
-        EXPECT_EQ(connectedId, get_elem_graph().get_entity_id_of_remote_element(elem, connectedIndex))
+        EXPECT_EQ(connectedId, get_elem_graph().get_connected_remote_id_and_via_side(elem, connectedIndex).first)
                 << "elem " << elemId;
     }
 
@@ -510,11 +510,11 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_2));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_2, 1).first;
+            stk::mesh::Entity elem = elem_graph.get_connected_element_and_via_side(elem_2, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_2, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 
-            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_2, 0);
+            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_connected_remote_id_and_via_side(elem_2, 0).first;
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_2, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
 
@@ -634,11 +634,11 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_2));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_2, 1).first;
+            stk::mesh::Entity elem = elem_graph.get_connected_element_and_via_side(elem_2, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_2, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 
-            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_2, 0);
+            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_connected_remote_id_and_via_side(elem_2, 0).first;
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_2, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
 
@@ -798,8 +798,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
         if (proc == 0) {
             // Connectivity for Hex Element 1
             EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex1));
-            EXPECT_EQ(5,  elem_graph.get_side_id_to_connected_element(hex1, 0));
-            EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex1, 0));
+            EXPECT_EQ(5,  elem_graph.get_connected_remote_id_and_via_side(hex1, 0).second);
+            EXPECT_EQ(2u, elem_graph.get_connected_remote_id_and_via_side(hex1, 0).first);
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex1, 0));
             EXPECT_EQ(1u, elem_graph.num_edges());
             EXPECT_EQ(1u, elem_graph.num_parallel_edges());
@@ -807,10 +807,10 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
         else if (proc == 1) {
             // Connectivity for Shell Element 2
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(shell2));
-            EXPECT_EQ(0,  elem_graph.get_side_id_to_connected_element(shell2, 0));
-            EXPECT_EQ(1,  elem_graph.get_side_id_to_connected_element(shell2, 1));
-            EXPECT_EQ(3u, elem_graph.get_entity_id_of_remote_element(shell2, 0));
-            EXPECT_EQ(1u, elem_graph.get_entity_id_of_remote_element(shell2, 1));
+            EXPECT_EQ(0,  elem_graph.get_connected_remote_id_and_via_side(shell2, 0).second);
+            EXPECT_EQ(1,  elem_graph.get_connected_remote_id_and_via_side(shell2, 1).second);
+            EXPECT_EQ(3u, elem_graph.get_connected_remote_id_and_via_side(shell2, 0).first);
+            EXPECT_EQ(1u, elem_graph.get_connected_remote_id_and_via_side(shell2, 1).first);
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 1));
             EXPECT_EQ(2u, elem_graph.num_edges());
@@ -819,8 +819,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
         else if (proc == 2) {
             // Connectivity for Hex Element 3
             EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex3));
-            EXPECT_EQ(4,  elem_graph.get_side_id_to_connected_element(hex3, 0));
-            EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex3, 0));
+            EXPECT_EQ(4,  elem_graph.get_connected_remote_id_and_via_side(hex3, 0).second);
+            EXPECT_EQ(2u, elem_graph.get_connected_remote_id_and_via_side(hex3, 0).first);
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex3, 0));
             EXPECT_EQ(1u, elem_graph.num_edges());
             EXPECT_EQ(1u, elem_graph.num_parallel_edges());
@@ -965,11 +965,11 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
 
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_to_move));
 
-            stk::mesh::Entity elem = elem_graph.get_connected_element_via_side(elem_to_move, 1).first;
+            stk::mesh::Entity elem = elem_graph.get_connected_element_and_via_side(elem_to_move, 1).first;
             ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 1));
             EXPECT_EQ(3u, bulkData.identifier(elem));
 
-            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_to_move, 0);
+            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_connected_remote_id_and_via_side(elem_to_move, 0).first;
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
 

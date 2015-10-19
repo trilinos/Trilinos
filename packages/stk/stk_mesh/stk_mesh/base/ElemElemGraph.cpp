@@ -122,29 +122,18 @@ bool ElemElemGraph::is_connected_elem_locally_owned(stk::mesh::Entity localEleme
     return m_elem_graph[local_id][indexConnElement] >= 0;
 }
 
-int ElemElemGraph::get_side_id_to_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const
-{
-    return get_side_id_to_connected_local_id( get_local_element_id(localElement), indexConnElement );
-}
-
-int ElemElemGraph::get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const
-{
-    return m_via_sides[localElementId][indexConnElement];
-}
-
-impl::ElementViaSidePair ElemElemGraph::get_connected_element_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const
+impl::ElementViaSidePair ElemElemGraph::get_connected_element_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const
 {
     impl::LocalId local_id = get_local_element_id(localElement);
     impl::LocalId other_element_id = m_elem_graph[local_id][indexConnElement];
     return std::make_pair(m_local_id_to_element_entity[other_element_id],m_via_sides[local_id][indexConnElement]);
 }
 
-stk::mesh::EntityId ElemElemGraph::get_entity_id_of_remote_element(stk::mesh::Entity localElement, size_t indexConnElement) const
+impl::IdViaSidePair ElemElemGraph::get_connected_remote_id_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const
 {
     ThrowRequireMsg(!is_connected_elem_locally_owned(localElement, indexConnElement) , "Program error. Contact sierra-help@sandia.gov for support.");
     impl::LocalId local_id = get_local_element_id(localElement);
-    stk::mesh::EntityId id = -m_elem_graph[local_id][indexConnElement];
-    return id;
+    return impl::IdViaSidePair(-m_elem_graph[local_id][indexConnElement], m_via_sides[local_id][indexConnElement]);
 }
 
 int ElemElemGraph::get_owning_proc_id_of_remote_element(stk::mesh::Entity local_element, stk::mesh::EntityId other_element_id) const
@@ -938,7 +927,7 @@ private:
             {
                 if(impl::does_element_have_side(m_bulkData, this_element) && !m_elementGraph.is_connected_elem_locally_owned(this_element, j))
                 {
-                    stk::mesh::EntityId other_element_id = m_elementGraph.get_entity_id_of_remote_element(this_element,j);
+                    stk::mesh::EntityId other_element_id = m_elementGraph.get_connected_remote_id_and_via_side(this_element,j).first;
                     int other_proc = m_elementGraph.get_owning_proc_id_of_remote_element(this_element, other_element_id);
                     elements_to_comm.push_back(impl::graphEdgeProc(m_bulkData.identifier(this_element), other_element_id, other_proc));
                 }
@@ -988,7 +977,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                 remote_death_boundary.set_topology_is_modified();
                 if(elementGraph.is_connected_elem_locally_owned(this_element, j))
                 {
-                    impl::ElementViaSidePair other_element_via_side = elementGraph.get_connected_element_via_side(this_element, j);
+                    impl::ElementViaSidePair other_element_via_side = elementGraph.get_connected_element_and_via_side(this_element, j);
                     stk::mesh::Entity other_element = other_element_via_side.first;
                     if(impl::does_element_have_side(bulkData, other_element_via_side.first))
                     {
@@ -1052,7 +1041,8 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                 }
                 else
                 {
-                    stk::mesh::EntityId remote_id = elementGraph.get_entity_id_of_remote_element(this_element, j);
+                    impl::IdViaSidePair remote_id_side_pair = elementGraph.get_connected_remote_id_and_via_side(this_element, j);
+                    stk::mesh::EntityId remote_id = remote_id_side_pair.first;
                     impl::parallel_info &parallel_edge_info = elementGraph.get_parallel_edge_info(this_element, remote_id);
                     bool other_element_active = parallel_edge_info.m_in_body_to_be_skinned;
                     bool create_side = other_element_active;
@@ -1064,7 +1054,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                     }
                     else
                     {
-                        int side_id = elementGraph.get_side_from_element1_to_remote_element2(this_element, remote_id);
+                        int side_id = remote_id_side_pair.second;
                         ThrowRequireMsg(side_id != -1, "Program error. Please contact sierra-help@sandia.gov for support.");
                         impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id);
                     }
@@ -2233,7 +2223,7 @@ void ElemElemGraph::update_all_local_neighbors(const stk::mesh::Entity elemToSen
     {
         if(is_connected_elem_locally_owned(elemToSend, k))
         {
-            impl::ElementViaSidePair neighborElemViaSide = get_connected_element_via_side(elemToSend, k);
+            impl::ElementViaSidePair neighborElemViaSide = get_connected_element_and_via_side(elemToSend, k);
             stk::mesh::Entity neighborElem = neighborElemViaSide.first;
             int elemToSendSideId = neighborElemViaSide.second;
 
@@ -2436,7 +2426,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                     {
                         if(this->is_connected_elem_locally_owned(element, k))
                         {
-                            impl::ElementViaSidePair other_element_via_side = this->get_connected_element_via_side(element, k);
+                            impl::ElementViaSidePair other_element_via_side = this->get_connected_element_and_via_side(element, k);
                             stk::mesh::Entity other_element = other_element_via_side.first;
                             if (((*m_air_selector)(m_bulk_data.bucket(other_element))) && impl::does_element_have_side(m_bulk_data, other_element))
                             {
@@ -2447,12 +2437,13 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                         }
                         else
                         {
-                            stk::mesh::EntityId remote_id = this->get_entity_id_of_remote_element(element, k);
+                            impl::IdViaSidePair idSidePair = this->get_connected_remote_id_and_via_side(element, k);
+                            stk::mesh::EntityId remote_id = idSidePair.first;
                             impl::parallel_info &parallel_edge_info = this->get_parallel_edge_info(element, remote_id);
                             bool other_element_is_air = parallel_edge_info.m_is_air;
                             if(other_element_is_air)
                             {
-                                side_counts[this->get_side_from_element1_to_remote_element2(element, remote_id)]++;
+                                side_counts[idSidePair.second]++;
                                 remote_edges.push_back(RemoteEdge(element, remote_id, parallel_edge_info));
                             }
                         }
@@ -2489,7 +2480,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                     {
                         if(this->is_connected_elem_locally_owned(element, k))
                         {
-                            impl::ElementViaSidePair other_element_via_side = this->get_connected_element_via_side(element, k);
+                            impl::ElementViaSidePair other_element_via_side = this->get_connected_element_and_via_side(element, k);
                             stk::mesh::Entity other_element = other_element_via_side.first;
                             if (((m_skinned_selector)(m_bulk_data.bucket(other_element))) && impl::does_element_have_side(m_bulk_data, other_element))
                             {
@@ -2499,12 +2490,13 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                         }
                         else
                         {
-                            stk::mesh::EntityId remote_id = this->get_entity_id_of_remote_element(element, k);
+                            impl::IdViaSidePair idSidePair = this->get_connected_remote_id_and_via_side(element, k);
+                            stk::mesh::EntityId remote_id = idSidePair.first;
                             impl::parallel_info &parallel_edge_info = this->get_parallel_edge_info(element, remote_id);
                             bool is_other_element_selected = parallel_edge_info.m_in_body_to_be_skinned;
                             if(is_other_element_selected)
                             {
-                                side_counts[this->get_side_from_element1_to_remote_element2(element, remote_id)]++;
+                                side_counts[idSidePair.second]++;
                                 remote_edges.push_back(RemoteEdge(element, remote_id, parallel_edge_info));
                             }
                         }

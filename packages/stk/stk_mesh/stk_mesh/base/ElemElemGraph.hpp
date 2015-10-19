@@ -47,13 +47,11 @@ public:
 
     bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    impl::ElementViaSidePair get_connected_element_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
+    impl::ElementViaSidePair get_connected_element_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    stk::mesh::EntityId get_entity_id_of_remote_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
+    impl::IdViaSidePair get_connected_remote_id_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     int get_owning_proc_id_of_remote_element(stk::mesh::Entity localElement, stk::mesh::EntityId other_element_id) const;
-
-    int get_side_id_to_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     int get_side_from_element1_to_remote_element2(stk::mesh::Entity localElement, stk::mesh::EntityId other_element_id) const;
 
@@ -202,7 +200,6 @@ private:
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
-    int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
