@@ -673,8 +673,6 @@ namespace {
       mvOrig1.norm1(nOrig1());
       mvOrig1.norm2(nOrig2());
       mvOrig1.normInf(nOrigI());
-      mvOrig1.normWeighted(mvWeights,nOrigW());
-      mvOrig1.normWeighted(*mvW1,nOrigW1());
       mvOrig1.meanValue(meansOrig());
       for (size_t j=0; j < numView; ++j) {
         RCP<const V> v1 = mvOrig1.getVector(inView1[j]),
@@ -689,16 +687,12 @@ namespace {
       mvView1->norm1(nView1());
       mvView1->norm2(nView2());
       mvView1->normInf(nViewI());
-      mvView1->normWeighted(*mvSubWeights,nViewW());
-      mvView1->normWeighted(*mvW1,nViewW1());
       mvView1->meanValue(meansView());
       mvView1->dot( *mvView2, dotsView() );
       for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig1[inView1[j]],  nView1[j],  tol);
         TEST_FLOATING_EQUALITY(nOrig2[inView1[j]],  nView2[j],  tol);
         TEST_FLOATING_EQUALITY(nOrigI[inView1[j]],  nViewI[j],  tol);
-        TEST_FLOATING_EQUALITY(nOrigW[inView1[j]],  nViewW[j],  tol);
-        TEST_FLOATING_EQUALITY(nOrigW1[inView1[j]], nViewW1[j], tol);
         TEST_FLOATING_EQUALITY(meansOrig[inView1[j]], meansView[j], tol);
         TEST_FLOATING_EQUALITY(dotsOrig[j], dotsView[j], tol);
       }
@@ -2484,64 +2478,6 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NormWeighted, MV, V, Ordinal, Scalar , Node )
-  {
-#ifdef HAVE_XPETRA_TPETRA
-    RCP<Node> node = getNode<Node>();
-
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    // create a Map
-    const size_t numLocal = 13;
-    const size_t numVectors = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
-    MV    mvec(map,numVectors),
-       weights(map,numVectors),
-       weight1(map,1);
-    // randomize the multivector
-    mvec.randomize();
-    // set the weights
-    Array<Scalar> wvec(numVectors);
-    Scalar w1 = ScalarTraits<Scalar>::random();
-    for (size_t j=0; j < numVectors; ++j) {
-      wvec[j] = ScalarTraits<Scalar>::random();
-    }
-    weights.putScalar(ScalarTraits<Scalar>::one());
-    weights.scale(wvec());
-    weight1.putScalar(w1);
-
-    // take norms
-    Array<Mag> normsW(numVectors), normsW1(numVectors);
-    Array<Scalar> dots(numVectors);
-    mvec.dot(mvec,dots());
-    mvec.normWeighted(weights,normsW());
-    mvec.normWeighted(weight1,normsW1());
-    {
-      //TODO FAILED: Mag vnrm = mvec.getVector(0)->normWeighted(*weight1.getVector(0));
-      //TODO FAILED: TEST_FLOATING_EQUALITY( vnrm, normsW1[0], tol );
-    }
-
-    for (size_t j=0; j < numVectors; ++j) {
-      Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
-      Mag expnorm = ScalarTraits<Mag>::squareroot(
-                      ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww)
-                    );
-      Mag ww1 = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(w1) * w1 );
-      Mag expnorm1 = ScalarTraits<Mag>::squareroot(
-                       ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww1)
-                     );
-      TEST_FLOATING_EQUALITY( expnorm, normsW[j], tol );
-      TEST_FLOATING_EQUALITY( expnorm1, normsW1[j], tol );
-    }
-#endif
-  }
-
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadCombinations, MV, V, Ordinal, Scalar , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
@@ -2586,8 +2522,6 @@ namespace {
     TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
     TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
     TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
-    TEST_THROW(m1n1.normWeighted(m1n2,norms()), std::runtime_error);        // normWeighted
-    TEST_THROW(m1n2.normWeighted(m2n2,norms()), std::runtime_error);
     TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
     TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
 #endif
@@ -2643,7 +2577,6 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountNorm1        , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountNormInf      , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Norm2             , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NormWeighted      , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CopyView          , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, OffsetView        , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, ZeroScaleUpdate   , MV, V, ORDINAL, SCALAR, NODE ) \
