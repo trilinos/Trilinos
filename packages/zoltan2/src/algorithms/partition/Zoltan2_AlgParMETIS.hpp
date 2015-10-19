@@ -198,7 +198,13 @@ void AlgParMETIS<Adapter>::partition(
   TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets,
                                                        env);
   pm_idx_t *pm_adjs;  
-  TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, env);
+  pm_idx_t pm_dummy_adj;
+  if (nEdge)
+    TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, 
+                                                         env);
+  else
+    pm_adjs = &pm_dummy_adj;  // ParMETIS does not like NULL pm_adjs;
+    
 
   // Build vtxdist
   pm_idx_t *pm_vtxdist;
@@ -253,17 +259,10 @@ void AlgParMETIS<Adapter>::partition(
       pm_options[i] = 0; // Default options
     pm_options[2] = 15;  // Matches default value used in Zoltan
 
-int me = problemComm->getRank();
-std::cout << me << " KDDKDD vtxdist: ";
-for (int kdd = 0; kdd <= np; kdd++) std::cout << pm_vtxdist[kdd] << " ";
-std::cout << std::endl;
-
-std::cout << me << " KDDKDD Calling PARTKWAY" << std::endl;
     ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
                          &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
                          pm_partsizes, pm_imbTols, pm_options,
                          &pm_edgecut, pm_partList, &mpicomm);
-std::cout << me << " KDDKDD DONE" << std::endl;
   }
   else if (parmetis_method == "ADAPTIVE_REPART") {
     // Get object sizes
@@ -283,16 +282,18 @@ std::cout << me << " KDDKDD DONE" << std::endl;
   // Load answer into the solution.
 
   ArrayRCP<part_t> partList;
-  if (TPL_Traits<pm_idx_t, part_t>::OK_TO_CAST_TPL_T()) {
-    partList = ArrayRCP<part_t>((part_t *)pm_partList, 0, nVtx, true);
-  }
-  else {
-    // TODO Probably should have a TPL_Traits function to do the following
-    partList = ArrayRCP<part_t>(new part_t[nVtx], 0, nVtx, true);
-    for (size_t i = 0; i < nVtx; i++) {
-      partList[i] = part_t(pm_partList[i]);
+  if (nVtx) {
+    if (TPL_Traits<pm_idx_t, part_t>::OK_TO_CAST_TPL_T()) {
+      partList = ArrayRCP<part_t>((part_t *)pm_partList, 0, nVtx, true);
     }
-    delete [] pm_partList;
+    else {
+      // TODO Probably should have a TPL_Traits function to do the following
+      partList = ArrayRCP<part_t>(new part_t[nVtx], 0, nVtx, true);
+      for (size_t i = 0; i < nVtx; i++) {
+        partList[i] = part_t(pm_partList[i]);
+      }
+      delete [] pm_partList;
+    }
   }
 
   solution->setParts(partList);
@@ -300,9 +301,10 @@ std::cout << me << " KDDKDD DONE" << std::endl;
   env->memory("Zoltan2-ParMETIS: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<pm_idx_t,const lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
-  TPL_Traits<pm_idx_t,const gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
   TPL_Traits<pm_idx_t,size_t>::DELETE_TPL_T_ARRAY(&pm_vtxdist);
+  TPL_Traits<pm_idx_t,const lno_t>::DELETE_TPL_T_ARRAY(&pm_offsets);
+  if (nEdge)
+    TPL_Traits<pm_idx_t,const gno_t>::DELETE_TPL_T_ARRAY(&pm_adjs);
 
   if (nVwgt) delete [] pm_vwgts;
   if (nEwgt) delete [] pm_ewgts;
