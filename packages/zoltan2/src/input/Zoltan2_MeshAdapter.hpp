@@ -133,9 +133,6 @@ public:
   typedef typename InputTraits<User>::node_t                node_t;
   typedef User                                              user_t;
   typedef User                                              userCoord_t;
-  typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
-  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-  typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
 #endif
 
   enum BaseAdapterType adapterType() const {return MeshAdapterType;}
