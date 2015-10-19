@@ -91,6 +91,8 @@ class ParameterListTestCase(unittest.TestCase):
     def assertDictsEqual(self, dict1, dict2):
         keys1 = dict1.keys()
         keys2 = dict2.keys()
+        keys1.sort()
+        keys2.sort()
         self.assertEqual(keys1, keys2)
         for key in keys1:
             self.assertEqual(dict1[key], dict2[key])
@@ -115,7 +117,8 @@ class ParameterListTestCase(unittest.TestCase):
                       "d" : {"a":1, "b":2},
                       "s" : "Sandia",
                       "a" : (7, 8, 9),
-                      "A" : [0.0, 1.0, 2.718, 3.14]
+                      "A" : [0.0, 1.0, 2.718, 3.14],
+                      "S" : ["1", "22", "333", "44", "5"]
                       }
         self.fName = "testParameterList%d.dat" % self.comm.getRank()
         self.comm.barrier()
@@ -162,7 +165,7 @@ class ParameterListTestCase(unittest.TestCase):
         d = {"i" : 5,
              "f" : 3.14,
              "s" : "New Mexico",
-             "b" : ("1", "2", "3")
+             "b" : None
              }
         self.assertRaises(ValueError, Teuchos.ParameterList, d)
 
@@ -240,7 +243,7 @@ class ParameterListTestCase(unittest.TestCase):
     def testSetBadType(self):
         "Test Teuchos.ParameterList set method for an unsupported type"
         self.assertRaises(TypeError, self.plist.set, "bad parameter",
-                          ("1.2","3"))
+                          self.comm)
 
     def testSetBadKey(self):
         "Test Teuchos.ParameterList set method with bad key"
@@ -261,7 +264,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testSetParametersBad(self):
         "Test Teuchos.ParameterList setParameters method for unsupported type"
-        d = dict(i=5,f=10.0,t=(1,2,"3",5,7))
+        d = dict(i=5,f=10.0,t=(1,2,self.comm,5,7))
         self.assertRaises(ValueError, self.plist.setParameters, d)
 
     def testGetDefault(self):
@@ -496,7 +499,6 @@ class ParameterListTestCase(unittest.TestCase):
         plist = Teuchos.ParameterList(self.dict)
         r = "Teuchos." + repr(plist)
         r = r.replace("array","numpy.array")
-        r = r.replace("dtype=","dtype=numpy.")
         d = eval(r)
         self.assertTrue(isinstance(d, Teuchos.ParameterList))
 
@@ -524,7 +526,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def test__setitem__bad2(self):
         "Test Teuchos.ParameterList __setitem__ method for bad value"
-        self.assertRaises(TypeError, self.plist.__setitem__, "Hello", (9,"4",1))
+        self.assertRaises(TypeError, self.plist.__setitem__, "Hello", (9,slice(4),1))
 
     def test__str__(self):
         "Test Teuchos.ParameterList __str__ method"
@@ -533,7 +535,7 @@ class ParameterListTestCase(unittest.TestCase):
         plist = Teuchos.ParameterList(self.dict)
         s = str(plist)
         s = s.replace("array","numpy.array")
-        s = s.replace("dtype=","dtype=numpy.")
+        #s = s.replace("dtype=","dtype=numpy.")
         d = eval(s)
         self.assertTrue(isinstance(d, dict))
 
@@ -550,12 +552,23 @@ class ParameterListTestCase(unittest.TestCase):
     def testKeys(self):
         "Test Teuchos.ParameterList keys method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertEqual(plist.keys(), self.dict.keys())
+        keys1 = plist.keys()
+        keys2 = self.dict.keys()
+        keys1.sort()
+        keys2.sort()
+        self.assertEqual(keys1, keys2)
 
     def testValues(self):
         "Test Teuchos.ParameterList values method"
         plist = Teuchos.ParameterList(self.dict)
-        self.assertEqual(plist.values(), self.dict.values())
+        keys1 = plist.keys()
+        keys2 = self.dict.keys()
+        values1 = plist.values()
+        values2 = self.dict.values()
+        for key in keys1:
+            i1 = keys1.index(key)
+            i2 = keys2.index(key)
+            self.assertEqual(values1[i1], values2[i2])
 
     def testIteritems(self):
         "Test Teuchos.ParameterList iteritems method"
@@ -600,7 +613,7 @@ class ParameterListTestCase(unittest.TestCase):
 
     def testUpdateBad(self):
         "Test Teuchos.ParameterList update method for unsupported type"
-        d = dict(i=5,f=10.0,t=(1,2,"3",5,7))
+        d = dict(i=5,f=10.0,t=(None,self.comm,slice(9)))
         self.assertRaises(ValueError, self.plist.update, d)
 
     def test__iter__(self):

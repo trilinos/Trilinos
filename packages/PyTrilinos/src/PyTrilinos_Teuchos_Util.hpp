@@ -78,8 +78,10 @@
 //    ndarray(dtype='l')    <--> Array<long>
 //    ndarray(dtype='f')    <--> Array<float>
 //    ndarray(dtype='d')    <--> Array<double>
+//    ndarray(dtype='S')    <--> Array<std::string>
 //    sequence(int)          --> Array<long>
 //    sequence(float)        --> Array<double>
+//    sequence(str)          --> Array<std::string>
 
 //    Note: The python None type is unsupported and used for error
 //    reporting in getPythonParameter().
@@ -127,6 +129,49 @@ void copyNumPyToTeuchosArray(PyObject * pyArray,
     *it = *(data++);
 }
 
+// // Specialize copyNumPyToTeuchosArray() for template type bool,
+// // because you cannot iterate over Teuchos::Array<bool> in the
+// // standard way, due to the compressed storage specialization for this
+// // container type.
+
+// template<>
+// void copyNumPyToTeuchosArray(PyObject * pyArray,
+//                              Teuchos::Array< bool > & tArray)
+// {
+//   typedef typename Teuchos::Array< bool >::size_type size_type;
+//   size_type length = PyArray_DIM((PyArrayObject*) pyArray, 0);
+//   tArray.resize(length);
+//   bool* data = (bool*) PyArray_DATA((PyArrayObject*) pyArray);
+//   for (size_type i = 0; i < length; ++i)
+//   {
+//     tArray[i] = *(data++);
+//   }
+// }
+
+// Specialize copyNumPyToTeuchosArray() for template type std::string,
+// because the Teuchos::Array will be of type std::string and the
+// NumPy array will be of type char*.
+
+template<>
+void copyNumPyToTeuchosArray(PyObject * pyArray,
+                             Teuchos::Array< std::string > & tArray)
+{
+  typedef typename Teuchos::Array< std::string >::size_type size_type;
+  size_type stride = PyArray_STRIDE((PyArrayObject*)pyArray, 0);
+  size_type length = PyArray_DIM((PyArrayObject*) pyArray, 0);
+  tArray.resize(length);
+  char* data = (char*) PyArray_DATA((PyArrayObject*) pyArray);
+  for (typename Teuchos::Array< std::string >::iterator it = tArray.begin();
+       it != tArray.end(); ++it)
+  {
+    char temp[stride+1];
+    strncpy(temp, data, stride);
+    temp[stride] = 0;
+    *it = std::string(temp);
+    data += stride;
+  }
+}
+
 // ****************************************************************** //
 
 // Copy the data in a Teuchos::Array into a new 1D NumPy array.  If
@@ -146,10 +191,58 @@ PyObject * copyTeuchosArrayToNumPy(Teuchos::Array< T > & tArray)
   return pyArray;
 }
 
+// // Specialize copyTeuchosArrayToNumPy() for template type bool,
+// // because you cannot iterate over Teuchos::Array<bool> in the
+// // standard way, due to the compressed storage specialization for this
+// // container type.
+
+// template<>
+// PyObject * copyTeuchosArrayToNumPy(Teuchos::Array< bool > & tArray)
+// {
+//   typedef typename Teuchos::Array< bool >::size_type size_type;
+//   int typecode = PyTrilinos::NumPy_TypeCode< bool >();
+//   npy_intp dims[] = { tArray.size() };
+//   PyObject * pyArray = PyArray_SimpleNew(1, dims, typecode);
+//   bool* data = (bool*) PyArray_DATA((PyArrayObject*) pyArray);
+//   for (size_type i = 0; i < dims[0]; ++i)
+//   {
+//     *(data++) = tArray[i];
+//   }
+//   return pyArray;
+// }
+
+// Specialize copyTeuchosArrayToNumPy() for template type std::string,
+// because the Teuchos::Array will be of type std::string and the
+// NumPy array will be of type char*.
+
+template<>
+PyObject * copyTeuchosArrayToNumPy(Teuchos::Array< std::string > & tArray)
+{
+  int typecode = PyTrilinos::NumPy_TypeCode< std::string >();
+  npy_intp dims[] = { tArray.size() };
+  int strlen = 1;
+  for (typename Teuchos::Array< std::string >::iterator it = tArray.begin();
+       it != tArray.end(); ++it)
+  {
+    int itlen = it->size();
+    if (itlen > strlen) strlen = itlen;
+  }
+  PyObject * pyArray =
+    PyArray_New(&PyArray_Type, 1, dims, typecode, NULL, NULL, strlen, 0, NULL);
+  char* data = (char*) PyArray_DATA((PyArrayObject*) pyArray);
+  for (typename Teuchos::Array< std::string >::iterator it = tArray.begin();
+       it != tArray.end(); ++it)
+  {
+    strncpy(data, it->c_str(), strlen);
+    data += strlen;
+  }
+  return pyArray;
+}
+
 // ****************************************************************** //
 
 // Create a new Teuchos::ArrayRCP whose data buffer points to the same
-// data buffer as a given NumPy array.  The user must varify that the
+// data buffer as a given NumPy array.  The user must verify that the
 // NumPy data type is the same as the template type a priori and that
 // the NumPy array is 1D.
 
