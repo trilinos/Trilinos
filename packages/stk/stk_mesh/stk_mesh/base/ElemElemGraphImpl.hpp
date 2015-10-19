@@ -97,9 +97,19 @@ struct DeletedElementData
     int                 m_remoteProc;
 };
 
+struct ElementViaSidePair
+{
+    stk::mesh::Entity element;
+    int side;
+};
+
+struct IdViaSidePair
+{
+    stk::mesh::EntityId id;
+    int side;
+};
+
 typedef std::pair<LocalId,int> ElementSidePair;
-typedef std::pair<stk::mesh::Entity,int> ElementViaSidePair;
-typedef std::pair<stk::mesh::EntityId,int> IdViaSidePair;
 typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;

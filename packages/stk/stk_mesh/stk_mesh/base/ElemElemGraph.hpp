@@ -200,6 +200,7 @@ private:
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
+    stk::mesh::EntityId convert_negative_local_id_to_remote_global_id(impl::LocalId remoteElementId) const;
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
