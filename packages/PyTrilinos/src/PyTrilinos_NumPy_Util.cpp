@@ -151,4 +151,16 @@ int NumPy_TypeCode< std::complex< long double > >()
   return NPY_CLONGDOUBLE;
 }
 
+template<>
+int NumPy_TypeCode< char * >()
+{
+  return NPY_STRING;
+}
+
+template<>
+int NumPy_TypeCode< std::string >()
+{
+  return NPY_STRING;
+}
+
 }
