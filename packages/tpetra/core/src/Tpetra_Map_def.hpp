@@ -731,6 +731,18 @@ namespace Tpetra {
     return contiguous_;
   }
 
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Map<LocalOrdinal,GlobalOrdinal,Node>::local_map_type
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  getLocalMap () const
+  {
+    return local_map_type (glMap_, lgMap_.d_view, getIndexBase (),
+                           getMinGlobalIndex (), getMaxGlobalIndex (),
+                           firstContiguousGID_, lastContiguousGID_,
+                           getNodeNumElements (), isContiguous ());
+  }
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
