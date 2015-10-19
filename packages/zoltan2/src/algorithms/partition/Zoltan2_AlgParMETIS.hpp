@@ -212,7 +212,7 @@ void AlgParMETIS<Adapter>::partition(
   //        See Zoltan bug 4299.
   pm_idx_t *pm_partList = new pm_idx_t[nVtx+1];
 
-  // Get target part sizes and imbalance tolerances
+  // Get target part sizes 
 
   pm_idx_t pm_nCon = (nVwgt == 0 ? 1 : pm_idx_t(nVwgt));
   pm_real_t *pm_partsizes = new pm_real_t[numGlobalParts*pm_nCon];
@@ -225,10 +225,18 @@ void AlgParMETIS<Adapter>::partition(
       for (size_t i=0; i<numGlobalParts; i++)
         pm_partsizes[i*pm_nCon+dim] = pm_real_t(1.) / pm_real_t(numGlobalParts);
   }
+
+  // Get imbalance tolerances
+  double tolerance = 1.1;
+  const Teuchos::ParameterList &pl = env->getParameters();
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
+  if (pe) tolerance = pe->getValue<double>(&tolerance);
+
   pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
   for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
-    pm_imbTols[dim] = 1.05;  // TODO:  GET THE PARAMETER
+    pm_imbTols[dim] = pm_real_t(tolerance);
 
+  // Other ParMETIS parameters?
   std::string parmetis_method("PARTKWAY");
   pm_idx_t pm_wgtflag = 2*(nVwgt > 0) + (nEwgt > 0);
   pm_idx_t pm_numflag = 0;
@@ -239,10 +247,11 @@ void AlgParMETIS<Adapter>::partition(
   if (parmetis_method == "PARTKWAY") {
 
     pm_idx_t pm_edgecut = -1;
-    pm_idx_t pm_options[3];
-    pm_options[0] = 0;   // Use default options
-    pm_options[1] = 0;   // Debug level (ignored if pm_options[0] == 0)
-    pm_options[2] = 0;   // Seed (ignored if pm_options[0] == 0)
+    pm_idx_t pm_options[METIS_NOPTIONS];
+    pm_options[0] = 1;   // Use non-default options for some ParMETIS options
+    for (int i = 0; i < METIS_NOPTIONS; i++) 
+      pm_options[i] = 0; // Default options
+    pm_options[2] = 15;  // Matches default value used in Zoltan
 
     ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
                          &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,

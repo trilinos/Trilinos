@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
       X->putScalar(Teuchos::as<Scalar>(0));
       H.Iterate(*B, *X, nIts);
-      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
+      out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
     }
 
     // =========================================================================
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
 
       X->putScalar(Teuchos::as<Scalar>(0));
       H.Iterate(*B, *X, nIts);
-      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
+      out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
     }
 
     // =========================================================================
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
 
       X->putScalar(Teuchos::as<Scalar>(0));
       H.Iterate(*B, *X, nIts);
-      out << "||Residual|| = " << Utils::ResidualNorm(*A, *X, *B)[0] << std::endl;
+      out << "||Residual|| = " << Utilities::ResidualNorm(*A, *X, *B)[0] << std::endl;
     }
 
     {

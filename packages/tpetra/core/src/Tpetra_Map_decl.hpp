@@ -203,7 +203,7 @@ namespace Tpetra {
   /// <li>the set of global indices (over all processes) forms an
   ///   interval, </li>
   /// <li>every global index in that interval is owned by exactly one
-  ///   process in the Map's communicator, <li>
+  ///   process in the Map's communicator, </li>
   /// <li>the (ordered) list of global indices on each process p in
   ///   the Map's communicator forms a contiguous interval, and </li>
   /// <li>if process p owns a global index \f$g_p\f$ and process q
@@ -1270,16 +1270,6 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return ! map1.isSameAs (map2); }
-
-
-// Include KokkosRefactor partial specialization if enabled
-#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
-#  if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#    include "Tpetra_KokkosRefactor_Map_decl.hpp"
-#  else
-#    error "The Kokkos refactor version of Tpetra must be enabled if the Kokkos refactor version of Tpetra::Map is enabled."
-#  endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#endif // defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
 
 
 #endif // TPETRA_MAP_DECL_HPP

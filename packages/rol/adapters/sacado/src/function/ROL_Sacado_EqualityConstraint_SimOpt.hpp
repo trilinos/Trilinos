@@ -151,25 +151,24 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<Sca
     //    v in U (n), jv in C (n)    
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast; 
 
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
-
-    Teuchos::RCP<std::vector<ScalarT> > jvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(jv)).getVector());
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    RCP<vector> jvp = dyn_cast<SV>(jv).getVector(); 
 
     int n = up->size();
     int m = zp->size();
     
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
 
     c_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -207,25 +206,24 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<Sca
     // v in Z (m), jv in C (n)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > jvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(jv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
+    RCP<vector> jvp = dyn_cast<SV>(jv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size(); 
     
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
 
     c_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -265,25 +263,24 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vec
     // v in C* (n), ajv in U* (n)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ajvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ajv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
-
+    RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+    
     int n = up->size();
     int m = zp->size();
     
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
 
     c_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -327,25 +324,24 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vec
     // v in C* (n), ajv in Z* (m)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ajvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ajv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
+    RCP<vector> ajvp = dyn_cast<SV>(ajv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();   
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();   
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();   
 
     int n = up->size();
     int m = zp->size();
     
-    Teuchos::RCP<std::vector<FadType> > c_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> c_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
 
     c_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -388,29 +384,26 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_11AD(Vec
     // w in C* (n), v in U* (n), ahwv in U* (n)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;    
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ahwvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ahwv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast; 
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > wp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(w))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
+    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    Teuchos::RCP<std::vector<FadType> > v_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > jv_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
 
     v_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -456,29 +449,26 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_12AD(Vec
     // w in C* (n), v in U* (n), ahwv in Z* (m)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;    
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ahwvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ahwv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast;  
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > wp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(w))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
+    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    Teuchos::RCP<std::vector<FadType> > v_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > jv_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
 
     v_fad_rcp->reserve(n);
     u_fad_rcp->reserve(n);
@@ -522,29 +512,26 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_21AD(Vec
     // w in C* (n), v in Z* (m), ahwv in U* (n)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;    
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ahwvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ahwv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast; 
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > wp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(w))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
+    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    Teuchos::RCP<std::vector<FadType> > v_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > jv_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
 
     v_fad_rcp->reserve(m);
     u_fad_rcp->reserve(n);
@@ -588,29 +575,26 @@ void Sacado_EqualityConstraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vec
     // w in C* (n), v in Z* (m), ahwv in Z* (m)
 
     typedef Sacado::Fad::DFad<ScalarT> FadType;    
+    typedef std::vector<FadType>       Fadvector;
+    typedef std::vector<ScalarT>       vector;
+    typedef StdVector<ScalarT>         SV;
 
-    Teuchos::RCP<std::vector<ScalarT> > ahwvp = 
-        Teuchos::rcp_const_cast<std::vector<ScalarT> >((Teuchos::dyn_cast<StdVector<ScalarT> >(ahwv)).getVector());
+    using Teuchos::RCP;       using Teuchos::rcp;
+    using Teuchos::dyn_cast; 
 
-    Teuchos::RCP<const std::vector<ScalarT> > vp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(v))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > wp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(w))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > up =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(u))).getVector(); 
-
-    Teuchos::RCP<const std::vector<ScalarT> > zp =
-    (Teuchos::dyn_cast<StdVector<ScalarT> >(const_cast<Vector<ScalarT> &>(z))).getVector(); 
-
+    RCP<vector> ahwvp = dyn_cast<SV>(ahwv).getVector();
+    RCP<const vector> vp = dyn_cast<const SV>(v).getVector();
+    RCP<const vector> wp = dyn_cast<const SV>(w).getVector();
+    RCP<const vector> up = dyn_cast<const SV>(u).getVector();
+    RCP<const vector> zp = dyn_cast<const SV>(z).getVector();
+ 
     int n = up->size();
     int m = zp->size();
 
-    Teuchos::RCP<std::vector<FadType> > v_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > u_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > z_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
-    Teuchos::RCP<std::vector<FadType> > jv_fad_rcp = Teuchos::rcp( new std::vector<FadType> );
+    RCP<Fadvector> v_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> u_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> z_fad_rcp = rcp( new Fadvector );
+    RCP<Fadvector> jv_fad_rcp = rcp( new Fadvector );
 
     v_fad_rcp->reserve(m);
     u_fad_rcp->reserve(n);

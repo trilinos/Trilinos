@@ -45,6 +45,7 @@
 #include "Thyra_SpmdMultiVectorDefaultBase.hpp"
 #include "Thyra_TpetraVectorSpace_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
 namespace Thyra {

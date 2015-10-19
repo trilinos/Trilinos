@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
           continue;
 
         // Set seed
-        Utils::SetRandomSeed(*comm);
+        Utilities::SetRandomSeed(*comm);
 
         // Reset (potentially) cached value of the estimate
         A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
           // TODO: do multiple vectors simultaneously to average
 
           // we set seed for reproducibility
-          Utils::SetRandomSeed(*comm);
+          Utilities::SetRandomSeed(*comm);
           X->randomize();
           A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 

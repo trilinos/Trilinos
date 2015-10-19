@@ -59,6 +59,8 @@ using namespace ROL;
 template<class ScalarT>
 class FunctionZakharov {
 
+  
+
   public:
 
     ScalarT eval(const std::vector<ScalarT> &x);
@@ -78,12 +80,14 @@ class FunctionZakharov {
 template<class ScalarT>
 ScalarT FunctionZakharov<ScalarT>::eval(const std::vector<ScalarT> & x) {
 
+    typedef typename std::vector<ScalarT>::size_type uint;
+
     ScalarT xdotx = 0;
     ScalarT kdotx = 0;
     ScalarT J = 0;
    
     // Compute dot products 
-    for(unsigned i=0; i<x.size(); ++i) {
+    for(uint i=0; i<x.size(); ++i) {
         xdotx += pow(x[i],2);       // (k,x)
         kdotx += double(i+1)*x[i];  // (x,x)
     }
@@ -98,9 +102,16 @@ ScalarT FunctionZakharov<ScalarT>::eval(const std::vector<ScalarT> & x) {
 template<class Real>
 class Zakharov_Sacado_Objective : public Objective<Real> {
 
+  typedef std::vector<Real>  vector;
+  typedef Vector<Real>       V;
+  typedef StdVector<Real>    SV;
+
   typedef Sacado::Fad::DFad<Real>          GradType;
   typedef Sacado::Fad::SFad<Real,1>        DirDerivType;
   typedef Sacado::Fad::DFad<DirDerivType>  HessVecType;
+
+  typedef typename vector::size_type uint;
+
   // In C++11, we could use template typedefs:
   // template <typename T>       using  GradTypeT = Sacado::Fad::DFad<T>;
   // typedef Sacado::Fad::SFad<Real,1>  DirDerivType;
@@ -113,36 +124,45 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     FunctionZakharov<GradType>    zfuncGrad_; 
     FunctionZakharov<HessVecType> zfuncHessVec_; 
 
+    Teuchos::RCP<const vector> getVector( const V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<const SV>(x).getVector();
+    }
+
+    Teuchos::RCP<vector> getVector( V& x ) {
+      using Teuchos::dyn_cast;
+      return dyn_cast<SV>(x).getVector();
+    }
+
   public:
 
     Zakharov_Sacado_Objective() {}
 
     /* Evaluate the objective function at x */
     Real value( const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<const StdVector<Real> >(x)).getVector();
+      using Teuchos::RCP;
+      RCP<const vector> xp = getVector(x);      
       return zfunc_.eval(*xp);
     }
 
     /* Evaluate the gradient at x */
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<std::vector<Real> > gp =
-        (Teuchos::dyn_cast<StdVector<Real> >(g)).getVector();
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<const StdVector<Real> >(x)).getVector();
+      using Teuchos::RCP;
+      RCP<const vector> xp = getVector(x);
+      RCP<vector> gp = getVector(g);
 
-      unsigned n = xp->size();
+      uint n = xp->size();
 
       std::vector<GradType> x_grad(n);
 
-      for(unsigned i=0; i<n; ++i) {
+      for(uint i=0; i<n; ++i) {
         x_grad[i] = (*xp)[i]; // Set values x(i).
         x_grad[i].diff(i,n);  // Choose canonical directions.
       }
 
       GradType J_grad = zfuncGrad_.eval(x_grad);
 
-      for(unsigned i=0; i<n; ++i) {
+      for(uint i=0; i<n; ++i) {
         (*gp)[i] = J_grad.dx(i);
       }
 
@@ -150,18 +170,17 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
 
     /* Compute the action of the Hessian evaluated at x on a vector v */
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<std::vector<Real> > hvp =
-        (Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<const StdVector<Real> >(v)).getVector();
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<const StdVector<Real> >(x)).getVector();
 
-      unsigned n = xp->size();
+      using Teuchos::RCP;
+      RCP<vector> hvp = getVector(hv);
+      RCP<const vector> vp = getVector(v);
+      RCP<const vector> xp = getVector(x);
+
+      uint n = xp->size();
 
       std::vector<HessVecType>  x_hessvec(n);
 
-      for(unsigned i=0; i<n; ++i) {
+      for(uint i=0; i<n; ++i) {
         DirDerivType tmp(1,(*xp)[i]);  // Set values x(i).
         tmp.fastAccessDx(0)= (*vp)[i]; // Set direction values v(i).
         x_hessvec[i] = tmp;            // Use tmp to define hessvec-able x.
@@ -171,7 +190,7 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
       // Compute Hessian-vector product (and other currently irrelevant things).
       HessVecType J_hessvec = zfuncHessVec_.eval(x_hessvec);
 
-      for(unsigned i=0; i<n; ++i) {
+      for(uint i=0; i<n; ++i) {
         (*hvp)[i]   =  (J_hessvec.dx(i)).fastAccessDx(0);
         // hessvec  =  get gradient      get dir deriv
       }

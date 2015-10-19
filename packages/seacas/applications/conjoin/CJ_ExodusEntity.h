@@ -50,7 +50,6 @@ namespace Excn {
 	       blockCount(0), nodesetCount(0), sidesetCount(0),
 	       timestepCount(0), isActive(true) {}
     
-    bool is_active() const {return isActive;}
     size_t count(ObjectType type) const
     {
       switch(type) {

@@ -46,8 +46,8 @@
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_CONTROLVOLUMEDEF_HPP
-#define INTREPID_CUBATURE_CONTROLVOLUMEDEF_HPP
+#ifndef INTREPID2_CUBATURE_CONTROLVOLUMEDEF_HPP
+#define INTREPID2_CUBATURE_CONTROLVOLUMEDEF_HPP
 
 namespace Intrepid2{
 
@@ -86,9 +86,9 @@ void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoin
                                                                        ArrayPoint& cellCoords) const
 {
   // get array dimensions
-  int numCells         = cellCoords.dimension(0);
-  int numNodesPerCell  = cellCoords.dimension(1);
-  int spaceDim         = cellCoords.dimension(2);
+  std::size_t numCells         = static_cast<std::size_t>(cellCoords.dimension(0));
+  std::size_t numNodesPerCell  = static_cast<std::size_t>(cellCoords.dimension(1));
+  std::size_t spaceDim         = static_cast<std::size_t>(cellCoords.dimension(2));
   int numNodesPerSubCV = subCVCellTopo_->getNodeCount();
 
   // get sub-control volume coordinates (one sub-control volume per node of primary cell)
@@ -116,8 +116,8 @@ void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoin
     // get sub-control volume centers (integration points)
      Intrepid2::FieldContainer<Scalar> subCVCenter(numNodesPerCell,1,spaceDim);
      Intrepid2::FieldContainer<Scalar> cellCVCoords(numNodesPerCell,numNodesPerSubCV,spaceDim);
-     for (int isubcv = 0; isubcv < numNodesPerCell; isubcv++){
-       for (int idim = 0; idim < spaceDim; idim++){
+     for (std::size_t isubcv = 0; isubcv < numNodesPerCell; isubcv++){
+       for (std::size_t idim = 0; idim < spaceDim; idim++){
           for (int inode = 0; inode < numNodesPerSubCV; inode++){
               subCVCenter(isubcv,0,idim) += subCVCoords(icell,isubcv,inode,idim)/numNodesPerSubCV;
               cellCVCoords(isubcv,inode,idim) = subCVCoords(icell,isubcv,inode,idim);
@@ -133,7 +133,7 @@ void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoin
      Intrepid2::CellTools<Scalar>::setJacobianDet(subCVJacobDet, subCVJacobian );
 
     // fill array with sub control volumes (the sub control volume cell measure)
-     for (int inode = 0; inode < numNodesPerCell; inode++){
+     for (std::size_t inode = 0; inode < numNodesPerCell; inode++){
          Scalar vol = 0;
          for (int ipt = 0; ipt < numSubcvCubPoints; ipt++){
             vol += subcvCubWeights(ipt)*subCVJacobDet(inode,ipt);

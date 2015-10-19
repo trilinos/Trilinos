@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
           // basisValues are in (F,P,D) format and the multiindex is (i,j,k), here's the offset:
            int l = k + j * spaceDim + i * spaceDim * numPoints;
                     
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
           int l =  i + j * numFields;
-           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

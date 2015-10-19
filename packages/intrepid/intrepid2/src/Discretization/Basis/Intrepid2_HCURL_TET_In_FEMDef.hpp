@@ -198,7 +198,7 @@ namespace Intrepid2 {
                         
      int num_nonzero_sv = 0;
      for (int i=0;i<bigN;i++) {
-       if (S(i,0) > INTREPID_TOL) {
+       if (S(i,0) > INTREPID2_TOL) {
 	 num_nonzero_sv++;
        }
      }

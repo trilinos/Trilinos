@@ -51,6 +51,8 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_IO.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -183,9 +185,9 @@ int main(int argc, char *argv[]) {
 
           if (optDumpMatrices) {
             std::string fileName="checkA.mm";
-            Utils::Write( fileName,*A);
+            Xpetra::IO<SC,LO,GO,Node>::Write( fileName,*A);
             fileName="checkB.mm";
-            Utils::Write( fileName,*B);
+            Xpetra::IO<SC,LO,GO,Node>::Write( fileName,*B);
           }
 
         }  //scope for timing matrix creation
@@ -195,7 +197,7 @@ int main(int argc, char *argv[]) {
 
           RCP<Matrix> AB;
           RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
-          AB = Utils::Multiply(*A, false, *B, false, *fos);
+          AB = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *B, false, *fos);
           //if (optDumpMatrices) {
           //  std::string fileName="checkAB.mm";
           //  Utils::Write( fileName,*AB);

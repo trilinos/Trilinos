@@ -15,15 +15,11 @@
 #include "crs_matrix_helper.hpp"
 #include "dense_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "sequential_for.hpp"
 #include "task_policy_graphviz.hpp"
 
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "tri_solve.hpp"
 
@@ -45,8 +41,7 @@ namespace Tacho {
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
-    typedef SequentialFor ForType;
+    typedef TaskFactory<TaskPolicy,Future> TaskFactoryType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -130,12 +125,12 @@ namespace Tacho {
 
       TaskFactoryType::Policy().set_work_phase(2);
       TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
-        ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+        ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
         (Diag::NonUnit, TU, TB).apply(r_val_tri_solve);
       
       TaskFactoryType::Policy().set_work_phase(3);
       TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-        ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+        ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
         (Diag::NonUnit, TU, TB).apply(r_val_tri_solve);
     }
 

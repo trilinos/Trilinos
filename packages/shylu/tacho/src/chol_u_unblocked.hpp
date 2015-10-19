@@ -10,8 +10,7 @@ namespace Tacho {
 
   using namespace std;
 
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
@@ -21,8 +20,7 @@ namespace Tacho {
         CrsExecViewType &A);
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewType>
+  template<typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Chol<Uplo::Upper,AlgoChol::Unblocked>
@@ -32,7 +30,6 @@ namespace Tacho {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     CrsExecViewType ATL, ATR,      A00,  a01,     A02,
       /**/          ABL, ABR,      a10t, alpha11, a12t,
@@ -66,10 +63,10 @@ namespace Tacho {
       }
 
       // sparse inverse scale
-      scaleCrsMatrix<ParallelForType>(member, 1.0/real(alpha_val), a12t);
+      scaleCrsMatrix(member, 1.0/real(alpha_val), a12t);
 
       // hermitian rank update
-      her_r<ParallelForType>(member, -1.0, a12t, A22);
+      her_r(member, -1.0, a12t, A22);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00,  a01,     A02,  /**/ ATL, ATR,
@@ -81,8 +78,7 @@ namespace Tacho {
     return 0;
   }
 
-  template<typename ParallelFor,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
@@ -93,7 +89,6 @@ namespace Tacho {
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     // input x is row vector
 
@@ -102,25 +97,25 @@ namespace Tacho {
     rx.setView(x, 0);
     ordinal_type nnz = rx.NumNonZeros();
 
-    ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nnz),
-                    [&](const ordinal_type i) {
-                      const ordinal_type row_at_i = rx.Col(i);
-                      const value_type   val_at_i = rx.Value(i);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz),
+                         [&](const ordinal_type i) {
+                           const ordinal_type row_at_i = rx.Col(i);
+                           const value_type   val_at_i = rx.Value(i);
 
-                      ra.setView(A, row_at_i);
-                      ordinal_type prev = 0;
+                           ra.setView(A, row_at_i);
+                           ordinal_type prev = 0;
 
-                      for (ordinal_type j=0;j<nnz;++j) {
-                        ordinal_type col_at_j = rx.Col(j);
-                        value_type   val_at_j = rx.Value(j);
+                           for (ordinal_type j=0;j<nnz;++j) {
+                             ordinal_type col_at_j = rx.Col(j);
+                             value_type   val_at_j = rx.Value(j);
 
-                        ordinal_type idx = ra.Index(col_at_j, prev);
-                        if (idx >= 0) {
-                          ra.Value(idx) += alpha*val_at_i*conj(val_at_j);
-                          prev = idx;
-                        }
-                      }
-                    });
+                             ordinal_type idx = ra.Index(col_at_j, prev);
+                             if (idx >= 0) {
+                               ra.Value(idx) += alpha*val_at_i*conj(val_at_j);
+                               prev = idx;
+                             }
+                           }
+                         });
 
     return 0;
   }

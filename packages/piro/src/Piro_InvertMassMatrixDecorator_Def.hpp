@@ -304,7 +304,7 @@ void Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
       }
       Teuchos::RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f();
-      Thyra::Vp_StVtV<Scalar>(f.ptr(), 1.0, *invDiag, *modelOutArgs.get_f());
+      Thyra::ele_wise_prod_update<Scalar>(1.0, *invDiag, f.ptr());
     }
 
     // Do not recompute mass matrix in future if it is a constant

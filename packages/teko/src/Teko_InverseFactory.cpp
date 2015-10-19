@@ -245,6 +245,7 @@ RCP<InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,
    RCP<Teuchos::ParameterList> myList = rcp(new Teuchos::ParameterList(list));
 
    Stratimikos::DefaultLinearSolverBuilder strat;
+   addToStratimikosBuilder(rcpFromRef(strat));
    strat.setParameterList(myList);
 
    try {

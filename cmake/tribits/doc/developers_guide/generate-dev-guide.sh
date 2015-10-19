@@ -120,6 +120,13 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   update_if_different  snapshot-dir-help.txt  tmp
 
   echo
+  echo "Generating output for 'is_checkin_tested_commit.py --help' ..."
+  echo
+  ../../ci_support/is_checkin_tested_commit.py --help \
+    &> is_checkin_tested_commit.txt.tmp
+  update_if_different  is_checkin_tested_commit.txt  tmp
+
+  echo
   echo "Generating output for 'install_devtools.py --help' ..."
   echo
   ../../devtools_install/install_devtools.py --help \

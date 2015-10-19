@@ -111,7 +111,7 @@ EXAMPLE_PATH           = ../examples \
                          .
 EXAMPLE_PATTERNS       =
 EXAMPLE_RECURSIVE      = YES
-IMAGE_PATH             = images
+IMAGE_PATH             = .
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
@@ -267,15 +267,25 @@ PREDEFINED             = DOXYGEN_COMPILE \
                          EPETRA_MPI \
                          HAVE_MUELU_AMESOS \
                          HAVE_MUELU_AMESOS2 \
+                         HAVE_MUELU_AMGX \
+                         HAVE_MUELU_AZTECOO \
                          HAVE_MUELU_BELOS \
+                         HAVE_MUELU_BOOST \
+                         HAVE_MUELU_CGAL \
                          HAVE_MUELU_EPETRA \
                          HAVE_MUELU_EPETRAEXT \
+                         HAVE_MUELU_EXPERIMENTAL \
+                         HAVE_MUELU_GALERI \
                          HAVE_MUELU_IFPACK \
                          HAVE_MUELU_IFPACK2 \
+                         HAVE_MUELU_ISORROPIA \
+                         HAVE_MUELU_MATLAB \
                          HAVE_MUELU_ML \
+                         HAVE_MUELU_STRATIMIKOS \
+                         HAVE_MUELU_TEKO \
                          HAVE_MUELU_TPETRA \
                          HAVE_MUELU_ZOLTAN \
-                         HAVE_MUELU_STOKHOS
+                         HAVE_MUELU_ZOLTAN2
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------

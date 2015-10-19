@@ -59,7 +59,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   MDVector_UnitTests
   NAME MDVector_UnitTests_1D_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=1"
   STANDARD_PASS_OUTPUT
@@ -86,7 +86,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_UnitTests
   NAME MDVector_UnitTests_2D_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=2"
   STANDARD_PASS_OUTPUT
@@ -167,7 +167,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_UnitTests
   NAME MDVector_UnitTests_3D_1_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,1,1"
   STANDARD_PASS_OUTPUT
@@ -383,7 +383,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_1D_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --dims=10"
   STANDARD_PASS_OUTPUT
@@ -392,7 +392,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_1D_1_per
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --dims=10 --periodic=1"
   STANDARD_PASS_OUTPUT
@@ -428,7 +428,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_2D_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner"
   STANDARD_PASS_OUTPUT
@@ -437,7 +437,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_2D_1_1_per
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --periodic=0,1"
   STANDARD_PASS_OUTPUT
@@ -554,7 +554,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_CommTests
   NAME MDVector_CommTests_3D_1_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --dims=8,10,12"
   STANDARD_PASS_OUTPUT
@@ -869,7 +869,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   MDVector_SliceTests
   NAME MDVector_SliceTests_1D_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=1 --commDims=1"
   STANDARD_PASS_OUTPUT
@@ -896,7 +896,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_SliceTests
   NAME MDVector_SliceTests_2D_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=1"
   STANDARD_PASS_OUTPUT
@@ -950,7 +950,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   MDVector_SliceTests
   NAME MDVector_SliceTests_3D_1_1_1
-  COMM mpi
+  COMM mpi serial
   NUM_MPI_PROCS 1
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1"
   STANDARD_PASS_OUTPUT

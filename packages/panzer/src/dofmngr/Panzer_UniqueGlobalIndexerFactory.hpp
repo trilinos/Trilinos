@@ -75,8 +75,14 @@ public:
      * \param[in] physicsBlocks A vector of physics block objects that contain
      *                          unknown field information.
      * \param[in] connMngr Connection manager that contains the mesh topology
+     * \param[in] fieldOrder Specifies the local ordering of the degrees of
+     *            freedom. This is relevant when degrees of freedom are shared
+     *            on the same geometric entity. The default is an alphabetical
+     *            ordering.
      *
-     * \returns A fully constructed UniqueGlobalIndexer object
+     * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
+     *          the object is fully constructed. If it is false, the caller must
+     *          finalize it.
      */
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,

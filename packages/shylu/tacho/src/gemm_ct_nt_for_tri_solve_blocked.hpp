@@ -13,8 +13,7 @@ namespace Tacho {
   // Gemm used in the tri-solve phase
   // ================================
   template<>
-  template<typename ParallelForType,
-           typename ScalarType,
+  template<typename ScalarType,
            typename CrsExecViewTypeA,
            typename DenseExecViewTypeB,
            typename DenseExecViewTypeC>
@@ -32,10 +31,9 @@ namespace Tacho {
     typedef typename CrsExecViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsExecViewTypeA::value_type        value_type;
     typedef typename CrsExecViewTypeA::row_view_type     row_view_type;
-    typedef typename CrsExecViewTypeA::team_factory_type team_factory_type;
 
     // scale the matrix C with beta
-    scaleDenseMatrix<ParallelForType>(member, beta, C);
+    scaleDenseMatrix(member, beta, C);
 
     // C(i,j) += alpha*A'(i,k)*B(k,j)
     const ordinal_type mA = A.NumRows();
@@ -45,16 +43,16 @@ namespace Tacho {
       const ordinal_type nB = B.NumCols();
 
       if (nnz_a > 0 && nB > 0) {
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 0, nnz_a),
-                        [&](const ordinal_type i) {
-                          const ordinal_type row_at_i = a.Col(i);
-                          const value_type   val_at_ik = conj(a.Value(i));
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, nnz_a),
+                             [&](const ordinal_type i) {
+                               const ordinal_type row_at_i = a.Col(i);
+                               const value_type   val_at_ik = conj(a.Value(i));
 
-                          for (ordinal_type j=0;j<nB;++j) {
-                            const value_type val_at_kj = B.Value(k, j);
-                            C.Value(row_at_i, j) += alpha*val_at_ik*val_at_kj;
-                          }
-                        });
+                               for (ordinal_type j=0;j<nB;++j) {
+                                 const value_type val_at_kj = B.Value(k, j);
+                                 C.Value(row_at_i, j) += alpha*val_at_ik*val_at_kj;
+                               }
+                             });
         member.team_barrier();
       }
     }

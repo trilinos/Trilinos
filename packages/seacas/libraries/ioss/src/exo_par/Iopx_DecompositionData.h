@@ -378,7 +378,6 @@ namespace Iopx {
 
       void build_global_to_local_elem_map();
       void get_element_block_communication(size_t num_elem_block);
-      void get_element_block_counts(size_t num_elem_block);
 
       void generate_adjacency_list(int exodusId, std::vector<INT> &pointer, std::vector<INT> &adjacency, size_t block_count);
 

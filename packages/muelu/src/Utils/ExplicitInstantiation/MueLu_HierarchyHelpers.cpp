@@ -57,3 +57,35 @@
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
+
+#ifdef HAVE_MUELU_EPETRA
+#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+#ifdef HAVE_TPETRA_INST_CUDA_DEFAULT
+    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
+    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
+    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosCudaWrapperNode >;
+#elseif HAVE_TPETRA_INST_OPENMP_DEFAULT
+    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+
+#elseif HAVE_TPETRA_INST_SERIAL_DEFAULT
+    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+
+#elseif HAVE_TPETRA_INST_PTHREAD_DEFAULT
+    template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
+    template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
+    template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
+
+#else
+    // use Serial Node as default if Tpetra is disabled??
+  template class MueLu::TopRAPFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+  template class MueLu::TopSmootherFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+  template class MueLu::HierarchyUtils<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+
+#endif // end IF ELSEIF ...
+
+#endif // end ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+#endif // end ifdef HAVE_MUELU_EPETRA

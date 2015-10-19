@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_LinearAlgebra_i_h)
-#define Intrepid_MiniTensor_LinearAlgebra_i_h
+#if !defined(Intrepid2_MiniTensor_LinearAlgebra_i_h)
+#define Intrepid2_MiniTensor_LinearAlgebra_i_h
 
 namespace Intrepid2 {
 
@@ -48,10 +48,10 @@ namespace Intrepid2 {
 // R^N tensor Frobenius norm
 // \return \f$ \sqrt{A:A} \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-norm(Tensor<T, N> const & A)
+norm(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -83,7 +83,6 @@ norm(Tensor<T, N> const & A)
   }
 
   if (s > 0.0) return std::sqrt(s);
-
   return 0.0;
 
 }
@@ -92,15 +91,15 @@ norm(Tensor<T, N> const & A)
 // R^N tensor 1-norm
 // \return \f$ \max_{j \in {0,\cdots,N}}\Sigma_{i=0}^N |A_{ij}| \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-norm_1(Tensor<T, N> const & A)
+norm_1(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N>
+  Vector<T, N, ES>
   v(dimension);
 
   T
@@ -151,15 +150,15 @@ norm_1(Tensor<T, N> const & A)
 // R^N tensor infinity-norm
 // \return \f$ \max_{i \in {0,\cdots,N}}\Sigma_{j=0}^N |A_{ij}| \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-norm_infinity(Tensor<T, N> const & A)
+norm_infinity(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N>
+  Vector<T, N, ES>
   v(dimension);
 
   T s = 0.0;
@@ -210,9 +209,10 @@ norm_infinity(Tensor<T, N> const & A)
 // \param i index
 // \param j index
 //
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-swap_row(Tensor<T, N> & A, Index const i, Index const j)
+swap_row(Tensor<T, N, ES> & A, Index const i, Index const j)
 {
   Index const
   dimension = A.get_dimension();
@@ -231,9 +231,10 @@ swap_row(Tensor<T, N> & A, Index const i, Index const j)
 // \param i index
 // \param j index
 //
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-swap_col(Tensor<T, N> & A, Index const i, Index const j)
+swap_col(Tensor<T, N, ES> & A, Index const i, Index const j)
 {
   Index const
   dimension = A.get_dimension();
@@ -254,10 +255,10 @@ swap_col(Tensor<T, N> & A, Index const i, Index const j)
 // \param A tensor
 // \return \f$ \det A \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-det(Tensor<T, N> const & A)
+det(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -302,10 +303,10 @@ det(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ A:I \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-trace(Tensor<T, N> const & A)
+trace(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -342,10 +343,10 @@ trace(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ I_A = A:I \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-I1(Tensor<T, N> const & A)
+I1(Tensor<T, N, ES> const & A)
 {
   return trace(A);
 }
@@ -355,10 +356,10 @@ I1(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ II_A \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-I2(Tensor<T, N> const & A)
+I2(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -372,7 +373,11 @@ I2(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
+#ifdef KOKKOS_HAVE_CUDA
+      Kokkos::abort("I2 for N > 3 not implemented.");
+#else
       std::cerr << "I2 for N > 3 not implemented." << std::endl;
+#endif
       exit(1);
       break;
 
@@ -399,10 +404,10 @@ I2(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ III_A \f$
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-I3(Tensor<T, N> const & A)
+I3(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -413,7 +418,11 @@ I3(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
+#ifdef KOKKOS_HAVE_CUDA
+      Kokkos::abort("I3 for N > 3 not implemented.");
+#else 
       std::cerr << "I3 for N > 3 not implemented." << std::endl;
+#endif
       exit(1);
       break;
 
@@ -437,22 +446,43 @@ I3(Tensor<T, N> const & A)
 //
 // Condition number.
 //
-template<typename T, Index N>
+template<typename T, Index N, typename ES>
+KOKKOS_INLINE_FUNCTION
 T
-cond(Tensor<T, N> const & A)
+cond(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   S = boost::get<1>(svd(A));
 
   T const
-  k = S(0, 0) / S(dimension, dimension);
+  k = S(0, 0) / S(dimension - 1, dimension - 1);
 
   return k;
 }
 
-} // namespace Intrepid2
+//
+// Reciprocal condition number.
+//
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+T
+inv_cond(Tensor<T, N, ES> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
 
-#endif // Intrepid_MiniTensor_LinearAlgebra_i_h
+  Tensor<T, N, ES> const
+  S = boost::get<1>(svd(A));
+
+  T const
+  k = S(dimension - 1, dimension - 1) / S(0, 0);
+
+  return k;
+}
+
+} // namespace Intrepid
+
+#endif // Intrepid2_MiniTensor_LinearAlgebra_i_h

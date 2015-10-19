@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,25 +39,26 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor_i_h)
-#define Intrepid_MiniTensor_Tensor_i_h
+#if !defined(Intrepid2_MiniTensor_Tensor_i_h)
+#define Intrepid2_MiniTensor_Tensor_i_h
 
 namespace Intrepid2 {
 
 //
 // Constructor that initializes to NaNs
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor() :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor() :
     TensorBase<T, Store>::TensorBase()
 {
+  set_dimension(N);
   return;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Index const dimension) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
@@ -66,17 +67,17 @@ Tensor<T, N>::Tensor(Index const dimension) :
 ///
 /// Create tensor from a specified value
 ///
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(ComponentValue const value) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(ComponentValue const value) :
     TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Index const dimension, ComponentValue const value) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -86,20 +87,19 @@ Tensor<T, N>::Tensor(Index const dimension, ComponentValue const value) :
 //  Create tensor from array
 //
 //
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(ArrayT & data, iType index1) :
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(ArrayT & data, iType index1) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data, index1)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
@@ -109,10 +109,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
     iType index1,
@@ -123,10 +123,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -144,10 +144,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -167,10 +167,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -192,19 +192,19 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(Index const dimension, ArrayT & data, iType index1) :
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Index const dimension, ArrayT & data, iType index1) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data, index1)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     typename Kokkos::Impl::enable_if<
     !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -215,10 +215,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
     iType index1,
@@ -235,10 +235,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
     iType index1,
@@ -257,10 +257,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
     iType index1,
@@ -281,10 +281,10 @@ Tensor<T, N>::Tensor(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
-Tensor<T, N>::Tensor(
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     ArrayT & data,
     iType index1,
@@ -306,20 +306,19 @@ Tensor<T, N>::Tensor(
 {
   return;
 }
-#endif
 
 //FIXME: Irina D. add kokkos initializations for tensor (data)
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(T const * data_ptr) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(T const * data_ptr) :
     TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Index const dimension, T const * data_ptr) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Index const dimension, T const * data_ptr) :
     TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
@@ -327,9 +326,9 @@ Tensor<T, N>::Tensor(Index const dimension, T const * data_ptr) :
 //
 // Copy constructor
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Tensor<T, N> const & A) :
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Tensor<T, N, ES> const & A) :
     TensorBase<T, Store>::TensorBase(A)
 {
   return;
@@ -339,13 +338,13 @@ Tensor<T, N>::Tensor(Tensor<T, N> const & A) :
 // Create tensor specifying components
 // \param  s00, s01, ... components in the R^2 canonical basis
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     T const & s00, T const & s01,
     T const & s10, T const & s11)
 {
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   self.set_dimension(2);
@@ -363,14 +362,14 @@ Tensor<T, N>::Tensor(
 // Create tensor specifying components
 // \param  s00, s01, ... components in the R^3 canonical basis
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     T const & s00, T const & s01, T const & s02,
     T const & s10, T const & s11, T const & s12,
     T const & s20, T const & s21, T const & s22)
 {
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   self.set_dimension(3);
@@ -393,9 +392,9 @@ Tensor<T, N>::Tensor(
 //
 //  Create tensor from array with component order
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(T const * data_ptr, ComponentOrder const component_order)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(T const * data_ptr, ComponentOrder const component_order)
 {
   assert(data_ptr != NULL);
 
@@ -404,16 +403,16 @@ Tensor<T, N>::Tensor(T const * data_ptr, ComponentOrder const component_order)
   return;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(
     Index const dimension,
     T const * data_ptr,
     ComponentOrder const component_order)
 {
   assert(data_ptr != NULL);
 
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   self.set_dimension(dimension);
@@ -426,9 +425,9 @@ Tensor<T, N>::Tensor(
 //
 // 2nd-order tensor from 4th-order tensor
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::Tensor(Tensor4<T, dimension_sqrt<N>::value, ES> const & A)
 {
   Index const
   dimension_4th = A.get_dimension();
@@ -436,7 +435,7 @@ Tensor<T, N>::Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A)
   Index const
   dimension_2nd = dimension_4th * dimension_4th;
 
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   self.set_dimension(dimension_2nd);
@@ -454,9 +453,9 @@ Tensor<T, N>::Tensor(Tensor4<T, dimension_sqrt<N>::value> const & A)
 //
 // Simple destructor
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>::~Tensor()
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>::~Tensor()
 {
   return;
 }
@@ -464,39 +463,38 @@ Tensor<T, N>::~Tensor()
 //
 // Get dimension
 //
-template<typename T, Index N>
-inline Index
-Tensor<T, N>::get_dimension() const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Index
+Tensor<T, N, ES>::get_dimension() const
 {
-  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+  return TensorBase<T, Store>::get_dimension();
 }
 
 //
 // Set dimension
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::set_dimension(Index const dimension)
+Tensor<T, N, ES>::set_dimension(Index const dimension)
 {
-  if (IS_DYNAMIC == true) {
-    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  if (IS_DYNAMIC == false) {
+    assert(dimension <= N);
   }
-  else {
-    assert(dimension == N);
-  }
-
+  TensorBase<T, Store>::set_dimension(dimension, ORDER);
   return;
 }
 
 //
 // Indexing for constant tensor
 //
-template<typename T, Index N>
-inline T const &
-Tensor<T, N>::operator()(Index const i, Index const j) const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+T const &
+Tensor<T, N, ES>::operator()(Index const i, Index const j) const
     {
-  Tensor<T, N> const &
+  Tensor<T, N, ES> const &
   self = (*this);
 
   Index const
@@ -508,11 +506,12 @@ Tensor<T, N>::operator()(Index const i, Index const j) const
 //
 //Tensor indexing
 //
-template<typename T, Index N>
-inline T &
-Tensor<T, N>::operator()(Index const i, Index const j)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+T &
+Tensor<T, N, ES>::operator()(Index const i, Index const j)
 {
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   Index const
@@ -524,10 +523,10 @@ Tensor<T, N>::operator()(Index const i, Index const j)
 //
 // Fill components with value specification
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(ComponentValue const value)
+Tensor<T, N, ES>::fill(ComponentValue const value)
 {
   TensorBase<T, Store>::fill(value);
   return;
@@ -536,10 +535,10 @@ Tensor<T, N>::fill(ComponentValue const value)
 //
 // Fill components with value as parameter
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(T const & s)
+Tensor<T, N, ES>::fill(T const & s)
 {
   TensorBase<T, Store>::fill(s);
   return;
@@ -548,44 +547,43 @@ Tensor<T, N>::fill(T const & s)
 //
 // Fill components from array defined by pointer.
 //
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
+KOKKOS_INLINE_FUNCTION
 typename Kokkos::Impl::enable_if<
 !Kokkos::Impl::is_same<ArrayT, T*>::value, void>::type
-Tensor<T, N>::fill(ArrayT & data, 
+Tensor<T, N, ES>::fill(ArrayT & data, 
             iType index1)
 {
   TensorBase<T, Store>::fill(data, index1);
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(ArrayT & data, iType index1, iType index2)
+Tensor<T, N, ES>::fill(ArrayT & data, iType index1, iType index2)
 {
   TensorBase<T, Store>::fill(data, index1, index2);
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType1, typename iType2, typename iType3>
-inline
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3)
+Tensor<T, N, ES>::fill(ArrayT & data, iType1 index1, iType2 index2, iType3 index3)
 {
   TensorBase<T, Store>::fill(data, index1, index2, index3);
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(
+Tensor<T, N, ES>::fill(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -596,11 +594,11 @@ Tensor<T, N>::fill(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(
+Tensor<T, N, ES>::fill(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -612,11 +610,11 @@ Tensor<T, N>::fill(
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 template<class ArrayT, typename iType>
-inline
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(
+Tensor<T, N, ES>::fill(
     ArrayT & data,
     iType index1,
     iType index2,
@@ -635,12 +633,10 @@ Tensor<T, N>::fill(
       index6);
   return;
 }
-#endif
-
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(T const * data_ptr)
+Tensor<T, N, ES>::fill(T const * data_ptr)
 {
   TensorBase<T, Store>::fill(data_ptr);
   return;
@@ -649,14 +645,14 @@ Tensor<T, N>::fill(T const * data_ptr)
 //
 // Fill components from array defined by pointer.
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 void
-Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
+Tensor<T, N, ES>::fill(T const * data_ptr, ComponentOrder const component_order)
 {
   assert(data_ptr != NULL);
 
-  Tensor<T, N> &
+  Tensor<T, N, ES> &
   self = (*this);
 
   Index const
@@ -708,11 +704,15 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
       break;
 
     default:
+#if defined(KOKKOS_HAVE_CUDA)
+     Kokkos::abort("ERROR (Tensor::fill(): Unknown component order.");
+#else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
       std::cerr << "Unknown component order.";
       std::cerr << std::endl;
       exit(1);
+#endif
       break;
 
     }
@@ -726,6 +726,7 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
 namespace {
 
 template<typename S>
+KOKKOS_INLINE_FUNCTION
 bool
 greater_than(S const & a, S const & b)
 {
@@ -738,9 +739,10 @@ greater_than(S const & a, S const & b)
 // Sort and index in descending order. Useful for ordering singular values
 // and eigenvalues and corresponding vectors in the respective decompositions.
 //
-template<typename T, Index N>
-std::pair<Vector<T, N>, Tensor<T, N>>
-sort_permutation(Vector<T, N> const & u)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+std::pair<Vector<T, N, ES>, Tensor<T, N, ES>>
+sort_permutation(Vector<T, N, ES> const & u)
 {
 
   Index const
@@ -756,10 +758,10 @@ sort_permutation(Vector<T, N> const & u)
 
   std::sort(s.begin(), s.end(), greater_than<std::pair<T, Index>>);
 
-  Vector<T, N> v(dimension);
+  Vector<T, N, ES> v(dimension);
 
-  Tensor<T, N>
-  P = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  P = zero<T, N, ES>(dimension);
 
   for (Index i = 0; i < dimension; ++i) {
     v(i) = s[i].first;
@@ -773,14 +775,15 @@ sort_permutation(Vector<T, N> const & u)
 //
 // Extract a row as a vector
 //
-template<typename T, Index N>
-Vector<T, N>
-row(Tensor<T, N> const & A, Index const i)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<T, N, ES>
+row(Tensor<T, N, ES> const & A, Index const i)
 {
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N>
+  Vector<T, N, ES>
   v(dimension);
 
   switch (dimension) {
@@ -808,14 +811,15 @@ row(Tensor<T, N> const & A, Index const i)
 //
 // Extract a column as a vector
 //
-template<typename T, Index N>
-Vector<T, N>
-col(Tensor<T, N> const & A, Index const j)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<T, N, ES>
+col(Tensor<T, N, ES> const & A, Index const j)
 {
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N>
+  Vector<T, N, ES>
   v(dimension);
 
   switch (dimension) {
@@ -843,12 +847,12 @@ col(Tensor<T, N> const & A, Index const j)
 //
 // Tensor addition
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+operator+(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   add(A, B, C);
@@ -859,12 +863,12 @@ operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor subtraction
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+operator-(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   subtract(A, B, C);
@@ -875,12 +879,12 @@ operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor minus
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>
-operator-(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+operator-(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B(A.get_dimension());
 
   minus(A, B);
@@ -891,10 +895,10 @@ operator-(Tensor<T, N> const & A)
 //
 // Tensor equality
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 bool
-operator==(Tensor<T, N> const & A, Tensor<T, N> const & B)
+operator==(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   return equal(A, B);
 }
@@ -902,10 +906,10 @@ operator==(Tensor<T, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor inequality
 //
-template<typename T, Index N>
-inline
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 bool
-operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B)
+operator!=(Tensor<T, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   return not_equal(A, B);
 }
@@ -913,12 +917,13 @@ operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B)
 //
 // Scalar tensor product
 //
-template<typename S, typename T, Index N>
-inline typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
-operator*(S const & s, Tensor<T, N> const & A)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES> >::type
+operator*(S const & s, Tensor<T, N, ES> const & A)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -929,12 +934,13 @@ operator*(S const & s, Tensor<T, N> const & A)
 //
 // Tensor scalar product
 //
-template<typename S, typename T, Index N>
-inline typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
-operator*(Tensor<T, N> const & A, S const & s)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N, ES> >::type
+operator*(Tensor<T, N, ES> const & A, S const & s)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -945,12 +951,12 @@ operator*(Tensor<T, N> const & A, S const & s)
 //
 // Tensor scalar division
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator/(Tensor<T, N> const & A, S const & s)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+operator/(Tensor<T, N, ES> const & A, S const & s)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   divide(A, s, B);
@@ -961,12 +967,12 @@ operator/(Tensor<T, N> const & A, S const & s)
 //
 // Scalar tensor division
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator/(S const & s, Tensor<T, N> const & A)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+operator/(S const & s, Tensor<T, N, ES> const & A)
 {
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   split(A, s, B);
@@ -977,9 +983,10 @@ operator/(S const & s, Tensor<T, N> const & A)
 //
 // Tensor vector product v = A u
 //
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+operator*(Tensor<T, N, ES> const & A, Vector<S, N, ES> const & u)
 {
   return dot(A, u);
 }
@@ -987,9 +994,10 @@ operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
 //
 // Vector tensor product v = u A
 //
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+operator*(Vector<S, N, ES> const & u, Tensor<T, N, ES> const & A)
 {
   return dot(u, A);
 }
@@ -997,27 +1005,33 @@ operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
 //
 // Tensor dot product C = A B
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator*(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+operator*(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   return dot(A, B);
 }
 
 //
+// R^N tensor vector product v = A u
+// \param A tensor
+// \param u vector
+// \return \f$ A u \f$
+//
 // Tensor vector product v = A u
 //
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-dot(Tensor<T, N> const & A, Vector<S, N> const & u)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+dot(Tensor<T, N, ES> const & A, Vector<S, N, ES> const & u)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(u.get_dimension() == dimension);
 
-  Vector<typename Promote<S, T>::type, N>
+   Vector<typename Promote<S, T>::type, N, ES>
   v(dimension);
 
   switch (dimension) {
@@ -1054,16 +1068,17 @@ dot(Tensor<T, N> const & A, Vector<S, N> const & u)
 //
 // Vector tensor product v = u A
 //
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-dot(Vector<S, N> const & u, Tensor<T, N> const & A)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<typename Promote<S, T>::type, N, ES>
+dot(Vector<S, N, ES> const & u, Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(u.get_dimension() == dimension);
 
-  Vector<typename Promote<S, T>::type, N>
+   Vector<typename Promote<S, T>::type, N, ES>
   v(dimension);
 
   switch (dimension) {
@@ -1100,17 +1115,17 @@ dot(Vector<S, N> const & u, Tensor<T, N> const & A)
 //
 // Tensor tensor product C = A B
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(B.get_dimension() == dimension);
 
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(dimension);
 
   switch (dimension) {
@@ -1160,17 +1175,17 @@ dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor tensor product C = A^T B
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+t_dot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(B.get_dimension() == dimension);
 
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(dimension);
 
   switch (dimension) {
@@ -1220,17 +1235,17 @@ t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor tensor product C = A B^T
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+dot_t(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(B.get_dimension() == dimension);
 
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(dimension);
 
   switch (dimension) {
@@ -1280,17 +1295,17 @@ dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor tensor product C = A^T B^T
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+t_dot_t(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   Index const
   dimension = A.get_dimension();
 
   assert(B.get_dimension() == dimension);
 
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   C(dimension);
 
   switch (dimension) {
@@ -1340,10 +1355,10 @@ t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // Tensor tensor double dot product (contraction)
 //
-template<typename S, typename T, Index N>
-inline
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
 typename Promote<S, T>::type
-dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
+dotdot(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 {
   Index const
   dimension = A.get_dimension();
@@ -1382,17 +1397,17 @@ dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 //
 // dyad
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-dyad(Vector<S, N> const & u, Vector<T, N> const & v)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+dyad(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   Index const
   dimension = u.get_dimension();
 
   assert(v.get_dimension() == dimension);
 
-  Tensor<typename Promote<S, T>::type, N>
+  Tensor<typename Promote<S, T>::type, N, ES>
   A(dimension);
 
   switch (dimension) {
@@ -1439,10 +1454,10 @@ dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 //
 // bun operator, just for Jay, and now Reese too.
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-bun(Vector<S, N> const & u, Vector<T, N> const & v)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+bun(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   return dyad(u, v);
 }
@@ -1450,10 +1465,10 @@ bun(Vector<S, N> const & u, Vector<T, N> const & v)
 //
 // tensor product
 //
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-tensor(Vector<S, N> const & u, Vector<T, N> const & v)
+template<typename S, typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<typename Promote<S, T>::type, N, ES>
+tensor(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   return dyad(u, v);
 }
@@ -1461,15 +1476,16 @@ tensor(Vector<S, N> const & u, Vector<T, N> const & v)
 //
 // diagonal tensor from vector
 //
-template<typename T, Index N>
-Tensor<T, N>
-diag(Vector<T, N> const & v)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+diag(Vector<T, N, ES> const & v)
 {
   Index const
   dimension = v.get_dimension();
 
-  Tensor<T, N>
-  A = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  A = zero<T, N, ES>(dimension);
 
   switch (dimension) {
 
@@ -1498,14 +1514,15 @@ diag(Vector<T, N> const & v)
 //
 // diagonal of tensor in a vector
 //
-template<typename T, Index N>
-Vector<T, N>
-diag(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Vector<T, N, ES>
+diag(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Vector<T, N>
+  Vector<T, N, ES>
   v(dimension);
 
   switch (dimension) {
@@ -1536,37 +1553,36 @@ diag(Tensor<T, N> const & A)
 // Zero 2nd-order tensor
 // All components are zero
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 zero()
 {
-  return Tensor<T, N>(N, ZEROS);
+  return Tensor<T, N, ES>(N, ZEROS);
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 zero(Index const dimension)
 {
-  return Tensor<T, DYNAMIC>(dimension, ZEROS);
+  return Tensor<T, DYNAMIC, ES>(dimension, ZEROS);
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 zero(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-  return Tensor<T, N>(dimension, ZEROS);
+  return Tensor<T, N, ES>(dimension, ZEROS);
 }
 
 // Local utility functions
 namespace {
 
-template<typename T, Index N>
-inline
-void ones_in_diagonal(Tensor<T, N> & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+void ones_in_diagonal(Tensor<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -1595,9 +1611,9 @@ void ones_in_diagonal(Tensor<T, N> & A)
   return;
 }
 
-template<typename T, Index N>
-inline
-void fill_levi_civita(Tensor<T, N> & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+void fill_levi_civita(Tensor<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -1616,12 +1632,12 @@ void fill_levi_civita(Tensor<T, N> & A)
 //
 // 2nd-order identity tensor
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 identity()
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   A(N, ZEROS);
 
   ones_in_diagonal(A);
@@ -1629,12 +1645,12 @@ identity()
   return A;
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 identity(Index const dimension)
 {
-  Tensor<T, DYNAMIC>
+  Tensor<T, DYNAMIC, ES>
   A(dimension, ZEROS);
 
   ones_in_diagonal(A);
@@ -1642,14 +1658,13 @@ identity(Index const dimension)
   return A;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 identity(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   A(dimension, ZEROS);
 
   ones_in_diagonal(A);
@@ -1660,39 +1675,39 @@ identity(Index const dimension)
 //
 // 2nd-order identity tensor, à la Matlab
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 eye()
 {
-  return identity<T, N>();
+  return identity<T, N, ES>();
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 eye(Index const dimension)
 {
-  return identity<T>(dimension);
+  return identity<T, DYNAMIC,ES>(dimension);
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 eye(Index const dimension)
 {
-  return identity<T, N>(dimension);
+  return identity<T, N, ES>(dimension);
 }
 
 //
 // Levi-Civita symbol
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 levi_civita_2()
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   A(N, ZEROS);
 
   fill_levi_civita(A);
@@ -1700,12 +1715,12 @@ levi_civita_2()
   return A;
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 levi_civita_2(Index const dimension)
 {
-  Tensor<T, DYNAMIC>
+  Tensor<T, DYNAMIC, ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -1713,14 +1728,13 @@ levi_civita_2(Index const dimension)
   return A;
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 levi_civita_2(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor<T, DYNAMIC>
+  Tensor<T, DYNAMIC, ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -1731,74 +1745,73 @@ levi_civita_2(Index const dimension)
 //
 // Permutation symbol
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 permutation_2()
 {
-  return levi_civita_2<T, N>();
+  return levi_civita_2<T, N, ES>();
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 permutation_2(Index const dimension)
 {
-  return levi_civita_2<T>(dimension);
+  return levi_civita_2<T, DYNAMIC,ES>(dimension);
 }
 
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 permutation_2(Index const dimension)
 {
-  return levi_civita_2<T, N>(dimension);
+  return levi_civita_2<T, N,ES>(dimension);
 }
 
 //
 // Alternating symbol
 //
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 alternator_2()
 {
-  return levi_civita_2<T, N>();
+  return levi_civita_2<T, N,ES>();
 }
 
-template<typename T>
-inline
-Tensor<T, DYNAMIC> const
+template<typename T,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, DYNAMIC, ES> const
 alternator_2(Index const dimension)
 {
-  return levi_civita_2<T>(dimension);
+  return levi_civita_2<T, DYNAMIC, ES>(dimension);
 }
 
-template<typename T, Index N>
-inline
-Tensor<T, N> const
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES> const
 alternator_2(Index const dimension)
 {
-  return levi_civita_2<T, N>(dimension);
+  return levi_civita_2<T, N,ES>(dimension);
 }
 
 //
 // 2nd-order tensor transpose
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>
-transpose(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+transpose(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B = A;
 
   switch (dimension) {
-
   default:
     for (Index i = 0; i < dimension; ++i) {
       for (Index j = i + 1; j < dimension; ++j) {
@@ -1819,7 +1832,6 @@ transpose(Tensor<T, N> const & A)
     std::swap(B(0, 1), B(1, 0));
 
     break;
-
   }
 
   return B;
@@ -1829,15 +1841,15 @@ transpose(Tensor<T, N> const & A)
 // symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A + A^T) \f$
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>
-sym(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+sym(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B(dimension);
 
   switch (dimension) {
@@ -1894,15 +1906,15 @@ sym(Tensor<T, N> const & A)
 // skew symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A - A^T) \f$
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>
-skew(Tensor<T, N> const & A)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+skew(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B(dimension);
 
   switch (dimension) {
@@ -1953,15 +1965,15 @@ skew(Tensor<T, N> const & A)
 // for N!=3.
 // \param u vector
 //
-template<typename T, Index N>
-inline
-Tensor<T, N>
-skew(Vector<T, N> const & u)
+template<typename T, Index N,  typename ES>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N, ES>
+skew(Vector<T, N, ES> const & u)
 {
   Index const
   dimension = u.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   A(dimension);
 
   switch (dimension) {
@@ -1981,18 +1993,21 @@ skew(Vector<T, N> const & u)
     break;
 
   default:
+#if defined(KOKKOS_HAVE_CUDA)
+    Kokkos::abort("ERROR(Tensor::skew): Skew from vector undefined for R");
+#else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
     std::cerr << std::endl;
     std::cerr << "Skew from vector undefined for R^" << N;
     std::cerr << std::endl;
     exit(1);
     break;
-
+#endif
   }
 
   return A;
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor_i_h
+#endif // Intrepid2_MiniTensor_Tensor_i_h

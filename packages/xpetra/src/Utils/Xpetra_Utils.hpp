@@ -56,7 +56,7 @@
 #include "Epetra_CombineMode.h"
 #endif
 
-#include "Xpetra_Map.hpp" // definition of UnderlyingLib
+#include "Xpetra_Map.hpp"     // definition of UnderlyingLib
 
 namespace Xpetra {
 
@@ -97,6 +97,9 @@ namespace Xpetra {
   Epetra_CombineMode     toEpetra(Xpetra::CombineMode CM);
 
 #endif // HAVE_XPETRA_EPETRA
+
+
+
 
 }
 

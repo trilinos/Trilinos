@@ -58,8 +58,8 @@ namespace Zoltan2 {
 /*!  \brief BasicVectorAdapter represents a vector (plus optional weights)
             supplied by the user as pointers to strided arrays.
 
-    BasicVectorAdapter may be a single vector or multivector (set of 
-    corresponding vectors with the same global identifiers and 
+    BasicVectorAdapter may be a single vector or multivector (set of
+    corresponding vectors with the same global identifiers and
     distribution across processes).  A constructor specifically for use
     of BasicVectorAdapter to represent geometric coordinates is also provided.
 
@@ -67,7 +67,7 @@ namespace Zoltan2 {
     \li \c scalar_t is the data type for weights and vector entry values.
     \li \c lno_t is the integral data type used by Zoltan2 for local indices and local counts.
     \li \c gno_t is the data type used by the application for global Ids; must be a Teuchos Ordinal.  (Teuchos Ordinals are those data types for which traits are defined in Trilinos/packages/teuchos/src/Teuchos_OrdinalTraits.hpp.)
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel, which is used to optimize performance on many-core and multi-core architectures.  If you don't use Kokkos, you can ignore this data type.
+    \li \c node_t is a Kokkos CPU Node type.  If you don't use Kokkos, you can ignore this data type.
 
     The template parameter (\c User) is a C++ class type which provides the
     actual data types with which the Zoltan2 library will be compiled, through

@@ -51,12 +51,13 @@
 #include <limits> // std::numeric_limits
 #include <type_traits>
 
-
+namespace Tpetra {
+namespace Details {
 //
-// This anonymous namespace stores utility functions and Kokkos
+// This namespace stores utility functions and Kokkos
 // functors for use in FixedHashTable construction.
 //
-namespace { // (anonymous)
+namespace FHT {
 
 // Is it worth actually using building the FixedHashTable using
 // parallel threads, instead of just counting in a sequential loop?
@@ -656,14 +657,11 @@ private:
   size_type size_;
 };
 
-} // namespace (anonymous)
+} // namespace FHT
 
 //
 // Here begins the actual implementation of FixedHashTable.
 //
-
-namespace Tpetra {
-namespace Details {
 
 template<class KeyType, class ValueType, class DeviceType>
 bool
@@ -683,26 +681,13 @@ void
 FixedHashTable<KeyType, ValueType, DeviceType>::
 check () const
 {
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  const char prefix[] = "Tpetra::Details::FixedHashTable: ";
-  const char suffix[] = "  Please report this bug to the Tpetra developers.";
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (ptr_.ptr_on_device () != rawPtr_, std::logic_error,
-     prefix << "ptr_.ptr_on_device () != rawPtr_." << suffix);
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (val_.ptr_on_device () != rawVal_, std::logic_error,
-     prefix << "val_.ptr_on_device () != rawVal_." << suffix);
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+  // const char prefix[] = "Tpetra::Details::FixedHashTable: ";
+  // const char suffix[] = "  Please report this bug to the Tpetra developers.";
 }
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable () :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -728,10 +713,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys) :
   keys_ (keys),
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -763,10 +744,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()), // to be set in init()
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -822,10 +799,6 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const ValueType startingValue,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -897,10 +870,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const KeyType lastContigKey,
                 const ValueType startingValue,
                 const bool keepKeys) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -968,10 +937,6 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const keys_type& keys,
                 const ValueType startingValue) :
   keys_ (keys),
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -1016,10 +981,6 @@ template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const Teuchos::ArrayView<const ValueType>& vals) :
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ (NULL),
-  rawVal_ (NULL),
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ (std::numeric_limits<KeyType>::max ()),
   maxKey_ (std::numeric_limits<KeyType>::is_integer ?
            std::numeric_limits<KeyType>::min () :
@@ -1094,7 +1055,7 @@ init (const keys_type& keys,
      ", please talk to the Tpetra developers.");
 
   const bool buildInParallel =
-    worthBuildingFixedHashTableInParallel<execution_space> ();
+    FHT::worthBuildingFixedHashTableInParallel<execution_space> ();
 
   // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
   // could change that by setting up ptr and val as Kokkos::DualView
@@ -1180,7 +1141,7 @@ init (const keys_type& keys,
   // kernel is still correct in that case, but I would rather not
   // incur overhead then.
   if (buildInParallel) {
-    CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
+    FHT::CountBuckets<counts_type, keys_type> functor (counts, theKeys, size);
     Kokkos::parallel_for (theNumKeys, functor);
   }
   else {
@@ -1208,7 +1169,7 @@ init (const keys_type& keys,
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
   if (buildInParallel) {
-    typedef ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
+    typedef FHT::ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
     functor_type functor (ptr, counts);
     Kokkos::parallel_scan (size+1, functor);
   }
@@ -1228,8 +1189,8 @@ init (const keys_type& keys,
                          theNumKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
-  typedef FillPairs<typename val_type::non_const_type, keys_type,
-                    typename ptr_type::non_const_type> functor_type;
+  typedef FHT::FillPairs<typename val_type::non_const_type, keys_type,
+    typename ptr_type::non_const_type> functor_type;
   typename functor_type::value_type result (initMinKey, initMaxKey);
 
   const ValueType newStartingValue = startingValue + static_cast<ValueType> (startIndex);
@@ -1279,10 +1240,6 @@ init (const keys_type& keys,
   // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ = ptr.ptr_on_device ();
-  rawVal_ = val.ptr_on_device ();
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
   // We've already set firstContigKey_ and lastContigKey_ above.
@@ -1365,7 +1322,7 @@ init (const host_input_keys_type& keys,
   typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
-  FillPairsResult<KeyType> result (initMinKey, initMaxKey);
+  FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);
   for (offset_type k = 0; k < numKeys; ++k) {
     typedef typename hash_type::result_type hash_value_type;
     const KeyType key = keys[k];
@@ -1404,10 +1361,6 @@ init (const host_input_keys_type& keys,
   // "Commit" the computed arrays and other computed quantities.
   ptr_ = ptr;
   val_ = val;
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  rawPtr_ = ptr.ptr_on_device ();
-  rawVal_ = val.ptr_on_device ();
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   minKey_ = result.minKey_;
   maxKey_ = result.maxKey_;
   // We've already assigned to minVal_ and maxVal_ above.
@@ -1435,7 +1388,7 @@ checkForDuplicateKeys () const
     return false;
   }
   else {
-    typedef CheckForDuplicateKeys<ptr_type, val_type> functor_type;
+    typedef FHT::CheckForDuplicateKeys<ptr_type, val_type> functor_type;
     functor_type functor (val_, ptr_);
     bool hasDupKeys = false;
     Kokkos::parallel_reduce (size, functor, hasDupKeys);

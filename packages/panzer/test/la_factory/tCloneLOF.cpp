@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    RCP<const EpetraLinearObjFactory<Traits,int> > ep_control_lof 
        = rcp_dynamic_cast<const EpetraLinearObjFactory<Traits,int> >(control_lof);
 
-   std::vector<int> control_owned, owned;
+   std::vector<int> control_owned;
    control_indexer->getOwnedIndices(control_owned);
 
    TEST_ASSERT(ep_control_lof->getMap()->SameAs(*ep_lof->getMap()));

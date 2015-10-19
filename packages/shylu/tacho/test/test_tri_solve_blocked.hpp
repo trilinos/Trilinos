@@ -11,14 +11,9 @@
 #include "dense_matrix_base.hpp"
 #include "dense_matrix_view.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "tri_solve.hpp"
 
@@ -47,11 +42,8 @@ namespace Tacho {
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> DenseMatrixBaseType;
     typedef DenseMatrixView<DenseMatrixBaseType> DenseMatrixViewType;
     
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-
-    typedef ParallelFor ForType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
     
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
     typedef TaskView<DenseMatrixViewType,TaskFactoryType> DenseTaskViewType;
@@ -102,7 +94,7 @@ namespace Tacho {
       TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>::blocksize = blocksize;
 
       TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Blocked>
-        ::invoke<ForType>(TaskFactoryType::Policy(),
+        ::invoke(TaskFactoryType::Policy(),
                           TaskFactoryType::Policy().member_single(),
                           Diag::NonUnit, U, B);
 
@@ -110,7 +102,7 @@ namespace Tacho {
     }
     {
       Gemm<Trans::ConjTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::invoke<ForType>(TaskFactoryType::Policy(),
+        ::invoke(TaskFactoryType::Policy(),
                           TaskFactoryType::Policy().member_single(),
                           1.0, U, B, 0.0, C);
 
@@ -124,7 +116,7 @@ namespace Tacho {
       TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>::blocksize = blocksize;
       
       TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
-        ::invoke<ForType>(TaskFactoryType::Policy(),
+        ::invoke(TaskFactoryType::Policy(),
                           TaskFactoryType::Policy().member_single(),
                           Diag::NonUnit, U, B);
       
@@ -132,7 +124,7 @@ namespace Tacho {
     }
     {
       Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::invoke<ForType>(TaskFactoryType::Policy(),
+        ::invoke(TaskFactoryType::Policy(),
                           TaskFactoryType::Policy().member_single(),
                           1.0, U, B, 0.0, C);
 

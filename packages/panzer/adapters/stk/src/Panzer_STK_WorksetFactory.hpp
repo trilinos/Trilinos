@@ -56,8 +56,16 @@ namespace panzer_stk_classic {
   */
 class WorksetFactory : public panzer::WorksetFactoryBase {
 public:
+   WorksetFactory() {}
+
    WorksetFactory(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
+
    virtual ~WorksetFactory() {}
+
+  /** Set mesh
+     */
+   virtual
+   void setMesh(const Teuchos::RCP<const panzer_stk_classic::STK_Interface> & mesh);
 
    /** Build sets of boundary condition worksets
      */

@@ -46,7 +46,6 @@
     \brief Interior Point test using Hock & Schittkowski problem 32.
 */
 
-#include "Teuchos_getConst.hpp"
 #include "ROL_HS32.hpp"
 #include "ROL_LogBarrierObjective.hpp"
 #include "ROL_InteriorPoint.hpp"
@@ -56,8 +55,7 @@ template<class Real>
 void print_vector(const ROL::Vector<Real> &x) {
   typedef ROL::StdVector<Real> SV;
   using Teuchos::dyn_cast;
-  using Teuchos::getConst;
-  const SV &xs = dyn_cast<const SV>(getConst(x));
+  const SV &xs = dyn_cast<const SV>(x);
   Teuchos::RCP<const std::vector<Real> > x_rcp = xs.getVector();
    
   for(int i=0;i<xs.dimension();++i) {
@@ -71,8 +69,7 @@ void print_subvector(const ROL::Vector<Real> &x, const int i){
   typedef typename PV::size_type size_type;
   size_type n = static_cast<size_type>(i);
   using Teuchos::dyn_cast;
-  using Teuchos::getConst;
-  const PV &xp = dyn_cast<const PV>(getConst(x));
+  const PV &xp = dyn_cast<const PV>(x);
   print_vector(*(xp.get(n)));
 }
 

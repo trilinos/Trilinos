@@ -63,6 +63,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -333,11 +334,56 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
   }
 }
 
+bool hasInterfaceCondition (const std::vector<panzer::BC>& bcs)
+{
+  for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+    if (bcit->bcType() == panzer::BCT_Interface)
+      return true;
+  return false;
+}
+
+Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+getSTKConnManager (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> > stk_conn_mgr =
+    Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_mgr);
+  TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
+                             "There are interface conditions, but the connection manager"
+                             " does not support the necessary connections.");
+  return stk_conn_mgr;
+}
+
+void buildInterfaceConnections (const std::vector<panzer::BC>& bcs,
+                                const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+    stk_conn_mgr = getSTKConnManager(conn_mgr);
+  for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+    if (bcit->bcType() == panzer::BCT_Interface)
+      stk_conn_mgr->associateElementsInSideset(bcit->sidesetID());
+}
+
+void checkInterfaceConnections (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
+                                const Teuchos::RCP<Teuchos::Comm<int> >& comm)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+    stk_conn_mgr = getSTKConnManager(conn_mgr);
+  std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
+  if ( ! sidesets.empty()) {
+    std::stringstream ss;
+    ss << "Sideset IDs";
+    for (std::size_t i = 0; i < sidesets.size(); ++i)
+      ss << " " << sidesets[i];
+    ss << " did not yield associations, but these sidesets correspond to BCT_Interface BCs.";
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str());
+  }
+}
+
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::vector<panzer::BC>& bcs,
                         const ProblemOptions& po);
 
 // calls MPI_Init and MPI_Finalize
-int main (int argc,char * argv[])
+int main (int argc, char* argv[])
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -356,7 +402,7 @@ int main (int argc,char * argv[])
 
   ProblemOptions po;
   {
-    // Set this problem up with two discontinuous (A, C) and one continuous (B)
+    // Set up this problem with two discontinuous (A, C) and one continuous (B)
     // fields.
     //   On fields A are imposed Neumann and weak Dirichlet matching interface conditions.
     //   On fields C are imposed Robin interface conditions, with one-way
@@ -384,6 +430,7 @@ int main (int argc,char * argv[])
     po.test_Jacobian = false;
     clp.setOption("test-jacobian", "dont-test-jacobian", &po.test_Jacobian,
                   "Test Jacobian using finite differences.");
+    po.generate_mesh_only = false;
     clp.setOption("generate-mesh-only", "dont-generate-mesh-only", &po.generate_mesh_only,
                   "Generate mesh, save, and quit.");
     try {
@@ -551,14 +598,21 @@ int main (int argc,char * argv[])
 
   // build DOF Manager and linear object factory
   /////////////////////////////////////////////////////////////
- 
-  // build the connection manager 
-  const Teuchos::RCP<panzer::ConnManager<int,int> > 
-    conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
-  panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-  RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-    = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+  RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+  {
+    const Teuchos::RCP<panzer::ConnManager<int,int> >
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh)); 
+    const bool has_interface_condition = hasInterfaceCondition(bcs);
+    if (has_interface_condition)
+      buildInterfaceConnections(bcs, conn_manager);
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    globalIndexerFactory.setEnableGhosting(has_interface_condition);
+    dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
+      Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, conn_manager, "");
+    if (has_interface_condition)
+      checkInterfaceConnections(conn_manager, dofManager->getComm());
+  }
 
   // construct some linear algebra object, build object to pass to evaluators
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory

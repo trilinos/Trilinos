@@ -55,6 +55,9 @@
 
 namespace panzer {
 
+// Forward declaration.
+template <typename LocalOrdinalT> class ConnManagerBase;
+
 class UniqueGlobalIndexerBase {
 public:
    //! Pure virtual destructor: prevents warnings with inline empty implementation 
@@ -282,15 +285,9 @@ public:
      */
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
 
-   /** Access the local IDs for an element, as well as any other local IDs
-     * associated with the element.
+   /** \brief Returns the connection manager currently being used.
      */
-   virtual void getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const;
-
-   /** Access the gloal IDs for an element, as well as any other gloal IDs
-     * associated with the element.
-     */
-   virtual void getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const;
+   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const = 0;
 
    class CopyCellLIDsFunctor {
    public:
@@ -303,7 +300,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<local_lids.dimension_1();i++) 
+       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      
@@ -355,6 +352,17 @@ protected:
      localIDs_k_ = localIDs_k;
    }
 
+   /** Access internal state and share the local ID fields. This allows decorators
+     * classes to be defined and still not loose the performance benefit of the
+     * fast getElementLIDs methods. Note that this copies from a distinct UGI into
+     * this object.
+     */
+   void shareLocalIDs(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & src)
+   {
+     localIDs_   = src.localIDs_;
+     localIDs_k_ = src.localIDs_k_;
+   }
+
 private:
    std::vector<std::vector<LocalOrdinalT> > localIDs_; 
    Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
@@ -402,21 +410,6 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
         lids[g] = hashMap[gids[g]];
     }
   } 
-}
-
-// Default implementations for any DOF manager that doesn't want to support
-// associated elements.
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const
-{
-  lids = getElementLIDs(localElmtId);
-}
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
-getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const
-{
-  getElementGIDs(localElmtId, gids);
 }
 
 }

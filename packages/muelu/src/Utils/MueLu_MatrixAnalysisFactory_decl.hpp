@@ -60,9 +60,10 @@
 namespace MueLu {
 
   /*!
-    @class Matrix analysis class.
-    @brief Factory checks matrix properties of a on current level. This factory can be plugged in everywhere
-           in the factory layout of the MueLu preconditioner. It only needs A as input and pipes it through as output.
+    @class MatrixAnalysisFactory
+    @brief This class checks matrix properties of A on current level.
+    This factory can be plugged in everywhere
+    in the factory layout of the MueLu preconditioner. It only needs A as input and pipes it through as output.
 
     ## Input/output of MatrixAnalysisFactory ##
 

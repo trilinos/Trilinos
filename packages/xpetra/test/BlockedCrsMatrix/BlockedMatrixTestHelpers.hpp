@@ -45,7 +45,7 @@ Teuchos::RCP<Epetra_Map> MergeMaps(const std::vector<Teuchos::RCP<const Epetra_M
   for (unsigned i=0; i<maps.size(); ++i) {
     if (maps[i]==Teuchos::null)
       std::cout << "can not merge extractor with null maps" << std::endl;
-    if (not maps[i]->UniqueGIDs())
+    if (maps[i]->UniqueGIDs() == false)
       std::cout << "map " << i <<  " not unique" << std::endl;
   }
   std::set<int> mapentries;

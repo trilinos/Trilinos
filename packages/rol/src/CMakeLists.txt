@@ -30,37 +30,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # vector headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
-APPEND_SET(HEADERS
-  vector/ROL_Vector.hpp
-  vector/ROL_Vector_SimOpt.hpp
-  vector/ROL_StdVector.hpp
-  vector/ROL_PartitionedVector.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/vector)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # function headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/function)
-APPEND_SET(HEADERS
-  function/ROL_Objective.hpp
-  function/ROL_ObjectiveDef.hpp
-  function/ROL_Objective_SimOpt.hpp
-  function/ROL_Reduced_Objective_SimOpt.hpp
-  function/ROL_Constraints.hpp
-  function/ROL_EqualityConstraint.hpp
-  function/ROL_EqualityConstraintDef.hpp
-  function/ROL_EqualityConstraint_SimOpt.hpp
-  function/ROL_BoundConstraint.hpp
-  function/ROL_StdBoundConstraint.hpp
-  function/ROL_LinearOperator.hpp
-  function/ROL_ProjectedHessian.hpp
-  function/ROL_ProjectedPreconditioner.hpp
-  function/ROL_PrimalDualHessian.hpp
-  function/ROL_PrimalDualPreconditioner.hpp
-  function/ROL_LogBarrierObjective.hpp
-)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # step headers
@@ -90,20 +70,17 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 # algorithm headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
-APPEND_SET(HEADERS
-  algorithm/ROL_Algorithm.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # status test headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/status)
-APPEND_SET(HEADERS
-  status/ROL_StatusTest.hpp
-  status/ROL_BundleStatusTest.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/status)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # sol headers
@@ -126,48 +103,17 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
 # elementwise function headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
-APPEND_SET(HEADERS
-  elementwise/ROL_Elementwise_Function.hpp
-  elementwise/ROL_Elementwise_Reduce.hpp
-  elementwise/ROL_UnaryFunctions.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # zoo headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoo)
-APPEND_SET(HEADERS
-  zoo/ROL_Types.hpp
-  zoo/ROL_HelperFunctions.hpp
-  zoo/ROL_TestObjectives.hpp
-  zoo/ROL_Rosenbrock.hpp
-  zoo/ROL_FreudensteinRoth.hpp
-  zoo/ROL_Beale.hpp
-  zoo/ROL_Powell.hpp
-  zoo/ROL_SumOfSquares.hpp
-  zoo/ROL_LeastSquares.hpp
-  zoo/ROL_PoissonControl.hpp
-  zoo/ROL_PoissonInversion.hpp
-  zoo/ROL_HS1.hpp
-  zoo/ROL_HS2.hpp
-  zoo/ROL_HS3.hpp
-  zoo/ROL_HS4.hpp
-  zoo/ROL_HS5.hpp
-  zoo/ROL_HS25.hpp
-  zoo/ROL_HS29.hpp
-  zoo/ROL_HS32.hpp
-  zoo/ROL_HS38.hpp
-  zoo/ROL_HS45.hpp
-  zoo/ROL_BVP.hpp
-  zoo/ROL_Zakharov.hpp
-  zoo/ROL_Minimax1.hpp
-  zoo/ROL_Minimax2.hpp
-  zoo/ROL_Minimax3.hpp
-  zoo/ROL_ParameterListConverters.hpp
-  )
-
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/zoo)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # All sources

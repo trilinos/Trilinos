@@ -46,8 +46,8 @@
     \author Created by D. Kouri and D. Ridzal.
 */
 
-#ifndef INTREPID_ADAPTIVESPARSEGRID_HPP
-#define INTREPID_ADAPTIVESPARSEGRID_HPP
+#ifndef INTREPID2_ADAPTIVESPARSEGRID_HPP
+#define INTREPID2_ADAPTIVESPARSEGRID_HPP
 
 #include "Intrepid2_AdaptiveSparseGridInterface.hpp"
 

@@ -6,6 +6,21 @@
  */
 
 #include "GameofLife.hpp"
+#include "GameOfLife/EntityKeyHash.hpp"  // for hash
+#include "GameOfLife/GameofLifeMesh.hpp"  // for GameofLifeMesh
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldParallel.hpp"  // for communicate_field_data
+#include "stk_mesh/base/GetEntities.hpp"  // for get_selected_entities
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 /*
  * GameofLife
  */

@@ -751,19 +751,24 @@ namespace Iogn {
 
     map.resize(count);
     proc.resize(count);
-    int64_t j = 0;
+    int64_t counter = 0;
     if (myProcessor != 0) {
       int64_t offset = myStartZ * (numX+1) * (numY+1);
       for (int64_t i=0; i < slab; i++) {
-        map[j] = offset + i + 1;
-        proc[j++] = static_cast<int>(myProcessor-1);
+        map[i] = offset + i + 1;
       }
+      for (int64_t i=0; i < slab; i++) {
+        proc[i] = static_cast<int>(myProcessor-1);
+      }
+      counter += slab;
     }
     if (myProcessor != processorCount-1) {
       int64_t offset = (myStartZ + myNumZ) * (numX+1) * (numY+1);
       for (int64_t i=0; i < slab; i++) {
-        map[j] = offset + i + 1;
-        proc[j++] = static_cast<int>(myProcessor+1);
+        map[i+counter] = offset + i + 1;
+      }
+      for (int64_t i=0; i < slab; i++) {
+        proc[i+counter] = static_cast<int>(myProcessor+1);
       }
     }
   }

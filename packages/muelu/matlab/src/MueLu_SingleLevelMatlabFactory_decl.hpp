@@ -69,6 +69,7 @@
 namespace MueLu {
   /*!
     @class SingleLevelMatlabFactory
+    @ingroup MueMexClasses 
     @brief Factory for interacting with Matlab
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>

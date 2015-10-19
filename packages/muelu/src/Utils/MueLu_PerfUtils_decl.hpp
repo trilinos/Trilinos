@@ -54,9 +54,16 @@
 #include <Xpetra_Import_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include "MueLu_Utilities_fwd.hpp"
+//#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
+// MPI helpers
+#define MueLu_sumAll(rcpComm, in, out)                                        \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
+#define MueLu_minAll(rcpComm, in, out)                                        \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
+#define MueLu_maxAll(rcpComm, in, out)                                        \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
   template <class Scalar,
             class LocalOrdinal  = int,

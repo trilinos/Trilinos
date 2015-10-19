@@ -14,8 +14,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewType>
+  template<typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
   Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::Two>
@@ -26,7 +25,6 @@ namespace Tacho {
     typedef typename CrsExecViewType::value_type        value_type;
     typedef typename CrsExecViewType::ordinal_type      ordinal_type;
     typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
     // row_view_type r1t, r2t;
 
@@ -53,10 +51,10 @@ namespace Tacho {
 
       if (nnz_r1t) {
         // inverse scale
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type j) {
-                          r1t.Value(j) /= alpha;
-                        });
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 1, nnz_r1t),
+                             [&](const ordinal_type j) {
+                               r1t.Value(j) /= alpha;
+                             });
 
         member.team_barrier();
 
@@ -69,18 +67,18 @@ namespace Tacho {
           row_view_type &r2t = A.RowView(row_at_i);
 
           ordinal_type idx_team[MAX_TEAM_SIZE] = {};
-          ParallelForType(team_factory_type::createThreadLoopRegion(member, i, nnz_r1t),
-                          [&](const ordinal_type j) {
-                            ordinal_type &idx = idx_team[member.team_rank()];
-                            if (idx > -2) {
-                              const ordinal_type col_at_j = r1t.Col(j);
-                              idx = r2t.Index(col_at_j, idx);
-                              if (idx >= 0) {
-                                const value_type   val_at_j = r1t.Value(j);
-                                r2t.Value(idx) -= val_at_i*val_at_j;
-                              }
-                            }
-                          });
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, i, nnz_r1t),
+                               [&](const ordinal_type j) {
+                                 ordinal_type &idx = idx_team[member.team_rank()];
+                                 if (idx > -2) {
+                                   const ordinal_type col_at_j = r1t.Col(j);
+                                   idx = r2t.Index(col_at_j, idx);
+                                   if (idx >= 0) {
+                                     const value_type   val_at_j = r1t.Value(j);
+                                     r2t.Value(idx) -= val_at_i*val_at_j;
+                                   }
+                                 }
+                               });
         }
       }
     }

@@ -32,8 +32,8 @@
     \author Created by P. Bochev and J. Lai.
 */
 
-#ifndef INTREPID_HGRAD_POLY_C1_FEM_HPP
-#define INTREPID_HGRAD_POLY_C1_FEM_HPP
+#ifndef INTREPID2_HGRAD_POLY_C1_FEM_HPP
+#define INTREPID2_HGRAD_POLY_C1_FEM_HPP
 
 #include "Intrepid2_Basis.hpp"
 #include "Shards_CellTopology.hpp"

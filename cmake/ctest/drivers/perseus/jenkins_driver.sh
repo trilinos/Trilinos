@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 echo
 echo "Starting nightly Trilinos development testing on typhon: `date`"
@@ -8,7 +8,7 @@ echo
 snapshot_kokkos_into_trilinos() {
     cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
     cd $WORKSPACE/kokkos && git reset --hard origin/$1 && cd -
-    $WORKSPACE/kokkos/config/snapshot.py -n $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
+    $WORKSPACE/kokkos/config/snapshot.py -n $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages || { echo "SNAPSHOT FAILED!" && exit 1; }
     export KOKKOS_BRANCH=$1
 }
 
@@ -72,7 +72,9 @@ $SCRIPT_DIR/../cron_driver.py
 # snapshot_kokkos_into_trilinos develop
 # $SCRIPT_DIR/../cron_driver.py
 
-# cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
+git status
+
+cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
 
 echo
 echo "Ending nightly Trilinos development testing on typhon: `date`"

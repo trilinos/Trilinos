@@ -93,16 +93,16 @@ namespace Details {
     */
   class DefaultNode {
   public:
-#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+#if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 #else
-#    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
+#    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
     //! \brief Return a pointer to the default node.

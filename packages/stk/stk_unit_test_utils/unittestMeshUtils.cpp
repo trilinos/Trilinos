@@ -1,6 +1,5 @@
-#include "unittestMeshUtils.hpp"
 
-#include <stk_mesh/base/Types.hpp>
+#include "unittestMeshUtils.hpp"
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -36,8 +35,28 @@ void put_mesh_into_part(stk::mesh::BulkData& bulkData, stk::mesh::Part& part)
 }
 
 
+std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim, const std::string &options)
+{
+    std::ostringstream os;
+    os << "generated:" << xdim << "x" << ydim << "x" << zdim << options;
+    return os.str();
+}
 
 
+void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
+                                  const stk::mesh::EntityVector& killedElements,
+                                  const stk::mesh::PartVector& removeParts)
+{
+    std::vector<stk::mesh::PartVector> add_parts(killedElements.size());
+    std::vector<stk::mesh::PartVector> rm_parts(killedElements.size());
+
+    for (size_t j=0;j<killedElements.size();++j)
+    {
+        rm_parts[j] = removeParts;
+    }
+
+    bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
+}
 
 } // namespace unit_test_util
 } // namespace stk

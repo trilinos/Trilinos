@@ -452,7 +452,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
     }
 }
 
-int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, unsigned face_ord, stk::mesh::Permutation elem_perm, stk::mesh::Entity elem_face)
+int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, unsigned face_ord, stk::mesh::Permutation claimed_permutation, stk::mesh::Entity elem_face)
 {
     stk::mesh::Entity face_nodes_buff[100], mapped_face_nodes_buff[100];
 
@@ -461,7 +461,22 @@ int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, u
 
     elem_topo.face_nodes(elem_nodes, face_ord, face_nodes_buff);
     stk::topology face_topo = elem_topo.face_topology(face_ord);
-    face_topo.permutation_nodes(face_nodes_buff, elem_perm, mapped_face_nodes_buff);
+
+    stk::mesh::ConnectivityOrdinal const *face_ordinals_for_elem = mesh.begin_face_ordinals(elem);
+
+    const unsigned num_faces = mesh.num_faces(elem);
+    EXPECT_GT(num_faces, 0u);
+    unsigned face_idx;
+    for (face_idx = 0; face_idx < num_faces; ++face_idx)
+    {
+        if (face_ord == face_ordinals_for_elem[face_idx])
+            break;
+    }
+    EXPECT_LT(face_idx, num_faces);
+
+    stk::mesh::Permutation const *face_perms_for_elem = mesh.begin_face_permutations(elem);
+    stk::mesh::Permutation face_perm = face_perms_for_elem[face_idx];
+    face_topo.permutation_nodes(face_nodes_buff, face_perm, mapped_face_nodes_buff);
 
     // Another way to get to face's nodes.
     stk::mesh::Entity const *face_nodes = mesh.begin_nodes(elem_face);
@@ -475,7 +490,7 @@ int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, u
 
     // Indeed, find_permutation computes what was stored!
     stk::mesh::Permutation perm = mesh.find_permutation(elem_topo, elem_nodes, face_topo, face_nodes, face_ord);
-    EXPECT_EQ(perm, elem_perm);
+    EXPECT_EQ(perm, claimed_permutation);
     return innermost_hits;
 }
 
@@ -551,8 +566,8 @@ void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
     stk::mesh::Entity side = stk::mesh::declare_element_side(mesh, global_side_id, elem, local_side_id, &quad4_part);
     mesh.modification_end();
 
-    stk::mesh::Permutation elem_perm = static_cast<stk::mesh::Permutation>(0);
-    check_permutation_given(mesh, elem, local_side_id, elem_perm, side);
+    stk::mesh::Permutation identity_permutation = static_cast<stk::mesh::Permutation>(0);
+    check_permutation_given(mesh, elem, local_side_id, identity_permutation, side);
 
 //    std::string out_filename = "testStk.exo";
 //    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);

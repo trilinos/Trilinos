@@ -49,6 +49,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
@@ -64,13 +65,14 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Constructor)
   {
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
     TEST_EQUALITY(sapFactory != Teuchos::null, true);
 
     out << *sapFactory << std::endl;
-
   }
 
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
@@ -111,8 +113,8 @@ namespace MueLuTests {
 
     // construct the data to compare
     SC omega = dampingFactor / lambdaMax;
-    RCP<Vector> invDiag = Utils_kokkos::GetMatrixDiagonalInverse(*A);
-    RCP<Matrix> Ptest   = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out);
+    RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
+    RCP<Matrix> Ptest   = Xpetra::IteratorOps<SC,LO,GO,NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label");
 
     // compare matrices by multiplying them by a random vector
     RCP<MultiVector> X = MultiVectorFactory::Build(A->getDomainMap(), 1);
@@ -304,7 +306,7 @@ namespace MueLuTests {
         TEST_EQUALITY(R2->getGlobalNumRows(), 7);
         TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = MueLu::Utils<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
+        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LO,GO>::Multiply(*P1,true,*P1,false,out);
         TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
         TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
         TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);

@@ -60,12 +60,16 @@ specific unit test suites.
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
+#include <Kokkos_Core.hpp>
+
 #include "MueLu_TestHelpers_kokkos.hpp"
 
 #include "MueLu_VerboseObject.hpp"
 
 int main(int argc, char* argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  Kokkos::initialize(argc, argv);
 
   bool success = false;
   bool verbose = true;
@@ -110,6 +114,8 @@ int main(int argc, char* argv[]) {
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  Kokkos::finalize();
 
   return (success ? ierr : EXIT_FAILURE);
 }

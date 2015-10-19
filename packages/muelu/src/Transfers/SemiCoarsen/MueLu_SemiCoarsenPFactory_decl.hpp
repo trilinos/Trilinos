@@ -64,9 +64,9 @@ namespace MueLu {
 
 
 /*!
-  @class SemiCoarsenPFactory class.
-  @brief Prolongator factory performing semi-coarsening.
+  @class SemiCoarsenPFactory
   @ingroup MueLuTransferClasses
+  @brief Prolongator factory performing semi-coarsening.
 
   The semi-coarsening is performed along user-provided "vertical lines" (in z-direction).
   The line detection algorithm can be found in the LineDetectionFactory.

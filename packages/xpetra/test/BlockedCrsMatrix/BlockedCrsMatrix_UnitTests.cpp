@@ -89,6 +89,7 @@
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 //#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
 

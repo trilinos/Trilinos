@@ -52,6 +52,7 @@ inline
 Tensor3<T, N>::Tensor3() :
 TensorBase<T, Store>::TensorBase()
 {
+  set_dimension(N);
   return;
 }
 
@@ -130,7 +131,7 @@ inline
 Index
 Tensor3<T, N>::get_dimension() const
 {
-  return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
+  return TensorBase<T, Store>::get_dimension();
 }
 
 //
@@ -141,12 +142,11 @@ inline
 void
 Tensor3<T, N>::set_dimension(Index const dimension)
 {
-  if (IS_DYNAMIC == true) {
-    TensorBase<T, Store>::set_dimension(dimension, ORDER);
+  if (IS_DYNAMIC == false) {
+    assert(dimension <= N);
   }
-  else {
-    assert(dimension == N);
-  }
+
+  TensorBase<T, Store>::set_dimension(dimension, ORDER);
 
   return;
 }
@@ -407,8 +407,6 @@ inline
 Tensor3<T, N> const
 levi_civita_3(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor3<T, DYNAMIC>
   A(dimension, ZEROS);
 

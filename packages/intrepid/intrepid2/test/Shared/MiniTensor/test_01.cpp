@@ -52,6 +52,7 @@
 
 int main(int argc, char* argv[])
 {
+ 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   std::cout << "End Result: TEST PASSED";
   std::cout << std::endl;
@@ -76,6 +77,26 @@ generate_sequence(
 
   return v;
 }
+
+
+template <class Scalar, class Tensor>
+struct InitializationFunctor
+{
+
+  int dimension, num;
+
+  InitializationFunctor(const int &dimension_,
+                        const int &num_):
+                        dimension(dimension_),
+                        num(num_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const unsigned int i) const {
+    Intrepid2::Tensor<Scalar, DYNAMIC, Kokkos::DefaultExecutionSpace> Z(dimension);  
+  }
+};
+ 
 
 template<typename Tensor, typename Scalar>
 bool
@@ -147,7 +168,6 @@ test_fundamentals(Index const dimension)
   decremented = error <= machine_epsilon<Scalar>();
   passed = passed && decremented;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   //test Tensor fill and create for Kokkos data types
   Kokkos::View<Scalar *, Kokkos::DefaultExecutionSpace>
   X1("X1_kokkos", dimension);
@@ -215,10 +235,11 @@ test_fundamentals(Index const dimension)
 
   error = norm_f(V);
 
+   Kokkos::parallel_for(number_components, InitializationFunctor<Scalar, Tensor>(dimension,number_components));
+
   bool const
   tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
   passed = passed && tensor_create_from_1d_kokkos;
-#endif 
 
   return passed;
 }
@@ -373,9 +394,11 @@ test_arithmetic(Index const dimension)
 
 TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
 {
+
+  Kokkos::initialize();
+
   bool const
   vector_dynamic_passed = test_fundamentals<Vector<Real>, Real>(3);
-
   TEST_COMPARE(vector_dynamic_passed, ==, true);
 
   bool const
@@ -412,6 +435,8 @@ TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
   tensor4_static_passed = test_fundamentals<Tensor4<Real, 3>, Real>(3);
 
   TEST_COMPARE(tensor4_static_passed, ==, true);
+
+  Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Filling)
@@ -1158,4 +1183,4 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
 }
 
-} // namespace Intrepid
+} // namespace Intrepid2

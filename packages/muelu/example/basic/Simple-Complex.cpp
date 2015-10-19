@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     // Print relative residual norm
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    ST::magnitudeType residualNorms = MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal>::ResidualNorm(*A, *X, *B)[0];
+    ST::magnitudeType residualNorms = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal>::ResidualNorm(*A, *X, *B)[0];
     if (comm->getRank() == 0)
       std::cout << "||Residual|| = " << residualNorms << std::endl;
 

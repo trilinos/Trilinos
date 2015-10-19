@@ -68,3 +68,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   COMM mpi
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tFilteredUGI
+  SOURCES tFilteredUGI.cpp UnitTest_ConnManager.cpp UnitTest_ConnManager.hpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM mpi
+  )

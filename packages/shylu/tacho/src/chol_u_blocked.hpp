@@ -15,11 +15,9 @@ namespace Tacho {
   using namespace std;
 
   template<template<int> class ControlType,
-           typename ParallelForType,
            typename CrsExecViewType>
   class FunctionChol<Uplo::Upper,AlgoChol::Blocked,
                      ControlType,
-                     ParallelForType,
                      CrsExecViewType> {
   private:
     int _r_val;
@@ -56,7 +54,7 @@ namespace Tacho {
         A22.fillRowViewArray();      
 
         _r_val = Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
-          ::invoke<ParallelForType,CrsExecViewType>(policy, member, A11);
+          ::invoke(policy, member, A11);
 
         if (_r_val) {
           _r_val += A00.NumRows();
@@ -64,10 +62,10 @@ namespace Tacho {
         }
 
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForFactorBlocked>
-          ::invoke<ParallelForType>(policy, member, Diag::NonUnit, 1.0, A11, A12);
+          ::invoke(policy, member, Diag::NonUnit, 1.0, A11, A12);
 
         Herk<Uplo::Upper,Trans::ConjTranspose,AlgoHerk::ForFactorBlocked>
-          ::invoke<ParallelForType>(policy, member, -1.0, A12, 1.0, A22);
+          ::invoke(policy, member, -1.0, A12, 1.0, A22);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

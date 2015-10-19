@@ -46,9 +46,12 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#include <Xpetra_Matrix.hpp>
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
+
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -116,7 +119,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Transpose(*A, true); // build transpose of A explicitely
+      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -135,7 +138,7 @@ namespace MueLu {
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
           Magnitude stopTol = 1e-4;
-          lambdaMax = Utils::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -145,12 +148,12 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
+        RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
+        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
       }
 
     } else {
@@ -168,7 +171,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL
@@ -187,6 +190,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

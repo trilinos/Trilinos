@@ -63,10 +63,12 @@
 
 #include <Teko_Utilities.hpp>
 
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_IO.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu.hpp"
 
@@ -289,7 +291,7 @@ namespace Thyra {
     typedef Xpetra::StridedMapFactory   <LO,GO,NO>    StridedMapFactory;
 
     typedef MueLu::Hierarchy            <SC,LO,GO,NO> Hierarchy;
-    typedef MueLu::Utils                <SC,LO,GO,NO> Utils;
+    typedef MueLu::Utilities            <SC,LO,GO,NO> Utils;
 
     const RCP<const Teuchos::Comm<int> > comm = velCoords->getMap()->getComm();
 
@@ -419,8 +421,8 @@ namespace Thyra {
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
     out.setOutputToRootOnly(0);
-    RCP<Matrix> BBt     = Utils::Multiply(*A_21,     false, *A_12,     false, out);
-    RCP<Matrix> BBt_abs = Utils::Multiply(*A_21_abs, false, *A_12_abs, false, out);
+    RCP<Matrix> BBt     = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21,     false, *A_12,     false, out);
+    RCP<Matrix> BBt_abs = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
     SC dropTol = (paramList.get<int>("useFilters") ? 0.06 : 0.00);
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
@@ -488,7 +490,7 @@ namespace Thyra {
     H->Keep("Ptent", M.GetFactory("Ptent").get());
     H->Setup(M, 0, MUELU_GPD("max levels", int, 3));
 
-#if 1
+#if 0
     for (int i = 1; i < H->GetNumLevels(); i++) {
       RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
       RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
@@ -497,8 +499,8 @@ namespace Thyra {
       RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
       RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
 
-      Utils::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
-      Utils::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
+      Xpetra::IO<SC,LO,GO,NO>::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
+      Xpetra::IO<SC,LO,GO,NO>::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
     }
 #endif
 
@@ -786,11 +788,13 @@ namespace Thyra {
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
-      SC omega = MUELU_GPD("bs: omega", double, 1.0);
+      SC   omega   = MUELU_GPD("bs: omega",     double, 1.0);
+      bool lumping = MUELU_GPD("bs: lumping",   bool,   false);
 
       RCP<SchurComplementFactory> schurFact = rcp(new SchurComplementFactory());
-      schurFact->SetParameter("omega",  ParameterEntry(omega));
-      schurFact->SetFactory  ("A",      MueLu::NoFactory::getRCP());
+      schurFact->SetParameter("omega",      ParameterEntry(omega));
+      schurFact->SetParameter("lumping",    ParameterEntry(lumping));
+      schurFact->SetFactory  ("A",          MueLu::NoFactory::getRCP());
 
       // Schur complement solver
       RCP<SmootherPrototype> schurSmootherPrototype;
@@ -816,6 +820,7 @@ namespace Thyra {
 
       smootherPrototype = rcp(new BraessSarazinSmoother());
       smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
+      smootherPrototype->SetParameter("lumping",        ParameterEntry(lumping));
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }

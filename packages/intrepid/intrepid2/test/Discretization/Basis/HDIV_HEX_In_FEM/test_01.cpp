@@ -327,7 +327,7 @@ Kokkos::initialize();
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
 	  int l = k + i * numPoints * spaceDim + j * spaceDim;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -347,7 +347,7 @@ Kokkos::initialize();
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
 	int l =  i * numPoints + j;
-           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

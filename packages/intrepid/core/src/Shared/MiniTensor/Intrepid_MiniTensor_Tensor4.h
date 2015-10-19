@@ -47,45 +47,44 @@
 namespace Intrepid {
 
 template<typename T, Index N>
-struct tensor4_store
-{
-  typedef Storage<T, dimension_power<N, 4>::value> type;
-};
+using tensor4_store = Storage<T, dimension_power<N, 4>::value>;
 
 ///
 /// Fourth-order tensor.
 ///
 template<typename T, Index N = DYNAMIC>
-class Tensor4 : public TensorBase<T, typename tensor4_store<T, N>::type>
+class Tensor4 : public TensorBase<T, tensor4_store<T, N>>
 {
 public:
 
   ///
   /// Order
   ///
-  static
-  Index const
+  static constexpr
+  Index
   ORDER = 4;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = N == DYNAMIC;
 
   ///
   /// Storage type
   ///
-  typedef typename tensor4_store<T, N>::type
-  Store;
+  using Store = tensor4_store<T, N>;
 
   ///
   /// Tensor order
   ///
-  static
+  static constexpr
   Index
-  get_order() {return ORDER;}
+  get_order()
+  {
+    return ORDER;
+  }
 
   ///
   /// 4th-order tensor constructor with NaNs

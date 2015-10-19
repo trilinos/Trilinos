@@ -31,9 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>                // for InitGoogleTest, etc
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 
 int gl_argc;
 char** gl_argv;

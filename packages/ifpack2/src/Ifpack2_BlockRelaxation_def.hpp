@@ -102,17 +102,13 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   NumMyRows_ (0),
   NumGlobalRows_ (0),
   NumGlobalNonzeros_ (0)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::invalid_argument,
-    Teuchos::typeName(*this) << "::BlockRelaxation(): input matrix is null.");
-}
+{}
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-BlockRelaxation<MatrixType,ContainerType>::~BlockRelaxation() {}
+BlockRelaxation<MatrixType,ContainerType>::
+~BlockRelaxation ()
+{}
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
@@ -145,7 +141,8 @@ setParameters (const Teuchos::ParameterList& List)
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument, "Ifpack2::BlockRelaxation::setParameters: "
-      "Invalid parameter value \"" << PT << "\" for parameter \"relaxation: type\".");
+      "Invalid parameter value \"" << PT << "\" for parameter \"relaxation: "
+      "type\".");
   }
 
   Ifpack2::getParameter (List, "relaxation: sweeps",NumSweeps_);
@@ -168,104 +165,132 @@ setParameters (const Teuchos::ParameterList& List)
   // NTS: Sanity check to be removed at a later date when Backward mode is enabled
   TEUCHOS_TEST_FOR_EXCEPTION(
     DoBackwardGS_, std::runtime_error,
-    "Ifpack2::BlockRelaxation:setParameters: \"relaxation: backward mode\" == "
-    "true is not supported yet.");
+    "Ifpack2::BlockRelaxation:setParameters: Setting the \"relaxation: "
+    "backward mode\" parameter to true is not yet supported.");
 
   // copy the list as each subblock's constructor will
   // require it later
   List_ = List;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 Teuchos::RCP<const Teuchos::Comm<int> >
-BlockRelaxation<MatrixType,ContainerType>::getComm() const{
-  return A_->getComm();
+BlockRelaxation<MatrixType,ContainerType>::getComm () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::getComm: "
+     "The matrix is null.  You must call setMatrix() with a nonnull matrix "
+     "before you may call this method.");
+  return A_->getComm ();
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
                                      typename MatrixType::local_ordinal_type,
                                      typename MatrixType::global_ordinal_type,
                                      typename MatrixType::node_type> >
-BlockRelaxation<MatrixType,ContainerType>::getMatrix() const {
-  return(A_);
+BlockRelaxation<MatrixType,ContainerType>::getMatrix () const {
+  return A_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::global_ordinal_type,
                                typename MatrixType::node_type> >
-BlockRelaxation<MatrixType,ContainerType>::getDomainMap() const {
-  return A_->getDomainMap();
+BlockRelaxation<MatrixType,ContainerType>::
+getDomainMap () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
+     "getDomainMap: The matrix is null.  You must call setMatrix() with a "
+     "nonnull matrix before you may call this method.");
+  return A_->getDomainMap ();
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
                                typename MatrixType::global_ordinal_type,
                                typename MatrixType::node_type> >
-BlockRelaxation<MatrixType,ContainerType>::getRangeMap() const {
-  return A_->getRangeMap();
+BlockRelaxation<MatrixType,ContainerType>::
+getRangeMap () const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
+     "getRangeMap: The matrix is null.  You must call setMatrix() with a "
+     "nonnull matrix before you may call this method.");
+  return A_->getRangeMap ();
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-bool BlockRelaxation<MatrixType,ContainerType>::hasTransposeApply() const {
+bool
+BlockRelaxation<MatrixType,ContainerType>::
+hasTransposeApply () const {
   return true;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-int BlockRelaxation<MatrixType,ContainerType>::getNumInitialize() const {
-  return(NumInitialize_);
+int
+BlockRelaxation<MatrixType,ContainerType>::
+getNumInitialize () const {
+  return NumInitialize_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-int BlockRelaxation<MatrixType,ContainerType>::getNumCompute() const {
-  return(NumCompute_);
+int
+BlockRelaxation<MatrixType,ContainerType>::
+getNumCompute () const
+{
+  return NumCompute_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-int BlockRelaxation<MatrixType,ContainerType>::getNumApply() const {
-  return(NumApply_);
+int
+BlockRelaxation<MatrixType,ContainerType>::
+getNumApply () const
+{
+  return NumApply_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-double BlockRelaxation<MatrixType,ContainerType>::getInitializeTime() const {
-  return(InitializeTime_);
+double
+BlockRelaxation<MatrixType,ContainerType>::
+getInitializeTime () const
+{
+  return InitializeTime_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-double BlockRelaxation<MatrixType,ContainerType>::getComputeTime() const {
-  return(ComputeTime_);
+double
+BlockRelaxation<MatrixType,ContainerType>::
+getComputeTime () const
+{
+  return ComputeTime_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-double BlockRelaxation<MatrixType,ContainerType>::getApplyTime() const {
-  return(ApplyTime_);
+double
+BlockRelaxation<MatrixType,ContainerType>::
+getApplyTime () const
+{
+  return ApplyTime_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-double BlockRelaxation<MatrixType,ContainerType>::getComputeFlops() const {
-  return(ComputeFlops_);
+double
+BlockRelaxation<MatrixType,ContainerType>::
+getComputeFlops () const
+{
+  return ComputeFlops_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-double BlockRelaxation<MatrixType,ContainerType>::getApplyFlops() const {
+double
+BlockRelaxation<MatrixType,ContainerType>::
+getApplyFlops () const
+{
   return ApplyFlops_;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
@@ -281,6 +306,11 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
        scalar_type alpha,
        scalar_type beta) const
 {
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::apply: "
+     "The matrix is null.  You must call setMatrix() with a nonnull matrix, "
+     "then call initialize() and compute() (in that order), before you may "
+     "call this method.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! isComputed (), std::runtime_error, "Ifpack2::BlockRelaxation::apply: "
     "isComputed() must be true prior to calling apply.");
@@ -307,10 +337,14 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   // If X and Y are pointing to the same memory location,
   // we need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const MV> X_copy;
-  if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-    X_copy = Teuchos::rcp (new MV (X, Teuchos::Copy));
-  } else {
-    X_copy = Teuchos::rcpFromRef (X);
+  {
+    auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
+    auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+      X_copy = rcp (new MV (X, Teuchos::Copy));
+    } else {
+      X_copy = rcpFromRef (X);
+    }
   }
 
   if (ZeroStartingSolution_) {
@@ -329,7 +363,13 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     ApplyInverseSGS(*X_copy,Y);
     break;
   default:
-    throw std::runtime_error("Ifpack2::BlockRelaxation::apply internal logic error.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
+       "PrecType_ enum value " << PrecType_ << ".  Valid values are Ifpack2::"
+       "Details::JACOBI = " << Ifpack2::Details::JACOBI << ", Ifpack2::Details"
+       "::GS = " << Ifpack2::Details::GS << ", and Ifpack2::Details::SGS = "
+       << Ifpack2::Details::SGS << ".  Please report this bug to the Ifpack2 "
+       "developers.");
   }
 
   ++NumApply_;
@@ -337,33 +377,35 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   ApplyTime_ += Time_->totalElapsedTime();
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::applyMat(
-          const Tpetra::MultiVector<typename MatrixType::scalar_type,
+void
+BlockRelaxation<MatrixType,ContainerType>::
+applyMat (const Tpetra::MultiVector<typename MatrixType::scalar_type,
                                     typename MatrixType::local_ordinal_type,
                                     typename MatrixType::global_ordinal_type,
                                     typename MatrixType::node_type>& X,
-                Tpetra::MultiVector<typename MatrixType::scalar_type,
-                                    typename MatrixType::local_ordinal_type,
-                                    typename MatrixType::global_ordinal_type,
-                                    typename MatrixType::node_type>& Y,
-             Teuchos::ETransp mode) const
+          Tpetra::MultiVector<typename MatrixType::scalar_type,
+                             typename MatrixType::local_ordinal_type,
+                             typename MatrixType::global_ordinal_type,
+                             typename MatrixType::node_type>& Y,
+          Teuchos::ETransp mode) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Ifpack2::BlockRelaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Ifpack2::BlockRelaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply (X, Y, mode);
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::initialize() {
+void
+BlockRelaxation<MatrixType,ContainerType>::
+initialize ()
+{
   using Teuchos::rcp;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>
     row_graph_type;
 
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::initialize: "
+     "The matrix is null.  You must call setMatrix() with a nonnull matrix "
+     "before you may call this method.");
   IsInitialized_ = false;
   Time_->start (true);
 
@@ -387,8 +429,10 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
   } else {
     // We should have checked for this in setParameters(), so it's a
     // logic_error, not an invalid_argument or runtime_error.
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Ifpack2::BlockRelaxation::initialize, invalid partitioner type.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Unknown "
+       "partitioner type " << PartitionerType_ << ".  Valid values are "
+       "\"linear\", \"line\", and \"user\".");
   }
 
   // need to partition the graph of A
@@ -413,9 +457,10 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
   IsInitialized_ = true;
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::compute()
+void
+BlockRelaxation<MatrixType,ContainerType>::
+compute ()
 {
   using Teuchos::rcp;
   typedef Tpetra::Vector<scalar_type,
@@ -423,10 +468,16 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
   typedef Tpetra::Import<local_ordinal_type,
     global_ordinal_type, node_type> import_type;
 
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::compute: "
+     "The matrix is null.  You must call setMatrix() with a nonnull matrix, "
+     "then call initialize(), before you may call this method.");
+
   // We should have checked for this in setParameters(), so it's a
   // logic_error, not an invalid_argument or runtime_error.
-  TEUCHOS_TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::logic_error,
-    "Ifpack2::BlockRelaxation::compute, NumSweeps_ must be >= 0");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::compute: "
+     "NumSweeps_ = " << NumSweeps_ << " < 0.");
 
   if (! isInitialized ()) {
     initialize ();
@@ -478,15 +529,16 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
   IsComputed_ = true;
 }
 
-//==============================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
+void
+BlockRelaxation<MatrixType,ContainerType>::
+ExtractSubmatrices ()
 {
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vec_type;
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    Partitioner_.is_null (), std::runtime_error,
-    "Ifpack2::BlockRelaxation::ExtractSubmatrices: Partitioner object is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Partitioner_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
+     "ExtractSubmatrices: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
@@ -511,11 +563,10 @@ void BlockRelaxation<MatrixType,ContainerType>::ExtractSubmatrices()
   }
 }
 
-
-
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X, MV& Y) const
+void
+BlockRelaxation<MatrixType,ContainerType>::
+ApplyInverseJacobi (const MV& X, MV& Y) const
 {
   const size_t NumVectors = X.getNumVectors ();
   MV AY (Y.getMap (), NumVectors);
@@ -539,10 +590,10 @@ void BlockRelaxation<MatrixType,ContainerType>::ApplyInverseJacobi (const MV& X,
 
 }
 
-
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) const
+void
+BlockRelaxation<MatrixType,ContainerType>::
+DoJacobi (const MV& X, MV& Y) const
 {
   const size_t NumVectors = X.getNumVectors ();
   const scalar_type one = STS::one ();
@@ -594,9 +645,9 @@ void BlockRelaxation<MatrixType,ContainerType>::DoJacobi(const MV& X, MV& Y) con
   }
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::
+void
+BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseGS (const MV& X, MV& Y) const
 {
   MV Xcopy (X, Teuchos::Copy);
@@ -608,10 +659,9 @@ ApplyInverseGS (const MV& X, MV& Y) const
   }
 }
 
-
-//==============================================================================
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::
+void
+BlockRelaxation<MatrixType,ContainerType>::
 DoGaussSeidel (MV& X, MV& Y) const
 {
   using Teuchos::Array;
@@ -719,7 +769,6 @@ DoGaussSeidel (MV& X, MV& Y) const
   }
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
@@ -734,10 +783,10 @@ ApplyInverseSGS (const MV& X, MV& Y) const
   }
 }
 
-//==========================================================================
 template<class MatrixType,class ContainerType>
 void
-BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
+BlockRelaxation<MatrixType,ContainerType>::
+DoSGS (MV& X, MV& Y) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -897,7 +946,9 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 }
 
 template<class MatrixType, class ContainerType>
-std::string BlockRelaxation<MatrixType,ContainerType>::description () const
+std::string
+BlockRelaxation<MatrixType,ContainerType>::
+description () const
 {
   std::ostringstream out;
 
@@ -940,10 +991,11 @@ std::string BlockRelaxation<MatrixType,ContainerType>::description () const
   return out.str();
 }
 
-
 template<class MatrixType,class ContainerType>
-void BlockRelaxation<MatrixType,ContainerType>::
-describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+void
+BlockRelaxation<MatrixType,ContainerType>::
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
   using std::setw;

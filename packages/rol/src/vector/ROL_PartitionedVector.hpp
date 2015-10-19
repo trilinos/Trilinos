@@ -42,8 +42,6 @@
 // @HEADER
 
 #include "ROL_Vector.hpp"
-#include "Teuchos_getConst.hpp"
-
 
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H
@@ -104,8 +102,7 @@ public:
 
   void axpy( const Real alpha, const V &x ) {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    const PV &xs = dyn_cast<const PV>(getConst(x));
+    const PV &xs = dyn_cast<const PV>(x);
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->axpy(alpha,*xs.get(i));
     }
@@ -113,8 +110,7 @@ public:
  
   Real dot( const V &x ) const {
     using Teuchos::dyn_cast;
-    using Teuchos::getConst;
-    const PV &xs = dyn_cast<const PV>(getConst(x));
+    const PV &xs = dyn_cast<const PV>(x);
     Real result = 0; 
       for( size_type i=0; i<vecs_->size(); ++i ) { 
         result += (*vecs_)[i]->dot(*xs.get(i));
@@ -158,10 +154,10 @@ public:
     using Teuchos::rcp;
     using Teuchos::dyn_cast;
 
-    RCPV bvec = this->clone();
+    RCPV bvec = clone();
 
     // Downcast
-    PV &eb = dyn_cast<PV>(const_cast <V&>(*bvec));    
+    PV &eb = dyn_cast<PV>(*bvec);    
 
     int begin = 0;   
     int end = 0;

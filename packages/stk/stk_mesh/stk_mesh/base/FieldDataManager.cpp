@@ -233,7 +233,7 @@ void DefaultFieldDataManager::remove_field_data_for_entity(EntityRank rank, unsi
 {
 
 }
-void DefaultFieldDataManager::reinitialize_removed_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields)
+void DefaultFieldDataManager::initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields)
 {
     // bucket of bucket_id shrinks by one
     for(size_t i = 0; i < fields.size(); ++i)
@@ -254,7 +254,7 @@ void DefaultFieldDataManager::reinitialize_removed_entity_field_data(EntityRank 
 
 void DefaultFieldDataManager::add_field_data_for_entity(const std::vector<FieldBase *> &allFields, EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord )
 {
-
+    initialize_entity_field_data(dst_rank, dst_bucket_id, dst_bucket_ord, allFields);
 }
 
 void resetFieldMetaDataPointers(const size_t bucket_index_begin, const size_t bucket_index_end,
@@ -283,7 +283,7 @@ ContiguousFieldDataManager::~ContiguousFieldDataManager()
     }
 }
 
-void ContiguousFieldDataManager::reinitialize_removed_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields)
+void ContiguousFieldDataManager::initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields)
 {
 
 }

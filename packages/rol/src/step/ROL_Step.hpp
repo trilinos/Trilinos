@@ -59,6 +59,10 @@
 
 namespace ROL {
 
+// We need a forward declaration here, because some steps are algorithms.
+template<class Real>
+class Algorithm;
+
 template <class Real>
 class Step {
 private:

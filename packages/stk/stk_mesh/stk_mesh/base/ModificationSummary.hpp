@@ -96,6 +96,10 @@ public:
     void write_summary(int mod_cycle_count, bool sort=true)
     {
     }
+
+    void set_proc_id(int proc_id)
+    {
+    }
 };
 
 class ModificationSummary
@@ -140,6 +144,8 @@ public:
 
     void write_summary(int mod_cycle_count, bool sort=true);
 
+    void set_proc_id(int proc_id);
+
 private:
 
     void clear_summary();
@@ -161,6 +167,7 @@ private:
     int m_lastModCycle;
     int m_modCounter;
     int m_modificationSummaryNumber;
+    int m_proc_id;
 };
 
 } // namespace

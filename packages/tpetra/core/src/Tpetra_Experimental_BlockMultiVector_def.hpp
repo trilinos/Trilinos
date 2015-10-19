@@ -60,22 +60,7 @@ namespace { // anonymous
   template<class MultiVectorType>
   struct RawPtrFromMultiVector {
     typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
-    static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      Teuchos::ArrayRCP<impl_scalar_type> X_view = X.get1dViewNonConst ();
-      impl_scalar_type* X_raw = X_view.getRawPtr ();
-      return X_raw;
-    }
-  };
 
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-  template<class S, class LO, class GO, class D>
-  struct RawPtrFromMultiVector<
-    Tpetra::MultiVector<
-      S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >
-  {
-    typedef Tpetra::MultiVector<
-      S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > MultiVectorType;
-    typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
     static impl_scalar_type* getRawPtr (MultiVectorType& X) {
       typedef typename MultiVectorType::dual_view_type dual_view_type;
       typedef typename dual_view_type::t_host::memory_space host_memory_space;
@@ -90,7 +75,6 @@ namespace { // anonymous
       return X_raw;
     }
   };
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
   /// \brief Get a raw pointer to the (host) data in a
   ///   Tpetra::MultiVector.

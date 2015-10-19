@@ -1132,6 +1132,152 @@ if(getrank(jacobian)==3){
     }//switch
   }
 
+
+  template<class Scalar>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
+                                      const Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                      const int &                  whichCell) 
+  {
+    //IKT, 10/7/15: OK to not validate arguments for this implementation? 
+    //INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
+  
+    ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>jacobianWrap(jacobian);   
+    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
+    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
+    int spaceDim  = (size_t)HGRAD_Basis->getBaseCellTopology().getDimension();
+    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    //points can be rank-2 (P,D), or rank-3 (C,P,D)
+    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+
+    // Temp (F,P,D) array for the values of basis functions gradients at the reference points
+    int basisCardinality = HGRAD_Basis -> getCardinality();
+    FieldContainer<Scalar> basisGrads(basisCardinality, numPoints, spaceDim);
+    
+    
+if(getrank(jacobian)==4){
+    for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
+       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
+         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
+           for (size_t l=0; l< static_cast<size_t>(jacobian.dimension(3)); l++){
+            jacobianWrap(i,j,k,l)=0.0;
+		  }
+        } 
+	 }
+	}
+}
+
+if(getrank(jacobian)==3){
+    for (size_t i=0; i< static_cast<size_t>(jacobian.dimension(0)); i++){
+       for (size_t j=0; j< static_cast<size_t>(jacobian.dimension(1)); j++){
+         for (size_t k=0; k< static_cast<size_t>(jacobian.dimension(2)); k++){
+            jacobianWrap(i,j,k)=0.0;
+	    }
+	   }
+	 }
+}        
+    // Handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of points arrays.
+    switch(getrank(points)) {
+      
+      // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
+      case 2:
+        {
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+	      for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(0)); pt++){
+            for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
+            }//dm
+          }//pt
+          
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+          
+          // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
+          // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
+          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          
+          if(whichCell == -1) {
+            for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                    
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+            
+          //}  
+            
+          }
+          else {
+            for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+//		}
+          } // if whichcell
+        }// case 2
+        break;
+        
+        // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
+      case 3:
+        {
+          // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+          FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+          for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+            
+            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+            for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
+              for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
+                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
+              }//dm
+            }//pt
+            
+            // Compute gradients of basis functions at this set of ref. points
+            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+            
+            // Compute jacobians for the point set corresponding to the current cellordinal
+            for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                  
+                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
+                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                  } // bfOrd
+                } // col
+              } // row
+            } // pointOrd
+          }//cellOrd
+//	    }
+        }// case 3
+	
+        break;
+        
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION( !( (getrank(points) == 2) && (getrank(points) == 3) ), std::invalid_argument,
+                            ">>> ERROR (Intrepid::CellTools::setJacobian): rank 2 or 3 required for points array. ");        
+    }//switch
+    
+  }
+
 template<class Scalar>
 template<class ArrayJacInv, class ArrayJac>
 void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
@@ -1177,6 +1323,128 @@ void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
 //                      Reference-to-physical frame mapping and its inverse                   //
 //                                                                                            //
 //============================================================================================//
+
+template<class Scalar>
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
+                                           const ArrayRefPoint &        refPoints,
+                                           const ArrayCell     &        cellWorkset,
+                                           const Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                           const int &                  whichCell)
+{
+  //INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
+
+   ArrayWrapper<Scalar,ArrayPhysPoint, Rank<ArrayPhysPoint >::value, false>physPointsWrap(physPoints);
+   ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
+   ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
+
+  size_t spaceDim  = (size_t)HGRAD_Basis->getBaseCellTopology().getDimension();
+
+  size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+  //points can be rank-2 (P,D), or rank-3 (C,P,D)
+  size_t numPoints = (getrank(refPoints) == 2) ? static_cast<size_t>(refPoints.dimension(0)) : static_cast<size_t>(refPoints.dimension(1));
+
+  // Temp (F,P) array for the values of nodal basis functions at the reference points
+  int basisCardinality = HGRAD_Basis -> getCardinality();
+  FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
+
+//#ifndef HAVE_INTREPID_KOKKOSCORE 
+  // Initialize physPoints
+  if(getrank(physPoints)==3){
+for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
+ for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){
+	for(size_t k = 0; k < static_cast<size_t>(physPoints.dimension(2)); k++){ 
+  physPointsWrap(i,j,k) = 0.0;
+    }
+   }
+}
+ }else if(getrank(physPoints)==2){
+	  for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++){
+	for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){ 
+  physPointsWrap(i,j) = 0.0;
+    }
+   }
+	 
+ }
+
+//#else
+//   Kokkos::deep_copy(physPoints.get_kokkos_view(), Scalar(0.0));  
+//#endif
+  // handle separately rank-2 (P,D) and rank-3 (C,P,D) cases of refPoints
+  switch(getrank(refPoints)) {
+    
+    // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
+    case 2:
+      {
+
+        // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(0)), static_cast<size_t>(refPoints.dimension(1)) );
+        // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+        for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(0)); pt++){
+          for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(1)) ; dm++){
+            tempPoints(pt, dm) = refPointsWrap(pt, dm);
+          }//dm
+        }//pt
+        HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+
+        // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
+        size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                if(whichCell == -1){
+                  physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+                else{
+                  physPointsWrap(pointOrd, dim) += cellWorksetWrap(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                }
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd
+      }// case 2
+  
+      break;
+      
+    // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.  
+    case 3:
+      {
+
+        // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
+        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(1)), static_cast<size_t>(refPoints.dimension(2)) );
+        
+        // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
+        for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+          
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+          for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(1)); pt++){
+            for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(2)) ; dm++){
+              tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
+            }//dm
+          }//pt
+          
+          // Compute basis values for this set of ref. points
+          HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
+          
+          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(size_t dim = 0; dim < spaceDim; dim++){
+              for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                
+                physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                
+              } // bfOrd
+            }// dim
+          }// pointOrd
+        }//cellOrd        
+      }// case 3
+      break;
+   
+  }
+}	
 
 template<class Scalar>
 template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
@@ -1504,6 +1772,135 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
 }
   
   
+template<class Scalar>
+template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                                     const ArrayInitGuess &        initGuess,
+                                                     const ArrayPhysPoint &        physPoints,
+                                                     const ArrayCell      &        cellWorkset,
+                                                     const Teuchos::RCP< Basis< Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                                     const int &                   whichCell)
+{
+ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
+ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
+// INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+  size_t spaceDim  = (size_t)HGRAD_Basis->getBaseCellTopology().getDimension();
+  size_t numPoints;
+  size_t numCells=0;
+  
+  // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
+  FieldContainer<Scalar> xOld;
+  FieldContainer<Scalar> xTem;  
+  FieldContainer<Scalar> jacobian;
+  FieldContainer<Scalar> jacobInv;
+  FieldContainer<Scalar> error; 
+  FieldContainer<Scalar> cellCenter(spaceDim);
+  
+  // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
+  if(whichCell == -1){
+    numPoints = static_cast<size_t>(physPoints.dimension(1));
+    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    xOld.resize(numCells, numPoints, spaceDim);
+    xTem.resize(numCells, numPoints, spaceDim);  
+    jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
+    error.resize(numCells,numPoints); 
+    // Set initial guess to xOld
+    for(size_t c = 0; c < numCells; c++){
+      for(size_t p = 0; p < numPoints; p++){
+        for(size_t d = 0; d < spaceDim; d++){
+          xOld(c, p, d) = initGuessWrap(c, p, d);
+        }// d
+      }// p
+    }// c
+  }
+  // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
+  else {
+    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    xOld.resize(numPoints, spaceDim);
+    xTem.resize(numPoints, spaceDim);  
+    jacobian.resize(numPoints, spaceDim, spaceDim);
+    jacobInv.resize(numPoints, spaceDim, spaceDim);
+    error.resize(numPoints); 
+    // Set initial guess to xOld
+    for(size_t c = 0; c < numCells; c++){
+      for(size_t p = 0; p < numPoints; p++){
+        for(size_t d = 0; d < spaceDim; d++){
+          xOld(c, p, d) = initGuessWrap(c, p, d);
+        }// d
+      }// p
+    }// c
+  }
+  
+  // Newton method to solve the equation F(refPoints) - physPoints = 0:
+  // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
+  for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter) {
+    
+    // Jacobians at the old iterates and their inverses. 
+    setJacobian(jacobian, xOld, cellWorkset, HGRAD_Basis, whichCell);
+    setJacobianInv(jacobInv, jacobian);
+    // The Newton step.
+    mapToPhysicalFrame( xTem, xOld, cellWorkset, HGRAD_Basis->getBaseCellTopology(), whichCell );      // xTem <- F(xOld)
+    RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
+    RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
+    RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
+
+    // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
+    RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
+    RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
+
+    // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
+    Scalar totalError;
+    if(whichCell == -1) {
+      FieldContainer<Scalar> cellWiseError(numCells);
+      // error(C,P) -> cellWiseError(P)
+
+      RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
+      totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
+    }
+    //Average L2 error for a single set of physical points: error is rank-1 (P) array
+    else{
+
+      totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
+      totalError = totalError;
+    }
+    
+    // Stopping criterion:
+    if (totalError < INTREPID_TOL) {
+      break;
+    } 
+    else if ( iter > INTREPID_MAX_NEWTON) {
+      INTREPID_VALIDATE(std::cout << " Intrepid::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
+                      << INTREPID_MAX_NEWTON  << " iterations\n" );
+      break;
+    }
+
+    // initialize next Newton step
+//    xOld = refPoints;
+int refPointsRank=getrank(refPoints);
+if (refPointsRank==3){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         for(size_t k=0;k<static_cast<size_t>(refPoints.dimension(2));k++){
+            xOld(i,j,k) = refPointsWrap(i,j,k);
+         }
+      }
+   }
+}else if(refPointsRank==2){
+   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
+      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+         xOld(i,j) = refPointsWrap(i,j);
+      }
+   }
+
+}
+
+
+
+  } // for(iter)
+}
+
+
 
 template<class Scalar>
 template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>

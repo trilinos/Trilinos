@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
 	int l =  i + j * numFields;
-	if (std::abs(vals(i,j) - basisValues[l]) > INTREPID_TOL) {
+	if (std::abs(vals(i,j) - basisValues[l]) > INTREPID2_TOL) {
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 	  
@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
           
           // basisGrads is (F,P,D), compute offset:
           int l = k + j * spaceDim + i * spaceDim * numPoints;
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
 
           // basisGrads is (F,P,D), compute offset:
           int l = k + j * spaceDim + i * spaceDim * numPoints;
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
  
           // basisD2 is (F,P,Dk), compute offset:
           int l = k + j * D2cardinality + i * D2cardinality * numPoints;
-           if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -539,7 +539,7 @@ int main(int argc, char *argv[]) {
           
           // basisD3 is (F,P,Dk), compute offset:
           int l = k + j * D3cardinality + i * D3cardinality * numPoints;
-          if (std::abs(vals(i,j,k) - basisD3[l]) > INTREPID_TOL) {
+          if (std::abs(vals(i,j,k) - basisD3[l]) > INTREPID2_TOL) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -564,7 +564,7 @@ int main(int argc, char *argv[]) {
           
           // basisD4 is (F,P,Dk), compute offset:
           int l = k + j * D4cardinality + i * D4cardinality * numPoints;
-          if (std::abs(vals(i,j,k) - basisD4[l]) > INTREPID_TOL) {
+          if (std::abs(vals(i,j,k) - basisD4[l]) > INTREPID2_TOL) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -589,7 +589,7 @@ int main(int argc, char *argv[]) {
 
       hexBasis.getValues(vals, hexNodes, op);
       for (int i = 0; i < vals.size(); i++) {
-        if (std::abs(vals[i]) > INTREPID_TOL) {
+        if (std::abs(vals[i]) > INTREPID2_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

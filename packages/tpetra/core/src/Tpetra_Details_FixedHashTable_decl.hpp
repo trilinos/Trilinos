@@ -388,10 +388,6 @@ public:
 
     this->ptr_ = ptr;
     this->val_ = val;
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-    this->rawPtr_ = ptr.ptr_on_device ();
-    this->rawVal_ = val.ptr_on_device ();
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
     this->minKey_ = src.minKey_;
     this->maxKey_ = src.maxKey_;
     this->minVal_ = src.minVal_;
@@ -425,7 +421,7 @@ public:
 
     const typename hash_type::result_type hashVal =
       hash_type::hashFunc (key, size);
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR) || defined(HAVE_TPETRA_DEBUG)
+
     const offset_type start = ptr_[hashVal];
     const offset_type end = ptr_[hashVal+1];
     for (offset_type k = start; k < end; ++k) {
@@ -433,15 +429,7 @@ public:
         return val_[k].second;
       }
     }
-#else
-    const offset_type start = rawPtr_[hashVal];
-    const offset_type end = rawPtr_[hashVal+1];
-    for (offset_type k = start; k < end; ++k) {
-      if (rawVal_[k].first == key) {
-        return rawVal_[k].second;
-      }
-    }
-#endif // HAVE_TPETRA_DEBUG
+
     // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
     // because neither have the right device function markings.
     return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
@@ -577,19 +565,6 @@ private:
   ptr_type ptr_;
   //! Array of hash table entries.
   val_type val_;
-
-#if ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-  /// \brief <tt>rawPtr_ == ptr_.ptr_on_device()</tt>.
-  ///
-  /// This is redundant, but we keep it around as a fair performance
-  /// comparison against the "classic" version of Tpetra.
-  const offset_type* rawPtr_;
-  /// \brief <tt>rawVal_ == val_.ptr_on_device()</tt>.
-  ///
-  /// This is redundant, but we keep it around as a fair performance
-  /// comparison against the "classic" version of Tpetra.
-  const Kokkos::pair<KeyType, ValueType>* rawVal_;
-#endif // ! defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
   /// \brief Minimum key (computed in init()).
   ///

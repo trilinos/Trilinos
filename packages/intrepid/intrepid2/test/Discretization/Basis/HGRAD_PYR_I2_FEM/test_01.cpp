@@ -371,7 +371,7 @@ Kokkos::initialize();
       for (int j = 0; j < numPoints; j++) {
           int l =  j + i * numPoints;
 
-           if (std::abs(vals(i,j) - basisValues[l]) > 100.*INTREPID_TOL) {
+           if (std::abs(vals(i,j) - basisValues[l]) > 100.*INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -395,7 +395,7 @@ Kokkos::initialize();
            //int l = k + h * spaceDim + j * spaceDim * numFields;
            int l = i + j * numFields + k * numFields * numPoints;
 
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > 100.*INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > 100.*INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -418,7 +418,7 @@ Kokkos::initialize();
         for (int k = 0; k < spaceDim; k++) {
            int l = i + j * numFields + k * numFields * numPoints;
 
-           if (std::abs(vals(i,j,k) - basisGrads[l]) > 100.*INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisGrads[l]) > 100.*INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -447,7 +447,7 @@ Kokkos::initialize();
            //int l = k + j * D2Cardin + i * D2Cardin * numPoints;
 
 
-           if (std::abs(vals(i,j,k) - basisD2[l]) > 100.*INTREPID_TOL) {
+           if (std::abs(vals(i,j,k) - basisD2[l]) > 100.*INTREPID2_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

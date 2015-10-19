@@ -7,28 +7,23 @@
 #ifndef GAMEOFLIFE_HPP
 #define GAMEOFLIFE_HPP
 
-#include <vector>
-#include <algorithm>
-#include <set>
-#include <unordered_set>
-#include <unordered_map>
-#include <stdlib.h>
+#include <stddef.h>                     // for size_t
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_topology/topology.hpp>    // for topology
+#include <string>                       // for string
+#include <unordered_map>                // for unordered_map
+#include <unordered_set>                // for unordered_set
+#include "EntityKeyHash.hpp"            // for hash
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector, EntityId, etc
+class GameofLifeMesh;
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { struct Entity; } }
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
 
-#include "EntityKeyHash.hpp"
-#include "GameofLifeMesh.hpp"
 
 typedef stk::mesh::Field<int> ScalarIntField;
 

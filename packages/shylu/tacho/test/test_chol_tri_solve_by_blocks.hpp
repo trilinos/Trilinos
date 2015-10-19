@@ -14,14 +14,9 @@
 #include "graph_helper_scotch.hpp"
 #include "crs_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "tri_solve.hpp"
 
@@ -44,10 +39,8 @@ namespace Tacho {
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-    typedef ParallelFor ForType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -135,12 +128,12 @@ namespace Tacho {
       
       auto future_factor 
         = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks>::
-                             TaskFunctor<ForType,CrsHierTaskViewType>(TU), 0);
+                             TaskFunctor<CrsHierTaskViewType>(TU), 0);
       TaskFactoryType::Policy().spawn(future_factor);
       
       auto future_forward_solve 
         = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::ByBlocks>
-                                                ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+                                                ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
                                                 (Diag::NonUnit, TU, TB), 1);
 
       TaskFactoryType::Policy().add_dependence(future_forward_solve, future_factor);      
@@ -148,7 +141,7 @@ namespace Tacho {
       
       auto future_backward_solve 
         = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::ByBlocks>
-                                                ::TaskFunctor<ForType,CrsHierTaskViewType,DenseHierTaskViewType>
+                                                ::TaskFunctor<CrsHierTaskViewType,DenseHierTaskViewType>
                                                 (Diag::NonUnit, TU, TB), 1);
 
       TaskFactoryType::Policy().add_dependence(future_backward_solve, future_forward_solve);            
@@ -166,20 +159,20 @@ namespace Tacho {
       
       {
         auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
-                                                            ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+                                                            ::TaskFunctor<CrsTaskViewType>(U), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
         auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,AlgoTriSolve::Unblocked>
-                                                            ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                                            ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
                                                             (Diag::NonUnit, U, B), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
       }
       {
         auto future = TaskFactoryType::Policy().create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Unblocked>
-                                                            ::TaskFunctor<ForType,CrsTaskViewType,DenseTaskViewType>
+                                                            ::TaskFunctor<CrsTaskViewType,DenseTaskViewType>
                                                             (Diag::NonUnit, U, B), 0);
         
         TaskFactoryType::Policy().spawn(future);

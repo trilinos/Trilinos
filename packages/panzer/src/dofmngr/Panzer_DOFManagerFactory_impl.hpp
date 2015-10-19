@@ -93,8 +93,12 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    {
      Teuchos::RCP<panzer::DOFManager<LO,GO> > nativeDofMngr = 
          Teuchos::rcp_dynamic_cast<panzer::DOFManager<LO,GO> >(dofManager);
-     if(nativeDofMngr!=Teuchos::null)
+     if (nativeDofMngr!=Teuchos::null) {
        nativeDofMngr->enableTieBreak(useTieBreak_);
+       nativeDofMngr->enableGhosting(enableGhosting_);
+     }
+     TEUCHOS_TEST_FOR_EXCEPTION(enableGhosting_ && nativeDofMngr.is_null(), std::logic_error,
+                                "The non-native DOF manager does not support the necessary ghosting.");
    }
 
    // by default assume orientations are not required
