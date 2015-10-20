@@ -198,7 +198,9 @@ private:
     void set_num_local_elements(size_t n);
     void add_new_element();
     size_t get_num_elements_in_graph() const;
+    size_t get_num_edges() const;
     const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
+    const std::vector<int> & get_via_sides_for_local_element(size_t i) const;
     void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
