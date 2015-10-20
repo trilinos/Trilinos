@@ -428,7 +428,7 @@ public:
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
+  void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
     matrixData_->getLocalDiagCopy(diag);
   }
 
@@ -438,7 +438,7 @@ public:
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
-  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+  void getLocalDiagCopy(Xpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     matrixData_->getLocalDiagCopy(diag,offsets);
   }
 
@@ -476,10 +476,11 @@ public:
   /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
     - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
   */
-  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS,
-             Scalar alpha = ScalarTraits<Scalar>::one(),
-             Scalar beta = ScalarTraits<Scalar>::zero()) const {
+  void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                   Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                   Scalar alpha = ScalarTraits<Scalar>::one(),
+                   Scalar beta = ScalarTraits<Scalar>::zero()) const {
 
     matrixData_->apply(X,Y,mode,alpha,beta);
   }
@@ -525,28 +526,28 @@ public:
 
   //! Import.
   void doImport(const Matrix &source,
-                const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
+                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {
     const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
     matrixData_->doImport(*sourceWrp.getCrsMatrix(), importer, CM);
   }
 
   //! Export.
   void doExport(const Matrix &dest,
-                const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+                const Xpetra::Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
     const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
     matrixData_->doExport(*destWrp.getCrsMatrix(), importer, CM);
   }
 
   //! Import (using an Exporter).
   void doImport(const Matrix &source,
-                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
     const CrsMatrixWrap & sourceWrp = dynamic_cast<const CrsMatrixWrap &>(source);
     matrixData_->doImport(*sourceWrp.getCrsMatrix(), exporter, CM);
   }
 
   //! Export (using an Importer).
   void doExport(const Matrix &dest,
-                const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+                const Xpetra::Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
     const CrsMatrixWrap & destWrp = dynamic_cast<const CrsMatrixWrap &>(dest);
     matrixData_->doExport(*destWrp.getCrsMatrix(), exporter, CM);
   }

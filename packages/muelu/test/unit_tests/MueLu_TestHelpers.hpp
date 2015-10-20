@@ -339,6 +339,9 @@ namespace MueLuTests {
         RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
 
 #if defined(HAVE_MUELU_TPETRA)
+        // TAW: Oct 11 2015: The following code only works if GO=LO=int is enabled in Tpetra
+        //                   The computeDiagonalGraph routine is not contained in the Xpetra::CrsMatrix interface!
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
         // Thanks for the code, Travis!
         int blocksize = 3;
         RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
@@ -368,6 +371,7 @@ namespace MueLuTests {
 
         RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
+#endif
 #endif
         return Op;
      } // BuildMatrix()

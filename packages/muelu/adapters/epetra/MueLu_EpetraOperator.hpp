@@ -46,7 +46,7 @@
 #ifndef MUELU_EPETRAOPERATOR_HPP
 #define MUELU_EPETRAOPERATOR_HPP
 
-//! @file 
+//! @file
 
 #include <Epetra_Operator.h>
 #include "MueLu_Hierarchy.hpp"
@@ -66,7 +66,7 @@ namespace MueLu {
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;
-    typedef MueLu::Utils<SC,LO,GO,NO>                       Utils;
+    typedef MueLu::Utilities<SC,LO,GO,NO>                       Utils;
 
   public:
 

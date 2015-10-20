@@ -146,9 +146,6 @@ private: // data members
   //! Use mass lumping, or a full solve
   bool massLumping_;
 
-  //! Apply mass matrix inverse within the evaluator
-  bool applyMassInverse_;
-
   //! Access to the panzer model evaluator pointer (thyra version)
   Teuchos::RCP<const panzer::ModelEvaluator<Scalar> > panzerModel_;
 

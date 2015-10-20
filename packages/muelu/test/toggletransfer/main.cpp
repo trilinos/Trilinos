@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::TimeMonitor> globalTimeMonitor = Teuchos::rcp (new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Timings: Global Time")));
 
     if (pauseForDebugger) {
-      Utils::PauseForDebugger();
+      Utilities::PauseForDebugger();
     }
 
     matrixParameters.check();
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
 
     {
       // we set seed for reproducibility
-      Utils::SetRandomSeed(*comm);
+      Utilities::SetRandomSeed(*comm);
       X->randomize();
       A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 

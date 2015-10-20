@@ -303,8 +303,10 @@ public:
   mag_type normInf() const;
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::normWeighted; // overloading, not hiding
-  //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-  mag_type
+  /// \brief Compute Weighted 2-norm (RMS Norm) of this Vector.
+  ///
+  /// \warning This method is DEPRECATED.
+  mag_type TPETRA_DEPRECATED
   normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights) const;
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::meanValue; // overloading, not hiding

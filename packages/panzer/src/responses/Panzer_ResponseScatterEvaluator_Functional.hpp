@@ -63,7 +63,7 @@ class FunctionalScatterBase {
 public:
   virtual ~FunctionalScatterBase() {}
 
-  virtual void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+  virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                  panzer::Traits::EvalData workset, 
                                  WorksetDetailsAccessor& wda,
                                  Teuchos::ArrayRCP<double> & dgdx) const = 0;
@@ -75,7 +75,7 @@ public:
    FunctionalScatter(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer)
      : globalIndexer_(globalIndexer) { }
 
-   void scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+   void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                          panzer::Traits::EvalData workset, 
                          WorksetDetailsAccessor& wda,
                          Teuchos::ArrayRCP<double> & dgdx) const;
@@ -112,12 +112,12 @@ private:
   Teuchos::RCP<Response_Functional<EvalT> > responseObj_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
-  PHX::MDField<ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
+  PHX::MDField<const ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
   Teuchos::RCP<FunctionalScatterBase> scatterObj_;
 };
 
 template <typename LO,typename GO>
-void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
+void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                                 panzer::Traits::EvalData workset, 
                                                 WorksetDetailsAccessor& wda,
                                                 Teuchos::ArrayRCP<double> & dgdx) const

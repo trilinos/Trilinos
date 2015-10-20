@@ -51,10 +51,12 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_CrsMatrixFactory_fwd.hpp>
 
+
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_SolverBase.hpp"
 #include "MueLu_Constraint_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
+
 
 namespace MueLu {
 

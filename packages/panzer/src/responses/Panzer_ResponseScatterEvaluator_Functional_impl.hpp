@@ -83,7 +83,7 @@ ResponseScatterEvaluator_Functional(const std::string & name,
 
   // build dendent field
   RCP<PHX::DataLayout> dl_cell = rcp(new PHX::MDALayout<panzer::Cell>(cd.numCells()));
-  cellIntegral_ = PHX::MDField<ScalarT,panzer::Cell>(name,dl_cell);
+  cellIntegral_ = PHX::MDField<const ScalarT,panzer::Cell>(name,dl_cell);
   this->addDependentField(cellIntegral_);
 
   std::string n = "Functional Response Scatter: " + name;
@@ -111,7 +111,7 @@ ResponseScatterEvaluator_Functional(const std::string & integrandName,
 
   // build dendent field
   RCP<PHX::DataLayout> dl_cell = rcp(new PHX::MDALayout<panzer::Cell>(cd.numCells()));
-  cellIntegral_ = PHX::MDField<ScalarT,panzer::Cell>(integrandName,dl_cell);
+  cellIntegral_ = PHX::MDField<const ScalarT,panzer::Cell>(integrandName,dl_cell);
   this->addDependentField(cellIntegral_);
 
   std::string n = "Functional Response Scatter: " + responseName;

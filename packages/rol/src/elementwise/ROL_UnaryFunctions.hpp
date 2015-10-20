@@ -61,7 +61,17 @@ private:
   Real value_;
 }; // class Fill
 
-}
+
+// Get the elementwise reciprocal of a vector
+template<class Real> 
+class Reciprocal : public UnaryFunction<Real> {
+public:
+  Real apply( const Real &x ) const {
+    return static_cast<Real>(1)/x;
+  }  
+};
+
+} // namespace Elementwise
 } // namespace ROL
 
 #endif // ROL_UNARYFUNCTIONS_H

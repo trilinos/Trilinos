@@ -65,12 +65,12 @@ namespace MueLu {
       void operator()(const LocalOrdinal i, size_t& maxLength) const {
         size_t d = rowPointers_[i+1] - rowPointers_[i];
 
-        maxLength = std::max(d, maxLength);
+        maxLength = (d > maxLength ? d : maxLength);
       }
 
       KOKKOS_INLINE_FUNCTION
       void join(volatile size_t& dest, const volatile size_t& src) {
-        dest = std::max(dest, src);
+        dest = (dest > src ? dest : src);
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -96,16 +96,17 @@ namespace MueLu {
     maxLocalIndex_ = domainMap_->getMaxLocalIndex();
 
     MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
-    Kokkos::parallel_reduce(graph_.row_map.dimension_0(), maxNumRowEntriesFunctor, maxNumRowEntries_, "LWGraph:LWGraph:maxnonzeros");
+    Kokkos::parallel_reduce("LWGraph:LWGraph:maxnonzeros", graph_.numRows(), maxNumRowEntriesFunctor, maxNumRowEntries_);
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  ArrayView<const LocalOrdinal>
+  const Kokkos::View<const LocalOrdinal*, DeviceType>
   LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   getNeighborVertices(LocalOrdinal i) const {
-    typename local_graph_type::row_map_type rowPointers = graph_.row_map;
+    auto rowPointers = graph_.row_map;
+    auto colIndices  = graph_.entries;
 
-    return ArrayView<const LO>(reinterpret_cast<const LO*>(rowPointers.ptr_on_device()) + i, rowPointers(i+1) - rowPointers(i));
+    return Kokkos::subview(colIndices, std::pair<size_t,size_t>(rowPointers(i), rowPointers(i+1)));
   }
 
 }

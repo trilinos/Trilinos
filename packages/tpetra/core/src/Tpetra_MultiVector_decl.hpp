@@ -1690,13 +1690,19 @@ namespace Tpetra {
       }
     }
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    //! The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    void
+    /// \brief Compute Weighted 2-norm (RMS Norm) of each column.
+    ///
+    /// \warning This method has been DEPRECATED.
+    ///
+    /// The results of this method are undefined for scalar types that
+    /// are not floating-point types (e.g., int).
+    void TPETRA_DEPRECATED
     normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
                   const Teuchos::ArrayView<mag_type>& norms) const;
 
     /// \brief Compute the weighted 2-norm (RMS Norm) of each column.
+    ///
+    /// \warning This method is DEPRECATED.
     ///
     /// The outcome of this routine is undefined for non-floating
     /// point scalar types (e.g., int).
@@ -1712,6 +1718,7 @@ namespace Tpetra {
     /// \c void, as above.
     template <typename T>
     typename std::enable_if< ! (std::is_same<mag_type,T>::value), void >::type
+    TPETRA_DEPRECATED
     normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
                   const Teuchos::ArrayView<T>& norms) const
     {

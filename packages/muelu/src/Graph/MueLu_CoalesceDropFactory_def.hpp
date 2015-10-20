@@ -186,7 +186,7 @@ namespace MueLu {
 
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
-          boundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
           graph->SetBoundaryNodeMap(boundaryNodes);
           numTotal = A->getNodeNumEntries();
 
@@ -212,7 +212,7 @@ namespace MueLu {
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
           ArrayRCP<LO> columns(A->getNodeNumEntries());
 
-          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
           const ArrayRCP<bool>     boundaryNodes(A->getNodeNumRows(), false);
 
@@ -305,7 +305,7 @@ namespace MueLu {
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
           ArrayRCP<const bool > pointBoundaryNodes;
-          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
           // extract striding information
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
@@ -426,7 +426,7 @@ namespace MueLu {
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
           ArrayRCP<const bool > pointBoundaryNodes;
-          pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
           // extract striding information
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
@@ -443,7 +443,7 @@ namespace MueLu {
           }
 
           // extract diagonal data for dropping strategy
-          RCP<Vector> ghostedDiag = MueLu::Utils<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+          RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
           const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
 
           // loop over all local nodes
@@ -536,7 +536,7 @@ namespace MueLu {
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
         ArrayRCP<const bool > pointBoundaryNodes;
-        pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
@@ -630,7 +630,7 @@ namespace MueLu {
                 LO col = indices[colID];
 
                 if (row != col)
-                  localLaplDiagData[row] += STS::one()/MueLu::Utils<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
               }
             }
             ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
@@ -691,7 +691,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utils<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 

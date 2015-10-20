@@ -97,9 +97,8 @@ private:
 
   Real computeGradient(Vector<Real> &g, const Vector<Real> &x,
                        const Real mu, BoundConstraint<Real> &bnd) {
-    Real zerotol = std::sqrt(ROL_EPSILON);
-    Real gnorm = 0.;
-    augLag_->gradient(g,x,zerotol);
+    Real gnorm = 0., tol = std::sqrt(ROL_EPSILON);
+    augLag_->gradient(g,x,tol);
     if ( scaleLagrangian_ ) {
       g.scale(mu);
     }
@@ -176,9 +175,9 @@ public:
     bnd.update(x,true,algo_state.iter);
     // Update objective and constraint.
     augLag_->update(x,true,algo_state.iter);
-    algo_state.value = augLag_->getObjectiveValue();
+    algo_state.value = augLag_->getObjectiveValue(x);
     algo_state.gnorm = computeGradient(*(state->gradientVec),x,state->searchSize,bnd);
-    augLag_->getConstraintVec(*(state->constraintVec));
+    augLag_->getConstraintVec(*(state->constraintVec),x);
     algo_state.cnorm = (state->constraintVec)->norm();
     // Update evaluation counters
     algo_state.ncval += augLag_->getNumberConstraintEvaluations();
@@ -218,15 +217,9 @@ public:
     state->descentVec->set(s);
     algo_state.snorm = s.norm();
     algo_state.iter++;
-    // Update objective function value
+    // Update objective function and constraints
     augLag_->update(x,true,algo_state.iter);
     bnd.update(x,true,algo_state.iter);
-    algo_state.value = augLag_->getObjectiveValue();
-    // Update constraint value
-    augLag_->getConstraintVec(*(state->constraintVec));
-    algo_state.cnorm = (state->constraintVec)->norm();
-    // Compute gradient of the augmented Lagrangian
-    algo_state.gnorm = computeGradient(*(state->gradientVec),x,state->searchSize,bnd);
     // Update multipliers
     bool updated = augLag_->updateMultipliers(l,state->searchSize,x,feasTolerance_);
     algo_state.snorm += (updated ? l.norm() + 1. : 0.);
@@ -240,6 +233,13 @@ public:
       optTolerance_  = optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_);
       feasTolerance_ = feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_);
     }
+    // Update objective function value
+    algo_state.value = augLag_->getObjectiveValue(x);
+    // Update constraint value
+    augLag_->getConstraintVec(*(state->constraintVec),x);
+    algo_state.cnorm = (state->constraintVec)->norm();
+    // Compute gradient of the augmented Lagrangian
+    algo_state.gnorm = computeGradient(*(state->gradientVec),x,state->searchSize,bnd);
     // Update evaluation counters
     algo_state.nfval += augLag_->getNumberFunctionEvaluations();
     algo_state.ngrad += augLag_->getNumberGradientEvaluations();

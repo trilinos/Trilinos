@@ -132,7 +132,7 @@ getLocalSideIds(const STK_Interface & mesh,
    stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
    stk_classic::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
 
-   stk_classic::mesh::EntityRank rank;
+   stk_classic::mesh::EntityRank rank = 0;
    unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId 
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
@@ -186,7 +186,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
    stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
    stk_classic::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
 
-   stk_classic::mesh::EntityRank rank;
+   stk_classic::mesh::EntityRank rank = 0;
    const STK_Interface::VectorFieldType * field = 0;
    unsigned int offset = 0;
    if(type_ == "coord"){

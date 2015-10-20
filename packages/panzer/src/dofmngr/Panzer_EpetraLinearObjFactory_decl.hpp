@@ -276,7 +276,13 @@ protected:
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph() const;
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGhostedGraph() const;
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGhostedGraph(bool optimizeStorage) const;
+
+   // this method by defaults calls getGhostedGraph, however if the column global indexer
+   // is filtered (i.e. a Filtered_UniqueGlobalIndexer) then the filtered columns are removed
+   // in the version of the graph return by this. Note if the column UGI is filtered, then their
+   // will be substantial computational cost including communication in this method.
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildFilteredGhostedGraph() const;
 
    // storage for Epetra graphs and maps
    Teuchos::RCP<const Epetra_Comm> comm_;
