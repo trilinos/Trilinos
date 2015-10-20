@@ -122,10 +122,28 @@ namespace MueLu {
     //@{
     //! @name Build methods.
 
-    //! Build an object with this factory.
+    /*! @brief Build an object with this factory.
+     *
+     * Extract sub block matrix from a given blocked crs operator.
+     * Strided or block information is extracted in the following way:
+     *   1) first check whether the corresponding sub maps are strided
+     *      If yes, use the fixed block size and strided block id
+     *   2) If no, get the full map of the map extractors.
+     *      Check whether the full map is strided.
+     *      If yes, use the strided information of the full map and build
+     *      partial (strided) maps with it
+     *      If no, throw an exception
+     *
+     * For blocked operators with block maps one should use the striding
+     * information from the sub maps. for strided operators, the striding
+     * information of the full map is the best choice.
+     */
     void Build(Level & currentLevel) const;
 
     //@}
+
+  private:
+    bool CheckForUserSpecifiedBlockInfo(bool bRange, std::vector<size_t>& stridingInfo, LocalOrdinal& stridedBlockId) const;
 
   }; // class SubBlockAFactory
 
