@@ -599,16 +599,14 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elem_graph.delete_elements(elems_to_delete);
 
         EXPECT_EQ(0u, elem_graph.size());
-        const stk::mesh::impl::ElementGraph &e_graph = elem_graph.get_element_graph();
-        for(unsigned i=0; i<e_graph.size(); ++i)
+        for(unsigned i=0; i<elem_graph.get_graph().get_num_elements_in_graph(); ++i)
         {
-            EXPECT_EQ(0u, e_graph[i].size());
+            EXPECT_EQ(0u, elem_graph.get_graph().get_connections_for_local_element(i).size());
         }
 
-        const stk::mesh::impl::SidesForElementGraph &via_sides = elem_graph.get_via_sides();
-        for(unsigned i=0; i<via_sides.size(); ++i)
+        for(unsigned i=0; i<elem_graph.get_graph().get_num_elements_in_graph(); ++i)
         {
-            EXPECT_EQ(0u, via_sides[i].size());
+            EXPECT_EQ(0u, elem_graph.get_graph().get_via_sides_for_local_element(i).size());
         }
     }
 }
@@ -1182,15 +1180,15 @@ stk::mesh::Entity get_element_side(stk::mesh::BulkData& bulkData, stk::mesh::Ent
     return side;
 }
 
-void test_parallel_graph_info(const ElementGraph& elem_graph, const ParallelGraphInfo& parallel_graph_info,
+void test_parallel_graph_info(const stk::mesh::Graph& graph, const ParallelGraphInfo& parallel_graph_info,
         LocalId this_element, LocalId other_element, int other_proc, int other_side_ord, int permutation)
 {
     ParallelGraphInfo::const_iterator iter1 = parallel_graph_info.find(std::make_pair(this_element, other_element));
     ASSERT_TRUE(iter1 != parallel_graph_info.end());
 
-    for(size_t i=0;i<elem_graph.size();++i)
+    for(size_t i=0;i<graph.get_num_elements_in_graph();++i)
     {
-        const std::vector<LocalId>& conn_elements = elem_graph[i];
+        const std::vector<LocalId>& conn_elements = graph.get_connections_for_local_element(i);
         for(size_t j=0;j<conn_elements.size();++j)
         {
             if(conn_elements[j]==-1*other_element && static_cast<LocalId>(i) == this_element)
@@ -1239,8 +1237,6 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     ElemElemGraphTester elemElemGraph(bulkData);
 
-    ElementGraph & elem_graph = elemElemGraph.get_element_graph();
-    SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
     stk::mesh::impl::ParallelGraphInfo & parallel_graph_info = elemElemGraph.get_parallel_graph_info();
 
     double graph_time = stk::wall_time() - wall_time_start;
@@ -1254,9 +1250,10 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     std::vector<stk::mesh::sharing_info> shared_modified;
 
-    for(size_t i = 0; i < elem_graph.size(); ++i)
+    for(size_t i = 0; i < elemElemGraph.get_graph().get_num_elements_in_graph(); ++i)
     {
-        const std::vector<LocalId>& connected_elements = elem_graph[i];
+        const std::vector<LocalId>& connected_elements = elemElemGraph.get_graph().get_connections_for_local_element(i);
+        const std::vector<int> &viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
         stk::mesh::Entity element1 = local_id_to_element_entity[i];
 
         LocalId this_element = i;
@@ -1265,12 +1262,12 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         {
             if(this_element < connected_elements[j] && connected_elements[j] >= 0)
             {
-                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + via_sides[i][j];
+                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + viaSides[j];
                 if ( impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
                 {
 
                 }
-                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, via_sides[i][j],
+                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, viaSides[j],
                         face_global_id, stk::mesh::PartVector(1,&part));
 
                 const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
@@ -1297,7 +1294,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                 if(owning_proc == this_proc)
                 {
                     stk::mesh::EntityId id = bulkData.identifier(element1);
-                    face_global_id = impl::get_element_side_multiplier() * id + via_sides[i][j];
+                    face_global_id = impl::get_element_side_multiplier() * id + viaSides[j];
                     perm = static_cast<stk::mesh::Permutation>(0);
                 }
                 else
@@ -1306,7 +1303,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                     perm = static_cast<stk::mesh::Permutation>(iter->second.m_permutation);
                 }
 
-                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(via_sides[i][j]);
+                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(viaSides[j]);
 
                 std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
 
@@ -1321,7 +1318,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         }
 
         std::vector<ElementSidePair> element_side_pairs;
-        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], via_sides[i], element_side_pairs);
+        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], viaSides, element_side_pairs);
 
         for(size_t j = 0; j < element_side_pairs.size(); j++)
         {
@@ -1501,9 +1498,6 @@ TEST(ElementGraph, create_element_graph_serial)
         size_t expectedNumElems = counts[stk::topology::ELEM_RANK];
         ASSERT_EQ(expectedNumElems, elemElemGraph.get_graph_size());
 
-        ElementGraph & elem_graph = elemElemGraph.get_element_graph();
-        SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
-
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after ElemElemGraphTester constructor");
         mem_usage.push_back(stk::get_memory_usage_now());
@@ -1511,21 +1505,22 @@ TEST(ElementGraph, create_element_graph_serial)
         int left_side_id = 4;
         int right_side_id = 5;
 
-        for(size_t i=0; i<elem_graph.size(); ++i)
+        for(size_t i=0; i<elemElemGraph.get_graph().get_num_elements_in_graph(); ++i)
         {
-            const std::vector<LocalId>& conn_elements = elem_graph[i];
+            const std::vector<LocalId>& conn_elements = elemElemGraph.get_graph().get_connections_for_local_element(i);
+            const std::vector<int>& viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
             if (i == 0)
             {
                 ASSERT_EQ(1u, conn_elements.size());
                 EXPECT_EQ(1, conn_elements[0]);
-                EXPECT_EQ(right_side_id, via_sides[i][0]);
+                EXPECT_EQ(right_side_id, viaSides[0]);
             }
-            else if (i == elem_graph.size() - 1)
+            else if (i == elemElemGraph.get_graph().get_num_elements_in_graph() - 1)
             {
-                LocalId second_to_last_element_index = elem_graph.size() - 2;
+                LocalId second_to_last_element_index = elemElemGraph.get_graph().get_num_elements_in_graph() - 2;
                 ASSERT_EQ(1u, conn_elements.size());
                 EXPECT_EQ(second_to_last_element_index, conn_elements[0]);
-                EXPECT_EQ(left_side_id, via_sides[i][0]);
+                EXPECT_EQ(left_side_id, viaSides[0]);
             }
             else
             {
@@ -1534,8 +1529,8 @@ TEST(ElementGraph, create_element_graph_serial)
                 LocalId element_to_the_right = i+1;
                 EXPECT_EQ(element_to_the_left, conn_elements[0]);
                 EXPECT_EQ(element_to_the_right, conn_elements[1]);
-                EXPECT_EQ(left_side_id, via_sides[i][0]);
-                EXPECT_EQ(right_side_id, via_sides[i][1]);
+                EXPECT_EQ(left_side_id, viaSides[0]);
+                EXPECT_EQ(right_side_id, viaSides[1]);
             }
         }
 
@@ -1587,9 +1582,6 @@ TEST(ElementGraph, create_element_graph_parallel)
         size_t expectedNumElems = counts[stk::topology::ELEM_RANK];
         ASSERT_EQ(expectedNumElems, elemElemGraph.get_graph_size());
 
-        ElementGraph & elem_graph = elemElemGraph.get_element_graph();
-        SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
-
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after ElemElemGraphTester constructor");
         mem_usage.push_back(stk::get_memory_usage_now());
@@ -1599,7 +1591,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         int left_side_id = 4;
         int right_side_id = 5;
 
-        EXPECT_EQ(2u, elem_graph.size());
+        EXPECT_EQ(2u, elemElemGraph.get_graph().get_num_elements_in_graph());
         EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
@@ -1613,249 +1605,24 @@ TEST(ElementGraph, create_element_graph_parallel)
             side_id = left_side_id;
         }
 
-        for(size_t i=0;i<elem_graph.size();++i)
+        for(size_t i=0;i<elemElemGraph.get_graph().get_num_elements_in_graph();++i)
         {
+            const std::vector<impl::LocalId> &connections = elemElemGraph.get_graph().get_connections_for_local_element(i);
+            const std::vector<int> &viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
             if (static_cast<LocalId>(i) == element_to_test_local_id)
             {
                 // Element on parallel boundary
-                ASSERT_EQ(2u, elem_graph[i].size());
-                ASSERT_EQ(2u, via_sides[i].size());
-                ASSERT_GE(-1, elem_graph[i][1]);
-                ASSERT_EQ(side_id, via_sides[i][1]);
+                ASSERT_EQ(2u, connections.size());
+                ASSERT_EQ(2u, viaSides.size());
+                ASSERT_GE(-1, connections[1]);
+                ASSERT_EQ(side_id, viaSides[1]);
             }
             else
             {
-                EXPECT_EQ(1u, elem_graph[i].size());
-                EXPECT_EQ(1u, via_sides[i].size());
+                EXPECT_EQ(1u, connections.size());
+                EXPECT_EQ(1u, viaSides.size());
             }
         }
-
-        if (stk::parallel_machine_rank(comm) == 0)
-        {
-            for(size_t i=0;i<wall_times.size();++i)
-            {
-                std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
-            }
-
-            for(size_t i=0;i<mem_usage.size();++i)
-            {
-                std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
-            }
-        }
-    }
-}
-
-TEST(ElementGraph, skin_mesh_using_element_graph_serial)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<double> wall_times;
-    wall_times.reserve(10);
-    std::vector<std::string> msgs;
-    msgs.reserve(10);
-
-    std::vector<size_t> mem_usage;
-
-    wall_times.push_back(stk::wall_time());
-    msgs.push_back("program-start");
-    mem_usage.push_back(stk::get_memory_usage_now());
-
-    if(stk::parallel_machine_size(comm) == 1)
-    {
-        std::string dimension = unitTestUtils::getOption("--zdim", "3");
-        const int zdim = std::atoi(dimension.c_str());
-
-        unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-        stk::io::put_io_part_attribute(skin_part);
-        BulkDataElementGraphTester bulkData(meta, comm);
-        std::ostringstream os;
-        os << "generated:" << zdim << "x" << zdim << "x" << zdim;
-        bool check_results = false;
-
-        std::string filename = os.str();
-
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after mesh-read");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        std::vector<unsigned> counts;
-        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
-        int numElems = counts[stk::topology::ELEM_RANK];
-        if ( check_results )
-        {
-            EXPECT_EQ(zdim, numElems);
-        }
-
-        ElemElemGraphTester elemElemGraph(bulkData);
-
-        size_t expectedNumElems = counts[stk::topology::ELEM_RANK];
-
-        ElementGraph & elem_graph = elemElemGraph.get_element_graph();
-        SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
-
-        if ( check_results )
-        {
-            ASSERT_EQ(expectedNumElems, elemElemGraph.get_graph_size());
-        }
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after ElemElemGraphTester constructor");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        stk::mesh::EntityVector local_id_to_element_entity(numElems, Entity());
-        std::vector<stk::topology> element_topologies(numElems);
-        impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
-
-        std::vector<ElementSidePair> elem_side_pairs = skin_mesh(via_sides, element_topologies);
-
-        bulkData.modification_begin();
-
-        for(size_t face_index=0; face_index<elem_side_pairs.size(); ++face_index)
-        {
-            stk::mesh::Entity element = local_id_to_element_entity[elem_side_pairs[face_index].first];
-            stk::mesh::EntityId face_global_id = face_index + 1;
-            stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
-        }
-
-        stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after create-faces");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
-
-        if ( check_results )
-        {
-            int left_side_id = 4;
-            int right_side_id = 5;
-
-            for(size_t i=0; i<elem_graph.size(); ++i)
-            {
-                const std::vector<LocalId>& conn_elements = elem_graph[i];
-                if (i == 0)
-                {
-                    ASSERT_EQ(1u, conn_elements.size());
-                    EXPECT_EQ(1, conn_elements[0]);
-                    EXPECT_EQ(right_side_id, via_sides[i][0]);
-                }
-                else if (i == elem_graph.size() - 1)
-                {
-                    LocalId second_to_last_element_index = elem_graph.size() - 2;
-                    ASSERT_EQ(1u, conn_elements.size());
-                    EXPECT_EQ(second_to_last_element_index, conn_elements[0]);
-                    EXPECT_EQ(left_side_id, via_sides[i][0]);
-                }
-                else
-                {
-                    ASSERT_EQ(2u, conn_elements.size());
-                    LocalId element_to_the_left = i-1;
-                    LocalId element_to_the_right = i+1;
-                    EXPECT_EQ(element_to_the_left, conn_elements[0]);
-                    EXPECT_EQ(element_to_the_right, conn_elements[1]);
-                    EXPECT_EQ(left_side_id, via_sides[i][0]);
-                    EXPECT_EQ(right_side_id, via_sides[i][1]);
-                }
-            }
-
-            EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
-        }
-
-        if (stk::parallel_machine_rank(comm) == 0)
-        {
-            for(size_t i=0;i<wall_times.size();++i)
-            {
-                std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
-            }
-
-            for(size_t i=0;i<mem_usage.size();++i)
-            {
-                std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
-            }
-        }
-    }
-}
-
-TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    std::vector<double> wall_times;
-    wall_times.reserve(10);
-    std::vector<std::string> msgs;
-    msgs.reserve(10);
-
-    std::vector<size_t> mem_usage;
-
-    wall_times.push_back(stk::wall_time());
-    msgs.push_back("program-start");
-    mem_usage.push_back(stk::get_memory_usage_now());
-
-    unsigned nProc = stk::parallel_machine_size(comm);
-    if(nProc <= 2)
-    {
-        unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-        stk::io::put_io_part_attribute(skin_part);
-        BulkDataElementGraphTester bulkData(meta, comm);
-
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after mesh-read");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        unsigned num_locally_owned_elems = stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
-
-        stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, Entity());
-        std::vector<stk::topology> element_topologies(num_locally_owned_elems);
-        impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
-
-        ElemElemGraphTester elemElemGraph(bulkData);
-
-        ASSERT_EQ(num_locally_owned_elems, elemElemGraph.get_graph_size());
-
-        SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after ElemElemGraphTester constructor");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        std::vector<ElementSidePair> elem_side_pairs = skin_mesh(via_sides, element_topologies);
-
-        bulkData.modification_begin();
-
-        int offset_per_proc = 40*bulkData.parallel_rank();
-
-        for(size_t face_index=0; face_index<elem_side_pairs.size(); ++face_index)
-        {
-            stk::mesh::Entity element = local_id_to_element_entity[elem_side_pairs[face_index].first];
-            stk::mesh::EntityId face_global_id = face_index + 1 + offset_per_proc;
-            stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
-        }
-
-        stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-        bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
-
-        wall_times.push_back(stk::wall_time());
-        msgs.push_back("after create-faces");
-        mem_usage.push_back(stk::get_memory_usage_now());
-
-        stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
-
-        std::vector<size_t> counts;
-        stk::mesh::Selector skin = skin_part;
-        stk::mesh::comm_mesh_counts(bulkData, counts, &skin);
-
-        size_t num_faces = counts[stk::topology::FACE_RANK];
-        EXPECT_EQ(18u, num_faces);
-
-        EXPECT_EQ(6u/nProc, elemElemGraph.num_edges());
-        EXPECT_EQ((nProc-1), elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -1922,16 +1689,11 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
-        ElementGraph elem_graph {
-                {1},
-                {0,-3},
-        };
-
-        SidesForElementGraph via_side {
-                {4},
-                {1,5},
-        };
-
+        stk::mesh::Graph graph;
+        graph.set_num_local_elements(2);
+        graph.add_connection_via_side(0, 4, 1);
+        graph.add_connection_via_side(1, 1, 0);
+        graph.add_connection_via_side(1, 5, -3);
 
         ParallelGraphInfo parallel_graph_info;
         int other_proc = 1;
@@ -1945,10 +1707,10 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
         parallel_graph_info.insert(std::make_pair(std::make_pair(local_element, other_element), parallel_info(other_proc, other_side_ord, permutation,
                 chosen_face_id, stk::topology::INVALID_TOPOLOGY, inActivePart)));
 
-        size_t num_elems_this_proc = elem_graph.size();
+        size_t num_elems_this_proc = graph.get_num_elements_in_graph();
         EXPECT_EQ(2u, num_elems_this_proc);
 
-        test_parallel_graph_info(elem_graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
+        test_parallel_graph_info(graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
     }
 }
 
@@ -1975,8 +1737,6 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
 
         ASSERT_EQ(numLocallyOwnedElems, elemElemGraph.get_graph_size());
 
-        ElementGraph & elem_graph = elemElemGraph.get_element_graph();
-
         ParallelGraphInfo & parallel_graph_info = elemElemGraph.get_parallel_graph_info();
 
         if(stk::parallel_machine_rank(comm)==0)
@@ -1987,7 +1747,7 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
             int other_side_ord = 4; // 4 left, 5 right
             int permutation = 4;
 
-            test_parallel_graph_info(elem_graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
+            test_parallel_graph_info(elemElemGraph.get_graph(), parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
         }
         else
         {
@@ -1997,7 +1757,7 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
             int other_side_ord = 5; // 4 left, 5 right
             int permutation = 4;
 
-            test_parallel_graph_info(elem_graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
+            test_parallel_graph_info(elemElemGraph.get_graph(), parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
         }
 
         EXPECT_EQ(3u, elemElemGraph.num_edges());
@@ -2152,105 +1912,6 @@ TEST(ElementGraph, create_faces_using_element_graph_parallel_block_membership)
             for(size_t i=0;i<mem_usage.size();++i)
             {
                 std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
-            }
-        }
-    }
-}
-
-TEST(ElementGraph, compare_performance_skin_mesh)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-
-    //wall_times.push_back(stk::wall_time());
-    // mem_usage.push_back(stk::get_memory_usage_now());
-
-    std::string dimension = unitTestUtils::getOption("--zdim", "none");
-
-    int xdim = 3;
-    if ( dimension != "none")
-    {
-        xdim = std::atoi(dimension.c_str());
-    }
-
-
-    int ydim = xdim;
-    int zdim = xdim * stk::parallel_machine_size(comm);
-
-    std::string filename = stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, "|nodeset:zZ");
-
-    {
-        unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-        stk::io::put_io_part_attribute(skin_part);
-        BulkDataElementGraphTester bulkData(meta, comm);
-
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
-
-        {
-            double wall_time_start = stk::wall_time();
-
-            stk::mesh::PartVector parts(1, &skin_part);
-            stk::mesh::skin_mesh(bulkData, parts);
-
-            double elapsed_time = stk::wall_time() - wall_time_start;
-
-            if (stk::parallel_machine_rank(comm) == 0)
-            {
-                std::cerr << "STK time: " << elapsed_time << std::endl;
-            }
-        }
-    }
-
-    {
-        unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::Part& skin_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-        stk::io::put_io_part_attribute(skin_part);
-        BulkDataElementGraphTester bulkData(meta, comm);
-
-        stk::unit_test_util::fill_mesh_using_stk_io(filename, bulkData, comm);
-
-        {
-            double wall_time_start = stk::wall_time();
-
-            unsigned num_locally_owned_elems = stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
-
-            stk::mesh::EntityVector local_id_to_element_entity(num_locally_owned_elems, Entity());
-            std::vector<stk::topology> element_topologies(num_locally_owned_elems);
-            impl::set_local_ids_and_fill_element_entities_and_topologies(bulkData, local_id_to_element_entity, element_topologies);
-
-            ElemElemGraphTester elemElemGraph(bulkData);
-
-            SidesForElementGraph & via_sides = elemElemGraph.get_via_sides();
-
-            std::vector<ElementSidePair> elem_side_pairs = skin_mesh(via_sides, element_topologies);
-
-            bulkData.modification_begin();
-
-            int offset_per_proc = 100000*bulkData.parallel_rank();
-
-            for(size_t face_index=0; face_index<elem_side_pairs.size(); ++face_index)
-            {
-                stk::mesh::Entity element = local_id_to_element_entity[elem_side_pairs[face_index].first];
-                stk::mesh::EntityId face_global_id = face_index + 1 + offset_per_proc;
-                stk::mesh::declare_element_side(bulkData, face_global_id, element, elem_side_pairs[face_index].second, &skin_part);
-            }
-
-            stk::mesh::Selector element_selector = bulkData.mesh_meta_data().locally_owned_part();
-            bulkData.my_internal_modification_end_for_skin_mesh(stk::topology::FACE_RANK, stk::mesh::impl::MeshModification::MOD_END_SORT, element_selector, NULL);
-
-            double elapsed_time = stk::wall_time() - wall_time_start;
-
-            stk::unit_test_util::write_mesh_using_stk_io("out.exo", bulkData, bulkData.parallel());
-
-            std::vector<size_t> counts;
-            stk::mesh::comm_mesh_counts(bulkData, counts);
-
-            if (stk::parallel_machine_rank(comm) == 0)
-            {
-                std::cerr << "Element graph time: " << elapsed_time << std::endl;
-                std::cerr << "Total # of elements: " << counts[stk::topology::ELEM_RANK] << std::endl;
             }
         }
     }

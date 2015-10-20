@@ -33,6 +33,26 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
                          std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
                          stk::mesh::Part *active_part=NULL);
 
+class Graph
+{
+public:
+    Graph();
+    void set_num_local_elements(size_t n);
+    void add_new_element();
+    size_t get_num_elements_in_graph() const;
+    size_t get_num_edges() const;
+    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
+    const std::vector<int> & get_via_sides_for_local_element(size_t i) const;
+    void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
+    void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
+    void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
+    void delete_all_connections(impl::LocalId elem);
+private:
+    impl::ElementGraph m_elem_graph;
+    impl::SidesForElementGraph m_via_sides;
+    size_t m_num_edges;
+};
+
 class ElemElemGraph
 {
 public:
@@ -71,7 +91,7 @@ public:
 
     bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
-    size_t size() {return get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
+    size_t size() {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
@@ -178,8 +198,7 @@ protected:
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Selector m_skinned_selector;
     const stk::mesh::Selector* m_air_selector;
-    impl::ElementGraph m_elem_graph;
-    impl::SidesForElementGraph m_via_sides;
+    Graph m_graph;
     impl::ParallelGraphInfo m_parallel_graph_info;
     stk::mesh::EntityVector m_local_id_to_element_entity;
     std::vector<impl::LocalId> m_entity_to_local_id;
@@ -187,7 +206,6 @@ protected:
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
     std::vector<int> m_deleted_elem_pool;
-    size_t m_num_edges;
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
 
@@ -195,17 +213,6 @@ protected:
     static const int INVALID_SIDE_ID;
 
 private:
-    void set_num_local_elements(size_t n);
-    void add_new_element();
-    size_t get_num_elements_in_graph() const;
-    size_t get_num_edges() const;
-    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
-    const std::vector<int> & get_via_sides_for_local_element(size_t i) const;
-    void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
-    void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
-    void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
-    void delete_all_connections(impl::LocalId elem);
-
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;

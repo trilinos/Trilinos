@@ -38,8 +38,7 @@ public:
 
     void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
 
-    stk::mesh::impl::ElementGraph & get_element_graph() { return m_elem_graph; }
-    stk::mesh::impl::SidesForElementGraph & get_via_sides() { return m_via_sides; }
+    stk::mesh::Graph & get_graph() { return m_graph; }
     stk::mesh::impl::ParallelGraphInfo & get_parallel_graph_info() { return m_parallel_graph_info; }
     stk::mesh::BulkData & get_bulk_data() { return m_bulk_data; }
     size_t get_graph_size() { return m_local_id_to_element_entity.size(); }
