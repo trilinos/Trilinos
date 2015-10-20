@@ -1625,26 +1625,18 @@ void ElemElemGraph::delete_local_connections_and_collect_remote(const stk::mesh:
         stk::mesh::Entity elem_to_delete = deletedElementInfo.entity;
         impl::LocalId elem_to_delete_id = get_local_element_id(elem_to_delete);
 
-//        if (!m_bulk_data.bucket(elem_to_delete).owned()) {
-//            continue;
-//        }
-
         size_t num_connected_elems = get_num_connected_elems(elem_to_delete);
         for (int conn_elem_index = num_connected_elems - 1; conn_elem_index >= 0; --conn_elem_index) {
             impl::LocalId connected_elem_id = get_connections_for_local_element(elem_to_delete_id)[conn_elem_index];
+
             bool local_connection = connected_elem_id >= 0;
             if (local_connection) {
-                m_via_sides[elem_to_delete_id].erase(m_via_sides[elem_to_delete_id].begin() + conn_elem_index);
-                --m_num_edges;
-
                 const std::vector<impl::LocalId> &connected = get_connections_for_local_element(connected_elem_id);
                 std::vector<impl::LocalId>::const_iterator pos_of_elem1_in_elem2 = std::find(connected.begin(), connected.end(), elem_to_delete_id);
                 ThrowRequire(pos_of_elem1_in_elem2 != connected.end());
                 int index_of_elem1_in_elem2 = pos_of_elem1_in_elem2 - connected.begin();
 
-                m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + index_of_elem1_in_elem2);
-                --m_num_edges;
-
+                delete_edge_from_graph(connected_elem_id, index_of_elem1_in_elem2);
             } else {
                 stk::mesh::EntityId connected_global_id = -connected_elem_id;
                 auto iter = m_parallel_graph_info.find(std::make_pair(elem_to_delete_id, connected_global_id));
@@ -1656,24 +1648,13 @@ void ElemElemGraph::delete_local_connections_and_collect_remote(const stk::mesh:
                 deletedElementData.m_remoteElement = connected_global_id;
                 deletedElementData.m_remoteProc = remote_proc;
                 local_elem_and_remote_connected_elem.push_back(deletedElementData);
-
-                m_via_sides[elem_to_delete_id].erase(m_via_sides[elem_to_delete_id].begin() + conn_elem_index);
-                --m_num_edges;
                 m_parallel_graph_info.erase(std::make_pair(elem_to_delete_id, connected_global_id));
             }
         }
 
-        ThrowRequire(m_via_sides[elem_to_delete_id].empty());
-        for (size_t id = 0; id < get_num_graph_edges(); ++id) {
-            if (id != static_cast<size_t>(elem_to_delete_id) && !m_local_id_in_pool[id]) {
-                const std::vector<impl::LocalId> &connected = get_connections_for_local_element(id);
-                std::vector<impl::LocalId>::const_iterator pos_of_deleted_elem_in_current_id = std::find(connected.begin(), connected.end(), elem_to_delete_id);
-                if (pos_of_deleted_elem_in_current_id != connected.end()) {
-                    int index_of_deleted_elem_in_current_id = pos_of_deleted_elem_in_current_id - connected.begin();
-                    m_elem_graph[id].erase(m_elem_graph[id].begin() + index_of_deleted_elem_in_current_id);
-                }
-            }
-        }
+        m_num_edges -= m_elem_graph[elem_to_delete_id].size();
+        m_elem_graph[elem_to_delete_id].clear();
+        m_via_sides[elem_to_delete_id].clear();
     }
 }
 
