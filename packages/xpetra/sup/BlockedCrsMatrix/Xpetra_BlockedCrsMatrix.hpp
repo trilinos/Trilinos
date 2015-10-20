@@ -119,17 +119,15 @@ namespace Xpetra {
                      size_t npr, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
     : domainmaps_(domainMaps), rangemaps_(rangeMaps)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(domainMaps->getThyraMode() != rangeMaps->getThyraMode(), Xpetra::Exceptions::RuntimeError,
-                       "BlockedCrsMatrix: user provided MapExtractor objects use different numbering (Thyra vs. Xpetra). Please use map extractors for range and domain maps which use the same numbering scheme!");
-
-      bThyraMode_ = domainMaps->getThyraMode();
+      bRangeThyraMode_  = rangeMaps->getThyraMode();
+      bDomainThyraMode_ = domainMaps->getThyraMode();
 
       blocks_.reserve(Rows()*Cols());
 
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r), npr, pftype));
+          blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
 
       // Default view
       CreateDefaultView();
@@ -142,7 +140,6 @@ namespace Xpetra {
      * \param domainMaps domain maps for all blocks
      * \param npr extimated number of entries per row in each block(!)
      * \param pftype Xpetra profile type
-     * TODO: create a new constructor which accepts striding information!!!
      */
     BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : thyraOp_(thyraOp)
@@ -164,8 +161,6 @@ namespace Xpetra {
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
-            //StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
-
             break;
           }
         }
@@ -174,13 +169,13 @@ namespace Xpetra {
 
       // check whether the underlying Thyra operator uses Thyra-style numbering (default for most applications) or
       // Xpetra style numbering
-      bool bUseThyraStyleNumbering = false;
+      bool bRangeUseThyraStyleNumbering = false;
       size_t numAllElements = 0;
       for(size_t v = 0; v < subRangeMaps.size(); ++v) {
         numAllElements += subRangeMaps[v]->getGlobalNumElements();
       }
-      if ( fullRangeMap->getGlobalNumElements() != numAllElements) bUseThyraStyleNumbering = true;
-      rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullRangeMap, subRangeMaps, bUseThyraStyleNumbering));
+      if ( fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
+      rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullRangeMap, subRangeMaps, bRangeUseThyraStyleNumbering));
 
       // build domain map extractor from Thyra::BlockedLinearOpBase object
       std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subDomainMaps(numDomainBlocks);
@@ -198,18 +193,17 @@ namespace Xpetra {
       }
       Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullDomainMap = mergeMaps(subDomainMaps);
       // plausibility check for numbering style (Xpetra or Thyra)
-      bool bUseThyraStyleNumberingTest = false;
+      bool bDomainUseThyraStyleNumbering = false;
       numAllElements = 0;
       for(size_t v = 0; v < subDomainMaps.size(); ++v) {
         numAllElements += subDomainMaps[v]->getGlobalNumElements();
       }
-      if (fullDomainMap->getGlobalNumElements() != numAllElements) bUseThyraStyleNumberingTest = true;
-      TEUCHOS_TEST_FOR_EXCEPTION( bUseThyraStyleNumberingTest != bUseThyraStyleNumbering, Xpetra::Exceptions::RuntimeError,
-                             "BlockedCrsMatrix: inconsistent numbering style for range and domain maps!");
-      domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullDomainMap, subDomainMaps, bUseThyraStyleNumbering));
+      if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;
+      domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullDomainMap, subDomainMaps, bDomainUseThyraStyleNumbering));
 
       // store numbering mode
-      bThyraMode_ = bUseThyraStyleNumbering;
+      bRangeThyraMode_  = bRangeUseThyraStyleNumbering;
+      bDomainThyraMode_ = bDomainUseThyraStyleNumbering;
 
       // add CrsMatrix objects in row,column order
       blocks_.reserve(Rows()*Cols());
@@ -223,7 +217,7 @@ namespace Xpetra {
             blocks_.push_back(xop);
           } else {
             // add empty block
-            blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r), 0, Xpetra::DynamicProfile));
+            blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
           }
         }
       }
@@ -403,7 +397,7 @@ namespace Xpetra {
           Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
 
           if (Ablock != Teuchos::null && !Ablock->isFillComplete())
-            Ablock->fillComplete(getDomainMap(c, bThyraMode_), getRangeMap(r, bThyraMode_), params);
+            Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
         }
 
       // get full row map
@@ -697,11 +691,11 @@ namespace Xpetra {
 
       if (mode == Teuchos::NO_TRANS) {
         for (size_t row = 0; row < Rows(); row++) {
-          RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bThyraMode_);
-          RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bThyraMode_);
+          RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
+          RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
 
           for (size_t col = 0; col < Cols(); col++) {
-            RCP<const MultiVector> Xblock = domainmaps_->ExtractVector(refX, col, bThyraMode_);
+            RCP<const MultiVector> Xblock = domainmaps_->ExtractVector(refX, col, bDomainThyraMode_);
             RCP<CrsMatrix>         Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
@@ -711,17 +705,17 @@ namespace Xpetra {
 
             Yblock->update(one, *tmpYblock, one);
           }
-          rangemaps_->InsertVector(Yblock, row, tmpY, bThyraMode_);
+          rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
         }
 
       } else if (mode == Teuchos::TRANS) {
         // TODO: test me!
         for (size_t col = 0; col < Cols(); col++) {
-          RCP<MultiVector>    Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bThyraMode_);
-          RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bThyraMode_);
+          RCP<MultiVector>    Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
+          RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
 
           for (size_t row = 0; row<Rows(); row++) {
-            RCP<const MultiVector> Xblock = rangemaps_->ExtractVector(refX, row, bThyraMode_);
+            RCP<const MultiVector> Xblock = rangemaps_->ExtractVector(refX, row, bRangeThyraMode_);
             RCP<CrsMatrix>         Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
@@ -731,7 +725,7 @@ namespace Xpetra {
 
             Yblock->update(one, *tmpYblock, one);
           }
-          domainmaps_->InsertVector(Yblock, col, tmpY, bThyraMode_);
+          domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
         }
       }
 
@@ -744,7 +738,7 @@ namespace Xpetra {
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getDomainMap(size_t i, bool bThyraMode = false) const    { return domainmaps_->getMap(i, bThyraMode); }
+    RCP<const Map > getDomainMap(size_t i, bool bThyraMode = false) const    { return domainmaps_->getMap(i, bDomainThyraMode_); }
 
     //! Returns the Map associated with the full range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
@@ -752,7 +746,7 @@ namespace Xpetra {
 
     //! Returns the Map associated with the i'th block range of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bThyraMode); }
+    RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
 
     //! Returns map extractor class for range map
     RCP<const MapExtractor> getRangeMapExtractor()  { return rangemaps_; }
@@ -860,7 +854,7 @@ namespace Xpetra {
       using Teuchos::rcp_dynamic_cast;
       Scalar one = ScalarTraits<SC>::one();
 
-      TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ || bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: only implemented for Xpetra-style numbering. If you need the merge routine for Thyra-style numbering, report this to the Xpetra developers." );
 
       RCP<CrsMatrix> sparse = CrsMatrixFactory::Build(fullrowmap_, 33);
@@ -971,8 +965,10 @@ namespace Xpetra {
     std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
-    bool                                                    bThyraMode_; ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
 #endif
+    bool                                   bRangeThyraMode_;  ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
+    bool                                   bDomainThyraMode_; ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
+
 };
 
 } //namespace Xpetra
