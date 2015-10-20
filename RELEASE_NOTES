@@ -1,5 +1,328 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.4 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.4 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL*, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+Amesos2
+
+  - Added MUMPS 5.0 support
+
+  - KLU2 is enabled by default
+
+  - Bug fixes
+
+  - Superlu_dist multiple version support (up to 4.0)
+
+Domi
+
+  - Various bug fixes:
+    - Fixed a bug where a periodic axis under a serial build would not
+      update communication padding.  The parallel version uses MPI
+      capabilities to do this, so a serial-only capability had to be
+      added for this corner case.
+
+    - Fixed a test that was doing a dynamic type comparison to be more
+      robust.
+
+    - Fixed some minor bugs in the MDVector getTpetraMultiVector()
+      method.
+
+    - The MDArrayView size() method was made const, as it should be
+
+  - Created serial tests
+    - Domi does not provide much in the way of unique capabilities if it
+      is compiled in serial.  Nevertheless, all tests that run on 1
+      processor were updated to run under a serial build of Trilinos as
+      well.
+
+Ifpack2
+
+  - Deprecated Ifpack2::Krylov
+    If you want a Krylov solver, just use Belos.  Ifpack2::Factory now
+    throws with an informative exception message if you ask for "KRYLOV".
+
+Muelu
+
+  - MueLu requires certain C++11 features.  Minimum compiler versions are
+    gcc 4.7.2 or icc 13. (See https://trilinos.org/about/cxx11.)
+
+  - Kokkos is a required dependency.
+
+  - New MatrixAnalysis Factory.
+
+  - Deprecated Create[TE]petraPreconditioner interfaces taking
+    Tpetra::CrsMatrix types as input argument in favor of interfaces
+    accepting Tpetra::Operator types.
+
+  - Numerous improvements to MueMex (MueLu's interface to Matlab).
+
+  - Mumps can now be used as a coarse grid solver through Amesos2.
+
+  - Unification of MueLu Epetra and Tpetra interfaces through Stratimikos.
+
+ROL
+
+  - Enhancements
+
+    -  Hierarchical XML parameter lists.  This makes ROL easier to use and
+       control.  Demonstrated in all examples and test.  Also created
+       the tierParameterList function to generate a hierarchical list
+       from a flat list, in rol/src/zoo/ROL_ParameterListConverters.hpp,
+       demonstrated in rol/test/parameters.
+
+    -  Algorithm constructor now takes reference-counted pointers to
+       Step and StatusTest.  There is another constructor that takes a step 
+       name (string) and a parameter list.  This makes it easier to initialize
+       a ROL algorithm, based on default choices of steps and status tests.
+
+    -  New elementwise functions in ROL::Vector allow application of general
+       nonlinear unary and binary functions as well as reduce operations.
+
+    -  Modified ROL::BoundConstraint to work with any vector type for which
+       Vector::applyUnary, Vector::applyBinary, and Vector::reduce are
+       implemented.
+
+    -  Modified default behavior of line search so that when the maximum
+       number of function evaluations is reached and sufficient decrease has
+       not been attained, optimization terminates.  The previous behavior can
+       be recovered by setting the parameter "Accept Last Alpha" to true in
+       the Step->Line Search sublist.
+
+    -  Added line search parameter "Accept Linesearch Minimizer" to the
+       Step->Line Search sublist. If this parameter is selected to be true,
+       the argmin step length will be used if the maximum number of function
+       evaluations is reached without attaining sufficient decrease.
+
+    -  Renamed CompositeStepSQP to CompositeStep.
+
+
+  - New Features
+
+    - Methods
+      -  Bundle Step, for solving nonsmooth problems; see example/minimax/*.
+
+      -  Moreau-Yosida Penalty, for solving general NLPs; see
+         example/burgers-control/example_04.
+
+      -  Augmented Lagrangian, for solving general NLPs; see
+         example/burgers-control/example_04.
+
+      -  Higher Moment Coherent Risk Measure.  This method is a new risk measure
+         for stochastic problems, see example/burgers-control/example_06.
+
+      -  Buffered Probability of Exceedance.  This method is a new capability to
+         minimize the probability of a stochastic cost function.  It is
+         demonstrated in example/burgers-control/example_06.
+
+    - Infrastructure
+
+      -  In ROL_ScaledStdVector.hpp, added a variant of ROL::StdVector that
+         supports constant (positive) diagonal scalings in the dot product. 
+         This variant comprises the pair of classes ROL::PrimalScaledStdVector
+         and ROL::DualScaledStdVector; changed the examples in
+         example/diode-circuit to use variable scalings through these new
+         classes.
+
+      -  Distribution Factory, to enable general sampling for stochastic
+         problems; demonstrated in example/burgers-control/example_05 through
+         _07.
+
+      -  SROMSampler.  This method permits the use of optimization-based
+         sampling for stochastic problem.  It is demonstrated in
+         test/sol/test_04.
+
+      -  ROL::PartitionedVector, for handling vectors of vectors, e.g., when
+         using slack variables, see /rol/test/vector/test_04.cpp.
+
+
+  - Bug Fixes
+
+    -  Removed reset of counters for objective function and gradient evaluations
+       contained in the AlgorithmState in rol/src/step/ROL_TrustRegionStep.hpp.
+
+    -  Corrected reading of the constraint tolerance parameter in
+       ROL::AugmentedLagrangianStep.
+
+Tpetra
+
+  - Changed CMake option for setting default Node type
+
+    To set the default Node type, use the Tpetra_DefaultNode CMake option.
+    We support the old KokkosClassic_DefaultNode CMake option for
+    backwards compatibility.
+
+    Tpetra will eventually change from using Node types to using
+    Kokkos::Device types directly.  For now, though, if you wish to set
+    the default Node type explicitly, you must use one of the following:
+
+      - Kokkos::Compat::KokkosCudaWrapperNode    (CUDA)
+      - Kokkos::Compat::KokkosOpenMPWrapperNode  (OpenMP)
+      - Kokkos::Compat::KokkosSerialWrapperNode  (Serial (no threads))
+      - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+    Tpetra normally only enables one Node type, so you only need to set
+    the default Node type if you have enabled more than one Node type.
+
+  - Rules for which Node type gets enabled by default
+
+    Tpetra only enables one Node type by default, whether or not ETI
+    (explicit template instantiation) is enabled.  Here are the rules for
+    which Node type gets enabled by default:
+
+      1. If you're building with CUDA, Tpetra uses CUDA by default.
+      2. Otherwise, if you're building with OpenMP, Tpetra uses OpenMP by
+         default.
+      3. Otherwise, if Kokkos enables the Serial execution space (if
+         Kokkos_ENABLE_Serial is ON), Tpetra uses Serial by default.
+      4. Otherwise, if Kokkos enables the Threads execution space (if
+         Kokkos_ENABLE_Pthread is ON), Tpetra uses Threads by default.
+
+    If you wish to enable other Node types, you may set the following
+    CMake options.  You do NOT need to set any of these options explicitly
+    if the Node type would be enabled by default anyway.
+
+      - Tpetra_INST_CUDA (Kokkos_ENABLE_Cuda must be ON, and Trilinos must
+        be built with CUDA; ON by default if building with CUDA)
+      - Tpetra_INST_OPENMP (Kokkos_ENABLE_OpenMP must be ON, and Trilinos
+        must be built with OpenMP support)
+      - Tpetra_INST_PTHREAD (Kokkos_ENABLE_Pthread must be ON)
+      - Tpetra_INST_SERIAL (Kokkos_ENABLE_Serial must be ON)
+
+    While it is legal to enable both the OpenMP and Pthreads back-ends in
+    the same executable, it is a bad idea.  Both back-ends spawn their own
+    worker threads, and those threads will fight over cores.
+
+  - Completely removed the "classic" version of Tpetra
+
+    You might recall that a while back, we split Tpetra into "classic"
+    (old) and "Kokkos refactor" (new) versions.  As of Trilinos 12.0, the
+    classic version was no longer supported, but we kept it in place for a
+    few users.  As of this release, we have removed the classic version
+    completely.
+
+    You no longer need to set Tpetra_ENABLE_Kokkos_Refactor to get the new
+    verson of Tpetra.  It is ON (TRUE).  If you attempt to set it to OFF
+    (FALSE), Tpetra's CMake raises an error at configure time.  Just
+    enable Tpetra -- that's all you need to do!
+
+    This change affects both the Classic and Core subpackages of Tpetra.
+    All the "classic" Node types are gone now, along with their associated
+    computational kernels.  Use the Kernels subpackage of Tpetra for local
+    kernels.  (We left KokkosClassic::DefaultArithmetic in place for
+    Stokhos, but ONLY for Stokhos.)  The "classic" versions of Tpetra
+    classes are also now gone.  We have replaced them completely with
+    their "Kokkos refactor" versions.
+
+    You might have noticed that Doxygen had a hard time generating
+    documentation for the classes which had "classic" and "refactor"
+    versions.  These changes should fix that.  Furthermore, it's easier to
+    find header files for classes.  In particular, most of the header
+    files in the tpetra/core/src/kokkos_refactor directory now just have
+    trivial definitions and only remain for backwards compatibility.
+
+  - Improved build times and fewer .cpp files in source directory
+
+    Tpetra does a better job now of splitting up explicit instantiations
+    into separate .cpp files.  In some cases, it uses CMake to generate
+    those .cpp files automatically.  This means fewer .cpp files in
+    tpetra/core/src, so it's easier to find what you want.
+
+  - 128-bit floating-point arithmetic through Scalar = __float128
+
+    __float128 is a GCC language extension to C(++) that implements
+    "double-double" 128-bit floating-point arithmetic.  It requires
+    linking with libquadmath, which comes with GCC.
+
+    You must use GCC in order to try this feature.  Also, set the
+    following CMake variables:
+
+    Tpetra_INST_FLOAT128:BOOL=ON
+    CMAKE_CXX_FLAGS:STRING="-std=gnu++11 -fext-numeric-literals"
+    TPL_ENABLE_quadmath:BOOL=ON
+
+    You may also have to tell CMake where to find the libquadmath library
+    and quadmath.h header file:
+
+    quadmath_LIBRARY_DIRS:FILEPATH="${QUADMATH_LIB_DIR}"
+    quadmath_INCLUDE_DIRS:FILEPATH="${QUADMATH_INC_DIR}"
+
+    Here, ${QUADMATH_LIB_DIR} points to the directory containing the
+    libquadmath library (usually your GCC library directory), and
+    ${QUADMATH_INC_DIR} points to the directory containing its header file
+    (quadmath.h).  For example, if you use a GCC installed in
+    $HOME/pkg/gcc-5.2.0, you might need to set those variables as follows:
+
+    QUADMATH_LIB_DIR=$HOME/pkg/gcc-5.2.0/lib
+    QUADMATH_INC_DIR=\
+      $HOME/pkg/gcc-5.2.0/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/include
+
+    Trilinos likes to set the "-pedantic" flag, which causes warnings for
+    __float128 literals.  The build works regardless, but it would be more
+    pleasing to your eyes if you could figure out how to shut off the
+    warnings.
+
+    I implemented this because the Kokkos refactor of Tpetra broke QD
+    support (dd_real and qd_real -- "double-double" and "quad-double,"
+    128- resp. 256-bit floating-point arithmetic).  Applications were
+    asking for a work-around solution.
+
+Zoltan2
+
+  -  Template argument for arbitrary global identifiers (zgid_t) has been
+     removed for greater efficiency in the code as well as greater conformity
+     with Trilinos.  
+     -  BasicUserTypes now has only three template parameters;
+        the zgid_t template argument has been removed.
+     -  OrderingSolution now has two different template parameters:
+        <lno_t, gno_t> for <local ordinal type, global ordinal type>
+
+  -  A new test driver capability has been added to Zoltan2 for more robust
+     testing and experimentation.
+
+  -  An interface to the Zoltan partitioners has been added to Zoltan2.
+     Parameter "algorithm" == "zoltan" invokes Zoltan partitioners; parameters
+     needed by Zoltan are provided through a parameter sublist called
+     "zoltan_parameters".  Zoltan's geometric and hypergraph methods are
+     available.
+
+  -  A new interface to third-party library ParMA (from Rensselaer Polytechnic
+     Institute) is available.  ParMA provides mesh partition improvement to
+     balance both primary and secondary entities.
+     It assumes the number of processors is equal to the number of requested
+     parts, and that the input mesh distribution corresponds to the input part 
+     assignments.  RPI's SCOREC repository is needed to use ParMA.  
+
+  -  A new hypergraph mesh partitioning model is available in Zoltan2
+     through the MeshAdapter.
+
+  -  Parameters to third-party libraries Scotch and ParMETIS are provided 
+     through parameter sublists "scotch_parameters" and 
+     "parmetis_parameters", respectively.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.2 Release Notes                                         #
 #                                                                             #
 ###############################################################################
