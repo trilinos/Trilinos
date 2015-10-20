@@ -71,7 +71,7 @@ public:
 
     bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
-    size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
+    size_t size() {return get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
@@ -197,7 +197,7 @@ protected:
 private:
     void set_num_local_elements(size_t n);
     void add_new_element();
-    size_t get_num_graph_edges() const;
+    size_t get_num_elements_in_graph() const;
     const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
     void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
