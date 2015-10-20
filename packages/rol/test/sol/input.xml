@@ -124,7 +124,7 @@
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="200"         />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
