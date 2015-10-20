@@ -209,16 +209,6 @@ namespace {
                          TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
   }
 
-  inline size_t min(size_t x, size_t y)
-  {
-    return x < y ? x : y;
-  }
-
-  inline size_t max(size_t x, size_t y)
-  {
-    return x > y ? x : y;
-  }
-
   template <typename T>
   void uniquify(std::vector<T> &vec)
   {
@@ -394,20 +384,20 @@ namespace {
       if (topology != NULL) {
         Ioss::ElementTopology *boundary = topology->boundary_type(0);
         if (boundary != NULL) {
-          common_nodes = min(common_nodes, boundary->number_boundaries());
+          common_nodes = std::min(common_nodes, boundary->number_boundaries());
         } else {
           // Different topologies on some element faces...
           size_t nb = topology->number_boundaries();
           for (size_t b=1; b <= nb; b++) {
             boundary = topology->boundary_type(b);
             if (boundary != NULL) {
-              common_nodes = min(common_nodes, boundary->number_boundaries());
+              common_nodes = std::min(common_nodes, boundary->number_boundaries());
             }
           }
         }
       }
     }
-    common_nodes = max(1, common_nodes);
+    common_nodes = std::max(1, common_nodes);
     Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
 
@@ -1307,7 +1297,7 @@ namespace Iopx {
 
       if (b_start < p_end && p_start < b_end) {
         // Some of this blocks elements are on this processor...
-        size_t overlap = min(b_end, p_end) - max(b_start, p_start);
+        size_t overlap = std::min(b_end, p_end) - std::max(b_start, p_start);
         size_t element_nodes = ebs[b].num_nodes_per_entry;
 
         sum += overlap * element_nodes;
@@ -1348,13 +1338,13 @@ namespace Iopx {
 
       if (b_start < p_end && p_start < b_end) {
         // Some of this blocks elements are on this processor...
-        size_t overlap = min(b_end, p_end) - max(b_start, p_start);
+        size_t overlap = std::min(b_end, p_end) - std::max(b_start, p_start);
         size_t element_nodes = ebs[b].num_nodes_per_entry;
         int64_t id =        ebs[b].id;
 
         // Get the connectivity (raw) for this portion of elements...
         std::vector<INT> connectivity(overlap*element_nodes);
-        size_t blk_start = max(b_start, p_start) - b_start + 1;
+        size_t blk_start = std::max(b_start, p_start) - b_start + 1;
 #if DEBUG_OUTPUT
         std::cerr << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
 #endif
@@ -1449,7 +1439,7 @@ namespace Iopx {
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
     // at least 10000 nodes.
-    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
+    //    size_t max_size = std::max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
 
     bool subsetting = false; // nodelist_size > max_size;
 
@@ -1594,7 +1584,7 @@ namespace Iopx {
     // equalize the nodeCount among processors since some procs have 1
     // more node than others. For small models, assume we can handle
     // at least 10000 nodes.
-    //    size_t max_size = max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
+    //    size_t max_size = std::max(10000, (nodeCount / 2) * 2 * 3 *sizeof(double) / sizeof(INT));
 
     bool subsetting = false; // elemlist_size > max_size;
 
@@ -1957,7 +1947,7 @@ namespace Iopx {
       b = find_index_location(elem, fileBlockIndex);
 
       assert(elem >= fileBlockIndex[b] && elem < fileBlockIndex[b+1]);
-      size_t off = max(fileBlockIndex[b], elementOffset);
+      size_t off = std::max(fileBlockIndex[b], elementOffset);
       el_blocks[b].localMap.push_back(elem-off);
     }
 
@@ -1973,7 +1963,7 @@ namespace Iopx {
         proc++;
 
       b = find_index_location(elem, fileBlockIndex);
-      size_t off = max(fileBlockIndex[b], elementOffset);
+      size_t off = std::max(fileBlockIndex[b], elementOffset);
 
       if (!el_blocks[b].localMap.empty() && elem < el_blocks[b].localMap[0]+off) {
         el_blocks[b].localIossOffset++;
@@ -1994,7 +1984,7 @@ namespace Iopx {
 
       b = find_index_location(elem, fileBlockIndex);
 
-      size_t off = max(fileBlockIndex[b], elementOffset);
+      size_t off = std::max(fileBlockIndex[b], elementOffset);
       el_blocks[b].exportMap.push_back(elem-off);
       el_blocks[b].exportCount[proc]++;
     }
@@ -2283,8 +2273,8 @@ namespace Iopx {
     BlockDecompositionData blk = el_blocks[blk_seq];
 
     // Determine number of file decomp elements are in this block and the offset into the block.
-    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
-    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
+    size_t bbeg = std::max(fileBlockIndex[blk_seq],   elementOffset);
+    size_t bend = std::min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
     size_t count = 0;
     if (bend > bbeg)
       count = bend - bbeg;
@@ -2619,8 +2609,8 @@ namespace Iopx {
   size_t DecompositionData<INT>::get_block_element_count(size_t blk_seq) const
   {
     // Determine number of file decomp elements are in this block;
-    size_t bbeg = max(fileBlockIndex[blk_seq],   elementOffset);
-    size_t bend = min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
+    size_t bbeg = std::max(fileBlockIndex[blk_seq],   elementOffset);
+    size_t bend = std::min(fileBlockIndex[blk_seq+1], elementOffset+elementCount);
     size_t count = 0;
     if (bend > bbeg)
       count = bend - bbeg;
