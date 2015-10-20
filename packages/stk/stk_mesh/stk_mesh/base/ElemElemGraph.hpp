@@ -195,8 +195,9 @@ protected:
     static const int INVALID_SIDE_ID;
 
 private:
-    size_t get_num_graph_edges() const { return m_elem_graph.size(); }
-    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const { return m_elem_graph[i]; }
+    size_t get_num_graph_edges() const;
+    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
+    void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
 

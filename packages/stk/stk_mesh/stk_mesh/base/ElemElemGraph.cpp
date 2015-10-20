@@ -1201,7 +1201,7 @@ void ElemElemGraph::unpack_and_store_connected_element(stk::CommBuffer &buf, imp
         auto iter_found = std::find(other_connected_elements.begin(), other_connected_elements.end(), former_remote_id);
         ThrowRequireMsg(iter_found != other_connected_elements.end(), "Failed to find formerly-remote connected id in elem-elem-graph.");
         size_t index = iter_found - other_connected_elements.begin();
-        m_elem_graph[connected_elem_local_id][index] = recvd_elem_local_id;
+        change_connection_at_index(connected_elem_local_id, index, recvd_elem_local_id);
 
         std::pair<impl::LocalId, stk::mesh::EntityId> key(connected_elem_local_id, recvd_elem_global_id);
         auto iter = m_parallel_graph_info.find(key);
@@ -1359,7 +1359,7 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                         auto iter = std::find(other_connected_elements.begin(), other_connected_elements.end(), elem_local_id);
                         ThrowRequireMsg(iter != other_connected_elements.end(), "Failed to find connected element");
                         size_t index = iter - other_connected_elements.begin();
-                        m_elem_graph[local_id][index] = -elem_global_id;
+                        change_connection_at_index(local_id, index, -elem_global_id);
                     }
                 }
                 else
@@ -1379,7 +1379,7 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                         if(iter != elements_connected.end())
                         {
                             int index = iter - elements_connected.begin();
-                            m_elem_graph[connected_elements[j]][index] = -elem_global_id;
+                            change_connection_at_index(connected_elements[j], index, -elem_global_id);
                         }
                     }
                 }
@@ -2510,6 +2510,21 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
     m_bulk_data.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, *this, skinned_elements);
 }
 
+size_t ElemElemGraph::get_num_graph_edges() const
+{
+    return m_elem_graph.size();
+}
+
+const std::vector<impl::LocalId> & ElemElemGraph::get_connections_for_local_element(size_t i) const
+{
+    return m_elem_graph[i];
+}
+
+void ElemElemGraph::change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem)
+{
+    m_elem_graph[elem][index] = connectedElem;
+}
+
 void ElemElemGraph::add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem)
 {
     m_elem_graph[elem].push_back(connectedElem);
@@ -2519,8 +2534,8 @@ void ElemElemGraph::add_connection_via_side(impl::LocalId elem, int viaSide, imp
 
 void ElemElemGraph::delete_edge_from_graph(impl::LocalId elem, int offset)
 {
-    m_via_sides[elem].erase(m_via_sides[elem].begin() + offset);
     m_elem_graph[elem].erase(m_elem_graph[elem].begin() + offset);
+    m_via_sides[elem].erase(m_via_sides[elem].begin() + offset);
     --m_num_edges;
 }
 
