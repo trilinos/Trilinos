@@ -615,13 +615,6 @@ stk::mesh::EntityId find_side_id(const stk::mesh::impl::ElemSideToProcAndFaceId&
     return chosen_side_id;
 }
 
-void ElemElemGraph::delete_edge_from_graph(impl::LocalId local_elem_id, int offset)
-{
-    m_via_sides[local_elem_id].erase(m_via_sides[local_elem_id].begin() + offset);
-    m_elem_graph[local_elem_id].erase(m_elem_graph[local_elem_id].begin() + offset);
-    --m_num_edges;
-}
-
 stk::topology ElemElemGraph::get_topology_of_remote_element(impl::LocalId local_elem_id, stk::mesh::EntityId other_element)
 {
     stk::mesh::Entity this_element = m_local_id_to_element_entity[local_elem_id];
@@ -1735,9 +1728,7 @@ void ElemElemGraph::delete_remote_connections(const std::vector<std::pair<stk::m
         bool found_deleted_elem = false;
         for (size_t conn_elem_index = 0; conn_elem_index < num_conn_elem; ++conn_elem_index) {
             if (get_connections_for_local_element(connected_elem_id)[conn_elem_index] == static_cast<int64_t>(-deleted_elem_global_id)) {
-                m_elem_graph[connected_elem_id].erase(m_elem_graph[connected_elem_id].begin() + conn_elem_index);
-                m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + conn_elem_index);
-                --m_num_edges;
+                delete_edge_from_graph(connected_elem_id, conn_elem_index);
                 found_deleted_elem = true;
                 m_parallel_graph_info.erase(std::make_pair(connected_elem_id, deleted_elem_global_id));
                 break;
@@ -2024,9 +2015,7 @@ void ElemElemGraph::break_remote_shell_connectivity_and_pack(stk::CommSparse &co
         {
             if (phase == 1)
             {
-                m_elem_graph[leftId].erase(m_elem_graph[leftId].begin() + index);
-                m_via_sides[leftId].erase(m_via_sides[leftId].begin() + index);
-                --m_num_edges;
+                delete_edge_from_graph(leftId, index);
             }
             else
             {
@@ -2137,9 +2126,7 @@ void ElemElemGraph::unpack_remote_edge_across_shell(stk::CommSparse &comm)
             {
                 if(get_connections_for_local_element(localId)[index] == static_cast<impl::LocalId>(-1*remoteElemId))
                 {
-                    m_elem_graph[localId].erase(m_elem_graph[localId].begin() + index);
-                    m_via_sides[localId].erase(m_via_sides[localId].begin() + index);
-                    --m_num_edges;
+                    delete_edge_from_graph(localId, index);
                     break;
                 }
                 else
@@ -2528,6 +2515,13 @@ void ElemElemGraph::add_connection_via_side(impl::LocalId elem, int viaSide, imp
     m_elem_graph[elem].push_back(connectedElem);
     m_via_sides[elem].push_back(viaSide);
     ++m_num_edges;
+}
+
+void ElemElemGraph::delete_edge_from_graph(impl::LocalId elem, int offset)
+{
+    m_via_sides[elem].erase(m_via_sides[elem].begin() + offset);
+    m_elem_graph[elem].erase(m_elem_graph[elem].begin() + offset);
+    --m_num_edges;
 }
 
 }} // end namespaces stk mesh

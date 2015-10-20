@@ -99,8 +99,6 @@ protected:
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
-
     stk::topology get_topology_of_connected_element(impl::LocalId local_elem_id, int offset);
 
     stk::topology get_topology_of_remote_element(impl::LocalId local_elem_id, stk::mesh::EntityId other_element);
@@ -200,6 +198,7 @@ private:
     size_t get_num_graph_edges() const { return m_elem_graph.size(); }
     const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const { return m_elem_graph[i]; }
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
+    void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
 
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;
