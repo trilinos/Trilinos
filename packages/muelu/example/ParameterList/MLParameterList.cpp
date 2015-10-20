@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
     std::string xmlFileName; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
     int muelu = true;            clp.setOption("muelu",  &muelu,             "use muelu through MLParameterListInterpreter");
-    int translatedmuelu = true;  clp.setOption("muelu2", &translatedmuelu,   "use muelu through XML parameter translation and ParameterListInterpreter"); 
+    int translatedmuelu = true;  clp.setOption("muelu2", &translatedmuelu,   "use muelu through XML parameter translation and ParameterListInterpreter");
     int ml    = true;
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
     clp.setOption("ml",    &ml,          "use ml");
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
       //
 
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
-      
+
       // Multigrid Hierarchy
       MLParameterListInterpreter mueLuFactory(*params);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
       H->Iterate(*B, *X, nIts);
 
       // Print relative residual norm
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *X, *B)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
           RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
           RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
           // Print relative residual norm
-          Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+          Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
             std::cout << "||Residual|| = " << residualNorms2 << std::endl;
         }
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 
     } // if (muelu)
 
-    
+
     if ( translatedmuelu ) {
        //
       // Construct a multigrid preconditioner
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
 
       RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
-      
+
       // Multigrid Hierarchy
       ParameterListInterpreter mueLuFactory(*mueluParams);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
       H->Iterate(*B, *X, nIts);
 
       // Print relative residual norm
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *X, *B)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
@@ -382,16 +382,16 @@ int main(int argc, char *argv[]) {
           RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
           RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
           // Print relative residual norm
-          Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+          Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
             std::cout << "||Residual|| = " << residualNorms2 << std::endl;
         }
 
         // TODO: AMG as a preconditioner (AZ_cg)
       }
-#endif // HAVE_MUELU_AZTECOO     
+#endif // HAVE_MUELU_AZTECOO
     } // if (translatedmuelu)
-    
+
 #if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
     if (ml) {
 
@@ -443,7 +443,7 @@ int main(int argc, char *argv[]) {
         RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
         RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
         // Print relative residual norm
-        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*A, *mueluX, *mueluB)[0];
+        Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)
           std::cout << "||Residual|| = " << residualNorms << std::endl;
       }

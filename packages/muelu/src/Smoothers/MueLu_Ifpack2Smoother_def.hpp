@@ -176,7 +176,7 @@ namespace MueLu {
 
           // Add Dirichlet rows to the list of seeds
           ArrayRCP<const bool> boundaryNodes;
-          boundaryNodes = Utils::DetectDirichletRows(*merged2Mat, 0.0);
+          boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
           bool haveBoundary = false;
           for (LO i = 0; i < boundaryNodes.size(); i++)
             if (boundaryNodes[i]) {
@@ -302,8 +302,8 @@ namespace MueLu {
     }
 
     RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tpA;
-    if (isBlockedMatrix == true) tpA = Utils::Op2NonConstTpetraRow(merged2Mat);
-    else                         tpA = Utils::Op2NonConstTpetraRow(A_);
+    if (isBlockedMatrix == true) tpA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+    else                         tpA = Utilities::Op2NonConstTpetraRow(A_);
     prec_ = Ifpack2::Factory::create(type_, tpA, overlap_);
     SetPrecParameters();
     prec_->initialize();
@@ -374,18 +374,16 @@ namespace MueLu {
 
     // Apply
     if (InitialGuessIsZero || supportInitialGuess) {
-      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(X);
-      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(B);
-
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utilities::MV2NonConstTpetraMV(X);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utilities::MV2TpetraMV(B);
       prec_->apply(tpB, tpX);
-
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
+      RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(*Correction);
-      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(*Residual);
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utilities::MV2NonConstTpetraMV(*Correction);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utilities::MV2TpetraMV(*Residual);
 
       prec_->apply(tpB, tpX);
 

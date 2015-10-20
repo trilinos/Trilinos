@@ -57,7 +57,7 @@
 
 namespace PHX {
 
-  /*! \brief Container that holds all data associated with a scalar type.
+  /*! \brief Container that holds all data associated with an evaluation type.
 
 
   */

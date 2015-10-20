@@ -438,10 +438,14 @@ namespace {
 
 #ifndef XPETRA_TEST_USE_LONGLONG_GO
 #ifdef HAVE_XPETRA_EPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
 #endif
+#endif
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       UNIT_TEST_GROUP_ORDINAL(int , int)
+#endif
 #endif
 #else
     typedef long long LongLongInt;

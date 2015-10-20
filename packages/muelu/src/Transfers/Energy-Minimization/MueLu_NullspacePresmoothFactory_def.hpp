@@ -85,10 +85,10 @@ namespace MueLu {
       RCP<MultiVector> B = Get< RCP<MultiVector> >(currentLevel, "Nullspace");
       newB = MultiVectorFactory::Build(B->getMap(), B->getNumVectors());
 
-      Teuchos::ArrayRCP<SC> D = Utils::GetMatrixDiagonal(*A);
+      Teuchos::ArrayRCP<SC> D = Utilities::GetMatrixDiagonal(*A);
 
       SC damping = 4./3;
-      damping /= Utils::PowerMethod(*A, true, (LO) 10, 1e-4);
+      damping /= Utilities::PowerMethod(*A, true, (LO) 10, 1e-4);
 
       A->apply(*B, *newB, Teuchos::NO_TRANS);
 

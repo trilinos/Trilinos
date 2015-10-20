@@ -49,11 +49,12 @@
 #include "Xpetra_ImportFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_IO.hpp"
 
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_CoordinatesTransferFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+//#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -163,13 +164,13 @@ namespace MueLu {
       std::ostringstream buf;
       buf << fineLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      MueLu::Utils<double,LO,GO,NO>::Write(fileName,*fineCoords);
+      Xpetra::IO<double,LO,GO,NO>::Write(fileName,*fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::ostringstream buf;
       buf << coarseLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      MueLu::Utils<double,LO,GO,NO>::Write(fileName,*coarseCoords);
+      Xpetra::IO<double,LO,GO,NO>::Write(fileName,*coarseCoords);
     }
   }
 

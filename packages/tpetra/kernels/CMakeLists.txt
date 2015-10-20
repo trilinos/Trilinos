@@ -1,7 +1,17 @@
+INCLUDE(TribitsETISupport)
+
 #
 # Define the subpackage
 #
 TRIBITS_SUBPACKAGE(Kernels)
+
+# Define ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION,
+# which defaults to ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION.
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+# Add this subpackage to the list of subpackages that do explicit
+# template instantiation (ETI).
+TRIBITS_ADD_ETI_SUPPORT()
 
 # If building in debug mode, define the HAVE_TPETRAKERNELS_DEBUG macro.
 TRIBITS_ADD_DEBUG_OPTION()
@@ -22,6 +32,41 @@ TRIBITS_ADD_OPTION_AND_DEFINE( KokkosLinAlg_Opt_Level
   "Optimization level for TpetraKernels computational kernels: a nonnegative integer.  Higher levels result in better performance that is more uniform for corner cases, but increase build time and library size.  The default value is 1, which should give performance within ten percent of optimal on most platforms, for most problems."
   "1"
   )
+
+# ==================================================================
+# Explicit template instantiation (ETI) and test instantiation logic
+# ==================================================================
+
+# tpetra/CMakeLists.txt (the package's CMake logic) defines these
+# variables.  Despite "ETI" in their names, they exist whether or not
+# ETI is defined.  If ETI is defined, these variables govern the set
+# of template parameter combinations over which Tpetra instantiates.
+# Whether or not ETI is defined, the variables govern the set of
+# template parameter combinations over which Tpetra runs tests.
+
+ASSERT_DEFINED (Tpetra_ETI_SCALARS)
+ASSERT_DEFINED (Tpetra_ETI_SCALARS_NO_ORDS)
+ASSERT_DEFINED (Tpetra_ETI_LORDS)
+ASSERT_DEFINED (Tpetra_ETI_DEVICES)
+
+SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS}")
+# Exclude all ordinal types (GlobalOrdinal and int).
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_NO_ORDS}")
+SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}")
+SET(${PACKAGE_NAME}_ETI_DEVICES "${Tpetra_ETI_DEVICES}")
+
+# "Export" the names for use in the ETI system.
+# If we don't do this, ETI won't see these variables.
+
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
+
+# ==================================================================
+# Process subdirectories
+# ==================================================================
 
 ADD_SUBDIRECTORY(src)
 

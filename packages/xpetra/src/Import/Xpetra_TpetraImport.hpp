@@ -83,15 +83,15 @@ namespace Xpetra {
 
     //! Construct an Import from the source and target Maps.
     TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target)
-      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target)))) {  }
+      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target)))) {   }
 
     //! Constructor (with list of parameters).
     TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist)
-      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target), plist))) {  }
+      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target), plist))) {   }
 
     //! Copy constructor.
     TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import)
-      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(import)))) {  }
+      : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(import)))) {   }
 
     //! Destructor.
     ~TpetraImport() {  }
@@ -159,6 +159,94 @@ namespace Xpetra {
     RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > import_;
 
   }; // TpetraImport class
+
+#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+  template <class Node>
+  class TpetraImport<Node> : public Import<int, int, Node>
+  {
+
+  public:
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Construct an Import from the source and target Maps.
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+
+    //! Constructor (with list of parameters).
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+
+    //! Copy constructor.
+    TpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import) { XPETRA_TPETRA_ETI_EXCEPTION("TpetraImport<int,int>", "TpetraImport<int,int>", "int"); }
+
+    //! Destructor.
+    ~TpetraImport() {  }
+
+    //@}
+
+    //! @name Import Attribute Methods
+    //@{
+
+    //! Number of initial identical IDs.
+    size_t getNumSameIDs() const { return 0; }
+
+    //! Number of IDs to permute but not to communicate.
+    size_t getNumPermuteIDs() const { return 0; }
+
+    //! List of local IDs in the source Map that are permuted.
+    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>(); }
+
+    //! List of local IDs in the target Map that are permuted.
+    ArrayView< const LocalOrdinal > getPermuteToLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>();  }
+
+    //! Number of entries not on the calling process.
+    size_t getNumRemoteIDs() const { return 0; }
+
+    //! List of entries in the target Map to receive from other processes.
+    ArrayView< const LocalOrdinal > getRemoteLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>();  }
+
+    //! Number of entries that must be sent by the calling process to other processes.
+    size_t getNumExportIDs() const { return 0; }
+
+    //! List of entries in the source Map that will be sent to other processes.
+    ArrayView< const LocalOrdinal > getExportLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>();  }
+
+    //! List of processes to which entries will be sent.
+    ArrayView< const int > getExportPIDs() const { return Teuchos::ArrayView<const int>();  }
+
+    //! The Source Map used to construct this Import object.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { return Teuchos::null; }
+
+    //! The Target Map used to construct this Import object.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { return Teuchos::null; }
+
+    //@}
+
+    //! @name I/O Methods
+    //@{
+
+    //! Print the Import's data to the given output stream.
+    void print(std::ostream &os) const { /* noop */ }
+
+    //@}
+
+    //! @name Xpetra specific
+    //@{
+
+    //! TpetraImport constructor to wrap a Tpetra::Import object
+    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {  }
+
+    RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Import() const { return Teuchos::null; }
+
+    //@}
+
+  }; // TpetraImport class (specialization for LO=GO=int)
+#endif // ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

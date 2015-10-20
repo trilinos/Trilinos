@@ -81,7 +81,7 @@ namespace MueLu {
 
     RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
-    RCP<Matrix> R = Utils2::Transpose(*P, true,label);
+    RCP<Matrix> R = Utilities::Transpose(*P, true,label);
 
     RCP<ParameterList> params = rcp(new ParameterList());;
     params->set("printLoadBalancingInfo", true);

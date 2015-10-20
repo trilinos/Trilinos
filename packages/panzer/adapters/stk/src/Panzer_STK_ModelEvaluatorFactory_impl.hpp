@@ -194,6 +194,7 @@ namespace panzer_stk_classic {
         p.set<bool>("Constant Mass Matrix",true);
         p.set<bool>("Apply Mass Matrix Inverse in Explicit Evaluator",true);
         p.set<bool>("Use Conservative IMEX",false);
+        p.set<bool>("Compute Real Time Derivative",false);
         p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);

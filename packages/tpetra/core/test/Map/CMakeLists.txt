@@ -55,6 +55,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_LocalMap
+  SOURCES
+    Map_LocalMap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 # Tpetra bug 5401:
 # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5401
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

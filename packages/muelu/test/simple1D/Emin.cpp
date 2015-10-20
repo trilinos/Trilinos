@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (pauseForDebugger) {
-      Utils::PauseForDebugger();
+      Utilities::PauseForDebugger();
     }
 
     /**********************************************************************************/

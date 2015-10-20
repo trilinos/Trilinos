@@ -228,7 +228,7 @@ namespace MueLu {
 
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
 
-    RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
+    RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
 
     Ifpack factory;
     prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
@@ -270,17 +270,17 @@ namespace MueLu {
 
     // Apply
     if (InitialGuessIsZero || supportInitialGuess) {
-      Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(X);
-      const Epetra_MultiVector& epB = Utils::MV2EpetraMV(B);
+      Epetra_MultiVector&       epX = Utilities::MV2NonConstEpetraMV(X);
+      const Epetra_MultiVector& epB = Utilities::MV2EpetraMV(B);
 
       prec_->ApplyInverse(epB, epX);
 
     } else {
-      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
+      RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-      Epetra_MultiVector&       epX = Utils::MV2NonConstEpetraMV(*Correction);
-      const Epetra_MultiVector& epB = Utils::MV2EpetraMV(*Residual);
+      Epetra_MultiVector&       epX = Utilities::MV2NonConstEpetraMV(*Correction);
+      const Epetra_MultiVector& epB = Utilities::MV2EpetraMV(*Residual);
 
       prec_->ApplyInverse(epB, epX);
 

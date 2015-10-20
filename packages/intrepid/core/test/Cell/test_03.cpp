@@ -345,16 +345,12 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> paramEdgeWeights(numCubPoints);
     edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
-    Teuchos::RCP< Basis< double, FieldContainer<double> > > HGRAD_Basis;
-
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
       // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
       if( ( (*cti).getDimension() >= 2) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
     
-        //Get basis corresponding to the cell topology being iterated over
-        HGRAD_Basis = getIntrepidBasis(*cti);     
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
         FieldContainer<double> refCellVertices(vCount, cellDim);
@@ -392,7 +388,7 @@ int main(int argc, char *argv[]) {
            *    3. Compute physical edge tangents
            */
           CellTools::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, (*cti) );
-          CellTools::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, HGRAD_Basis );
+          CellTools::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, getIntrepidBasis(*cti) );
           CellTools::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, (*cti)); 
           /*
            * Compute tangents directly using parametrization of phys. edge and compare with CellTools tangents.
@@ -492,9 +488,6 @@ int main(int argc, char *argv[]) {
       // Exclude 2D and Pyramid<5> cells
       if( ( (*cti).getDimension() == 3) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
         
-        //Get inrepid basis corresponding to cell topology    
-        HGRAD_Basis = getIntrepidBasis(*cti);     
-        
         int cellDim = (*cti).getDimension();
         int vCount  = (*cti).getVertexCount();
         FieldContainer<double> refCellVertices(vCount, cellDim);
@@ -537,7 +530,7 @@ int main(int argc, char *argv[]) {
               {
                 // Compute face normals using CellTools
                 CellTools::mapToReferenceSubcell(refTriFacePoints, paramTriFacePoints, 2, faceOrd, (*cti) );
-                CellTools::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, HGRAD_Basis );
+                CellTools::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, getIntrepidBasis(*cti) );
                 CellTools::getPhysicalFaceNormals(triFacePointNormals, triFacePointsJacobians, faceOrd, (*cti));               
                 CellTools::getPhysicalSideNormals(triSidePointNormals, triFacePointsJacobians, faceOrd, (*cti));               
                 /* 
@@ -601,7 +594,7 @@ int main(int argc, char *argv[]) {
               {
                 // Compute face normals using CellTools
                 CellTools::mapToReferenceSubcell(refQuadFacePoints, paramQuadFacePoints, 2, faceOrd, (*cti) );
-                CellTools::setJacobian(quadFacePointsJacobians, refQuadFacePoints, physCellVertices, HGRAD_Basis );
+                CellTools::setJacobian(quadFacePointsJacobians, refQuadFacePoints, physCellVertices, getIntrepidBasis(*cti) );
                 CellTools::getPhysicalFaceNormals(quadFacePointNormals, quadFacePointsJacobians, faceOrd, (*cti));               
                 CellTools::getPhysicalSideNormals(quadSidePointNormals, quadFacePointsJacobians, faceOrd, (*cti)); 
                 /*

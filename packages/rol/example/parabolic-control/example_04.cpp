@@ -72,12 +72,19 @@
 
 template<class Real>
 class EqualityConstraint_ParabolicControl : public ROL::EqualityConstraint_SimOpt<Real> {
+
+  typedef std::vector<Real>    vector;
+  typedef ROL::Vector<Real>    V;
+  typedef ROL::StdVector<Real> SV;
+  
+  typedef typename vector::size_type uint; 
+
 private:
   std::vector<Real> u0_;
   Real eps1_;
   Real eps2_;
-  unsigned nx_;
-  unsigned nt_;
+  uint nx_;
+  uint nt_;
   Real T_;
   Real dx_;
   Real dt_;
@@ -88,7 +95,7 @@ private:
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
     Mu.clear();
     Mu.resize(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       if ( n < nx_-1 ) {
         Mu[n] += dx_/6.0*(2.0*u[n]+u[n+1]);
       }
@@ -113,7 +120,7 @@ private:
   void apply_pde_jacobian(std::vector<Real> &jv, const std::vector<Real> &v, const std::vector<Real> &u) {
     jv.clear();
     jv.resize(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       if ( n < nx_-1 ) {
         jv[n] += dx_/6.0*(2.0*v[n]+v[n+1]) + dt_*eps1_/dx_*(v[n]-v[n+1]); // Mass & stiffness
       }
@@ -137,7 +144,7 @@ private:
                         const std::vector<Real> &u, const Real z) {
     r.clear();
     r.resize(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       if ( n < nx_-1 ) {
         r[n] += dx_/6.0*(2.0*u[n]+u[n+1]) + dt_*eps1_/dx_*(u[n]-u[n+1]); // Mass & stiffness
         r[n] -= dx_/6.0*(2.0*up[n]+up[n+1]); // Previous time step
@@ -153,14 +160,14 @@ private:
 
   Real compute_norm(const std::vector<Real> &r) {
     Real norm = 0.0;
-    for (unsigned i = 0; i < r.size(); i++) {
+    for (uint i = 0; i < r.size(); i++) {
       norm += r[i]*r[i];
     }
     return std::sqrt(norm);
   }
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (unsigned i = 0; i < u.size(); i++) {
+    for (uint i = 0; i < u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }
@@ -170,11 +177,12 @@ private:
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
     Teuchos::LAPACK<int,Real> lp;
+    int nx = static_cast<int>(nx_);
     int info;
-    int ldb  = nx_;
+    int ldb  = nx;
     int nhrs = 1;
-    lp.PTTRF(nx_,&d[0],&o[0],&info);
-    lp.PTTRS(nx_,nhrs,&d[0],&o[0],&u[0],ldb,&info);
+    lp.PTTRF(nx,&d[0],&o[0],&info);
+    lp.PTTRS(nx,nhrs,&d[0],&o[0],&u[0],ldb,&info);
   }
 
   void run_newton(std::vector<Real> &u, const std::vector<Real> &up, const Real z) {
@@ -194,7 +202,7 @@ private:
     Real alpha = 1.0, tmp = 0.0;
     std::vector<Real> s(nx_,0.0);
     std::vector<Real> utmp(nx_,0.0);
-    for (unsigned i = 0; i < maxit; i++) {
+    for (uint i = 0; i < maxit; i++) {
       // Get Jacobian
       compute_pde_jacobian(d,o,u);
       // Solve Newton system
@@ -220,6 +228,19 @@ private:
       }
     }
   }
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector(); 
+  }
+
+
+
 /*************************************************************/
 /********** END PRIVATE MEMBER FUNCTION DECLARATION **********/
 /*************************************************************/
@@ -227,31 +248,33 @@ private:
 public:
 
   EqualityConstraint_ParabolicControl(Real eps = 1.0, int nx = 128, int nt = 100, Real T = 1) 
-    : eps1_(eps), eps2_(1.0), nx_((unsigned)nx), nt_((unsigned)nt), T_(T) {
+    : eps1_(eps), eps2_(1.0), nx_(nx), nt_(nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1.0);
   }
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > cp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector());
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP; 
+
+    RCP<vector> cp = getVector(c);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     std::vector<Real> C(nx_,0.0);
     std::vector<Real> uold(u0_);
     std::vector<Real> unew(u0_);
-    for (unsigned t = 0; t < nt_; t++) {
+
+    for (uint t = 0; t < nt_; t++) {
       // Copy state and control at t time step
-      for (unsigned n = 0; n < nx_; n++) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[t*nx_+n];
       }
       // Evaluate residual at t time step
       compute_residual(C,uold,unew,(*zp)[t]);
       // Copy residual at t time step
-      for (unsigned n = 0; n < nx_; n++) {
+      for (uint n = 0; n < nx_; n++) {
         (*cp)[t*nx_+n] = C[n];
       }
       uold.assign(unew.begin(),unew.end());
@@ -259,17 +282,19 @@ public:
   }
 
   void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > up = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Initialize State Storage
     std::vector<Real> uold(u0_);
     std::vector<Real> unew(u0_);
     // Time Step Using Implicit Euler
-    for ( unsigned t = 0; t < nt_; t++ ) {
+    for ( uint t = 0; t < nt_; t++ ) {
       run_newton(unew,uold,(*zp)[t]);
-      for(unsigned n = 0; n < nx_; n++) {
+      for( uint n = 0; n < nx_; n++) {
         (*up)[t*nx_+n] = unew[n];
       }
       uold.assign(unew.begin(),unew.end());
@@ -282,21 +307,22 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+    
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     std::vector<Real> J(u0_.size(),0.0);
     std::vector<Real> M(u0_.size(),0.0);
     std::vector<Real> vold(u0_);
     std::vector<Real> unew(u0_);
     std::vector<Real> vnew(u0_);
-    for (unsigned t = 0; t < nt_; t++) {
-      for (unsigned n = 0; n < nx_; n++) {
+
+    for (uint t = 0; t < nt_; t++) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[t*nx_+n];
         vnew[n] = (*vp)[t*nx_+n];
       }
@@ -304,7 +330,7 @@ public:
       if ( t > 0 ) {
         apply_mass(M,vold);
       }
-      for (unsigned n = 0; n < nx_; n++) {
+      for (uint n = 0; n < nx_; n++) {
         (*jvp)[t*nx_+n] = J[n] - M[n];
       }
       vold.assign(vnew.begin(),vnew.end());
@@ -313,14 +339,14 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+ 
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+   
     // Initialize State Storage
     std::vector<Real> M(u0_);
     std::vector<Real> sold(u0_);
@@ -330,9 +356,10 @@ public:
     std::vector<Real> d(nx_,0.0);
     std::vector<Real> r(nx_,0.0);
     std::vector<Real> o(nx_-1,0.0);
+
     // Time Step Using Implicit Euler
-    for (unsigned t = 0; t < nt_; t++) {
-      for (unsigned n = 0; n < nx_; n++) {
+    for (uint t = 0; t < nt_; t++) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[t*nx_+n];
         vnew[n] = (*vp)[t*nx_+n];
       }
@@ -345,7 +372,7 @@ public:
       }
       // Solve solve adjoint system at current time step
       linear_solve(snew,d,o,vnew);
-      for(unsigned n = 0; n < nx_; n++) {
+      for(uint n = 0; n < nx_; n++) {
         (*jvp)[t*nx_+n] = snew[n];
       }
       sold.assign(snew.begin(),snew.end());
@@ -354,21 +381,23 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+
+    using Teuchos::RCP;
+
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     std::vector<Real> J(u0_.size(),0.0);
     std::vector<Real> M(u0_.size(),0.0);
     std::vector<Real> vold(u0_);
     std::vector<Real> unew(u0_);
     std::vector<Real> vnew(u0_);
-    for (unsigned t = nt_; t > 0; t--) {
-      for (unsigned n = 0; n < nx_; n++) {
+
+    for (uint t = nt_; t > 0; t--) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[(t-1)*nx_+n];
         vnew[n] = (*vp)[(t-1)*nx_+n];
       }
@@ -376,7 +405,7 @@ public:
       if ( t < nt_ ) {
         apply_mass(M,vold);
       }
-      for (unsigned n = 0; n < nx_; n++) {
+      for (uint n = 0; n < nx_; n++) {
         (*jvp)[(t-1)*nx_+n] = J[n] - M[n];
       }
       vold.assign(vnew.begin(),vnew.end());
@@ -385,14 +414,13 @@ public:
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, 
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+    using Teuchos::RCP;
+
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Initialize State Storage
     std::vector<Real> M(u0_);
     std::vector<Real> sold(u0_);
@@ -402,9 +430,10 @@ public:
     std::vector<Real> d(nx_,0.0);
     std::vector<Real> r(nx_,0.0);
     std::vector<Real> o(nx_-1,0.0);
+
     // Time Step Using Implicit Euler
-    for (unsigned t = nt_; t > 0; t--) {
-      for (unsigned n = 0; n < nx_; n++) {
+    for (uint t = nt_; t > 0; t--) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[(t-1)*nx_+n];
         vnew[n] = (*vp)[(t-1)*nx_+n];
       }
@@ -417,7 +446,7 @@ public:
       }
       // Solve solve adjoint system at current time step
       linear_solve(snew,d,o,vnew);
-      for (unsigned n = 0; n < nx_; n++) {
+      for (uint n = 0; n < nx_; n++) {
         (*jvp)[(t-1)*nx_+n] = snew[n];
       }
       sold.assign(snew.begin(),snew.end());
@@ -426,31 +455,31 @@ public:
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     jv.zero();
-    for (unsigned t = 0; t < nt_; t++) {
+    for (uint t = 0; t < nt_; t++) {
       (*jvp)[t*nx_+(nx_-1)] = -dt_*(*vp)[t];
     }
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > jvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    for (unsigned t = 0; t < nt_; t++) {
+
+    using Teuchos::RCP;
+ 
+    RCP<vector> jvp = getVector(jv);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
+    for (uint t = 0; t < nt_; t++) {
       (*jvp)[t] = -dt_*(*vp)[t*nx_+(nx_-1)];
     }
   }
@@ -458,31 +487,31 @@ public:
   void applyAdjointHessian_11(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w, 
                               const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> > hwvp = 
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hwv)).getVector());
-    Teuchos::RCP<const std::vector<Real> > wp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(w))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<const std::vector<Real> > up = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp = 
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> hwvp = getVector(hwv);
+    RCP<const vector> wp = getVector(w);
+    RCP<const vector> vp = getVector(v);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Initialize State Storage
     std::vector<Real> unew(u0_);
     std::vector<Real> wnew(u0_);
     std::vector<Real> vnew(u0_);
     std::vector<Real> snew(u0_);
+
     // Time Step Using Implicit Euler
-    for (unsigned t = nt_; t > 0; t--) {
-      for (unsigned n = 0; n < nx_; n++) {
+    for (uint t = nt_; t > 0; t--) {
+      for (uint n = 0; n < nx_; n++) {
         unew[n] = (*up)[(t-1)*nx_+n];
         vnew[n] = (*vp)[(t-1)*nx_+n];
         wnew[n] = (*wp)[(t-1)*nx_+n];
       }
       // Get PDE Hessian
       apply_pde_hessian(snew,unew,wnew,vnew);
-      for(unsigned n = 0; n < nx_; n++) {
+      for(uint n = 0; n < nx_; n++) {
         (*hwvp)[(t-1)*nx_+n] = snew[n];
       }
     }
@@ -509,10 +538,17 @@ public:
 
 template<class Real>
 class Objective_ParabolicControl : public ROL::Objective_SimOpt<Real> {
+
+  typedef std::vector<Real>    vector;
+  typedef ROL::Vector<Real>    V;
+  typedef ROL::StdVector<Real> SV;
+  
+  typedef typename vector::size_type uint; 
+
 private:
   Real alpha_;
-  unsigned nx_;
-  unsigned nt_;
+  uint nx_;
+  uint nt_;
   Real dx_;
   Real dt_;
   Real T_;
@@ -522,7 +558,7 @@ private:
 /***************************************************************/
   void apply_mass(std::vector<Real> &Mu, const std::vector<Real> &u ) {
     Mu.resize(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       if ( n < nx_-1 ) {
         Mu[n] += dx_/6.0*(2.0*u[n] + u[n+1]);
       }
@@ -546,7 +582,7 @@ private:
 
   Real compute_dot(const std::vector<Real> &r, const std::vector<Real> &s) {
     Real ip = 0.0; 
-    for (unsigned i = 0; i < r.size(); i++) {
+    for (uint i = 0; i < r.size(); i++) {
       ip += r[i]*s[i];
     }
     return ip;
@@ -567,10 +603,21 @@ private:
   }
 
   void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (unsigned i = 0; i < u.size(); i++) {
+    for (uint i = 0; i < u.size(); i++) {
       u[i] += alpha*s[i];
     }
   }
+
+  Teuchos::RCP<const vector> getVector( const V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<const SV>(x).getVector();
+  }
+
+  Teuchos::RCP<vector> getVector( V& x ) {
+    using Teuchos::dyn_cast;
+    return dyn_cast<SV>(x).getVector(); 
+  }
+
 /*************************************************************/
 /********** END PRIVATE MEMBER FUNCTION DECLARATION **********/
 /*************************************************************/
@@ -578,24 +625,27 @@ private:
 public:
 
   Objective_ParabolicControl(Real alpha = 1.e-4, int nx = 128, int nt = 100, Real T = 1) 
-    : alpha_(alpha), nx_((unsigned)nx), nt_((unsigned)nt), T_(T) {
+    : alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1.0);
   }
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     // Compute Norm of State
     std::vector<Real> uT(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       uT[n] = (*up)[(nt_-1)*nx_ + n] - evaluate_target((Real)n*dx_);
     } 
     Real val = 0.5*compute_weighted_dot(uT,uT); 
+
     // Add Norm of Control
-    for (unsigned t = 0; t < nt_; t++) {
+    for (uint t = 0; t < nt_; t++) {
       val += 0.5*alpha_*dt_*(*zp)[t]*(*zp)[t];
     }
     return val;
@@ -603,55 +653,57 @@ public:
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     g.zero();
-    Teuchos::RCP<std::vector<Real> > gp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+  
+    RCP<vector> gp = getVector(g);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+
     std::vector<Real> uT(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       uT[n] = (*up)[(nt_-1)*nx_ + n] - evaluate_target((Real)n*dx_);
     } 
     std::vector<Real> M(nx_,0.0);
     apply_mass(M,uT);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       (*gp)[(nt_-1)*nx_ + n] = M[n];
     }
   }
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     g.zero();
-    Teuchos::RCP<std::vector<Real> > gp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(g)).getVector());
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    using Teuchos::RCP;
+
+    RCP<vector> gp = getVector(g);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+ 
     // Compute gradient
-    for (unsigned n = 0; n < nt_; n++) {
+    for (uint n = 0; n < nt_; n++) {
       (*gp)[n] = dt_*alpha_*(*zp)[n];
     }
   }
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                    const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<std::vector<Real> > hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    using Teuchos::RCP;
+    
+    RCP<vector> hvp = getVector(hv);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+    RCP<const vector> vp = getVector(v);
+
     // Compute HessVec
     std::vector<Real> vT(nx_,0.0);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       vT[n] = (*vp)[(nt_-1)*nx_ + n];
     } 
     std::vector<Real> M(nx_,0.0);
     apply_mass(M,vT);
-    for (unsigned n = 0; n < nx_; n++) {
+    for (uint n = 0; n < nx_; n++) {
       (*hvp)[(nt_-1)*nx_ + n] = M[n];
     }
   }
@@ -668,16 +720,16 @@ public:
 
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                    const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > up =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(u))).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(v))).getVector();
-    Teuchos::RCP<std::vector<Real> > hvp =
-      Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(hv)).getVector());
+
+    using Teuchos::RCP;
+
+    RCP<vector> hvp = getVector(hv);
+    RCP<const vector> up = getVector(u);
+    RCP<const vector> zp = getVector(z);
+    RCP<const vector> vp = getVector(v);
+
     // Compute HessVec
-    for (unsigned n = 0; n < nt_; n++) {
+    for (uint n = 0; n < nt_; n++) {
       (*hvp)[n] = dt_*alpha_*(*vp)[n];
     }
   }
@@ -687,16 +739,25 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
+  typedef std::vector<RealT>    vector;
+  typedef ROL::Vector<RealT>    V;
+  typedef ROL::StdVector<RealT> SV;
+   
+  typedef typename vector::size_type uint;
+
+  using Teuchos::RCP;  using Teuchos::rcp;
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+
+  RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = rcp(&std::cout, false);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = rcp(&bhs, false);
 
   int errorFlag  = 0;
 
@@ -704,64 +765,81 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    int nx      = 40;    // Set spatial discretization.
-    int nt      = 40;    // Set temporal discretization.
+    uint nx     = 40;    // Set spatial discretization.
+    uint nt     = 40;    // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
     Objective_ParabolicControl<RealT> obj(alpha,nx,nt,T);
     EqualityConstraint_ParabolicControl<RealT> con(eps,nx,nt,T);
+
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > xz_rcp = Teuchos::rcp( new std::vector<RealT> (nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > xu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nt, 1.0) );
-    Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (nx*nt, 1.0) );
-    for (int i=0; i<nt; i++) {
+    RCP<vector> xz_rcp = rcp( new vector(nt, 1.0) );
+    RCP<vector> xu_rcp = rcp( new vector(nx*nt, 1.0) );
+    RCP<vector> gz_rcp = rcp( new vector(nt, 1.0) );
+    RCP<vector> gu_rcp = rcp( new vector(nx*nt, 1.0) );
+    RCP<vector> yz_rcp = rcp( new vector(nt, 1.0) );
+    RCP<vector> yu_rcp = rcp( new vector(nx*nt, 1.0) );
+
+    for (uint i=0; i<nt; i++) {
       (*xz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*yz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      for (int n=0; n<nx; n++) {
+      for (uint n=0; n<nx; n++) {
         (*xu_rcp)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_rcp)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
       }
     }
-    ROL::StdVector<RealT> xz(xz_rcp);
-    ROL::StdVector<RealT> xu(xu_rcp);
-    ROL::StdVector<RealT> gz(gz_rcp);
-    ROL::StdVector<RealT> gu(gu_rcp);
-    ROL::StdVector<RealT> yz(yz_rcp);
-    ROL::StdVector<RealT> yu(yu_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > xzp = Teuchos::rcp(&xz,false);
-    Teuchos::RCP<ROL::Vector<RealT> > xup = Teuchos::rcp(&xu,false);
-    Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
-    Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&gu,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
-    Teuchos::RCP<ROL::Vector<RealT> > yup = Teuchos::rcp(&yu,false);
+
+    SV xz(xz_rcp);
+    SV xu(xu_rcp);
+    SV gz(gz_rcp);
+    SV gu(gu_rcp);
+    SV yz(yz_rcp);
+    SV yu(yu_rcp);
+
+    RCP<V> xzp = rcp(&xz,false);
+    RCP<V> xup = rcp(&xu,false);
+    RCP<V> gzp = rcp(&gz,false);
+    RCP<V> gup = rcp(&gu,false);
+
+    RCP<V> yzp = rcp(&yz,false);
+    RCP<V> yup = rcp(&yu,false);
+
     ROL::Vector_SimOpt<RealT> x(xup,xzp);
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
-    Teuchos::RCP<std::vector<RealT> > c_rcp  = Teuchos::rcp( new std::vector<RealT> (nt*nx, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > l_rcp  = Teuchos::rcp( new std::vector<RealT> (nt*nx, 0.0) );
-    ROL::StdVector<RealT> c(c_rcp);
-    ROL::StdVector<RealT> l(l_rcp);
-    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(&c,false);
+
+    RCP<vector> c_rcp  = rcp( new vector(nt*nx, 0.0) );
+    RCP<vector> l_rcp  = rcp( new vector(nt*nx, 0.0) );
+
+    SV c(c_rcp);
+    SV l(l_rcp);
+
+    RCP<V> cp = rcp(&c,false);
+
     // Initialize reduced objective function
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > pobj = Teuchos::rcp(&obj,false);
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
+    RCP<ROL::Objective_SimOpt<RealT> > pobj = rcp(&obj,false);
+    RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,cp);
+
     // Check deriatives.
     obj.checkGradient(x,y,true,*outStream);
     obj.checkHessVec(x,y,true,*outStream);
     con.checkApplyJacobian(x,y,c,true,*outStream);
+
     //con.checkApplyAdjointJacobian(x,yu,c,x,true);
     con.checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
     robj.checkGradient(xz,yz,true,*outStream);
     robj.checkHessVec(xz,yz,true,*outStream);
+
     // Initialize constraints -- these are set to -infinity and infinity.
-    std::vector<RealT> lo(nt,-1.e16);
-    std::vector<RealT> hi(nt, 1.e16);
-    ROL::StdBoundConstraint<RealT> icon(lo,hi);
+    RCP<vector> lo_rcp = rcp( new vector(nt,-1.e16) );
+    RCP<vector> hi_rcp = rcp( new vector(nt, 1.e16) );
+
+    RCP<V> lo = rcp( new SV(lo_rcp) );
+    RCP<V> hi = rcp( new SV(hi_rcp) );
+
+    ROL::BoundConstraint<RealT> icon(lo,hi);
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -782,8 +860,8 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    Teuchos::RCP<ROL::Algorithm<RealT> > algo
-      = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    RCP<ROL::Algorithm<RealT> > algo
+      = rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
     // Run algorithm.
     xz.zero();
     std::clock_t timer_pdas = std::clock();
@@ -795,7 +873,7 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    algo = rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
     // Run Algorithm
     xz.zero();
     std::clock_t timer_tr = std::clock();
@@ -809,7 +887,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Set algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
+    algo = rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     x.zero();
     std::clock_t timer_cs = std::clock();
     algo->run(x, g, l, c, obj, con, true, *outStream);

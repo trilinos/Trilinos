@@ -83,6 +83,15 @@ public:
                                               const Teuchos::RCP<const Epetra_Map> & uniqueMap)
       : isInitialized_(false) { initialize(importer,ghostedMap,uniqueMap); }
 
+   /** Choose a few GIDs and instead of zeroing them out in the ghosted vector set
+     * them to a specified value. Note that this is only useful for GIDs in the
+     * ghosted map that are not in the unique map.
+     *
+     * This must be called befor initialize. Also note that no attempt to synchronize
+     * these values acrossed processor is made. So its up to the user to be consistent.
+     */
+   void useConstantValues(const std::vector<int> & indices,double value);
+
    /** Initialize this object with some Epetra communication objects. This method
      * must be called before an object of this type can be used.
      *
@@ -142,6 +151,9 @@ private:
    Teuchos::RCP<const Epetra_Import> importer_;
    Teuchos::RCP<Epetra_Vector> ghostedVector_;
    Teuchos::RCP<const Epetra_Vector> uniqueVector_;
+
+   typedef std::pair<std::vector<int>,double> FilteredPair;
+   std::vector<FilteredPair> filteredPairs_; 
 };
 
 }

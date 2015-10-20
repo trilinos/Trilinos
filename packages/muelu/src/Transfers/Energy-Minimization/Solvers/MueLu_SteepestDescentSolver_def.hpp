@@ -50,11 +50,11 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_SteepestDescentSolver_decl.hpp"
-
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+
+#include "MueLu_SteepestDescentSolver_decl.hpp"
 
 namespace MueLu {
 
@@ -74,7 +74,7 @@ namespace MueLu {
 
     Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
-    Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal(*A);
 
     RCP<CrsMatrix> Ptmp_ = CrsMatrixFactory::Build(C.GetPattern());
     Ptmp_->fillComplete(P0.getDomainMap(), P0.getRangeMap());
@@ -93,7 +93,7 @@ namespace MueLu {
 #else
       // gradient = - A * P
       SC stepLength = stepLength_;
-      Utils::MyOldScaleMatrix(*AP, D, true, false, false);
+      Utilities::MyOldScaleMatrix(*AP, D, true, false, false);
       C.Apply(*AP, *Ptmp);
 #endif
 

@@ -52,6 +52,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_IO.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -184,9 +185,9 @@ int main(int argc, char *argv[]) {
 
           if (optDumpMatrices) {
             std::string fileName="checkA.mm";
-            Utils::Write( fileName,*A);
+            Xpetra::IO<SC,LO,GO,Node>::Write( fileName,*A);
             fileName="checkB.mm";
-            Utils::Write( fileName,*B);
+            Xpetra::IO<SC,LO,GO,Node>::Write( fileName,*B);
           }
 
         }  //scope for timing matrix creation

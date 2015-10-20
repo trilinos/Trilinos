@@ -309,8 +309,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -334,8 +338,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -352,8 +360,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -378,8 +390,12 @@ namespace Xpetra {
           newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -397,8 +413,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -417,8 +437,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -446,8 +470,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -472,8 +500,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -492,8 +524,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,GlobalOrdinal>(numElements, localNumElements, comm)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -512,8 +548,12 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

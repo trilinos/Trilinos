@@ -300,7 +300,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<local_lids.dimension_1();i++) 
+       for(int i=0;i<Teuchos::as<int>(local_lids.dimension_1());i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      
@@ -350,6 +350,17 @@ protected:
 
      // store in Kokkos type
      localIDs_k_ = localIDs_k;
+   }
+
+   /** Access internal state and share the local ID fields. This allows decorators
+     * classes to be defined and still not loose the performance benefit of the
+     * fast getElementLIDs methods. Note that this copies from a distinct UGI into
+     * this object.
+     */
+   void shareLocalIDs(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & src)
+   {
+     localIDs_   = src.localIDs_;
+     localIDs_k_ = src.localIDs_k_;
    }
 
 private:

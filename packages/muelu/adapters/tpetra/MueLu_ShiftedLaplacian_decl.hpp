@@ -81,10 +81,12 @@
 #include <MueLu_Utilities_fwd.hpp>
 
 // Belos
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosTpetraAdapter.hpp>
+#endif
 
 namespace MueLu {
 
@@ -108,9 +110,11 @@ namespace MueLu {
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     typedef Belos::LinearProblem<SC,TMV,OP>              LinearProblem;
     typedef Belos::SolverManager<SC,TMV,OP>              SolverManager;
     typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
+#endif
 
   public:
 
@@ -291,11 +295,13 @@ namespace MueLu {
     RCP< MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO> > MueLuOp_;
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO> >               TpetraA_;
 
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     // Belos Linear Problem and Solver
     RCP<LinearProblem>                LinearProblem_;
     RCP<SolverManager>                SolverManager_;
     RCP<SolverFactory>                SolverFactory_;
     RCP<Teuchos::ParameterList>       BelosList_;
+#endif
 
   };
 

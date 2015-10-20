@@ -353,8 +353,11 @@ namespace {
 #else
         typedef long long GO;
 #endif
+
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, GO, NodeType )
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, GO, NodeType )
+#endif
 
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment
   // the line below if you want to reenable the test.

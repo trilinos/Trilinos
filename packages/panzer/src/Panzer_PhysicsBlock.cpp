@@ -107,6 +107,37 @@ void panzer::buildPhysicsBlocks(const std::map<std::string,std::string>& block_i
   }
 }
 
+void panzer::readPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                               const Teuchos::RCP<Teuchos::ParameterList>& physics_blocks_plist,
+                               std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::map;
+  using std::string;
+  
+  TEUCHOS_ASSERT(nonnull(physics_blocks_plist));
+
+  // Create a physics block for each element block
+  map<string,string>::const_iterator itr;
+  for (itr = block_ids_to_physics_ids.begin(); itr!=block_ids_to_physics_ids.end();++itr) {
+    string element_block_id = itr->first;
+    string physics_block_id = itr->second;
+    
+    // find physics block parameter sublist
+    TEUCHOS_TEST_FOR_EXCEPTION(!physics_blocks_plist->isSublist(physics_block_id),
+                            std::runtime_error,
+                            "Failed to find physics id: \""
+                            << physics_block_id 
+                            << "\" requested by element block: \"" 
+                            << element_block_id << "\"!");
+    
+    RCP<panzer::PhysicsBlock> pb = rcp(new panzer::PhysicsBlock(Teuchos::sublist(physics_blocks_plist,physics_block_id,true), 
+                                                        element_block_id));
+    physicsBlocks.push_back(pb);
+  }
+}
+
 // *******************************************************************
 Teuchos::RCP<panzer::PhysicsBlock> panzer::findPhysicsBlock(const std::string element_block_id,
                                                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
@@ -155,6 +186,17 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
             m_element_block_id,
             m_cell_data,
             build_transient_support);
+}
+
+// *******************************************************************
+panzer::PhysicsBlock::
+PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
+             const std::string & element_block_id) :
+  m_element_block_id(element_block_id),
+  m_default_integration_order(1),
+  m_input_parameters(physics_block_plist),
+  m_build_transient_support(false)
+{
 }
 
 // *******************************************************************
@@ -224,6 +266,26 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
             m_element_block_id,
             m_cell_data,
             m_build_transient_support);
+}
+
+// *******************************************************************
+void panzer::PhysicsBlock::initialize(const int default_integration_order,
+                                      const bool build_transient_support,
+                                      const panzer::CellData & cell_data,
+                                      const Teuchos::RCP<const panzer::EquationSetFactory>& eqset_factory,
+                                      const Teuchos::RCP<panzer::GlobalData>& global_data)
+{
+  m_default_integration_order = default_integration_order;
+  m_build_transient_support = build_transient_support;
+  m_cell_data     = cell_data;
+  m_global_data   = global_data;
+  m_eqset_factory = eqset_factory;
+
+  initialize(m_input_parameters,
+             m_default_integration_order,
+             m_element_block_id,
+             m_cell_data,
+             m_build_transient_support);
 }
 
 // *******************************************************************

@@ -11,6 +11,20 @@ namespace panzer {
 
 using Teuchos::RCP;
 
+void 
+EpetraVector_ReadOnly_GlobalEvaluationData::
+useConstantValues(const std::vector<int> & indices,double value)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(isInitialized_,std::logic_error,
+                             "EpetraVector_ReadOnly_GED has been initialized, cannot call \"useConstantValues\"!");
+
+  // add this specification to the filetered pairs vector
+  FilteredPair pair;
+  pair.first = indices;
+  pair.second = value;
+  filteredPairs_.push_back(pair);
+}
+
 void
 EpetraVector_ReadOnly_GlobalEvaluationData::
 initialize(const RCP<const Epetra_Import> & importer,
@@ -27,6 +41,23 @@ initialize(const RCP<const Epetra_Import> & importer,
   // build up the thyra conversion data structures
   ghostedSpace_ = Thyra::create_VectorSpace(ghostedMap_);
   uniqueSpace_ = Thyra::create_VectorSpace(uniqueMap_);
+
+  // translate filtered pair GIDs to LIDs
+   // initialize some ghosted values to the user specified values
+   for(std::size_t i=0;i<filteredPairs_.size();i++) {
+     std::vector<int> lids;
+     const std::vector<int> & gids = filteredPairs_[i].first;
+     for(std::size_t j=0;j<gids.size();j++) {
+       int lid = ghostedMap->LID(gids[j]);
+
+       // add legit LIDs to list
+       if(lid>=0)
+         lids.push_back(lid);
+     }
+
+     // overwrite original GID vector with new LID vector
+     filteredPairs_[i].first = lids;
+   }
   
   isInitialized_ = true;
 }
@@ -38,8 +69,10 @@ globalToGhost(int mem)
    TEUCHOS_TEST_FOR_EXCEPTION(uniqueVector_==Teuchos::null,std::logic_error,
                               "Unique vector has not been set, can't perform the halo exchange!");
 
+   // initialize the ghosted data, zeroing out things, and filling in specified constants
+   initializeData();
+
    // do the global distribution
-   ghostedVector_->PutScalar(0.0);
    ghostedVector_->Import(*uniqueVector_,*importer_,Insert);
 }
 
@@ -51,6 +84,14 @@ initializeData()
                               "EpetraVector_ReadOnly_GED has not been initialized, cannot call \"initializeData\"!");
 
    ghostedVector_->PutScalar(0.0);
+
+   // initialize some ghosted values to the user specified values
+   for(std::size_t i=0;i<filteredPairs_.size();i++) {
+     const std::vector<int> & lids = filteredPairs_[i].first;
+     double value = filteredPairs_[i].second;
+     for(std::size_t j=0;j<lids.size();j++)
+       (*ghostedVector_)[lids[j]] = value;
+   }
 }
 
 void 

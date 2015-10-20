@@ -5,6 +5,85 @@
 
 Rapid Optimization Library (ROL)
 
+RELEASE TAG: Trilinos 12.4
+------------
+Released as part of Trilinos 12.4, October 2015.
+(2nd public release)
+
+
+ENHANCEMENTS:
+-------------
+  x  Hierarchical XML parameter lists.  This makes ROL easier to use and
+     control.  Demonstrated in all examples and test.  Also created
+     the tierParameterList function to generate a hierarchical list
+     from a flat list, in rol/src/zoo/ROL_ParameterListConverters.hpp,
+     demonstrated in rol/test/parameters.
+  x  Algorithm constructor now takes reference-counted pointers to
+     Step and StatusTest.  There is another constructor that takes a step 
+     name (string) and a parameter list.  This makes it easier to initialize
+     a ROL algorithm, based on default choices of steps and status tests.
+  x  New elementwise functions in ROL::Vector allow application of general
+     nonlinear unary and binary functions as well as reduce operations.
+  x  Modified ROL::BoundConstraint to work with any vector type for which
+     Vector::applyUnary, Vector::applyBinary, and Vector::reduce are
+     implemented.
+  x  Modified default behavior of line search so that when the maximum
+     number of function evaluations is reached and sufficient decrease has
+     not been attained, optimization terminates.  The previous behavior can
+     be recovered by setting the parameter "Accept Last Alpha" to true in
+     the Step->Line Search sublist.
+  x  Added line search parameter "Accept Linesearch Minimizer" to the
+     Step->Line Search sublist. If this parameter is selected to be true,
+     the argmin step length will be used if the maximum number of function
+     evaluations is reached without attaining sufficient decrease.
+  x  Renamed CompositeStepSQP to CompositeStep.
+
+
+NEW FEATURES:
+-------------
+
+Methods:
+  x  Bundle Step, for solving nonsmooth problems; see example/minimax/*.
+  x  Moreau-Yosida Penalty, for solving general NLPs; see
+     example/burgers-control/example_04.
+  x  Augmented Lagrangian, for solving general NLPs; see
+     example/burgers-control/example_04.
+  x  Higher Moment Coherent Risk Measure.  This method is a new risk measure
+     for stochastic problems, see example/burgers-control/example_06.
+  x  Buffered Probability of Exceedance.  This method is a new capability to
+     minimize the probability of a stochastic cost function.  It is
+     demonstrated in example/burgers-control/example_06.
+
+Infrastructure:
+  x  In ROL_ScaledStdVector.hpp, added a variant of ROL::StdVector that
+     supports constant (positive) diagonal scalings in the dot product.  This
+     variant comprises the pair of classes ROL::PrimalScaledStdVector and
+     ROL::DualScaledStdVector; changed the examples in example/diode-circuit
+     to use variable scalings through these new classes.
+  x  Distribution Factory, to enable general sampling for stochastic problems;
+     demonstrated in example/burgers-control/example_05 through _07.
+  x  SROMSampler.  This method permits the use of optimization-based sampling
+     for stochastic problem.  It is demonstrated in test/sol/test_04.
+  x  ROL::PartitionedVector, for handling vectors of vectors, e.g., when using
+     slack variables, see /rol/test/vector/test_04.cpp.
+
+
+BUG FIXES:
+----------
+  x  Removed reset of counters for objective function and gradient evaluations
+     contained in the AlgorithmState in rol/src/step/ROL_TrustRegionStep.hpp.
+
+  x  Corrected reading of the constraint tolerance parameter in
+     ROL::AugmentedLagrangianStep.
+
+********************************
+*
+*
+*
+********************************
+
+Rapid Optimization Library (ROL)
+
 RELEASE TAG: Trilinos 12.2
 ------------
 Released as part of Trilinos 12.2, July 2015.  This is the first publicly

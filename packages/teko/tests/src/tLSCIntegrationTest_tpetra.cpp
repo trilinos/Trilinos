@@ -107,7 +107,8 @@ void tLSCIntegrationTest_tpetra::solveList(Teuchos::ParameterList & paramList,in
    gmresList.set( "Maximum Iterations", 1000 );                // Maximum number of iterations allowed
    gmresList.set( "Maximum Restarts", 15 );                   // Maximum number of restarts allowed
    gmresList.set( "Convergence Tolerance", 1.0e-9 );         // Relative convergence tolerance requested
-   paramList.set("Preconditioner Type","None");
+   paramList.set("Preconditioner Type","Ifpack2");
+
    Teuchos::ParameterList & MLList = paramList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
 
    // set default values for smoothed aggregation in MLList

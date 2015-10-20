@@ -1333,7 +1333,7 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  void
+  void TPETRA_DEPRECATED
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   normWeighted (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& weights,
                 const Teuchos::ArrayView<mag_type> &norms) const
