@@ -14,7 +14,7 @@ class MeshFixture : public ::testing::Test
 {
 protected:
     MeshFixture()
-    : communicator(MPI_COMM_WORLD), metaData(), bulkData(nullptr)
+    : communicator(MPI_COMM_WORLD), metaData(3), bulkData(nullptr)
     {
 
     }
