@@ -144,7 +144,7 @@ public:
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
-    mpicomm(TeuchosConst2MPI(problemComm__)),
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
 #endif
     model(model__)
   { }
