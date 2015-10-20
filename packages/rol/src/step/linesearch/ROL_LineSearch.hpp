@@ -148,13 +148,13 @@ public:
       else {
         d_->set(s);
         d_->scale(-1.0);
-        con.pruneActive(*d_,*(grad_),x,eps_);
+        con.pruneActive(*d_,grad_->dual(),x,eps_);
         gs = alpha*(grad_)->dot(d_->dual());
         d_->zero();
         updateIterate(*d_,x,s,alpha,con);
         d_->scale(-1.0);
         d_->plus(x);
-        con.pruneInactive(*d_,*(grad_),x,eps_);
+        con.pruneInactive(*d_,grad_->dual(),x,eps_);
         gs += d_->dot(grad_->dual());
       }
       if ( fnew <= fold - c1_*gs ) {
@@ -185,7 +185,7 @@ public:
       else if (econd_ == CURVATURECONDITION_NULL) {
         curvcond = true;
       }
-      else { 
+      else {
         updateIterate(*xtst_,x,s,alpha,con);
         obj.update(*xtst_);
         obj.gradient(*g_,*xtst_,tol);
@@ -254,17 +254,10 @@ public:
         ls_neval++;
         // Minimize quadratic interpolate to compute new alpha
         alpha = -gs/(2.0*(fnew-fval-gs));
-        // Evaluate objective at x + alpha s 
-        updateIterate(*d_,x,s,alpha,con);
-        obj.update(*d_);
-        fnew = obj.value(*d_,tol);
-        ls_neval++;
-        // Ensure that sufficient decrease and curvature conditions are satisfied
-        bool stat = status(LINESEARCH_BISECTION,ls_neval,ls_ngrad,alpha,fval,gs,fnew,x,s,obj,con);
-        if ( !stat ) {
-          alpha = 1.0;
-        }
-        val = alpha;
+        val = ((std::abs(alpha) > std::sqrt(ROL_EPSILON)) ? std::abs(alpha) : 1.0);
+
+        alpha0_ = val;
+        useralpha_ = true;
       }
       else {
         val = 1.0;
