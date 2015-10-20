@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,7 +43,7 @@
 
 // ***********************************************************************
 //
-//      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -498,7 +498,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     result.norm2(n2);
 
     out << "||U*randvec||_2 - ||iU*randvec||_2 = " << n1[0]-n2[0] << std::endl;
-    TEST_EQUALITY(n1[0]-n2[0] < 1e-7, true);
+    {
+      typedef typename TST::magnitudeType MT;
+      // Heuristic for rounding error: machine epsilon times square
+      // root of the number of floating-point operations.
+      const MT tol = TST::eps () * TST::squareroot (static_cast<MT> (result.getGlobalLength ()));
+      TEST_ASSERT( n1[0]-n2[0] < tol );
+    }
     out << std::endl;
 
     RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
