@@ -197,6 +197,9 @@ protected:
     static const int INVALID_SIDE_ID;
 
 private:
+    size_t get_num_graph_edges() const { return m_elem_graph.size(); }
+    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const { return m_elem_graph[i]; }
+
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
