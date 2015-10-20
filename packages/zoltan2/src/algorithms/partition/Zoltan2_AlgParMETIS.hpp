@@ -136,7 +136,6 @@ public:
               const RCP<const Comm<int> > &problemComm__,
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
-    mpicomm(TeuchosConst2MPI(problemComm__)),
     model(model__)
   { }
 
@@ -146,7 +145,6 @@ private:
 
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
-  MPI_Comm mpicomm;
   const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
 
   void scale_weights(size_t n, ArrayView<StridedData<lno_t, scalar_t> > &fwgts,
@@ -212,72 +210,104 @@ void AlgParMETIS<Adapter>::partition(
   model->getVertexDist(vtxdist);
   TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T_ARRAY(&pm_vtxdist, vtxdist, env);
 
+  // ParMETIS does not like processors having no vertices.
+  // Inspect vtxdist and remove from communicator procs that have no vertices
+  RCP<Comm<int> > subcomm;
+  MPI_Comm mpicomm;  // Note:  mpicomm is valid only while subcomm is in scope
+
+  if (np > 1) {
+    int nKeep = 0;
+    Array<int> keepRanks(np);
+    for (int i = 0; i < np; i++) {
+      if ((pm_vtxdist[i+1] - pm_vtxdist[i]) > 0) {
+        keepRanks[nKeep] = i;
+        pm_vtxdist[nKeep] = pm_vtxdist[i];
+        nKeep++;
+      }
+    }
+    pm_vtxdist[nKeep] = pm_vtxdist[np];
+    if (nKeep < np) {
+      subcomm = problemComm->createSubcommunicator(keepRanks.view(0,nKeep));
+      if (subcomm != Teuchos::null) 
+        mpicomm = Teuchos::getRawMpiComm(*subcomm);
+      else 
+        mpicomm = MPI_COMM_NULL;
+    }
+    else {
+      mpicomm = Teuchos::getRawMpiComm(*problemComm);
+    }
+  }
+  else {
+    mpicomm = Teuchos::getRawMpiComm(*problemComm);
+  }
+
   // Create array for ParMETIS to return results in.
-  // Note:  ParMETIS does not like NULL arrays,
-  //        so add 1 to always have non-null.
-  //        See Zoltan bug 4299.
-  pm_idx_t *pm_partList = new pm_idx_t[nVtx+1];
+  pm_idx_t *pm_partList = NULL;
+  if (nVtx) pm_partList = new pm_idx_t[nVtx];
 
-  // Get target part sizes 
+  if (mpicomm != MPI_COMM_NULL) {
+    // If in ParMETIS' communicator (i.e., have vertices), call ParMETIS
 
-  pm_idx_t pm_nCon = (nVwgt == 0 ? 1 : pm_idx_t(nVwgt));
-  pm_real_t *pm_partsizes = new pm_real_t[numGlobalParts*pm_nCon];
-  for (pm_idx_t dim = 0; dim < pm_nCon; dim++) {
-    if (!solution->criteriaHasUniformPartSizes(dim))
-      for (size_t i=0; i<numGlobalParts; i++)
-        pm_partsizes[i*pm_nCon+dim] = 
-                     pm_real_t(solution->getCriteriaPartSize(dim,i));
-    else
-      for (size_t i=0; i<numGlobalParts; i++)
-        pm_partsizes[i*pm_nCon+dim] = pm_real_t(1.) / pm_real_t(numGlobalParts);
+    // Get target part sizes 
+    pm_idx_t pm_nCon = (nVwgt == 0 ? 1 : pm_idx_t(nVwgt));
+    pm_real_t *pm_partsizes = new pm_real_t[numGlobalParts*pm_nCon];
+    for (pm_idx_t dim = 0; dim < pm_nCon; dim++) {
+      if (!solution->criteriaHasUniformPartSizes(dim))
+        for (size_t i=0; i<numGlobalParts; i++)
+          pm_partsizes[i*pm_nCon+dim] = 
+                       pm_real_t(solution->getCriteriaPartSize(dim,i));
+      else
+        for (size_t i=0; i<numGlobalParts; i++)
+          pm_partsizes[i*pm_nCon+dim] = pm_real_t(1.)/pm_real_t(numGlobalParts);
+    }
+
+    // Get imbalance tolerances
+    double tolerance = 1.1;
+    const Teuchos::ParameterList &pl = env->getParameters();
+    const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
+    if (pe) tolerance = pe->getValue<double>(&tolerance);
+
+    pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
+    for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
+      pm_imbTols[dim] = pm_real_t(tolerance);
+
+    // Other ParMETIS parameters?
+    std::string parmetis_method("PARTKWAY");
+    pm_idx_t pm_wgtflag = 2*(nVwgt > 0) + (nEwgt > 0);
+    pm_idx_t pm_numflag = 0;
+  
+    pm_idx_t pm_nPart;
+    TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts, env);
+
+    if (parmetis_method == "PARTKWAY") {
+
+      pm_idx_t pm_edgecut = -1;
+      pm_idx_t pm_options[METIS_NOPTIONS];
+      pm_options[0] = 1;   // Use non-default options for some ParMETIS options
+      for (int i = 0; i < METIS_NOPTIONS; i++) 
+        pm_options[i] = 0; // Default options
+      pm_options[2] = 15;  // Matches default value used in Zoltan
+
+      ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
+                           &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
+                           pm_partsizes, pm_imbTols, pm_options,
+                           &pm_edgecut, pm_partList, &mpicomm);
+    }
+    else if (parmetis_method == "ADAPTIVE_REPART") {
+      // Get object sizes
+      std::cout << "NOT READY FOR ADAPTIVE_REPART YET" << std::endl;
+      exit(-1);
+    }
+    else if (parmetis_method == "PART_GEOM") {
+      // Get coordinate info, too.
+      std::cout << "NOT READY FOR PART_GEOM YET" << std::endl;
+      exit(-1);
+    }
+
+    // Clean up 
+    delete [] pm_partsizes;
+    delete [] pm_imbTols;
   }
-
-  // Get imbalance tolerances
-  double tolerance = 1.1;
-  const Teuchos::ParameterList &pl = env->getParameters();
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
-  if (pe) tolerance = pe->getValue<double>(&tolerance);
-
-  pm_real_t *pm_imbTols = new pm_real_t[pm_nCon];
-  for (pm_idx_t dim = 0; dim < pm_nCon; dim++)
-    pm_imbTols[dim] = pm_real_t(tolerance);
-
-  // Other ParMETIS parameters?
-  std::string parmetis_method("PARTKWAY");
-  pm_idx_t pm_wgtflag = 2*(nVwgt > 0) + (nEwgt > 0);
-  pm_idx_t pm_numflag = 0;
-
-  pm_idx_t pm_nPart;
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts, env);
-
-  if (parmetis_method == "PARTKWAY") {
-
-    pm_idx_t pm_edgecut = -1;
-    pm_idx_t pm_options[METIS_NOPTIONS];
-    pm_options[0] = 1;   // Use non-default options for some ParMETIS options
-    for (int i = 0; i < METIS_NOPTIONS; i++) 
-      pm_options[i] = 0; // Default options
-    pm_options[2] = 15;  // Matches default value used in Zoltan
-
-    ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
-                         &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                         pm_partsizes, pm_imbTols, pm_options,
-                         &pm_edgecut, pm_partList, &mpicomm);
-  }
-  else if (parmetis_method == "ADAPTIVE_REPART") {
-    // Get object sizes
-    std::cout << "NOT READY FOR ADAPTIVE_REPART YET" << std::endl;
-    exit(-1);
-  }
-  else if (parmetis_method == "PART_GEOM") {
-    // Get coordinate info, too.
-    std::cout << "NOT READY FOR PART_GEOM YET" << std::endl;
-    exit(-1);
-  }
-
-  // Clean up 
-  delete [] pm_partsizes;
-  delete [] pm_imbTols;
 
   // Load answer into the solution.
 
