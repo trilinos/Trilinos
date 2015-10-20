@@ -33,24 +33,39 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
                          std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
                          stk::mesh::Part *active_part=NULL);
 
+struct GraphEdge
+{
+    GraphEdge(impl::LocalId e1, int s1, impl::LocalId e2, int s2) :
+        elem1(e1), elem2(e2), side1(s1), side2(s2)
+    {}
+    impl::LocalId elem1;
+    impl::LocalId elem2;
+    int side1;
+    int side2;
+};
+
+GraphEdge create_symmetric_edge(const GraphEdge& graphEdge);
+
 class Graph
 {
 public:
-    Graph();
     void set_num_local_elements(size_t n);
     void add_new_element();
     size_t get_num_elements_in_graph() const;
     size_t get_num_edges() const;
-    const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
-    const std::vector<int> & get_via_sides_for_local_element(size_t i) const;
+    size_t get_num_edges_for_element(impl::LocalId elem) const;
+    GraphEdge get_edge_for_element(impl::LocalId elem1, size_t index) const;
+    std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
     void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
+    void delete_edge(const GraphEdge &graphEdge);
     void delete_all_connections(impl::LocalId elem);
+    void change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, impl::LocalId newElem2Id);
 private:
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
-    size_t m_num_edges;
+    size_t m_num_edges = 0;
 };
 
 class ElemElemGraph
@@ -119,7 +134,7 @@ protected:
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
-    stk::topology get_topology_of_connected_element(impl::LocalId local_elem_id, int offset);
+    stk::topology get_topology_of_connected_element(impl::LocalId local_elem_id, impl::LocalId other_element);
 
     stk::topology get_topology_of_remote_element(impl::LocalId local_elem_id, stk::mesh::EntityId other_element);
 
@@ -209,12 +224,8 @@ protected:
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
 
-    static const impl::LocalId INVALID_LOCAL_ID;
-    static const int INVALID_SIDE_ID;
-
 private:
-    int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
-                                                           const std::vector<impl::LocalId>& connElements) const;
+    int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     stk::mesh::EntityId convert_negative_local_id_to_remote_global_id(impl::LocalId remoteElementId) const;
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);

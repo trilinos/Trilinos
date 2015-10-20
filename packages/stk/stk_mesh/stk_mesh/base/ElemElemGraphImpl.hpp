@@ -10,6 +10,7 @@
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
+namespace stk { namespace mesh { class Graph; } }
 namespace stk { class CommSparse; }
 
 namespace stk { namespace mesh {
@@ -176,7 +177,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const stk::mesh::Graph& graph,
         std::vector<ElementSidePair>& element_side_pairs);
 
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData);

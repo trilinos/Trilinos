@@ -601,12 +601,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(0u, elem_graph.size());
         for(unsigned i=0; i<elem_graph.get_graph().get_num_elements_in_graph(); ++i)
         {
-            EXPECT_EQ(0u, elem_graph.get_graph().get_connections_for_local_element(i).size());
-        }
-
-        for(unsigned i=0; i<elem_graph.get_graph().get_num_elements_in_graph(); ++i)
-        {
-            EXPECT_EQ(0u, elem_graph.get_graph().get_via_sides_for_local_element(i).size());
+            EXPECT_EQ(0u, elem_graph.get_graph().get_num_edges_for_element(i));
         }
     }
 }
@@ -1188,10 +1183,10 @@ void test_parallel_graph_info(const stk::mesh::Graph& graph, const ParallelGraph
 
     for(size_t i=0;i<graph.get_num_elements_in_graph();++i)
     {
-        const std::vector<LocalId>& conn_elements = graph.get_connections_for_local_element(i);
-        for(size_t j=0;j<conn_elements.size();++j)
+        size_t numConnected = graph.get_num_edges_for_element(i);
+        for(size_t j=0;j<numConnected;++j)
         {
-            if(conn_elements[j]==-1*other_element && static_cast<LocalId>(i) == this_element)
+            if(graph.get_edge_for_element(i, j).elem2==-1*other_element && static_cast<LocalId>(i) == this_element)
             {
                 ParallelGraphInfo::const_iterator iter = parallel_graph_info.find(std::make_pair(this_element, other_element));
 
@@ -1252,35 +1247,34 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
     for(size_t i = 0; i < elemElemGraph.get_graph().get_num_elements_in_graph(); ++i)
     {
-        const std::vector<LocalId>& connected_elements = elemElemGraph.get_graph().get_connections_for_local_element(i);
-        const std::vector<int> &viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
         stk::mesh::Entity element1 = local_id_to_element_entity[i];
 
         LocalId this_element = i;
 
-        for(size_t j = 0; j < connected_elements.size(); ++j)
+        for(size_t j = 0; j < elemElemGraph.get_graph().get_num_edges_for_element(this_element); ++j)
         {
-            if(this_element < connected_elements[j] && connected_elements[j] >= 0)
+            stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(this_element, j);
+            if(this_element < graphEdge.elem2 && graphEdge.elem2 >= 0)
             {
-                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + viaSides[j];
+                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + graphEdge.side1;
                 if ( impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
                 {
 
                 }
-                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, viaSides[j],
+                stk::mesh::Entity face = stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, graphEdge.side1,
                         face_global_id, stk::mesh::PartVector(1,&part));
 
                 const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(face);
                 unsigned num_side_nodes = bulkData.num_nodes(face);
                 stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes + num_side_nodes);
 
-                stk::mesh::Entity element2 = local_id_to_element_entity[connected_elements[j]];
+                stk::mesh::Entity element2 = local_id_to_element_entity[graphEdge.elem2];
                 std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm = stk::mesh::get_ordinal_and_permutation(bulkData, element2, stk::topology::FACE_RANK, side_nodes_vec);
                 bulkData.declare_relation(element2, face, ord_and_perm.first, ord_and_perm.second);
             }
-            else if(connected_elements[j] < 0)
+            else if(graphEdge.elem2 < 0)
             {
-                LocalId other_element = -1 * connected_elements[j];
+                LocalId other_element = -1 * graphEdge.elem2;
                 ParallelGraphInfo::const_iterator iter = parallel_graph_info.find(std::make_pair(this_element, other_element));
                 ThrowRequireMsg( iter != parallel_graph_info.end(), "Program error. Contact sierra-help@sandia.gov for support.");
                 int other_proc = iter->second.m_other_proc;
@@ -1294,7 +1288,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                 if(owning_proc == this_proc)
                 {
                     stk::mesh::EntityId id = bulkData.identifier(element1);
-                    face_global_id = impl::get_element_side_multiplier() * id + viaSides[j];
+                    face_global_id = impl::get_element_side_multiplier() * id + graphEdge.side1;
                     perm = static_cast<stk::mesh::Permutation>(0);
                 }
                 else
@@ -1303,7 +1297,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                     perm = static_cast<stk::mesh::Permutation>(iter->second.m_permutation);
                 }
 
-                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(viaSides[j]);
+                stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1);
 
                 std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
 
@@ -1318,7 +1312,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         }
 
         std::vector<ElementSidePair> element_side_pairs;
-        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], viaSides, element_side_pairs);
+        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], elemElemGraph.get_graph(), element_side_pairs);
 
         for(size_t j = 0; j < element_side_pairs.size(); j++)
         {
@@ -1347,20 +1341,6 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 }
 
 //BeginDocExample1
-std::vector<ElementSidePair>
-skin_mesh(const SidesForElementGraph &via_side, const std::vector<stk::topology> &element_topologies)
-{
-    std::vector<ElementSidePair> element_side_pairs;
-
-    size_t num_elems = via_side.size();
-    for(size_t i=0; i<num_elems; ++i)
-    {
-        const std::vector<int>& internal_sides = via_side[i];
-        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
-    }
-    return element_side_pairs;
-}
-
 
 stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData, const int killValue, const stk::mesh::Part& active)
 {
@@ -1413,55 +1393,6 @@ TEST(ElementGraph, check_graph_connectivity)
     EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 0, 0));
 }
 
-TEST(ElementGraph, skin_mesh_using_graph)
-{
-    // element0 --> element1 --> element2
-    ElementGraph elem_graph = {
-            {1},
-            {0,2},
-            {1}
-    };
-
-    SidesForElementGraph via_side = {
-            {4},
-            {1,5},
-            {3}
-    };
-
-    std::vector<stk::topology> element_topologies{
-        stk::topology::HEXAHEDRON_8,
-        stk::topology::HEXAHEDRON_8,
-        stk::topology::HEXAHEDRON_8
-    };
-
-    std::vector<ElementSidePair> element_side_pairs = skin_mesh(via_side, element_topologies);
-
-    std::vector<ElementSidePair>gold_element_side_pairs{
-        {0,0},
-        {0,1},
-        {0,2},
-        {0,3},
-        {0,5},
-        {1,0},
-        {1,2},
-        {1,3},
-        {1,4},
-        {2,0},
-        {2,1},
-        {2,2},
-        {2,4},
-        {2,5}
-    };
-
-    ASSERT_EQ(gold_element_side_pairs.size(), element_side_pairs.size());
-
-    for (size_t i=0;i<gold_element_side_pairs.size();++i)
-    {
-        std::vector<ElementSidePair >::iterator iter = std::find(element_side_pairs.begin(), element_side_pairs.end(), gold_element_side_pairs[i]);
-        EXPECT_TRUE(iter != element_side_pairs.end()) << "gold elem-side-pair=" << gold_element_side_pairs[i].first << ", " << gold_element_side_pairs[i].second;
-    }
-}
-
 TEST(ElementGraph, create_element_graph_serial)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -1507,30 +1438,33 @@ TEST(ElementGraph, create_element_graph_serial)
 
         for(size_t i=0; i<elemElemGraph.get_graph().get_num_elements_in_graph(); ++i)
         {
-            const std::vector<LocalId>& conn_elements = elemElemGraph.get_graph().get_connections_for_local_element(i);
-            const std::vector<int>& viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
+            size_t numConnected = elemElemGraph.get_graph().get_num_edges_for_element(i);
             if (i == 0)
             {
-                ASSERT_EQ(1u, conn_elements.size());
-                EXPECT_EQ(1, conn_elements[0]);
-                EXPECT_EQ(right_side_id, viaSides[0]);
+                ASSERT_EQ(1u, numConnected);
+                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                EXPECT_EQ(1, graphEdge.elem2);
+                EXPECT_EQ(right_side_id, graphEdge.side1);
             }
             else if (i == elemElemGraph.get_graph().get_num_elements_in_graph() - 1)
             {
                 LocalId second_to_last_element_index = elemElemGraph.get_graph().get_num_elements_in_graph() - 2;
-                ASSERT_EQ(1u, conn_elements.size());
-                EXPECT_EQ(second_to_last_element_index, conn_elements[0]);
-                EXPECT_EQ(left_side_id, viaSides[0]);
+                ASSERT_EQ(1u, numConnected);
+                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                EXPECT_EQ(second_to_last_element_index, graphEdge.elem2);
+                EXPECT_EQ(left_side_id, graphEdge.side1);
             }
             else
             {
-                ASSERT_EQ(2u, conn_elements.size());
+                ASSERT_EQ(2u, numConnected);
                 LocalId element_to_the_left = i-1;
                 LocalId element_to_the_right = i+1;
-                EXPECT_EQ(element_to_the_left, conn_elements[0]);
-                EXPECT_EQ(element_to_the_right, conn_elements[1]);
-                EXPECT_EQ(left_side_id, viaSides[0]);
-                EXPECT_EQ(right_side_id, viaSides[1]);
+                stk::mesh::GraphEdge graphEdge0 = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                stk::mesh::GraphEdge graphEdge1 = elemElemGraph.get_graph().get_edge_for_element(i, 1);
+                EXPECT_EQ(element_to_the_left, graphEdge0.elem2);
+                EXPECT_EQ(element_to_the_right, graphEdge1.elem2);
+                EXPECT_EQ(left_side_id, graphEdge0.side1);
+                EXPECT_EQ(right_side_id, graphEdge1.side1);
             }
         }
 
@@ -1607,20 +1541,18 @@ TEST(ElementGraph, create_element_graph_parallel)
 
         for(size_t i=0;i<elemElemGraph.get_graph().get_num_elements_in_graph();++i)
         {
-            const std::vector<impl::LocalId> &connections = elemElemGraph.get_graph().get_connections_for_local_element(i);
-            const std::vector<int> &viaSides = elemElemGraph.get_graph().get_via_sides_for_local_element(i);
+            size_t numConnectedElements = elemElemGraph.get_graph().get_num_edges_for_element(i);
             if (static_cast<LocalId>(i) == element_to_test_local_id)
             {
                 // Element on parallel boundary
-                ASSERT_EQ(2u, connections.size());
-                ASSERT_EQ(2u, viaSides.size());
-                ASSERT_GE(-1, connections[1]);
-                ASSERT_EQ(side_id, viaSides[1]);
+                ASSERT_EQ(2u, numConnectedElements);
+                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 1);
+                ASSERT_GE(-1, graphEdge.elem2);
+                ASSERT_EQ(side_id, graphEdge.side1);
             }
             else
             {
-                EXPECT_EQ(1u, connections.size());
-                EXPECT_EQ(1u, viaSides.size());
+                EXPECT_EQ(1u, numConnectedElements);
             }
         }
 

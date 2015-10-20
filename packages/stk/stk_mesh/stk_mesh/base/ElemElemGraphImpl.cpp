@@ -614,19 +614,20 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
     }
 }
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const stk::mesh::Graph& graph,
         std::vector<ElementSidePair>& element_side_pairs)
 {
     size_t num_sides = topology.num_sides();
     std::vector<int> elem_sides;
 
-    if (internal_sides.size() < num_sides)
+    if (graph.get_num_edges_for_element(elementId) < num_sides)
     {
         elem_sides.assign(num_sides, -1);
-        for(size_t j=0; j<internal_sides.size(); ++j)
+        for(size_t j=0; j<graph.get_num_edges_for_element(elementId); ++j)
         {
-            int sideId = internal_sides[j];
-            elem_sides[sideId] = internal_sides[j];
+            stk::mesh::GraphEdge graphEdge = graph.get_edge_for_element(elementId, j);
+            int sideId = graphEdge.side1;
+            elem_sides[sideId] = sideId;
         }
 
         for(size_t j=0; j<num_sides; ++j)
