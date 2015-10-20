@@ -195,11 +195,14 @@ protected:
     static const int INVALID_SIDE_ID;
 
 private:
+    void set_num_local_elements(size_t n);
+    void add_new_element();
     size_t get_num_graph_edges() const;
     const std::vector<impl::LocalId> & get_connections_for_local_element(size_t i) const;
     void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
     void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
+    void delete_all_connections(impl::LocalId elem);
 
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
                                                            const std::vector<impl::LocalId>& connElements) const;

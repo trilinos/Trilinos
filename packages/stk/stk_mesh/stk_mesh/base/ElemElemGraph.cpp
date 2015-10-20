@@ -232,8 +232,7 @@ int ElemElemGraph::size_data_members()
     stk::mesh::count_entities(m_bulk_data.mesh_meta_data().locally_owned_part(), m_bulk_data, counts);
     int numElems = counts[stk::topology::ELEM_RANK];
 
-    m_elem_graph.resize(numElems);
-    m_via_sides.resize(numElems);
+    set_num_local_elements(numElems);
     m_local_id_to_element_entity.resize(numElems, Entity());
     m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), INVALID_LOCAL_ID);
     m_element_topologies.resize(numElems);
@@ -1297,8 +1296,7 @@ impl::LocalId ElemElemGraph::create_new_local_id(stk::mesh::Entity new_elem)
         {
             m_entity_to_local_id.resize(new_elem.local_offset()+1);
         }
-        m_elem_graph.push_back(std::vector<impl::LocalId>());
-        m_via_sides.push_back(std::vector<int>());
+        add_new_element();
     }
     m_local_id_to_element_entity[new_local_id] = new_elem;
     m_entity_to_local_id[new_elem.local_offset()] = new_local_id;
@@ -1393,10 +1391,8 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                         m_num_parallel_edges++;
                 }
 
-                m_num_edges -= connected.size();
+                delete_all_connections(elem_local_id);
 
-                m_elem_graph[elem_local_id].clear();
-                m_via_sides[elem_local_id].clear();
                 m_deleted_element_local_id_pool.push_back(elem_local_id);
                 m_local_id_in_pool[elem_local_id] = true;
             }
@@ -1452,10 +1448,7 @@ impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
     else
     {
         new_local_id = get_num_graph_edges();
-        std::vector<impl::LocalId> new_element_connectivity;
-        std::vector<int> new_element_via_sides;
-        m_elem_graph.push_back(new_element_connectivity);
-        m_via_sides.push_back(new_element_via_sides);
+        add_new_element();
         m_local_id_in_pool.push_back(false);
         m_local_id_to_element_entity.push_back(Entity());
         m_element_topologies.push_back(stk::topology::INVALID_TOPOLOGY);
@@ -1652,9 +1645,7 @@ void ElemElemGraph::delete_local_connections_and_collect_remote(const stk::mesh:
             }
         }
 
-        m_num_edges -= m_elem_graph[elem_to_delete_id].size();
-        m_elem_graph[elem_to_delete_id].clear();
-        m_via_sides[elem_to_delete_id].clear();
+        delete_all_connections(elem_to_delete_id);
     }
 }
 
@@ -1684,8 +1675,6 @@ void ElemElemGraph::clear_deleted_element_connections(const stk::mesh::impl::Del
     {
         stk::mesh::Entity elem = deletedElementInfo.entity;
         impl::LocalId elem_to_delete_id = m_entity_to_local_id[elem.local_offset()];
-        m_elem_graph[elem_to_delete_id].clear();
-        ThrowAssertMsg(m_via_sides[elem_to_delete_id].empty(), "Unable to delete element from graph.  Contact sierra-help@sandia.gov for help.");
         m_deleted_element_local_id_pool.push_back(elem_to_delete_id);
         m_local_id_in_pool[elem_to_delete_id] = true;
         m_element_topologies[elem_to_delete_id] = stk::topology::INVALID_TOPOLOGY;
@@ -2491,6 +2480,18 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
     m_bulk_data.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, *this, skinned_elements);
 }
 
+void ElemElemGraph::set_num_local_elements(size_t n)
+{
+    m_elem_graph.resize(n);
+    m_via_sides.resize(n);
+}
+
+void ElemElemGraph::add_new_element()
+{
+    m_elem_graph.push_back(std::vector<impl::LocalId>());
+    m_via_sides.push_back(std::vector<int>());
+}
+
 size_t ElemElemGraph::get_num_graph_edges() const
 {
     return m_elem_graph.size();
@@ -2518,6 +2519,13 @@ void ElemElemGraph::delete_edge_from_graph(impl::LocalId elem, int offset)
     m_elem_graph[elem].erase(m_elem_graph[elem].begin() + offset);
     m_via_sides[elem].erase(m_via_sides[elem].begin() + offset);
     --m_num_edges;
+}
+
+void ElemElemGraph::delete_all_connections(impl::LocalId elem)
+{
+    m_num_edges -= m_elem_graph[elem].size();
+    m_elem_graph[elem].clear();
+    m_via_sides[elem].clear();
 }
 
 }} // end namespaces stk mesh
