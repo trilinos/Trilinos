@@ -80,11 +80,11 @@ namespace MueLu {
     typedef typename DeviceType::execution_space                execution_space;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
 
-  private:
     typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
     typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
 
+  private:
     // For compatibility
     typedef node_type                                           Node;
 #undef MUELU_LWGRAPH_KOKKOS_SHORT
@@ -102,7 +102,7 @@ namespace MueLu {
     ~LWGraph_kokkos() { }
     //@}
 
-    size_t GetNodeNumVertices() const                           { return graph_.row_map.dimension_0()-1; }
+    size_t GetNodeNumVertices() const                           { return graph_.numRows(); }
     size_t GetNodeNumEdges()    const                           { return graph_.row_map(GetNodeNumVertices()); }
 
     const RCP<const Teuchos::Comm<int> > GetComm()      const   { return domainMap_->getComm(); }
