@@ -71,8 +71,10 @@ public:
   }  
 }; // class Divide
 
+
 } // namespace Elementwise
 } // namespace ROL
+
 
 
 

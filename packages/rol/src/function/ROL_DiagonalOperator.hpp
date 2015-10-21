@@ -1,8 +1,8 @@
 // @HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,34 +34,66 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
 
+#ifndef ROL_DIAGONALOPERATOR_H
+#define ROL_DIAGONALOPERATOR_H
+
+#include "ROL_Vector.hpp"
+#include "ROL_Elementwise_Function.hpp"
+#include "ROL_LinearOperator.hpp"
+
+
+/** @ingroup func_group
+    \class ROL::DiagonalOperator
+    \brief Provides the interface to apply a diagonal operator which acts like
+           elementwise multiplication when apply() is used and elementwise division
+           when applyInverse() is used.
+*/
+
+namespace ROL {
+
+template<class Real>
+class DiagonalOperator : public LinearOperator<Real> {
+
+private:
+ 
+  Teuchos::RCP<Vector<Real> >             diag_;
+
+  const Elementwise::Multiply<Real>       mult_;
+  const Elementwise::Divide<Real>         div_;   
+
+public:
+
+  DiagonalOperator( const Vector<Real> &diag ) : diag_(diag.clone()) {
+    diag_->set(diag);
+  }
+
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    diag_->set(x);
+  }
+
+  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v); 
+    Hv.applyBinary( mult_, *diag_ );
+  }
+
+  void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
+    Hv.set(v); 
+    Hv.applyBinary( div_, *diag_ );
+  }
+
+};
+
+} // namespace ROL
 
 
 
-#include "MueLu_ExplicitInstantiation.hpp"
-#include "Stokhos_ConfigDefs.h"
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
-
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
-#include "Stokhos_MueLu_UQ_PCE.hpp"
-
-#include "MueLu_Utilities_def.hpp"
-
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::Utilities<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-INSTANTIATE_TPETRA_UQ_PCE_CUDA(MUELU_INST_N)
-
-#endif
-
+#endif // ROL_DIAGONALOPERATOR_H
 

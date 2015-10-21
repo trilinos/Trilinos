@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -50,10 +50,10 @@
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
-#include "MueLu_Utilities_def.hpp"
+#include "MueLu_Utilities_kokkos_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::Utilities<S, LO, GO, N>;
+  template class MueLu::Utilities_kokkos<S, LO, GO, N>;
 
 #define MUELU_INST_N(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
@@ -64,4 +64,4 @@ INSTANTIATE_TPETRA_UQ_PCE_CUDA(MUELU_INST_N)
 
 #endif
 
-
+#endif
