@@ -60,10 +60,6 @@ public:
   }  
 }; // class Multiply
 
-} // namespace Elementwise
-} // namespace ROL
-
-
 // Used to set every element in a vector to a specific value
 template<class Real>
 class Divide : public BinaryFunction<Real> {
