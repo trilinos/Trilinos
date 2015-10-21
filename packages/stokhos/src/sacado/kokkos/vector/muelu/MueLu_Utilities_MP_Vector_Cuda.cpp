@@ -53,11 +53,12 @@
 #include "MueLu_Utilities_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::Utils<S, LO, GO, N>; \
-  template class MueLu::Utils2<S, LO, GO, N>;
+  template class MueLu::Utilities<S, LO, GO, N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 INSTANTIATE_TPETRA_MP_VECTOR_CUDA(MUELU_INST_S_LO_GO_N)
 
 #endif
+
+
