@@ -82,7 +82,7 @@ public:
         }
         return side;
     }
-    int check_connectivity(stk::mesh::EntityId elem1_id, stk::mesh::EntityId elem2_id)
+    int get_side_from_element1_to_element2(stk::mesh::EntityId elem1_id, stk::mesh::EntityId elem2_id)
     {
         int side = -1;
         stk::mesh::Entity elem1 = m_bulk_data.get_entity(stk::topology::ELEM_RANK, elem1_id);

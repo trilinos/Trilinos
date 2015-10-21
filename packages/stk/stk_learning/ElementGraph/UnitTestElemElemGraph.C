@@ -35,6 +35,8 @@
 
 #include "ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+#include <stk_unit_test_utils/MeshFixture.hpp>
+
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
@@ -70,159 +72,6 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
 
 ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData &bulkData);
 
-void test_add_elements_to_empty_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int pSize = stk::parallel_machine_size(comm);
-
-    if (pSize <= 4)
-    {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulkData(meta, comm, auto_aura_option);
-        int nProc  = stk::parallel_machine_size(comm);
-        int myProc = stk::parallel_machine_rank(comm);
-
-        ElemElemGraphTester elem_graph(bulkData);
-
-        EXPECT_EQ(0u, elem_graph.size());
-
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
-
-        std::vector<unsigned> counts;
-        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
-        unsigned numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
-
-        if(myProc != 0)
-        {
-            EXPECT_EQ(4u/nProc, numLocallyOwnedElems);
-        }
-        else
-        {
-            EXPECT_EQ((4u/nProc + 4u%nProc), numLocallyOwnedElems);
-        }
-
-        stk::mesh::EntityVector elements_to_add;
-        stk::mesh::Selector selector(bulkData.mesh_meta_data().locally_owned_part());
-        bulkData.get_entities(stk::topology::ELEMENT_RANK, selector, elements_to_add);
-
-        elem_graph.add_elements(elements_to_add);
-
-        stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
-        stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
-        stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
-        stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
-
-        // We know that element 1 has 1 connection
-        //                      2 has 2 connections
-        //                      3 has 2 connections
-        //                      4 has 1 connection
-
-        bool ownedElem1 = false;
-        bool ownedElem2 = false;
-        bool ownedElem3 = false;
-        bool ownedElem4 = false;
-
-        unsigned numEdges = 0;
-        if(bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned())
-        {
-            numEdges += 1;
-            ownedElem1 = true;
-        }
-        if(bulkData.is_valid(elem2) && bulkData.bucket(elem2).owned())
-        {
-            numEdges += 2;
-            ownedElem2 = true;
-        }
-
-        if(bulkData.is_valid(elem3) && bulkData.bucket(elem3).owned())
-        {
-            numEdges += 2;
-            ownedElem3 = true;
-        }
-        if(bulkData.is_valid(elem4) && bulkData.bucket(elem4).owned())
-        {
-            numEdges += 1;
-            ownedElem4 = true;
-        }
-
-        unsigned numParallelEdges = 0;
-        if(ownedElem1)
-        {
-            if(!ownedElem2)
-            {
-                numParallelEdges++;
-            }
-        }
-        if(ownedElem2)
-        {
-            if(!ownedElem1)
-            {
-                numParallelEdges++;
-            }
-            if(!ownedElem3)
-            {
-                numParallelEdges++;
-            }
-        }
-        if(ownedElem3)
-        {
-            if(!ownedElem2)
-            {
-                numParallelEdges++;
-            }
-            if(!ownedElem4)
-            {
-                numParallelEdges++;
-            }
-        }
-        if(ownedElem4)
-        {
-            if(!ownedElem3)
-            {
-                numParallelEdges++;
-            }
-        }
-
-        EXPECT_EQ(elements_to_add.size(), elem_graph.size());
-        EXPECT_EQ(numEdges, elem_graph.num_edges());
-        EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
-
-        if (ownedElem1)
-        {
-            EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(1, 3));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(1, 4));
-        }
-        if (ownedElem2)
-        {
-            EXPECT_EQ(4, elem_graph.check_connectivity(2, 1));
-            EXPECT_EQ(5, elem_graph.check_connectivity(2, 3));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(2, 4));
-        }
-        if (ownedElem3)
-        {
-            EXPECT_EQ(4, elem_graph.check_connectivity(3, 2));
-            EXPECT_EQ(5, elem_graph.check_connectivity(3, 4));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(3, 1));
-        }
-        if (ownedElem4)
-        {
-            EXPECT_EQ(4, elem_graph.check_connectivity(4, 3));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(4, 1));
-            EXPECT_EQ(-1, elem_graph.check_connectivity(4, 2));
-        }
-    }
-}
-
-TEST(ElementGraph, add_elements_to_empty_graph_aura_on)
-{
-    test_add_elements_to_empty_graph(stk::mesh::BulkData::AUTO_AURA);
-}
-
-TEST(ElementGraph, add_elements_to_empty_graph_aura_off)
-{
-    test_add_elements_to_empty_graph(stk::mesh::BulkData::NO_AUTO_AURA);
-}
 
 void test_similarity_on_both_procs(const std::vector<stk::mesh::EntityId> &ids_in_use, stk::ParallelMachine comm)
 {
@@ -310,17 +159,17 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
 
     if (0 == p_rank)
     {
-        EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
-        EXPECT_EQ(2, elem_graph.check_connectivity(1, 4));
-        EXPECT_EQ(0, elem_graph.check_connectivity(3, 2));
-        EXPECT_EQ(4, elem_graph.check_connectivity(3, 4));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(1, 2));
+        EXPECT_EQ(2, elem_graph.get_side_from_element1_to_element2(1, 4));
+        EXPECT_EQ(0, elem_graph.get_side_from_element1_to_element2(3, 2));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(3, 4));
     }
     else
     {
-        EXPECT_EQ(4, elem_graph.check_connectivity(2, 1));
-        EXPECT_EQ(2, elem_graph.check_connectivity(2, 3));
-        EXPECT_EQ(0, elem_graph.check_connectivity(4, 1));
-        EXPECT_EQ(5, elem_graph.check_connectivity(4, 3));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(2, 1));
+        EXPECT_EQ(2, elem_graph.get_side_from_element1_to_element2(2, 3));
+        EXPECT_EQ(0, elem_graph.get_side_from_element1_to_element2(4, 1));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(4, 3));
     }
     EXPECT_EQ(2u, elem_graph.size());
     EXPECT_EQ(4u, elem_graph.num_edges());
@@ -420,7 +269,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         stk::mesh::EntityId leftNeighbor = elem_id - 1;
         if (currentElements.find(leftNeighbor) != currentElements.end())
         {
-            EXPECT_EQ(4, elem_graph.check_connectivity(elem_id, leftNeighbor));
+            EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(elem_id, leftNeighbor));
             ++numEdges;
 
             stk::mesh::Entity leftElem = bulkData.get_entity(stk::topology::ELEM_RANK, leftNeighbor);
@@ -434,7 +283,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         stk::mesh::EntityId rightNeighbor = elem_id + 1;
         if (currentElements.find(rightNeighbor) != currentElements.end())
         {
-            EXPECT_EQ(5, elem_graph.check_connectivity(elem_id, rightNeighbor));
+            EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(elem_id, rightNeighbor));
             ++numEdges;
 
             stk::mesh::Entity rightElem = bulkData.get_entity(stk::topology::ELEM_RANK, rightNeighbor);
@@ -6188,28 +6037,28 @@ ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk
 
     if (ownedElem1)
     {
-        EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(1, 3));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(1, 4));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(1, 2));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(1, 3));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(1, 4));
 
     }
     if (ownedElem2)
     {
-        EXPECT_EQ(4, elem_graph.check_connectivity(2, 1));
-        EXPECT_EQ(5, elem_graph.check_connectivity(2, 3));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(2, 4));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(2, 1));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(2, 3));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(2, 4));
     }
     if (ownedElem3)
     {
-        EXPECT_EQ(4, elem_graph.check_connectivity(3, 2));
-        EXPECT_EQ(5, elem_graph.check_connectivity(3, 4));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(3, 1));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(3, 2));
+        EXPECT_EQ(5, elem_graph.get_side_from_element1_to_element2(3, 4));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(3, 1));
     }
     if (ownedElem4)
     {
-        EXPECT_EQ(4, elem_graph.check_connectivity(4, 3));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(4, 1));
-        EXPECT_EQ(-1, elem_graph.check_connectivity(4, 2));
+        EXPECT_EQ(4, elem_graph.get_side_from_element1_to_element2(4, 3));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(4, 1));
+        EXPECT_EQ(-1, elem_graph.get_side_from_element1_to_element2(4, 2));
     }
 
     return elem_graph;
