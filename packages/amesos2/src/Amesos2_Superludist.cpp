@@ -57,12 +57,75 @@ namespace Amesos2 {
   AMESOS2_SOLVER_EPETRA_INST(Superludist);
 #endif
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,int);
+#endif
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<float>,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,unsigned);
+#endif
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<float>,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,long);
+#endif
+#endif
+
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<float>,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,long long);
+#endif
+#endif
+
+
+/*
+ * #ifdef HAVE_TPETRA_INST_FLOAT
   AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,int);
 #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
   AMESOS2_SOLVER_TPETRA_INST(Superludist,float,int,unsigned int);
 #endif
 #endif
+
 #ifdef HAVE_TPETRA_INST_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,int);
 #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
@@ -81,6 +144,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,unsigned int);
 #endif
 #endif
+  */
 
 
 }
@@ -88,7 +152,7 @@ namespace Amesos2 {
 #include "Kokkos_DefaultNode.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
-#define AMESOS2_SUPERLUDIST_LOCAL_INSTANT(S,LO,GO,N)                        \
+/*#define AMESOS2_SUPERLUDIST_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::Superludist<Tpetra::CrsMatrix<S, LO, GO, N>,      \
                                   Tpetra::MultiVector<S, LO, GO,  N> >;
 
@@ -143,7 +207,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
       AMESOS2_SUPERLUDIST_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
     #endif
 #endif
-#undef NODETYPE
+#undef NODETYPE*/
 
 #define AMESOS2_SUPERLUDIST_LOCAL_INSTANT(S,LO,GO,N)                        \
   template class Amesos2::Superludist<Tpetra::CrsMatrix<S, LO, GO, N>,      \
