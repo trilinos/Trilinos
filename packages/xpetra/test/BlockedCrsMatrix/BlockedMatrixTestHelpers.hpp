@@ -1,4 +1,5 @@
 
+#include <iterator>
 #include <Epetra_CrsMatrix.h>
 
 namespace XpetraBlockMatrixTests {

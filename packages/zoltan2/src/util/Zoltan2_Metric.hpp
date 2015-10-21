@@ -839,18 +839,13 @@ template <typename Adapter>
   // *************************** BUILD MAP FOR ADJS ***************************
   // **************************************************************************
 
-  Array<gno_t> vertexGIDs;
   RCP<const map_type> vertexMapG;
 
   // Build a list of the global vertex ids...
-  vertexGIDs.resize(localNumObj);
-  gno_t min;
-  min = as<gno_t> (Ids[0]);
+  gno_t min = std::numeric_limits<gno_t>::max();
   for (lno_t i = 0; i < localNumObj; ++i) {
-    vertexGIDs[i] = as<gno_t> (Ids[i]);
-
-    if (vertexGIDs[i] < min) {
-      min = vertexGIDs[i];
+    if (Ids[i] < min) {
+      min = Ids[i];
     }
   }
 
@@ -858,7 +853,7 @@ template <typename Adapter>
   Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,&min,&gmin);
 
   //Generate Map for vertex
-  vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
+  vertexMapG = rcp(new map_type(INVALID, Ids, gmin, comm));
 
   // **************************************************************************
   // ************************** BUILD GRAPH FOR ADJS **************************
@@ -875,10 +870,10 @@ template <typename Adapter>
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
 
     //globalRow for Tpetra Graph
-    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+    gno_t globalRowT = Ids[localElement];
 
     for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-      gno_t globalCol = as<gno_t> (edgeIds[j]);
+      gno_t globalCol = edgeIds[j];
       //create ArrayView globalCol object for Tpetra
       ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
@@ -904,9 +899,9 @@ template <typename Adapter>
     ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
 
     // globalRow for Tpetra Matrix
-    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+    gno_t globalRowT = Ids[localElement];
 
-    gno_t globalCol = as<gno_t> (Ids[localElement]);
+    gno_t globalCol = Ids[localElement];
     //create ArrayView globalCol object for Tpetra
     ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 

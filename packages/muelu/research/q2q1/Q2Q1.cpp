@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
 
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
-    ArrayRCP<const bool> dirBCs = Utils::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
+    ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
     ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
     ArrayRCP<const SC>  tBdata = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)

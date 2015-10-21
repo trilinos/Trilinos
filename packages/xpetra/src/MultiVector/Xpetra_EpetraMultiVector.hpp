@@ -192,9 +192,6 @@ namespace Xpetra {
     //! Compute Inf-norm of each vector in multi-vector.
     void normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
 
-    //!
-    void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
-
     //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const;
 
@@ -449,14 +446,6 @@ namespace Xpetra {
 
   template<class EpetraGlobalOrdinal>
   void EpetraMultiVectorT<EpetraGlobalOrdinal>::normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { XPETRA_MONITOR("EpetraMultiVectorT::normInf"); vec_->NormInf(norms.getRawPtr()); }
-
-  template<class EpetraGlobalOrdinal>
-  void EpetraMultiVectorT<EpetraGlobalOrdinal>::normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
-    XPETRA_MONITOR("EpetraMultiVectorT::normWeighted");
-
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT, weights, eWeights, "This Xpetra::EpetraMultiVectorT method only accept Xpetra::EpetraMultiVectorT as input arguments.");
-    vec_->NormWeighted(*eWeights.getEpetra_MultiVector(), norms.getRawPtr());
-  }
 
   template<class EpetraGlobalOrdinal>
   void EpetraMultiVectorT<EpetraGlobalOrdinal>::meanValue(const Teuchos::ArrayView<double> &means) const { XPETRA_MONITOR("EpetraMultiVectorT::meanValue"); vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
