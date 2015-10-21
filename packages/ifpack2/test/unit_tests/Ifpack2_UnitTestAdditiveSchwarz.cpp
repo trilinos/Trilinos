@@ -976,5 +976,5 @@ typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(default_scalar_type, default_local_ordinal_type, default_global_ordinal_type)
 
-} // namespace <anonymous>
+} // namespace (anonymous)
 

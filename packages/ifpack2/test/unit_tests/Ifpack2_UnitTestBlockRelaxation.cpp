@@ -80,10 +80,6 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-#include <qd/dd_real.h>
-#endif
-
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_BlockRelaxation.hpp>
 #include <Ifpack2_SparseContainer.hpp>
@@ -468,15 +464,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BandedContainer, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BlockedBandedContainer, Scalar, LocalOrdinal,GlobalOrdinal)
 
+// mfh 21 Oct 2015: This class was only getting tested for Scalar =
+// double, LocalOrdinal = int, GlobalOrdinal = int, and the default
+// Node type.  As part of the fix for Bug 6358, I'm removing the
+// assumption that GlobalOrdinal = int exists.
 
+typedef Tpetra::MultiVector<>::scalar_type default_scalar_type;
+typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;
+typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
+UNIT_TEST_GROUP_SCALAR_ORDINAL(default_scalar_type, default_local_ordinal_type, default_global_ordinal_type)
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
-#endif
-
-}//namespace <anonymous>
+} // namespace (anonymous)
 
 

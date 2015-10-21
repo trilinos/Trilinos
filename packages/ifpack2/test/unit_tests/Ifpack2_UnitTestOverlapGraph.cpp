@@ -194,10 +194,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2OverlapGraph, OverlapGraphTest0, LO, GO
   }
 }
 
-#define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
+#define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Ifpack2OverlapGraph, OverlapGraphTest0, LO, GO )
 
-UNIT_TEST_GROUP_ORDINAL(int, int)
+#include "Ifpack2_ETIHelperMacros.h"
 
-}//namespace <anonymous>
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+IFPACK2_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
+} // namespace (anonymous)
 
