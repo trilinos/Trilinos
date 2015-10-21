@@ -131,5 +131,6 @@ void applyBinaryInPlace(ROL::Vector<Real> &x, const ROL::Vector<Real> &y, Func f
 
 #include <ROL_Elementwise_Reduce.hpp>
 #include <ROL_UnaryFunctions.hpp>
+#include <ROL_BinaryFunctions.hpp>
 
 #endif

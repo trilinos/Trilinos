@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_UNARYFUNCTIONS_H
-#define ROL_UNARYFUNCTIONS_H
+#ifndef ROL_BINARYFUNCTIONS_H
+#define ROL_BINARYFUNCTIONS_H
 
 #include "ROL_Elementwise_Function.hpp"
 
@@ -51,27 +51,31 @@ namespace Elementwise {
 
 // Used to set every element in a vector to a specific value
 template<class Real>
-class Fill : public UnaryFunction<Real> {
+class Multiply : public BinaryFunction<Real> {
 public:
-  Fill( const Real &value ) : value_(value) {}
-  Real apply( const Real &x ) const {
-    return value_;
+  Multiply( ) { }
+
+  Real apply( const Real &x, const Real &y ) const {
+    return x*y;
   }  
-private:  
-  Real value_;
-}; // class Fill
+}; // class Multiply
 
-
-// Get the elementwise reciprocal of a vector
-template<class Real> 
-class Reciprocal : public UnaryFunction<Real> {
+// Used to set every element in a vector to a specific value
+template<class Real>
+class Divide : public BinaryFunction<Real> {
 public:
-  Real apply( const Real &x ) const {
-    return static_cast<Real>(1)/x;
+  Divide( ) { }
+
+  Real apply( const Real &x, const Real &y ) const {
+    return x/y;
   }  
-};
+}; // class Divide
+
 
 } // namespace Elementwise
 } // namespace ROL
 
-#endif // ROL_UNARYFUNCTIONS_H
+
+
+
+#endif // ROL_BINARYFUNCTIONS_H

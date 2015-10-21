@@ -64,17 +64,6 @@ template <typename scalar_t>
     return ((val < mark-epsilon) || (val > mark+epsilon));
 }
 
-#ifdef HAVE_ZOLTAN2_MPI
-
-RCP<Teuchos::MpiComm<int> > MPI2Teuchos(const MPI_Comm &comm);
-
-RCP<const Teuchos::MpiComm<int> > MPI2TeuchosConst(const MPI_Comm &comm);
-
-MPI_Comm Teuchos2MPI(const RCP<Comm<int> > &comm);
-
-MPI_Comm TeuchosConst2MPI(const RCP<const Comm<int> > &comm);
-
-#endif
 
 } // namespace Zoltan2
 

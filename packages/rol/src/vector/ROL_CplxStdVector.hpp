@@ -41,52 +41,57 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STDVECTOR_H
-#define ROL_STDVECTOR_H
+#ifndef ROL_CPLXSTDVECTOR_H
+#define ROL_CPLXSTDVECTOR_H
 
 #include <algorithm>
+#include <complex>
 #include <cstdlib>
 
 #include "ROL_Vector.hpp"
 
-/** \class ROL::StdVector
-    \brief Provides the std::vector implementation of the ROL::Vector interface.
+/** \class ROL::CplxStdVector 
+    \brief Variant on ROL::StdVector with complex entries. Perhaps this can
+           be accomplished with partial template specialization of 
+           ROL::StdVector instead?
 */
-
+           
 
 namespace ROL {
 
-template <class Real, class Element=Real>
-class StdVector : public Vector<Real> {
+template<class Real, template<class> class complex>
+class CplxStdVector : public Vector<Real> { 
 
-  typedef typename std::vector<Real>::size_type uint;
+  typedef std::vector<complex<Real> > vector;
+  typedef Vector<Real>                V; 
+  typedef typename vector::size_type  uint;
 
 private:
-
-  Teuchos::RCP<std::vector<Element> >  std_vec_;
+  
+  Teuchos::RCP<vector> std_vec_;
 
 public:
 
-  StdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
-
-  void set( const Vector<Real> &x ) {
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
+  CplxStdVector(const Teuchos::RCP<vector> &std_vec) : std_vec_(std_vec) {}  
+ 
+  void set( const V &x ) {
+    const CplxStdVector &ex = Teuchos::dyn_cast<const CplxStdVector>(x);
+    const vector &xval = *ex.getVector();
+    std::copy(xval.begin(),xval.end(),std_vec_->begin()); 
   }
 
-  void plus( const Vector<Real> &x ) {
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
+  void plus( const V &x ) {
+    const CplxStdVector &ex = Teuchos::dyn_cast<const CplxStdVector>(x);
+    const vector& xval = *ex.getVector();
     uint dimension  = std_vec_->size();
     for (uint i=0; i<dimension; i++) {
       (*std_vec_)[i] += xval[i];
     }
   }
 
-  void axpy( const Real alpha, const Vector<Real> &x ) {
-    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
+  void axpy( const Real alpha, const V &x ) {
+    const CplxStdVector &ex = Teuchos::dyn_cast<const CplxStdVector>(x);
+    const vector& xval = *ex.getVector();
     uint dimension  = std_vec_->size();
     for (uint i=0; i<dimension; i++) {
       (*std_vec_)[i] += alpha*xval[i];
@@ -99,38 +104,37 @@ public:
       (*std_vec_)[i] *= alpha;
     }
   }
-
-  Real dot( const Vector<Real> &x ) const {
-    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
+ 
+  complex<Real> dot( const V &x ) const {
+    const CplxStdVector & ex = Teuchos::dyn_cast<const CplxStdVector>(x);
+    const vector& xval = *ex.getVector();
     uint dimension  = std_vec_->size();
-    Real val = 0;
+    complex<Real> val = 0;
     for (uint i=0; i<dimension; i++) {
-      val += (*std_vec_)[i]*xval[i];
+      val += (*std_vec_)[i]*std::conj(xval[i]);
     }
     return val;
-  }
+  }  
 
   Real norm() const {
     Real val = 0;
-    val = std::sqrt( dot(*this) );
-    return val;
-  }
+    val = std::sqrt(std::abs(dot(*this))); 
+  } 
 
-  Teuchos::RCP<Vector<Real> > clone() const {
+  Teuchos::RCP<V> clone() const {
     return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())) ));
   }
 
-  Teuchos::RCP<const std::vector<Element> > getVector() const {
+  Teuchos::RCP<const vector> getVector() const {
     return std_vec_;
   }
 
-  Teuchos::RCP<std::vector<Element> > getVector() {
+  Teuchos::RCP<vector> getVector() {
     return std_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ));
+  Teuchos::RCP<V> basis( const int i ) const {
+    Teuchos::RCP<CplxStdVector> e = Teuchos::rcp( new CplxStdVector( Teuchos::rcp(new vector(std_vec_->size(), 0.0)) ));
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -139,39 +143,20 @@ public:
     return static_cast<int>(std_vec_->size());
   }
 
-  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i]);
+  Teuchos::RCP<V> dual() const {
+    uint dimension = std_vec_->size(); 
+    Teuchos::RCP<vector> x_rcp = Teuchos::rcp( new vector(dimension,0.0) );
+    for( uint i=0; i<dimension; ++i) {
+      (*x_rcp)[i] = std::conj( (*std_vec_)[i] );
     }
 
   }
 
-  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i],xval[i]);
-    }
 
-  }
+  // Elementwise operations probably do not make sense in general here
 
-  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-    Real result = r.initialValue();
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      r.reduce((*std_vec_)[i],result);
-    }
-    return result;
-  }
-
-
-}; // class StdVector
-
-
-
+};
 
 } // namespace ROL
 
-#endif
+#endif // ROL_CPLXSTDVECTOR_H

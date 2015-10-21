@@ -192,7 +192,19 @@ IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
   GLOBAL_SET(HAVE_COMPLEX_BLAS 
              NOT HAVE_COMPLEX_BLAS_PROBLEM OR HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM OR HAVE_VECLIB_COMPLEX_BLAS)
 
-ENDIF()
+ELSE() # NOT ${PACKAGE_NAME}_ENABLE_COMPLEX
+
+  # Forbid users from setting HAVE_COMPLEX_BLAS=ON, if
+  # Teuchos_ENABLE_COMPLEX is OFF.  Use two separate IF statements,
+  # because "DEFINED X AND NOT X" could be bad syntax if X is NOT
+  # defined.
+  IF (DEFINED HAVE_COMPLEX_BLAS)
+    IF (NOT HAVE_COMPLEX_BLAS)
+      MESSAGE(FATAL_ERROR "Teuchos: ${PACKAGE_NAME}_ENABLE_COMPLEX is OFF, yet you set HAVE_COMPLEX_BLAS=ON.  Please do not do this.  You normally do not need to set HAVE_COMPLEX_BLAS explicitly.  If for some reason you do, then it must have the same value as ${PACKAGE_NAME}_ENABLE_COMPLEX.")
+    ENDIF()
+  ENDIF()
+
+ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX
 
 #
 # C) Set up package-specific options
