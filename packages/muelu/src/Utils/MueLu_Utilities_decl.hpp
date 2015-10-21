@@ -683,7 +683,7 @@ public:
         Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
         A = transposer.createTranspose();
         RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
-        RCP<CrsMatrix>                                                           AAA  = rcp_implicit_cast<CrsMatrix>(AA);
+        RCP<CrsMatrix>                                                           AAA  = rcp_dynamic_cast<CrsMatrix>(AA);
         RCP<CrsMatrixWrap>                                                       AAAA = rcp( new CrsMatrixWrap(AAA));
 
         return AAAA;
@@ -712,7 +712,7 @@ public:
 
       RCP<Epetra_CrsMatrix> rcpA(A);
       RCP<Xpetra::EpetraCrsMatrix>            AA   = rcp(new Xpetra::EpetraCrsMatrix(rcpA));
-      RCP<CrsMatrix>                          AAA  = rcp_implicit_cast<CrsMatrix>(AA);
+      RCP<CrsMatrix>                          AAA  = rcp_dynamic_cast<CrsMatrix>(AA);
       RCP<CrsMatrixWrap>                      AAAA = rcp( new CrsMatrixWrap(AAA));
       AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
 
@@ -769,7 +769,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
 template<>
 inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT > (RCP<Epetra_CrsMatrix> &epAB) {
   RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
-  RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
+  RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = rcp_dynamic_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
   RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
   return tmpC3;
 }
