@@ -50,6 +50,7 @@
 */
 
 #include "ROL_BlockOperator.hpp"
+#include "ROL_DiagonalOperator.hpp"
 #include "ROL_Elementwise_Function.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
@@ -79,28 +80,6 @@ void print_vector( const ROL::Vector<Real> &x ) {
     }  
   }
 }
-
-// Implementation of a diagonal operator
-template<class Real> 
-class DiagonalOperator : public ROL::LinearOperator<Real> {
-
-  typedef ROL::Vector<Real> V;
-
-private:
-
-  const Teuchos::RCP<const V>             diag_;
-  const ROL::Elementwise::Multiply<Real>  mult_;
-
-public:
-
-  DiagonalOperator( const Teuchos::RCP<const V> &diag ) : diag_(diag) {}
-  
-  void apply( V &Hv, const V &v, Real &tol ) const {
-    Hv.set(v);
-    Hv.applyBinary( mult_, *diag_ );          
-  }
-};
-
 
 // Implemantation of a Dyadic operator x*y'
 template<class Real> 
@@ -152,7 +131,7 @@ int main(int argc, char *argv[]) {
 
   // Define operators
   typedef ROL::LinearOperator<RealT>    LinOp;
-  typedef DiagonalOperator<RealT>       DiagOp;
+  typedef ROL::DiagonalOperator<RealT>  DiagOp;
   typedef DyadicOperator<RealT>         DyadOp;
   typedef NullOperator<RealT>           NullOp;
 
@@ -225,14 +204,19 @@ int main(int argc, char *argv[]) {
     RCP<V> u  = rcp( new SV(u_rcp) );
     RCP<V> v  = rcp( new SV(v_rcp) );
     
-    RCP<LinOp> D1 = rcp( new DiagOp(d1) );
+    RCP<LinOp> D1 = rcp( new DiagOp(*d1) );
     RCP<LinOp> NO = rcp( new NullOp() );
     RCP<LinOp> UV = rcp( new DyadOp(u,v) );
-    RCP<LinOp> D2 = rcp( new DiagOp(d2) );
+    RCP<LinOp> D2 = rcp( new DiagOp(*d2) );
+
+   
+    RealT tol = 0.0;
+
+    D1->apply(*x1,*x1,tol);
+    D1->applyInverse(*x1,*x1,tol);
 
     ROL::BlockOperator2<RealT> bkop(D1,UV,NO,D2);
 
-    RealT tol = 0.0;
 
     bkop.apply(*y,*x,tol);  
 
