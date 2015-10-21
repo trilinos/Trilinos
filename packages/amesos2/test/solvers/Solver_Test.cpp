@@ -383,6 +383,8 @@ test_mat_with_solver (const string& mm_file,
         if (verbosity > 1) {
           *fos << "    Testing Epetra objects" << endl;
         }
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRAEXT
         const ParameterList epetra_runs = Teuchos::getValue<ParameterList> (test_params.entry (object_it));
         const bool epetraSuccess = test_epetra (mm_file, solver_name, epetra_runs, solve_params);
@@ -396,6 +398,7 @@ test_mat_with_solver (const string& mm_file,
                << endl;
         }
 #endif // HAVE_AMESOS2_EPETRAEXT
+#endif // HAVE_TPETRA_INST_INT_INT
       }
       else if (object_name == "tpetra") {
         if (verbosity > 1) {
@@ -464,6 +467,7 @@ struct solution_checker<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,No
   }
 };
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRAEXT
 template <>
 struct solution_checker<Epetra_MultiVector> {
@@ -480,6 +484,7 @@ struct solution_checker<Epetra_MultiVector> {
                                           0.005, *compare_fos);
   }
 };
+#endif
 #endif
 
 
@@ -686,7 +691,7 @@ do_solve_routine(const string& solver_name,
   return success;
 }
 
-
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRAEXT
 
 //////////////////////////
@@ -856,6 +861,7 @@ bool test_epetra(const string& mm_file,
   return( success );
 }
 #endif  // HAVE_AMESOS2_EPETRAEXT
+#endif  // HAVE_TPETRA_INST_INT_INT
 
 //////////////////////////
 //     Tpetra Tests     //

@@ -12,6 +12,15 @@ SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 # B) Set up package-specific options
 #
 
+IF (NOT Tpetra_INST_INT_INT)
+
+   MESSAGE(WARNING "Amesos2 will not provide Epetra Matrix Support with Tpetra_INST_INT_INT OFF.")
+
+
+ENDIF ()
+
+
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VERBOSE_DEBUG
   HAVE_${PACKAGE_NAME_UC}_VERBOSE_DEBUG
