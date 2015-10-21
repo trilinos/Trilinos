@@ -124,13 +124,13 @@ void Jacobi(
 } // end Jacobi
 
 
-template <class GlobalOrdinal>
+template <class GlobalOrdinal, class Node>
 inline void JacobiT(
     double omega,
-    const Xpetra::Vector<double,int,GlobalOrdinal> & Dinv,
-    const Xpetra::Matrix<double,int,GlobalOrdinal> & A,
-    const Xpetra::Matrix<double,int,GlobalOrdinal> & B,
-    Xpetra::Matrix<double,int,GlobalOrdinal> &C,
+    const Xpetra::Vector<double,int,GlobalOrdinal,Node> & Dinv,
+    const Xpetra::Matrix<double,int,GlobalOrdinal,Node> & A,
+    const Xpetra::Matrix<double,int,GlobalOrdinal,Node> & B,
+    Xpetra::Matrix<double,int,GlobalOrdinal,Node> &C,
     bool call_FillComplete_on_result,
     bool doOptimizeStorage,
     const std::string & label) {
@@ -138,7 +138,7 @@ inline void JacobiT(
   typedef double        SC;
   typedef int           LO;
   typedef GlobalOrdinal GO;
-  typedef typename Xpetra::Vector<double, int, GlobalOrdinal>::node_type NO;
+  typedef Node          NO;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -164,7 +164,7 @@ inline void JacobiT(
     Epetra_CrsMatrix & epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
     //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -234,7 +234,7 @@ inline void JacobiInt(
     Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,int,NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,int,NO>::Op2NonConstEpetraCrs(C);
     //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<int>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<int COMMA typename Xpetra::Map<int COMMA int>::node_type>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -297,7 +297,7 @@ inline void Jacobi(
     bool call_FillComplete_on_result,
     bool doOptimizeStorage,
     const std::string & label) {
-  JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
+  JacobiT(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif // HAVE_XPETRA_INT_LONG_LONG
 
@@ -380,7 +380,7 @@ public:
     if (C == Teuchos::null)
       C = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(B.getRowMap(),Teuchos::OrdinalTraits<LocalOrdinal>::zero());
 
-    Xpetra::JacobiT<GlobalOrdinal>(omega, Dinv, A, B, *C, true,true,label);
+    JacobiT<GlobalOrdinal>(omega, Dinv, A, B, *C, true,true,label);
     C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
     return C;
   } //Jacobi

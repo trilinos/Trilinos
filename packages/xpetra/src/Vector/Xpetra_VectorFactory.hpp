@@ -122,7 +122,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraVectorT<int>(map, zeroOut) );
+        return rcp( new EpetraVectorT<int,Node>(map, zeroOut) );
 #endif
 #endif
 
@@ -158,7 +158,7 @@ namespace Xpetra {
 
 #if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraVectorT<long long>(map, zeroOut) );
+        return rcp( new EpetraVectorT<long long,Node>(map, zeroOut) );
 #endif
 
       XPETRA_FACTORY_END;
@@ -196,7 +196,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraIntVectorT<int>(map, zeroOut) );
+        return rcp( new EpetraIntVectorT<int,Node>(map, zeroOut) );
 #endif
 #endif
 
@@ -232,7 +232,7 @@ namespace Xpetra {
 
 #if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraIntVectorT<long long>(map, zeroOut) );
+        return rcp( new EpetraIntVectorT<long long,Node>(map, zeroOut) );
 #endif
 
       XPETRA_FACTORY_END;

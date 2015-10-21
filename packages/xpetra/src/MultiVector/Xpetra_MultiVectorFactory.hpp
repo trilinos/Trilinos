@@ -137,7 +137,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<int,Node>(map, NumVectors, zeroOut) );
 #endif
 #endif
 
@@ -160,7 +160,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<int,Node>(map, ArrayOfPtrs, NumVectors) );
 #endif
 #endif
 
@@ -195,7 +195,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<long long,Node>(map, NumVectors, zeroOut) );
 #endif
 #endif
 
@@ -214,7 +214,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<long long,Node>(map, ArrayOfPtrs, NumVectors) );
 #endif
 #endif
 

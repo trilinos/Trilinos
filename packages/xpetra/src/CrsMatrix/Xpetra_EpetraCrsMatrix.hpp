@@ -71,14 +71,14 @@
 
 namespace Xpetra {
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraCrsMatrixT
-    : public CrsMatrix<double, int, EpetraGlobalOrdinal>
+    : public CrsMatrix<double, int, EpetraGlobalOrdinal, Node>
   {
-    typedef EpetraGlobalOrdinal                                                 GlobalOrdinal;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::scalar_type         Scalar;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::local_ordinal_type  LocalOrdinal;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::node_type           Node;
+    typedef EpetraGlobalOrdinal                                                       GlobalOrdinal;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type         Scalar;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type  LocalOrdinal;
+
 
     // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
@@ -217,13 +217,13 @@ namespace Xpetra {
     const RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getComm"); return toXpetra(mtx_->Comm()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRowMap"); return toXpetra<GlobalOrdinal>(mtx_->RowMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->RowMap()); }
 
     //! Returns the Map that describes the column distribution in this matrix.
-    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getColMap"); return toXpetra<GlobalOrdinal>(mtx_->ColMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getColMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->ColMap()); }
 
     //! Returns the CrsGraph associated with this matrix.
-    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrixT::getCrsGraph"); return toXpetra<GlobalOrdinal>(mtx_->Graph()); }
+    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrixT::getCrsGraph"); return toXpetra<GlobalOrdinal,Node>(mtx_->Graph()); }
 
     //! Number of global elements in the row map of this matrix.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalNumRows"); return mtx_->NumGlobalRows64(); }
@@ -289,7 +289,7 @@ namespace Xpetra {
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const;
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra<EpetraGlobalOrdinal,Node>(diag)); }
 
     //! Get offsets of the diagonal entries in the matrix.
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
@@ -310,10 +310,10 @@ namespace Xpetra {
     void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const;
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getDomainMap"); return toXpetra<GlobalOrdinal>(mtx_->DomainMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getDomainMap"); return toXpetra<GlobalOrdinal, Node>(mtx_->DomainMap()); }
 
     //!
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRangeMap"); return toXpetra<GlobalOrdinal>(mtx_->RangeMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRangeMap"); return toXpetra<GlobalOrdinal, Node>(mtx_->RangeMap()); }
 
     //@}
 
@@ -335,7 +335,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getMap"); return toXpetra<GlobalOrdinal>(mtx_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->Map()); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -420,11 +420,11 @@ namespace Xpetra {
   }; // EpetraCrsMatrixT class
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<int> EpetraCrsMatrix;
+  typedef EpetraCrsMatrixT<int, typename Xpetra::Map<int, int>::node_type> EpetraCrsMatrix;
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<long long> EpetraCrsMatrix64;
+  typedef EpetraCrsMatrixT<long long, typename Xpetra::Map<int, long long>::node_type> EpetraCrsMatrix64;
 #endif
 
 } // Xpetra namespace

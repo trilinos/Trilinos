@@ -117,7 +117,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraImportT<int>(source, target));
+        return rcp( new EpetraImportT<int,Node>(source, target));
 #endif
 #endif
 
@@ -152,7 +152,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraImportT<long long>(source, target));
+        return rcp( new EpetraImportT<long long,Node>(source, target));
 #endif
 #endif
 

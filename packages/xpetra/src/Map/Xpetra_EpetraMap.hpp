@@ -64,28 +64,27 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  template<class GlobalOrdinal>
-  const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal> &);
-  template<class GlobalOrdinal>
-  const Epetra_Map & toEpetra(const RCP< const Map<int, GlobalOrdinal> > &);
+  template<class GlobalOrdinal, class Node>
+  const Epetra_Map & toEpetra(const Map<int,GlobalOrdinal, Node> &);
+  template<class GlobalOrdinal, class Node>
+  const Epetra_Map & toEpetra(const RCP< const Map<int, GlobalOrdinal, Node> > &);
   //template<class GlobalOrdinal>
   //const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
-  template<class GlobalOrdinal>
-  const RCP< const Map<int, GlobalOrdinal> > toXpetra(const Epetra_BlockMap &);
+  template<class GlobalOrdinal, class Node>
+  const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
   //
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraMapT
-    : public virtual Map<int, EpetraGlobalOrdinal>
+    : public virtual Map<int, EpetraGlobalOrdinal, Node>
   {
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef typename Map<int, GlobalOrdinal>::node_type Node;
 
   public:
     typedef int local_ordinal_type;
     typedef int global_ordinal_type;
-    typedef Map<int, int>::node_type node_type;
+    typedef Node node_type;
 
     static Teuchos::RCP<Node> defaultArgNode() {
         // Workaround function for a deferred visual studio bug
@@ -178,10 +177,10 @@ namespace Xpetra {
     bool isDistributed() const { XPETRA_MONITOR("EpetraMapT::isDistributed"); return map_->DistributedGlobal(); }
 
     //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isCompatible"); return map_->PointSameAs(toEpetra(map)); }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isCompatible"); return map_->PointSameAs(toEpetra<GlobalOrdinal,Node>(map)); }
 
     //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isSameAs"); return map_->SameAs(toEpetra(map)); }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("EpetraMapT::isSameAs"); return map_->SameAs(toEpetra<GlobalOrdinal,Node>(map)); }
 
     //@}
 
@@ -211,10 +210,10 @@ namespace Xpetra {
     //@{
 
     //! Return a new Map with processes with zero elements removed.
-    RCP<const Map<int,GlobalOrdinal> > removeEmptyProcesses() const;
+    RCP<const Map<int,GlobalOrdinal,Node> > removeEmptyProcesses() const;
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const;
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const;
 
     //@}
 
@@ -257,21 +256,24 @@ namespace Xpetra {
 
   }; // EpetraMapT class
 
+
+// TODO replace this by an ETI system!!!
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraMapT<int> EpetraMap;
+  typedef EpetraMapT<int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > EpetraMap;
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraMapT<long long> EpetraMap64;
+  typedef EpetraMapT<long long,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > EpetraMap64;
 #endif
+  // TODO replace this by an ETI system!!!
 
 // Moving here from cpp since some compilers don't have public visibility of virtual thunks.
 // https://software.sandia.gov/bugzilla/show_bug.cgi?id=6232
 
   // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_BlockMap. We don't need to keep a reference on it.
   // TODO: use toEpetra() function here.
-  template<class EpetraGlobalOrdinal>
-  EpetraMapT<EpetraGlobalOrdinal>::EpetraMapT(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  template<class EpetraGlobalOrdinal, class Node>
+  EpetraMapT<EpetraGlobalOrdinal, Node>::EpetraMapT(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                        LocalGlobal lg, const Teuchos::RCP<Node> &node)
   {
     // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
@@ -323,8 +325,8 @@ namespace Xpetra {
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<GlobalOrdinal>(numGlobalElements), 1, indexBase, *toEpetra(comm))))));
   }
 
-  template<class EpetraGlobalOrdinal>
-  EpetraMapT<EpetraGlobalOrdinal>::EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
+  template<class EpetraGlobalOrdinal, class Node>
+  EpetraMapT<EpetraGlobalOrdinal,Node>::EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
   {
     // This test come from Tpetra
@@ -425,8 +427,8 @@ namespace Xpetra {
   }
 
   // TODO: UnitTest FAILED
-  template<class EpetraGlobalOrdinal>
-  EpetraMapT<EpetraGlobalOrdinal>::EpetraMapT(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase,
+  template<class EpetraGlobalOrdinal,class Node>
+  EpetraMapT<EpetraGlobalOrdinal, Node>::EpetraMapT(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
   {
     if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
@@ -437,50 +439,58 @@ namespace Xpetra {
   }
 
 
-  template<class EpetraGlobalOrdinal>
-  LookupStatus EpetraMapT<EpetraGlobalOrdinal>::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
+  template<class EpetraGlobalOrdinal, class Node>
+  LookupStatus EpetraMapT<EpetraGlobalOrdinal, Node>::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
 
-  template<class EpetraGlobalOrdinal>
-  LookupStatus EpetraMapT<EpetraGlobalOrdinal>::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+  template<class EpetraGlobalOrdinal, class Node>
+  LookupStatus EpetraMapT<EpetraGlobalOrdinal, Node>::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
 
+  // TODO fix me
+  template<class EpetraGlobalOrdinal, class Node> inline
+  Teuchos::ArrayView< const EpetraGlobalOrdinal > Xpetra::EpetraMapT<EpetraGlobalOrdinal, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const GlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
+
+#if 0
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  template<> inline
-  Teuchos::ArrayView< const int > EpetraMapT<int>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const GlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
+  template<class Node> inline
+  Teuchos::ArrayView< const int > Xpetra::EpetraMapT<int, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const GlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  template<> inline
-  Teuchos::ArrayView< const long long > EpetraMapT<long long>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const GlobalOrdinal >(map_->MyGlobalElements64(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
+  template<class Node> inline
+  Teuchos::ArrayView< const long long > EpetraMapT<long long, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const GlobalOrdinal >(map_->MyGlobalElements64(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
+#endif
 #endif
 
-  template<class EpetraGlobalOrdinal>
-  Teuchos::RCP<typename EpetraMapT<EpetraGlobalOrdinal>::Node>
-  EpetraMapT<EpetraGlobalOrdinal>::getNode () const
+  template<class EpetraGlobalOrdinal, class Node>
+  Teuchos::RCP<Node>
+  EpetraMapT<EpetraGlobalOrdinal, Node>::getNode () const
   {
     XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
-    return KokkosClassic::DefaultNode::getDefaultNode();
+    //return KokkosClassic::DefaultNode::getDefaultNode();
+    // TODO check this...
+    return Teuchos::null;
   } //removed &
 
-  template<class EpetraGlobalOrdinal>
-  RCP<const Map<int,EpetraGlobalOrdinal> > EpetraMapT<EpetraGlobalOrdinal>::removeEmptyProcesses () const {
+  template<class EpetraGlobalOrdinal, class Node>
+  RCP<const Map<int,EpetraGlobalOrdinal, Node> > EpetraMapT<EpetraGlobalOrdinal, Node>::removeEmptyProcesses () const {
    const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();
     if (!NewMap) {
       return Teuchos::null;
     } else {
-      const RCP< const Map<int, GlobalOrdinal> >  NewMapX = toXpetra<GlobalOrdinal>(*NewMap);
+      const RCP< const Map<int, EpetraGlobalOrdinal, Node> >  NewMapX = toXpetra<EpetraGlobalOrdinal, Node>(*NewMap);
       delete NewMap;   // NOTE: toXpetra *copys* the epetra map rather than wrapping it, so we have to delete NewMap to avoid a memory leak.
       return NewMapX;
     }
   }
 
-  template<class EpetraGlobalOrdinal>
-  RCP<const Map<int,EpetraGlobalOrdinal> > EpetraMapT<EpetraGlobalOrdinal>::replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{
+  template<class EpetraGlobalOrdinal, class Node>
+  RCP<const Map<int,EpetraGlobalOrdinal, Node> > EpetraMapT<EpetraGlobalOrdinal, Node>::replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{
     throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
     return Teuchos::null;
   }
 
-  template<class EpetraGlobalOrdinal>
-  std::string EpetraMapT<EpetraGlobalOrdinal>::description() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  std::string EpetraMapT<EpetraGlobalOrdinal, Node>::description() const {
     XPETRA_MONITOR("EpetraMapT::description");
 
     // This implementation come from Tpetra_Map_def.hpp (without modification)
@@ -494,8 +504,8 @@ namespace Xpetra {
     return oss.str();
   }
 
-  template<class EpetraGlobalOrdinal>
-  void EpetraMapT<EpetraGlobalOrdinal>::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template<class EpetraGlobalOrdinal, class Node>
+  void EpetraMapT<EpetraGlobalOrdinal, Node>::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     XPETRA_MONITOR("EpetraMapT::describe");
 
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
