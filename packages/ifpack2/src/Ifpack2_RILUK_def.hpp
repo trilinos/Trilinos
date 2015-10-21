@@ -264,13 +264,25 @@ setParameters (const Teuchos::ParameterList& params)
 
   if (! gotFillLevel) {
     try {
+      // Try global_ordinal_type.  The cast to int must succeed.
+      fillLevel = as<int> (params.get<global_ordinal_type> ("fact: iluk level-of-fill"));
+      gotFillLevel = true;
+    }
+    catch (InvalidParameterType&) {
+      // Try the next type.
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  if (! gotFillLevel) {
+    try {
       // Try magnitude_type, for compatibility with ILUT.
       // The cast from magnitude_type to int must succeed.
       fillLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-fill"));
       gotFillLevel = true;
     }
     catch (InvalidParameterType&) {
-      // Try double next.
+      // Try the next type.
     }
     // Don't catch InvalidParameterName here; we've already done that above.
   }
