@@ -1121,12 +1121,12 @@ public:
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
   // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
   // normInf(const Teuchos::ArrayView<T>& norms) const;
-  void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-                    const Teuchos::ArrayView<mag_type>& norms) const;
-  template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-  normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-               const Teuchos::ArrayView<T>& norms) const;
+  // void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //                   const Teuchos::ArrayView<mag_type>& norms) const;
+  // template <typename T>
+  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //              const Teuchos::ArrayView<T>& norms) const;
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
   template <typename T>
   typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<impl_scalar_type, T>::value, void>::type
@@ -1293,7 +1293,7 @@ public:
   mag_type norm2() const;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;
   mag_type normInf() const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
+  // using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
   // mag_type
   // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::meanValue;
