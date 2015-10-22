@@ -55,7 +55,9 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
+#endif
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>

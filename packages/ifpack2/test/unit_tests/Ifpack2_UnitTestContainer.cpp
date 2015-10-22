@@ -80,10 +80,6 @@
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-#include <qd/dd_real.h>
-#endif
-
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_DenseContainer.hpp>
 #include <Ifpack2_SparseContainer.hpp>
@@ -520,26 +516,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
 }
 
 // Define the set of unit tests to instantiate in this file.
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+#define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( SparseContainer, ILUT, Scalar, LocalOrdinal, GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BandedContainer, FullMatrixSameScalar, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DenseContainer, FullMatrixSameScalar, Scalar, LocalOrdinal,GlobalOrdinal) \
 
+// NOTE (mfh 21 Oct 2015) This test is special, because it wants to
+// use two different GlobalOrdinal types, but Ifpack2 does not do ETI
+// for SparseContainer for that case.  I think this reflects a flaw in
+// the design of SparseContainer rather than a flaw in Ifpack2's ETI
+// system.  It's also worrisome that the test never actually exercised
+// GO != LO, because it was only ever instantiated for LO = int and GO
+// = int.  Anyway, I'll protect that one instantiation for now.
+
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+
 // Instantiate the unit tests for Scalar=double, LO=int, and GO=int.
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+UNIT_TEST_GROUP_SC_LO_GO(double, int, int)
+
+#endif // defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
 
 // mfh 03 Sep 2013: See the explicit instantiation at the top of this file.
 //#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 //UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 //#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-// Instantiate the unit tests for Scalar=dd_real, LO=int, and GO=int.
-// For now, we only do this if explicit instantiation is turned off,
-// because we don't know how to find out if explicit instantiation is
-// enabled for these types.
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
-#endif
-
-}//namespace <anonymous>
+} // namespace (anonymous)
 
