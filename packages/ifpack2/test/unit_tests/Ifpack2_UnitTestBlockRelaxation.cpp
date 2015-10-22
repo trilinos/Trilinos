@@ -464,6 +464,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BandedContainer, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2BlockRelaxation, BlockedBandedContainer, Scalar, LocalOrdinal,GlobalOrdinal)
 
+// FIXME (mfh 21 Oct 2015) This test exercises two different GO
+// (GlobalOrdinal) types: whatever GO is, and GO = LO (LocalOrdinal).
+// As such, given that LO = int is the only currently enabled LO type,
+// this test won't build if GO = int is disabled (Bug 6358).  We
+// disable building the test in that case.
+
+#ifdef HAVE_TPETRA_INST_INT_INT
+
 // mfh 21 Oct 2015: This class was only getting tested for Scalar =
 // double, LocalOrdinal = int, GlobalOrdinal = int, and the default
 // Node type.  As part of the fix for Bug 6358, I'm removing the
@@ -474,6 +482,8 @@ typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;
 typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(default_scalar_type, default_local_ordinal_type, default_global_ordinal_type)
+
+#endif // HAVE_TPETRA_INST_INT_INT
 
 } // namespace (anonymous)
 
