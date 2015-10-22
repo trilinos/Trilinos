@@ -375,31 +375,27 @@ namespace Xpetra {
                                  "Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
       RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
-      const int nnz = matrix->NumMyNonzeros();
+      const int numRows = matrix->NumMyRows();
+      const int numCols = matrix->NumMyCols();
+      const int nnz     = matrix->NumMyNonzeros();
+
       int*      rowptr;
       int*      colind;
       double*   vals;
       int       rv = matrix->ExtractCrsDataPointers(rowptr, colind, vals);
       TEUCHOS_TEST_FOR_EXCEPTION(rv, std::runtime_error, "Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
-      rowptr_ = Teuchos::arcp<typename local_matrix_type::size_type>(nnz+1);
-      for (int i = 0; i < nnz; i++)
-        rowptr_[i] = Teuchos::asSafe<typename local_matrix_type::size_type>(rowptr[i]);
-      rowptr_[nnz] = nnz;
+
+      // Transform int* rowptr array to size_type* array
+      rowptr_ = Teuchos::arcp<typename local_matrix_type::row_map_type::non_const_value_type>(numRows+1);
+      for (int i = 0; i < numRows+1; i++)
+        rowptr_[i] = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
 
       // create Kokkos::Views
-      typedef typename local_matrix_type::row_map_type  row_map_type;
-      typedef typename local_matrix_type::index_type    index_type;
-      typedef typename local_matrix_type::values_type   values_type;
+      typename local_matrix_type::row_map_type kokkosRowptr(rowptr_.getRawPtr(), numRows+1);
+      typename local_matrix_type::index_type   kokkosColind(colind,              nnz);
+      typename local_matrix_type::values_type  kokkosVals  (vals,                nnz);
 
-      row_map_type      kokkosRowptr = row_map_type(rowptr_.getRawPtr(), nnz+1);
-      index_type        kokkosColind = index_type  (colind,    nnz);
-      values_type       kokkosVals   = values_type (vals,      nnz);
-
-      const int         numRows = matrix->NumMyRows();
-      const int         numCols = matrix->NumMyCols();
-      const std::string label("LocalMatrix");
-
-      local_matrix_type ret(label, numRows, numCols, nnz, kokkosVals, kokkosRowptr, kokkosColind);
+      local_matrix_type ret("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowptr, kokkosColind);
 
       return ret;
     }
