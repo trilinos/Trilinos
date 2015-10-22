@@ -72,7 +72,7 @@ namespace MueLu {
     PrintMonitor m(*this, "CG iterations");
 
     if (nIts_ == 0) {
-      finalP = MatrixFactory2::BuildCopy(rcpFromRef(P0));
+      finalP = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(rcpFromRef(P0));
       return;
     }
 
@@ -93,7 +93,7 @@ namespace MueLu {
     Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
     // T is used only for projecting onto
-    RCP<CrsMatrix> T_ = CrsMatrixFactory::Build(C.GetPattern());
+    RCP<CrsMatrix> T_ = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(C.GetPattern());
     T_->fillComplete(P0.getDomainMap(), P0.getRangeMap());
     RCP<Matrix>    T = rcp(new CrsMatrixWrap(T_));
 
@@ -112,7 +112,7 @@ namespace MueLu {
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
-    R = MatrixFactory2::BuildCopy(T);
+    R = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(T);
 #ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     // TAW: Oct 16 2015: MueLu::Utilities returns the Tpetra::CrsMatrix object which would not be instantiated!
@@ -130,11 +130,11 @@ namespace MueLu {
       R->fillComplete(R->getDomainMap(), R->getRangeMap());
 
     // Z_0 = M^{-1}R_0
-    Z = MatrixFactory2::BuildCopy(R);
+    Z = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(R);
     Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
 
     // P_0 = Z_0
-    P = MatrixFactory2::BuildCopy(Z);
+    P = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(Z);
 
     oldRZ = Frobenius(*R, *Z);
 
@@ -159,7 +159,7 @@ namespace MueLu {
         // For example, if we use TentativePFactory for both nonzero pattern and initial guess
         // I think it might also happen because of numerical breakdown, but we don't test for that yet
         if (k == 0)
-          X = MatrixFactory2::BuildCopy(rcpFromRef(P0));
+          X = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(rcpFromRef(P0));
         break;
       }
 
@@ -191,7 +191,7 @@ namespace MueLu {
 #endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
-      Z = MatrixFactory2::BuildCopy(R);
+      Z = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(R);
       Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
