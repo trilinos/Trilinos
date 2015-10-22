@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -153,12 +153,12 @@ createConstLinearOp(
  * objects wrapped in Thyra operator/vector objects.
  *
  * Example usage:
- 
+
  \code
 
   typedef Thyra::TpetraObjectExtraction<Scalar,LO,GO,Node> TOE;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TpetraMultiVector_t;
-  
+
   RCP<TpetraMultiVector_t> tpetraMv = TOE::getTpetraMultiVector(thyraMv);
   RCP<TpetraVector_t> tpetraV = TOE::getTpetraVector(thyraV);
 
@@ -169,8 +169,10 @@ createConstLinearOp(
  *
  * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
-  class Node=KokkosClassic::DefaultNode::DefaultNodeType >
+template <class Scalar = Tpetra::Vector<>::scalar_type,
+          class LocalOrdinal = Tpetra::Vector<>::local_ordinal_type,
+          class GlobalOrdinal = Tpetra::Vector<>::global_ordinal_type,
+          class Node = Tpetra::Vector<>::node_type>
 class TpetraOperatorVectorExtraction {
 public:
 

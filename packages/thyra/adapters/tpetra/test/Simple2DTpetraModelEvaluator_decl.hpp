@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -127,9 +127,9 @@ private: // data members
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
   Scalar d_;
-  Teuchos::RCP<Tpetra::Vector<Scalar,int> > x0_;
+  Teuchos::RCP<Tpetra::Vector<Scalar> > x0_;
   Teuchos::Array<Scalar> p_;
-  Teuchos::RCP<Tpetra::CrsGraph<int> > W_op_graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<> > W_op_graph_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
