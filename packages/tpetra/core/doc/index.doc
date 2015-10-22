@@ -158,7 +158,7 @@ solver package and the Anasazi eigensolver package.
 
 \section tpetra_tutorial Tutorial lessons
 
-Tpetra includes five lessons.  The first shows how to initialize an
+Tpetra includes several lessons.  The first shows how to initialize an
 application using Tpetra, with or without MPI.  Following lessons
 demonstrate how to create and modify Tpetra data structures, and how
 to use Tpetra's abstractions to move data between different parallel

@@ -7,6 +7,10 @@ MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 # Ifpack2 only works with Tpetra linear algebra objects.
 SET(Ifpack2_ETI_FIELDS "S|LO|GO|N")
 
+# Set up a pattern that excludes all complex Scalar types.
+# TriBITS' ETI system knows how to interpret this pattern.
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_COMPLEX "S=std::complex<float>|std::complex<double>" "LO=.*" "GO=.*" "N=.*")
+
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has
 # its own set.  The JOIN commands below set up those lists.  We use
@@ -70,7 +74,7 @@ TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
                             "IFPACK2_INSTANTIATE_SLGN(S,LO,GO,N)"     IFPACK2_ETIMACRO_SLGN                            
                             )
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
-                            "${Ifpack2_ETI_EXCLUDE_SET};S=std::complex<double> LO=.* GO=.*; S=std::complex<float> LO=.* GO=.*"  
+                            "${Ifpack2_ETI_EXCLUDE_SET};${Ifpack2_ETI_EXCLUDE_SET_COMPLEX}"
                             list_of_manglings eti_typedefs
                             "IFPACK2_INSTANTIATE_SL_REAL(S,LO,GO)" IFPACK2_ETIMACRO_SL_REAL
                             "IFPACK2_INSTANTIATE_SLG_REAL(S,LO,GO)" IFPACK2_ETIMACRO_SLG_REAL
