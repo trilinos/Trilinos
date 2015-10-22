@@ -193,6 +193,8 @@ SET(PARAKLETE_KLU_COMMON
                 PROPERTIES
                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
       ENDIF()
+  ELSEIF (WIN32 AND NOT CYGWIN)
+       # No flags
   ELSE()
        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
                 PROPERTIES
@@ -257,6 +259,8 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
                 PROPERTIES
                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
         ENDIF()
+    ELSEIF (WIN32 AND NOT CYGWIN)
+       # No flags
     ELSE()
          SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
                 PROPERTIES
@@ -311,6 +315,8 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
                                 PROPERTIES
                                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
                             ENDIF()
+   ELSEIF (WIN32 AND NOT CYGWIN)
+       # No flags
    ELSE()
         SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
                                 PROPERTIES
@@ -395,13 +401,15 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
  )
 
     
-    IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.2)
      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
                               PROPERTIES
                               COMPILE_FLAGS "-Wno-all -Wno-pedantic")
         ENDIF()
-   ELSE()
+  ELSEIF (WIN32 AND NOT CYGWIN)
+       # No flags
+  ELSE()
       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
                               PROPERTIES
                               COMPILE_FLAGS "-Wno-all")

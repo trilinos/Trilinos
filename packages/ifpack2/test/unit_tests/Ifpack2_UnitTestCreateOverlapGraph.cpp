@@ -42,29 +42,29 @@
 */
 
 // ***********************************************************************
-// 
+//
 //      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 
 
@@ -134,10 +134,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2CreateOverlapGraph, OverlapGraphTest0, 
   }
 }
 
-#define UNIT_TEST_GROUP_ORDINAL(LocalOrdinal,GlobalOrdinal) \
+#define UNIT_TEST_GROUP_LO_GO(LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Ifpack2CreateOverlapGraph, OverlapGraphTest0, LocalOrdinal,GlobalOrdinal)
 
-UNIT_TEST_GROUP_ORDINAL(int, int)
+#include "Ifpack2_ETIHelperMacros.h"
 
-}//namespace <anonymous>
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+// Test all enabled combinations of LocalOrdinal (LO)
+// and GlobalOrdinal (GO) types.
+
+IFPACK2_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
+} // namespace (anonymous)
 
