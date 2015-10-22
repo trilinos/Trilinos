@@ -548,10 +548,22 @@ GLOBAL_SET(HAVE_TPETRA_FLOAT ${Tpetra_INST_FLOAT})
 
 # Make sure that it's OK to instantiate/test over Scalar = float.
 # Tpetra requires BLAS support for this case.  It presumes that a BLAS
-# could exist without float (S) support.
-ASSERT_DEFINED (HAVE_TEUCHOS_BLASFLOAT)
-IF (Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
-  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
+# could exist without float (S) support.  Furthermore, it presumes
+# that Teuchos supports float (this is mainly necessary for correct
+# linking when ETI is ON, with downstream packages like Thyra, which
+# get used in surprising places, e.g., in Ifpack2).
+IF (Tpetra_INST_FLOAT)
+  IF (NOT DEFINED Teuchos_ENABLE_FLOAT)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is not defined.  Tpetra needs Teuchos to support float.  Please set Teuchos_ENABLE_FLOAT:BOOL=ON, reconfigure, and rebuild.")
+  ELSEIF (NOT Teuchos_ENABLE_FLOAT)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is OFF.  Tpetra needs Teuchos to support float.  Please set Teuchos_ENABLE_FLOAT:BOOL=ON, reconfigure, and rebuild.")
+  ENDIF ()
+
+  IF (NOT DEFINED HAVE_TEUCHOS_BLASFLOAT)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is not defined.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
+  ELSEIF (NOT HAVE_TEUCHOS_BLASFLOAT)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
+  ENDIF ()
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = std::complex<float> or
@@ -611,10 +623,19 @@ ENDIF ()
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex arithmetic.
 
-# mfh 18 Aug 2015: Teuchos currently doesn't even define
-# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
-# Thanks to Andrew Bradley for pointing this out.
 IF (Tpetra_INST_COMPLEX_DOUBLE)
+  IF (NOT DEFINED Teuchos_ENABLE_COMPLEX)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is not defined.  Please set Teuchos_ENABLE_COMPLEX:BOOL=ON, reconfigure, and rebuild.")
+  ELSEIF (NOT Teuchos_ENABLE_COMPLEX)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is OFF.  Please set Teuchos_ENABLE_COMPLEX:BOOL=ON, reconfigure, and rebuild.")
+  ENDIF ()
+
+  # mfh 18 Aug 2015: Teuchos currently doesn't even define
+  # HAVE_COMPLEX_BLAS, in the case where one would expect it to be
+  # OFF.  Thanks to Andrew Bradley for pointing this out.  This is why
+  # we start with a check for whether it is NOT DEFINED; otherwise,
+  # testing "IF (NOT HAVE_COMPLEX_BLAS)" would be a CMake syntax
+  # error.
   IF (NOT DEFINED HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
@@ -645,8 +666,15 @@ ENDIF ()
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex float (C)
-# arithmetic.
+# arithmetic.  Also, check whether Teuchos supports complex arithmetic
+# at all.
 IF (Tpetra_INST_COMPLEX_FLOAT)
+  IF (NOT DEFINED Teuchos_ENABLE_COMPLEX)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but Teuchos_ENABLE_COMPLEX is not defined.  Please set Teuchos_ENABLE_COMPLEX:BOOL=ON, reconfigure, and rebuild.")
+  ELSEIF (NOT Teuchos_ENABLE_COMPLEX)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but Teuchos_ENABLE_COMPLEX is OFF.  Please set Teuchos_ENABLE_COMPLEX:BOOL=ON, reconfigure, and rebuild.")
+  ENDIF ()
+
   IF (NOT DEFINED HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
