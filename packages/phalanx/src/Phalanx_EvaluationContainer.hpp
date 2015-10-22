@@ -52,7 +52,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 #include <string>
 
 namespace PHX {
@@ -102,7 +102,7 @@ namespace PHX {
 
     bool post_registration_setup_called_;
 
-    boost::unordered_map<std::string,boost::any> fields_;
+    std::unordered_map<std::string,boost::any> fields_;
 
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
   };

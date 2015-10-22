@@ -13,13 +13,13 @@ namespace PHX {
   template<typename EvalT>
   class KokkosViewFactoryFunctor {
     
-    boost::unordered_map<std::string,boost::any>& fields_;
+    std::unordered_map<std::string,boost::any>& fields_;
     const PHX::FieldTag& tag_;
     const std::vector<PHX::index_size_type> extended_dimensions_;
     
   public:
     
-    KokkosViewFactoryFunctor(boost::unordered_map<std::string,boost::any>& fields,
+    KokkosViewFactoryFunctor(std::unordered_map<std::string,boost::any>& fields,
 			     const PHX::FieldTag& tag,
 			     const std::vector<PHX::index_size_type>& extended_dimensions) :
       fields_(fields),
