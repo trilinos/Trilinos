@@ -775,6 +775,7 @@ template <typename Adapter>
 
   typedef GraphMetricValues<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::Vector<part_t,lno_t,gno_t,node_t>     vector_t;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -893,6 +894,7 @@ template <typename Adapter>
 
   // Ipart: Identity matrix for part numbers
   Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
+  RCP<vector_t> scaleVec = Teuchos::rcp( new vector_t(vertexMapG,false) );
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
     part_t justPart = part[localElement];
