@@ -315,15 +315,16 @@ if [ ! -z "$LAUNCH" ]
 then
     if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
     then
-        LAUNCH="$LAUNCH -n 1"
-        # If the launch script doesn't work to run something simple, don't use it.
-        $LAUNCH >/dev/null 2>&1 true || LAUNCH=
-    else
         LAUNCH=
         unset OMPI_MCA_btl_openib_ib_retry_count
         unset OMPI_MCA_btl_openib_ib_timeout
         export OMPI_MCA_mtl=^psm
+        export OMPI_MCA_pml=^cm
         export OMPI_MCA_btl=tcp,sm,self
+    else
+        LAUNCH="$LAUNCH -n 1"
+        # If the launch script doesn't work to run something simple, don't use it.
+        $LAUNCH >/dev/null 2>&1 true || LAUNCH=
     fi
 fi
 
