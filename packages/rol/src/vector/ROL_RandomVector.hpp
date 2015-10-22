@@ -41,60 +41,28 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_UNARYFUNCTIONS_H
-#define ROL_UNARYFUNCTIONS_H
+#ifndef ROL_RANDOMVECTOR_H
+#define ROL_RANDOMVECTOR_H
 
-#include <cstdlib>
-#include <ctime>
-
+#include "ROL_Vector.hpp"
 #include "ROL_Elementwise_Function.hpp"
 
+
 namespace ROL {
-namespace Elementwise {
 
-// Used to set every element in a vector to a specific value
-template<class Real>
-class Fill : public UnaryFunction<Real> {
-public:
-  Fill( const Real &value ) : value_(value) {}
-  Real apply( const Real &x ) const {
-    return value_;
-  }  
-private:  
-  Real value_;
-}; // class Fill
+/** @ingroup la_group
+    \function RandomizeVector
+    \brief Fill a ROL::Vector with uniformly-distributed random numbers
+           in the interval [lower,upper]
+*/
 
-
-// Get the elementwise reciprocal of a vector
 template<class Real> 
-class Reciprocal : public UnaryFunction<Real> {
-public:
-  Real apply( const Real &x ) const {
-    return static_cast<Real>(1)/x;
-  }  
-}; // class Reciprocal
+void RandomizeVector( Vector<Real> &x, const Real &lower=0.0, const Real &upper=1.0 ) {
 
+  Elementwise::UniformlyRandom<Real> ur(lower,upper);
+  x.applyUnary(ur);
+}
 
-// Generate a uniformly distributed random number
-// between lower and upper
-template<class Real> 
-class UniformlyRandom : public UnaryFunction<Real> {
-private:
-  const Real lower_;
-  const Real upper_;
+}
 
-public:
-  UniformlyRandom( const Real &lower = 0.0, const Real &upper = 1.0) : 
-    lower_(lower), upper_(upper) {
-  }
-
-  Real apply( const Real &x ) const {
-    return (static_cast<Real>(rand()) / static_cast<Real>(RAND_MAX)) * (upper_-lower_) + lower_;
-  }
-}; // class UniformlyRandom
-
-
-} // namespace Elementwise
-} // namespace ROL
-
-#endif // ROL_UNARYFUNCTIONS_H
+#endif // ROL_RANDOMVECTOR_H
