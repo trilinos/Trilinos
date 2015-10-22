@@ -309,8 +309,9 @@ FUNCTION(TEUCHOS_TEST_setPrintActiveRcpNodesOnExit)
 
 ENDFUNCTION()
 
-
-TEUCHOS_TEST_setPrintActiveRcpNodesOnExit()
+IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+  TEUCHOS_TEST_setPrintActiveRcpNodesOnExit()
+ENDIF()
 
 
 #
