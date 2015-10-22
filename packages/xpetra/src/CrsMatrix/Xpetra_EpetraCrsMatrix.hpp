@@ -373,6 +373,9 @@ namespace Xpetra {
     local_matrix_type getLocalMatrix () const {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
                                  "Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+      if (isInitializedLocalMatrix_)
+        return localMatrix_;
+
       RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
       const int numRows = matrix->NumMyRows();
@@ -386,30 +389,33 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(rv, std::runtime_error, "Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
 
       // Transform int* rowptr array to size_type* array
-      rowptr_ = Teuchos::arcp<typename local_matrix_type::row_map_type::non_const_value_type>(numRows+1);
-      for (int i = 0; i < numRows+1; i++)
-        rowptr_[i] = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
+      typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr("local row map", numRows+1);
+      for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+        kokkosRowPtr(i) = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
 
       // create Kokkos::Views
-      typename local_matrix_type::row_map_type kokkosRowptr(rowptr_.getRawPtr(), numRows+1);
       typename local_matrix_type::index_type   kokkosColind(colind,              nnz);
       typename local_matrix_type::values_type  kokkosVals  (vals,                nnz);
 
-      local_matrix_type ret("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowptr, kokkosColind);
+      localMatrix_ = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
+      isInitializedLocalMatrix_ = true;
 
-      return ret;
+      return localMatrix_;
     }
 #endif
    //@}
 
   private:
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    mutable Teuchos::ArrayRCP<typename local_matrix_type::size_type> rowptr_;  ///< locally shared rowptr for Kokkos::View. This is annoying but a local reinterpret_cast produces segfaults. Note that the rowptr are somewhat special compared to colids and values...
-#endif
-
     RCP<Epetra_CrsMatrix> mtx_;
 
     bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    mutable
+      local_matrix_type localMatrix_;
+    mutable
+      bool              isInitializedLocalMatrix_;
+#endif
 
   }; // EpetraCrsMatrixT class
 
