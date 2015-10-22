@@ -194,9 +194,9 @@ SET(PARAKLETE_KLU_COMMON
                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
       ENDIF()
   ELSE()
-#       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
-#                PROPERTIES
-#                COMPILE_FLAGS "-Wno-all")
+       SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_KLU_COMMON},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all")
   ENDIF()
 
          
@@ -258,9 +258,9 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
         ENDIF()
     ELSE()
-#         SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
-#                PROPERTIES
-#                COMPILE_FLAGS "-Wno-all")
+         SET_SOURCE_FILES_PROPERTIES(${KLU_FILES},
+                PROPERTIES
+                COMPILE_FLAGS "-Wno-all")
     ENDIF()
 
 
@@ -312,9 +312,9 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
                                 COMPILE_FLAGS "-Wno-all -Wno-pedantic")
                             ENDIF()
    ELSE()
-#        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
-#                                PROPERTIES
-#                                COMPILE_FLAGS "-Wno-all ")
+        SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_HEADERS},
+                                PROPERTIES
+                                COMPILE_FLAGS "-Wno-all ")
    ENDIF()
   
 
@@ -402,9 +402,9 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
                               COMPILE_FLAGS "-Wno-all -Wno-pedantic")
         ENDIF()
    ELSE()
-#      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
-#                              PROPERTIES
-#                              COMPILE_FLAGS "-Wno-all")
+      SET_SOURCE_FILES_PROPERTIES(${PARAKLETE_SOURCE},
+                              PROPERTIES
+                              COMPILE_FLAGS "-Wno-all")
   ENDIF()
 
 
@@ -540,7 +540,10 @@ ENDIF()
 # src
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(HEADERS ${HEADERS}
+  Amesos_BaseSolver.h
   Amesos_ComponentBaseSolver.h
   Amesos_TestRowMatrix.h
   )
