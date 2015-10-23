@@ -419,14 +419,6 @@ namespace Xpetra {
 
   }; // EpetraCrsMatrixT class
 
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<int, typename Xpetra::Map<int, int>::node_type> EpetraCrsMatrix;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<long long, typename Xpetra::Map<int, long long>::node_type> EpetraCrsMatrix64;
-#endif
-
 } // Xpetra namespace
 
 #define XPETRA_EPETRACRSMATRIX_SHORT

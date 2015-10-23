@@ -58,10 +58,6 @@
 
 namespace Xpetra {
 
-  // TODO: move that elsewhere
-  //   template<class GlobalOrdinal>
-  //   const Epetra_Import & toEpetra(const Import<int, GlobalOrdinal> &);
-
   template<class GlobalOrdinal, class Node>
   RCP< const Import<int, GlobalOrdinal, Node > > toXpetra(const Epetra_Import *import);
   //

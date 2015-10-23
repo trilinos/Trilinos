@@ -257,19 +257,6 @@ namespace Xpetra {
   }; // EpetraMapT class
 
 
-// TODO replace this by an ETI system!!!
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraMapT<int,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > EpetraMap;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraMapT<long long,Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace> > EpetraMap64;
-#endif
-  // TODO replace this by an ETI system!!!
-
-// Moving here from cpp since some compilers don't have public visibility of virtual thunks.
-// https://software.sandia.gov/bugzilla/show_bug.cgi?id=6232
-
   // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_BlockMap. We don't need to keep a reference on it.
   // TODO: use toEpetra() function here.
   template<class EpetraGlobalOrdinal, class Node>

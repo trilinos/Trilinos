@@ -158,14 +158,6 @@ namespace Xpetra {
 
   }; // EpetraExportT class
 
-//#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-//  typedef EpetraExportT<int, typename Xpetra::Map<int, int>::node_type> EpetraExport;
-//#endif
-
-//#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-//  typedef EpetraExportT<long long, typename Xpetra::Map<int, long long>::node_type> EpetraExport64;
-//#endif
-
 } // Xpetra namespace
 
 #endif // XPETRA_EPETRAEXPORT_HPP

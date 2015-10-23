@@ -344,17 +344,6 @@ namespace Xpetra {
 
   }; // EpetraMultiVectorT class
 
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraMultiVectorT<int, typename Xpetra::Map<int, int>::node_type> EpetraMultiVector;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraMultiVectorT<long long, typename Xpetra::Map<int, long long>::node_type> EpetraMultiVector64;
-#endif
-
-// Moving here from cpp since some compilers don't have public visibility of virtual thunks.
-// https://software.sandia.gov/bugzilla/show_bug.cgi?id=6232
-
   //template<class> class EpetraVectorT; // TODO check this
   template<class EpetraGlobalOrdinal, class Node> class EpetraVectorT;
 

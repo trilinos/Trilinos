@@ -327,14 +327,6 @@ namespace Xpetra {
 
   }; // class EpetraIntVectorT
 
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  //typedef EpetraIntVectorT<int> EpetraIntVector;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  //typedef EpetraIntVectorT<long long> EpetraIntVector64;
-#endif
-
 } // namespace Xpetra
 
 #endif // XPETRA_EPETRAINTVECTOR_HPP

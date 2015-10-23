@@ -279,20 +279,6 @@ namespace Xpetra {
 
   }; // EpetraCrsGraphT class
 
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  // TODO not sure about this...
-  //template<class Node>
-  //typedef typename EpetraCrsGraphT<int,Node> EpetraCrsGraph<Node>;
-  typedef EpetraCrsGraphT<int, typename Xpetra::Map<int, int>::node_type> EpetraCrsGraph;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  // TODO not sure about this
-  //template<class Node>
-  //typedef typename EpetraCrsGraphT<long long,Node> EpetraCrsGraph64<Node>;
-  typedef EpetraCrsGraphT<long long, typename Xpetra::Map<int, long long>::node_type> EpetraCrsGraph64;
-#endif
-
 } // Xpetra namespace
 
 #endif // XPETRA_EPETRACRSGRAPH_HPP

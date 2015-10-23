@@ -216,14 +216,6 @@ namespace Xpetra {
 
   }; // EpetraVectorT class
 
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraVectorT<int,typename Xpetra::Map<int, int>::node_type> EpetraVector;
-#endif
-
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-  typedef EpetraVectorT<long long,typename Xpetra::Map<int, long long>::node_type> EpetraVector64;
-#endif
-
 } // Xpetra namespace
 
 #endif // XPETRA_EPETRAVECTOR_HPP
