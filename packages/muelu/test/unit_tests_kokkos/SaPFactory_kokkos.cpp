@@ -61,10 +61,10 @@
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
 
-  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -75,8 +75,9 @@ namespace MueLuTests {
     out << *sapFactory << std::endl;
   }
 
-  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -131,7 +132,7 @@ namespace MueLuTests {
     Ptest->apply(*X, *Btest, Teuchos::NO_TRANS, one, zero);
     Btest->update(-one, *Bfact, one);
 
-    Array<STS::magnitudeType> norms(1);
+    Array<typename STS::magnitudeType> norms(1);
     Btest->norm2(norms);
     out << "|| B_factory - B_test || = " << norms[0] << std::endl;
     TEST_EQUALITY(norms[0] < 1e-12, true);
@@ -142,6 +143,7 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, EpetraVsTpetra)
   {
+#   include "MueLu_UseShortNames.hpp"
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -341,5 +343,28 @@ namespace MueLuTests {
   } //SaPFactory_EpetraVsTpetra
 #endif
 #endif
+
+#define UNIT_TEST_GROUP(SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Constructor, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Build,       SC, LO, GO, NO)
+
+#ifdef HAVE_MUELU_TPETRA
+  #include <TpetraCore_config.h>
+  #include <TpetraCore_ETIHelperMacros.h>
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP)
+#endif
+
+  // Uncomment after rebasing on top of TOBIAS patches
+// #ifdef HAVE_MUELU_EPETRA
+// #  if (defined(HAVE_MUELU_TPETRA) && !defined(HAVE_MUELU_TPETRA_INST_INT_INT)) || (!defined(HAVE_MUELU_TPETRA))
+// #error Why are we here?
+  // typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> node_type;
+  // UNIT_TEST_GROUP(double, int, int, node_type);
+// #  endif
+// #endif
+
 
 }//namespace MueLuTests

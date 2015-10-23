@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   int ierr = -1;
   try {
     // Note: the command line parameter --linAlgebra= is taken into account.
-    // Xpetra parameters are added to the Teuchos::CommandLineProcessor of Teuchos::UnitTestRepository in MueLu_TestHelpers.cpp
+    // Xpetra parameters are added to the Teuchos::CommandLineProcessor of Teuchos::UnitTestRepository in MueLu_TestHelpers_kokkos.cpp
 
 #ifdef ParallelDebug
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
