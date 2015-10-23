@@ -85,11 +85,11 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
   using Xpetra::TpetraCrsMatrix; //TMP
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  using Xpetra::EpetraCrsMatrix; //TMP
-#endif
-#endif
+//#ifdef HAVE_XPETRA_EPETRA
+//#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+//  using Xpetra::EpetraCrsMatrixT<int>; //TMP
+//#endif
+//#endif
 
   using Xpetra::Map;
 
@@ -211,7 +211,7 @@ namespace {
 
     RCP<const Map<int,int,Node> > epmap = Xpetra::MapFactory<int,int,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
      {
-       EpetraCrsMatrix t =  EpetraCrsMatrix(epmap, numLocal);
+       Xpetra::EpetraCrsMatrixT<int,Node> t =  Xpetra::EpetraCrsMatrixT<int,Node>(epmap, numLocal);
 
        // Test of constructor
        EpCrsMatrix op(epmap,1);
