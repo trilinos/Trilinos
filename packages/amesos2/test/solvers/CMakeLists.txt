@@ -1,10 +1,10 @@
 
-IF (Tpetra_INST_INT_INT)
+
 TRIBITS_ADD_EXECUTABLE(
   Solver_Test
   SOURCES Solver_Test
   )
-ENDIF()
+
 
 ##### KLU2 Tests #####
 
@@ -25,7 +25,6 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 
-   IF (Tpetra_INST_INT_INT)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superlu_test.xml
@@ -40,7 +39,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     STANDARD_PASS_OUTPUT
     COMM serial mpi
     )
-    ENDIF()
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Superlu_UnitTests
@@ -57,7 +56,6 @@ ENDIF()
 
 ##### SuperLU_MT Tests #####
 
-IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUMTFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -73,12 +71,11 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
     COMM serial mpi
     )
 ENDIF()
-ENDIF()
 
 
 ##### SuperLU_DIST Tests #####
 
-IF (Tpetra_INST_INT_INT)
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -94,11 +91,10 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
     COMM mpi
     )
 ENDIF()
-ENDIF()
 
 
 ##### PARDISO_MKL Tests #####
-IF (Tpetra_INST_INT_INT)
+
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -114,10 +110,10 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     COMM serial mpi
     )
 ENDIF()
-ENDIF()
+
 
 ##### LAPACK Tests #####
-IF (Tpetra_INST_INT_INT)
+
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -133,10 +129,9 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
     COMM serial mpi
     )
 ENDIF()
-ENDIF()
+
 
 ####   BASKER Tests ####
-#IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_Basker)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Basker_UnitTests
@@ -147,8 +142,9 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     STANDARD_PASS_OUTPUT
     )
 ENDIF()
-#ENDIF()
+
 ##### MUMPS Tests ####
+#MUMPS requires int/int type
 IF (Tpetra_INST_INT_INT)
 if (${PACKAGE_NAME}_ENABLE_MUMPS)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -162,7 +158,7 @@ if (${PACKAGE_NAME}_ENABLE_MUMPS)
 ENDIF()
 ENDIF()
 
-IF(Tpetra_INST_INT_INT)
+
 ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
 IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
   # SolverFactory test (doesn't make sense to run unless Trilinos is
@@ -176,4 +172,4 @@ IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()
-ENDIF ()
+
