@@ -1107,10 +1107,13 @@ bool test_tpetra(const string& mm_file,
 #if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_FLOAT))
       if( scalar == "float" ){
         if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
           if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
             AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
+#endif
           }
+#ifdef HAVE_TPETRA_INST_INT_INT
           else if( go == "int" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
           }
@@ -1169,10 +1172,13 @@ bool test_tpetra(const string& mm_file,
 #if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_DOUBLE))
       if( scalar == "double" ){
         if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INST
+
           if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INST
             AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
+#endif
           }
+#ifdef HAVE_TPETRA_INST_INT_INST
           else if( go == "int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
           }
@@ -1231,10 +1237,13 @@ bool test_tpetra(const string& mm_file,
 #if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
       if( scalar == "double double" ){
         if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
           if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INST
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
+#endif
           }
+#ifdef HAVE_TPETRA_INST_INT_INT
           else if( go == "int" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
           }
@@ -1285,10 +1294,13 @@ bool test_tpetra(const string& mm_file,
       } // end scalar == "double double"
       if( scalar == "quad" || scalar == "quad double" ){
         if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
           if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
+#endif
           }
+#ifdef HAVE_TPETRA_INST_INT_INT
           else if( go == "int" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
           }
@@ -1344,10 +1356,12 @@ bool test_tpetra(const string& mm_file,
         if( mag == "float" ){
           typedef std::complex<float> cmplx;
           if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
             if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
+#endif
             }
+#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
             }
@@ -1405,10 +1419,13 @@ bool test_tpetra(const string& mm_file,
         if( mag == "double" ){
           typedef std::complex<double> cmplx_double;
           if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
             if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
+#endif
             }
+#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
             }
@@ -1466,10 +1483,13 @@ bool test_tpetra(const string& mm_file,
         if( mag == "double double" ){
           typedef std::complex<dd_real> cmplx_dd;
           if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
             if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
+#endif
             }
+#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
             }
@@ -1521,10 +1541,13 @@ bool test_tpetra(const string& mm_file,
         else if( mag == "quad" || mag == "quad double" ){
           typedef std::complex<qd_real> cmplx_qd;
           if( lo == "int" ){
-#ifdef HAVE_TPETRA_INST_INT_INT
+
             if( go == "default" ){
+#ifdef HAVE_TPETRA_INST_INT_INT
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
+#endif
             }
+#ifdef HAVE_TPETRA_INST_INT_INT
             else if( go == "int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
             }
