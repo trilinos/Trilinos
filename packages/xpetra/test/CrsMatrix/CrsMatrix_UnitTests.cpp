@@ -900,7 +900,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GetLocalMatrix, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
@@ -940,7 +939,7 @@ namespace {
 
       // access data before fill complete!
       bool bSuccess = true;
-      TEUCHOS_TEST_THROW( local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
+      TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
       TEST_EQUALITY(bSuccess, true);
 
       A->fillComplete();
@@ -949,7 +948,11 @@ namespace {
       local_matrix_type view2 = A->getLocalMatrix();
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+
+      // check that the local_matrix_type taken the second time is the same
+      local_matrix_type view3 = A->getLocalMatrix();
+      TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
 
       for (LO r = 0; r < view2.numRows(); ++r) {
         // extract data from current row r
@@ -987,7 +990,7 @@ namespace {
 
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
 
       for (LO r = 0; r < view2.numRows(); ++r) {
         // extract data from current row r
@@ -1001,6 +1004,7 @@ namespace {
           TEST_EQUALITY(vv, -123.4);
         }
       }
+
     } // endl loop over linear algebra packages
 #endif
   }
@@ -1015,8 +1019,6 @@ namespace {
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
     typedef typename Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node> CrsMatrixFactoryClass;
     typedef typename CrsMatrixClass::local_matrix_type local_matrix_type;
-
-    Kokkos::initialize();
 
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1196,8 +1198,6 @@ namespace {
         }
       }
     } // loop over linear Algebra frameworks
-
-    Kokkos::finalize();
 #endif
   }
 
