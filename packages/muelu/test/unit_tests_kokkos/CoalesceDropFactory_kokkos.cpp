@@ -70,8 +70,7 @@ namespace MueLuTests {
     out << *coalesceDropFact << std::endl;
   }
 
-  // Scalar no dropping
-  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, Build)
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering)
   {
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
@@ -85,44 +84,47 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(36);
     fineLevel.Set("A", A);
 
-    CoalesceDropFactory_kokkos coalesceDropFact;
-    fineLevel.Request("Graph",          &coalesceDropFact);
-    fineLevel.Request("DofsPerNode",    &coalesceDropFact);
-    fineLevel.Request("Filtering",      &coalesceDropFact);
+    CoalesceDropFactory_kokkos dropFact;
+    fineLevel.Request("Graph",       &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+    fineLevel.Request("Filtering",   &dropFact);
 
-    coalesceDropFact.Build(fineLevel);
+    dropFact.Build(fineLevel);
 
-    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &coalesceDropFact);
-    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &coalesceDropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &coalesceDropFact);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering, false);
+    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
+    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
+    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
+
+    TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
+    TEST_EQUALITY(filtering,                   false);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {
-      auto v0 = graph->getNeighborVertices(0); for (int i = 0; i < v0.size(); i++) out << " " << v0(i); out << std::endl;
-      auto v1 = graph->getNeighborVertices(1); for (int i = 0; i < v1.size(); i++) out << " " << v1(i); out << std::endl;
-      auto v2 = graph->getNeighborVertices(2); for (int i = 0; i < v2.size(); i++) out << " " << v2(i); out << std::endl;
+      auto v0 = graph->getNeighborVertices(0);
+      auto v1 = graph->getNeighborVertices(1);
+      auto v2 = graph->getNeighborVertices(2);
       if (v0.size() == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
           v1.size() == 3 && v2.size() == 3)
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
-      }
-      else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == 2)
+          bCorrectGraph = true;
+
+      } else {
+        if (graph->getNeighborVertices(0).size() == 3)
+          bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
 
-    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+    auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+    auto myDomainMap = graph->GetDomainMap();
 
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(),  35);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(),  0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),      0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),  Teuchos::as<size_t>(36 + (comm->getSize()-1)*2));
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),  as<size_t>(36 + (comm->getSize()-1)*2));
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(),  35);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(),  0);
@@ -130,7 +132,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  36);
   }
 
-  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ScalarDropping)
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ClassicScalarWithFiltering)
   {
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
@@ -142,14 +144,14 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<const Map> dofMap = MapFactory::Build(lib, 3*comm->getSize(), 0, comm);
-    RCP<Matrix> mtx = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 1.0, -1.0, -0.0001);
+    auto dofMap = MapFactory::Build(lib, 3*comm->getSize(), 0, comm);
+    auto mtx    = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 1.0, -1.0, -0.0001);
+
     mtx->SetFixedBlockSize(1, 0);
     fineLevel.Set("A", mtx);
 
     CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
-    dropFact.SetParameter("lightweight wrap",       Teuchos::ParameterEntry(true));
-    dropFact.SetParameter("aggregation: drop tol",  Teuchos::ParameterEntry(0.5));
+    dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.5));
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
@@ -157,13 +159,13 @@ namespace MueLuTests {
 
     dropFact.Build(fineLevel);
 
-    RCP<LWGraph_kokkos> graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
-    LO                  myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    bool                filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
+    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
+    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
+    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering,                            true);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
+    TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
+    TEST_EQUALITY(filtering,                   true);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {
@@ -176,184 +178,245 @@ namespace MueLuTests {
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 1) bCorrectGraph = true;
-      }
-      else {
-        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == 1)
+          bCorrectGraph = true;
+
+      } else {
+        if (graph->getNeighborVertices(0).size() == 2)
+          bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
 
-    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+    auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+    auto myDomainMap = graph->GetDomainMap();
 
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(),  3*comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(),  0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),      0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),  Teuchos::as<size_t>(3*comm->getSize()+(comm->getSize()-1)*2));
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),  as<size_t>(3*comm->getSize()+(comm->getSize()-1)*2));
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(),  3*comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(),  0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),      0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  Teuchos::as<size_t>(3*comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==3), true);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  as<size_t>(3*comm->getSize()));
+    TEST_EQUALITY(myDomainMap->getNodeNumElements(),    3);
   }
 
-#if 0
-  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, AmalgamationLightweight)
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering)
   {
-    // unit test for block size 3
-    // lightweight wrap = true
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
 
     Level fineLevel;
-    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    int blockSize=3;
+    int blockSize = 3;
 
-    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, blockSize*comm->getSize(), 0, comm);
-    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
+    auto dofMap = MapFactory::Build(lib, blockSize*comm->getSize(), 0, comm);
+    auto mtx    = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
     mtx->SetFixedBlockSize(blockSize, 0);
     fineLevel.Set("A", mtx);
 
-    CoalesceDropFactory dropFact = CoalesceDropFactory();
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
-    fineLevel.Request("Graph", &dropFact);
+    CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+
+    fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
+    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
-    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
-    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
+    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
+    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
+    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
+
+    TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
+    TEST_EQUALITY(filtering,                           false);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
-      }
-      else {
-        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == 2)
+          bCorrectGraph = true;
+
+      } else {
+        if (as<int>(graph->getNeighborVertices(0).size()) == blockSize)
+          bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
 
-    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+    auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+    auto myDomainMap = graph->GetDomainMap();
 
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    if (comm->getSize()>1) {
+    TEST_EQUALITY(myImportMap->getMinLocalIndex(),     0);
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(), as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
+
+    if (comm->getSize() > 1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t numLocalImportElts = myImportMap->getNodeNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+        TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+1);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+        TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+2);
       }
     }
-    if (comm->getSize()>1) {
+    if (comm->getSize() > 1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+        TEST_EQUALITY(maxLocalIndex, numLocalRowMapElts*blockSize-2);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+        TEST_EQUALITY(maxLocalIndex, numLocalRowMapElts*blockSize-1);
       }
     }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
-  } // AmalgamationLightweight
+    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),     0);
+    TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),     0);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(), as<size_t>(comm->getSize()));
+    TEST_EQUALITY(myDomainMap->getNodeNumElements(),   1);
+  }
 
-  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationBasic)
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering)
   {
-    // unit test for block size 3.
-    // lightweight wrap = false
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+
+    Level fineLevel;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    auto dofMap = MapFactory::Build(lib, 3*comm->getSize(), 0, comm);
+    auto mtx    = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, 0.00001);
+
+    mtx->SetFixedBlockSize(3, 0);
+    fineLevel.Set("A", mtx);
+
+    CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+    dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0));
+
+    fineLevel.Request("Graph",       &dropFact);
+    fineLevel.Request("DofsPerNode", &dropFact);
+    fineLevel.Request("Filtering",   &dropFact);
+
+    dropFact.Build(fineLevel);
+
+    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
+    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
+    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
+
+    TEST_EQUALITY(as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(filtering,                            true);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+
+    TEST_EQUALITY(graph->getNeighborVertices(0).size(), 1);
+
+    auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+    auto myDomainMap = graph->GetDomainMap();
+
+    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
+    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(myImportMap->getMinLocalIndex(),     0);
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(), as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
+    if (comm->getSize() > 1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+1);
+      } else {
+        TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+2);
+      }
+    }
+
+    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
+    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),     0);
+    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),     0);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(), as<size_t>(comm->getSize()));
+    TEST_EQUALITY(myDomainMap->getNodeNumElements(),   1);
+  }
+
+#if 0
+  TEUCHOS_UNIT_TEST(CoalesceDropFactory_kokkos, LaplacianScalarWithoutFiltering)
+  {
+    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     Level fineLevel;
-    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    int blockSize=3;
-
-    int nx = blockSize*comm->getSize();
-    RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
-    A->SetFixedBlockSize(blockSize, 0);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(36);
     fineLevel.Set("A", A);
-    CoalesceDropFactory dropFact = CoalesceDropFactory();
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
-    fineLevel.Request("Graph", &dropFact);
+
+    CoalesceDropFactory_kokkos dropFact;
+    dropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
+
+    fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
+    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
-    fineLevel.print(out);
-    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
-    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
+    auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
+    auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
+    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
+    TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
+    TEST_EQUALITY(filtering, false);
+
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
-      bCorrectGraph = true;
+    if (comm->getSize() == 1) {
+      auto v0 = graph->getNeighborVertices(0);
+      auto v1 = graph->getNeighborVertices(1);
+      auto v2 = graph->getNeighborVertices(2);
+      if (v0.size() == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
+          v1.size() == 3 && v2.size() == 3)
+        bCorrectGraph = true;
     } else {
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
-      }
-      else {
-        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
+      if (comm->getRank() == 0 ) {
+        if (graph->getNeighborVertices(0).size() == 2)
+          bCorrectGraph = true;
+
+      } else {
+        if (graph->getNeighborVertices(0).size() == 3)
+          bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
 
-    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+    auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+    auto myDomainMap = graph->GetDomainMap();
 
-    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
-    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1))); //u,v and p
-    if (comm->getSize()>1) {
-      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
-      } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
-      }
-    }
-    if (comm->getSize()>1) {
-      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
-      } else {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
-      }
-    }
+    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(),  35);
+    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(),  0);
+    TEST_EQUALITY(myImportMap->getMinLocalIndex(),      0);
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),  as<size_t>(36 + (comm->getSize()-1)*2));
 
-    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
-    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
-  } // AmalgamationBasic
+    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(),  35);
+    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(),  0);
+    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),      0);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  36);
+  }
+#endif
 
 
+#if 0
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStridedLW)
   {
     // unit test for block size 3 using a strided map
@@ -371,7 +434,7 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
 
     std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(blockSize));
+    stridingInfo.push_back(as<size_t>(blockSize));
     LocalOrdinal stridedBlockId = -1;
 
     RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
@@ -401,8 +464,8 @@ namespace MueLuTests {
     fineLevel.print(out);
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -422,23 +485,23 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t numLocalImportElts = myImportMap->getNodeNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
       }
     }
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+        TEST_EQUALITY(as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+        TEST_EQUALITY(as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
       }
     }
 
@@ -446,8 +509,8 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
+    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
   } // AmalgamationStridedLW
 
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStrided2LW)
@@ -461,8 +524,8 @@ namespace MueLuTests {
 
     // create strided map information
     std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(2));
-    stridingInfo.push_back(Teuchos::as<size_t>(1));
+    stridingInfo.push_back(as<size_t>(2));
+    stridingInfo.push_back(as<size_t>(1));
     LocalOrdinal stridedBlockId = 0;
 
     int blockSize=3;
@@ -505,8 +568,8 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
 
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -526,23 +589,23 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t numLocalImportElts = myImportMap->getNodeNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
       }
     }
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+        TEST_EQUALITY(as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+        TEST_EQUALITY(as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
       }
     }
 
@@ -550,70 +613,10 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
+    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
   } // AmalgamationStrided2LW
 
-
-  TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationDroppingLW)
-  {
-    // unit test for block size 3 = (3)
-    // drop small entries
-    // lightweight wrap = true
-    out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-
-    Level fineLevel;
-    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
-
-    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0, comm);
-    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, 0.00001);
-    mtx->SetFixedBlockSize(3, 0);
-    fineLevel.Set("A", mtx);
-
-    CoalesceDropFactory dropFact = CoalesceDropFactory();
-    dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
-    dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(1.0));
-    fineLevel.Request("Graph", &dropFact);
-    fineLevel.Request("DofsPerNode", &dropFact);
-
-    dropFact.Build(fineLevel);
-
-    fineLevel.print(out);
-    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
-
-    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
-    TEST_EQUALITY(graph->getNeighborVertices(0).size(), 1);
-
-    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-    const RCP<const Map> myDomainMap = graph->GetDomainMap();
-
-    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
-    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    if (comm->getSize()>1) {
-      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
-      } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
-      }
-    }
-
-    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
-    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
-
-  } // AmalgamationDroppingLW
 
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStridedOffsetDropping2LW)
   {
@@ -627,9 +630,9 @@ namespace MueLuTests {
 
     // create strided map information
     std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(2));
-    stridingInfo.push_back(Teuchos::as<size_t>(3));
-    stridingInfo.push_back(Teuchos::as<size_t>(4));
+    stridingInfo.push_back(as<size_t>(2));
+    stridingInfo.push_back(as<size_t>(3));
+    stridingInfo.push_back(as<size_t>(4));
     LocalOrdinal stridedBlockId = 1;
     GlobalOrdinal offset = 19;
 
@@ -674,8 +677,8 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
 
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
-    TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 9, true);
+    TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
+    TEST_EQUALITY(as<int>(myDofsPerNode) == 9, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -695,21 +698,21 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
       size_t numLocalImportElts = myImportMap->getNodeNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
-        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+        TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
       }
     }
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
+    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
   } // AmalgamationStridedOffsetDropping2LW
 #endif
 
