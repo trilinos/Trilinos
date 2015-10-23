@@ -928,9 +928,11 @@ template <typename Adapter>
     for (lno_t i=0; i < localNumObj; i++) {
       const gno_t globalRow = Ids[i];
       size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+      NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
       Indices.resize (NumEntries);
       Values.resize (NumEntries);
       adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
       for (size_t j=0; j < NumEntries; j++)
 	if (part[i] != Values[j])
@@ -945,9 +947,11 @@ template <typename Adapter>
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
 	size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+	NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
 	adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+	adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j=0; j < NumEntries; j++)
 	  if (part[i] != Values[j])
