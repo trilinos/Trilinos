@@ -909,6 +909,7 @@ template <typename Adapter>
 
     //Update Tpetra Ipart matrix
     Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
+    scaleVec->replaceLocalValue(localElement,part[localElement]);
   }// *** vertex loop ***
 
   //Fill-complete parts Matrix
