@@ -920,6 +920,7 @@ template <typename Adapter>
     rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
   Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
 				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
+  adjsMatrix->rightScale(*scaleVec);
   Array<gno_t> Indices;
   Array<part_t> Values;
 
