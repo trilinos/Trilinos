@@ -188,24 +188,20 @@ namespace MueLu {
 
 #define MUELU_TEST_PARAM_2LIST(paramList, defaultList, paramName, paramType, cmpValue) \
   (cmpValue == ( \
-                 paramList.isParameter(paramName)   ? paramList  .get<paramType>(paramName) : ( \
-                                                                                                defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
-                                                                                                MasterList::getDefault<paramType>(paramName) ) ) )
+    paramList.isParameter(paramName)   ? paramList  .get<paramType>(paramName) : ( \
+      defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
+      MasterList::getDefault<paramType>(paramName) ) ) )
 
 #ifndef HAVE_MUELU_KOKKOS_REFACTOR
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName = rcp(new oldFactory());
+#define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
+  varName = rcp(new oldFactory());
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
   if (!useKokkos) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
-#endif
-
-#ifndef HAVE_MUELU_KOKKOS_REFACTOR
-#define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
-  varName = rcp(new oldFactory());
-#else
 #define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
   if (!useKokkos) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
