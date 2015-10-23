@@ -214,12 +214,12 @@ int main(int argc, char *argv[]) {
     Op->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
 
     // Epetra_Vector -> Xpetra::Vector
-    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
 
-    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epNS));
 
     // Epetra_Map -> Xpetra::Map
-    const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
+    const RCP< const Map> map = Xpetra::toXpetra<int,Node>(emap);
 
     RCP<Hierarchy> H = rcp ( new Hierarchy() );
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);

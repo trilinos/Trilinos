@@ -152,13 +152,21 @@ namespace {
 
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_TEST_USE_LONGLONG_GO
-  // TODO replace this by something smarter! What if Kokkos is not available?
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-    typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
+  // use dummy node
+#ifdef HAVE_XPETRA_TPETRA
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+#else
+  typedef int Node;
+#endif
+  typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
   UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
 #else
-    // TODO replace this by something smarter! What if Kokkos is not available?
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+  // use dummy node
+#ifdef HAVE_XPETRA_TPETRA
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+#else
+  typedef int Node;
+#endif
     typedef long long LongLongInt;
     typedef Xpetra::EpetraMapT<long long, Node> EpetraMap;
   UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , LongLongInt)

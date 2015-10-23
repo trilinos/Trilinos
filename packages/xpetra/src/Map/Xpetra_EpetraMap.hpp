@@ -454,8 +454,9 @@ namespace Xpetra {
   {
     XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
     //return KokkosClassic::DefaultNode::getDefaultNode();
+    return KokkosClassic::Details::getNode<Node>();
     // TODO check this...
-    return Teuchos::null;
+    //return Teuchos::null;
   } //removed &
 
   template<class EpetraGlobalOrdinal, class Node>

@@ -68,8 +68,12 @@
 
 namespace {
 #ifdef HAVE_XPETRA_EPETRA
-  // TODO replace this by something smarter! What if Kokkos is not available?
+// TODO find something smarter to define a Node
+#ifdef HAVE_XPETRA_TPETRA
   typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+#else
+  typedef int Node;
+#endif
 #ifndef XPETRA_TEST_USE_LONGLONG_GO
   typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
 #else

@@ -134,7 +134,10 @@ template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraImportT<int, default_node_type >;
+template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA
 #endif // XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
@@ -159,12 +162,11 @@ template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif
 #else
-  // What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraImportT<long long, default_node_type >;
+template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA
-
-// TODO
-//template class EpetraImportT<long long, typename Xpetra::Map<int, long long>::node_type>;
-//template RCP< const Import<int, long long> > toXpetra<long long>(const Epetra_Import *);
 #endif
 
 } // Xpetra namespace

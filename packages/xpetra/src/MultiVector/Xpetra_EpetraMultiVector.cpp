@@ -101,12 +101,16 @@ template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosOpenMPWr
 typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
 //template class EpetraMultiVectorT<int, default_node_type >;
-template RCP<MultiVector<double, int, int, default_node_type > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
+template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
 template const Epetra_MultiVector & toEpetra<int, default_node_type >(const MultiVector<double, int, int, default_node_type > &);
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<int, default_node_type >(const MultiVector<double, int, int, default_node_type > &);
 #endif // HAVE_XPETRA_TPETRA
 #endif
 
@@ -134,12 +138,16 @@ template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosOp
 typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
 //template class EpetraMultiVectorT<int, default_node_type >;
-template RCP<MultiVector<double, int, long long, default_node_type > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
+template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);
 template const Epetra_MultiVector & toEpetra<long long, default_node_type >(const MultiVector<double, int, long long, default_node_type > &);
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<long long, default_node_type >(const MultiVector<double, int, long long, default_node_type > &);
 #endif // HAVE_XPETRA_TPETRA
 #endif
 

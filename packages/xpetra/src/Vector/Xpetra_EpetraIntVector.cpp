@@ -340,7 +340,9 @@ typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::Ho
 template class EpetraIntVectorT<int, default_node_type >;
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraIntVectorT<int, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif
 
@@ -361,7 +363,9 @@ typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::Ho
 template class EpetraIntVectorT<long long, default_node_type >;
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraIntVectorT<long long, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif
 

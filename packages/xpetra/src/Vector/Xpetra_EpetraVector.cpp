@@ -168,7 +168,12 @@ template Epetra_Vector & toEpetra<int,default_node_type >(Vector<double, int, in
 template const Epetra_Vector & toEpetra<int, default_node_type >(const Vector<double, int, int, default_node_type > &);
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraVectorT<int, default_node_type >;
+//template RCP<Vector<double, int, int, default_node_type > toXpetra<int, default_node_type>(RCP<Epetra_Vector>);
+template Epetra_Vector & toEpetra<int,default_node_type >(Vector<double, int, int,default_node_type> &);
+template const Epetra_Vector & toEpetra<int, default_node_type >(const Vector<double, int, int, default_node_type > &);
 #endif // HAVE_XPETRA_TPETRA
 #endif
 
@@ -201,7 +206,12 @@ template Epetra_Vector & toEpetra<long long,default_node_type >(Vector<double, i
 template const Epetra_Vector & toEpetra<long long, default_node_type >(const Vector<double, int, long long, default_node_type > &);
 #endif
 #else
-  // TODO What, if Tpetra is disabled? Use fake Kokkos thing?
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef int default_node_type;
+template class EpetraVectorT<long long, default_node_type >;
+//template RCP<Vector<double, int, long long, default_node_type > toXpetra<int, default_node_type>(RCP<Epetra_Vector>);
+template Epetra_Vector & toEpetra<long long,default_node_type >(Vector<double, int, long long,default_node_type> &);
+template const Epetra_Vector & toEpetra<long long, default_node_type >(const Vector<double, int, long long, default_node_type > &);
 #endif // HAVE_XPETRA_TPETRA
 #endif
 
