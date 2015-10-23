@@ -28,7 +28,7 @@ ENDIF()
 TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(HDF5  HDF5_ALLOW_PREFIND)
 IF (HDF5_ALLOW_PREFIND)
 
-  MESSAGE("-- Using FIND_PACKAGE(HDF5 ...) ...") 
+  MESSAGE("-- Using FIND_PACKAGE(HDF5 ...) ...")
 
   SET(HDF5_COMPONENTS C)
   IF (HDF5_REQUIRE_FORTRAN)
@@ -36,6 +36,14 @@ IF (HDF5_ALLOW_PREFIND)
   ENDIF()
 
   FIND_PACKAGE(HDF5 COMPONENTS ${HDF5_COMPONENTS})
+
+  # Make sure that HDF5 is parallel.
+  IF (TPL_ENABLE_MPI AND NOT HDF5_IS_PARALLEL)
+    MESSAGE(FATAL_ERROR "Trilinos is configured for MPI, HDF5 is not.
+    Did CMake find the correct libraries?
+    Try setting HDF5_INCLUDE_DIRS and/or HDF5_LIBRARY_DIRS explicitly.
+    ")
+  ENDIF()
 
   IF (HDF5_FOUND)
     # Tell TriBITS that we found HDF5 and there no need to look any further!
