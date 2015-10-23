@@ -62,8 +62,8 @@ using Teuchos::RCP;
 /*                     Typedefs                          */
 /*********************************************************/
 //Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
+typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+typedef Tpetra::MultiVector<double>                  tMVector_t;
 
 
 
@@ -99,10 +99,10 @@ int main(int narg, char *arg[]) {
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
       cout << "\nReading parameter list from the XML file \""
-		<<xmlMeshInFileName<<"\" ...\n\n";
+                <<xmlMeshInFileName<<"\" ...\n\n";
     }
-    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
-					 Teuchos::inoutArg(inputMeshList));
+    Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,
+                                         Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
@@ -115,7 +115,7 @@ int main(int narg, char *arg[]) {
 
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
-							     "meshInput");
+                                                             "meshInput");
 
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
@@ -170,32 +170,32 @@ int main(int narg, char *arg[]) {
     baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia), false));
 
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
-						   CommT, modelFlags);
+                                                   CommT, modelFlags);
 
     Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel.getComm(),
-				    primaryEType,
-				      secondAdjEType, moffsets, madjacencyIds);
+                                    primaryEType,
+                                      secondAdjEType, moffsets, madjacencyIds);
 
     for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
       if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
-	std::cout << "Number of adjacencies do not match" << std::endl;
-	return 3;
+        std::cout << "Number of adjacencies do not match" << std::endl;
+        return 3;
       }
 
       for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
-	ssize_t in_list = -1;
+        ssize_t in_list = -1;
 
-	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
-	  if (adjacencyIds[k] == adjacencyIds[j]) {
-	    in_list = k;
-	    break;
-	  }
-	}
+        for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+          if (adjacencyIds[k] == adjacencyIds[j]) {
+            in_list = k;
+            break;
+          }
+        }
 
-	if (in_list < 0) {
-	  std::cout << "Adjacency missing" << std::endl;
-	  return 4;
-	}
+        if (in_list < 0) {
+          std::cout << "Adjacency missing" << std::endl;
+          return 4;
+        }
       }
     }
   }
@@ -224,32 +224,32 @@ int main(int narg, char *arg[]) {
     baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia2),false));
 
     Zoltan2::GraphModel<base_adapter_t> graphModel2(baseInputAdapter, env,
-						   CommT, modelFlags);
+                                                   CommT, modelFlags);
 
     Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel2.getComm(),
-				    primaryEType,
-				    secondAdjEType, moffsets, madjacencyIds);
+                                    primaryEType,
+                                    secondAdjEType, moffsets, madjacencyIds);
 
     for (size_t tnoct = 0; tnoct < ia2.getLocalNumOf(primaryEType); tnoct++) {
       if (offsets[tnoct+1]-offsets[tnoct]!=moffsets[tnoct+1]-moffsets[tnoct]) {
-	std::cout << "Number of adjacencies do not match" << std::endl;
-	return 3;
+        std::cout << "Number of adjacencies do not match" << std::endl;
+        return 3;
       }
 
       for (inputAdapter_t::lno_t j=moffsets[tnoct]; j<moffsets[tnoct+1]; j++) {
-	ssize_t in_list = -1;
+        ssize_t in_list = -1;
 
-	for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
-	  if (adjacencyIds[k] == adjacencyIds[j]) {
-	    in_list = k;
-	    break;
-	  }
-	}
+        for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
+          if (adjacencyIds[k] == adjacencyIds[j]) {
+            in_list = k;
+            break;
+          }
+        }
 
-	if (in_list < 0) {
-	  std::cout << "Adjacency missing" << std::endl;
-	  return 4;
-	}
+        if (in_list < 0) {
+          std::cout << "Adjacency missing" << std::endl;
+          return 4;
+        }
       }
     }
   }
