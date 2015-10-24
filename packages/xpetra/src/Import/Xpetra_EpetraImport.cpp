@@ -128,8 +128,7 @@ template class EpetraImportT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template RCP<const Import<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif
@@ -152,12 +151,11 @@ template class EpetraImportT<long long, Kokkos::Compat::KokkosThreadsWrapperNode
 template RCP<const Import<int,long long,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Import *);
 #endif
 #ifdef HAVE_XPETRA_OPENMP
-template class EpetraImportT<long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template class EpetraImportT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template RCP<const Import<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<long long>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif

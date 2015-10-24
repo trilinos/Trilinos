@@ -98,8 +98,7 @@ template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNod
 template const Epetra_Map & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<int, default_node_type >;
 template const RCP< const Map<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<int, default_node_type >(const RCP< const Map<int, int, default_node_type > > &map);
@@ -135,8 +134,7 @@ template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrap
 template const Epetra_Map & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Map< int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> & map);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<long long>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMapT<long long, default_node_type >;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);

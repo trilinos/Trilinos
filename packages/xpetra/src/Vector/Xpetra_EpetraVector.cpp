@@ -160,8 +160,7 @@ template Epetra_Vector & toEpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(V
 template const Epetra_Vector & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Vector<double, int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraVectorT<int, default_node_type >;
 //template RCP<Vector<double, int, int, default_node_type > toXpetra<int, default_node_type>(RCP<Epetra_Vector>);
 template Epetra_Vector & toEpetra<int,default_node_type >(Vector<double, int, int,default_node_type> &);
@@ -180,7 +179,7 @@ template const Epetra_Vector & toEpetra<int, default_node_type >(const Vector<do
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
 #ifdef HAVE_XPETRA_SERIAL
-template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
+template class EpetraVectorT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
 //template RCP<Vector<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode>(RCP<Epetra_Vector>);
 template Epetra_Vector & toEpetra<long long,Kokkos::Compat::KokkosSerialWrapperNode>(Vector<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> &);
 template const Epetra_Vector & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const Vector<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode > &);
@@ -198,8 +197,7 @@ template Epetra_Vector & toEpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperN
 template const Epetra_Vector & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const Vector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraVectorT<long long, default_node_type >;
 //template RCP<Vector<double, int, long long, default_node_type > toXpetra<long long, default_node_type>(RCP<Epetra_Vector>);
 template Epetra_Vector & toEpetra<long long,default_node_type >(Vector<double, int, long long, default_node_type> &);

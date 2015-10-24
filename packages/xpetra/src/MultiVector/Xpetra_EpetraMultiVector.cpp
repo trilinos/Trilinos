@@ -98,8 +98,7 @@ template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNo
 template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMultiVectorT<int, default_node_type >;
 template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
@@ -135,8 +134,7 @@ template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosOpenMPWra
 template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 //template class EpetraMultiVectorT<int, default_node_type >;
 template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);

@@ -760,8 +760,7 @@ template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
 template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<int, default_node_type >;
 #endif
 #else
@@ -783,8 +782,7 @@ template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosThreadsWrapperN
 template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<long long, default_node_type >;
 #endif
 #else

@@ -238,8 +238,7 @@ template RCP< const CrsGraph<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode >
 template const Epetra_CrsGraph & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const CrsGraph<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > &graph);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsGraphT<int, default_node_type >;
 template RCP< const CrsGraph<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<int, default_node_type >(const RCP< const CrsGraph<int, int, default_node_type > > &graph);
@@ -271,8 +270,7 @@ template RCP< const CrsGraph<int, long long, Kokkos::Compat::KokkosOpenMPWrapper
 template const Epetra_CrsGraph & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const RCP< const CrsGraph<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > &graph);
 #endif
 #ifdef HAVE_XPETRA_CUDA
-typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsGraphT<long long, default_node_type >;
 template RCP< const CrsGraph<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<long long, default_node_type >(const RCP< const CrsGraph<int, long long, default_node_type > > &graph);

@@ -172,11 +172,8 @@ namespace {
       LO nEle = 6;
       const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
       // TODO get rid of this...
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
+      //#ifndef XPETRA_TEST_USE_LONGLONG_GO
       const RCP<const Xpetra::EpetraMapT<GO, Node> > XepMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO, Node> >(map);
-#else
-      const RCP<const Xpetra::EpetraMapT<GO, Node> XepMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO, Node> >(map);
-#endif
       /////////////////////////////////////// transform Xpetra::Map objects to Epetra
       // this is needed for AztecOO
       const Teuchos::RCP<const Epetra_Map> epMap = Teuchos::rcpFromRef(XepMap->getEpetra_Map());
