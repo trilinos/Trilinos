@@ -53,10 +53,12 @@
 
 namespace MueLuTests {
 
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -70,6 +72,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -133,6 +138,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -205,6 +213,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -291,6 +302,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;

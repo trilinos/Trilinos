@@ -65,6 +65,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -78,6 +81,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+
+    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
+
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
