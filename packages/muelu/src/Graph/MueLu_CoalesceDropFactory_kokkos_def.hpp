@@ -61,6 +61,27 @@
 
 namespace MueLu {
 
+  namespace { // anonymous
+
+    template<class LocalOrdinal, class RowType>
+    class ScanFunctor {
+    public:
+      ScanFunctor(RowType rows) : rows_(rows) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LocalOrdinal i, LocalOrdinal& upd, const bool& final) const {
+        upd += rows_(i);
+        if (final)
+          rows_(i) = upd;
+      }
+
+    private:
+      RowType rows_;
+    };
+
+  }
+
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -190,11 +211,17 @@ namespace MueLu {
 
         // parallel_scan (exclusive)
         // NOTE: parallel_scan with KOKKOS_LAMBDA does not work with CUDA for now
+#if 0
         Kokkos::parallel_scan("CoalesceDropF:Build:scalar_filter:stage1_scan", numRows+1, KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
           upd += rows(i);
           if (final)
             rows(i) = upd;
         });
+#else
+        ScanFunctor<LO,decltype(rows)> scanFunctor(rows);
+        Kokkos::parallel_scan("CoalesceDropF:Build:scalar_filter:stage1_scan", numRows+1, scanFunctor);
+#endif
+
 
         // Stage 2: fill in the column indices
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
