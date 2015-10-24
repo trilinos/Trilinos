@@ -887,39 +887,18 @@ template <typename Adapter>
   adjsMatrix->fillComplete ();
 
   // **************************************************************************
-  // ************************ BUILD IDENTITY FOR PARTS ************************
+  // ************************ BUILD VECTOR FOR PARTS ************************
   // **************************************************************************
 
-  //RCP<sparse_matrix_type> Ipart;
-
-  // Ipart: Identity matrix for part numbers
-  //Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
+  // scaleVec: Scale vector for part numbers
   RCP<vector_t> scaleVec = Teuchos::rcp( new vector_t(vertexMapG,false) );
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    //part_t justPart = part[localElement];
-    //ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
-
-    // globalRow for Tpetra Matrix
-    //gno_t globalRowT = Ids[localElement];
-
-    //gno_t globalCol = Ids[localElement];
-    //create ArrayView globalCol object for Tpetra
-    //ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-    //Update Tpetra Ipart matrix
-    //Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
+    //Update Tpetra vector
     scaleVec->replaceLocalValue(localElement,part[localElement]);
   }// *** vertex loop ***
 
-  //Fill-complete parts Matrix
-  //Ipart->fillComplete ();
-
-  // Create matrix to store adjs part
-  //RCP<sparse_matrix_type> adjsPart = 
-  //rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
-  //Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,*adjsPart);
-  // adjsPart:= adjsMatrix * Ipart
+  // adjsMatrix:= adjsMatrix * scaleVec
   adjsMatrix->rightScale(*scaleVec);
   Array<gno_t> Indices;
   Array<part_t> Values;
@@ -927,11 +906,9 @@ template <typename Adapter>
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++) {
       const gno_t globalRow = Ids[i];
-      size_t //NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
-      NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
+      size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
       Indices.resize (NumEntries);
       Values.resize (NumEntries);
-      //adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
       adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
       for (size_t j=0; j < NumEntries; j++)
@@ -946,11 +923,9 @@ template <typename Adapter>
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
-	size_t //NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
-	NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
+	size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
-	//adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 	adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j=0; j < NumEntries; j++)
