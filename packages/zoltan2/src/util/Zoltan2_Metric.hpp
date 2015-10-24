@@ -886,19 +886,13 @@ template <typename Adapter>
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete ();
 
-  // **************************************************************************
-  // ************************ BUILD VECTOR FOR PARTS ************************
-  // **************************************************************************
-
-  // scaleVec: Scale vector for part numbers
+  // Compute part
   RCP<vector_t> scaleVec = Teuchos::rcp( new vector_t(vertexMapG,false) );
-
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    //Update Tpetra vector
     scaleVec->replaceLocalValue(localElement,part[localElement]);
-  }// *** vertex loop ***
+  }
 
-  // adjsMatrix:= adjsMatrix * scaleVec
+  // Postmultiply adjsMatrix by part
   adjsMatrix->rightScale(*scaleVec);
   Array<gno_t> Indices;
   Array<part_t> Values;
