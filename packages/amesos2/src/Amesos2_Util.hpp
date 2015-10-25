@@ -59,17 +59,16 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-
-#ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRA
-#  include <Epetra_Map.h>
-#endif
-#endif
-
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
+
+#ifdef HAVE_TPETRA_INST_INT_INT
+#ifdef HAVE_AMESOS2_EPETRA
+#include <Epetra_Map.h>
+#endif
+#endif
 
 
 namespace Amesos2 {
@@ -113,6 +112,7 @@ namespace Amesos2 {
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
      *
@@ -636,6 +636,10 @@ namespace Amesos2 {
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+
+    //#pragma message "include 3"
+    //#include <Epetra_Map.h>
+
     template <typename LO, typename GO, typename GS, typename Node>
     Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
     epetra_map_to_tpetra_map(const Epetra_BlockMap& map)
