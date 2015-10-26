@@ -49,7 +49,7 @@
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"
-#include "boost/any.hpp"
+#include "Phalanx_any.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
 #include <sstream>
 
@@ -81,7 +81,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 	     Tag5,Tag6,Tag7>& f)
 {
-  boost::any a = m_eval_containers.template
+  PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -97,7 +97,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 	     Tag5,Tag6,Tag7>& f)
 {
-  boost::any a = m_eval_containers.template
+  PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);

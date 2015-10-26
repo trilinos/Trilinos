@@ -174,11 +174,11 @@ getKokkosExtendedDataTypeDimensions() const
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-boost::any
+PHX::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   //return fields_[f.identifier()];
-  std::unordered_map<std::string,boost::any>::iterator a= fields_.find(f.identifier());
+  std::unordered_map<std::string,PHX::any>::iterator a= fields_.find(f.identifier());
    if (a==fields_.end()){
     std::cout << " PHX::EvaluationContainer<EvalT, Traits>::getFieldData can't find an f.identifier() "<<  f.identifier() << std::endl;
    }
@@ -212,7 +212,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->vp_manager_ << std::endl;
-  for (std::unordered_map<std::string,boost::any>::const_iterator i = 
+  for (std::unordered_map<std::string,PHX::any>::const_iterator i = 
 	 fields_.begin(); i != fields_.end(); ++i)
     os << i->first << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
