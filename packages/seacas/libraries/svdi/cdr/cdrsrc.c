@@ -177,8 +177,8 @@ struct job
   int KSZROU;
   int KJROUT[4];
   int KSECUR;
-  int KJTIME[3];
-  int KJDATE[3];
+  int KJTIME[4];
+  int KJDATE[4];
   int MACHIN[3];
   int MACLEN;
   }vcjob_;
