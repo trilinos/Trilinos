@@ -47,7 +47,7 @@
 #include "EML_SystemInterface.h"
 
 #include <Ioss_CodeTypes.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>

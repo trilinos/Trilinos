@@ -37,7 +37,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/cmdline.hpp>
 
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
 #include <stk_util/parallel/Parallel.hpp>

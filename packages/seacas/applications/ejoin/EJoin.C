@@ -58,7 +58,7 @@
 
 #include <exodusII.h>
 
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Transform.h>
 

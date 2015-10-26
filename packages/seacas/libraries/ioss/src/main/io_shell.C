@@ -39,7 +39,7 @@
 #include <Ioss_Utils.h>
 #include <Ioss_ParallelUtils.h>
 #include <assert.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <cstring>
