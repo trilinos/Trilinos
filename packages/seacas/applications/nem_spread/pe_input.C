@@ -83,10 +83,6 @@ int read_mesh_file_name(const char *filename)
       }
     }
   }
-
-  /* Close the command file */
-  fclose(file_cmd);
-
   return 0;
 }
 
