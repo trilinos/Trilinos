@@ -119,19 +119,19 @@
   %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(Teuchos::RCP< TYPE > *),
 				 SWIG_POINTER_OWN));
 }
-// Convert virtual method input argument to a plain pointer
+// Convert virtual method plain pointer input argument to a Pythno object
 %typemap(directorin) CONST TYPE *
 {
   Teuchos::RCP< CONST TYPE > *temp$argnum = new Teuchos::RCP< CONST TYPE >($1_name, false);
   $input = SWIG_NewPointerObj(%as_voidptr(temp$argnum), $descriptor(Teuchos::RCP< TYPE > *), 0);
 }
-// Convert virtual method input argument to a plain reference
+// Convert virtual method plain reference input argument to a Python object
 %typemap(directorin) CONST TYPE &
 {
   Teuchos::RCP< CONST TYPE > *temp$argnum = new Teuchos::RCP< CONST TYPE >(&$1_name, false);
   $input = SWIG_NewPointerObj(%as_voidptr(temp$argnum), $descriptor(Teuchos::RCP< TYPE > *), 0);
 }
-// Convert virtual method python output to a plain pointer
+// Convert virtual method Python output to a plain pointer
 %typemap(directorout) CONST TYPE * (void *argp = 0, int res = 0, Teuchos::RCP< CONST TYPE > temp)
 {
   int newmem = 0;
@@ -153,7 +153,7 @@
 				 $1_ltype) : 0;
   }
 }
-// Convert virtual method python output to a plain reference
+// Convert virtual method Python output to a plain reference
 %typemap(directorout) CONST TYPE &  (void *argp = 0, int res = 0, Teuchos::RCP< CONST TYPE > temp)
 {
   int newmem = 0;
