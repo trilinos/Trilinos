@@ -135,6 +135,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > smartresult;
   Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
@@ -189,8 +190,11 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -287,6 +291,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > smartresult;
   Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
@@ -341,8 +346,11 @@ convertPythonToTpetraVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -913,7 +921,7 @@ protected:
     return PyTrilinos::convertToDistArray(*self);
   }
 }
-// The refactor is making Tpetra::Vector difficult for SWIG to
+// The refactor is making Tpetra::MultiVector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
 namespace Tpetra
 {
