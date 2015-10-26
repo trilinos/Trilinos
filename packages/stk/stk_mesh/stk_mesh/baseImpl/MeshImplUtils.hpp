@@ -87,7 +87,6 @@ int check_for_connected_nodes(const BulkData& mesh);
 bool check_permutations_on_all(stk::mesh::BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 
-
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const BulkData & mesh,

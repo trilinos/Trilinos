@@ -73,6 +73,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
 #include "stk_util/util/SortAndUnique.hpp"
+#include "stk_util/diag/StringUtil.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_mesh/base/ElemElemGraph.hpp>
 
@@ -1549,107 +1550,132 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
 
-void BulkData::dump_all_mesh_info(std::ostream& out, bool parallel_barriers) const
+namespace {
+
+bool print_comm_data_for_entity_in_ghosting(const BulkData& mesh, const Ghosting& ghosting, EntityKey entityKey, std::ostream& out)
 {
-    if (parallel_barriers) {
-        const int p_size = this->parallel_size();
-        const int p_rank = this->parallel_rank();
-        for (int proc=0 ; proc<p_size ; ++proc) {
-            MPI_Barrier(this->parallel());
-            if (p_rank == proc) {
-                out << "PROCESSOR " << proc << " ------------------------\n";
-                this->internal_dump_all_mesh_info(out);
-            }
-        }
+    std::vector<int> procs;
+    mesh.comm_procs(ghosting, entityKey, procs);
+    if (procs.empty()) { return false; }
+    out << "        Ghosting " << mesh.ghosting_part(ghosting).name() << " with procs:  " << stk::util::join(procs, ", ");
+    return true;
+}
+
+void print_comm_data_for_entity(const BulkData& mesh, EntityKey entityKey, std::ostream& out)
+{
+    const std::vector<Ghosting*> & ghostLevels = mesh.ghostings();
+    bool ghostedAnywhere = false;
+    for (size_t ghostI=0 ; ghostI<ghostLevels.size() ; ++ghostI) {
+        const Ghosting& ghosting = *ghostLevels[ghostI];
+        ghostedAnywhere |= print_comm_data_for_entity_in_ghosting(mesh, ghosting, entityKey, out);
     }
-    else
-    {
-        internal_dump_all_mesh_info(out);
+    if (!ghostedAnywhere) {
+        out << "        Not Communicated" << std::endl;
     }
 }
 
-void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
+void print_field_data_for_entity(const BulkData& mesh, const MeshIndex& meshIndex, std::ostream& out)
 {
-  // Dump output for metadata first
-  m_mesh_meta_data.dump_all_meta_info(out);
+    const Bucket* bucket = meshIndex.bucket;
+    size_t b_ord = meshIndex.bucket_ordinal;
+    const FieldVector& all_fields = mesh.mesh_meta_data().get_fields();
+    for(FieldBase* field : all_fields) {
+        if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
+        FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
+        unsigned data_size = field_meta_data.m_bytes_per_entity;
+        if (data_size > 0) { // entity has this field?
+            void* data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * b_ord;
+            out << "        For field: " << *field << ", has data: ";
+            field->print_data(out, data, data_size);
+            out << std::endl;
+        }
+    }
+}
 
-  out << "BulkData "
-      << " info...(ptr=" << this << ")\n";
-
-  out << "ConnectivityMap = " << "\n";
-  out << this->connectivity_map();
-
-  const FieldVector& all_fields = m_mesh_meta_data.get_fields();
-
-  // Iterate all buckets for all ranks...
-  const std::vector<std::string> & rank_names = m_mesh_meta_data.entity_rank_names();
-  for (size_t i = 0, e = rank_names.size(); i < e; ++i) {
-    EntityRank rank = static_cast<EntityRank>(i);
-    out << "  All " << rank_names[i] << " entities:" << std::endl;
-
-    const BucketVector& buckets = this->buckets(rank);
-    for(Bucket* bucket : buckets) {
-      out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
-      PartVector supersets;
-      bucket->supersets(supersets);
-      for(Part* part : supersets) {
-        out << part->name() << " ";
-      }
-      out << "}" << std::endl;
-
-      EntityRank b_rank = bucket->entity_rank();
-
-      for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
-        Entity entity = (*bucket)[b_ord];
-        out << "      " << print_entity_key(m_mesh_meta_data, entity_key(entity)) << "(offset: " << entity.local_offset() <<
-                "), state = " << state(entity) << std::endl;
-
-        // Print connectivity
-        for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
-          if (connectivity_map().valid(static_cast<EntityRank>(rank), r)) {
+void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex, std::ostream& out)
+{
+    const Bucket* bucket = meshIndex.bucket;
+    size_t b_ord = meshIndex.bucket_ordinal;
+    const std::vector<std::string> & rank_names = mesh.mesh_meta_data().entity_rank_names();
+    EntityRank b_rank = bucket->entity_rank();
+    for (EntityRank r = stk::topology::NODE_RANK, re = static_cast<EntityRank>(rank_names.size()); r < re; ++r) {
+        if (mesh.connectivity_map().valid(static_cast<EntityRank>(b_rank), r)) {
             out << "        Connectivity to " << rank_names[r] << std::endl;
             Entity const* entities = bucket->begin(b_ord, r);
             ConnectivityOrdinal const* ordinals = bucket->begin_ordinals(b_ord, r);
             const int num_conn         = bucket->num_connectivity(b_ord, r);
             for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
-              Entity target_entity = entities[c_itr];
-              out << "          [" << ordinals[c_itr] << "]  " << entity_key(target_entity) << "  ";
-              if (r != stk::topology::NODE_RANK) {
-                out << this->bucket(target_entity).topology();
-                if (b_rank != stk::topology::NODE_RANK) {
-                  Permutation const *permutations = bucket->begin_permutations(b_ord, r);
-                  if (permutations) {
-                    out << " permutation index " << permutations[c_itr];
-                  }
+                Entity target_entity = entities[c_itr];
+                out << "          [" << ordinals[c_itr] << "]  " << mesh.entity_key(target_entity) << "  ";
+                if (r != stk::topology::NODE_RANK) {
+                    out << mesh.bucket(target_entity).topology();
+                    if (b_rank != stk::topology::NODE_RANK) {
+                        Permutation const *permutations = bucket->begin_permutations(b_ord, r);
+                        if (permutations) {
+                            out << " permutation index " << permutations[c_itr];
+                        }
+                    }
                 }
-              }
-              out << ", state = " << state(target_entity);
-              out << std::endl;
+                out << ", state = " << mesh.state(target_entity);
+                out << std::endl;
             }
-          }
         }
-
-        // Print field data
-        if (m_num_fields > 0) {
-          for(FieldBase* field : all_fields) {
-
-            if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
-
-            FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
-
-            unsigned data_size = field_meta_data.m_bytes_per_entity;
-            if (data_size > 0) { // entity has this field?
-              void* data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * b_ord;
-              out << "        For field: " << *field << ", has data: ";
-              field->print_data(out, data, data_size);
-              out << std::endl;
-            }
-          }
-        }
-      }
     }
-  }
 }
+
+void print_bucket_parts(const BulkData& mesh, const Bucket* bucket, std::ostream& out)
+{
+    out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
+    const PartVector& supersets = bucket->supersets();
+    for(Part* part : supersets) {
+        out << part->name() << " ";
+    }
+    out << "}" << std::endl;
+}
+
+void print_entity_offset_and_state(const BulkData& mesh, const MeshIndex& meshIndex, std::ostream& out)
+{
+    Entity entity = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
+    out << "      " << print_entity_key(mesh.mesh_meta_data(), mesh.entity_key(entity)) << "(offset: " << entity.local_offset() <<
+            "), state = " << mesh.state(entity) << std::endl;
+}
+
+} // namespace
+
+void BulkData::dump_all_mesh_info(std::ostream& out) const
+{
+    // Dump output for metadata first
+    m_mesh_meta_data.dump_all_meta_info(out);
+
+    out << "BulkData "
+            << " info...(ptr=" << this << ")\n";
+
+    out << "ConnectivityMap = " << "\n";
+    out << this->connectivity_map();
+
+    // Iterate all buckets for all ranks...
+    const std::vector<std::string> & rank_names = m_mesh_meta_data.entity_rank_names();
+    for (size_t i = 0, e = rank_names.size(); i < e; ++i) {
+        EntityRank rank = static_cast<EntityRank>(i);
+        out << "  All " << rank_names[i] << " entities:" << std::endl;
+
+        const BucketVector& buckets = this->buckets(rank);
+        for(Bucket* bucket : buckets) {
+            print_bucket_parts(*this, bucket, out);
+
+            for (size_t b_ord = 0, b_end = bucket->size(); b_ord < b_end; ++b_ord) {
+                MeshIndex meshIndex(bucket, b_ord);
+                print_entity_offset_and_state(*this, meshIndex, out);
+                print_entity_connectivity(*this, meshIndex, out);
+                if (m_num_fields > 0) {
+                    print_field_data_for_entity(*this, meshIndex, out);
+                }
+                print_comm_data_for_entity(*this, entity_key((*bucket)[b_ord]), out);
+            }
+        }
+    }
+}
+
 
 namespace {
 

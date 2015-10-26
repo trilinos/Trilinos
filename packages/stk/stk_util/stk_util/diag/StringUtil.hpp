@@ -912,20 +912,26 @@ void convertCharArrayToStringVector(int numArgs, const char** charArray, std::ve
     }
 }
 
-inline
-std::string join(const std::string & delimeter, const std::vector<std::string> & strings) {
-    std::ostringstream output;
-    const size_t numStrings = strings.size();
-    for (size_t i=0 ; i<numStrings ; ++i) {
-        output << strings[i];
-        if (i < numStrings-1) {
-            output << delimeter;
-        }
+} // namespace sierra
+
+namespace stk {
+namespace util {
+
+template<typename DATA, typename SEPARATOR>
+std::string join(const std::vector<DATA>& data, const SEPARATOR& sep)
+{
+    std::ostringstream os;
+    for(size_t i=0;i<data.size()-1;++i)
+    {
+        os << data[i] << sep;
     }
-    return output.str();
+    os << data.back();
+    return os.str();
 }
 
 
-} // namespace sierra
+} // namespace util
+} // namespace stk
+
 
 #endif // STK_UTIL_DIAG_StringUtil_h

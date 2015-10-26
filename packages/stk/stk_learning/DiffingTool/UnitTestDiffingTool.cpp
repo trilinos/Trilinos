@@ -26,6 +26,7 @@
 #include <stk_util/environment/EnvData.hpp>
 
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/diag/StringUtil.hpp>
 
 #include <stk_util/parallel/DebugTool.hpp>
 
@@ -59,21 +60,10 @@ std::vector<std::string> filter_out_empty_strings(const std::vector<std::string>
     return filtered_strings;
 }
 
-std::string join_string_vector(const std::vector<std::string>& filtered_strings, char sep)
-{
-    std::ostringstream os;
-    for(size_t i=0;i<filtered_strings.size()-1;++i)
-    {
-        os << filtered_strings[i] << sep;
-    }
-    os << filtered_strings.back();
-    return os.str();
-}
-
 std::string join_string_vector_ignoring_empty_strings(const std::vector<std::string>& strings, char sep)
 {
     std::vector<std::string> filtered_strings = filter_out_empty_strings(strings);
-    return join_string_vector(filtered_strings, sep);
+    return stk::util::join(filtered_strings, sep);
 }
 
 std::vector<std::string> split_strings_from_stream(std::stringstream& ss, std::string& scratch_space, char delim)

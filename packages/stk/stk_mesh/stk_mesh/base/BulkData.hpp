@@ -682,7 +682,7 @@ public:
   size_t total_field_data_footprint(EntityRank rank) const;
 
   // Print all mesh info
-  void dump_all_mesh_info(std::ostream& out, bool parallel_barriers = false) const;
+  void dump_all_mesh_info(std::ostream& out) const;
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
@@ -1022,13 +1022,10 @@ protected: //functions
 
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 
-  void set_modification_summary_proc_id(int proc_id) {
-      m_modSummary.set_proc_id(proc_id);
-  }
+  void set_modification_summary_proc_id(int proc_id) { m_modSummary.set_proc_id(proc_id); }
 
 private: //functions
 
-  void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
   void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
     std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 
@@ -1330,6 +1327,7 @@ protected: //data
   {
       m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
   }
+  void set_mod_summary_proc_id(int proc_id) { m_modSummary.set_proc_id(proc_id); }
 
 private: // data
   Parallel m_parallel;
