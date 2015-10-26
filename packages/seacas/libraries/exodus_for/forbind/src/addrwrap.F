@@ -1666,6 +1666,31 @@ C
         END
 
 
+        SUBROUTINE EXSETOPT (IDEXO, OPTION, VALUE, IERR)
+C> \sa ex_set_opt()
+C
+C>       SET SPECIFIED OPTION
+C
+        IMPLICIT NONE
+        INCLUDE 'exodusII.inc'
+        INTEGER IDEXO           ! (R)
+        INTEGER OPTION          ! (R)
+        INTEGER VALUE           ! (R)
+        INTEGER IERR            ! (W)
+
+        INTEGER*4 IDEXO4        ! (R)
+        INTEGER*4 OPTION4       ! (R)
+        INTEGER*4 VALUE4        ! (R)
+        INTEGER*4 IERR4         ! (W)
+
+        IDEXO4 = IDEXO
+        OPTION4 = OPTION
+        VALUE4 = VALUE
+        CALL EXSETOPT4 (IDEXO4, OPTION4, VALUE4, IERR4)
+        IERR = IERR4
+        END
+
+
         SUBROUTINE EXPCNS (IDEXO, IDNPSS, NNNPS, NDNPS, IXNNPS,
      &          IXDNPS, LTNNPS, FACNPS, IERR)
 C> \sa ex_put_concat_node_sets()

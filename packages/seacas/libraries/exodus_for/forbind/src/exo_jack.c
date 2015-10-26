@@ -2842,6 +2842,15 @@ F2C(exmxnm,EXMXNM) (int *idexo,
   *ierr = ex_set_max_name_length(*idexo, *length);
 }
 
+void
+F2C(exsetopt,EXSETOPT) (int *idexo,
+		      int *option,
+		      int *value,
+		      int *ierr)
+{
+  *ierr = ex_set_option(*idexo, *option, *value);
+}
+
 /*
  * copy EXODUS file
  */
