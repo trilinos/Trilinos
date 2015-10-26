@@ -14,6 +14,8 @@ USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo "      (Used for PostScript drivers)      "
    echo "    --nomap          node|element|all    "
    echo "      (Global node/element ids by default; --nomap uses local ids)"
+   echo "    --show_filename                     -none-"
+   echo "      (show database filename below plot)"
    echo "    --help           (Prints this message)"
    echo "    "
    echo "  Contact: gdsjaar@sandia.gov"
@@ -78,7 +80,7 @@ export EXT04=NO
 
 GETOPT=${ACCESS}/bin/getopt.seacas
 
-TEMP=`${GETOPT} -o aoidhbp -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,aprepro,help -n 'blot' -- "$@"`
+TEMP=`${GETOPT} -o aoidhbps -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,aprepro,help,show_filename -n 'blot' -- "$@"`
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
 
@@ -118,7 +120,9 @@ while true ; do
            --nomap)
               nomap_option="-nomap $2" ; shift 2 ;;
            -a|--aprepro)
-              aprepro="true" ; shift ;;
+	      aprepro="true" ; shift ;;
+           -s|--show_filename)
+	      caption="--show_filename" ; shift ;;
 	    --) shift ; break ;;
 	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
 	esac
@@ -170,7 +174,7 @@ then
 fi
 
 # Run the code, --
-${ACCESS}/bin/${codename}${sep}${device} ${ps_option} ${nomap_option} -basename ${filename} ${FOR011}
+${ACCESS}/bin/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
 
 if [ ! -z ${filename} ] && [ "${device}" != "dual" ] && [ "${device}" != "xcps" ]
 then
