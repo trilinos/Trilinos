@@ -223,7 +223,7 @@ namespace Thyra {
         if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
           doubleCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
           paramList.remove("Coordinates");
-          RCP<Xpetra::EpetraMultiVector> epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVector(doubleCoords));
+          RCP<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(doubleCoords));
           RCP<Xpetra::MultiVector<double,int,int,Node> > epCoordinatesMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(epCoordinates);
           coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(epCoordinatesMult);
           TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
@@ -253,7 +253,7 @@ namespace Thyra {
         if (paramList.isType<RCP<Epetra_MultiVector> >("Nullspace")) {
           epetra_nullspace = paramList.get<RCP<Epetra_MultiVector> >("Nullspace");
           paramList.remove("Nullspace");
-          RCP<Xpetra::EpetraMultiVector> xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVector(epetra_nullspace));
+          RCP<Xpetra::EpetraMultiVectorT<int,Node> > xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epetra_nullspace));
           RCP<Xpetra::MultiVector<double,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(xpEpNullspace);
           nullspace = rcp_dynamic_cast<XpMultVec>(xpEpNullspaceMult);
           TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(nullspace));
