@@ -1,4 +1,10 @@
-PARSING RESULTS: $ Test program for Aprepro
+Aprepro: ERROR: syntax error, unexpected UNDVAR (/Users/gdsjaar/src/seacas.git/src/libraries/aprepro_lib/test.inp_app, line 78)
+Aprepro: WARNING: Undefined variable 'This' (/Users/gdsjaar/src/seacas.git/src/libraries/aprepro_lib/test.inp_app, line 79)
+Aprepro: ERROR: syntax error, unexpected UNDVAR (/Users/gdsjaar/src/seacas.git/src/libraries/aprepro_lib/test.inp_app, line 79)
+Aprepro: WARNING: User-defined Variable 'a' redefined (_string_, line 1)
+Aprepro: WARNING: Undefined variable 'T' (/Users/gdsjaar/src/seacas.git/src/libraries/aprepro_lib/test.inp_app, line 199)
+Aprepro: WARNING: Undefined variable 'new_var' (/Users/gdsjaar/src/seacas.git/src/libraries/aprepro_lib/test.inp_app, line 232)
+$ Test program for Aprepro
 $
 Test number representations
 1	1	1	1	1

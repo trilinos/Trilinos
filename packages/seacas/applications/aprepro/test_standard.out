@@ -1,3 +1,9 @@
+Aprepro: WARN: Undefined variable 'Parse' (/Users/gdsjaar/src/seacas.git/src/applications/aprepro/test.inp_app, line 78)
+Aprepro: ERROR:  syntax error (/Users/gdsjaar/src/seacas.git/src/applications/aprepro/test.inp_app, line 78)
+Aprepro: WARN: Undefined variable 'This' (/Users/gdsjaar/src/seacas.git/src/applications/aprepro/test.inp_app, line 79)
+Aprepro: ERROR:  syntax error (/Users/gdsjaar/src/seacas.git/src/applications/aprepro/test.inp_app, line 79)
+Aprepro: WARN: User-defined Variable 'a' redefined (_string_, line 1)
+Aprepro: WARN: Undefined variable 'T' (/Users/gdsjaar/src/seacas.git/src/applications/aprepro/test.inp_app, line 189)
 $ Test program for Aprepro
 $
 Test number representations

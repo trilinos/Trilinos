@@ -70,5 +70,30 @@ if(GENERATE_BISON_FILES)
                      )
 endif()
 
+TRIBITS_ADD_ADVANCED_TEST(
+ aprepro_unit_test
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro ARGS -q ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
+  OUTPUT_FILE test.output
+  PASS_ANY
+ TEST_1 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
+		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
+ COMM serial		      
+ FINAL_PASS_REGULAR_EXPRESSION 
+)
+
+TRIBITS_ADD_ADVANCED_TEST(
+ aprepro_array_test
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro 
+	ARGS -q --include ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
+  OUTPUT_FILE test-array.out
+  PASS_ANY
+ TEST_1 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.gold
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.out
+ COMM serial		      
+ FINAL_PASS_REGULAR_EXPRESSION 
+)
+
 SEACAS_POSTPROCESS()
 
