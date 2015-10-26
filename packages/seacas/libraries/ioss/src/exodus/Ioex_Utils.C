@@ -32,7 +32,9 @@ namespace {
 	  coordinates[9*i+j] = coord[j];
 	}
       }
-      ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      int ierr = ex_put_coordinate_frames(exoid, nframes, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+      if (ierr < 0)
+	Ioex::exodus_error(exoid, __LINE__, -1);
     }
   }
 
@@ -41,13 +43,17 @@ namespace {
   {
     // Query number of coordinate frames...
     int nframes = 0;
-    ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+    int ierr = ex_get_coordinate_frames(exoid, &nframes, NULL, NULL, NULL);
+    if (ierr < 0)
+      Ioex::exodus_error(exoid, __LINE__, -1);
 
     if (nframes > 0) {
       std::vector<char> tags(nframes);
       std::vector<double> coord(nframes*9);
       std::vector<INT>  ids(nframes);
-      ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+      ierr = ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
+      if (ierr < 0)
+	Ioex::exodus_error(exoid, __LINE__, -1);
 
       for (int i=0; i<nframes; i++) {
 	Ioss::CoordinateFrame cf(ids[i], tags[i], &coord[9*i]);
