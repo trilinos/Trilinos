@@ -5,7 +5,7 @@ General
   * Fixed several memory management bugs
   * Fixed a pervasive bug where C++ exceptions were caught in the
     wrong order. This fix results in Python errors that have much
-    better messages, allowing us to debug problems that employ
+    better messages, making it easier to debug problems that employ
     cross-language polymorphism.
 
 Epetra
@@ -21,8 +21,9 @@ Epetra
     class and the new Epetra vector converters were fixed.
 
 Tpetra
+  * Fixed wrappers for Tpetra MultiVector and Vector classes.
   * Added __distarray__() method to Tpetra vector classes, so that
-    they now support the Distributed Array Protocol.
+    they now export the Distributed Array Protocol.
   * Bug fixes related to latest Tpetra upgrade
 
 LOCA
