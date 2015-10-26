@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
     X->PutScalar(0.0);
 
     // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
+    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
+    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
 
     xX->setSeed(100);
     xX->randomize();

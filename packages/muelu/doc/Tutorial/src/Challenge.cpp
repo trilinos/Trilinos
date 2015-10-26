@@ -193,19 +193,19 @@ int main(int argc, char *argv[]) {
       Epetra_Map coords_emap (globalNumDofs/nDofsPerNode, nLocalDofs/nDofsPerNode, 0, *Xpetra::toEpetra(comm));
       EpetraExt::MatrixMarketFileToMultiVector(coordsFile.c_str(), coords_emap, ptrcoords);
       RCP<Epetra_MultiVector> epCoords = Teuchos::rcp(ptrcoords);
-      xCoords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoords));
+      xCoords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epCoords));
     }
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
     RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
     RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
     Op->SetFixedBlockSize(nDofsPerNode);
 
-    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epNS));
 
     // Epetra_Map -> Xpetra::Map
-    const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
+    const RCP< const Map> map = Xpetra::toXpetra<GO,Node>(emap);
 
     ParameterListInterpreter mueLuFactory(xmlFileName,*comm);
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -244,8 +244,8 @@ int main(int argc, char *argv[]) {
     solver.Iterate(500, dtol);
 
     { //TODO: simplify this
-      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(epX));
-      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(epB));
+      RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(epX));
+      RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(epB));
       // Print relative residual norm
       Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*Op, *mueluX, *mueluB)[0];
       if (comm->getRank() == 0)

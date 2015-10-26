@@ -534,7 +534,7 @@ int main(int argc, char *argv[]) {
       xLsg->putScalar( (SC) 0.0);
 
       // Epetra_Vector -> Xpetra::Vector
-      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVector(epv));
+      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
 
       // calculate initial (absolute) residual
       Array<ScalarTraits<SC>::magnitudeType> norms(1);

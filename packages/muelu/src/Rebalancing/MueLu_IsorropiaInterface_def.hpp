@@ -184,7 +184,7 @@ namespace MueLu {
 
 
 #ifdef HAVE_MUELU_EPETRA
-    RCP< Xpetra::EpetraCrsGraphT<GlobalOrdinal, Node> > epCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsGraphT<GlobalOrdinal, Node> >(crsGraph);
+    RCP< Xpetra::EpetraCrsGraphT<GO, Node> > epCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsGraphT<GO, Node> >(crsGraph);
     if(epCrsGraph != Teuchos::null) {
       RCP< const Epetra_CrsGraph> epetraCrsGraph = epCrsGraph->getEpetra_CrsGraph();
 

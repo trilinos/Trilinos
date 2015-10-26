@@ -269,8 +269,8 @@ int main(int argc, char *argv[]) {
         solver.Iterate(nIts, 1e-10);
 
         { //TODO: simplify this
-          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
-          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
           // Print relative residual norm
           Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
@@ -379,8 +379,8 @@ int main(int argc, char *argv[]) {
         solver.Iterate(nIts, 1e-10);
 
         { //TODO: simplify this
-          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
-          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+          RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
+          RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
           // Print relative residual norm
           Teuchos::ScalarTraits<SC>::magnitudeType residualNorms2 = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
           if (comm->getRank() == 0)
@@ -440,8 +440,8 @@ int main(int argc, char *argv[]) {
       solver.Iterate(nIts, 1e-10);
 
       { //TODO: simplify this
-        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(eX));
-        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(eB));
+        RCP<Vector> mueluX = rcp(new Xpetra::EpetraVectorT<int,Node>(eX));
+        RCP<Vector> mueluB = rcp(new Xpetra::EpetraVectorT<int,Node>(eB));
         // Print relative residual norm
         Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*A, *mueluX, *mueluB)[0];
         if (comm->getRank() == 0)

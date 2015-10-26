@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
     RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap,1);
     xtest->putScalar( (SC) 0.0);
 
-    RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+    RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
     // calculate initial (absolute) residual
     Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
