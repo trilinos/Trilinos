@@ -308,7 +308,8 @@ C                   occur.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER*4 ERRNUM,ERRSEV
+      INTEGER ERRNUM
+      INTEGER ERRSEV
 C
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
@@ -468,7 +469,8 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C
       CHARACTER *8 C1,C2,MDEV,MPKG
-      INTEGER*4 ISTATE,MPAGES
+      INTEGER ISTATE
+      INTEGER*4 MPAGES
       SAVE MDEV,MPKG,MPAGES
 
       DATA MPKG /'        '/
@@ -671,14 +673,18 @@ C
 C
       REAL*4 VECTOR(7)
       COMMON /WMET04/ VECTOR
+      integer*4 i4
 C
 C CALL EACH OF THE INDIVIDUAL ATTRIBUTE SETTING ROUTINES.
 C CHECK FOR VALIDITY OF INPUT VALUES WILL BE DONE IN EACH INDIVIDUAL
 C ROUTINE.
-      CALL WMETFC(INT(ATTARR(1)))
-      CALL WMETBC(INT(ATTARR(2)))
+      i4 = INT(ATTARR(1))
+      CALL WMETFC(i4)
+      i4 = INT(ATTARR(2))
+      CALL WMETBC(i4)
       CALL WMETIN(ATTARR(3))
-      CALL WMETLS(INT(ATTARR(4)))
+      i4 = INT(ATTARR(4))
+      CALL WMETLS(i4)
       CALL WMETLW(ATTARR(5))
       CALL WMETCS(ATTARR(6))
 C
@@ -785,7 +791,8 @@ C                   greater than 12.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER*4 ERRNUM,ERRSEV
+      INTEGER ERRNUM
+      INTEGER ERRSEV
 C
 C REPORT THE ERROR USING VDLOGE.
       CALL WMETLE(ERRNUM,ERRSEV)
@@ -1090,9 +1097,11 @@ C                   ASCII and sends it to the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C 
-      INTEGER*4 N,NSTR(4) 
+      INTEGER   N
+      INTEGER*4 NSTR(4) 
       integer i, j
-      integer*4 itemp, itemp1, itemp2
+      integer   itemp
+      integer*4 itemp1, itemp2
 C
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
@@ -1120,14 +1129,14 @@ C SEND PAIRS OF CHARACTERS TO THE OUTPUT FILE.
          ITEMP2=ITEMP1
       ELSE
          ITEMP=256*ITEMP2+ITEMP1
-         CALL WMET13(1,ITEMP)
+         CALL WMET13S(ITEMP)
       ENDIF
    10 CONTINUE
 C 
 C PAD WITH A BLANK IF NECESSARY TO MAKE NUMBER OF CHARS EVEN. 
    20 IF(MOD(J,2).EQ.0) THEN
          ITEMP=256*ITEMP2+32
-         CALL WMET13(1,ITEMP)
+         CALL WMET13S(ITEMP)
       ENDIF
 C
       RETURN
@@ -1161,10 +1170,11 @@ C                    of HLS is the one adopted by GSPC 79.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
+      integer   maxval
       REAL*4 HLS(3), temp
       INTEGER*4 RGB(3)
       integer*4 ired, igre, iblu, maxc, minc, isum, idif
-      integer*4 maxlit, maxval
+      integer*4 maxlit
 C
 C          copy the inputs to locals
 C
@@ -1255,8 +1265,9 @@ C                    of HLS is the one adopted by GSPC 79.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
+      INTEGER MAXVAL
       REAL*4 HLS(3), LIT, HUE, SAT, f
-      INTEGER*4 RGB(3), maxval, inten, irange, irang2, isplus
+      INTEGER*4 RGB(3), inten, irange, irang2, isplus
       integer*4 iv1, iv2, iv3, iv4, ib, ig, ir
       integer*4 ijump, zero
 
@@ -1553,10 +1564,10 @@ c
       COMMON /WMET08/ CLRTAB
 c
 c  batch update mode--c700
-      INTEGER*4 IBATUP(1)
+      INTEGER IBATUP
 c
 c  send color table--c800
-      INTEGER*4 ISNDCO(1)
+      INTEGER ISNDCO
 c
       INTEGER*4 IBUF(6)
       DATA IBUF/36869,5*0/
@@ -1581,7 +1592,7 @@ c
       END IF
 c
 c   send batch update mode
-      CALL WMET13(1,IBATUP)
+      CALL WMET13S(IBATUP)
 c          check for valid indexes.
 c
       DO 100 I=1,NUM
@@ -1635,7 +1646,7 @@ c
       CALL WMET13(6,IBUF)
   100 CONTINUE
 c
-  999 CALL WMET13(1,ISNDCO)
+  999 CALL WMET13S(ISNDCO)
 c  send color table
       RETURN
       END
@@ -1981,6 +1992,7 @@ C
 C
 C MAX NPTS IS 508.  Constraint imposed by postprocessor.
       INTEGER*4 OUTARY(2)
+      INTEGER*4 zero, i4
 C
 C SCALE FACTORS FOR NDC TO DC MAPPING.  (LXY)
       REAL*4 XSCALE,YSCALE
@@ -2000,14 +2012,15 @@ C SAVE CURRENT ATTRIBUTES
       CALL WMETIO(ATTARR)
 C
 C SET CURRENT LINESTYLE TO SOLID
-      CALL WMETLS(0)
+      zero = 0
+      CALL WMETLS(zero)
 C
 C BEGIN POLYGON COMMAND = AA00
 C                       = 43520
 C END POLYGON COMMAND = AB00
 C                     = 43776
 C 
-      CALL WMET13(1,43520)
+      CALL WMET13S(int4(43520))
 C
       NN=NPTS
 C CHECK MAXIMUM POINTS LIMIT
@@ -2019,13 +2032,14 @@ C CONVERT EACH X,Y TO SCREEN UNITS AND WRITE OUT
         CALL WMET13(2,OUTARY)
  100  CONTINUE
 C                        
-      CALL WMET13(1,43776)
+      CALL WMET13S(int4(43776))
 C
 C MOVE SOMEWHERE TO UPDATE CURRENT POSITION
       CALL WMETIM(XARRAY(1),YARRAY(1))
 C
 C RESTORE LINESTYLE
-      CALL WMETLS(NINT(ATTARR(4)))
+      i4 = NINT4(ATTARR(4))
+      CALL WMETLS(i4)
 C
 999   RETURN
       END
@@ -2051,9 +2065,39 @@ C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C DIMENSION OUTARY TO NUMWDS+1 TO AVOID PROBLEMS WHEN NUMWDS = 0.
-      INTEGER*4 NUMWDS,OUTARY(NUMWDS+1)
+      INTEGER   NUMWDS
+      INTEGER*4 OUTARY(NUMWDS+1)
 C
       CALL WMETBF(NUMWDS,OUTARY)
+      RETURN
+      END
+      SUBROUTINE WMET13S(OUT)
+C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C
+C VBOUT            -Output 16 Bits of Data.
+C
+CC ENVIRONMENT      -Computer-independent, System-independent, FORTRAN 77
+C
+C ENTRY CONDITIONS -NUMWDS = integer number of words in OUTARY.
+C                          = 0 means flush the buffer.
+C                   OUTARY = integer array of output data, 16 bits/word,
+C                   right-justified.
+C
+C
+C NARRATIVE        - This routine used to do all the work but due to
+C                    complex computer, device and software (COMDQ)
+C                    dependencies, the work has moved to the computer
+C                    dependent, device dependent, COMQ dependent routine
+C                    BGPBUF.
+C
+C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
+C
+C DIMENSION OUTARY TO NUMWDS+1 TO AVOID PROBLEMS WHEN NUMWDS = 0.
+      INTEGER*4 OUTARY(1)
+      INTEGER OUT
+C
+      OUTARY(1) = OUT
+      CALL WMETBF(1,OUTARY)
       RETURN
       END
       SUBROUTINE WMETDC(INDEX,VALUE)
@@ -2569,7 +2613,8 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL*4 ASPECT
       INTEGER*4 JUSTIF  
-      integer*4 i, iszrou, iusrsz, iidsiz, just, aspe
+      integer     iidsiz, iusrsz, iszrou
+      integer*4 i, just, aspe
       integer istat
 C
       INTEGER*4 CLRTAB(256,3)
@@ -2612,16 +2657,18 @@ C DC DIMENSIONS OF OFFSETS AND PICTURE. (LXY,HC1)
 C
       INTEGER*4 MACHIN(3),MACLEN
       INTEGER*4 KIDSIZ,KJOBID(4),KUSRSZ,KUSRID(4),KSZROU
-      INTEGER*4 KJROUT(4),KSECUR,KJTIME(3),KJDATE(3)
+      INTEGER*4 KJROUT(4),KSECUR,KJTIME(4),KJDATE(4)
       COMMON / VCJOB/ KIDSIZ,KJOBID,KUSRSZ,KUSRID,KSZROU,
      1               KJROUT,KSECUR,KJTIME,KJDATE,MACHIN,MACLEN
 C 
 C DECLARE FILE INITIALIZATION COMMANDS.
-      integer*4 idfile(2),isecur(3)
+      integer*4 idfile(2),isecur(3), zero(1)
+      real*4 rzero
 C
       DATA ISECUR/33282,1,0/
 C
 C
+      ZERO = 0
       XPAD = 0
       YPAD = 0
 c
@@ -2712,27 +2759,28 @@ C SEND DATE AND TIME.
       CALL WMET05(3,KJTIME) 
 C 
 C SEND LENGTH OF JOB ID AND JOB ID. 
-      CALL WMET13(1,IIDSIZ)
+      CALL WMET13S(IIDSIZ)
       CALL WMET05(4,KJOBID) 
 C 
 C SEND LENGTH OF USER ID AND USER ID. 
-      CALL WMET13(1,IUSRSZ)
+      CALL WMET13S(IUSRSZ)
       CALL WMET05(4,KUSRID) 
 C 
 C SEND LENGTH OF ROUTING INFO AND ROUTING INFO. 
-      CALL WMET13(1,ISZROU)
+      CALL WMET13S(ISZROU)
       CALL WMET05(4,KJROUT) 
 C 
 C SEND SECURITY AND FLUSH BUFFER.
       ISECUR(3)=KSECUR
       CALL WMET13(3,ISECUR)
-      CALL WMET13(0,0)
+      zero(1) = 0
+      CALL WMET13(0,zero)
 C
 C SEND ASPECT RATIO
-      CALL WMET13(1,33539)
-      CALL WMET13(1,INT(XNDCMX*XDEVIC))
-      CALL WMET13(1,INT(YNDCMX*YDEVIC))
-      CALL WMET13(1,0)
+      CALL WMET13S(int4(33539))
+      CALL WMET13S(INT(XNDCMX*XDEVIC))
+      CALL WMET13S(INT(YNDCMX*YDEVIC))
+      CALL WMET13S(0)
 C
 C          SET UP COLOR TABLE
 C
@@ -2755,7 +2803,7 @@ C
       CLRTAB(7,1) = 0
 c
 C SET CURRENT POSITION TO (0.,0.)
-      CALL WMETIM(0.,0.)
+      CALL WMETIM(rzero, rzero)
 C
 C
       RETURN
@@ -2842,7 +2890,7 @@ C
 C MOVE TO THE POSITION SPECIFIED.
       CALL WMETIM(X,Y)
 C plot marker at current position (A400 HEX = 41984) TO THE OUTPUT FILE.
-      CALL WMET13(1,41984)
+      CALL WMET13S(int4(41984))
 C
       RETURN
       END
@@ -2872,14 +2920,15 @@ C
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
      1 KBAUD,KCOMTP
-      INTEGER*4 FILLER
+      INTEGER FILLER
 C
 C FILLER IS 1440 BYTES WORTH OF DECIMAL 8100 PADD CHARACTERS
       DATA FILLER /33024/
+      integer*4 zero(1)
 C
 C SEND AN END OF DATA COMMAND TO THE OUTPUT FILE.
 C 8600 HEX = 34304 = END OF DATA COMMAND.
-      CALL WMET13(1,34304)
+      CALL WMET13S(int4(34304))
 C
 C UPON TERMINATION, WE WANT TO SEND AN EXTRA BUFFER FULL OF PADD
 C CHARACTERS.  BY DOING THIS, WE CAN EASILY BUILD A STANDARD
@@ -2888,12 +2937,13 @@ C NECESSARY FOR SOME SYSTEMS TO THROW AWAY DATA AT THE END OF
 C THE FILE, AND THIS WILL ENSURE THAT NOTHING WORTHWHILE GETS
 C DISCARDED.
 C
+      zero(1) = 0
       DO 10 I=1,2048
-         CALL WMET13(1,FILLER)
+         CALL WMET13S(FILLER)
   10  CONTINUE
 C
 C FLUSH OUTPUT BUFFERS.
-      CALL WMET13(0,0)
+      CALL WMET13(0,zero)
 C
       CALL WMETCF(KOUTFL,1)
       CALL WMETMO(2)
@@ -2935,7 +2985,8 @@ C                    apply.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER*4 LENGT1, CHARS(136), LENGTH, i, jspot
+      INTEGER   JSPOT
+      INTEGER*4 LENGT1, CHARS(136), LENGTH, i
       REAL*4 VECTOR(7)
       COMMON /WMET04/ VECTOR
 C
