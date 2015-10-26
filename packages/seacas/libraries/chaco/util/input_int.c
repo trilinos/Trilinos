@@ -69,6 +69,6 @@ int       input_int(void)
 	done = TRUE;
     }
 
-    sscanf(line, "%d", &val);
+    (void)sscanf(line, "%d", &val);
     return (val);
 }

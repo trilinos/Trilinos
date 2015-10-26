@@ -116,6 +116,10 @@ divide (
 	local_method = 2;
     }
 
+    for (i=0; i < MAXSETS; i++) {
+      weights[i] = 0.0;
+    }
+    
     bndy_list = NULL;
 
     if (striping) {

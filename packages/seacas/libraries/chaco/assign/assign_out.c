@@ -133,6 +133,7 @@ assign_out_inv (
         fclose(fout);
     }
     sfree(size);
+    sfree(inorder);
 }
 
 void 

@@ -302,8 +302,8 @@ nway_kl (
 				(!enforce_balance_hard &&
 				  weightsum[i] >= goal[i] && weightsum[j] <= goal[j]) ||
 				(!enforce_balance_hard &&
-			    weightsum[i] - vweight - goal[i] > -(max_dev + 1) / 2 &&
-			    weightsum[j] + vweight - goal[j] <  (max_dev + 1) / 2)) {
+				 weightsum[i] - vweight - goal[i] > -(double)((max_dev + 1) / 2) &&
+				 weightsum[j] + vweight - goal[j] <  (double)((max_dev + 1) / 2))) {
 
 				/* Is it the best move seen so far? */
 				if (k - maxdval > bestval) {

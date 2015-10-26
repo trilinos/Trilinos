@@ -118,7 +118,7 @@ read_val (
 	offset = 0;
     }
 
-    while (isspace(line[offset]) && offset < LINE_LENGTH) offset++;
+    while (offset < LINE_LENGTH && isspace(line[offset])) offset++;
     if (offset == LINE_LENGTH || line[offset] == '%' || line[offset] == '#') {
 	*end_flag = 1;
 	if (break_pnt < LINE_LENGTH) {
@@ -213,7 +213,7 @@ read_int (
 	offset = 0;
     }
 
-    while (isspace(line[offset]) && offset < LINE_LENGTH) offset++;
+    while (offset < LINE_LENGTH && isspace(line[offset])) offset++;
     if (offset == LINE_LENGTH || line[offset] == '%' || line[offset] == '#') {
 	*end_flag = 1;
 	if (break_pnt < LINE_LENGTH) {

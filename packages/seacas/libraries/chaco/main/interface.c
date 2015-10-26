@@ -265,8 +265,7 @@ interface (
 		   eigtol, seed);
 
 skip:
-    if (coords != NULL)
-	sfree(coords);
+    sfree(coords);
 
     if (default_goal)
 	sfree(goal);
@@ -284,7 +283,7 @@ skip:
     if (!Using_Main && params_file != NULL)
       fclose(params_file);
 
-    if (vwgts) sfree(vwgts);
-    if (ewgts) sfree(ewgts);
+    sfree(vwgts);
+    sfree(ewgts);
     return (flag);
 }
