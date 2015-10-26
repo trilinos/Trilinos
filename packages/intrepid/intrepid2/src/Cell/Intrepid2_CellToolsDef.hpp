@@ -981,9 +981,9 @@ typedef typename conditional_eSpace<ArrayJac>::execution_space execution_space;
    }
 };
 
-template <class Scalar,class ArrayPoint>
+template <class Scalar,class ArrayPointWrap,class ArrayPoint>
 struct copyTempPoints {
-  ArrayPoint points;
+  ArrayPointWrap points;
   FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
@@ -991,7 +991,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  copyTempPoints (FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints_, ArrayPoint points_) :
+  copyTempPoints (FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints_, ArrayPointWrap points_) :
      tempPoints(tempPoints_),points(points_)
   {}
 
@@ -1005,10 +1005,10 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
    }
 };
 
-template <class Scalar,class ArrayJac, class ArrayCell,class ArrayPoint>
+template <class Scalar,class ArrayJacWrap, class ArrayCellWrap,class ArrayPoint>
 struct setJacref2WhichNeg1 {
-  ArrayJac jacobian;
-  ArrayCell cellWorkset;
+  ArrayJacWrap jacobian;
+  ArrayCellWrap cellWorkset;
   FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
 int spaceDim;
 size_t numPoints;
@@ -1019,7 +1019,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2WhichNeg1 (ArrayJac jacobian_, ArrayCell cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref2WhichNeg1 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_)
  {}
 
@@ -1044,10 +1044,10 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
 };
 
 
-template <class Scalar,class ArrayJac, class ArrayCell,class ArrayPoint>
+template <class Scalar,class ArrayJacWrap, class ArrayCellWrap,class ArrayPoint>
 struct setJacref2Which {
-  ArrayJac jacobian;
-  ArrayCell cellWorkset;
+  ArrayJacWrap jacobian;
+  ArrayCellWrap cellWorkset;
   FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
   int spaceDim;
   size_t numPoints;
@@ -1059,7 +1059,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2Which (ArrayJac jacobian_, ArrayCell cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_,int whichCell_) :
+  setJacref2Which (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_,int whichCell_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_), whichCell(whichCell_)
  {}
 
@@ -1083,23 +1083,23 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
    }
 };
 
-template <class Scalar,class ArrayJac, class ArrayCell,class ArrayPoint,class ArrayPointWrap>
+template <class Scalar,class ArrayJacWrap, class ArrayCellWrap,class ArrayPointWrap,class ArrayPoint>
 struct setJacref3 {
-  ArrayJac jacobian;
-  ArrayCell cellWorkset;
+  ArrayJacWrap jacobian;
+  ArrayCellWrap cellWorkset;
   ArrayPointWrap points;
 //  FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
 int spaceDim;
 size_t numPoints;
 int basisCardinality;
-Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis;
+Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref3 (ArrayJac jacobian_, ArrayCell cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref3 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),points(points_),spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_),HGRAD_Basis(HGRAD_Basis_)
  {}
 
@@ -1134,11 +1134,11 @@ FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSp
    }
 };
   template<class Scalar>
-  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  template<class ArrayJac, class ArrayPoint, class ArrayCell,class RCPcontainer>
   void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
                                       const ArrayPoint &           points,
                                       const ArrayCell  &           cellWorkset,
-                                      Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis,
+                                      Teuchos::RCP< Basis< Scalar, RCPcontainer > > HGRAD_Basis,
                                       const int &                  whichCell) 
   {
    // INTREPID2_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
@@ -1173,7 +1173,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (tempPoints,pointsWrap));
+Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1195,7 +1195,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>, ArrayPoint,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> , ArrayPoint> (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
@@ -1345,7 +1345,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (tempPoints,pointsWrap));
+Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
@@ -1367,7 +1367,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
         // points is (C,P,D): multiple jacobians computed at multiple point sets, one jacobian per cell  
       case 3:
         {
- Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>, ArrayPoint,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true> > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
+ Kokkos::parallel_for (numCells, setJacref3<Scalar,ArrayWrapper<Scalar,ArrayJac, Rank<ArrayJac >::value, false>,ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true> ,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>,ArrayPoint > (jacobianWrap,cellWorksetWrap,pointsWrap,HGRAD_Basis,spaceDim,numPoints,basisCardinality));
 //	    }
         }// case 3
 	
