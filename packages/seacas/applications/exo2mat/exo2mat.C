@@ -51,13 +51,11 @@
       to include complete writing of side set and node set information 
       so it will be available for the mat2exo conversion stage
 
-   Note:
-     If exo2mat is available, it should be used. However,
-     the mathsoft libraries are a moving target. This crutch
-     delivers almost the same functionality, but does so by
-     writing an .m file rather than the binary .mat file.
-     gmreese. April 1, 2003.
 */
+
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 #include <assert.h>                     // for assert
 #include <stddef.h>                     // for size_t
@@ -68,45 +66,51 @@
 #include "exodusII.h"                   // for ex_get_variable_param, etc
 #include "matio.h"                      // for Mat_VarCreate, Mat_VarFree, etc
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
+#define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 #define EXT ".mat"
 int textfile=0;
 
-FILE* m_file=0;     /* file for m file output */
-mat_t *mat_file=0;  /* file for binary .mat output */
+FILE* m_file=NULL;     /* file for m file output */
+mat_t *mat_file=NULL;  /* file for binary .mat output */
 
-static char *qainfo[] =
+static const char *qainfo[] =
 {
   "exo2mat",
-  "2014/01/14",
-  "2.02",
+  "2015/10/20",
+  "3.00",
 };
 
 
 void usage()
 {
-    printf("exo2mat [options] exodus_file_name.\n");
-    printf("   the exodus_file_name is required (exodusII only).\n");
-    printf("   Options:\n");
-    printf("     -t write a text (.m) file rather than a binary .mat\n");
-    printf("     -o output file name (rather than auto generate)\n");
-    printf("   -v5  output version 5 mat file (default)\n");
-    printf("   -v73 output version 7.3 mat file (hdf5-based)\n");
-    printf(" ** note **\n");
-    printf("Binary files are written by default on all platforms with");
-    printf(" available libraries.\n");
+  std::cout << "exo2mat [options] exodus_file_name.\n"
+	    << "   the exodus_file_name is required (exodus only).\n"
+	    << "   Options:\n"
+	    << "   -t   write a text (.m) file rather than a binary .mat\n"
+	    << "   -o   output file name (rather than auto generate)\n"
+	    << "   -v5  output version 5 mat file (default)\n"
+	    << "   -v73 output version 7.3 mat file (hdf5-based)\n"
+	    << "   -v7.3 output version 7.3 mat file (hdf5-based)\n"
+	    << " ** note **\n"
+	    << "Binary files are written by default on all platforms.\n";
 }
 
 /* put a string into an m file. If the string has
    line feeds, we put it as ints, and use 'char()' to convert it */
-void mPutStr (char *name,char *str)
+void mPutStr (const char *name, char *str)
 {
-  unsigned int i,j;
   assert(m_file!=0);
   if (strchr(str,'\n')==0)
     fprintf(m_file,"%s='%s';\n",name,str);
   else {
     fprintf(m_file,"%s=[",name);
+    size_t i;
+    size_t j;
     for (j=i=0;i<strlen(str);i++,j++){
       if (j>=20){
 	j=0;
@@ -120,39 +124,45 @@ void mPutStr (char *name,char *str)
 }
 
 /* put double array in m file */
-void mPutDbl (char *name,int n1,int n2,double *pd)
+void mPutDbl (const char *name,int n1,int n2,double *pd)
 {
-  int i,j;
-  assert(m_file!=0);
+  assert(m_file != NULL);
   if ( n1==1 && n2 ==1 ){
     fprintf(m_file,"%s=%15.8e;\n",name,*pd);
     return;
   }
   fprintf(m_file,"%s=zeros(%d,%d);\n",name,n1,n2);
-  for (i=0;i<n1;i++)
-    for (j=0;j<n2;j++)
+  for (int i=0;i<n1;i++)
+    for (int j=0;j<n2;j++)
       fprintf(m_file,"%s(%d,%d)=%15.8e;\n",name,i+1,j+1,pd[i*n2+j]);
 }
 
 
 /* put integer array in m file */
-void mPutInt (char *name,int n1,int n2, int *pd)
+void mPutInt (const char *name, int pd)
 {
-  int i,j;
-  assert(m_file!=0);
+  assert(m_file != NULL);
+  fprintf(m_file,"%s=%d;\n",name,pd);
+  return;
+}
+
+/* put integer array in m file */
+void mPutInt (const char *name,int n1,int n2, int *pd)
+{
+  assert(m_file != NULL);
   if ( n1==1 && n2 ==1 ){
     fprintf(m_file,"%s=%d;\n",name,*pd);
     return;
   }
   fprintf(m_file,"%s=zeros(%d,%d);\n",name,n1,n2);
-  for (i=0;i<n1;i++)
-    for (j=0;j<n2;j++)
+  for (int i=0;i<n1;i++)
+    for (int j=0;j<n2;j++)
       fprintf(m_file,"%s(%d,%d)=%d;\n",name,i+1,j+1,pd[i*n2+j]);
 }
 
 
 /* put string in mat file*/
-void matPutStr (char *name,char *str)
+void matPutStr (const char *name, char *str)
 {
   matvar_t *matvar = NULL;
   size_t dims[2];
@@ -166,7 +176,7 @@ void matPutStr (char *name,char *str)
 }
 
 /* put double in mat file*/
-void matPutDbl (char *name,int n1,int n2,double *pd)
+void matPutDbl (const char *name,int n1,int n2,double *pd)
 {
   matvar_t *matvar = NULL;
   
@@ -180,7 +190,7 @@ void matPutDbl (char *name,int n1,int n2,double *pd)
 }
 
 /* put integer in mat file*/
-void matPutInt (char *name,int n1,int n2, int *pd)
+void matPutInt (const char *name,int n1,int n2, int *pd)
 {
   matvar_t *matvar = NULL;
   
@@ -196,7 +206,7 @@ void matPutInt (char *name,int n1,int n2, int *pd)
 /*----------------------*/
 
 /* wrappers for the output routine types */
-void PutStr (char *name,char *str)
+void PutStr (const char *name, char *str)
 {
   if ( textfile )
     mPutStr(name,str);
@@ -204,15 +214,15 @@ void PutStr (char *name,char *str)
     matPutStr(name,str);
 }
 
-void PutDbl (char *name,int n1,int n2,double *pd)
+void PutInt (const char *name,int pd)
 {
   if ( textfile )
-    mPutDbl(name,n1,n2,pd);
+    mPutInt(name,pd);
   else
-    matPutDbl(name,n1,n2,pd);
+    matPutInt(name,1,1,&pd);
 }
     
-void PutInt (char *name,int n1,int n2,int *pd)
+void PutInt (const char *name,int n1,int n2,int *pd)
 {
   if ( textfile )
     mPutInt(name,n1,n2,pd);
@@ -220,13 +230,20 @@ void PutInt (char *name,int n1,int n2,int *pd)
     matPutInt(name,n1,n2,pd);
 }
     
+void PutDbl (const char *name,int n1,int n2,double *pd)
+{
+  if ( textfile )
+    mPutDbl(name,n1,n2,pd);
+  else
+    matPutDbl(name,n1,n2,pd);
+}
+    
 
 /**********************************************************************/
 /* remove an argument from the list */
 void del_arg(int *argc, char* argv[], int j)
 {
-  int jj;
-  for (jj=j+1;jj<*argc;jj++)
+  for (int jj=j+1;jj<*argc;jj++)
     argv[jj-1]=argv[jj];
   (*argc)--;
   argv[*argc]=0;
@@ -246,10 +263,6 @@ int main (int argc, char *argv[])
     num_side_sets,num_node_sets,num_time_steps,
     num_info_lines,num_global_vars,
     num_nodal_vars,num_element_vars,num_nodeset_vars, num_sideset_vars,
-    *ids,*iscr,*num_elem_in_block,*junk,
-    *elem_list,*side_list,
-    *nsssides,*nssdfac,
-    *nnsnodes,*nnsdfac,
     nstr2, has_ss_dfac;
     
   float
@@ -257,9 +270,6 @@ int main (int argc, char *argv[])
 
   int mat_version = 50;
   
-  double
-    *scr,*x,*y,*z;
-
   oname=0;
 
   /* process arguments */
@@ -281,6 +291,13 @@ int main (int argc, char *argv[])
       j--;
       continue;
     }
+    // This matches the option used in matlab
+    if ( (strcmp(argv[j],"-v7.3")==0) || (strcmp(argv[j],"-V7.3")==0)){    /* Version 7.3 */
+      del_arg(&argc,argv,j);
+      mat_version = 73;
+      j--;
+      continue;
+    }
     if ( strcmp(argv[j],"-v5")==0){    /* Version 5 (default) */
       del_arg(&argc,argv,j);
       mat_version = 50;
@@ -290,14 +307,14 @@ int main (int argc, char *argv[])
     if ( strcmp(argv[j],"-o")==0){    /* specify output file name */
       del_arg(&argc,argv,j);
       if ( argv[j] ){
-         oname=(char*)calloc(strlen(argv[j])+10,sizeof(char));
-	 strcpy(oname,argv[j]);
-	 del_arg(&argc,argv,j);
-	 printf("output file: %s\n",oname);
+	oname=(char*)calloc(strlen(argv[j])+10,sizeof(char));
+	strcpy(oname,argv[j]);
+	del_arg(&argc,argv,j);
+	std::cout << "output file: " << oname << "\n";
       }
       else {
-         fprintf(stderr,"Invalid output file specification.\n");
-	 return 2;
+	std::cerr << "ERROR: Invalid output file specification.\n";
+	return 2;
       }
       j--;
 
@@ -305,7 +322,7 @@ int main (int argc, char *argv[])
     }
   }
 
-   /* QA Info */
+  /* QA Info */
   printf("%s: %s, %s\n", qainfo[0], qainfo[2], qainfo[1]);
   
   /* usage message*/
@@ -319,20 +336,20 @@ int main (int argc, char *argv[])
     ext=".m";
 
   if ( !oname ){
-      filename = (char*)malloc( strlen(argv[1])+10);
-      strcpy(filename,argv[1]);
-      dot=strrchr(filename,'.');
-      if ( dot ) *dot=0;
-      strcat(filename,ext);
+    filename = (char*)malloc( strlen(argv[1])+10);
+    strcpy(filename,argv[1]);
+    dot=strrchr(filename,'.');
+    if ( dot ) *dot='\0';
+    strcat(filename,ext);
   }
   else {
-      filename=oname;
+    filename=oname;
   }
 
   if ( textfile ){
     m_file = fopen(filename,"w");
     if (!m_file ){
-      fprintf(stderr,"Unable to open %s\n",filename);
+      std::cerr << "ERROR: Unable to open " << filename << "\n";
       exit(1);
     }
   }
@@ -343,7 +360,7 @@ int main (int argc, char *argv[])
       mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT73);
     }
     if (mat_file == NULL) {
-      fprintf(stderr,"Unable to create matlab file %s\n",filename);
+      std::cerr << "ERROR: Unable to create matlab file " << filename << "\n";
       exit(1);
     }
   }
@@ -355,12 +372,12 @@ int main (int argc, char *argv[])
   /* open exodus file */
   exo_file=ex_open(argv[1],EX_READ,&cpu_word_size,&io_word_size,&exo_version);
   if (exo_file < 0){
-    printf("error opening %s\n",argv[1]);
+    std::cerr << "ERROR: Cannot open " << argv[1] << "\n";
     exit(1);
   }
 
   /* print */
-  fprintf(stderr,"translating %s to %s ...\n",argv[1],filename);
+  std::cout << "\ttranslating " << argv[1] << " to " << filename << "...\n";
 
   /* read database paramters */
   line=(char *) calloc ((MAX_LINE_LENGTH+1),sizeof(char));
@@ -377,25 +394,25 @@ int main (int argc, char *argv[])
 
 
   /* export paramters */
-  PutInt("naxes",  1, 1,&num_axes);
-  PutInt("nnodes", 1, 1,&num_nodes);
-  PutInt("nelems", 1, 1,&num_elements);
-  PutInt("nblks",  1, 1,&num_blocks);
-  PutInt("nnsets", 1, 1,&num_node_sets);
-  PutInt("nssets", 1, 1,&num_side_sets);
-  PutInt("nsteps", 1, 1,&num_time_steps);
-  PutInt("ngvars", 1, 1,&num_global_vars);
-  PutInt("nnvars", 1, 1,&num_nodal_vars);
-  PutInt("nevars", 1, 1,&num_element_vars);
-  PutInt("nnsvars", 1, 1,&num_nodeset_vars);
-  PutInt("nssvars", 1, 1,&num_sideset_vars);
+  PutInt("naxes",  num_axes);
+  PutInt("nnodes", num_nodes);
+  PutInt("nelems", num_elements);
+  PutInt("nblks",  num_blocks);
+  PutInt("nnsets", num_node_sets);
+  PutInt("nssets", num_side_sets);
+  PutInt("nsteps", num_time_steps);
+  PutInt("ngvars", num_global_vars);
+  PutInt("nnvars", num_nodal_vars);
+  PutInt("nevars", num_element_vars);
+  PutInt("nnsvars",num_nodeset_vars);
+  PutInt("nssvars",num_sideset_vars);
 
   /* allocate -char- scratch space*/
-  n =                              num_info_lines;
-  n = (n > num_global_vars) ?  n : num_global_vars;
-  n = (n > num_nodal_vars) ?   n : num_nodal_vars;
-  n = (n > num_element_vars) ? n : num_element_vars;
-  n = (n > num_blocks) ?       n : num_blocks;
+  n = num_info_lines;
+  n = std::max(n, num_global_vars);
+  n = std::max(n, num_nodal_vars);
+  n = std::max(n, num_element_vars);
+  n = std::max(n, num_blocks);
   nstr2 = n;
   str2= (char **) calloc (n,sizeof(char *));
   for (i=0;i<nstr2;i++)
@@ -427,30 +444,36 @@ int main (int argc, char *argv[])
   }
 
   /* nodal coordinates */
-  x = (double *) calloc(num_nodes,sizeof(double));
-  y = (double *) calloc(num_nodes,sizeof(double));
-  if (num_axes == 3) 
-    z = (double *) calloc(num_nodes,sizeof(double));
-  else 
-    z = NULL;
-  ex_get_coord(exo_file,x,y,z);
-  PutDbl("x0", num_nodes, 1, x);
-  PutDbl("y0", num_nodes, 1, y);
-  free(x);
-  free(y);
-  if (num_axes == 3){ 
-    PutDbl("z0",num_nodes,1, z);
-    free(z);
-  }
-  
-   /* side sets */
-  if(num_side_sets > 0){
-    ids=(int *) calloc(num_side_sets,sizeof(int));
-    ex_get_ids(exo_file,EX_SIDE_SET,ids);
-    PutInt( "ssids",num_side_sets, 1,ids);
-    nsssides = (int *) calloc(num_side_sets,sizeof(int)); /*dgriffi */
-    nssdfac  = (int *) calloc(num_side_sets,sizeof(int)); /*dgriffi */
-    for (i=0;i<num_side_sets;i++){
+  {
+    std::vector<double> x, y, z;
+    x.resize(num_nodes);
+    if (num_axes >= 2) y.resize(num_nodes);
+    if (num_axes == 3) z.resize(num_nodes);
+    ex_get_coord(exo_file,TOPTR(x), TOPTR(y), TOPTR(z));
+    PutDbl("x0", num_nodes, 1, TOPTR(x));
+    if (num_axes >= 2) {
+      PutDbl("y0", num_nodes, 1, TOPTR(y));
+    }
+    if (num_axes == 3){ 
+      PutDbl("z0",num_nodes,1, TOPTR(z));
+    }
+  }  
+
+  /* side sets */
+  std::vector<int> ids;
+  if(num_side_sets > 0) {
+    ids.resize(num_side_sets);
+    ex_get_ids(exo_file,EX_SIDE_SET,TOPTR(ids));
+    PutInt( "ssids",num_side_sets, 1,TOPTR(ids));
+    std::vector<int> nsssides(num_side_sets);
+    std::vector<int> nssdfac(num_side_sets);
+    std::vector<int> iscr;
+    std::vector<int> jscr;
+    std::vector<double> scr;
+    std::vector<int> elem_list;
+    std::vector<int> side_list;
+    std::vector<int> junk;
+    for (i=0;i<num_side_sets;i++) {
       ex_get_set_param(exo_file,EX_SIDE_SET, ids[i],&n1,&n2);
       nsssides[i]=n1; /* dgriffi */
       nssdfac[i]=n2;  /* dgriffi */
@@ -461,128 +484,118 @@ int main (int argc, char *argv[])
       has_ss_dfac = (n2 != 0);
       if(n2==0 || n1==n2){
 	
-	printf(" WARNING: Exodus II file does not contain distribution factors.\n");
+	std::cerr << "WARNING: Exodus II file does not contain distribution factors.\n";
 	
 	/* n1=number of faces, n2=number of df */
 	/* using distribution factors to determine number of nodes in the sideset
-         causes a lot grief since some codes do not output distribution factors
-         if they are all equal to 1. mkbhard: I am using the function call below
-         to figure out the total number of nodes in this sideset. Some redundancy
-         exists, but it works for now */
+	   causes a lot grief since some codes do not output distribution factors
+	   if they are all equal to 1. mkbhard: I am using the function call below
+	   to figure out the total number of nodes in this sideset. Some redundancy
+	   exists, but it works for now */
 
-	junk = (int*) calloc(n1,sizeof(int)); 
-	ex_get_side_set_node_count(exo_file,ids[i],junk);
+	junk.resize(n1);
+	ex_get_side_set_node_count(exo_file,ids[i],TOPTR(junk));
 	n2=0; /* n2 will be equal to the total number of nodes in the sideset */
-	for (j=0;j<n1;j++) n2+=junk[j];
-	free(junk);
-
+	for (j=0;j<n1;j++)
+	  n2+=junk[j];
       }
 	
-      iscr = (int *) calloc(n1+n2,sizeof(int));
-      ex_get_side_set_node_list(exo_file,ids[i],iscr,iscr+n1);
+      iscr.resize(n1);
+      jscr.resize(n2);
+      ex_get_side_set_node_list(exo_file,ids[i],TOPTR(iscr),TOPTR(jscr));
       /* number-of-nodes-per-side list */
       sprintf(str,"ssnum%02d",i+1);
-      PutInt(str,n1,1,iscr); 
+      PutInt(str,n1,1,TOPTR(iscr)); 
       /* nodes list */
       sprintf(str,"ssnod%02d",i+1);
-      PutInt(str,n2,1,iscr+n1);
-      free(iscr);
+      PutInt(str,n2,1,TOPTR(jscr));
+
       /* distribution-factors list */
-      scr = (double *) calloc (n2,sizeof(double));
+      scr.resize(n2);
       if (has_ss_dfac) {
-	ex_get_side_set_dist_fact(exo_file,ids[i],scr);
+	ex_get_side_set_dist_fact(exo_file,ids[i], TOPTR(scr));
       } else {
 	for (j=0; j<n2; j++) {
 	  scr[j] = 1.0;
 	}
       }
       sprintf(str,"ssfac%02d",i+1);
-      PutDbl(str,n2,1,scr);
-      free(scr);
-      /* element and side list for side sets (dgriffi) */
-      elem_list = (int *) calloc(n1, sizeof(int));
-      side_list = (int *) calloc(n1, sizeof(int));
-      ex_get_set(exo_file,EX_SIDE_SET,ids[i],elem_list,side_list);
-      sprintf(str,"ssside%02d",i+1);
-      PutInt(str,n1,1,side_list);
-      sprintf(str,"sselem%02d",i+1);
-      PutInt(str,n1,1,elem_list);
-      free(elem_list);
-      free(side_list);
+      PutDbl(str,n2,1,TOPTR(scr));
 
+      /* element and side list for side sets (dgriffi) */
+      elem_list.resize(n1);
+      side_list.resize(n1);
+      ex_get_set(exo_file,EX_SIDE_SET,ids[i],TOPTR(elem_list),TOPTR(side_list));
+      sprintf(str,"ssside%02d",i+1);
+      PutInt(str,n1,1,TOPTR(side_list));
+      sprintf(str,"sselem%02d",i+1);
+      PutInt(str,n1,1,TOPTR(elem_list));
     }
     /* Store # sides and # dis. factors per side set (dgriffi) */
-    PutInt("nsssides",num_side_sets,1,nsssides);
-    PutInt("nssdfac",num_side_sets,1,nssdfac);
-    free(ids);
-    free(nsssides);
-    free(nssdfac);
+    PutInt("nsssides",num_side_sets,1,TOPTR(nsssides));
+    PutInt("nssdfac",num_side_sets,1,TOPTR(nssdfac));
   }
 
   /* node sets (section by dgriffi) */
   if(num_node_sets > 0){
-    ids=(int *) calloc(num_node_sets,sizeof(int));
-    ex_get_ids(exo_file,EX_NODE_SET, ids);
-    PutInt( "nsids",num_node_sets, 1,ids);
-    nnsnodes = (int *) calloc(num_node_sets,sizeof(int)); 
-    nnsdfac  = (int *) calloc(num_node_sets,sizeof(int));
+    std::vector<int> iscr;
+    std::vector<double> scr;
+    std::vector<int> ids(num_node_sets);
+    ex_get_ids(exo_file,EX_NODE_SET, TOPTR(ids));
+    PutInt( "nsids",num_node_sets, 1,TOPTR(ids));
+    std::vector<int> nnsnodes(num_node_sets);
+    std::vector<int> nnsdfac(num_node_sets);
     for (i=0;i<num_node_sets;i++){
       ex_get_set_param(exo_file,EX_NODE_SET,ids[i],&n1,&n2);
-      iscr = (int *) calloc(n1,sizeof(int));
-      ex_get_node_set(exo_file,ids[i],iscr);
+      iscr.resize(n1);
+      ex_get_node_set(exo_file,ids[i],TOPTR(iscr));
       /* nodes list */
       sprintf(str,"nsnod%02d",i+1);
-      PutInt(str,n1,1,iscr);
-      free(iscr);
-      /* distribution-factors list */
-      scr = (double *) calloc (n2,sizeof(double));
-      ex_get_node_set_dist_fact(exo_file,ids[i],scr);  
-      sprintf(str,"nsfac%02d",i+1);
-      PutDbl(str,n2,1,scr);
-      free(scr);
-
+      PutInt(str,n1,1,TOPTR(iscr));
+      {
+	/* distribution-factors list */
+	scr.resize(n2);
+	ex_get_node_set_dist_fact(exo_file,ids[i],TOPTR(scr));  
+	sprintf(str,"nsfac%02d",i+1);
+	PutDbl(str,n2,1,TOPTR(scr));
+      }
       nnsnodes[i]=n1;
       nnsdfac[i]=n2;
-
     }
 
-      /* Store # nodes and # dis. factors per node set */
-      PutInt("nnsnodes",num_node_sets,1,nnsnodes);
-      PutInt("nnsdfac",num_node_sets,1,nnsdfac);
-      free(ids);
-   
-    free(nnsdfac);
-    free(nnsnodes);
-    
+    /* Store # nodes and # dis. factors per node set */
+    PutInt("nnsnodes",num_node_sets,1,TOPTR(nnsnodes));
+    PutInt("nnsdfac",num_node_sets,1,TOPTR(nnsdfac));
   }
 
   /* element blocks */
-  ids=(int *) calloc(num_blocks,sizeof(int));
-  num_elem_in_block=(int *) calloc(num_blocks,sizeof(int));
-  ex_get_ids(exo_file,EX_ELEM_BLOCK,ids);
-  PutInt( "blkids",num_blocks, 1,ids);
-  for (i=0;i<num_blocks;i++) {
-    ex_get_elem_block(exo_file,ids[i],str2[i],&n,&n1,&n2);
-    num_elem_in_block[i]=n;
-    iscr = (int *) calloc(n*n1,sizeof(int));
-    ex_get_conn(exo_file,EX_ELEM_BLOCK,ids[i],iscr, NULL, NULL);
-    sprintf(str,"blk%02d",i+1);
-    PutInt(str,n1,n,iscr);
-    free(iscr);
+  std::vector<int> num_elem_in_block(num_blocks);
+  {
+    ids.resize(num_blocks);
+    std::vector<int> iscr;
+    ex_get_ids(exo_file,EX_ELEM_BLOCK,TOPTR(ids));
+    PutInt( "blkids",num_blocks, 1,TOPTR(ids));
+    for (i=0;i<num_blocks;i++) {
+      ex_get_elem_block(exo_file,ids[i],str2[i],&n,&n1,&n2);
+      num_elem_in_block[i]=n;
+      iscr.resize(n*n1);
+      ex_get_conn(exo_file,EX_ELEM_BLOCK,ids[i],TOPTR(iscr), NULL, NULL);
+      sprintf(str,"blk%02d",i+1);
+      PutInt(str,n1,n,TOPTR(iscr));
+    }
+    str[0]='\0';
+    for (i=0;i<num_blocks;i++) {
+      strcat(str, str2[i]);
+      strcat(str, "\n");
+    }
+    PutStr("blknames",str);
   }
-  str[0]='\0';
-  for (i=0;i<num_blocks;i++) {
-    strcat(str, str2[i]);
-    strcat(str, "\n");
-  }
-  PutStr("blknames",str);  
 
   /* time values */
   if (num_time_steps > 0 ) {
-    scr = (double *) calloc (num_time_steps,sizeof(double));
-    ex_get_all_times (exo_file,scr);
-    PutDbl( "time", num_time_steps, 1,scr);
-    free(scr); 
+    std::vector<double> scr(num_time_steps);
+    ex_get_all_times (exo_file, TOPTR(scr));
+    PutDbl( "time", num_time_steps, 1, TOPTR(scr));
   }
 
   /* global variables */
@@ -594,13 +607,12 @@ int main (int argc, char *argv[])
       strcat(str, "\n");
     }
     PutStr("gnames",str);
-    scr = (double *) calloc (num_time_steps,sizeof(double));
+    std::vector<double> scr(num_time_steps);
     for (i=0;i<num_global_vars;i++){
       sprintf(str,"gvar%02d",i+1);
-      ex_get_glob_var_time(exo_file,i+1,1,num_time_steps,scr);
-      PutDbl(str,num_time_steps,1,scr);
+      ex_get_glob_var_time(exo_file,i+1,1,num_time_steps,TOPTR(scr));
+      PutDbl(str,num_time_steps,1,TOPTR(scr));
     }
-    free(scr);
   }
 
   /* nodal variables */
@@ -612,15 +624,14 @@ int main (int argc, char *argv[])
       strcat(str, "\n");
     }
     PutStr("nnames",str);
-    scr = (double *) calloc (num_nodes*num_time_steps,sizeof(double));
-    for (i=0;i<num_nodal_vars;i++){
+    std::vector<double> scr(num_nodes*num_time_steps);
+    for (int i=0; i<num_nodal_vars; i++){
       sprintf(str,"nvar%02d",i+1);
-      for (j=0;j<num_time_steps;j++)
+      for (int j=0; j<num_time_steps; j++)
 	ex_get_nodal_var(exo_file,j+1,i+1,num_nodes,
-                                  scr+num_nodes*j);
-      PutDbl(str,num_nodes,num_time_steps,scr);
+			 &scr[num_nodes*j]);
+      PutDbl(str,num_nodes,num_time_steps,TOPTR(scr));
     }
-    free(scr);
   }
 
   /* element variables */
@@ -633,43 +644,39 @@ int main (int argc, char *argv[])
     }
     PutStr("enames",str);
     /* truth table */
-    iscr = (int *) calloc(num_element_vars*num_blocks, sizeof(int));
-    ex_get_elem_var_tab(exo_file,num_blocks,num_element_vars,iscr);
+    std::vector<int> iscr(num_element_vars*num_blocks);
+    ex_get_elem_var_tab(exo_file,num_blocks,num_element_vars,TOPTR(iscr));
+    std::vector<double> scr(num_elements * num_time_steps);
     for (i=0;i<num_element_vars;i++){
-      scr = (double *) calloc (num_elements*num_time_steps,sizeof(double));
+      std::fill(scr.begin(), scr.end(), 0.0);
       n=0;
       sprintf(str,"evar%02d",i+1);
       for (j=0;j<num_time_steps;j++){
 	for (k=0;k<num_blocks;k++){ 
           if(iscr[num_element_vars*k+i]==1)
-	      ex_get_elem_var(exo_file,j+1,i+1,ids[k],num_elem_in_block[k],scr+n);
-	      n=n+num_elem_in_block[k];
+	    ex_get_elem_var(exo_file,j+1,i+1,ids[k],num_elem_in_block[k],&scr[n]);
+	  n=n+num_elem_in_block[k];
 	      
 	}
       }
-      PutDbl(str,num_elements,num_time_steps,scr);
-      free(scr);
+      PutDbl(str,num_elements,num_time_steps,TOPTR(scr));
     }
-    free(iscr);
   }
-  free(num_elem_in_block);
-  free(ids);
+  // Clear out num_elem_in_block...
  
   /* node and element number maps */
   ex_opts(0);  /* turn off error reporting. It is not an error to have no map*/
-  ids = (int *)malloc(num_nodes*sizeof(int));
-  err = ex_get_node_num_map(exo_file,ids);
+  ids.resize(num_nodes);
+  err = ex_get_node_num_map(exo_file,TOPTR(ids));
   if ( err==0 ){
-    PutInt("node_num_map",num_nodes,1,ids);
+    PutInt("node_num_map",num_nodes,1,TOPTR(ids));
   }
-  free(ids);
 
-  ids = (int *)malloc(num_elements*sizeof(int));
-  err = ex_get_elem_num_map(exo_file,ids);
+  ids.resize(num_elements);
+  err = ex_get_elem_num_map(exo_file,TOPTR(ids));
   if ( err==0 ){
-    PutInt("elem_num_map",num_elements,1,ids);
+    PutInt("elem_num_map",num_elements,1,TOPTR(ids));
   }
-  free(ids);
 
 
   /* close exo file */
@@ -682,7 +689,7 @@ int main (int argc, char *argv[])
     Mat_Close(mat_file);
 
   /* */
-  fprintf(stderr,"done.\n");
+  std::cout << "done...\n";
 
   free(filename);
   free(line);

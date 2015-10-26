@@ -37,12 +37,12 @@ EXTRA_DEFINES = -DHAS_MATLAB -DV5_COMPAT
 
 CODE = exo2mat
 
-SRC = exo2mat.c
+SRC = exo2mat.C
 
-OBJS = $(SRC:.c=.o)
+OBJS = $(SRC:.C=.o)
 
 LIBS = $(SUPLIB) $(EXOIIV2C) $(NETCDF) $(MATIO) -lm -lz
 
-NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+NormalCCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
 
 InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
