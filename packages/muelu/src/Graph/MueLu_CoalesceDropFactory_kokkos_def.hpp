@@ -81,9 +81,8 @@ namespace MueLu {
 
   }
 
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -105,8 +104,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
 
@@ -117,18 +116,18 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
     SC zero = STS::zero(), one = STS::one();
 
-    RCP<Matrix> A         = Get< RCP<Matrix> >(currentLevel, "A");
-    LO          blkSize   = A->GetFixedBlockSize();
-    GO          indexBase = A->getRowMap()->getIndexBase();
+    auto A         = Get< RCP<Matrix> >(currentLevel, "A");
+    LO   blkSize   = A->GetFixedBlockSize();
+    GO   indexBase = A->getRowMap()->getIndexBase();
 
-    RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
+    auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
     const ParameterList& pL = GetParameterList();
 
@@ -149,7 +148,7 @@ namespace MueLu {
     RCP<LWGraph_kokkos> graph;
     LO                  dofsPerNode = -1;
 
-    typedef Kokkos::View<const bool*, typename NO::device_type> boundary_nodes_type;
+    typedef typename LWGraph_kokkos::boundary_nodes_type boundary_nodes_type;
     boundary_nodes_type boundaryNodes;
 
     if (algo == "classical") {
@@ -332,7 +331,7 @@ namespace MueLu {
     } else if (algo == "distance laplacian") {
       typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
 
-      RCP<doubleMultiVector> Coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
+      auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
 
       if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
         //
@@ -346,7 +345,7 @@ namespace MueLu {
 
         numTotal = A->getNodeNumEntries();
 
-        DofsPerNode = 1;
+        dofsPerNode = 1;
 
       } else if (blkSize == 1 && threshold != STS::zero()) {
         //
@@ -380,7 +379,7 @@ namespace MueLu {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
       Kokkos::parallel_reduce("CoalesceDropF:Build:bnd", boundaryNodes.dimension_0(), KOKKOS_LAMBDA(const LO i, GO& n) {
-        if (boundaryNodes[i])
+        if (boundaryNodes(i))
           n++;
       }, numLocalBoundaryNodes);
 
