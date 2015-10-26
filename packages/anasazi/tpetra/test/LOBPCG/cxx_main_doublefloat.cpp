@@ -70,34 +70,37 @@ using std::vector;
 //       currently cannot do.
 
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
-RCP<Map<int> > vmap;
-ParameterList mptestpl; 
+RCP<Map<> > vmap;
+ParameterList mptestpl;
 int rnnzmax;
 int dim, mptestnev, blockSize;
-double *dvals; 
+double *dvals;
 int *colptr, *rowind;
 int mptestmypid = 0;
 string mptestwhich("LR");
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-template <class Scalar> 
-RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem()
+template <class Scalar>
+RCP<Eigenproblem<Scalar, MultiVector<Scalar>, Operator<Scalar> > > buildProblem()
 {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
-  typedef Operator<Scalar,int>         OP;
-  typedef MultiVector<Scalar,int>      MV;
-  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(*vmap,rnnzmax));
+  typedef Operator<Scalar>             OP;
+  typedef MultiVector<Scalar>          MV;
+  typedef MV::global_ordinal_type      GO;
+
+  RCP<CrsMatrix<Scalar> > A = rcp (new CrsMatrix<Scalar> (*vmap, rnnzmax));
   if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*dptr));
+        // FIXME (mfh 22 Oct 2015) This assumes that Scalar is real.
+        A->insertGlobalValues (static_cast<GO> (*rptr-1), tuple<GO> (c), tuple<Scalar> (*dptr));
         if (c != *rptr -1) {
-          A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*dptr));
+          A->insertGlobalValues (static_cast<GO> (c), tuple<GO> (*rptr-1), tuple<Scalar> (*dptr));
         }
         ++rptr;
         ++dptr;
@@ -111,7 +114,7 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
   // simple symmetry test
   // if (mptestmypid == 0) cout << endl;
   // for (int t=0; t<10; ++t) {
-  //   Vector<Scalar,int> x(A->getRangeMap()), y(x), Axy(x);
+  //   Vector<Scalar> x(A->getRangeMap()), y(x), Axy(x);
   //   x.random();
   //   y.random();
   //   Scalar d;
@@ -137,13 +140,13 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
   problem->setNEV(mptestnev);
   // diagonal preconditioner
   if (precond) {
-    Vector<Scalar,int> diags(A->getRowMap());
+    Vector<Scalar> diags(A->getRowMap());
     A->getLocalDiagCopy(diags);
     for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
       diags[i] = SCT::one() / diags[i];
     }
-    RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
+    RCP<Operator<Scalar> > P = rcp (new DiagPrecond<Scalar> (diags));
     problem->setPrec(P);
   }
   TEUCHOS_TEST_FOR_EXCEPT(problem->setProblem() == false);
@@ -154,12 +157,12 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar>
-bool runTest(double ltol, double times[], int &numIters) 
+bool runTest(double ltol, double times[], int &numIters)
 {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
-  typedef Operator<Scalar,int>         OP;
-  typedef MultiVector<Scalar,int>      MV;
+  typedef Operator<Scalar>             OP;
+  typedef MultiVector<Scalar>          MV;
 
   const Scalar ONE  = SCT::one();
   mptestpl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
@@ -171,12 +174,12 @@ bool runTest(double ltol, double times[], int &numIters)
   Time btimer("Build Timer"), ctimer("Construct Timer"), stimer("Solve Timer");
   ReturnType ret;
   if (mptestmypid==0) cout << "Building problem..." << endl;
-  { 
+  {
     TimeMonitor localtimer(btimer);
     problem = buildProblem<Scalar>();
   }
   RCP<SolverManager<Scalar,MV,OP> > solver;
-  if (mptestmypid==0) cout << "Constructing solver..." << endl; 
+  if (mptestmypid==0) cout << "Constructing solver..." << endl;
   {
     TimeMonitor localtimer(ctimer);
     solver = rcp(new LOBPCGSolMgr<Scalar,MV,OP>( problem, mptestpl));
@@ -206,10 +209,10 @@ bool runTest(double ltol, double times[], int &numIters)
     //
     Eigensolution<Scalar,MV> solution = problem->getSolution();
     int numsol = solution.numVecs;
-    RCP<const Operator<Scalar,int> > A = problem->getOperator();
-    RCP<MultiVector<Scalar,int> > X = solution.Evecs;
-    RCP<MultiVector<Scalar,int> > R = rcp(new MultiVector<Scalar,int>(*X));
-    RCP<MultiVector<Scalar,int> > XL= rcp(new MultiVector<Scalar,int>(*X));
+    RCP<const Operator<Scalar> > A = problem->getOperator();
+    RCP<MultiVector<Scalar> > X = solution.Evecs;
+    RCP<MultiVector<Scalar> > R = rcp(new MultiVector<Scalar>(*X));
+    RCP<MultiVector<Scalar> > XL= rcp(new MultiVector<Scalar>(*X));
     A->apply(*X,*R);  // R = A*X
     Array<MT> L( numsol );
     for (int i=0; i<numsol; ++i) {
@@ -238,7 +241,7 @@ bool runTest(double ltol, double times[], int &numIters)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   GlobalMPISession mpisess(&argc,&argv,&cout);
   RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
@@ -246,7 +249,7 @@ int main(int argc, char *argv[])
 
   //
   // Get test parameters from command-line processor
-  //  
+  //
   bool verbose = false, debug = false;
   mptestnev = 1;             // number of eigenpairs to find
   blockSize = 1;   // blocksize used by solver
@@ -314,7 +317,7 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  vmap = rcp(new Map<int>(dim,0,comm));
+  vmap = rcp (new Map<> (dim,0,comm));
   // create the parameter list
   if (maxiters == -1) {
     maxiters = dim/blockSize - 1; // maximum number of iterations to run
@@ -341,7 +344,7 @@ int main(int argc, char *argv[])
     cout << "Number of nonzeros: " << nnz << endl;
     cout << "NEV: " << mptestnev << endl;
     cout << "Block size used by solver: " << blockSize << endl;
-    cout << "Max number of iterations: " << maxiters << endl; 
+    cout << "Max number of iterations: " << maxiters << endl;
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
@@ -351,16 +354,6 @@ int main(int argc, char *argv[])
   double ftime[3]; int fiter; bool fpass = runTest<float>(ltol,ftime,fiter);
   ltol = (reduce_tol ? ltol*ltol : ltol);
   double dtime[3]; int diter; bool dpass = runTest<double>(ltol,dtime,diter);
-  /*
-#ifdef HAVE_TEUCHOS_QD
-  unsigned int old_cw; fpu_fix_start(&old_cw); // fix floating point rounding for intel processors; required for proper implementation
-  ltol = (reduce_tol ? ltol*ltol : ltol);
-  double ddtime[3]; int dditer; bool ddpass = runTest<dd_real>(ltol,ddtime,dditer);
-  ltol = (reduce_tol ? ltol*ltol : ltol);
-  double qdtime[3]; int qditer; bool qdpass = runTest<qd_real>(ltol,qdtime,qditer);
-  fpu_fix_end(&old_cw);                        // restore previous floating point rounding
-#endif
-  */
 
   // done with the matrix data now; delete it
   if (mptestmypid == 0) {
@@ -404,7 +397,7 @@ int main(int argc, char *argv[])
   */
 
   if (!allpass) {
-    if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;	
+    if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;
     return -1;
   }
   //

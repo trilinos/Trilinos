@@ -47,6 +47,9 @@
 #ifndef MUELU_ML2MUELUPARAMETERTRANSLATOR_HPP
 #define MUELU_ML2MUELUPARAMETERTRANSLATOR_HPP
 
+#include <functional>
+#include <cctype>
+
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 

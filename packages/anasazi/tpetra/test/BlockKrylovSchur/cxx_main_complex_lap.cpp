@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
   typedef double                              ST;
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef Tpetra::MultiVector<ST,int>         MV;
-  typedef Tpetra::Operator<ST,int>            OP;
+  typedef Tpetra::MultiVector<ST>             MV;
+  typedef MV::global_ordinal_type             GO;
+  typedef Tpetra::Operator<ST>                OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   const ST ONE  = SCT::one();
@@ -105,23 +106,23 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  RCP<const Map<int> > map = rcp (new Map<int> (dim,0,comm));
-  RCP<CrsMatrix<ST,int> > K = rcp (new CrsMatrix<ST,int> (map, 4));
+  RCP<const Map<> > map = rcp (new Map<> (dim,0,comm));
+  RCP<CrsMatrix<ST> > K = rcp (new CrsMatrix<ST> (map, 4));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
-      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
-      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
+      K->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i  ), tuple<ST>( 2));
+      K->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i+1), tuple<ST>(-1));
+      K->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i  ), tuple<ST>(-1));
+      K->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i+1), tuple<ST>( 2));
     }
   }
   else {
     for (int i=0; i<ROWS_PER_PROC-1; ++i) {
-      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
-      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
+      K->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i  ), tuple<ST>( 2));
+      K->insertGlobalValues(static_cast<GO>(base+i  ), tuple<GO>(base+i+1), tuple<ST>(-1));
+      K->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i  ), tuple<ST>(-1));
+      K->insertGlobalValues(static_cast<GO>(base+i+1), tuple<GO>(base+i+1), tuple<ST>( 2));
     }
   }
   K->fillComplete();

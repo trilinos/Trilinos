@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,7 +43,7 @@
 
 // ***********************************************************************
 //
-//      Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//      Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2004) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -74,10 +74,9 @@
 */
 
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Ifpack2_Version.hpp>
+#include "Teuchos_ConfigDefs.hpp"
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 #include <iostream>
 
 #include "Tpetra_DefaultPlatform.hpp"
@@ -85,40 +84,40 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-#include <qd/dd_real.h>
-#endif
+#include "Ifpack2_UnitTestHelpers.hpp"
+#include "Ifpack2_RILUK.hpp"
 
-#include <Ifpack2_UnitTestHelpers.hpp>
-#include <Ifpack2_RILUK.hpp>
+namespace { // (anonymous)
 
-namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 
 //this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, LO, GO)
 {
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+  //we are now in a class method declared by the above macro, and
+  //that method has these input arguments:
+  //Teuchos::FancyOStream& out, bool& success
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  using Teuchos::RCP;
+  using std::endl;
+
+  out << "Ifpack2::RILUK: Test0" << endl;
+  Teuchos::OSTab tab0 (out);
 
   global_size_t num_rows_per_proc = 5;
-
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  const RCP<const Tpetra::Map<LO,GO,Node> > rowmap =
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
   if (rowmap->getComm()->getSize() > 1) {
-    out << std::endl;
-    out << "This test may only be run in serial." << std::endl;
+    out << endl << "This test may only be run in serial." << endl;
     return;
   }
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowmap);
 
-  Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
+  Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LO,GO,Node> > prec (crsmatrix);
 
   Teuchos::ParameterList params;
   int fill_level = 1;
@@ -132,19 +131,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, Loca
   prec.initialize();
   //trivial tests to insist that the preconditioner's domain/range maps are
   //the same as those of the matrix:
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
+  const Tpetra::Map<LO,GO,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
+  const Tpetra::Map<LO,GO,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
 
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_dom_map = *prec.getDomainMap();
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_rng_map = *prec.getRangeMap();
+  const Tpetra::Map<LO,GO,Node>& prec_dom_map = *prec.getDomainMap();
+  const Tpetra::Map<LO,GO,Node>& prec_rng_map = *prec.getRangeMap();
 
-  TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true );
-  TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true );
+  TEST_ASSERT( prec_dom_map.isSameAs(mtx_dom_map) );
+  TEST_ASSERT( prec_rng_map.isSameAs(mtx_rng_map) );
 
   prec.compute();
 
-  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
-  x.putScalar(1);
+  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
   prec.apply(x, y);
 
@@ -157,24 +156,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, Loca
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, LO, GO)
 {
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+  //we are now in a class method declared by the above macro, and
+  //that method has these input arguments:
+  //Teuchos::FancyOStream& out, bool& success
 
   using Teuchos::RCP;
   using std::endl;
-  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
 
-  out << "Testing Ifpack2::RILUK" << endl;
+  out << "Ifpack2::RILUK: Test1" << endl;
 
   const global_size_t num_rows_per_proc = 5;
   RCP<const map_type> rowmap =
-    tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node> (num_rows_per_proc);
+    tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
 
   if (rowmap->getComm ()->getSize () > 1) {
     out << endl << "This test may only be run in serial or with a single MPI process." << endl;
@@ -182,7 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, Loca
   }
 
   out << "Creating matrix" << endl;
-  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
 
   out << "Creating preconditioner" << endl;
   Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
@@ -261,7 +260,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, Loca
   out << "Done with test" << endl;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, LO, GO)
 {
   // Test that ILU(k) computes correct factors in serial for fill levels 0 to 5.
   // This test does nothing in parallel.
@@ -271,35 +270,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
   // 2) Compute ILU(lof) of A.
   // 3) The incomplete factors should be equal to those of an exact LU decomposition without pivoting.
   //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
-  typedef Teuchos::ScalarTraits<Scalar>                               TST;
 
   using Teuchos::RCP;
+  using std::endl;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node>                multivector_type;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>                  crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node>                  row_matrix_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>         reader_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::Map<LO,GO,Node>                               map_type;
+  typedef Teuchos::ScalarTraits<Scalar>                         TST;
+
+  out << "Ifpack2::RILUK: FillLevel" << endl;
 
   Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
   if (comm->getSize() > 1) {
-    out << std::endl;
-    out << "This test is only meaningful in serial." << std::endl;
+    out << endl << "This test is only meaningful in serial." << endl;
     return;
   }
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
-
   global_size_t num_rows_per_proc = 10;
+  const RCP<const Tpetra::Map<LO,GO,Node> > rowmap =
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
-  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  for (GO lof=0; lof<6; ++lof) {
 
-  for (GlobalOrdinal lof=0; lof<6; ++lof) {
-
-    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap,lof+2);
+    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowmap,lof+2);
     //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
     //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm, platform.getNode());
     //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
@@ -356,12 +354,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
     TEST_EQUALITY(norms[0] < 1e-12, true);
     out << std::endl;
+  } //for (GO lof=0; lof<6; ++lof)
+} // unit test FillLevel()
 
-  } //for (GlobalOrdinal lof=0; lof<6; ++lof)
-
-} //unit test FillLevel()
-
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, Scalar, LO, GO)
 {
   // Test that ILU(k) ignores ordering of GIDs in the matrix rowmap.  This test is a virtual duplicate
   // of the test "FillLevel", with the exception that the row map GIDs are permuted.
@@ -375,56 +371,56 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
   // 2) Compute ILU(lof) of A.
   // 3) The incomplete factors should be equal to those of an exact LU decomposition without pivoting.
   //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
-  typedef Teuchos::ScalarTraits<Scalar>                               TST;
-  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
   using Teuchos::RCP;
+  using std::endl;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> multivector_type;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::Map<LO,GO,Node>                               map_type;
+  typedef Teuchos::ScalarTraits<Scalar>                         TST;
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  out << "Ifpack2::RILUK: IgnoreRowMapGIDs" << endl;
+
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform =
+    Tpetra::DefaultPlatform::getDefaultPlatform ();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
   if (comm->getSize() > 1) {
-    out << std::endl;
-    out << "This test is only meaningful in serial." << std::endl;
+    out << endl << "This test is only meaningful in serial." << endl;
     return;
   }
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
-
   global_size_t num_rows_per_proc = 10;
-
-  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  const RCP<const Tpetra::Map<LO,GO,Node> > rowMap =
+    tif_utest::create_tpetra_map<LO,GO,Node>(num_rows_per_proc);
 
   //Create a permuted row map.  The first entry is the same as the original row map,
   //the remainder are in descending order.
-  Teuchos::ArrayView<const GlobalOrdinal> GIDs = rowMap->getNodeElementList();
-  Teuchos::Array<GlobalOrdinal> permutedGIDs(GIDs.size());
-  Teuchos::Array<GlobalOrdinal> origToPerm(GIDs.size());
+  Teuchos::ArrayView<const GO> GIDs = rowMap->getNodeElementList();
+  Teuchos::Array<GO> permutedGIDs(GIDs.size());
+  Teuchos::Array<GO> origToPerm(GIDs.size());
   permutedGIDs[0] = GIDs[0];
   origToPerm[0] = 0;
-  for (GlobalOrdinal i=1; i<GIDs.size(); ++i) {
+  for (GO i=1; i<GIDs.size(); ++i) {
     permutedGIDs[i] = GIDs[GIDs.size()-i];
     origToPerm[GIDs[GIDs.size()-i]] = i;
   }
-  const LocalOrdinal indexBase = 0;
+  const LO indexBase = 0;
   Teuchos::RCP<const map_type> permRowMap = Teuchos::rcp(new map_type(INVALID, permutedGIDs(), indexBase, comm));
 
-  for (GlobalOrdinal lof=0; lof<6; ++lof) {
+  for (GO lof=0; lof<6; ++lof) {
 
-    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,lof+2);
+    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LO,GO,Node>(rowMap,lof+2);
 
     //Copy the banded matrix into a new matrix with permuted row map GIDs.
     //This matrix will have the sparsity pattern as the original matrix.
     RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
-    Teuchos::Array<GlobalOrdinal> Inds(5);
-    Teuchos::Array<GlobalOrdinal> pInds(5);
+    Teuchos::Array<GO> Inds(5);
+    Teuchos::Array<GO> pInds(5);
     Teuchos::Array<Scalar>        Vals(5);
     Teuchos::Array<Scalar>        pVals(5);
     size_t numEntries;
@@ -498,7 +494,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     result.norm2(n2);
 
     out << "||U*randvec||_2 - ||iU*randvec||_2 = " << n1[0]-n2[0] << std::endl;
-    TEST_EQUALITY(n1[0]-n2[0] < 1e-7, true);
+    {
+      typedef typename TST::magnitudeType MT;
+      // Heuristic for rounding error: machine epsilon times square
+      // root of the number of floating-point operations.
+      const MT tol = TST::eps () * TST::squareroot (static_cast<MT> (result.getGlobalLength ()));
+      TEST_ASSERT( n1[0]-n2[0] < tol );
+    }
     out << std::endl;
 
     RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
@@ -509,12 +511,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     TEST_EQUALITY(norms[0] < 1e-7, true);
     out << std::endl;
 
-  } //for (GlobalOrdinal lof=0; lof<6; ++lof)
+  } //for (GO lof=0; lof<6; ++lof)
 
 
 } //unit test IgnoreRowMapGIDs()
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency, Scalar, LO, GO)
 {
   // Test that ILU(k) throws an exception if the ordering of the GIDs
   // in the row Map is not the same as the ordering of the local GIDs
@@ -528,12 +530,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::global_size_t GST;
+
+  out << "Ifpack2::RILUK: TestGIDConsistency" << endl;
 
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
   RCP<const Teuchos::Comm<int> > comm =
@@ -543,7 +545,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
     out << endl << "This test only runs in serial." << endl;
     return;
   }
-  out << "Ifpack2::Version(): " << Ifpack2::Version () << endl;
 
   // Create matrix: 5 rows per process, 3 entries per row
   const LO indexBase = 0;
@@ -600,24 +601,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   prec.setParameters (params);
   TEST_THROW( prec.initialize (), std::runtime_error);
 
-} //unit test TestGIDConsistency()
+} // unit test TestGIDConsistency()
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, TestGIDConsistency, Scalar, LocalOrdinal, GlobalOrdinal)
+//
+// Instantiate and run unit tests
+//
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-//FIXME JJH 5/5/2014 Tpetra::MatrixMatrix::add is not instantiated for float, so instantiate FillLevel test separately
-TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, FillLevel, double, int, int)
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, Test0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, Test1, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, FillLevel, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUKSingleProcess, TestGIDConsistency, SC, LO, GO )
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
-#endif
+// FIXME (21 Oct 2015) There was a FIXME here a while back about
+// matrix-matrix add not getting instantiated for Scalar != double.
+// Need to fix that to make this test work for Scalar != double.
 
-}//namespace <anonymous>
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
+     UNIT_TEST_GROUP_SC_LO_GO( double, LO, GO )
+#else // NOT HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_LO_GO( LO, GO )
+#endif // HAVE_TPETRA_INST_DOUBLE
+
+#include "Ifpack2_ETIHelperMacros.h"
+
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+IFPACK2_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
+} // namespace (anonymous)
 
