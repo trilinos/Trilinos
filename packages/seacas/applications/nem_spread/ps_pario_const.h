@@ -36,6 +36,7 @@
 #define PS_PARIO_CONST_H
 
 #include "rf_io_const.h"
+#include <string>
 
 /* Global variables. */
 extern double   PIO_Time_Array[];		/* Vector for timings */
@@ -90,6 +91,6 @@ extern char    Par_Nem_File_Name[];        /* The parallel nemesis file name */
 
 int read_pexoII_info(const char *);
 void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
-void gen_par_filename(char *scalar_fname, char *par_fname, int proc_for, int nprocs);
+std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs);
 void add_fname_ext(char *cOrigFile, const char *cExt);
 #endif

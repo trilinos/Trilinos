@@ -152,10 +152,9 @@ int main (int argc, char *argv[])
     std::cerr << "Input Mesh File = '" << mesh_file_name << "'" << std::endl;
     int exoid=ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
     if (exoid < 0) {
-      char ctemp[1024];
-      sprintf(ctemp, "fatal: unable to open input ExodusII file %s",
-	      mesh_file_name);
-      Gen_Error(0, ctemp);
+      std::string error("fatal: unable to open input ExodusII file ");
+      error += mesh_file_name;
+      Gen_Error(0, error.c_str());
       return 0;
     }
 

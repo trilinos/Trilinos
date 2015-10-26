@@ -568,6 +568,7 @@ int generate_loadbal(Machine_Description* machine,
 
   if (sphere->num < mesh->num_elems) {
 
+    FREE_GRAPH = 0; /* Don't have Chaco to free the adjacency */
     /* now loop over the number of groups */
     for (size_t iloop = 0; iloop < nloops; iloop++) {
 
@@ -655,7 +656,6 @@ int generate_loadbal(Machine_Description* machine,
             num_level = nprocg[iloop];
 	  totalproc = nprocg[iloop];
         }
-        FREE_GRAPH = 0; /* Don't have Chaco to free the adjacency */
       }
       else {
         tmp_nv    = problem->num_vertices;
@@ -667,8 +667,6 @@ int generate_loadbal(Machine_Description* machine,
         tmp_y     = y_ptr;
         tmp_z     = z_ptr;
         tmp_v2p   = lb->vertex2proc;
-
-	FREE_GRAPH = 0;
 
         for(int cnt = 0; cnt < machine->num_dims; cnt++) 
           tmpdim[cnt] = machine->dim[cnt];
@@ -801,8 +799,9 @@ int generate_loadbal(Machine_Description* machine,
       free(tmp_adj);
     }
     free (tmp_v2p);
-    if (tmp_vwgts) free (tmp_vwgts);
-    if (tmp_ewgts) free (tmp_ewgts);
+    // FREE_GRAPH always 0 if nloops > 1
+    if (tmp_vwgts) { free (tmp_vwgts); tmp_vwgts = NULL; }
+    if (tmp_ewgts) { free (tmp_ewgts); tmp_ewgts = NULL; }
     if (tmp_x)     free (tmp_x);
     if (tmp_y)     free (tmp_y);
     if (tmp_z)     free (tmp_z);
@@ -815,12 +814,12 @@ int generate_loadbal(Machine_Description* machine,
     vec_free(weight->edges);
   }
 
-  /*
-   * If this is an elemental load balance and there are spheres present
-   * then adjust lb->vertex2proc accordingly. The spheres are then
-   * distributed linearly to processors.
-   */
   if(problem->type == ELEMENTAL) {
+    /*
+     * If this is an elemental load balance and there are spheres present
+     * then adjust lb->vertex2proc accordingly. The spheres are then
+     * distributed linearly to processors.
+     */
     if(sphere->num > 0) {
       // If type == LINEAR || SCATTERED, then the spheres were handled above (unless the model is all spheres...)
       if ((lb->type != LINEAR && lb->type != SCATTERED) || sphere->num == mesh->num_elems) {
@@ -876,9 +875,7 @@ int generate_loadbal(Machine_Description* machine,
 	}
       }
     } /* End "if(sphere->num > 0)" */
-  } /* End "if(lb->type == ELEMENTAL)" */
 
-  if(problem->type == ELEMENTAL) {
     if(problem->local_mech == 1) {
       printf("\n==============Looking For Local Issues==================\n");
 
@@ -925,15 +922,16 @@ int generate_loadbal(Machine_Description* machine,
       printf("============================================================\n");
       printf("\n");
     }
-  }
+  } // problem->type == ELEMENTAL
 
   /* since Chaco didn't free the graph, need to do it here */
-  if (FREE_GRAPH == 0) {
+  if (!FREE_GRAPH) {
     vec_free(graph->start);
     vec_free(graph->adj);
     vec_free(weight->vertices);
     vec_free(weight->edges);
   }
+  if (fp != NULL) fclose(fp);
   return 1;
 
  cleanup:
@@ -956,6 +954,7 @@ int generate_loadbal(Machine_Description* machine,
       free(tmp_adj);
     }
     free (tmp_v2p);
+    // FREE_GRAPH always zero if nloops > 1
     if (tmp_vwgts) free (tmp_vwgts);
     if (tmp_ewgts) free (tmp_ewgts);
     if (tmp_x)     free (tmp_x);
