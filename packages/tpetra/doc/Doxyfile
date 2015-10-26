@@ -58,7 +58,8 @@ INPUT                  = ../core/doc/index.doc \
                          ../core/example/Lesson03-Power-Method/index.doc \
                          ../core/example/Lesson04-Sparse-Matrix-Fill/index.doc \
                          ../core/example/Lesson05-Redistribution/index.doc \
-                         ../core/example/Lesson06-Custom-Operator/index.doc
+                         ../core/example/Lesson06-Custom-Operator/index.doc \
+                         ../core/example/Lesson07-Kokkos-Fill/index.doc
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
@@ -72,7 +73,8 @@ EXAMPLE_PATH           =  ../core/example/Lesson01-Init \
                           ../core/example/Lesson03-Power-Method \
                           ../core/example/Lesson04-Sparse-Matrix-Fill \
                           ../core/example/Lesson05-Redistribution \
-                          ../core/example/Lesson06-Custom-Operator
+                          ../core/example/Lesson06-Custom-Operator \
+                          ../core/example/Lesson07-Kokkos-Fill
 EXAMPLE_RECURSIVE       = YES
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 

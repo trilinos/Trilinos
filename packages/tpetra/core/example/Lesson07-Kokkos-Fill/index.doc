@@ -1,0 +1,18 @@
+/*!
+\page Tpetra_Lesson07 Tpetra Lesson 07: Thread-Parallel Fill
+\brief Construct a sparse matrix in paralel using Kokkos
+
+\section Tpetra_Lesson07_Topics Lesson topics
+
+This lesson shows an example of how to go from a simple finite-element
+discretization, to a linear system to solve, in a thread-parallel way,
+using Kokkos.
+
+\section Tpetra_Lesson07_Example Code example
+
+This is an example code that uses Kokkos to thread-parallelize linear
+system construction.
+
+\include 05_solve.cpp
+
+*/
