@@ -100,9 +100,6 @@ namespace Xpetra {
     //! Compute Inf-norm of this Vector.
     Teuchos::ScalarTraits<int>::magnitudeType normInf() const;
 
-    //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &weights) const;
-
     //! Compute mean (average) value of this Vector.
     int meanValue() const;
 
@@ -188,9 +185,6 @@ namespace Xpetra {
 
     //! Compute Inf-norm of each vector in multi-vector.
     void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
-
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<int,int,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<int> &means) const;

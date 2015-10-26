@@ -112,11 +112,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   out.setShowProcRank(true);
 
   // clean rows associated with boundary conditions
-  Utils::findDirichletRows(SM_Matrix_,BCrows_);
-  Utils::findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+  findDirichletRows(SM_Matrix_,BCrows_);
+  findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
   D0_Matrix_->resumeFill();
-  Utils::Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
-  Utils::Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
+  Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
+  Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
   D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -126,7 +126,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
   TMT_Matrix_->resumeFill();
-  Utils::Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
+  Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
@@ -156,7 +156,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
   A22_->resumeFill();
-  Utils::Remove_Zeroed_Rows(A22_,1.0e-16);
+  Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
 
   // Use HierarchyManagers to build 11 & 22 Hierarchies
@@ -231,8 +231,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   Teuchos::RCP<XMat> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
-  Utils::Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
-  Utils::Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
+  Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
+  Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<XMat> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
@@ -352,7 +352,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const XTMV& RHS, XTMV& X) const {
 
   // compute residuals
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   RCP<XMV> P11res    = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> P11x      = MultiVectorFactory::Build(P11_->getDomainMap(),X.getNumVectors());
   RCP<XMV> D0res     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
@@ -380,21 +380,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const X
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (1,1)-block
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -411,21 +411,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const X
   RCP<XMV> D0x       = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(),X.getNumVectors());
 
   // precondition (2,2)-block
-  RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  RCP<XMV> residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
   Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
-  residual  = Utils::Residual(*SM_Matrix_, X, RHS);
+  residual  = Utilities::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
   Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);

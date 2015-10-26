@@ -71,6 +71,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
@@ -257,12 +258,12 @@ int main(int argc, char *argv[]) {
     // (though you may avoid that in a serial run), a matrix (in a
     // MatrixMarket format), and a file with coordinates.
     if (!mapFile.empty())
-      map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
+      map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
 
-    A = Utils::Read(matrixFile, map);
+    A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, map);
 
     if (!coordFile.empty())
-      coordinates = Utils2::ReadMultiVector(coordFile, map);
+      coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(coordFile, map);
   }
 
   // For scalar equations, we assume that the constant vector is a
@@ -348,7 +349,7 @@ printf("after level print\n");
   // use any initial guess you like.
   {
     // We set seed for reproducibility
-    Utils::SetRandomSeed(*comm);
+    Utilities::SetRandomSeed(*comm);
     X->randomize();
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 

@@ -91,7 +91,7 @@ namespace MueLuTests {
         Teuchos::Array<ST::magnitudeType> finalNorms(1); X.norm2(finalNorms);
         out << "||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(25) << norms[0] << std::endl;
 
-        Teuchos::Array<ST::magnitudeType> residualNorms = Utils::ResidualNorm(A, X, RHS);
+        Teuchos::Array<ST::magnitudeType> residualNorms = Utilities::ResidualNorm(A, X, RHS);
         out << "||Residual|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorms[0] << std::endl;
 
         return residualNorms[0];

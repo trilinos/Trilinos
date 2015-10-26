@@ -48,6 +48,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
@@ -92,17 +93,17 @@ namespace MueLu {
 
     std::string    mapFile   = pL.get<std::string>("mapFileName");
     RCP<const Map> rowMap    = A->getRowMap();
-    RCP<const Map> coarseMap = Utils2::ReadMap(mapFile, rowMap->lib(), rowMap->getComm());
+    RCP<const Map> coarseMap = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMap(mapFile, rowMap->lib(), rowMap->getComm());
     Set(coarseLevel, "CoarseMap", coarseMap);
 
     std::string matrixFile = pL.get<std::string>("matrixFileName");
-    RCP<Matrix> P          = Utils::Read(matrixFile, rowMap, coarseMap, coarseMap, rowMap);
+    RCP<Matrix> P          = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(matrixFile, rowMap, coarseMap, coarseMap, rowMap);
 #if 1
     Set(coarseLevel, "P", P);
 #else
     // Expand column map by 1
-    RCP<Matrix> P1 = Utils::Multiply(*A, false, *P, false);
-    P = Utils::Read(matrixFile, rowMap, P1->getColMap(), coarseMap, rowMap);
+    RCP<Matrix> P1 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false);
+    P = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(matrixFile, rowMap, P1->getColMap(), coarseMap, rowMap);
     Set(coarseLevel, "P", P);
 #endif
 

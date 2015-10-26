@@ -49,6 +49,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_RandomVector.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
@@ -108,14 +109,11 @@ int main(int argc, char *argv[]) {
     RCP<vector> hv_rcp    = rcp( new vector(dim, 0.0) );
     RCP<vector> ihhv_rcp  = rcp( new vector(dim, 0.0) );
   
+
     RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
       (*x_rcp)[i]   = 2;
       (*k_rcp)[i]   = i+1.0;
-
-      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
     RCP<V> k = rcp(new SV(k_rcp) );
@@ -127,6 +125,10 @@ int main(int argc, char *argv[]) {
     SV v(v_rcp);
     SV hv(hv_rcp);
     SV ihhv(ihhv_rcp);
+
+    ROL::RandomizeVector( xtest, left, right );
+    ROL::RandomizeVector( d, left, right );
+    ROL::RandomizeVector( v, left, right );
 
     ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 

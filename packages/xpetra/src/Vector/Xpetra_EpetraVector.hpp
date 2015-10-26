@@ -86,7 +86,6 @@ namespace Xpetra {
     using EpetraMultiVectorT<GlobalOrdinal>::norm1;        // overloading, not hiding
     using EpetraMultiVectorT<GlobalOrdinal>::norm2;        // overloading, not hiding
     using EpetraMultiVectorT<GlobalOrdinal>::normInf;      // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::normWeighted; // overloading, not hiding
     using EpetraMultiVectorT<GlobalOrdinal>::meanValue;    // overloading, not hiding
     using EpetraMultiVectorT<GlobalOrdinal>::replaceGlobalValue;    // overloading, not hiding
     using EpetraMultiVectorT<GlobalOrdinal>::sumIntoGlobalValue;    // overloading, not hiding

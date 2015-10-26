@@ -46,6 +46,7 @@
 #ifndef MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include <Kokkos_CrsMatrix.hpp>
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
@@ -131,7 +132,7 @@ namespace MueLu {
         graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getDomainMap(), A->getRangeMap(), "graph of A"));
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        auto boundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        auto boundaryNodes = MueLu::Utilities_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DetectDirichletRows(*A, dirichletThreshold);
         graph->SetBoundaryNodeMap(boundaryNodes);
 
         numTotal = A->getNodeNumEntries();
@@ -239,5 +240,5 @@ namespace MueLu {
 
   }
 }
-
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_COALESCEDROPFACTORY_KOKKOS_DEF_HPP

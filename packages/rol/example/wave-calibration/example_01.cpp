@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
     //double num_periods=12.3456;
     int num_periods=12;
     double epsilon = 3;
-    double k=1;
+    double kappa=1;
     double phase = M_PI/7;
     double amplitude = 9.876;
 
@@ -211,8 +211,8 @@ int main(int argc, char *argv[]) {
     double mu=1.2566370614e-6;
     double c = 1./sqrt(epsilon*epsilon_0*mu);
 
-    // omega k = c
-    double omega = c/k;
+    // omega*kappa = c
+    double omega = c/kappa;
     double frequency = omega/(2*M_PI);
     double period = 1./frequency;
     double total_time = num_periods*period;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
     RealT solution_min = realmax;
     int dim = 1;
     int k_max = 20;
-    int num_points = 100;
+    int num_points = 150;
     RealT r_k(0);
     RealT sigma(4.0);
     RealT dist_to_loc(10*(omega_max-omega_min)/(k_max*num_points));
@@ -455,8 +455,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "FFT frequency:            omega_fft = " << maxomega; 
     *outStream << std::endl << "Computed optimal frequency:  omega* = " << solution_min << std::endl; 
     *outStream << std::endl << "'True' epsilon:                 eps = " << std::left << std::setprecision(8) << std::setw(12) << epsilon; 
-    *outStream << std::endl << "FFT epsilon:                eps_fft = " << 1/(pow(maxomega*k,2)*epsilon_0*mu); 
-    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow(solution_min*k,2)*epsilon_0*mu) << std::endl; 
+    *outStream << std::endl << "FFT epsilon:                eps_fft = " << 1/(pow(maxomega*kappa,2)*epsilon_0*mu); 
+    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow(solution_min*kappa,2)*epsilon_0*mu) << std::endl; 
     (*omega_vec_rcp)[0] = maxomega;
     *outStream << std::endl << "Objective value at FFT freq     val = " << cal_obj.value(omega_rol_vec, tol); 
     *outStream << std::endl << "Objective value at opt freq    val* = " << objval_min << std::endl; 

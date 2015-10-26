@@ -106,8 +106,12 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("ImportFactory<int,int>", "TpetraImport<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

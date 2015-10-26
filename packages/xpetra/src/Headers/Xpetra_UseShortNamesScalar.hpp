@@ -53,6 +53,10 @@
 typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
 #endif
 
+#ifdef XPETRA_IO_SHORT
+typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node> IO;
+#endif
+
 #ifdef XPETRA_ITERATOROPS_SHORT
 typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorOps;
 #endif

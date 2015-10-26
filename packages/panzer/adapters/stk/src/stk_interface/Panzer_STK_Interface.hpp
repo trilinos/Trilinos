@@ -1143,7 +1143,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk_classic::
 
          const double * coord = getNodeCoordinates(node->identifier());
 
-         for(int d=0;d<getDimension();d++) {
+         for(unsigned d=0;d<getDimension();d++) {
            double * solnData = stk_classic::mesh::field_data(*fields[d],*node);
  
            // recall mesh field coordinates are stored as displacements
