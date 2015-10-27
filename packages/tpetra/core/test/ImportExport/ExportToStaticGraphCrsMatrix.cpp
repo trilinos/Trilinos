@@ -634,10 +634,18 @@ main (int argc, char *argv[])
 
   typedef double ST;
   typedef int LO;
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_INT_LONG)
+#if defined (HAVE_TPETRA_INST_INT_LONG_LONG)
+  typedef long long GO;
+#elif defined (HAVE_TPETRA_INST_INT_LONG)
   typedef long GO;
-#else
+#elif defined (HAVE_TPETRA_INST_INT_INT)
   typedef int GO;
+#elif defined (HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
+  typedef unsigned long int GO;
+#elif defined (HAVE_TPETRA_INST_INT_UNSIGNED)
+  typedef unsigned int GO;
+#else
+#  error "Tpetra: Must enable at least one GlobalOrdinal type in {long long, long, int, unsigned long, unsigned} in order to build this test."
 #endif
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
