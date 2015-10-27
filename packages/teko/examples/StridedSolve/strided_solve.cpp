@@ -154,7 +154,7 @@ int main(int argc,char * argv[])
    Epetra_Vector * ptrx = 0;
 
    std::cout << "Reading matrix market file" << std::endl;
-   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",map,map,map,ptrA);
+   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm",map,map,map,ptrA);
    EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",map,ptrf);
    EpetraExt::MatrixMarketFileToVector("../data/nslhs_test.mm",map,ptrx);
 
