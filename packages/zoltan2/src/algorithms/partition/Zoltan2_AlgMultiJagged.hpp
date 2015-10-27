@@ -380,7 +380,153 @@ void uqsort(IT n, uSortItem<IT, WT> * arr)
     }
 }
 
+template <class IT, class WT, class SIGN>
+struct uSignedSortItem
+{
+    IT id;
+    //unsigned int val;
+    WT val;
+    SIGN signbit; // 1 means positive, 0 means negative.
+    bool operator<(const uSignedSortItem<IT, WT, SIGN>& rhs) const {
+      /*if I am negative, the other is positive*/
+      if (this->signbit < rhs.signbit){
+        return true;
+      }
+      /*if both has the same sign*/
+      else if (this->signbit == rhs.signbit){
 
+        if (this->val < rhs.val){//if my value is smaller,
+          return this->signbit;//then if we both are positive return true.
+                              //if we both are negative, return false.
+        }
+        else if (this->val > rhs.val){//if my value is larger,
+          return !this->signbit; //then if we both are positive return false.
+                                //if we both are negative, return true.
+        }
+        else { //if both are equal.
+          return false;
+        }
+      }
+      else {
+        /*if I am positive, the other is negative*/
+        return false;
+      }
+
+    }
+    bool operator>(const uSignedSortItem<IT, WT, SIGN>& rhs) const {
+      /*if I am positive, the other is negative*/
+      if (this->signbit > rhs.signbit){
+        return true;
+      }
+      /*if both has the same sign*/
+      else if (this->signbit == rhs.signbit){
+
+        if (this->val < rhs.val){//if my value is smaller,
+          return !this->signbit;//then if we both are positive return false.
+                              //if we both are negative, return true.
+        }
+        else if (this->val > rhs.val){//if my value is larger,
+          return this->signbit; //then if we both are positive return true.
+                                //if we both are negative, return false.
+        }
+        else { // if they are equal
+          return false;
+        }
+      }
+      else {
+        /*if I am negative, the other is positive*/
+        return false;
+      }
+    }
+    bool operator<=(const uSignedSortItem<IT, WT, SIGN>& rhs){
+      return !(*this > rhs);}
+    bool operator>=(const uSignedSortItem<IT, WT, SIGN>& rhs){
+      return !(*this  < rhs);}
+};
+
+/*! \brief Quick sort function.
+ *      Sorts the arr of uSignedSortItems, with respect to increasing vals.
+ */
+template <class IT, class WT, class SIGN>
+void uqSignsort(IT n, uSignedSortItem<IT, WT, SIGN> * arr){
+
+    IT NSTACK = 50;
+    IT M = 7;
+    IT         i, ir=n, j, k, l=1;
+    IT         jstack=0, istack[50];
+    uSignedSortItem<IT,WT,SIGN>    a, temp;
+
+    --arr;
+    for (;;)
+    {
+        if (ir < M + l)
+        {
+            for (j=l+1;j<=ir;j++)
+            {
+                a=arr[j];
+                for (i=j-1;i>=1;i--)
+                {
+                    if (arr[i] <= a)
+                    {
+                        break;
+                    }
+                    arr[i+1] = arr[i];
+                }
+                arr[i+1]=a;
+            }
+            if (jstack == 0)
+                break;
+            ir=istack[jstack--];
+            l=istack[jstack--];
+        }
+        else
+        {
+            k=(l+ir) >> 1;
+            SWAP(arr[k],arr[l+1], temp)
+            if (arr[l+1] > arr[ir])
+            {
+                SWAP(arr[l+1],arr[ir],temp)
+            }
+            if (arr[l] > arr[ir])
+            {
+                SWAP(arr[l],arr[ir],temp)
+            }
+            if (arr[l+1] > arr[l])
+            {
+                SWAP(arr[l+1],arr[l],temp)
+            }
+            i=l+1;
+            j=ir;
+            a=arr[l];
+            for (;;)
+            {
+                do i++; while (arr[i] < a);
+                do j--; while (arr[j] > a);
+                if (j < i) break;
+                SWAP(arr[i],arr[j],temp);
+            }
+            arr[l]=arr[j];
+            arr[j]=a;
+            jstack += 2;
+            if (jstack > NSTACK){
+                std::cout << "uqsort: NSTACK too small in sort." << std::endl;
+                exit(1);
+            }
+            if (ir+l+1 >= j+i)
+            {
+                istack[jstack]=ir;
+                istack[jstack-1]=i;
+                ir=j-1;
+            }
+            else
+            {
+                istack[jstack]=j-1;
+                istack[jstack-1]=l;
+                l=i;
+            }
+        }
+    }
+}
 
 /*! \brief Multi Jagged coordinate partitioning algorithm.
  *
@@ -3988,7 +4134,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
 
 
     //Allocate memory for sorting data structure.
-    uSortItem<mj_part_t, mj_gno_t> * sort_item_num_part_points_in_procs = allocMemory <uSortItem<mj_part_t, mj_gno_t> > (num_procs);
+    uSignedSortItem<mj_part_t, mj_gno_t, char> * sort_item_num_part_points_in_procs = allocMemory <uSignedSortItem<mj_part_t, mj_gno_t, char> > (num_procs);
     for(mj_part_t i = 0; i < num_parts; ++i){
         //the algorithm tries to minimize the cost of migration,
         //by assigning the processors with highest number of coordinates on that part.
@@ -3998,18 +4144,31 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
                 //if processor is not assigned yet.
                 //add its num points to the sort data structure.
                 if (processor_part_assignments[ii] == -1){
-                        sort_item_num_part_points_in_procs[ii].val =
-                                        num_points_in_all_processor_parts[ii * num_parts + i];
+                        sort_item_num_part_points_in_procs[ii].val = num_points_in_all_processor_parts[ii * num_parts + i];
+                        sort_item_num_part_points_in_procs[ii].signbit = 1; //indicate that the processor has positive weight.
                 }
                 else {
                         //if processor is already assigned, insert -nLocal - 1 so that it won't be selected again.
                         //would be same if we simply set it to -1,
                         //but more information with no extra cost (which is used later) is provided.
-                        sort_item_num_part_points_in_procs[ii].val = -num_points_in_all_processor_parts[ii * num_parts + i] - 1;
+                        //sort_item_num_part_points_in_procs[ii].val = -num_points_in_all_processor_parts[ii * num_parts + i] - 1;
+
+                        //UPDATE: Since above gets warning when unsigned is used to represent, we added extra bit to as sign bit to the sort item.
+                        //It is 1 for positives, 0 for negatives.
+                        sort_item_num_part_points_in_procs[ii].val = num_points_in_all_processor_parts[ii * num_parts + i];
+                        sort_item_num_part_points_in_procs[ii].signbit = 0;
                 }
         }
         //sort the processors in the part.
-        uqsort<mj_part_t, mj_gno_t>(num_procs, sort_item_num_part_points_in_procs);
+        uqSignsort<mj_part_t, mj_gno_t,char>(num_procs, sort_item_num_part_points_in_procs);
+
+        /*
+        for(mj_part_t ii = 0; ii < num_procs; ++ii){
+          std::cout << "ii:" << ii << " " << sort_item_num_part_points_in_procs[ii].id <<
+              " " << sort_item_num_part_points_in_procs[ii].val <<
+              " " << int(sort_item_num_part_points_in_procs[ii].signbit) << std::endl;
+        }
+        */
 
         mj_part_t required_proc_count =  num_procs_assigned_to_each_part[i];
         mj_gno_t total_num_points_in_part = global_num_points_in_parts[i];
@@ -4034,9 +4193,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
         for(mj_part_t ii = 0; ii < num_procs; ++ii){
             // TODO:  THE LINE BELOW PRODUCES A WARNING IF gno_t IS UNSIGNED
             // TODO:  SEE BUG 6194
-            if (sort_item_num_part_points_in_procs[ii].val < 0){
+            if (sort_item_num_part_points_in_procs[ii].signbit == 0){
                 did_change_sign = true;
-                sort_item_num_part_points_in_procs[ii].val = -sort_item_num_part_points_in_procs[ii].val - 1;
+                sort_item_num_part_points_in_procs[ii].signbit = 1;
             }
             else {
                 break;
@@ -4044,8 +4203,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
         }
         if(did_change_sign){
             //resort the processors in the part for the rest of the processors that is not assigned.
-            uqsort<mj_part_t, mj_gno_t>(num_procs - required_proc_count, sort_item_num_part_points_in_procs);
+            uqSignsort<mj_part_t, mj_gno_t>(num_procs - required_proc_count, sort_item_num_part_points_in_procs);
         }
+        /*
+        for(mj_part_t ii = 0; ii < num_procs; ++ii){
+          std::cout << "after resort ii:" << ii << " " << sort_item_num_part_points_in_procs[ii].id <<
+              " " << sort_item_num_part_points_in_procs[ii].val <<
+              " " << int(sort_item_num_part_points_in_procs[ii].signbit ) << std::endl;
+        }
+        */
 
         //check if this processors is one of the procs assigned to this part.
         //if it is, then get the group.
@@ -4166,7 +4332,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
     freeArray<mj_part_t>(part_assignment_proc_begin_indices);
     freeArray<mj_part_t>(processor_chains_in_parts);
     freeArray<mj_part_t>(processor_part_assignments);
-    freeArray<uSortItem<mj_part_t, mj_gno_t> > (sort_item_num_part_points_in_procs);
+    freeArray<uSignedSortItem<mj_part_t, mj_gno_t, char> > (sort_item_num_part_points_in_procs);   
     freeArray<mj_part_t > (num_procs_assigned_to_each_part);
 
 }
