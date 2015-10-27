@@ -2260,9 +2260,12 @@ void AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box()
     mj_scalar_t *gmaxs = allocMemory<mj_scalar_t>(this->coord_dim);
 
     for (int i = 0; i < this->coord_dim; ++i){
-        mj_scalar_t localMin = this->mj_coordinates[i][0];
-        mj_scalar_t localMax = this->mj_coordinates[i][0];
-        for (mj_lno_t j = 1; j < this->num_local_coords; ++j){
+        mj_scalar_t localMin = std::numeric_limits<mj_scalar_t>::max();
+        mj_scalar_t localMax = -localMin;
+        if (localMax > 0) localMax = 0;
+
+
+        for (mj_lno_t j = 0; j < this->num_local_coords; ++j){
             if (this->mj_coordinates[i][j] < localMin){
                 localMin = this->mj_coordinates[i][j];
             }
@@ -2274,14 +2277,18 @@ void AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box()
         //cout << " localMax:" << localMax << endl;
         mins[i] = localMin;
         maxs[i] = localMax;
+
     }
     reduceAll<int, mj_scalar_t>(*this->comm, Teuchos::REDUCE_MIN,
             this->coord_dim, mins, gmins
     );
 
+
     reduceAll<int, mj_scalar_t>(*this->comm, Teuchos::REDUCE_MAX,
             this->coord_dim, maxs, gmaxs
     );
+
+
 
     //create single box with all areas.
     global_box = rcp(new mj_partBox_t(0,this->coord_dim,gmins,gmaxs));
