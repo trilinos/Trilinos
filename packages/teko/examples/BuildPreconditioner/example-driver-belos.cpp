@@ -122,7 +122,7 @@ int main(int argc,char * argv[])
 
    // read in the CRS matrix
    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
-   RCP<TP_Op> Mat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac_test.mm",
+   RCP<TP_Op> Mat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac.mm",
                                                                          Teuchos::DefaultComm<int>::getComm(),
                                                                          node);
 

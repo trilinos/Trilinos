@@ -99,7 +99,7 @@ int main(int argc,char * argv[])
 
    // Read in the matrix, store pointer as an RCP
    Epetra_CrsMatrix * ptrA = 0;
-   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",Comm,ptrA);
+   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm",Comm,ptrA);
    RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
    // read in the RHS vector
