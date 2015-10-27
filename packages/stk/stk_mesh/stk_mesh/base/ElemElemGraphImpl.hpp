@@ -87,6 +87,7 @@ struct ShellConnectivityData
     int                 m_nearElementProc;
     stk::mesh::EntityId m_shellElementId;
     stk::mesh::EntityId m_farElementId;
+    int                 m_farElementSide;
     int                 m_farElementProc;
     bool                m_farElementIsRemote;
 };
@@ -160,9 +161,6 @@ bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity el
 stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
         stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
-
-stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
-        int element1_side_id);
 
 void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
                                           stk::mesh::Entity localElement,

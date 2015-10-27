@@ -474,27 +474,6 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     return side;
 }
 
-stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
-        int element1_side_id)
-{
-    stk::mesh::EntityId element1_global_id = bulkData.identifier(element1);
-    stk::mesh::EntityId element2_global_id = bulkData.identifier(element2);
-    stk::mesh::EntityId side_global_id = 0;
-
-    if(element1_global_id < element2_global_id)
-    {
-        side_global_id = get_element_side_multiplier() * element1_global_id + element1_side_id;
-    }
-    else
-    {
-        int side_id = elementGraph.get_side_from_element1_to_locally_owned_element2(element2, element1);
-        ThrowRequireMsg(side_id != -1, "Program error. Contact sierra-help@sandia.gov for support.");
-        side_global_id = get_element_side_multiplier() * element2_global_id + side_id;
-    }
-
-    return side_global_id;
-}
-
 void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
 {
     const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
@@ -625,7 +604,7 @@ void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology to
         elem_sides.assign(num_sides, -1);
         for(size_t j=0; j<graph.get_num_edges_for_element(elementId); ++j)
         {
-            stk::mesh::GraphEdge graphEdge = graph.get_edge_for_element(elementId, j);
+            const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
             int sideId = graphEdge.side1;
             elem_sides[sideId] = sideId;
         }

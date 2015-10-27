@@ -1253,7 +1253,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
         for(size_t j = 0; j < elemElemGraph.get_graph().get_num_edges_for_element(this_element); ++j)
         {
-            stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(this_element, j);
+            const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(this_element, j);
             if(this_element < graphEdge.elem2 && graphEdge.elem2 >= 0)
             {
                 stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + graphEdge.side1;
@@ -1442,7 +1442,7 @@ TEST(ElementGraph, create_element_graph_serial)
             if (i == 0)
             {
                 ASSERT_EQ(1u, numConnected);
-                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
                 EXPECT_EQ(1, graphEdge.elem2);
                 EXPECT_EQ(right_side_id, graphEdge.side1);
             }
@@ -1450,7 +1450,7 @@ TEST(ElementGraph, create_element_graph_serial)
             {
                 LocalId second_to_last_element_index = elemElemGraph.get_graph().get_num_elements_in_graph() - 2;
                 ASSERT_EQ(1u, numConnected);
-                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 0);
                 EXPECT_EQ(second_to_last_element_index, graphEdge.elem2);
                 EXPECT_EQ(left_side_id, graphEdge.side1);
             }
@@ -1459,8 +1459,8 @@ TEST(ElementGraph, create_element_graph_serial)
                 ASSERT_EQ(2u, numConnected);
                 LocalId element_to_the_left = i-1;
                 LocalId element_to_the_right = i+1;
-                stk::mesh::GraphEdge graphEdge0 = elemElemGraph.get_graph().get_edge_for_element(i, 0);
-                stk::mesh::GraphEdge graphEdge1 = elemElemGraph.get_graph().get_edge_for_element(i, 1);
+                const stk::mesh::GraphEdge & graphEdge0 = elemElemGraph.get_graph().get_edge_for_element(i, 0);
+                const stk::mesh::GraphEdge & graphEdge1 = elemElemGraph.get_graph().get_edge_for_element(i, 1);
                 EXPECT_EQ(element_to_the_left, graphEdge0.elem2);
                 EXPECT_EQ(element_to_the_right, graphEdge1.elem2);
                 EXPECT_EQ(left_side_id, graphEdge0.side1);
@@ -1546,7 +1546,7 @@ TEST(ElementGraph, create_element_graph_parallel)
             {
                 // Element on parallel boundary
                 ASSERT_EQ(2u, numConnectedElements);
-                stk::mesh::GraphEdge graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 1);
+                const stk::mesh::GraphEdge & graphEdge = elemElemGraph.get_graph().get_edge_for_element(i, 1);
                 ASSERT_GE(-1, graphEdge.elem2);
                 ASSERT_EQ(side_id, graphEdge.side1);
             }
@@ -1621,15 +1621,16 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
+        const int other_side_ord = 2;
+
         stk::mesh::Graph graph;
         graph.set_num_local_elements(2);
-        graph.add_connection_via_side(0, 4, 1);
-        graph.add_connection_via_side(1, 1, 0);
-        graph.add_connection_via_side(1, 5, -3);
+        graph.add_edge(stk::mesh::GraphEdge(0, 4, 1, 1));
+        graph.add_edge(stk::mesh::GraphEdge(1, 1, 0, 4));
+        graph.add_edge(stk::mesh::GraphEdge(1, 5, -3, other_side_ord));
 
         ParallelGraphInfo parallel_graph_info;
         int other_proc = 1;
-        int other_side_ord = 2;
         LocalId local_element = 1;
         LocalId other_element = 3;
         int permutation = 0;
@@ -6830,7 +6831,11 @@ TEST_F(TwoElemTwoSharedSideTester, DISABLED_skin_mesh)
 {
      if(bulkData.parallel_size() <= 2)
      {
-         stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
+         {
+             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
+             elem_elem_graph.skin_mesh({&activePart, &skinPart});
+         }
+         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
          test_skinned_mesh(bulkData);
      }
 }
@@ -6841,7 +6846,14 @@ TEST_F(TwoElemTwoSharedSideTester, DISABLED_skin_one_hex)
      {
          remove_element_from_part(bulkData, 2, activePart);
          stk::mesh::Selector activeSelector = activePart;
-         stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
+         {
+             stk::mesh::Selector sel = activeSelector;
+             stk::mesh::Selector air = !activeSelector;
+
+             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
+             elem_elem_graph.skin_mesh({&activePart, &skinPart});
+         }
+         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
          test_skinned_1_hex(bulkData);
      }
 }

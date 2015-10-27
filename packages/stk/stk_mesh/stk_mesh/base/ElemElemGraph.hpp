@@ -38,11 +38,45 @@ struct GraphEdge
     GraphEdge(impl::LocalId e1, int s1, impl::LocalId e2, int s2) :
         elem1(e1), elem2(e2), side1(s1), side2(s2)
     {}
+    GraphEdge() :
+        elem1(std::numeric_limits<impl::LocalId>::max()), elem2(std::numeric_limits<impl::LocalId>::max()), side1(-1), side2(-1)
+    {}
     impl::LocalId elem1;
     impl::LocalId elem2;
     int side1;
     int side2;
 };
+
+struct GraphEdgeLessByElem2 {
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        if (a.elem2 != b.elem2)
+        {
+            return a.elem2 < b.elem2;
+        }
+        else if (a.side2 != b.side2)
+        {
+            return a.side2 < b.side2;
+        }
+        else if (a.elem1 != b.elem1)
+        {
+            return a.elem1 < b.elem1;
+        }
+        else
+        {
+            return a.side1 < b.side1;
+        }
+    }
+};
+
+inline
+bool operator==(const GraphEdge& a, const GraphEdge& b)
+{
+    return  a.elem1 == b.elem1 &&
+            a.side1 == b.side1 &&
+            a.elem2 == b.elem2 &&
+            a.side2 == b.side2;
+}
 
 GraphEdge create_symmetric_edge(const GraphEdge& graphEdge);
 
@@ -54,18 +88,17 @@ public:
     size_t get_num_elements_in_graph() const;
     size_t get_num_edges() const;
     size_t get_num_edges_for_element(impl::LocalId elem) const;
-    GraphEdge get_edge_for_element(impl::LocalId elem1, size_t index) const;
+    const GraphEdge & get_edge_for_element(impl::LocalId elem1, size_t index) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
-    void change_connection_at_index(impl::LocalId elem, int index, impl::LocalId connectedElem);
-    void add_connection_via_side(impl::LocalId elem, int viaSide, impl::LocalId connectedElem);
+
+    void add_edge(const GraphEdge &graphEdge);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_connections(impl::LocalId elem);
     void change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, impl::LocalId newElem2Id);
 private:
-    impl::ElementGraph m_elem_graph;
-    impl::SidesForElementGraph m_via_sides;
-    size_t m_num_edges = 0;
+    std::vector<std::vector<GraphEdge> > m_graphEdges;
+    size_t m_numEdges = 0;
 };
 
 class ElemElemGraph
@@ -146,7 +179,7 @@ protected:
                                               const stk::mesh::EntityVector & sideNodes,
                                               impl::ConnectedElementDataVector & connectedElementDataVector) const;
 
-    void get_element_side_pairs(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<impl::ElementSidePair> &elem_side_pairs) const;
+    void get_element_side_pairs(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges) const;
 
     stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
                                                                 stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
@@ -230,7 +263,7 @@ private:
     stk::mesh::EntityId convert_negative_local_id_to_remote_global_id(impl::LocalId remoteElementId) const;
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
-    void add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
+    void add_both_edges_between_local_elements(const GraphEdge& graphEdge);
     void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id);
     void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
