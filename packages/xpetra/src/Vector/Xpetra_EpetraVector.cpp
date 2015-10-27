@@ -87,17 +87,6 @@ namespace Xpetra {
   Teuchos::ScalarTraits<double>::magnitudeType EpetraVectorT<EpetraGlobalOrdinal>::normInf() const { XPETRA_MONITOR("EpetraVectorT::normInf"); double r; this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormInf(&r); return r; }
 
   template<class EpetraGlobalOrdinal>
-  Teuchos::ScalarTraits<double>::magnitudeType
-  EpetraVectorT<EpetraGlobalOrdinal>::normWeighted (const Vector<double,int,GlobalOrdinal, KokkosClassic::DefaultNode::DefaultNodeType>& weights) const
-  {
-    XPETRA_MONITOR("EpetraVectorT::normWeighted");
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT, weights, tWeights, "This Xpetra::EpetraVectorT method only accept Xpetra::EpetraVectorT as input arguments.");
-    double r[1];
-    this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), r);
-    return r[0];
-  }
-
-  template<class EpetraGlobalOrdinal>
   double EpetraVectorT<EpetraGlobalOrdinal>::meanValue() const {
     XPETRA_MONITOR("EpetraVectorT::meanValue");
     double r;

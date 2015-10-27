@@ -1,4 +1,7 @@
-IF (Tpetra_INST_INT_LONG)
+# FIXME (mfh 27 Sep 2015) The test actually uses GO = int.  We should
+# just make the test independent of the particular GO value -- it
+# shouldn't matter, since the test cases are small.
+IF (Tpetra_INST_INT_LONG AND Tpetra_INST_INT_INT)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES 

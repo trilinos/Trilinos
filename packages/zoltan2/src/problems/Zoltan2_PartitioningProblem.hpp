@@ -103,7 +103,6 @@ class PartitioningProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
@@ -121,7 +120,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -137,7 +136,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -153,7 +152,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -219,6 +218,19 @@ public:
       return metrics_->getMetrics();
   }
 
+  /*! \brief Get the array of graphMetrics
+   *   Graph metrics were only computed if user requested
+   *   graph metrics with a parameter.
+   */
+  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
+   if (graphMetrics_.is_null()){
+      ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
+      return emptyMetrics;
+    }
+    else
+      return graphMetrics_->getGraphMetrics();
+  }
+
   /*! \brief Print the array of metrics
    *   \param os the output stream for the report.
    *   Metrics were only computed if user requested
@@ -229,6 +241,18 @@ public:
       os << "No metrics available." << std::endl;
     else
       metrics_->printMetrics(os);
+  };
+
+  /*! \brief Print the array of metrics
+   *   \param os the output stream for the report.
+   *   Metrics were only computed if user requested
+   *   metrics with a parameter.
+   */
+  void printGraphMetrics(std::ostream &os) const {
+    if (graphMetrics_.is_null())
+      os << "No metrics available." << std::endl;
+    else
+      graphMetrics_->printMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
@@ -376,6 +400,7 @@ private:
 
   bool metricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
+  RCP<const GraphPartitioningSolutionQuality<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -503,10 +528,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // TODO: If hierarchical_
 
   // Create the solution. The algorithm will query the Solution
-  //   for part and weight information. The algorithm will
-  //   update the solution with part assignments and quality
-  //   metrics.  The Solution object itself will convert our internal
-  //   global numbers back to application global Ids if needed.
+  // for part and weight information. The algorithm will
+  // update the solution with part assignments and quality metrics. 
 
   // Create the algorithm
   try {
@@ -538,6 +561,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algName_ == std::string("block")) {
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          problemComm_, this->identifierModel_));
+    }
+    else if (algName_ == std::string("forTestingOnly")) {
+      this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
     }
     // else if (algName_ == std::string("rcb")) {
     //  this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_,problemComm_,
@@ -616,6 +644,20 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     Z2_FORWARD_EXCEPTIONS
 
     metrics_ = rcp(quality);
+
+    if (modelAvail_[GraphModelType] == true){
+      typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
+
+      gpsq_t *graphQuality = NULL;
+
+      try{
+	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
+			     this->baseInputAdapter_, solutionConst);
+      }
+      Z2_FORWARD_EXCEPTIONS
+
+      graphMetrics_ = rcp(graphQuality);
+    }
   }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
@@ -725,10 +767,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[IdentifierModelType] = true;
 
       algName_ = algorithm;
-      needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("zoltan") ||
-	     algorithm == std::string("parma"))
+	     algorithm == std::string("parma") ||
+	     algorithm == std::string("forTestingOnly"))
     {
       algName_ = algorithm;
     }
@@ -778,7 +820,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         modelAvail_[HypergraphModelType]=true;
       }
       algName_ = algorithm;
-      needConsecutiveGlobalIds = true;
     }
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
     else if (algorithm == std::string("nd"))
@@ -806,7 +847,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         algName_ = std::string("phg"); 
       else
         algName_ = std::string("patoh"); 
-      needConsecutiveGlobalIds = true;
     }
     else if (model == std::string("graph"))
     {
@@ -833,8 +873,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         algName_ = std::string("phg"); 
       else
         algName_ = std::string("patoh"); 
-      removeSelfEdges = true;
-      needConsecutiveGlobalIds = true;
 #endif
 #endif
     }
@@ -851,7 +889,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[IdentifierModelType]=true;
 
       algName_ = std::string("block");
-      needConsecutiveGlobalIds = true;
     }
     else
     {
@@ -969,15 +1006,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       sgParameter = pe->getValue<int>(&sgParameter);
 
     if (sgParameter == 1)
-        graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
+        graphFlags_.set(BUILD_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
     
     if (removeSelfEdges)
-      graphFlags_.set(SELF_EDGES_MUST_BE_REMOVED);
+      graphFlags_.set(REMOVE_SELF_EDGES);
 
     if (needConsecutiveGlobalIds)
-      graphFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      graphFlags_.set(GENERATE_CONSECUTIVE_IDS);
 
     // How does user input map to vertices and edges?
 
@@ -1006,8 +1043,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any special behaviors required by the algorithm?
     
-    if (needConsecutiveGlobalIds)
-      idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   }
   //  else if (modelType_ == CoordinateModelType)
   if (modelAvail_[CoordinateModelType]==true)
@@ -1015,8 +1050,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any special behaviors required by the algorithm?
     
-    if (needConsecutiveGlobalIds)
-      coordFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   }
 
 

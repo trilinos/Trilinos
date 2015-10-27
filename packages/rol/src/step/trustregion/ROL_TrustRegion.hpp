@@ -104,29 +104,29 @@ public:
   TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(ROL_OVERFLOW), cnt_(0) {
     // Unravel Parameter List
     // Trust-Region Parameters
-    delmax_ = parlist.get("Maximum Trust-Region Radius",          5000.0);
-    eta0_   = parlist.get("Step Acceptance Parameter",            0.05);
-    eta1_   = parlist.get("Radius Shrinking Threshold",           0.05);
-    eta2_   = parlist.get("Radius Growing Threshold",             0.9);
-    gamma0_ = parlist.get("Radius Shrinking Rate (Negative rho)", 0.0625);
-    gamma1_ = parlist.get("Radius Shrinking Rate (Positive rho)", 0.25);
-    gamma2_ = parlist.get("Radius Growing Rate",                  2.5);
-    TRsafe_ = parlist.get("Trust-Region Safeguard",               100.0);
+    delmax_ = parlist.sublist("Step").sublist("Trust Region").get("Maximum Radius",5000.0);
+    eta0_   = parlist.sublist("Step").sublist("Trust Region").get("Step Acceptance Threshold",0.05);
+    eta1_   = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Threshold",0.05);
+    eta2_   = parlist.sublist("Step").sublist("Trust Region").get("Radius Growing Threshold",0.9);
+    gamma0_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Negative rho)",0.0625);
+    gamma1_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Positive rho)",0.25);
+    gamma2_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Growing Rate",2.5);
+    TRsafe_ = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
     eps_    = TRsafe_*ROL_EPSILON;
 
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-    scale_       = parlist.get("Value Update Tolerance Scaling",1.e-1);
-    omega_       = parlist.get("Value Update Exponent",0.9);
-    force_       = parlist.get("Value Update Forcing Sequence Initial Value",1.0);
-    updateIter_  = parlist.get("Value Update Forcing Sequence Update Frequency",10);
-    forceFactor_ = parlist.get("Value Update Forcing Sequence Reduction Factor",0.1);
+    useInexact_.push_back(parlist.sublist("General").get("Inexact Objective Function", false));
+    useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
+    useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
+    scale_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Tolerance Scaling",1.e-1);
+    omega_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Exponent",0.9);
+    force_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Initial Value",1.0);
+    updateIter_  = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",10);
+    forceFactor_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",0.1);
 
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);  
+    softUp_ = parlist.sublist("General").get("Variable Objective Function",false);  
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -191,8 +191,8 @@ public:
     }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed  -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
-    pRed_ -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed  -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    pRed_ -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = 1.0; 
@@ -330,9 +330,6 @@ public:
 
 }
 
-#include "ROL_CauchyPoint.hpp"
-#include "ROL_DogLeg.hpp"
-#include "ROL_DoubleDogLeg.hpp"
-#include "ROL_TruncatedCG.hpp"
+#include "ROL_TrustRegionFactory.hpp"
 
 #endif

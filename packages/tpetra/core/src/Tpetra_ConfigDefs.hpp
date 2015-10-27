@@ -192,8 +192,22 @@ namespace Tpetra {
       typedef double scalar_type;
       //! Default value of LocalOrdinal template parameter.
       typedef int local_ordinal_type;
-      //! Default value of GlobalOrdinal template parameter.
+
+      /// \typedef global_ordinal_type
+      /// \brief Default value of GlobalOrdinal template parameter.
+#if defined(HAVE_TPETRA_INST_INT_INT)
       typedef int global_ordinal_type;
+#elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+      typedef long long global_ordinal_type;
+#elif defined(HAVE_TPETRA_INST_INT_LONG)
+      typedef long global_ordinal_type;
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
+      typedef unsigned long global_ordinal_type;
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
+      typedef unsigned global_ordinal_type;
+#else
+#  error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
+#endif
       //! Default value of Node template parameter.
       typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
     } // namespace DefaultTypes
@@ -337,9 +351,7 @@ namespace Tpetra {
 #define TPETRA_USE_KOKKOS_DISTOBJECT 0
 #endif
 
-
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#  include <Kokkos_Complex.hpp>
+#include <Kokkos_Complex.hpp>
 
 // Specializations of Teuchos::SerializationTraits for
 // Kokkos::complex<{float,double}>.
@@ -355,7 +367,5 @@ namespace Teuchos {
     : public DirectSerializationTraits<Ordinal, ::Kokkos::complex<double> >
   {};
 } // namespace Teuchos
-
-#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 
 #endif // TPETRA_CONFIGDEFS_HPP

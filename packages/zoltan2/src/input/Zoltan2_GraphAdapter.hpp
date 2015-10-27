@@ -70,14 +70,10 @@ enum GraphEntityType {
     such as Tpetra and Epetra objects and C-language pointers to arrays.
 
     Data types:
-    \li \c scalar_t vertex and edge weights 
+    \li \c scalar_t vertex and edge weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c zgid_t    application global Ids
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
-
-    See IdentifierTraits to understand why the user's global ID type (\c zgid_t)
-    may differ from that used by Zoltan2 (\c gno_t).
+    \li \c node_t   is a Kokkos Node type
 
     The Kokkos node type can be safely ignored.
 
@@ -119,10 +115,9 @@ private:
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
   typedef UserCoord userCoord_t;
@@ -154,31 +149,31 @@ public:
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
    */
-  virtual void getVertexIDsView(const zgid_t *&vertexIds) const = 0; 
+  virtual void getVertexIDsView(const gno_t *&vertexIds) const = 0;
 
   /*! \brief Gets adjacency lists for all vertices in a compressed
              sparse row (CSR) format.
-      \param offsets is an array of size getLocalNumVertices() + 1.  
-         The neighboring vertices for vertexId[i] 
-         begin at adjIds[offsets[i]].  
+      \param offsets is an array of size getLocalNumVertices() + 1.
+         The neighboring vertices for vertexId[i]
+         begin at adjIds[offsets[i]].
           The last element of offsets is the size of the adjIds array.
       \param adjIds on return will point to the array of adjacent vertices for
          for each vertex.
    */
   virtual void getEdgesView(const lno_t *&offsets,
-                            const zgid_t *&adjIds) const = 0;
-       
+                            const gno_t *&adjIds) const = 0;
+
   /*! \brief Returns the number (0 or greater) of weights per vertex
    */
   virtual int getNumWeightsPerVertex() const { return 0; }
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
       \param weights is the list of weights of the given index for
-           the vertices returned in getVertexIDsView().  
+           the vertices returned in getVertexIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
-  virtual void getVertexWeightsView(const scalar_t *&weights, int &stride, 
+  virtual void getVertexWeightsView(const scalar_t *&weights, int &stride,
                                     int idx = 0) const
   {
     weights = NULL;
@@ -191,7 +186,7 @@ public:
    *         global degree of the vertex
    */
   virtual bool useDegreeAsVertexWeight(int idx) const
-  { 
+  {
     return false;
   }
 
@@ -199,7 +194,7 @@ public:
    */
   virtual int getNumWeightsPerEdge() const { return 0; }
 
-  /*! \brief  Provide a pointer to the edge weights, if any.  
+  /*! \brief  Provide a pointer to the edge weights, if any.
       \param weights is the list of weights of the given index for
            the edges returned in getEdgeView().
       \param stride The k'th weight is located at weights[stride*k]
@@ -313,15 +308,15 @@ public:
       return getLocalNumEdges();
    }
 
-  void getIDsView(const zgid_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const {
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       getVertexIDsView(Ids);
     else {
-      // TODO:  Need getEdgeIDsView?  What is an Edge ID?  
-      // TODO:  std::pair<zgid_t, zgid_t>?
+      // TODO:  Need getEdgeIDsView?  What is an Edge ID?
+      // TODO:  std::pair<gno_t, gno_t>?
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  getIDsView not yet supported for graph edges." 
+           << " error:  getIDsView not yet supported for graph edges."
            << std::endl;
       throw std::runtime_error(emsg.str());
     }
@@ -338,11 +333,11 @@ public:
     if (getPrimaryEntityType() == GRAPH_VERTEX)
       getVertexWeightsView(wgt, stride, idx);
     else {
-      // TODO:  Need getEdgeWeightsView that lets Edges be primary object? 
+      // TODO:  Need getEdgeWeightsView that lets Edges be primary object?
       // TODO:  That is, get edge weights based on some Edge ID.
       std::ostringstream emsg;
       emsg << __FILE__ << "," << __LINE__
-           << " error:  getWeightsView not yet supported for graph edges." 
+           << " error:  getWeightsView not yet supported for graph edges."
            << std::endl;
       throw std::runtime_error(emsg.str());
     }

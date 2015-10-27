@@ -225,9 +225,7 @@ FillableMat::operator==(const FillableMat& rhs) const
     this_it = begin(),
     this_end = end();
 
-  FillableMat::const_iterator
-    rhs_it = rhs.begin(),
-    rhs_end = rhs.end();
+  FillableMat::const_iterator rhs_it = rhs.begin();
 
   for(; this_it != this_end; ++this_it, ++rhs_it) {
     int this_row = this_it->first;

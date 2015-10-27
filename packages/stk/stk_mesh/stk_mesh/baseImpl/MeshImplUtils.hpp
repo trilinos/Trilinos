@@ -375,22 +375,25 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
                                               ShellStatus  shell_status)
 {
     bool should_connect = false;
-    const std::pair<bool, unsigned> equiv_result = element_side_topology.equivalent(face_nodes, element_side_nodes);
-    const bool nodes_match = equiv_result.first;
-    if (nodes_match) {
-       if (NO_SHELLS == shell_status) {
-           should_connect = true;
-       }
-       else {
-           const unsigned permutation_of_element_side = equiv_result.second;
-           const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
-           if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
-               should_connect = !element_side_polarity_matches_face_nodes;
+    if(face_nodes.size() == element_side_nodes.size()) 
+    {
+        const std::pair<bool, unsigned> equiv_result = element_side_topology.equivalent(face_nodes, element_side_nodes);
+        const bool nodes_match = equiv_result.first;
+        if (nodes_match) {
+           if (NO_SHELLS == shell_status) {
+               should_connect = true;
            }
-           else { // YES_SHELLS_BOTH_SHELS_OR_BOTH_SOLIDS
-               should_connect = element_side_polarity_matches_face_nodes;
+           else {
+               const unsigned permutation_of_element_side = equiv_result.second;
+               const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
+               if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
+                   should_connect = !element_side_polarity_matches_face_nodes;
+               }
+               else { // YES_SHELLS_BOTH_SHELS_OR_BOTH_SOLIDS
+                   should_connect = element_side_polarity_matches_face_nodes;
+               }
            }
-       }
+        }
     }
     return should_connect;
 }

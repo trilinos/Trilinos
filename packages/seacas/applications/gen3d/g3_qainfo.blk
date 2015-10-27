@@ -39,36 +39,9 @@ C     there are any changes to any routines, this routine should also
 C     be committed.  The assignment to QAINFO(I) strips off the 'Revision'
 C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
       
-      CVSREV = '$Revision: 1.38 $'
-      CVSDAT = '$Date: 2015/09/09 10:06:56 $'
-
-      QAINFO(1) = 'Gen3DII '
+      QAINFO(1) = 'Gen3DII                         '
       QAINFO(2) = '                                '
       QAINFO(3) = '                                '
-      if (cvsrev(1:1) .eq. '$') then
-         LREV = LENSTR(CVSREV) - 12
-         QAINFO(2) = CVSDAT(10:17)
-         QAINFO(3)(MAX(1,8-LREV):8) = CVSREV(12:11+LREV)
-      else
-         lrev = lenstr(cvsrev)
-         QAINFO(2) = CVSDAT(3:10)
-         QAINFO(3)(MAX(1,9-LREV):8) = CVSREV(1:LREV)
-      end if
-C........
-C.ExodusII version. The gen3d repository was copied over to gen3d2 for this
-C change so that some history could be maintained.
-c....
-c.Fixed front/back sidesets on center blocks (I think)
-c.fix problem with previous fix
-c.Fix 3d map generation -- just generate dummy map which is all the old one did when it worked
-c.Move qa/info output to before expini.
-c.Fixed back sideset problem
-c.Added error checks to all exp* calls
-c.Fixed if no ss nor nset dist factors on input database
-c.Fixed interval gradient initialization in arc* files
-c.Fixed maxint in gradients; fixed 360 degree rotation in exparc
-c.Increased maxint, maxfld at request of goodyear
-c.Increased max front/back side/nodesets
-c.Fixed getint
-c Allow tunnel for rotate
-c fix sideset df issue 
+      QAINFO(2)(:8) = '20150928'
+      QAINFO(3)(:8) = ' 1.39   '
+      

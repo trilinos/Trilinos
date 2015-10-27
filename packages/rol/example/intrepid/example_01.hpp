@@ -87,10 +87,9 @@ class TrackingObjective : public Objective_SimOpt<Real> {
     void applyMass(V &Mv, const V &v) {
 
       using Teuchos::dyn_cast;
-      using Teuchos::rcp_const_cast;
 
-      RCP<vec> Mvp = rcp_const_cast<vec>((dyn_cast<SV>(Mv)).getVector()); 
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+      RCP<vec> Mvp = dyn_cast<SV>(Mv).getVector(); 
+      RCP<const vec> vp = dyn_cast<const SV>(v).getVector();
 
       for(int cell=0;cell<numCells_;++cell) {
         for(int rfield=0;rfield<numFields_;++rfield) {
@@ -232,7 +231,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
     void vec2mat(RCP<Matrix> &m, const V &v) {
 
       using Teuchos::dyn_cast;
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+      RCP<const vec> vp = dyn_cast<const SV>(v).getVector();
 
       for(int i=0;i<nDoF_;++i) {
         (*m)(i,0) = (*vp)[i];  
@@ -245,7 +244,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
        using Teuchos::dyn_cast;
        using Teuchos::rcp_const_cast;
 
-       RCP<vec> vp = rcp_const_cast<vec>((dyn_cast<SV>(v)).getVector()); 
+       RCP<vec> vp = (dyn_cast<SV>(v)).getVector(); 
        
        for(int i=0;i<nDoF_;++i) {
          (*vp)[i] = (*m)(i,0);   
@@ -257,7 +256,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
     void gather(FC<ScalarT> &fc, const V& v) {
 
       using Teuchos::dyn_cast;
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+      RCP<const vec> vp = dyn_cast<const SV>(v).getVector();
 
       for(int cell=0;cell<numCells_;++cell) {
         for(int field=0;field<numFields_;++field) {
@@ -328,20 +327,19 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
     void applyAdjointHessian(V &ahwv, const V &w, const V &v, 
                              const V  &u, const V &z, var one, var two )  {
 
-      using Teuchos::rcp_const_cast;     
       using Teuchos::dyn_cast;
 
       typedef Sacado::Fad::SFad<Real,1> SFad;
       typedef Sacado::Fad::DFad<SFad>   DSFad;
 
-      RCP<vec> ahwvp = rcp_const_cast<vec>((dyn_cast<SV>(ahwv)).getVector());
+      RCP<vec> ahwvp = dyn_cast<SV>(ahwv).getVector();
 
       std::fill(ahwvp->begin(),ahwvp->end(),0.0);
 
-      RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
-      RCP<const vec> wp = (dyn_cast<SV>(const_cast<V &>(w))).getVector();
-      RCP<const vec> up = (dyn_cast<SV>(const_cast<V &>(u))).getVector();
-      RCP<const vec> zp = (dyn_cast<SV>(const_cast<V &>(z))).getVector();
+      RCP<const vec> vp = (dyn_cast<const SV>(v)).getVector();
+      RCP<const vec> wp = (dyn_cast<const SV>(w)).getVector();
+      RCP<const vec> up = (dyn_cast<const SV>(u)).getVector();
+      RCP<const vec> zp = (dyn_cast<const SV>(z)).getVector();
 
       FC<DSFad> u_fc(numCells_,numFields_);
       FC<DSFad> z_fc(numCells_,numFields_);
@@ -439,8 +437,8 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
         using Teuchos::dyn_cast;
         typedef DFad<Real> FadType;
 
-        RCP<const vec> up = (dyn_cast<SV>(const_cast<V &>(u))).getVector();
-        RCP<const vec> zp = (dyn_cast<SV>(const_cast<V &>(z))).getVector();
+        RCP<const vec> up = dyn_cast<const SV>(u).getVector();
+        RCP<const vec> zp = dyn_cast<const SV>(z).getVector();
 
         FC<FadType> u_fc1(numCells_,numFields_); 
         FC<FadType> z_fc1(numCells_,numFields_);
@@ -485,10 +483,9 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
     void value(V &c, const V &u, const V &z, Real &tol=0) {
 
-      using Teuchos::rcp_const_cast;
       using Teuchos::dyn_cast;
       // Downcast and extract RCPs to std::vectors
-      RCP<vec> cp = rcp_const_cast<vec>((dyn_cast<SV>(c)).getVector()); 
+      RCP<vec> cp = dyn_cast<SV>(c).getVector(); 
 
       std::fill(cp->begin(),cp->end(),0.0); 
 

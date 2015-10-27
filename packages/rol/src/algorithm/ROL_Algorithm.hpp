@@ -46,7 +46,9 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
+#include "ROL_StepFactory.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_StatusTestFactory.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
@@ -58,8 +60,14 @@
 
 namespace ROL {
 
+template<class Real>
+class StepFactory;
+
+template<class Real>
+class StatusTestFactory;
+
 template <class Real>
-class DefaultAlgorithm {
+class Algorithm {
 private:
   Teuchos::RCP<Step<Real> >           step_;
   Teuchos::RCP<StatusTest<Real> >     status_;
@@ -69,20 +77,48 @@ private:
 
 public:
 
-  virtual ~DefaultAlgorithm() {}
+  virtual ~Algorithm() {}
 
-  DefaultAlgorithm(Step<Real> & step, StatusTest<Real> & status, bool printHeader = false ) {
-    step_   = Teuchos::rcp(&step,   false);
-    status_ = Teuchos::rcp(&status, false);
-    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+  /** \brief Constructor, given a step and a status test.
+  */
+  Algorithm( const Teuchos::RCP<Step<Real> > & step,
+             const Teuchos::RCP<StatusTest<Real> > & status,
+             bool printHeader = false ) {
+    step_ = step;
+    status_ = status;
+    state_ = Teuchos::rcp(new AlgorithmState<Real>);
     printHeader_ = printHeader;
   }
 
-  DefaultAlgorithm(Step<Real> & step, StatusTest<Real> & status, AlgorithmState<Real> &state, 
-                   bool printHeader = false ) {
-    step_   = Teuchos::rcp(&step,   false);
-    status_ = Teuchos::rcp(&status, false);
-    state_  = Teuchos::rcp(&state,  false);
+  /** \brief Constructor, given a step, a status test, and a
+             previously defined algorithm state.
+  */
+  Algorithm( const Teuchos::RCP<Step<Real> > & step,
+             const Teuchos::RCP<StatusTest<Real> > & status,
+             const Teuchos::RCP<AlgorithmState<Real> > & state,
+             bool printHeader = false ) {
+    step_ = step;
+    status_ = status;
+    state_ = state;
+    printHeader_ = printHeader;
+  }
+
+  /** \brief Constructor, given a string, for the step, and a
+             parameter list of various options.  The status
+             test is determined based on the step string.
+  */
+  Algorithm( const std::string &stepname,
+             Teuchos::ParameterList &parlist,
+             bool printHeader = false) {
+    EStep els = StringToEStep(stepname);
+    TEUCHOS_TEST_FOR_EXCEPTION( !(isValidStep(els)),
+                                std::invalid_argument,
+                                "Invalid step name in algorithm constructor!");
+    StepFactory<Real> stepFactory;
+    StatusTestFactory<Real> statusTestFactory;
+    step_   = stepFactory.getStep(stepname,parlist);
+    status_ = statusTestFactory.getStatusTest(stepname,parlist);
+    state_  = Teuchos::rcp(new AlgorithmState<Real>);
     printHeader_ = printHeader;
   }
 
@@ -138,8 +174,8 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -154,10 +190,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {
@@ -211,14 +247,14 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
     if ( state_->lagmultVec == Teuchos::null ) {
       state_->lagmultVec = l.clone();
-      state_->lagmultVec->set(l);
     }
+    state_->lagmultVec->set(l);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -233,10 +269,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {
@@ -250,7 +286,20 @@ public:
     return output;
   }
 
-  /** \brief Run algorithm on equality constrained problems (Type-E).
+  /** \brief Run algorithm on equality and bound constrained problems (Type-EB).
+             This is the primary Type-EB interface.
+  */
+  virtual std::vector<std::string> run( Vector<Real>             &x,
+                                        Vector<Real>             &l, 
+                                        Objective<Real>          &obj,
+                                        EqualityConstraint<Real> &con,
+                                        BoundConstraint<Real>    &bnd,
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
+    return run(x,x.dual(),l,l.dual(),obj,con,bnd,print,outStream);
+  }
+
+  /** \brief Run algorithm on equality and bound constrained problems (Type-EB).
              This general interface supports the use of dual optimization and
              constraint vector spaces, where the user does not define the dual() method.
   */
@@ -268,14 +317,14 @@ public:
     // Initialize Current Iterate Container 
     if ( state_->iterateVec == Teuchos::null ) {
       state_->iterateVec = x.clone();
-      state_->iterateVec->set(x);
     }
+    state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
     if ( state_->lagmultVec == Teuchos::null ) {
       state_->lagmultVec = l.clone();
-      state_->lagmultVec->set(l);
     }
+    state_->lagmultVec->set(l);
 
     // Initialize Step Container
     Teuchos::RCP<Vector<Real> > s = x.clone();
@@ -290,10 +339,10 @@ public:
     // Initialize Minimum Value and Vector
     if ( state_->minIterVec == Teuchos::null ) {
       state_->minIterVec = x.clone();
-      state_->minIterVec->set(x);
-      state_->minIter = state_->iter;
-      state_->minValue = state_->value;
     }
+    state_->minIterVec->set(x);
+    state_->minIter = state_->iter;
+    state_->minValue = state_->value;
 
     // Run Algorithm
     while (status_->check(*state_)) {
@@ -318,9 +367,9 @@ public:
   Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {
     return state_;
   }
-  
 
-}; // class DefaultAlgorithm
+}; // class Algorithm
+
 
 } // namespace ROL
 

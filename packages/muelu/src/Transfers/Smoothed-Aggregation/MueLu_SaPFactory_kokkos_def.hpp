@@ -46,9 +46,12 @@
 #ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
-#include <Xpetra_Matrix.hpp>
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
+
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -73,8 +76,8 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
 #undef  SET_VALID_ENTRY
 
-    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Tentative prolongator factory");
 
     return validParamList;
   }
@@ -87,22 +90,20 @@ namespace MueLu {
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory_kokkos and NullspaceFactory.
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
-    coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
+    coarseLevel.DeclareInput("P", initialPFact.get(), this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
-    std::ostringstream levelstr;
-    levelstr << coarseLevel.GetLevelID();
 
     // Add debugging information
-    // Node::execution_space::print_configuration(GetOStream(Runtime1));
+    Node::execution_space::print_configuration(GetOStream(Runtime1));
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -118,7 +119,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Transpose(*A, true); // build transpose of A explicitely
+      A = Utilities_kokkos::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -137,7 +138,7 @@ namespace MueLu {
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
           Magnitude stopTol = 1e-4;
-          lambdaMax = Utils::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          lambdaMax = Utilities_kokkos::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -147,12 +148,12 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
+        RCP<Vector> invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
       }
 
     } else {
@@ -170,7 +171,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL
@@ -189,6 +190,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

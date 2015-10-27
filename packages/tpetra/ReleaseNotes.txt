@@ -2,6 +2,129 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Development version (12.3)
+--------------------------
+
+* Changed CMake option for setting default Node type
+
+To set the default Node type, use the Tpetra_DefaultNode CMake option.
+We support the old KokkosClassic_DefaultNode CMake option for
+backwards compatibility.
+
+Tpetra will eventually change from using Node types to using
+Kokkos::Device types directly.  For now, though, if you wish to set
+the default Node type explicitly, you must use one of the following:
+
+  - Kokkos::Compat::KokkosCudaWrapperNode    (CUDA)
+  - Kokkos::Compat::KokkosOpenMPWrapperNode  (OpenMP)
+  - Kokkos::Compat::KokkosSerialWrapperNode  (Serial (no threads))
+  - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+Tpetra normally only enables one Node type, so you only need to set
+the default Node type if you have enabled more than one Node type.
+
+* Rules for which Node type gets enabled by default
+
+Tpetra only enables one Node type by default, whether or not ETI
+(explicit template instantiation) is enabled.  Here are the rules for
+which Node type gets enabled by default:
+
+  1. If you're building with CUDA, Tpetra uses CUDA by default.
+  2. Otherwise, if you're building with OpenMP, Tpetra uses OpenMP by
+     default.
+  3. Otherwise, if Kokkos enables the Serial execution space (if
+     Kokkos_ENABLE_Serial is ON), Tpetra uses Serial by default.
+  4. Otherwise, if Kokkos enables the Threads execution space (if
+     Kokkos_ENABLE_Pthread is ON), Tpetra uses Threads by default.
+
+If you wish to enable other Node types, you may set the following
+CMake options.  You do NOT need to set any of these options explicitly
+if the Node type would be enabled by default anyway.
+
+  - Tpetra_INST_CUDA (Kokkos_ENABLE_Cuda must be ON, and Trilinos must
+    be built with CUDA; ON by default if building with CUDA)
+  - Tpetra_INST_OPENMP (Kokkos_ENABLE_OpenMP must be ON, and Trilinos
+    must be built with OpenMP support)
+  - Tpetra_INST_PTHREAD (Kokkos_ENABLE_Pthread must be ON)
+  - Tpetra_INST_SERIAL (Kokkos_ENABLE_Serial must be ON)
+
+While it is legal to enable both the OpenMP and Pthreads back-ends in
+the same executable, it is a bad idea.  Both back-ends spawn their own
+worker threads, and those threads will fight over cores.
+
+* Completely removed the "classic" version of Tpetra
+
+You might recall that a while back, we split Tpetra into "classic"
+(old) and "Kokkos refactor" (new) versions.  As of Trilinos 12.0, the
+classic version was no longer supported, but we kept it in place for a
+few users.  As of this release, we have removed the classic version
+completely.
+
+You no longer need to set Tpetra_ENABLE_Kokkos_Refactor to get the new
+verson of Tpetra.  It is ON (TRUE).  If you attempt to set it to OFF
+(FALSE), Tpetra's CMake raises an error at configure time.  Just
+enable Tpetra -- that's all you need to do!
+
+This change affects both the Classic and Core subpackages of Tpetra.
+All the "classic" Node types are gone now, along with their associated
+computational kernels.  Use the Kernels subpackage of Tpetra for local
+kernels.  (We left KokkosClassic::DefaultArithmetic in place for
+Stokhos, but ONLY for Stokhos.)  The "classic" versions of Tpetra
+classes are also now gone.  We have replaced them completely with
+their "Kokkos refactor" versions.
+
+You might have noticed that Doxygen had a hard time generating
+documentation for the classes which had "classic" and "refactor"
+versions.  These changes should fix that.  Furthermore, it's easier to
+find header files for classes.  In particular, most of the header
+files in the tpetra/core/src/kokkos_refactor directory now just have
+trivial definitions and only remain for backwards compatibility.
+
+* Improved build times and fewer .cpp files in source directory
+
+Tpetra does a better job now of splitting up explicit instantiations
+into separate .cpp files.  In some cases, it uses CMake to generate
+those .cpp files automatically.  This means fewer .cpp files in
+tpetra/core/src, so it's easier to find what you want.
+
+* 128-bit floating-point arithmetic through Scalar = __float128
+
+__float128 is a GCC language extension to C(++) that implements
+"double-double" 128-bit floating-point arithmetic.  It requires
+linking with libquadmath, which comes with GCC.
+
+You must use GCC in order to try this feature.  Also, set the
+following CMake variables:
+
+Tpetra_INST_FLOAT128:BOOL=ON
+CMAKE_CXX_FLAGS:STRING="-std=gnu++11 -fext-numeric-literals"
+TPL_ENABLE_quadmath:BOOL=ON
+
+You may also have to tell CMake where to find the libquadmath library
+and quadmath.h header file:
+
+quadmath_LIBRARY_DIRS:FILEPATH="${QUADMATH_LIB_DIR}"
+quadmath_INCLUDE_DIRS:FILEPATH="${QUADMATH_INC_DIR}"
+
+Here, ${QUADMATH_LIB_DIR} points to the directory containing the
+libquadmath library (usually your GCC library directory), and
+${QUADMATH_INC_DIR} points to the directory containing its header file
+(quadmath.h).  For example, if you use a GCC installed in
+$HOME/pkg/gcc-5.2.0, you might need to set those variables as follows:
+
+QUADMATH_LIB_DIR=$HOME/pkg/gcc-5.2.0/lib
+QUADMATH_INC_DIR=$HOME/pkg/gcc-5.2.0/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/include
+
+Trilinos likes to set the "-pedantic" flag, which causes warnings for
+__float128 literals.  The build works regardless, but it would be more
+pleasing to your eyes if you could figure out how to shut off the
+warnings.
+
+I implemented this because the Kokkos refactor of Tpetra broke QD
+support (dd_real and qd_real -- "double-double" and "quad-double,"
+128- resp. 256-bit floating-point arithmetic).  Applications were
+asking for a work-around solution.
+
 Trilinos 12.2
 -------------
 

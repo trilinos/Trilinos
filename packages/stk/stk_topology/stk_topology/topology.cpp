@@ -121,8 +121,8 @@ std::ostream & operator<<(std::ostream &out, topology t)
 
 bool isTriangle (topology topo)
 {
-    bool isTri  = ((topo.name() == "TRI_3")      || (topo.name() == "TRI_4")           || (topo.name() == "TRI_6")
-            ||(topo.name() == "TRIANGLE_3")      || (topo.name() == "TRIANGLE_4")      || (topo.name() == "TRIANGLE_6"));
+    bool isTri  = ((topo.name() == "TRI_3_2D")      || (topo.name() == "TRIANGLE_3_2D")           || (topo.name() == "TRI_4_2D")
+            ||(topo.name() == "TRIANGLE_4_2D")      || (topo.name() == "TRI_6_2D")      || (topo.name() == "TRIANGLE_6_2D"));
 
     isTri = isTri && (topo.rank() == topology::ELEMENT_RANK);
 
@@ -131,8 +131,8 @@ bool isTriangle (topology topo)
 
 bool isQuadrilateral (topology topo)
 {
-    bool isQuad = ((topo.name() == "QUAD_4")     || (topo.name() == "QUAD_8")          || (topo.name() == "QUAD_9")
-            ||(topo.name() == "QUADRILATERAL_4") || (topo.name() == "QUADRILATERAL_8") || (topo.name() == "QUADRILATERAL_9"));
+    bool isQuad = ((topo.name() == "QUAD_4_2D")     || (topo.name() == "QUADRILATERAL_4_2D")          || (topo.name() == "QUAD_8_2D")
+            ||(topo.name() == "QUADRILATERAL_8_2D") || (topo.name() == "QUAD_9_2D") || (topo.name() == "QUADRILATERAL_9_2D"));
 
     isQuad = isQuad && (topo.rank() == topology::ELEMENT_RANK);
 

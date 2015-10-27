@@ -45,6 +45,7 @@
 #define ROL_BUNDLE_STEP_H
 
 #include "ROL_Bundle.hpp"
+//#include "ROL_Bundle_TT.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_Vector.hpp"
@@ -107,57 +108,48 @@ private:
 
   Real ftol_;
 
-  void LineSearchFactory(Teuchos::ParameterList &parlist) {
-    ls_maxit_ = parlist.get("Maximum Number of Function Evaluations",20);
-    ELineSearch els = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
-    switch(els) {
-      case LINESEARCH_ITERATIONSCALING:
-        lineSearch_ = Teuchos::rcp( new IterationScaling<Real>(parlist) );     break;
-      case LINESEARCH_PATHBASEDTARGETLEVEL:
-        lineSearch_ = Teuchos::rcp( new PathBasedTargetLevel<Real>(parlist) ); break;
-      case LINESEARCH_BACKTRACKING:
-        lineSearch_ = Teuchos::rcp( new BackTracking<Real>(parlist) );         break;
-      case LINESEARCH_BISECTION:
-        lineSearch_ = Teuchos::rcp( new Bisection<Real>(parlist) );            break;
-      case LINESEARCH_BRENTS:
-        lineSearch_ = Teuchos::rcp( new Brents<Real>(parlist) );               break;
-      case LINESEARCH_GOLDENSECTION:
-        lineSearch_ = Teuchos::rcp( new GoldenSection<Real>(parlist) );        break;
-      case LINESEARCH_CUBICINTERP:
-      default:
-        lineSearch_ = Teuchos::rcp( new CubicInterp<Real>(parlist) );          break;
-    }
-  }
-
 public:
 
   BundleStep(Teuchos::ParameterList &parlist)
-    : QPiter_(0), step_flag_(0), aggLinErrNew_(0.0), aggLinErrOld_(0.0), aggDistMeasNew_(0.0),
-      first_print_(true), ftol_(ROL_EPSILON) {
+    : bundle_(Teuchos::null), lineSearch_(Teuchos::null),
+      QPiter_(0), QPmaxit_(0), QPtol_(0.), step_flag_(0),
+      y_(Teuchos::null), linErrNew_(0.), valueNew_(0.),
+      aggSubGradNew_(Teuchos::null), aggSubGradOldNorm_(0.),
+      aggLinErrNew_(0.), aggLinErrOld_(0.), aggDistMeasNew_(0.),
+      T_(0.), tol_(0.), m1_(0.), m2_(0.), m3_(0.), nu_(0.),
+      ls_maxit_(0), first_print_(true), isConvex_(false),
+      ftol_(ROL_EPSILON) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
-    state->searchSize = parlist.get("Bundle Step: Initial Trust-Region Parameter",1.e3);
-    T_                = parlist.get("Bundle Step: Maximum Trust-Region Parameter",1.e8); 
-    tol_              = parlist.get("Bundle Step: Epsilon Solution Tolerance",1.e-6);
-    m1_               = parlist.get("Bundle Step: Upper Threshold for Serious Step",0.1);
-    m2_               = parlist.get("Bundle Step: Lower Threshold for Serious Step",0.2);
-    m3_               = parlist.get("Bundle Step: Upper Threshold for Null Step",0.9);
-    nu_               = parlist.get("Bundle Step: Tolerance for Trust-Region Parameter",1.e-3);
+    state->searchSize = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter", 1.e3);
+    T_   = parlist.sublist("Step").sublist("Bundle").get("Maximum Trust-Region Parameter",       1.e8); 
+    tol_ = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance",           1.e-6);
+    m1_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Serious Step",     0.1);
+    m2_  = parlist.sublist("Step").sublist("Bundle").get("Lower Threshold for Serious Step",     0.2);
+    m3_  = parlist.sublist("Step").sublist("Bundle").get("Upper Threshold for Null Step",        0.9);
+    nu_  = parlist.sublist("Step").sublist("Bundle").get("Tolerance for Trust-Region Parameter", 1.e-3);
 
     // Initialize bundle
-    Real coeff        = parlist.get("Bundle Step: Distance Measure Coefficient",0.0);
-    unsigned maxSize  = parlist.get("Bundle Step: Maximum Bundle Size",200);
-    unsigned remSize  = parlist.get("Bundle Step: Removal Size for Bundle Update",2);
-    bundle_   = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));
+    Real coeff        = parlist.sublist("Step").sublist("Bundle").get("Distance Measure Coefficient",   0.0);
+    unsigned maxSize  = parlist.sublist("Step").sublist("Bundle").get("Maximum Bundle Size",            200);
+    unsigned remSize  = parlist.sublist("Step").sublist("Bundle").get("Removal Size for Bundle Update", 2);
+    if ( parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0) == 1 ) {
+      //bundle_ = Teuchos::rcp(new Bundle_TT<Real>(maxSize,coeff,remSize));
+      bundle_ = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));
+    }
+    else {
+      bundle_ = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));
+    }
     isConvex_ = ((coeff == 0.0) ? true : false);
 
     // Initialize QP solver 
-    QPtol_   = parlist.get("Bundle Step: Cutting Plane Solver Tolerance",1.e-8);
-    QPmaxit_ = parlist.get("Bundle Step: Cutting Plane Solver Maximum Number of Iterations",1000);
+    QPtol_   = parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Tolerance", 1.e-8);
+    QPmaxit_ = parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Iteration Limit", 1000);
 
     // Initialize Line Search
-    lineSearch_ = Teuchos::null;
+    ls_maxit_
+      = parlist.sublist("Step").sublist("Line Search").get("Maximum Number of Function Evaluations",20);
     if ( !isConvex_ ) {
-      LineSearchFactory(parlist);
+      lineSearch_ = LineSearchFactory<Real>(parlist);
     }
   }
 

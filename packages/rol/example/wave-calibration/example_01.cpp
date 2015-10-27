@@ -58,7 +58,6 @@
 #include <iostream>
 #include <complex>
 #include <valarray>
-#include <unordered_map>
 
 typedef double RealT;
 
@@ -193,7 +192,7 @@ int main(int argc, char *argv[]) {
     //double num_periods=12.3456;
     int num_periods=12;
     double epsilon = 3;
-    double k=1;
+    double kappa=1;
     double phase = M_PI/7;
     double amplitude = 9.876;
 
@@ -212,8 +211,8 @@ int main(int argc, char *argv[]) {
     double mu=1.2566370614e-6;
     double c = 1./sqrt(epsilon*epsilon_0*mu);
 
-    // omega k = c
-    double omega = c/k;
+    // omega*kappa = c
+    double omega = c/kappa;
     double frequency = omega/(2*M_PI);
     double period = 1./frequency;
     double total_time = num_periods*period;
@@ -306,16 +305,15 @@ int main(int argc, char *argv[]) {
     RealT stol     = 1e-18;          // step tolerance
     int   max_iter = 100;            // maximum number of optimization iterations
     Teuchos::ParameterList parlist;  // list of algorithmic parameters
-      // Line-search step parameters.
-      parlist.set("Descent Type", "Quasi-Newton");
-      parlist.set("Secant Type", "Limited-Memory BFGS");
+      parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
+      parlist.sublist("General").sublist("Secant").set("Type", "Limited-Memory BFGS");
       // Trust-region step parameters.
-      parlist.set("Trust-Region Subproblem Solver Type", "Truncated CG");
-      parlist.set("Initial Trust-Region Radius", 1e7);
-      parlist.set("Maximum Trust-Region Radius", 1e12);
-    ROL::LineSearchStep<RealT>   lsstep(parlist);  // line-search method
-    ROL::TrustRegionStep<RealT>  trstep(parlist);  // trust-region method
-    ROL::StatusTest<RealT>       status(gtol, stol, max_iter);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver", "Truncated CG");
+      parlist.sublist("Step").sublist("Trust Region").set("Initial Radius", 1e7);
+      parlist.sublist("Step").sublist("Trust Region").set("Maximum Radius", 1e12);
+    Teuchos::RCP<ROL::LineSearchStep<RealT> >   lsstep = Teuchos::rcp(new ROL::LineSearchStep<RealT>(parlist));  // line-search method
+    Teuchos::RCP<ROL::TrustRegionStep<RealT> >  trstep = Teuchos::rcp(new ROL::TrustRegionStep<RealT>(parlist));  // trust-region method
+    Teuchos::RCP<ROL::StatusTest<RealT> >       status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, max_iter));  // status test
 
     // Run simple algorithm (starting at many initial points).
     /*
@@ -326,7 +324,7 @@ int main(int argc, char *argv[]) {
     RealT solution_min  = std::numeric_limits<double>::max();
     for (int i=0; i<num_inits; ++i) {  // start at several initial guesses
       (*omega_vec_rcp)[0] = omega_min + (double)rand() / ((double)RAND_MAX/(omega_max-omega_min)); 
-      ROL::DefaultAlgorithm<RealT> algo(trstep, status, false);
+      ROL::Algorithm<RealT> algo(trstep, status, false);
       algo.run(omega_rol_vec, cal_obj, true, *outStream);
       double solution = (*omega_vec_rcp)[0];
       double objval   = cal_obj.value(omega_rol_vec, tol);
@@ -349,7 +347,7 @@ int main(int argc, char *argv[]) {
     RealT solution_min = realmax;
     int dim = 1;
     int k_max = 20;
-    int num_points = 100;
+    int num_points = 150;
     RealT r_k(0);
     RealT sigma(4.0);
     RealT dist_to_loc(10*(omega_max-omega_min)/(k_max*num_points));
@@ -402,7 +400,8 @@ int main(int argc, char *argv[]) {
       // Compute r_k based on the domain volume ... this would have to be generalized.
       int nsamples = vec_sample.size();
       //r_k = (1.0/M_PI)*pow(std::tgamma(1.0+dim/2.0)*volumeD*sigma*log10(nsamples)/nsamples, 1.0/dim);
-        r_k = (1.0/sqrt(M_PI))*pow(std::tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
+      //r_k = (1.0/sqrt(M_PI))*pow(std::tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
+        r_k = (1.0/sqrt(M_PI))*pow(tgamma(1.0+dim/2.0)*(omega_max-omega_min)*sigma*log10(nsamples)/nsamples, 1.0/dim);
 
       // Start local optimization runs.
       for (std::vector<Teuchos::RCP<ROL::Vector<RealT > > >::iterator itsam = vec_sample.begin(); itsam != vec_sample.end(); ++itsam) {
@@ -424,7 +423,7 @@ int main(int argc, char *argv[]) {
         if (!islocal && !isnearlocal) {
           int idx = itsam - vec_sample.begin(); // current iterator index
           if ((val_sample[idx] <= minval_sample) || (min_distance[idx] > r_k)) {
-            ROL::DefaultAlgorithm<RealT> algo(trstep, status, false);
+            ROL::Algorithm<RealT> algo(trstep, status, false);
             Teuchos::RCP<ROL::Vector<RealT> > soln_vec  = omega_rol_vec.clone();
             soln_vec->set(**itsam);
             algo.run(*soln_vec, cal_obj, true, *outStream);
@@ -456,8 +455,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "FFT frequency:            omega_fft = " << maxomega; 
     *outStream << std::endl << "Computed optimal frequency:  omega* = " << solution_min << std::endl; 
     *outStream << std::endl << "'True' epsilon:                 eps = " << std::left << std::setprecision(8) << std::setw(12) << epsilon; 
-    *outStream << std::endl << "FFT epsilon:                eps_fft = " << 1/(pow(maxomega*k,2)*epsilon_0*mu); 
-    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow(solution_min*k,2)*epsilon_0*mu) << std::endl; 
+    *outStream << std::endl << "FFT epsilon:                eps_fft = " << 1/(pow(maxomega*kappa,2)*epsilon_0*mu); 
+    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow(solution_min*kappa,2)*epsilon_0*mu) << std::endl; 
     (*omega_vec_rcp)[0] = maxomega;
     *outStream << std::endl << "Objective value at FFT freq     val = " << cal_obj.value(omega_rol_vec, tol); 
     *outStream << std::endl << "Objective value at opt freq    val* = " << objval_min << std::endl; 

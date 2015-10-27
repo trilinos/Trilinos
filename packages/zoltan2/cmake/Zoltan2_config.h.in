@@ -4,9 +4,6 @@
 /* define if we want to include wolf experimental code */
 #cmakedefine INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
 
-/* define if we want to enable the Hyper Graph Model */
-#cmakedefine HAVE_ZOLTAN2_HYPERGRAPHMODEL
-
 /* define if we have MPI */
 #cmakedefine HAVE_ZOLTAN2_MPI
 

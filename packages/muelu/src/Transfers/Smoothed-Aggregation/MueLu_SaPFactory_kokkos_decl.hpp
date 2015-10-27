@@ -43,14 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SAPFACTORYK_DECL_HPP
-#define MUELU_SAPFACTORYK_DECL_HPP
-
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#ifndef MUELU_SAPFACTORY_KOKKOS_DECL_HPP
+#define MUELU_SAPFACTORY_KOKKOS_DECL_HPP
 
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -117,7 +117,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -130,9 +130,9 @@ namespace MueLu {
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
       //FIXME what does the return code mean (unclear in MueMat)?
       */
-    void Build(Level& fineLevel, Level &coarseLevel) const;
+    void Build (Level& fineLevel, Level& coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const; //Build()
+    void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
@@ -142,4 +142,4 @@ namespace MueLu {
 
 #define MUELU_SAPFACTORY_KOKKOS_SHORT
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
-#endif // MUELU_SAPFACTORYK_DECL_HPP
+#endif // MUELU_SAPFACTORY_KOKKOS_DECL_HPP

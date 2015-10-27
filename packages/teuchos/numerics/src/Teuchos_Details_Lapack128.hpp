@@ -168,6 +168,44 @@ public:
          __float128 WORK[],
          const int LWORK,
          int* const INFO) const;
+
+  //! Scale the matrix A by the real scalar cto/cfrom.
+  void
+  LASCL (const char TYPE,
+         const int kl,
+         const int ku,
+         const __float128 cfrom,
+         const __float128 cto,
+         const int m,
+         const int n,
+         __float128* A,
+         const int lda,
+         int* info) const;
+
+  //! Compute LU factorization of the banded matrix A.
+  void
+  GBTRF (const int m,
+         const int n,
+         const int kl,
+         const int ku,
+         __float128* A,
+         const int lda,
+         int* IPIV,
+         int* info) const;
+
+  //! Solve linear system(s) using results of GBTRF (above).
+  void
+  GBTRS (const char TRANS,
+         const int n,
+         const int kl,
+         const int ku,
+         const int nrhs,
+         const __float128* A,
+         const int lda,
+         const int* IPIV,
+         __float128* B,
+         const int ldb,
+         int* info) const;
 };
 
 } // namespace Details

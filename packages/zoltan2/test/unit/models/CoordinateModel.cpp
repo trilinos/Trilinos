@@ -69,7 +69,7 @@ using std::cout;
 using std::endl;
 
 void testCoordinateModel(std::string &fname, int nWeights,
-  const RCP<const Comm<int> > &comm, bool consecutiveIds,
+  const RCP<const Comm<int> > &comm,
   bool nodeZeroHasAll, bool printInfo)
 {
   int fail = 0, gfail = 0;
@@ -77,7 +77,6 @@ void testCoordinateModel(std::string &fname, int nWeights,
   if (printInfo){
     cout << "Test: " << fname << endl;
     cout << "Num Weights: " << nWeights;
-    cout << " want consec ids: " << consecutiveIds;
     cout << " proc 0 has all: " << nodeZeroHasAll;
     cout << endl;
   }
@@ -208,9 +207,6 @@ void testCoordinateModel(std::string &fname, int nWeights,
   typedef Zoltan2::CoordinateModel<base_ia_t> model_t;
   modelFlags_t modelFlags;
 
-  if (consecutiveIds)
-    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
-
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
   RCP<model_t> model;
   
@@ -276,14 +272,6 @@ void testCoordinateModel(std::string &fname, int nWeights,
     }
   }
 
-  if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<zgno_t>::areConsecutive(
-      gids.getRawPtr(), nLocalIds);
-
-    if (!inARow)
-      fail = 15;
-  }
-
   gfail = globalFail(comm, fail);
 
   if (gfail)
@@ -298,23 +286,18 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
   string fname("simple");   // reader will seek coord file
-  bool wishConsecutiveIds = true;
 
-  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds, false, rank==0);
+  testCoordinateModel(fname, 0, comm, false, rank==0);
 
-  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds, false, rank==0);
+  testCoordinateModel(fname, 1, comm, false, rank==0);
 
-  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds, false, rank==0);
+  testCoordinateModel(fname, 2, comm, false, rank==0);
 
-  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds, false, rank==0);
+  testCoordinateModel(fname, 0, comm, true, rank==0);
 
-  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds, true, rank==0);
+  testCoordinateModel(fname, 1, comm, true, rank==0);
 
-  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds, true, rank==0);
-
-  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds, true, rank==0);
-
-  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds, true, rank==0);
+  testCoordinateModel(fname, 2, comm, true, rank==0);
 
   if (rank==0) cout << "PASS" << endl;
 

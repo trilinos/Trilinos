@@ -60,6 +60,7 @@ third-party solver libraries.
   <li> SuperLU_DIST</li>
   <li> Pardiso (MKL version 10.3 or compatible)</li>
   <li> LAPACK</li>
+  <li> MUMPS (5.0)</li>
 </ul>
 
 A templated version of KLU (KLU2) will be included in Amesos2.

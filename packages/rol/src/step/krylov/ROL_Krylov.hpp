@@ -92,7 +92,6 @@ public:
 
 }
 
-#include "ROL_ConjugateGradients.hpp"
-#include "ROL_ConjugateResiduals.hpp"
+#include "ROL_KrylovFactory.hpp"
 
 #endif

@@ -106,7 +106,7 @@ double computeIntegral(int cubDegree, int xDeg, int yDeg) {
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -147,8 +147,8 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
-  int maxDeg                             = 30; // can be as large as INTREPID_CUBATURE_SPARSE2D_GAUSS_MAX, but runtime is excessive
-  int maxOffset                          = INTREPID_CUBATURE_LINE_GAUSS_MAX;
+  int maxDeg                             = 30; // can be as large as INTREPID2_CUBATURE_SPARSE2D_GAUSS_MAX, but runtime is excessive
+  int maxOffset                          = INTREPID2_CUBATURE_LINE_GAUSS_MAX;
   int numPoly                            = (maxDeg+1)*(maxDeg+2)/2;
   int numAnalytic                        = (maxOffset+1)*(maxOffset+2)/2;
   testInt.assign(numPoly, tmparray);
@@ -221,6 +221,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+Kokkos::finalize();
   return errorFlag;
 }

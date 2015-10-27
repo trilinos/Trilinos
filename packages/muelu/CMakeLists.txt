@@ -112,6 +112,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable MueLu code refactored to use Kokkos."
   NO)
 
+# Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_STRATIMIKOS ${${PACKAGE_NAME}_ENABLE_Stratimikos})
+
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra
@@ -128,17 +132,17 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_INT OFF)
   ENDIF()
 
-  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
-    IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-      MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
-    ENDIF()
-  ENDIF()
+  #IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
+  #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+  #    MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
+  #  ENDIF()
+  #ENDIF()
 
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
-    IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-      MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
-    ENDIF()
-  ENDIF()
+  #IF(${PACKAGE_NAME}_ENABLE_Epetra)
+  #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+  #    MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
+  #  ENDIF()
+  #ENDIF()
 
   # <double, int, long>
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG)
@@ -151,7 +155,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
 
   # <double, int, long long int>
-   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
+  IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
     GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT ON)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGLONGINT ON)
   ELSE()
@@ -210,6 +214,16 @@ IF(${PACKAGE_NAME}_ENABLE_Tpetra)
   ENDIF()
 ENDIF()
 
+# The HAVE_MUELU_TPETRA_INST_INT_INT flag is enabled if Tpetra is enabled
+# with TPETRA_INST_INT_INT. This flag is used to control whether we need
+# special stub implementations for the MueLu::Tpetra stack with GO=int.
+# taw 9 Oct 2015: This is independent from ETI on/off
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_INT_INT)
+  SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
+ENDIF()
+GLOBAL_SET (HAVE_MUELU_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
+
 # ML's MMM
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
   HAVE_${PACKAGE_NAME_UC}_ML_MMM
@@ -246,6 +260,7 @@ ADD_SUBDIRECTORY(src/Interface)
 ADD_SUBDIRECTORY(adapters)
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab/bin)
+  ADD_SUBDIRECTORY(matlab/tests)
 ENDIF()
 
 #address bugzilla bug#6236

@@ -5,6 +5,34 @@
 #include "Sacado.hpp"
 #endif
 
+namespace Intrepid2{
+
+typedef int index_type;
+
+}
+
+/*template<typename T, typename = void>
+struct conditional_eSpace : Kokkos::Serial { };
+
+template<typename T>
+struct conditional_eSpace<T, decltype(std::declval<T>().execution_space, void())> : T { };
+*/
+
+template<class T>
+struct Void {
+  typedef void type;
+};
+
+template<class T, class U = void>
+struct conditional_eSpace {
+	typedef Kokkos::Serial execution_space;
+};
+
+template<class T>
+struct conditional_eSpace<T, typename Void<typename T::execution_space>::type > {
+
+	typedef typename T::execution_space execution_space;
+};
 template<class A>
 struct CheckType{static const bool value = false; };
 

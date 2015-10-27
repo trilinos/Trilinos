@@ -54,7 +54,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#define INTREPID_CUBATURE_LINE_MAX 61
+#define INTREPID2_CUBATURE_LINE_MAX 61
 
 using namespace Intrepid2;
 
@@ -108,7 +108,7 @@ double computeIntegral(int cubDegree, int polyDegree, EIntrepidPLPoly poly_type)
 int main(int argc, char *argv[]) {
   
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -146,8 +146,8 @@ int main(int argc, char *argv[]) {
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
-  testInt.assign(INTREPID_CUBATURE_LINE_MAX+1, tmparray);
-  analyticInt.assign(INTREPID_CUBATURE_LINE_MAX+1, tmparray);
+  testInt.assign(INTREPID2_CUBATURE_LINE_MAX+1, tmparray);
+  analyticInt.assign(INTREPID2_CUBATURE_LINE_MAX+1, tmparray);
 
   // open file with analytic values
   std::string basedir = "./data";
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   try {
     for (EIntrepidPLPoly poly_type=PL_GAUSS; poly_type <= PL_GAUSS_LOBATTO; poly_type++) {
       // compute integrals
-      for (int cubDeg=0; cubDeg <= INTREPID_CUBATURE_LINE_MAX; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_MAX; cubDeg++) {
         testInt[cubDeg].resize(cubDeg+1);
         for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
           testInt[cubDeg][polyDeg] = computeIntegral(cubDeg, polyDeg, poly_type);
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
         filecompare.close();
       }
       // perform comparison
-      for (int cubDeg=0; cubDeg <= INTREPID_CUBATURE_LINE_MAX; cubDeg++) {
+      for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_MAX; cubDeg++) {
         for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
           double abstol = ( analyticInt[polyDeg][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyDeg][0]) );
           double absdiff = std::fabs(analyticInt[polyDeg][0] - testInt[cubDeg][polyDeg]);
@@ -206,6 +206,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+Kokkos::finalize();
   return errorFlag;
 }

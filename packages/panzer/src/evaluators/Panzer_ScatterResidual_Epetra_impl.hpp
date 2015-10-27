@@ -404,6 +404,9 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
+
+   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> >&
+     colGlobalIndexer = useColumnIndexer ? colGlobalIndexer_ : globalIndexer_;
    
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the
@@ -415,10 +418,12 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-      if(useColumnIndexer)
-        colGlobalIndexer_->getElementAndAssociatedLIDs(cellLocalId, cLIDs);
-      else
-        globalIndexer_->getElementAndAssociatedLIDs(cellLocalId, cLIDs);
+      cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      if (Teuchos::nonnull(workset.other)) {
+        const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
+        const std::vector<int> other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
+        cLIDs.insert(cLIDs.end(), other_cLIDs.begin(), other_cLIDs.end());
+      }
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {

@@ -60,7 +60,12 @@ public:
 
   virtual ~BundleStatusTest() {}
 
-  BundleStatusTest( Real tol = 1.e-6, int max_iter = 100 ) :  
+  BundleStatusTest( Teuchos::ParameterList &parlist ) {
+    tol_      = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance", 1.e-6);
+    max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);
+  }
+
+  BundleStatusTest( Real tol = 1.e-6, int max_iter = 100 ) :
     tol_(tol), max_iter_(max_iter) {}
 
   /** \brief Check algorithm status.

@@ -49,8 +49,9 @@
 
 #include "ROL_Zakharov.hpp"
 #include "ROL_BelosKrylov.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -86,7 +87,7 @@ int main(int argc, char *argv[]) {
 
       Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
       std::string paramfile = "parameters.xml";
-      Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&*parlist));
+      Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 
       // Iteration Vector 
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -117,26 +118,22 @@ int main(int argc, char *argv[]) {
       RealT gtol  = 1e-12;  // norm of gradient tolerance
       RealT stol  = 1e-14;  // norm of step tolerance
       int   maxit = 100;    // maximum number of iterations
-      ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+      Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, maxit));    
 
       // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(*step,status,false);
+      ROL::Algorithm<RealT> algo(step,status,false);
 
       // Run Algorithm
-      std::vector<std::string> output = algo.run(x, obj, false);
-      for ( unsigned i = 0; i < output.size(); i++ ) {
-          std::cout << output[i];
-      }
+      algo.run(x, obj, true, *outStream);
 
       // Get True Solution
       Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
       ROL::StdVector<RealT> xtrue(xtrue_rcp);
- 
         
       // Compute Error
       x.axpy(-1.0, xtrue);
       RealT abserr = x.norm();
-      *outStream << std::scientific << "\n   Absolute Error: " << abserr;
+      *outStream << std::scientific << "\n   Absolute Error: " << abserr << std::endl;
       if ( abserr > sqrt(ROL::ROL_EPSILON) ) {
           errorFlag += 1;
       }

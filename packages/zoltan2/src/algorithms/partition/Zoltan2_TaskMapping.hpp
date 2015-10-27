@@ -807,10 +807,14 @@ public:
       {
         u = umpa_uRandom(n-4, _u_umpa_seed);
         v = umpa_uRandom(n-4, _u_umpa_seed);
-        ZOLTAN2_ALGMJ_SWAP(a[v], a[u], tmp);
-        ZOLTAN2_ALGMJ_SWAP(a[v+1], a[u+1], tmp);
-        ZOLTAN2_ALGMJ_SWAP(a[v+2], a[u+2], tmp);
-        ZOLTAN2_ALGMJ_SWAP(a[v+3], a[u+3], tmp);
+
+        // FIXME (mfh 30 Sep 2015) This requires including Zoltan2_AlgMultiJagged.hpp.
+
+        ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v], a[u], tmp);
+        ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+1], a[u+1], tmp);
+        ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+2], a[u+2], tmp);
+        ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+3], a[u+3], tmp);
+
       }
     }
     else {
@@ -1813,36 +1817,36 @@ public:
 /*! \brief Constructor
  * The interface function that calls CoordinateTaskMapper which will also perform the mapping operation.
  * The result mapping can be obtained by
- *    -proc_to_task_xadj: which holds the beginning and end indices of 
+ *    -proc_to_task_xadj: which holds the beginning and end indices of
  *     tasks on proc_to_task_adj that is assigned to a processor.
  *     the tasks assigned to processor i are between proc_to_task_xadj[i] and
  *     proc_to_task_xadj[i+1] on proc_to_task_adj.
  *
  *    -proc_to_task_adj: holds the task adj array.
  *
- *    -task_comm_xadj, task_comm_adj, task_communication_edge_weight_ 
+ *    -task_comm_xadj, task_comm_adj, task_communication_edge_weight_
  *     can be provided NULL.
  *     In this case all processors will calculate the same mapping.
- *    -If task_comm_xadj, task_comm_adj and provided, algorithm will perform 
- *     rotations, and processors will calculate different mappings, and 
+ *    -If task_comm_xadj, task_comm_adj and provided, algorithm will perform
+ *     rotations, and processors will calculate different mappings, and
  *     best one will be reduced.
- *    -If task_communication_edge_weight_ is provided with 
+ *    -If task_communication_edge_weight_ is provided with
  *     task_comm_xadj, task_comm_adj, this will be used when cost is calculated.
- *    -recursion_depth is a mandatory argument. In the case part_no_array 
+ *    -recursion_depth is a mandatory argument. In the case part_no_array
  *     is not null, this parameter
  *     should represent the length of part_no_array.
- *     If part_no_array is given as NULL, then this will give the 
+ *     If part_no_array is given as NULL, then this will give the
  *     recursion depth for the algorithm,
- *     Maximum number is ceil(log_2(min(num_processors, num_tasks))), 
+ *     Maximum number is ceil(log_2(min(num_processors, num_tasks))),
  *     and providing a higher number will
- *     be equivalant to this. Partitioning algorithm will work as RCB 
+ *     be equivalant to this. Partitioning algorithm will work as RCB
  *     when maximum number is given, which performs the best mapping results.
- *    -part_no_array: The best results are obtained when this parameter 
- *     is given as NULL. But if this is provided, partitioning will use this 
+ *    -part_no_array: The best results are obtained when this parameter
+ *     is given as NULL. But if this is provided, partitioning will use this
  *     array for partitioning each dimension to the given numbers.
- *     The multiplication of these numbers should be equal to 
+ *     The multiplication of these numbers should be equal to
  *     min(num_processors, num_tasks).
- *    -machine_dimensions: This can be NULL, but if provided the algorithm 
+ *    -machine_dimensions: This can be NULL, but if provided the algorithm
  *     will perform shift of the machine coords so that
  *     the largest gap is treated as wrap-around link.
  *
@@ -1857,24 +1861,24 @@ public:
  *  \param task_comm_xadj is the task communication graphs xadj array.
  *        (task i's adjacency is between task_comm_xadj[i] and task_comm_xadj[i+1])
  *  \param task_comm_adj is task communication graphs adj array.
- *  \param task_communication_edge_weight_ is the weight of the communication 
+ *  \param task_communication_edge_weight_ is the weight of the communication
  *         in task graph.
- *  \param proc_to_task_xadj is is the output for tasks showing which proc 
+ *  \param proc_to_task_xadj is is the output for tasks showing which proc
  *         has the which parts.
- *        (proc-i will own the tasks from proc_to_task_xadj[i] to 
+ *        (proc-i will own the tasks from proc_to_task_xadj[i] to
  *        proc_to_task_xadj[i+1])
- *  \param proc_to_task_adj is the ouput list of tasks pointed by 
+ *  \param proc_to_task_adj is the ouput list of tasks pointed by
  *        proc_to_task_xadj
- *  \param recursion_depth is the recursion depth that will be applied to 
+ *  \param recursion_depth is the recursion depth that will be applied to
  *        partitioning.
  *        If part_no_array is provided, then it is the length of this array.
- *  \param part_no_array if part_no_array is provided, partitioning algorithm 
- *        will be forced to use *        this array for partitioning. However, 
+ *  \param part_no_array if part_no_array is provided, partitioning algorithm
+ *        will be forced to use *        this array for partitioning. However,
  *        the multiplication of each entries in this array
  *       should be equal to min(num_processors, num_tasks).
- *  \param *machine_dimensions: the dimensions of the machine network. For 
+ *  \param *machine_dimensions: the dimensions of the machine network. For
  *        example for hopper 17x8x24
- *        This can be NULL, but if provided the algorithm will perform 
+ *        This can be NULL, but if provided the algorithm will perform
  *        shift of the machine coords so that
  *        the largest gap is treated as wrap-around link.
  */
@@ -1914,7 +1918,7 @@ void coordinateTaskMapperInterface(
   }
 
 
-  CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t> *ctm = 
+  CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t> *ctm =
       new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t>(
       envConst_,
       problemComm.getRawPtr(),

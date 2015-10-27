@@ -51,13 +51,67 @@
 #include "ROL_EqualityConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_CompositeStepSQP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::MoreauYosidaPenaltyStep
-    \brief Provides the interface to compute augmented Lagrangian steps.
+    \brief Implements the computation of optimization steps using Moreau-Yosida
+           regularized bound constraints.
+
+    To describe the generalized Moreau-Yosida penalty method, we consider the
+    following abstract setting.  Suppose \f$\mathcal{X}\f$ is a Hilbert space
+    of functions mapping \f$\Xi\f$ to \f$\mathbb{R}\f$.  For example, 
+    \f$\Xi\subset\mathbb{R}^n\f$ and \f$\mathcal{X}=L^2(\Xi)\f$ or 
+    \f$\Xi = \{1,\ldots,n\}\f$ and \f$\mathcal{X}=\mathbb{R}^n\f$. We assume
+    \f$ f:\mathcal{X}\to\mathbb{R}\f$ is twice-continuously Fr&eacute;chet 
+    differentiable and \f$a,\,b\in\mathcal{X}\f$ with \f$a\le b\f$ almost 
+    everywhere in \f$\Xi\f$.  Note that the generalized Moreau-Yosida penalty
+    method will also work with secant approximations of the Hessian. 
+
+    The generalized Moreau-Yosida penalty method is a proveably convergent
+    algorithm for convex optimization problems and may not converge for general
+    nonlinear, nonconvex problems.  The algorithm solves
+    \f[
+       \min_x \quad f(x) \quad \text{s.t.} \quad c(x) = 0, \quad a \le x \le b.
+    \f]
+    We can respresent the bound constraints using the indicator function
+    \f$\iota_{[a,b]}(x) = 0\f$ if \f$a \le x \le b\f$ and equals \f$\infty\f$
+    otherwise.  Using this indicator function, we can write our optimization
+    problem as the (nonsmooth) equality constrained program
+    \f[
+       \min_x \quad f(x) + \iota_{[a,b]}(x) \quad \text{s.t.}\quad c(x) = 0.
+    \f]
+    Since the indicator function is not continuously Fr&eacute;chet
+    differentiable, we cannot apply our existing algorithms (such as, Composite
+    Step SQP) to the above equality constrained problem.  To circumvent this
+    issue, we smooth the indicator function using generalized Moreau-Yosida
+    regularization, i.e., we replace \f$\iota_{[a,b]}\f$ in the objective
+    function with
+    \f[
+       \varphi(x,\mu,c) = \inf_y\; \{\; \iota_{[a,b]}(x-y)
+         + \langle \mu, y\rangle_{\mathcal{X}}
+         + \frac{c}{2}\|y\|_{\mathcal{X}}^2 \;\}.
+    \f]
+    One can show that \f$\varphi(\cdot,\mu,c)\f$ for any \f$\mu\in\mathcal{X}\f$
+    and \f$c > 0\f$ is continuously Fr&eacute;chet
+    differentiable with respect to \f$x\f$.  Thus, using this penalty,
+    Step::compute solves the following subproblem: given
+    \f$c_k>0\f$ and \f$\mu_k\in\mathcal{X}\f$, determine \f$x_k\in\mathcal{X}\f$
+    that solves
+    \f[
+      \min_{x} \quad f(x) + \varphi(x,\mu_k,c_k)\quad\text{s.t.}
+         c(x) = 0.
+    \f]
+    The multipliers \f$\mu_k\f$ are then updated in Step::update as
+    \f$\mu_{k+1} = \nabla_x\varphi(x_k,\mu_k,c_k)\f$ and \f$c_k\f$ is
+    potentially increased (although this is not always necessary).
+
+    For more information on this method see:
+    \li D. P. Bertsekas. "Approximations Procedures Based on the Method of
+    Multipliers." Journal of Optimization Theory and Applications,
+    Vol. 23(4), 1977.
+    \li K. Ito, K. Kunisch. "Augmented Lagrangian Methods for Nonsmooth,
+    Convex, Optimization in Hilbert Space." Nonlinear Analysis, 2000.
 */
 
 
@@ -67,56 +121,72 @@ template <class Real>
 class MoreauYosidaPenaltyStep : public Step<Real> {
 private:
   Teuchos::RCP<MoreauYosidaPenalty<Real> > myPen_;
-  Teuchos::RCP<Step<Real> > step_;
-  Teuchos::RCP<StatusTest<Real> > status_;
-  Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
+  Teuchos::RCP<Vector<Real> > g_; 
   Teuchos::RCP<Vector<Real> > l_; 
 
-  Teuchos::RCP<Teuchos::ParameterList> parlist_;
-
   Real tau_;
-  Real alpha1_;
-  Real alpha2_;
-  Real beta1_;
-  Real beta2_;
-  Real eta0_;
-  Real eta1_;
-  Real omega0_;
-  Real omega1_;
-  Real gamma1_;
-
   bool print_;
 
-  Real eta_;
-  Real omega_;
-  Real gamma_;
-
-  int maxit_;
+  Teuchos::ParameterList parlist_;
   int subproblemIter_;
+
+  void updateState(const Vector<Real> &x, const Vector<Real> &l,
+                   Objective<Real> &obj,
+                   EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
+                   AlgorithmState<Real> &algo_state) {
+    Real zerotol = std::sqrt(ROL_EPSILON);
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    // Update objective and constraint.
+    obj.update(x,true,algo_state.iter);
+    con.update(x,true,algo_state.iter);
+    myPen_->update(x,true,algo_state.iter);
+    // Compute objective value, constraint value, & gradient of Lagrangian
+    algo_state.value = myPen_->value(x, zerotol);
+    con.value(*(state->constraintVec),x, zerotol);
+    myPen_->gradient(*(state->gradientVec), x, zerotol);
+    con.applyAdjointJacobian(*g_,l,x,zerotol);
+    state->gradientVec->plus(*g_);
+    // Compute criticality measure
+    if (bnd.isActivated()) {
+      x_->set(x);
+      x_->axpy(-1.0,(state->gradientVec)->dual());
+      bnd.project(*x_);
+      x_->axpy(-1.0,x);
+      algo_state.gnorm = x_->norm();
+    }
+    else {
+      algo_state.gnorm = (state->gradientVec)->norm();
+    }
+    algo_state.cnorm = (state->constraintVec)->norm();
+    // Update state
+    algo_state.nfval++;
+    algo_state.ngrad++;
+    algo_state.ncval++;
+  }
 
 public:
   ~MoreauYosidaPenaltyStep() {}
 
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), myPen_(Teuchos::null), subproblemIter_(0) {
-    Step<Real>::getState()->searchSize = parlist.get("Moreau-Yosida Penalty: Initial Penalty Parameter",10.0);
-    tau_    = parlist.get("Moreau-Yosida Penalty: Penalty Parameter Growth Factor",10.0);
-    alpha1_ = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance Update Exponent",1.0);
-    alpha2_ = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance Update Exponent",0.1);
-    beta1_  = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance Decrease Exponent",1.0);
-    beta2_  = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance Decrease Exponent",0.9);
-    eta0_   = parlist.get("Moreau-Yosida Penalty: Initial Optimality Tolerance",1.0);
-    omega0_ = parlist.get("Moreau-Yosida Penalty: Initial Feasibility Tolerance",1.0);
-    eta1_   = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance",1.e-8);
-    omega1_ = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance",1.e-8);
-    gamma1_ = parlist.get("Moreau-Yosida Penalty: Minimum Penalty Parameter Reciprocal",0.1);
-    print_  = parlist.get("Moreau-Yosida Penalty: Print Intermediate Optimization History",false);
-    // Initialize subproblem step type
-    //step_   = Teuchos::rcp(new CompositeStepSQP<Real>(parlist));
-    maxit_  = parlist.get("Moreau-Yosida Penalty: Subproblem Iteration Limit",1000);
-
-    parlist_ = Teuchos::rcp(&parlist,false);
+    : Step<Real>(), myPen_(Teuchos::null), algo_(Teuchos::null),
+      x_(Teuchos::null), g_(Teuchos::null), l_(Teuchos::null),
+      tau_(10.), print_(false), parlist_(parlist), subproblemIter_(0) {
+    // Parse parameters
+    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",10.0);
+    tau_   = steplist.get("Penalty Parameter Growth Factor",10.0);
+    print_ = steplist.sublist("Subproblem").get("Print History",false);
+    // Set parameters for step subproblem
+    Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",1.e-8);
+    Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance",1.e-8);
+    Real stol = 1.e-6*std::min(gtol,ctol);
+    int maxit = steplist.sublist("Subproblem").get("Iteration Limit",1000);
+    parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol);
+    parlist_.sublist("Status Test").set("Constraint Tolerance", ctol);
+    parlist_.sublist("Status Test").set("Step Tolerance",       stol);
+    parlist_.sublist("Status Test").set("Iteration Limit",      maxit);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -129,10 +199,10 @@ public:
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
-    // Initialize intermediate stopping tolerances
-    gamma_ = std::min(1.0/state->searchSize,gamma1_);
-    omega_ = omega0_*std::pow(gamma_,alpha1_);
-    eta_   = eta0_*std::pow(gamma_,alpha2_);
+    // Initialize additional storage
+    x_ = x.clone();
+    g_ = g.clone();
+    l_ = l.clone();
     // Project x onto the feasible set
     if ( bnd.isActivated() ) {
       bnd.project(x);
@@ -144,22 +214,7 @@ public:
     algo_state.nfval = 0;
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
-    // Initialize additional storage
-    x_ = x.clone();
-    l_ = l.clone();
-    // Update objective and constraint.
-    Real zerotol = 0.0;
-    myPen_->update(x,true,algo_state.iter);
-    algo_state.value = myPen_->value(x, zerotol);
-    algo_state.value = myPen_->getObjectiveValue();
-    algo_state.nfval += myPen_->getNumberFunctionEvaluations();
-    myPen_->gradient(*(state->gradientVec), x, zerotol);
-    algo_state.ngrad += myPen_->getNumberGradientEvaluations();
-    algo_state.gnorm = (state->gradientVec)->norm();
-    state->constraintVec = c.clone();
-    con.value(*(state->constraintVec),x,zerotol);
-    algo_state.ncval++;
-    algo_state.cnorm = (state->constraintVec)->norm();
+    updateState(x,l,obj,con,bnd,algo_state);
   }
 
   /** \brief Compute step (equality and bound constraints).
@@ -168,11 +223,7 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    Real ftol = omega1_; //std::max(omega_,omega1_);
-    Real ctol = eta1_; //std::max(eta_,eta1_);
-    step_   = Teuchos::rcp(new CompositeStepSQP<Real>(*parlist_));
-    status_ = Teuchos::rcp(new StatusTestSQP<Real>(ftol,ctol,1.e-6*ftol,maxit_));
-    algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));
+    algo_ = Teuchos::rcp(new Algorithm<Real>("Composite Step",parlist_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
     s.set(*x_); s.axpy(-1.0,x);
@@ -187,36 +238,24 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec->set(s);
-    state->gradientVec->set(*((step_->getStepState())->gradientVec));
-    state->constraintVec->set(*((step_->getStepState())->constraintVec));
-
-    state->searchSize *= tau_;
-    myPen_->updateMultipliers(state->searchSize,x);
-
+    // Update iterate and Lagrange multiplier
     x.plus(s);
     l.set(*l_);
-
-    if (bnd.isActivated()) {
-      x_->set(x);
-      x_->axpy(-1.0,(state->gradientVec)->dual());
-      bnd.project(*x_);
-      x_->axpy(-1.0,x);
-      algo_state.gnorm = x_->norm();
-    }
-    else {
-      algo_state.gnorm = (state->gradientVec)->norm();
-    }
-
+    // Update objective and constraint
+    algo_state.iter++;
+    con.update(x,true,algo_state.iter);
+    myPen_->update(x,true,algo_state.iter);
+    // Update multipliers
+    state->searchSize *= tau_;
+    myPen_->updateMultipliers(state->searchSize,x);
+    // Update state
+    updateState(x,l,obj,con,bnd,algo_state);
     algo_state.nfval += myPen_->getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
     algo_state.ngrad += myPen_->getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
     algo_state.ncval += (algo_->getState())->ncval;
-    algo_state.value = myPen_->getObjectiveValue();
-    //algo_state.gnorm = (state->gradientVec)->norm();
-    algo_state.cnorm = (state->constraintVec)->norm();
     algo_state.snorm = s.norm();
     algo_state.iterateVec->set(x);
     algo_state.lagmultVec->set(l);
-    algo_state.iter++;
   }
 
   /** \brief Print iterate header.
@@ -229,9 +268,7 @@ public:
     hist << std::setw(15) << std::left << "cnorm";
     hist << std::setw(15) << std::left << "gnorm";
     hist << std::setw(15) << std::left << "snorm";
-    hist << std::setw(15) << std::left << "penalty";
-//    hist << std::setw(15) << std::left << "feasTol";
-//    hist << std::setw(15) << std::left << "optTol";
+    hist << std::setw(10) << std::left << "penalty";
     hist << std::setw(8) << std::left << "#fval";
     hist << std::setw(8) << std::left << "#grad";
     hist << std::setw(8) << std::left << "#cval";
@@ -267,9 +304,8 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << " ";
-      hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
-//      hist << std::setw(15) << std::left << std::max(eta_,eta1_);
-//      hist << std::setw(15) << std::left << std::max(omega_,omega1_);
+      hist << std::scientific << std::setprecision(2);
+      hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
       hist << "\n";
     }
     else {
@@ -279,9 +315,8 @@ public:
       hist << std::setw(15) << std::left << algo_state.cnorm;
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << algo_state.snorm;
-      hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
-//      hist << std::setw(15) << std::left << eta_;
-//      hist << std::setw(15) << std::left << omega_;
+      hist << std::scientific << std::setprecision(2);
+      hist << std::setw(10) << std::left << Step<Real>::getStepState()->searchSize;
       hist << std::scientific << std::setprecision(6);
       hist << std::setw(8) << std::left << algo_state.nfval;
       hist << std::setw(8) << std::left << algo_state.ngrad;

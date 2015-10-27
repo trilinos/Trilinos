@@ -49,10 +49,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "ROL_CVaRVector.hpp"
 #include "ROL_CVaRBoundConstraint.hpp"
@@ -71,6 +70,7 @@
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
+#include "ROL_DistributionFactory.hpp"
 
 
 template<class Real> 
@@ -146,15 +146,12 @@ int main(int argc, char* argv[]) {
     // Get ROL parameterlist
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Build ROL algorithm
-    double gtol = parlist->get("Gradient Tolerance",1.e-6);
-    double stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit   = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<double> status(gtol,stol,maxit);
+    Teuchos::RCP<ROL::StatusTest<double> > status = Teuchos::rcp(new ROL::StatusTest<double>(*parlist));
     //ROL::LineSearchStep<double> step(*parlist);
     Teuchos::RCP<ROL::Step<double> > step;
-    Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
+    Teuchos::RCP<ROL::Algorithm<double> > algo;
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -214,7 +211,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -236,7 +233,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -267,7 +264,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -290,7 +287,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -317,7 +314,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -344,7 +341,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -361,7 +358,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> data2(2,0.0);
     data2[0] = 0.0; data2[1] = 1.0;
     Teuchos::RCP<ROL::Distribution<double> > dist2 =
-      Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_PARABOLIC,data2));
+      Teuchos::rcp(new ROL::Parabolic<double>(data2[0],data2[1]));
     Teuchos::RCP<ROL::PlusFunction<double> > plusf =
       Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));
     pf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));
@@ -378,7 +375,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -403,7 +400,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -428,7 +425,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -453,7 +450,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";
@@ -485,7 +482,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(xc,dc,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(xc,*obj,*CVaRcon,true,*outStream);
     // Print Solution
     *outStream << "t = " << xc.getVaR() << "\n";
@@ -520,7 +517,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(xq,dq,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(xq,*obj,*CVaRcon,true,*outStream);
     // Print Solution
     *outStream << "t = " << xq.getVaR() << "\n";
@@ -544,7 +541,7 @@ int main(int argc, char* argv[]) {
     obj->checkHessVec(x,d,true,*outStream);
     // Run ROL algorithm
     step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    algo = Teuchos::rcp( new ROL::Algorithm<double>(step,status,false) );
     algo->run(x,*obj,*con,true,*outStream);
     // Print Solution
     *outStream << "x = (";

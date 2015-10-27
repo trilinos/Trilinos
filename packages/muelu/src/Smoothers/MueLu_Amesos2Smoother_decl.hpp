@@ -63,6 +63,7 @@ namespace MueLu {
 
   /*!
     @class Amesos2Smoother
+    @ingroup MueLuSmootherClasses 
     @brief Class that encapsulates Amesos2 direct solvers.
 
     This class creates an Amesos2 preconditioner factory.  The factory is capable of generating direct solvers

@@ -45,9 +45,9 @@
     \brief Shows how to solve a finite minimax problem.
 */
 
+#include "ROL_Algorithm.hpp"
 #include "ROL_BundleStep.hpp"
 #include "ROL_BundleStatusTest.hpp"
-#include "ROL_Algorithm.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Minimax2.hpp"
@@ -95,17 +95,9 @@ int main(int argc, char *argv[]) {
     // Algorithmic input parameters.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-
-    // Define status test.
-    RealT gtol  = 1e-4; // norm of gradient tolerance
-    int   maxit = 1000; // maximum number of iterations
-    parlist->set("Bundle Step: Epsilon Solution Tolerance",gtol);
-    ROL::BundleStatusTest<RealT> status(gtol, maxit);    
-    ROL::BundleStep<RealT> step(*parlist);
-
-    // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    std::string stepname = "Bundle";
+    ROL::Algorithm<RealT> algo(stepname,*parlist);
 
     // Run algorithm.
     algo.run(x, obj, true, *outStream);

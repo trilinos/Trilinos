@@ -65,7 +65,6 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 		      const RCP<const Comm<int> > comm,
                       Zoltan2::MeshEntityType sourcetarget,
                       Zoltan2::MeshEntityType through) {
-  typedef typename MeshAdapter<User>::zgid_t zgid_t;
   typedef typename MeshAdapter<User>::gno_t gno_t;
   typedef typename MeshAdapter<User>::lno_t lno_t;
   typedef typename MeshAdapter<User>::node_t node_t;
@@ -87,13 +86,13 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     // Get node-element connectivity
 
     const lno_t *offsets=NULL;
-    const zgid_t *adjacencyIds=NULL;
+    const gno_t *adjacencyIds=NULL;
     ia->getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-    zgid_t const *Ids=NULL;
+    gno_t const *Ids=NULL;
     ia->getIDsViewOf(sourcetarget, Ids);
 
-    zgid_t const *throughIds=NULL;
+    gno_t const *throughIds=NULL;
     ia->getIDsViewOf(through, throughIds);
 
     size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
@@ -211,9 +210,8 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
                             Zoltan2::MeshEntityType sourcetarget,
                             Zoltan2::MeshEntityType through,
                             const typename MeshAdapter<User>::lno_t *&offsets,
-                            const typename MeshAdapter<User>::zgid_t *&adjacencyIds)
+                            const typename MeshAdapter<User>::gno_t *&adjacencyIds)
 {
-  typedef typename MeshAdapter<User>::zgid_t zgid_t;
   typedef typename MeshAdapter<User>::gno_t gno_t;
   typedef typename MeshAdapter<User>::lno_t lno_t;
   typedef typename MeshAdapter<User>::node_t node_t;
@@ -229,10 +227,10 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     
     size_t nadj = 0;
 
-    zgid_t const *Ids=NULL;
+    gno_t const *Ids=NULL;
     ia->getIDsViewOf(sourcetarget, Ids);
 
-    zgid_t const *throughIds=NULL;
+    gno_t const *throughIds=NULL;
     ia->getIDsViewOf(through, throughIds);
 
     /* Allocate memory necessary for the adjacency */
@@ -259,7 +257,7 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     Ids = NULL;
     start[LocalNumIDs] = nadj;
 
-    zgid_t *adj_ = new zgid_t [nadj];
+    gno_t *adj_ = new gno_t [nadj];
 
     for (size_t i=0; i < nadj; i++) {
       adj_[i] = adj[i];

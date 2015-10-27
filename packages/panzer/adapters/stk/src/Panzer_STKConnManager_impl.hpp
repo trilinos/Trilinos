@@ -89,6 +89,7 @@ void STKConnManager<GO>::clearLocalElementMapping()
    elementBlocks_.clear();
    elmtLidToConn_.clear();
    connSize_.clear();
+   elmtToAssociatedElmts_.clear();
 }
 
 template <typename GO>
@@ -283,7 +284,8 @@ void STKConnManager<GO>::buildConnectivity(const panzer::FieldPattern & fp)
    // This method does not modify connectivity_. But it should be called here
    // because the data it initializes should be available at the same time as
    // connectivity_.
-   applyInterfaceConditions();
+   if (hasAssociatedNeighbors())
+     applyInterfaceConditions();
 }
 
 template <typename GO>
@@ -364,6 +366,19 @@ void STKConnManager<GO>::getDofCoords(const std::string & blockId,
    coordProvider.getInterpolatoryCoordinates(vertices,points);
 }
 
+template <typename GO>
+bool STKConnManager<GO>::hasAssociatedNeighbors() const
+{
+  return ! sidesetsToAssociate_.empty();
+}
+
+template <typename GO>
+void STKConnManager<GO>::associateElementsInSideset(const std::string sideset_id)
+{
+  sidesetsToAssociate_.push_back(sideset_id);
+  sidesetYieldedAssociations_.push_back(false);
+}
+
 inline std::size_t
 getElementIdx(const std::vector<stk_classic::mesh::Entity*>& elements,
               const stk_classic::mesh::Entity* const e)
@@ -374,33 +389,51 @@ getElementIdx(const std::vector<stk_classic::mesh::Entity*>& elements,
 
 template <typename GO>
 void STKConnManager<GO>::applyInterfaceConditions()
-{
-  std::vector<std::string> sideset_names;
-  stkMeshDB_->getSidesetNames(sideset_names);
-  for (std::vector<std::string>::const_iterator ssni = sideset_names.begin();
-       ssni != sideset_names.end(); ++ssni) {
+{  
+  elmtToAssociatedElmts_.resize(elements_->size());
+  for (std::size_t i = 0; i < sidesetsToAssociate_.size(); ++i) {
     std::vector<stk_classic::mesh::Entity*> sides;
-    stkMeshDB_->getMySides(*ssni, sides);
+    stkMeshDB_->getAllSides(sidesetsToAssociate_[i], sides);
+    sidesetYieldedAssociations_[i] = ! sides.empty();
     for (std::vector<stk_classic::mesh::Entity*>::const_iterator si = sides.begin();
          si != sides.end(); ++si) {
       const stk_classic::mesh::Entity* const side = *si;
-      const stk_classic::mesh::PairIterRelation relations = side->relations(stkMeshDB_->getElementRank());
-      if (relations.size() != 2) continue;
+      const stk_classic::mesh::PairIterRelation
+        relations = side->relations(stkMeshDB_->getElementRank());
+      if (relations.size() != 2) {
+        // If relations.size() != 2 for one side in the sideset, then it's true
+        // for all, including the first.
+        TEUCHOS_ASSERT(si == sides.begin());
+        sidesetYieldedAssociations_[i] = false;
+        break;
+      }
       const std::size_t ea_id = getElementIdx(*elements_, relations[0].entity()),
         eb_id = getElementIdx(*elements_, relations[1].entity());
-      elmtToInterfaceElmt_[ea_id] = eb_id;
-      elmtToInterfaceElmt_[eb_id] = ea_id;
+      elmtToAssociatedElmts_[ea_id].push_back(eb_id);
+      elmtToAssociatedElmts_[eb_id].push_back(ea_id);
     }
   }
 }
 
 template <typename GO>
-bool STKConnManager<GO>::getElementAcrossInterface(const LocalOrdinal& el, LocalOrdinal& el_other) const
+std::vector<std::string> STKConnManager<GO>::
+checkAssociateElementsInSidesets(const Teuchos::Comm<int>& comm) const
 {
-  typename std::map<LocalOrdinal,LocalOrdinal>::const_iterator it = elmtToInterfaceElmt_.find(el);
-  if (it == elmtToInterfaceElmt_.end()) return false;
-  el_other = it->second;
-  return true;
+  std::vector<std::string> sidesets;
+  for (std::size_t i = 0; i < sidesetYieldedAssociations_.size(); ++i) {
+    int sya, my_sya = sidesetYieldedAssociations_[i] ? 1 : 0;
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &my_sya, &sya);
+    if (sya == 0)
+      sidesets.push_back(sidesetsToAssociate_[i]);
+  }
+  return sidesets;
+}
+
+template <typename GO>
+const std::vector<typename STKConnManager<GO>::LocalOrdinal>&
+STKConnManager<GO>::getAssociatedNeighbors(const LocalOrdinal& el) const
+{
+  return elmtToAssociatedElmts_[el];
 }
 
 }

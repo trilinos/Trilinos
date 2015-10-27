@@ -202,20 +202,14 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     BCType bc_type = bc->bcType();
 
     if (bc_type == BCT_Interface) {
-      // Build one FieldManager for each local side workset for each dirichlet bc
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
-        bc_field_managers_[*bc];
-
       // Loop over local face indices and setup each field manager
       for (std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
            wkst != currentWkst->end(); ++wkst) {
-        PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
+        // Build one FieldManager for each local side workset for each bc
+        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
+          bc_field_managers_[*bc];
 
-        // Set up the field manager
-        Traits::SetupData setupData;
-        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-        worksets->push_back(wkst->second);
-        setupData.worksets_ = worksets;
+        PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
 
         int gid_count = 0;
         for (int block_id_index = 0; block_id_index < 2; ++block_id_index) {
@@ -232,7 +226,9 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           const Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
           
           // register evaluators from strategy      
-          const panzer::CellData side_cell_data(wkst->second.num_cells, wkst->first, volume_cell_topology);
+          const panzer::CellData side_cell_data(wkst->second.num_cells,
+                                                wkst->second.details(block_id_index).subcell_index,
+                                                volume_cell_topology);
 
           // Copy the physics block for side integrations
           Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
@@ -262,6 +258,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           derivative_dimensions[0] = 1;
           fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
         }
+
+        // Set up the field manager
+        Traits::SetupData setupData;
+        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
+        worksets->push_back(wkst->second);
+        setupData.worksets_ = worksets;
 
         fm.postRegistrationSetup(setupData);
       }

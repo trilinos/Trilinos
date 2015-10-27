@@ -93,7 +93,6 @@ class MatchingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -162,9 +161,6 @@ private:
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
 };
 
 
@@ -206,17 +202,6 @@ void MatchingProblem<Adapter>::solve(bool newData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-  // EGB: This seems excessive. Algorithms should never change the comm?!
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -247,23 +232,6 @@ void MatchingProblem<Adapter>::createMatchingProblem()
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  Comm<int> *c = problemComm_.getRawPtr();
-  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
-  if (mc){
-    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
-    mpiComm_ = (*wrappedComm.getRawPtr())();
-  }
-  else{
-    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
-  }
-
-#endif
-
   // Only graph model supported.
   // TODO: Allow hypergraph later?
 
@@ -277,8 +245,8 @@ void MatchingProblem<Adapter>::createMatchingProblem()
   switch (modelType) {
 
   case GraphModelType:
-    graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
-    graphFlags.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+    graphFlags.set(REMOVE_SELF_EDGES);
+    graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 

@@ -49,8 +49,9 @@
 #define USE_HESSVEC 1
 
 #include "ROL_Rosenbrock.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -80,33 +81,15 @@ int main(int argc, char *argv[]) {
     ROL::ZOO::Objective_Rosenbrock<RealT> obj;
     int dim = 100; // Set problem dimension. Must be even.
 
+    // Set parameters.
     Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Descent Type",                           "Newton Krylov");
-    parlist.set("Linesearch Type",                        "Cubic Interpolation");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    10);
-    // Define Step
-    ROL::LineSearchStep<RealT> step(parlist);
+    parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
 
-    // Define Status Test
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
-
-    // Define Algorithm
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    // Define algorithm.
+    ROL::Algorithm<RealT> algo("Line Search",parlist);
 
     // Iteration Vector
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -118,10 +101,7 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> x(x_rcp);
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(x, obj, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
-    }
+    algo.run(x, obj, true, *outStream);
 
     // Get True Solution
     Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );

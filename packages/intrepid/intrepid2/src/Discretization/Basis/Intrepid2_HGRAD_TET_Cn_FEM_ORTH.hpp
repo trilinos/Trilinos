@@ -46,8 +46,8 @@
     \author Created by Robert C. Kirby
 */
 
-#ifndef INTREPID_HGRAD_TET_Cn_FEM_ORTH_HPP
-#define INTREPID_HGRAD_TET_Cn_FEM_ORTH_HPP
+#ifndef INTREPID2_HGRAD_TET_Cn_FEM_ORTH_HPP
+#define INTREPID2_HGRAD_TET_Cn_FEM_ORTH_HPP
 
 #include "Intrepid2_Basis.hpp"
 #include "Sacado.hpp"

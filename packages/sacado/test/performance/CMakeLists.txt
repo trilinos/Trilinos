@@ -74,3 +74,4 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
 ENDIF()
 
 ADD_SUBDIRECTORY(fenl_assembly)
+ADD_SUBDIRECTORY(fenl_assembly_view)

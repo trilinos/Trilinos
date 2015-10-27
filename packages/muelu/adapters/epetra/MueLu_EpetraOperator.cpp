@@ -50,7 +50,6 @@
 
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -111,30 +110,45 @@ const Epetra_Comm& EpetraOperator::Comm() const {
     return epA->Comm();
   }
 
-  RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A);
-  return epA->Comm();
+  RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
+  if (crsOp == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+  const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+  if (tmp_ECrsMtx == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
+  return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->Comm();
 }
 
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
+  RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getDomainMap());
 
-  RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A);
-  return epA->DomainMap();
+  RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
+  if (crsOp == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+  const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+  if (tmp_ECrsMtx == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
+  return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->DomainMap();
 }
 
 const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
+  RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getRangeMap());
 
-  RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A);
-  return epA->RangeMap();
+  RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
+  if (crsOp == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
+  const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+  if (tmp_ECrsMtx == Teuchos::null)
+    throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
+  return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->RangeMap();
 }
 
 } // namespace

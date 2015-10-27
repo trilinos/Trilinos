@@ -80,10 +80,6 @@ HEADER
 #include <Ifpack2_Version.hpp>
 #include <iostream>
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-#include <qd/dd_real.h>
-#endif
-
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_Relaxation.hpp>
 #include <Tpetra_RowMatrix.hpp>
@@ -222,9 +218,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
   RCP<const MV> xrcp = y.subView (Teuchos::Range1D (0,1));
   const MV& x = *xrcp;
 
-  TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
-  TEST_EQUALITY(&(x.get2dView()[0][0]), &(y.get2dView()[0][0]));         // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
-  TEST_EQUALITY(x.getLocalMV().getValues(), y.getLocalMV().getValues()); // another way to test if x and y are pointing to the same memory location
+  TEST_INEQUALITY(&x, &y); // vector x and y are different
+  // Vectors x and y point to the same data.
+  TEST_EQUALITY(x.template getLocalView<Kokkos::HostSpace> ().ptr_on_device (),
+                y.template getLocalView<Kokkos::HostSpace> ().ptr_on_device ());
 
   prec.apply(x, y);
 
@@ -1092,7 +1089,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    auto yb = ylcl.getRawPtr();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -1100,33 +1097,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
 }
 
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LocalOrdinal, GlobalOrdinal)
+#define UNIT_TEST_GROUP_SC_LO_GO( Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test0, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test1, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test2, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test3, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, Test4, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SymGaussSeidelZeroRows, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, LocalSymGaussSeidelZeroRows, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LO, GO )
 
-# define UNIT_TEST_GROUP_BLOCK_LGN( Scalar, LocalOrdinal, GlobalOrdinal ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)
+#include "Ifpack2_ETIHelperMacros.h"
 
-typedef Tpetra::MultiVector<>::scalar_type scalar_type;
-typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;
-typedef Tpetra::MultiVector<>::global_ordinal_type global_ordinal_type;
+IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(scalar_type, local_ordinal_type, global_ordinal_type)
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types.
+//
+// FIXME (21 Oct 2015) Fix test for complex Scalar types.  (The class
+// itself should be fine.)
 
-UNIT_TEST_GROUP_BLOCK_LGN(scalar_type, local_ordinal_type, global_ordinal_type)
-
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, local_ordinal_type, global_ordinal_type)
-#endif
+IFPACK2_INSTANTIATE_SLG_REAL( UNIT_TEST_GROUP_SC_LO_GO )
 
 } // namespace (anonymous)
 

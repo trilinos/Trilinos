@@ -46,20 +46,20 @@
     \author Created by P. Bochev, D. Ridzal and M. Perego
 */
 
-#ifndef INTREPID_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
-#define INTREPID_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
+#ifndef INTREPID2_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
+#define INTREPID2_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
 #include "Teuchos_Assert.hpp"
 
-/** \def INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX
+/** \def INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct line rule of the GaussJacobi20(-Legendre) type.
 */
 // srkenno@sandia.gov 6/21/10:
 // see below comment for the enum
-#define INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX 11
+#define INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX 11
 
 
 namespace Intrepid2 {
@@ -73,13 +73,13 @@ class CubatureDirectLineGaussJacobi20 : public Intrepid2::CubatureDirect<Scalar,
 
   // srkenno@sandia.gov 6/21/10:
   // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
-  enum {INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM = INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX};
+  enum {INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM = INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX};
 
   private:
 
   /** \brief Complete set of data defining line GaussJacobi20(-Legendre) rules.
   */
-  static const CubatureTemplate cubature_data_[INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1];
+  static const CubatureTemplate cubature_data_[INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1];
 
   /** \brief Names of templates for frequently used direct cubature rules.
   */
@@ -111,13 +111,13 @@ class CubatureDirectLineGaussJacobi20 : public Intrepid2::CubatureDirect<Scalar,
 
   /** \brief Exposes cubature data, accessible without construction.
   */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1];
+  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1];
 
 
 }; // end class CubatureDirect 
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1] {
+inline const CubatureTemplate (& CubatureDirectLineGaussJacobi20<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX_ENUM+1] {
   return cubature_data_;
 }
 

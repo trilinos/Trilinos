@@ -2,9 +2,6 @@
 #define ROL_DIODECIRCUIT_HPP
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -401,7 +398,7 @@ public:
     Imeas_ = Teuchos::rcp(new std::vector<Real>(ns_,0.0));
     Real temp;
     std::ifstream measurements("measurements.dat");
-    std::cout << "Reading measurements" << std::endl;
+    //std::cout << "Reading measurements" << std::endl;
     if (measurements.is_open()){
       for (int i=0;i<ns_;i++){
 	measurements >> temp;

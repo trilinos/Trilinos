@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,17 +39,17 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor_t_h)
-#define Intrepid_MiniTensor_Tensor_t_h
+#if !defined(Intrepid2_MiniTensor_Tensor_t_h)
+#define Intrepid2_MiniTensor_Tensor_t_h
 
 namespace Intrepid2 {
 
 //
 // tensor input
 //
-template<typename T, Index N>
+template<typename T, Index N, class  ES>
 std::istream &
-operator>>(std::istream & is, Tensor<T, N> & A)
+operator>>(std::istream & is, Tensor<T, N, ES> & A)
 {
 
   Index const
@@ -67,9 +67,9 @@ operator>>(std::istream & is, Tensor<T, N> & A)
 //
 // tensor output
 //
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 std::ostream &
-operator<<(std::ostream & os, Tensor<T, N> const & A)
+operator<<(std::ostream & os, Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -78,11 +78,11 @@ operator<<(std::ostream & os, Tensor<T, N> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < dimension; ++i) {
 
-    os << A(i,0);
+    os << std::setw(24) << A(i,0);
 
     for (Index j = 1; j < dimension; ++j) {
       os << "," << std::setw(24) << A(i,j);
@@ -94,6 +94,6 @@ operator<<(std::ostream & os, Tensor<T, N> const & A)
   return os;
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor_t_h
+#endif // Intrepid2_MiniTensor_Tensor_t_h

@@ -1166,10 +1166,8 @@ namespace TSQR {
   ///
   /// \tparam Scalar The type of entries in the (node-local) matrix.
   ///
-  /// \tparam NodeType The Kokkos Node type.  This currently
-  ///   <i>must</i> implement \c StandardNodeMemoryModel, that is, it
-  ///   must be a CPU node and not a GPU node.  This algorithm is not
-  ///   appropriate for GPUs.
+  /// \tparam NodeType The Kokkos Node type.  This currently must be a
+  ///   CPU node; this algorithm is not (yet) appropriate for GPUs.
   ///
   /// This implementation of the intranode part of TSQR factors the
   /// matrix in two passes.  The first pass parallelizes over

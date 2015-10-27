@@ -137,7 +137,8 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_IntVector > *
-convertPythonToEpetraIntVector(PyObject * pyobj)
+convertPythonToEpetraIntVector(PyObject * pyobj,
+                               int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EIV_ptr =
@@ -151,15 +152,16 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_IntVector > smartresult;
   Teuchos::RCP< Epetra_IntVector > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<int> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_IntVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EIV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EIV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -170,8 +172,8 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<int>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -179,6 +181,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->getEpetraIntVectorView();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -196,10 +199,6 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_IntVector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<int> > * >(argp);
-    }
     return result;
   }
   //
@@ -208,8 +207,12 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<int>(comm, dap);
+      *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -255,6 +258,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
       int * data = (int*) PyArray_DATA(array);
       Epetra_Map map(totalLength, 0, comm);
       smartresult = Teuchos::rcp(new Epetra_IntVector(Copy, map, data));
+      *newmem = SWIG_CAST_NEW_MEMORY;
       result = new Teuchos::RCP< Epetra_IntVector >(smartresult);
       return result;
     }
@@ -271,7 +275,8 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_MultiVector > *
-convertPythonToEpetraMultiVector(PyObject * pyobj)
+convertPythonToEpetraMultiVector(PyObject * pyobj,
+                                 int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EMV_ptr =
@@ -285,15 +290,16 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_MultiVector > smartresult;
   Teuchos::RCP< Epetra_MultiVector > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_MultiVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EMV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EMV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -304,8 +310,8 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -313,6 +319,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->getEpetraMultiVectorView();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -330,10 +337,6 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_MultiVector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
-    }
     return result;
   }
   //
@@ -342,8 +345,12 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<double>(comm, dap);
+      *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -403,6 +410,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
       smartresult =
         Teuchos::rcp(new Epetra_MultiVector(Copy, map, data, vecLen, numVec));
       result = new Teuchos::RCP< Epetra_MultiVector >(smartresult);
+      *newmem = SWIG_CAST_NEW_MEMORY;
       return result;
     }
   }
@@ -418,7 +426,8 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Vector > *
-convertPythonToEpetraVector(PyObject * pyobj)
+convertPythonToEpetraVector(PyObject * pyobj,
+                            int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EV_ptr =
@@ -432,15 +441,16 @@ convertPythonToEpetraVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_Vector > smartresult;
   Teuchos::RCP< Epetra_Vector > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_Vector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -451,8 +461,8 @@ convertPythonToEpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -460,6 +470,7 @@ convertPythonToEpetraVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->getEpetraVectorView();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -477,10 +488,6 @@ convertPythonToEpetraVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_Vector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
-    }
     return result;
   }
   //
@@ -489,8 +496,12 @@ convertPythonToEpetraVector(PyObject * pyobj)
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<double>(comm, dap);
+      *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -537,6 +548,7 @@ convertPythonToEpetraVector(PyObject * pyobj)
       Epetra_Map map(totalLength, 0, comm);
       smartresult = Teuchos::rcp(new Epetra_Vector(Copy, map, data));
       result = new Teuchos::RCP< Epetra_Vector >(smartresult);
+      *newmem = SWIG_CAST_NEW_MEMORY;
       return result;
     }
   }

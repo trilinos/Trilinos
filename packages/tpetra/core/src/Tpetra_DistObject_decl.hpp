@@ -42,12 +42,22 @@
 #ifndef TPETRA_DISTOBJECT_DECL_HPP
 #define TPETRA_DISTOBJECT_DECL_HPP
 
+/// \file Tpetra_DistObject_decl.hpp
+/// \brief Declaration of the Tpetra::DistObject class
+///
+/// If you want to use Tpetra::DistObject, include
+/// "Tpetra_DistObject.hpp" (a file which CMake generates and installs
+/// for you).  If you only want the declaration of Tpetra::DistObject,
+/// include this file (Tpetra_DistObject_decl.hpp).
+
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
-#include <Kokkos_NodeAPIConfigDefs.hpp> // enum KokkosClassic::ReadWriteOption
+#include "Kokkos_NodeAPIConfigDefs.hpp" // enum KokkosClassic::ReadWriteOption
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
@@ -59,8 +69,10 @@
 
 
 namespace Tpetra {
+
   /// \class DistObject
-  /// \brief Base class for distributed Tpetra objects that support data redistribution.
+  /// \brief Base class for distributed Tpetra objects that support
+  ///   data redistribution.
   ///
   /// DistObject is a base class for all Tpetra distributed global
   /// objects, including CrsMatrix and MultiVector.  It provides the
@@ -78,6 +90,10 @@ namespace Tpetra {
   ///
   /// \tparam Node Same as Map's \c Node template parameter.  Defaults
   ///   to the default Kokkos Node type.
+  ///
+  /// \tparam classic DO NOT SET THIS EXPLICITLY.  This template
+  ///   parameter only exists for backwards compatibility.  It must
+  ///   always be false.
   ///
   /// \section Tpetra_DistObject_Summary Summary
   ///
@@ -171,17 +187,10 @@ namespace Tpetra {
             class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
             class Node = Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
-  class DistObject {};
-
-#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
-
-  template <class Packet,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node>
-  class DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, true> :
+  class DistObject :
     virtual public SrcDistObject,
-    virtual public Teuchos::Describable {
+    virtual public Teuchos::Describable
+  {
   public:
     //! @name Typedefs
     //@{
@@ -190,7 +199,7 @@ namespace Tpetra {
     ///
     /// Note that this type does not always correspond to the
     /// <tt>Scalar</tt> template parameter of subclasses.
-    typedef Packet packet_type;
+    typedef typename Kokkos::Details::ArithTraits<Packet>::val_type packet_type;
     //! The type of local indices.
     typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
@@ -198,15 +207,28 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node node_type;
 
+    //! The Kokkos Device type.
+    typedef typename Node::device_type device_type;
+    //! The Kokkos execution space.
+    typedef typename device_type::execution_space execution_space;
+
+  private:
+    typedef typename Kokkos::View<packet_type*, device_type>::size_type view_size_type;
+    typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic> this_type;
+
+  public:
+    //! The type of the Map specialization to use with this class.
+    typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
     //@}
     //! @name Constructors and destructor
     //@{
 
     //! Constructor.
-    explicit DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+    explicit DistObject (const Teuchos::RCP<const map_type>& map);
 
     //! Copy constructor.
-    DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& rhs);
+    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs);
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~DistObject ();
@@ -234,7 +256,7 @@ namespace Tpetra {
     ///   global index.
     void
     doImport (const SrcDistObject& source,
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               CombineMode CM);
 
     /// \brief Export data into this object using an Export object ("forward mode").
@@ -256,7 +278,7 @@ namespace Tpetra {
     ///   global index.
     void
     doExport (const SrcDistObject& source,
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
               CombineMode CM);
 
     /// \brief Import data into this object using an Export object ("reverse mode").
@@ -279,7 +301,7 @@ namespace Tpetra {
     ///   global index.
     void
     doImport (const SrcDistObject& source,
-              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
               CombineMode CM);
 
     /// \brief Export data into this object using an Import object ("reverse mode").
@@ -302,7 +324,7 @@ namespace Tpetra {
     ///   global index.
     void
     doExport (const SrcDistObject& source,
-              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
               CombineMode CM);
 
     //@}
@@ -322,8 +344,7 @@ namespace Tpetra {
     /// multiple Map objects.  For example, CrsMatrix has both a row
     /// Map and a column Map.  It is up to the subclass to decide
     /// which Map to use when invoking the DistObject constructor.
-    virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
-    getMap() const { return map_; }
+    virtual Teuchos::RCP<const map_type> getMap () const { return map_; }
 
     //@}
     //! @name I/O methods
@@ -345,14 +366,15 @@ namespace Tpetra {
     /// DistObject may override it.
     virtual std::string description () const;
 
-
     /// \brief Print a descriptiion of this object to the given output stream.
     ///
     /// We declare this method virtual so that subclasses of
     /// Distobject may override it.
     virtual void
     describe (Teuchos::FancyOStream &out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
+
     //@}
     //! @name Methods for use only by experts
     //@{
@@ -403,7 +425,7 @@ namespace Tpetra {
     /// \note To implementers of DistObject subclasses: The default
     ///   implementation of this class throws std::logic_error.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
 
     // Forward declaration of nonmember function.
     template<class PT, class LO, class GO, class NT>
@@ -472,12 +494,34 @@ namespace Tpetra {
     doTransfer (const SrcDistObject& src,
                 CombineMode CM,
                 size_t numSameIDs,
-                const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
-                const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
-                const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
+                const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
+                const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
+                const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
                 Distributor &distor,
                 ReverseOption revOp);
+
+    virtual void
+    doTransferOld (const SrcDistObject& src,
+                   CombineMode CM,
+                   size_t numSameIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
+                   Distributor &distor,
+                   ReverseOption revOp);
+
+    virtual void
+    doTransferNew (const SrcDistObject& src,
+                   CombineMode CM,
+                   size_t numSameIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
+                   Distributor &distor,
+                   ReverseOption revOp);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -496,6 +540,9 @@ namespace Tpetra {
     /// \return True if they are compatible, else false.
     virtual bool
     checkSizes (const SrcDistObject& source) = 0;
+
+    /// \brief Whether lass (???) implements old or new interface
+    virtual bool useNewInterface () { return false; }
 
     /// \brief Perform copies and permutations that are local to this process.
     ///
@@ -517,8 +564,15 @@ namespace Tpetra {
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) = 0;
+                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
+                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs)
+    {}
+    virtual void
+    copyAndPermuteNew (const SrcDistObject& source,
+                       size_t numSameIDs,
+                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteToLIDs,
+                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteFromLIDs)
+    {}
 
     /// \brief Perform any packing or preparation required for communication.
     ///
@@ -544,11 +598,20 @@ namespace Tpetra {
     /// \param distor [in] The Distributor object we are using.
     virtual void
     packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                    Teuchos::Array<Packet>& exports,
+                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
+                    Teuchos::Array<packet_type>& exports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor &distor) = 0;
+                    Distributor &distor)
+    {}
+    virtual void
+    packAndPrepareNew (const SrcDistObject& source,
+                       const Kokkos::View<const local_ordinal_type*, execution_space> &exportLIDs,
+                       Kokkos::View<packet_type*, execution_space> &exports,
+                       const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor &distor)
+    {}
 
     /// \brief Perform any unpacking and combining after communication.
     ///
@@ -572,12 +635,23 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                      const Teuchos::ArrayView<const Packet> &imports,
-                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
+                      const Teuchos::ArrayView<const packet_type>& imports,
+                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                       size_t constantNumPackets,
                       Distributor &distor,
-                      CombineMode CM) = 0;
+                      CombineMode CM)
+    {}
+
+    virtual void
+    unpackAndCombineNew (
+      const Kokkos::View<const local_ordinal_type*, execution_space> &importLIDs,
+      const Kokkos::View<const packet_type*, execution_space> &imports,
+      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
+      size_t constantNumPackets,
+      Distributor &distor,
+      CombineMode CM)
+    {}
     //@}
 
     /// \brief Hook for creating a const view.
@@ -618,12 +692,16 @@ namespace Tpetra {
     virtual void releaseViews () const;
 
     //! The Map over which this object is distributed.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
+    Teuchos::RCP<const map_type> map_;
+
+  private:
+    //! Buffer into which packed data are imported (received from other processes).
+    Kokkos::View<packet_type*, execution_space> imports_;
 
   protected:
-    //! Buffer into which packed data are imported (received from other processes).
-    Teuchos::Array<Packet> imports_;
+    Teuchos::Array<packet_type> imports_old_;
 
+  private:
     /// \brief Number of packets to receive for each receive operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -634,11 +712,20 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
-    Teuchos::Array<size_t> numImportPacketsPerLID_;
+    Kokkos::View<size_t*, execution_space> numImportPacketsPerLID_;
+    typename Kokkos::View<size_t*, execution_space>::HostMirror host_numImportPacketsPerLID_;
 
+  protected:
+    Teuchos::Array<size_t> numImportPacketsPerLID_old_;
+
+  private:
     //! Buffer from which packed data are exported (sent to other processes).
-    Teuchos::Array<Packet> exports_;
+    Kokkos::View<packet_type*, execution_space> exports_;
 
+  protected:
+    Teuchos::Array<packet_type> exports_old_;
+
+  private:
     /// \brief Number of packets to send for each send operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -649,19 +736,20 @@ namespace Tpetra {
     /// (For example, MultiVector sets the constantNumPackets output
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
-    Teuchos::Array<size_t> numExportPacketsPerLID_;
+    Kokkos::View<size_t*,execution_space> numExportPacketsPerLID_;
+  protected:
+    Teuchos::Array<size_t> numExportPacketsPerLID_old_;
 
-  private:
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
+  private:
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
     Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
     Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;
     Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
     Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-  }; // class DistObject
 
-#endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
+  }; // class DistObject
 
   /// \brief Remove processes which contain no elements in this object's Map.
   ///
@@ -794,9 +882,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-// Include KokkosRefactor partial specialisation if enabled
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
-#endif
-
-#endif /* TPETRA_DISTOBJECT_DECL_HPP */
+#endif // TPETRA_DISTOBJECT_DECL_HPP

@@ -50,6 +50,9 @@
 
 #cmakedefine HAVE_MUELU_TPETRA
 
+/* Whether Tpetra is enabled with LocalOrdinal = int and GlobalOrdinal = int */
+#cmakedefine HAVE_MUELU_TPETRA_INST_INT_INT
+
 #cmakedefine HAVE_MUELU_STRATIMIKOS
 
 #cmakedefine HAVE_MUELU_ZOLTAN

@@ -59,10 +59,11 @@
 
 */
 
-#include "example_01.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+
+#include "example_01.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -98,17 +99,18 @@ int main(int argc, char *argv[]) {
     
     // Load json parameters into a Teuchos::ParameterList  
     ROL::JSON_Parameters(jsonFileName,parlist);
+    std::string stepname = "Trust Region"; // can we obtain this from parlist?  or jsonFile?
 
-    Teuchos::RCP<ROL::Step<RealT> > step;
-    ROL::stepFactory<RealT>(parlist,step);
+    ROL::StepFactory<RealT> stepFactory;
+    Teuchos::RCP<ROL::Step<RealT> > step = stepFactory.getStep(stepname, parlist);
 
     // Define Status Test
     RealT gtol  = parlist.get("Gradient Tolerance",1e-12); 
     RealT stol  = parlist.get("Step Tolerance",1e-14);  
     int   maxit = parlist.get("Maximum Number of Iterations",100); 
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);           
+    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, maxit));           
 
-    ROL::DefaultAlgorithm<RealT> algo(*step,status,false);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp(new std::vector<RealT> (dim, 1.0) );
     Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp(new std::vector<RealT> (dim, 0.0) );
@@ -123,10 +125,7 @@ int main(int argc, char *argv[]) {
     ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
     // Run Algorithm
-    std::vector<std::string> output = algo.run(x, obj, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
-    }
+    algo.run(x, obj, true, *outStream);
 
     // Get True Solution
     Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );

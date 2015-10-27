@@ -50,7 +50,6 @@
 
 // Kokkos
 #include <Kokkos_DefaultNode.hpp> // default template parameter of many MueLu classes
-#include <Kokkos_DefaultKernels.hpp>
 
 // Memory management
 #include <Teuchos_Array.hpp>
@@ -68,21 +67,22 @@
 namespace MueLu {
 
   // import Teuchos memory management classes into MueLu
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
   using Teuchos::arcp;
   using Teuchos::arcpFromArrayView;
-  using Teuchos::rcpFromRef;
-  using Teuchos::null;
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
-  using Teuchos::rcpFromRef;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::as;
+  using Teuchos::null;
   using Teuchos::ParameterList;
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_implicit_cast;
+  using Teuchos::rcp_static_cast;
 
   // verbose levels
   using Teuchos::VERB_DEFAULT;

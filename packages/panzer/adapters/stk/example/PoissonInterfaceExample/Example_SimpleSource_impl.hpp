@@ -86,11 +86,15 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
 { 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < source.dimension(1); ++point) {
-
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      source(cell,point) = 2.0 + x - 10*y*y;
+      if (this->wda(workset).int_rules[ir_index]->ip_coordinates.dimension(2) == 2) {
+        source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
+      } else {
+        const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
+        source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y)*cos(2*M_PI*z);
+      }
     }
   }
 }

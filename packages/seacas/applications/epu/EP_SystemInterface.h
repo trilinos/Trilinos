@@ -107,7 +107,6 @@ namespace Excn {
     private:
       void enroll_options();
       bool decompose_filename(const std::string &cs);
-      void parse_exclude(const char *list);
 
       /*! The defined formats for the count attribute are:<br>
           - <missing> -- default -- 1 <= count <= oo  (all steps)

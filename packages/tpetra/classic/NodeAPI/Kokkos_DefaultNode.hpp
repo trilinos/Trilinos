@@ -46,25 +46,9 @@
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
 #include "Kokkos_BufferMacros.hpp"
-
-#ifdef HAVE_TPETRACLASSIC_SERIAL
-#  include "Kokkos_SerialNode.hpp"
-#endif // HAVE_TPETRACLASSIC_SERIAL
-#ifdef HAVE_TPETRACLASSIC_TBB
-#  include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_TPETRACLASSIC_THREADPOOL
-#  include "Kokkos_TPINode.hpp"
-#endif
-#ifdef HAVE_TPETRACLASSIC_OPENMP
-#  include "Kokkos_OpenMPNode.hpp"
-#endif
-#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
-#  include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#endif
-
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_RCP.hpp>
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace KokkosClassic {
 
@@ -109,35 +93,20 @@ namespace Details {
     */
   class DefaultNode {
   public:
-#if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
-    typedef ::KokkosClassic::DoNotUse::TPINode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE)
-    typedef ::KokkosClassic::DoNotUse::TBBNode DefaultNodeType;
-#elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE)
-    typedef ::KokkosClassic::DoNotUse::OpenMPNode DefaultNodeType;
-#elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
-#  if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
+#if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosThreadsWrapperNode DefaultNodeType;
-#  elif defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE)
+#elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-#  elif defined(HAVE_TPETRACLASSIC_SERIAL)
-    typedef ::KokkosClassic::DoNotUse::SerialNode DefaultNodeType;
-#  else
-#    error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
-#  endif // defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT)
-#elif defined(HAVE_TPETRACLASSIC_SERIAL)
-    //! Typedef specifying the default node type.
-    typedef ::KokkosClassic::DoNotUse::SerialNode DefaultNodeType;
 #else
-#  error "No default Kokkos Node type specified.  Please set the CMake option KokkosClassic_DefaultNode to a valid Node type."
+#    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
-      //! \brief Return a pointer to the default node.
-      static RCP<DefaultNodeType> getDefaultNode();
+    //! \brief Return a pointer to the default node.
+    static RCP<DefaultNodeType> getDefaultNode();
   };
 
 } // namespace KokkosClassic

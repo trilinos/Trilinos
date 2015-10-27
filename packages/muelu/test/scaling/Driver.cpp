@@ -52,6 +52,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -240,19 +241,19 @@ int main(int argc, char *argv[]) {
 
     } else {
       if (!mapFile.empty())
-        map = Utils2::ReadMap(mapFile, lib, comm);
+        map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, lib, comm);
       comm->barrier();
 
       const bool binaryFormat = false;
 
       if (!binaryFormat && !map.is_null()) {
-        RCP<const Map> colMap    = (!colMapFile.empty()    ? Utils2::ReadMap(colMapFile,    lib, comm) : Teuchos::null);
-        RCP<const Map> domainMap = (!domainMapFile.empty() ? Utils2::ReadMap(domainMapFile, lib, comm) : Teuchos::null);
-        RCP<const Map> rangeMap  = (!rangeMapFile.empty()  ? Utils2::ReadMap(rangeMapFile,  lib, comm) : Teuchos::null);
-        A = Utils::Read(matrixFile, map, colMap, domainMap, rangeMap);
+        RCP<const Map> colMap    = (!colMapFile.empty()    ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(colMapFile,    lib, comm) : Teuchos::null);
+        RCP<const Map> domainMap = (!domainMapFile.empty() ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(domainMapFile, lib, comm) : Teuchos::null);
+        RCP<const Map> rangeMap  = (!rangeMapFile.empty()  ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(rangeMapFile,  lib, comm) : Teuchos::null);
+        A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, map, colMap, domainMap, rangeMap);
 
       } else {
-        A = Utils::Read(matrixFile, lib, comm, binaryFormat);
+        A = Xpetra::IO<SC,LO,GO,Node>::Read(matrixFile, lib, comm, binaryFormat);
 
         if (!map.is_null()) {
           RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
@@ -270,11 +271,11 @@ int main(int argc, char *argv[]) {
       if (!coordFile.empty()) {
         // NOTE: currently we only allow reading scalar matrices, thus coordinate
         // map is same as matrix map
-        coordinates = Utils2::ReadMultiVector(coordFile, map);
+        coordinates = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(coordFile, map);
       }
 
       if (!nullFile.empty())
-        nullspace = Utils2::ReadMultiVector(nullFile, map);
+        nullspace = Xpetra::IO<SC,LO,GO,Node>::ReadMultiVector(nullFile, map);
     }
 
     comm->barrier();
@@ -373,8 +374,8 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i <= numRebuilds; i++) {
           if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utils::Op2NonConstTpetraCrs(A);
-            RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utils::MV2NonConstTpetraMV(coordinates));
+            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
+            RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utilities::MV2NonConstTpetraMV(coordinates));
 
             if (useAMGX) {
 #ifdef HAVE_MUELU_AMGX
@@ -387,8 +388,8 @@ int main(int argc, char *argv[]) {
 
           } else {
 #ifdef HAVE_MUELU_EPETRA
-            RCP<Epetra_CrsMatrix> eA = Utils::Op2NonConstEpetraCrs(A);
-            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utils::MV2NonConstEpetraMV(coordinates));
+            RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
+            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
             H = eH->GetHierarchy();
 #endif
           }
@@ -407,7 +408,7 @@ int main(int argc, char *argv[]) {
 
         {
           // we set seed for reproducibility
-          Utils::SetRandomSeed(*comm);
+          Utilities::SetRandomSeed(*comm);
           X->randomize();
           A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
@@ -433,7 +434,7 @@ int main(int argc, char *argv[]) {
 
           if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-            aH->apply(*(Utils::MV2TpetraMV(B)), *(Utils::MV2NonConstTpetraMV(X)));
+            aH->apply(*(Utilities::MV2TpetraMV(B)), *(Utilities::MV2NonConstTpetraMV(X)));
 #endif
           } else {
             H->IsPreconditioner(false);

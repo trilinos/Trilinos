@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <Teuchos_getConst.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TestForException.hpp>
@@ -139,6 +140,89 @@ namespace ROL {
     output.erase( std::remove_if( output.begin(), output.end(), removeSpecialCharacters()), output.end() );
     std::transform( output.begin(), output.end(), output.begin(), ::tolower );
     return output;
+  }
+
+  /** \enum   ROL::EStep
+      \brief  Enumeration of step types.
+
+      \arg    AUGMENTEDLAGRANGIAN     describe
+      \arg    BUNDLE                  describe
+      \arg    COMPOSITESTEP           describe
+      \arg    LINESEARCH              describe
+      \arg    MOREAUYOSIDAPENALTY     describe
+      \arg    PRIMALDUALACTIVESET     describe
+      \arg    TRUSTREGION             describe
+   */
+  enum EStep{
+    STEP_AUGMENTEDLAGRANGIAN = 0,
+    STEP_BUNDLE,
+    STEP_COMPOSITESTEP,
+    STEP_LINESEARCH,
+    STEP_MOREAUYOSIDAPENALTY,
+    STEP_PRIMALDUALACTIVESET,
+    STEP_TRUSTREGION,
+    STEP_LAST
+  };
+
+  inline std::string EStepToString(EStep tr) {
+    std::string retString;
+    switch(tr) {
+      case STEP_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian";   break;
+      case STEP_BUNDLE:              retString = "Bundle";                 break;
+      case STEP_COMPOSITESTEP:       retString = "Composite Step";         break;
+      case STEP_LINESEARCH:          retString = "Line Search";            break;
+      case STEP_MOREAUYOSIDAPENALTY: retString = "Moreau-Yosida Penalty";  break;
+      case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
+      case STEP_TRUSTREGION:         retString = "Trust Region";           break;
+      case STEP_LAST:                retString = "Last Type (Dummy)";      break;
+      default:                       retString = "INVALID EStep";
+    }
+    return retString;
+  }
+  
+  /** \brief  Verifies validity of a TrustRegion enum.
+    
+      \param  tr  [in]  - enum of the TrustRegion
+      \return 1 if the argument is a valid TrustRegion; 0 otherwise.
+    */
+  inline int isValidStep(EStep ls) {
+    return( (ls == STEP_AUGMENTEDLAGRANGIAN) ||
+            (ls == STEP_BUNDLE) ||
+            (ls == STEP_COMPOSITESTEP) ||
+            (ls == STEP_LINESEARCH) ||
+            (ls == STEP_MOREAUYOSIDAPENALTY) ||
+            (ls == STEP_PRIMALDUALACTIVESET) ||
+            (ls == STEP_TRUSTREGION) );
+  }
+
+  inline EStep & operator++(EStep &type) {
+    return type = static_cast<EStep>(type+1);
+  }
+
+  inline EStep operator++(EStep &type, int) {
+    EStep oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline EStep & operator--(EStep &type) {
+    return type = static_cast<EStep>(type-1);
+  }
+
+  inline EStep operator--(EStep &type, int) {
+    EStep oldval = type;
+    --type;
+    return oldval;
+  }
+
+  inline EStep StringToEStep(std::string s) {
+    s = removeStringFormat(s);
+    for ( EStep tr = STEP_AUGMENTEDLAGRANGIAN; tr < STEP_LAST; tr++ ) {
+      if ( !s.compare(removeStringFormat(EStepToString(tr))) ) {
+        return tr;
+      }
+    }
+    return STEP_TRUSTREGION;
   }
 
   /** \enum   ROL::EBoundAlgorithm
@@ -370,16 +454,18 @@ namespace ROL {
   enum EKrylov{
     KRYLOV_CG = 0,
     KRYLOV_CR,
+    KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
 
   inline std::string EKrylovToString(EKrylov tr) {
     std::string retString;
     switch(tr) {
-      case KRYLOV_CG:   retString = "Conjugate Gradients";                          break;
-      case KRYLOV_CR:   retString = "Conjugate Residuals";                          break;
-      case KRYLOV_LAST: retString = "Last Type (Dummy)";                            break;
-      default:                    retString = "INVALID EKrylov";
+      case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
+      case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
+      case KRYLOV_USERDEFINED: retString = "User Defined";        break;
+      case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
+      default:                 retString = "INVALID EKrylov";
     }
     return retString;
   }
@@ -391,7 +477,8 @@ namespace ROL {
     */
   inline int isValidKrylov(EKrylov d){
     return( (d == KRYLOV_CG)      ||
-            (d == KRYLOV_CR) );
+            (d == KRYLOV_CR)      ||
+            (d == KRYLOV_USERDEFINED) );
   }
 
   inline EKrylov & operator++(EKrylov &type) {
@@ -434,7 +521,7 @@ namespace ROL {
       \arg    FLETCHER_CONJDESC  \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
       \arg    LIU_STOREY         \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
       \arg    DAI_YUAN           \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
-      \arg    HAGAR_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+      \arg    HAGER_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
       \arg    OREN_LUENBERGER    \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
    */
   enum ENonlinearCG{
@@ -445,7 +532,7 @@ namespace ROL {
     NONLINEARCG_FLETCHER_CONJDESC,
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
-    NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_HAGER_ZHANG,
     NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
@@ -460,7 +547,7 @@ namespace ROL {
       case NONLINEARCG_FLETCHER_CONJDESC:     retString = "Fletcher Conjugate Descent";  break;
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
-      case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_HAGER_ZHANG:           retString = "Hager-Zhang";                 break;
       case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
@@ -481,7 +568,7 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_HAGER_ZHANG)       ||
             (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
@@ -784,6 +871,7 @@ namespace ROL {
       case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
       case TESTOBJECTIVES_POISSONCONTROL:      retString = "Poisson Optimal Control";          break;
       case TESTOBJECTIVES_POISSONINVERSION:    retString = "Poisson Inversion Problem";        break;
+      case TESTOBJECTIVES_ZAKHAROV:            retString = "Zakharov's Function";              break;
       case TESTOBJECTIVES_LAST:                retString = "Last Type (Dummy)";                break;
       default:                                 retString = "INVALID ETestObjectives";
     }
@@ -803,7 +891,8 @@ namespace ROL {
             (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
             (to == TESTOBJECTIVES_LEASTSQUARES)        ||
             (to == TESTOBJECTIVES_POISSONCONTROL)      ||
-            (to == TESTOBJECTIVES_POISSONINVERSION)
+            (to == TESTOBJECTIVES_POISSONINVERSION)    ||
+            (to == TESTOBJECTIVES_ZAKHAROV)
           );
   }
 
@@ -1074,29 +1163,14 @@ namespace ROL {
       ROL::Objective
   \endcode
 
-  \subsection step_qs_sec Step 3: Choose optimization step.
+  \subsection step_qs_sec Step 3: Choose optimization algorithm.
   ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
 
   \code
-      ROL::LineSearchStep<RealT> step(parlist);
+      ROL::Algorithm<RealT> algo("Line Search",parlist);
   \endcode
 
-  \subsection status_qs_sec Step 4: Set status test.
-  ---  with gradient tolerance, step tolerance, and the maximum
-  number of iterations, respectively.
-
-  \code
-      ROL::StatusTest<RealT> status(gtol, stol, maxit);
-  \endcode
-
-  \subsection algo_qs_sec Step 5: Define an algorithm.
-  ---  based on the status test and the step.
-
-  \code
-      ROL::DefaultAlgorithm<RealT> algo(step,status);
-  \endcode
-
-  \subsection run_qs_sec Step 6: Run algorithm.
+  \subsection run_qs_sec Step 4: Run algorithm.
   ---  starting from the initial iterate @b x, applied to objective function @b obj.
 
   \code
@@ -1169,7 +1243,7 @@ namespace ROL {
               \mbox{subject to} & c(x) = 0 \,.
             \end{array}
           \f]
-          Equality constraints are handled in ROL using matrix-free sequential quadratic programming (SQP).
+          Equality constraints are handled in ROL using, for example, matrix-free composite-step methods, including sequential quadratic programming (SQP).
           The user implements the methods of the #ROL::EqualityConstraint interface.
       \li @b Type-EB. Equality and bound constraints:
           \f[
@@ -1188,7 +1262,7 @@ namespace ROL {
               &&&&&& s \ge 0 \,.
             \end{array}
           \f]
-          ROL uses a combination of matrix-free SQP, projection methods and primal-dual active set methods to solve these problems.
+          ROL uses a combination of matrix-free composite-step methods, projection methods and primal-dual active set methods to solve these problems.
           The user implements the methods of the #ROL::EqualityConstraint and the #ROL::BoundConstraint interfaces.
 
     Third, ROL's design enables streamlined algorithmic extensions, such as the \ref stochastic_group capability.

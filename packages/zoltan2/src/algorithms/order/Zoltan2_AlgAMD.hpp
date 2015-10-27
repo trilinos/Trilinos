@@ -116,8 +116,8 @@ class AlgAMD : public Algorithm<Adapter>
     ) : model(model__), pl(pl__), comm(comm__)
     { }
 
-    int order(const RCP<OrderingSolution<typename Adapter::zgid_t,
-                                         typename Adapter::lno_t> > &solution)
+    int order(const RCP<OrderingSolution<typename Adapter::lno_t,
+                                         typename Adapter::gno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(
@@ -132,12 +132,12 @@ class AlgAMD : public Algorithm<Adapter>
       const size_t nVtx = model->getLocalNumVertices();
 
       //cout << "Local num vertices" << nVtx << endl;
-      ArrayView<const lno_t> edgeIds;
+      ArrayView<const gno_t> edgeIds;
       ArrayView<const lno_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
       // wgts are ignored in AMD
-      model->getLocalEdgeList( edgeIds, offsets, wgts);
+      model->getEdgeList(edgeIds, offsets, wgts);
 
       AMDTraits<lno_t> AMDobj;
       double Control[AMD_CONTROL];

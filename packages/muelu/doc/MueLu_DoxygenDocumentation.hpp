@@ -53,20 +53,31 @@
 
 \mainpage
 
-@image html muelu2.png
+@image html muelu.png
 
 \section muelu_index Table of Contents
 
 - \ref muelu_overview
+- \ref muelu_documentation
 - \ref muelu_authors
 - \ref muelu_copyright
 - \ref muelu_questions
 
-\section muelu_overview Overview
+\section muelu_overview MueLu Overview
 
 MueLu is a flexible and extensible multigrid solver framework.  It is intended for the research and
 development of new multigrid preconditioning techniques.
 More information can be found at https://trilinos.org/packages/muelu.
+
+\section muelu_documentation Documentation
+
+Useful views of the Doxygen documentation are:
+  - Browsing the entire class documentation. Choose the <a href="classes.html">Class Index subtab</a>.
+  - Browsing the class documentation organized by logical groups.  Choose the <a href="modules.html">Modules tab</a>.
+
+The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
+<a href=https://trilinos.org/packages/muelu/muelu-documentation>MueLu home page</a>.
+
 
 \section muelu_authors Authors and Contributors
 
@@ -88,7 +99,8 @@ More information can be found at https://trilinos.org/packages/muelu.
 
 \section muelu_questions For All Questions and Comments...
 
-   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov), Ray Tuminaro (rstumin@sandia.gov), or Tobias Wiesner (tawiesn@sandia.gov).
+   Please contact the authors listed in the License above, or use one of the
+   <a href=https://trilinos.org/packages/muelu/muelu-contact-us>MueLu mailing lists</a>.
 
 */
 

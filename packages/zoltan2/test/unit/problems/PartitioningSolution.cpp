@@ -54,7 +54,7 @@
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> zzuser_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> zzuser_t;
 typedef Zoltan2::BasicIdentifierAdapter<zzuser_t> idInput_t;
 typedef idInput_t::part_t zzpart_t;
 
@@ -113,9 +113,8 @@ int main(int argc, char *argv[])
   // A simple identifier map.
 
   zgno_t *myGids = new zgno_t [numIdsPerProc];
-  for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++){
+  for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++)
     myGids[i] = x++;
-  }
 
   /////////////
   // TEST:
@@ -263,4 +262,5 @@ int main(int argc, char *argv[])
   }
   delete [] idLists;
   delete [] sizeLists;
+  delete [] myGids;
 }

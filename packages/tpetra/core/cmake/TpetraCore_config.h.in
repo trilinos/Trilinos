@@ -123,9 +123,6 @@
 /* Define when enabling Tpetra for refactoring to new KokkosCore interface */
 #cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
 
-/* Define if you want to use the new Kokkos refactor version of Map */
-#cmakedefine TPETRA_USE_KOKKOS_REFACTOR_MAP
-
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

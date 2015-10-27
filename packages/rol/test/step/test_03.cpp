@@ -48,8 +48,9 @@
 #define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -79,17 +80,14 @@ int main(int argc, char *argv[]) {
 
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-    parlist->set("Use Inexact Hessian-Times-A-Vector",true);
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
-    parlist->set("Use Inexact Hessian-Times-A-Vector",false);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
     // Define Status Test
-    RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
-    RealT stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit  = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<RealT> status(gtol,stol,maxit);
+    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(*parlist));
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
@@ -110,7 +108,7 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = 
         Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist->set("Maximum Number of Krylov Iterations", 2*dim);
+      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Check Derivatives
       Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
@@ -130,21 +128,18 @@ int main(int argc, char *argv[]) {
 
       //ROL::EDescent desc = ROL::DESCENT_STEEPEST; 
       ROL::EDescent desc = ROL::DESCENT_NEWTONKRYLOV; 
-      parlist->set("Descent Type", ROL::EDescentToString(desc));
+      parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(desc));
       *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
 
       // Define Step
-      ROL::LineSearchStep<RealT> step(*parlist);
+      Teuchos::RCP<ROL::LineSearchStep<RealT> > step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
       
       // Define Algorithm
-      ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+      ROL::Algorithm<RealT> algo(step,status,false);
 
       // Run Algorithm
       x.set(x0);
-      std::vector<std::string> output = algo.run(x, *obj, *con);
-      for ( unsigned i = 0; i < output.size(); i++ ) {
-        std::cout << output[i];
-      }
+      algo.run(x, *obj, *con, true, *outStream);
 
       // Compute Error
       e.set(x);

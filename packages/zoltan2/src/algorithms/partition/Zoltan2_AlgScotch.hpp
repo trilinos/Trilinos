@@ -144,7 +144,7 @@ public:
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
-    mpicomm(TeuchosConst2MPI(problemComm__)),
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
 #endif
     model(model__)
   { }
@@ -198,30 +198,30 @@ void AlgPTScotch<Adapter>::partition(
 
   // Get vertex info
   ArrayView<const gno_t> vtxID;
-  ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx, env);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const int>   procIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
-  size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets, env);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets,
+                                                          env);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds, env);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds,
+                                                          env);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -349,8 +349,8 @@ void AlgPTScotch<Adapter>::partition(
   env->memory("Zoltan2-Scotch: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
-  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
+  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
 
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
@@ -364,9 +364,8 @@ void AlgPTScotch<Adapter>::partition(
   // TODO
   // TODO:  Actual logic should call Scotch when number of processes == 1.
   ArrayView<const gno_t> vtxID;
-  ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
-  size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
+  size_t nVtx = model->getVertexList(vtxID, vwgts);
 
   ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;

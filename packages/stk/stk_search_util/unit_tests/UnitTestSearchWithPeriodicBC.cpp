@@ -141,11 +141,7 @@ void check_gold( const SearchPairVector & search_results )
     //entry in search is found in gold
 
     bool found = std::find(gold.begin(),gold.end(),std::make_pair(domain_node,range_node)) != gold.end();
-    if (!found)
-    {
-      std::cout << "We can't find domain/range: " << search_results[i].first << "/" << search_results[i].second  << std::endl;
-      EXPECT_TRUE(0);
-    }
+    EXPECT_TRUE(found) << "We can't find domain/range: " << search_results[i].first << "/" << search_results[i].second  << std::endl;
   }
 }
 

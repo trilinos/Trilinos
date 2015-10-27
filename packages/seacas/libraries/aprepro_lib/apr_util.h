@@ -43,7 +43,7 @@ namespace SEAMS {
   void conv_string(char *string);
   void new_string(const char *from, char **to);
   void concat_string(const char *from1, const char *from2, char **to);
-  char *get_temp_filename();
+  const char *get_temp_filename();
   void math_error(const SEAMS::Aprepro &aprepro, const char *function);
   void math_error(const char *function);
   void yyerror (const SEAMS::Aprepro &aprepro, const std::string &s);

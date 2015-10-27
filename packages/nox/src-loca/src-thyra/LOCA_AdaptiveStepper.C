@@ -543,6 +543,9 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
 
+  const bool equilibrate = mgr->getAdaptParamsNonConst()->get<bool>("Equilibrate", true);
+
+  if (equilibrate) {
 // GAH begin equilibration
   printRelaxationStep();
 
@@ -557,6 +560,9 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
     curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
   else
     curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Unsuccessful);
+  } else {
+    solverStatus = NOX::StatusTest::Converged;
+  }
 
   // Set up continuation groups
   const LOCA::MultiContinuation::ExtendedGroup& constSolnGrp =
@@ -573,12 +579,14 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
                             predictor,
                             conParamIDs);
 
+  if (equilibrate) {
   // Do printing (relaxation case) after continuation group set up
-// GAH end equilibration
+  // GAH end equilibration
   if (solverStatus == NOX::StatusTest::Failed)
     printRelaxationEndStep(LOCA::Abstract::Iterator::Unsuccessful);
   else
     printRelaxationEndStep(LOCA::Abstract::Iterator::Successful);
+  }
 
   prevGroupPtr =
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(curGroupPtr->clone());
@@ -590,8 +598,7 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
     return LOCA::Abstract::Iterator::Unsuccessful;
 
   // If the user requested it, print the solution at the end of the relaxation step
-  if(mgr->getAdaptParamsNonConst()->get<bool>("Print Relaxation Solution", false)){
-
+  if (equilibrate && mgr->getAdaptParamsNonConst()->get<bool>("Print Relaxation Solution", false)) {
     globalData->locaUtils->out()
       << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
 
@@ -604,7 +611,6 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
     globalData->locaUtils->out()
       << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
-
   }
 
   // We have successfully relaxed the solution from the remesh, now prepare to resume stepping

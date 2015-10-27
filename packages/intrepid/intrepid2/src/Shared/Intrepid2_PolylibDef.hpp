@@ -99,12 +99,12 @@
 namespace Intrepid2 {
 
 /// Maximum number of iterations in polynomial defalation routine Jacobz
-#define INTREPID_POLYLIB_STOP 50
+#define INTREPID2_POLYLIB_STOP 50
 
 /// Define whether to use polynomial deflation (1) or tridiagonal solver (0).
-#define INTREPID_POLYLIB_POLYNOMIAL_DEFLATION 0
+#define INTREPID2_POLYLIB_POLYNOMIAL_DEFLATION 0
 
-#ifdef INTREPID_POLYLIB_POLYNOMIAL_DEFLATION
+#ifdef INTREPID2_POLYLIB_POLYNOMIAL_DEFLATION
     /// zero determination using Newton iteration with polynomial deflation
 #define jacobz(n,z,alpha,beta) Jacobz(n,z,alpha,beta)
 #else
@@ -689,7 +689,7 @@ void IntrepidPolylib::Jacobz(const int n, Scalar *z, const Scalar alpha, const S
         r = -std::cos((two*(Scalar)k + one) * dth);
         if(k) r = 0.5*(r + rlast);
 
-        for(j = 1; j < INTREPID_POLYLIB_STOP; ++j){
+        for(j = 1; j < INTREPID2_POLYLIB_STOP; ++j){
             IntrepidPolylib::jacobfd(1,&r,&poly, &pder, n, alpha, beta);
 
             for(i = 0, sum = 0.0; i < k; ++i) sum += one/(r - z[i]);

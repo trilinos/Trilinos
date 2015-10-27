@@ -167,7 +167,27 @@ public:
     std::size_t getOwnedElementCount() const
     { return ownedElementCount_; }
 
-   virtual bool getElementAcrossInterface(const LocalOrdinal& el, LocalOrdinal& el_other) const;
+    /** Before calling buildConnectivity, provide sideset IDs from which to
+      * extract associated elements.
+      */
+    void associateElementsInSideset(const std::string sideset_id);
+
+    /** After calling <code>buildConnectivity</code>, optionally check which
+      * sidesets yielded no element associations in this communicator. This is a
+      * parallel operation. In many applications, the outcome indicating
+      * correctness is that the returned vector is empty.
+      */
+    std::vector<std::string> checkAssociateElementsInSidesets(const Teuchos::Comm<int>& comm) const;
+
+    /** Get elements, if any, associated with <code>el</code>, excluding
+      * <code>el</code> itself.
+      */
+    virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& el) const;
+
+    /** Return whether getAssociatedNeighbors will return true for at least one
+      * input. Default implementation returns false.
+      */
+    virtual bool hasAssociatedNeighbors() const;
 
 protected:
    /** Apply periodic boundary conditions associated with the mesh object.
@@ -208,7 +228,9 @@ protected:
 
    std::size_t ownedElementCount_;
 
-   std::map<LocalOrdinal,LocalOrdinal> elmtToInterfaceElmt_;
+   std::vector<std::string> sidesetsToAssociate_;
+   std::vector<bool> sidesetYieldedAssociations_;
+   std::vector<std::vector<LocalOrdinal> > elmtToAssociatedElmts_;
 };
 
 }

@@ -149,11 +149,11 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    
+
     Teuchos::ParameterList nonSerialList,dummyList;
     ExtractNonSerializableData(paramList, dummyList, nonSerialList);
     HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
-    
+
     mueLuFactory->SetupHierarchy(*H);
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
   }

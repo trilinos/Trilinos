@@ -98,7 +98,6 @@ Kokkos::initialize();
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-  
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
@@ -160,39 +159,31 @@ Kokkos::initialize();
     // Declare arrays for cell workset and point sets. We will have 10 cells in the wset. and 10 pts per pt. set
     Kokkos::View<double***> cellWorkset("cellWorkset",10,10,10);                 // physical cell workset
     Kokkos::View<double***> refPoints("refPoints",10,10,10);                   // reference point set(s) 
-    Kokkos::View<double**> physPoints("physPoints",10,10);                  // physical point set(s)
     Kokkos::View<double**> controlPoints("controlPoints",10,10);               // preimages: physical points mapped back to ref. frame
     
     // We will use cubature factory to get some points on the reference cells. Declare necessary arrays
-    DefaultCubatureFactory<double>  cubFactory;   
-    FieldContainer<double> cubPoints;
-    FieldContainer<double> cubWeights;
+    DefaultCubatureFactory<double,Kokkos::View<double**>,Kokkos::View<double*> >  cubFactory;   
 
     // Initialize number of cells in the cell workset
     int numCells  = 10;
     
-
     // Loop over cell topologies, make cell workset for each one by perturbing the cellWorkset & test methods
     for(topo_iterator = supportedTopologies.begin(); topo_iterator != supportedTopologies.end(); ++topo_iterator){
-      
       // 1.   Define a single reference point set using cubature factory with order 4 cubature
-      Teuchos::RCP<Cubature<double> > cellCubature = cubFactory.create( (*topo_iterator), 4); 
+      Teuchos::RCP<Cubature<double,Kokkos::View<double**>,Kokkos::View<double*> > > cellCubature = cubFactory.create( (*topo_iterator), 4); 
       int cubDim = cellCubature -> getDimension();
       int numPts = cellCubature -> getNumPoints();
-      cubPoints.resize(numPts, cubDim);
-      cubWeights.resize(numPts);
+    Kokkos::View<double**> cubPoints("cubPoints",numPts,cubDim);
+    Kokkos::View<double*> cubWeights("cubWeights",numPts);
       cellCubature -> getCubature(cubPoints, cubWeights);
-
       // 2.   Define a cell workset by perturbing the cellWorkset of the reference cell with the specified topology
       // 2.1  Resize dimensions of the rank-3 (C,N,D) cell workset array for the current topology
       int numNodes = (*topo_iterator).getNodeCount();
       int cellDim  = (*topo_iterator).getDimension();
       Kokkos::resize(cellWorkset,numCells, numNodes, cellDim);
-
       // 2.2  Copy cellWorkset of the reference cell with the same topology to temp rank-2 (N,D) array
-      FieldContainer<double> refCellNodes(numNodes, cellDim );
+      Kokkos::View<double**> refCellNodes("refCellNodes",numNodes, cellDim );
       CellTools::getReferenceSubcellNodes(refCellNodes, cellDim, 0, (*topo_iterator) );
-
       // 2.3  Create randomly perturbed version of the reference cell and save in the cell workset array
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
         
@@ -209,20 +200,16 @@ Kokkos::initialize();
        *      to a physical point set in rank-2 (P,D) array for a specified cell ordinal. Use the cub.
        *      points array for this test. Resize physPoints and controlPoints to rank-2 (P,D) arrays.
        */
-      Kokkos::resize(physPoints,numPts, cubDim);
-      Kokkos::resize(controlPoints,numPts, cubDim);
-      
+  Kokkos::View<double**> physPoints("physPoints",numPts,cubDim); 
+  Kokkos::View<double**> controlPoints("controlPoints",numPts,cubDim);
       *outStream 
         << " Mapping a set of " << numPts << " points to one cell in a workset of " << numCells << " " 
         << (*topo_iterator).getName() << " cells. \n";
-      
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
-        
-        // Forward map:: requires cell ordinal
+
         CellTools::mapToPhysicalFrame(physPoints, cubPoints, cellWorkset, (*topo_iterator), cellOrd);
         // Inverse map: requires cell ordinal
         CellTools::mapToReferenceFrame(controlPoints, physPoints, cellWorkset, (*topo_iterator), cellOrd);
-
         // Points in controlPoints should match the originals in cubPoints up to a tolerance
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
@@ -247,7 +234,6 @@ Kokkos::initialize();
        *      to a physical point set in rank-3 (C, P,D) array for all cell ordinals. Use the cub.
        *      points array for this test. Resize physPoints and controlPoints to rank-3 (C,P,D) arrays.
        */
- 
       Kokkos::View<double***>physPoints3("physPoints3",numCells, numPts, cubDim);
       Kokkos::View<double***>controlPoints3("controlPoints3",numCells, numPts, cubDim);
       
@@ -362,11 +348,8 @@ Kokkos::initialize();
     Kokkos::View<double**> physPoints("physPoints",10,10);                  // physical point set(s)
     Kokkos::View<double**> controlPoints("controlPoints",10,10);               // preimages: physical points mapped back to ref. frame
     Kokkos::View<double***> initialGuess("initialGuess",10,10,10);                // User-defined initial guesses for F^{-1}
-    
     // We will use cubature factory to get some points on the reference cells. Declare necessary arrays
-    DefaultCubatureFactory<double>  cubFactory;   
-    FieldContainer<double> cubPoints;
-    FieldContainer<double> cubWeights;
+    DefaultCubatureFactory<double,Kokkos::View<double**>, Kokkos::View<double*> >  cubFactory;
     
     // Initialize number of cells in the cell workset
     int numCells  = 10;
@@ -374,13 +357,13 @@ Kokkos::initialize();
     
     // Loop over cell topologies, make cell workset for each one by perturbing the cellWorkset & test methods
     for(topo_iterator = supportedTopologies.begin(); topo_iterator != supportedTopologies.end(); ++topo_iterator){
-      
+ 
       // 1.   Define a single reference point set using cubature factory with order 6 cubature
-      Teuchos::RCP<Cubature<double> > cellCubature = cubFactory.create( (*topo_iterator), 4); 
+      Teuchos::RCP<Cubature<double,Kokkos::View<double**>, Kokkos::View<double*> > > cellCubature = cubFactory.create( (*topo_iterator), 4); 
       int cubDim = cellCubature -> getDimension();
       int numPts = cellCubature -> getNumPoints();
-      cubPoints.resize(numPts, cubDim);
-      cubWeights.resize(numPts);
+    Kokkos::View<double**> cubPoints("cubPoints",numPts, cubDim);
+    Kokkos::View<double*> cubWeights("cubWeights",numPts); 
       cellCubature -> getCubature(cubPoints, cubWeights);
       
       // 2.   Define a cell workset by perturbing the cellWorkset of the reference cell with the specified topology
@@ -390,7 +373,7 @@ Kokkos::initialize();
       Kokkos::resize(cellWorkset,numCells, numNodes, cellDim);
       
       // 2.2  Copy cellWorkset of the reference cell with the same topology to temp rank-2 (N,D) array
-      FieldContainer<double> refCellNodes(numNodes, cellDim );
+      Kokkos::View<double**> refCellNodes("refCellNodes",numNodes, cellDim );
       CellTools::getReferenceSubcellNodes(refCellNodes, cellDim, 0, (*topo_iterator) );
       
       // 2.3  Create randomly perturbed version of the reference cell and save in the cell workset array
@@ -533,7 +516,7 @@ Kokkos::initialize();
   /*************************************************************************************************
     *         Wrap up test: check if the test broke down unexpectedly due to an exception          *
     ************************************************************************************************/
-  
+ 
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;

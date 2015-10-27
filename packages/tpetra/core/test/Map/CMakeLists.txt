@@ -1,4 +1,4 @@
-
+IF (Tpetra_INST_INT_INT)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_ProblematicLookup
   SOURCES
@@ -8,6 +8,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
+ENDIF()
 
 IF (Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -33,6 +34,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 ENDIF()
 
+# This one uses the default LO and GO types.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_Bug6051
   SOURCES
@@ -53,6 +55,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Map_LocalMap
+  SOURCES
+    Map_LocalMap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 # Tpetra bug 5401:
 # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5401
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -65,47 +76,55 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_OneToOne
-  SOURCES
+# mfh 26 Sep 2015: Not sure if this one needs GO = int.
+# It might be OK just to use the default GO type.
+IF (TPETRA_INST_INT_INT)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_OneToOne
+    SOURCES
     Map_OneToOne
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
-  )
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+ENDIF()
 
-# Tpetra bug 5822, first test.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_Bug5822
-  SOURCES
+IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG)
+  # Tpetra bug 5822, first test.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_Bug5822
+    SOURCES
     Map_Bug5822
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
-  )
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
 
-# Tpetra bug 5822, second test.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_Bug5822_2
-  SOURCES
+  # Tpetra bug 5822, second test.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Map_Bug5822_2
+    SOURCES
     Map_Bug5822_2
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 2
-  )
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    )
+ENDIF()
 
-# Tpetra bug 5882
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Map_ExportTest_Bug5882
-  SOURCES
+IF (Tpetra_INST_INT_INT)
+  # Tpetra bug 5882
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Map_ExportTest_Bug5882
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "passed!"
-  NUM_MPI_PROCS 2
-  )
+    SOURCES
+    Map_ExportTest_Bug5882
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "passed!"
+    NUM_MPI_PROCS 2
+    )
+ENDIF()
 
 IF (Tpetra_INST_INT_LONG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -129,6 +148,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 ENDIF()
 
+IF (Tpetra_INST_INT_INT)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Map_isOneToOne
   SOURCES
@@ -138,3 +158,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
   )
+ENDIF()
+
+# FIXME (mfh 20 Oct 2015) My recent commit
+# 0abee4e8fffdc0975f329bde3b3671db916388bb reverts the fix for Bug
+# 6412.  Thus, I am disabling the test for now.  This is a temporary
+# measure until we have a chance to extract a test case from the
+# application in question and use that to debug the fix.
+
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   Map_Bug6412
+#   SOURCES
+#     Map_Bug6412.cpp
+#     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#   COMM mpi
+#   NUM_MPI_PROCS 2-10
+#   STANDARD_PASS_OUTPUT
+#   )

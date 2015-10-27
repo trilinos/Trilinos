@@ -163,8 +163,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 identity_1(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ikjl(I);
   return I;
@@ -196,8 +194,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 identity_2(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_iljk(I);
   return I;
@@ -229,8 +225,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 identity_3(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, N> I(dimension, ZEROS);
   ones_in_ijkl(I);
   return I;
@@ -267,8 +261,6 @@ template<typename T, Index N>
 Tensor4<T, N> const
 levi_civita_4(Index const dimension)
 {
-  if (N != DYNAMIC) assert(dimension == N);
-
   Tensor4<T, DYNAMIC>
   A(dimension, ZEROS);
 
@@ -1087,7 +1079,7 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < dimension; ++i) {
 
@@ -1095,7 +1087,7 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
 
       for (Index k = 0; k < dimension; ++k) {
 
-        os << A(i,j,k,0);
+        os << std::setw(24) << A(i,j,k,0);
 
         for (Index l = 1; l < dimension; ++l) {
 

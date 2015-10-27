@@ -62,7 +62,7 @@ using namespace Intrepid2;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+ Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
 
         ifstream massfile(&filename[0]);
         if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, iprint, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, iprint, INTREPID2_UTILS_SCALAR) > 0)
             errorFlag++;
           massfile.close();
         }
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
         ifstream stifffile(&filename[0]);
         if (stifffile.is_open())
         {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, iprint, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, iprint, INTREPID2_UTILS_SCALAR) > 0)
             errorFlag++;
           stifffile.close();
         }
@@ -358,6 +358,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+ Kokkos::finalize();
   return errorFlag;
 }

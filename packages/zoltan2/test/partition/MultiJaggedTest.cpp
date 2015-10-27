@@ -808,7 +808,6 @@ int testFromDataFile(
     }
 
     typedef Zoltan2::BasicUserTypes<inputAdapter_t::scalar_t,
-                                    inputAdapter_t::gno_t,
                                     inputAdapter_t::lno_t,
                                     inputAdapter_t::gno_t> bvtypes_t;
     typedef Zoltan2::BasicVectorAdapter<bvtypes_t> bvadapter_t;

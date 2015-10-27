@@ -265,7 +265,7 @@ namespace MueLu {
         typename std::vector<GlobalOrdinal>::iterator endLocation = std::unique(nodeIds.begin(), nodeIds.end());
         nodeIds.erase(endLocation, nodeIds.end());
 
-        // print out nodeids 
+        // print out nodeids
         for(typename std::vector<GlobalOrdinal>::iterator printIt = nodeIds.begin(); printIt != nodeIds.end(); printIt++)
           fout << " " << *printIt;
         nodeIds.clear();

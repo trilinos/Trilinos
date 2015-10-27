@@ -46,13 +46,16 @@
 */
 
 #include "example_01.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_BoundConstraint.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "ROL_BoundConstraint.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "ROL_TrustRegionStep.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -81,15 +84,15 @@ int main(int argc, char *argv[]) {
     
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     RealT V_th      = parlist->get("Thermal Voltage", 0.02585);
     RealT lo_Vsrc   = parlist->get("Source Voltage Lower Bound", 0.0);
     RealT up_Vsrc   = parlist->get("Source Voltage Upper Bound", 1.0);
     RealT step_Vsrc = parlist->get("Source Voltage Step", 1.e-2);
 
-    // RealT true_Is = parlist->get("True Saturation Current", 1.e-12);
-    // RealT true_Rs = parlist->get("True Saturation Resistance", 0.25);
+    RealT true_Is = parlist->get("True Saturation Current", 1.e-12);
+    RealT true_Rs = parlist->get("True Saturation Resistance", 0.25);
     RealT init_Is = parlist->get("Initial Saturation Current", 1.e-12);
     RealT init_Rs = parlist->get("Initial Saturation Resistance", 0.25);
     RealT lo_Is   = parlist->get("Saturation Current Lower Bound", 1.e-16);
@@ -117,14 +120,18 @@ int main(int argc, char *argv[]) {
     Objective_DiodeCircuit<RealT> obj(alpha,ns,nz);
     
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-    (*z_rcp)[0]  = init_Is;
-    (*z_rcp)[1]  = init_Rs;
-    (*yz_rcp)[0]  = init_Is;
-    (*yz_rcp)[1]  = init_Rs;
+    Teuchos::RCP<std::vector<RealT> > z_rcp    = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > yz_rcp   = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > soln_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
+    (*z_rcp)[0]     = init_Is;
+    (*z_rcp)[1]     = init_Rs;
+    (*yz_rcp)[0]    = init_Is;
+    (*yz_rcp)[1]    = init_Rs;
+    (*soln_rcp)[0]  = true_Is;
+    (*soln_rcp)[1]  = true_Rs;
     ROL::StdVector<RealT> z(z_rcp);
     ROL::StdVector<RealT> yz(yz_rcp);
+    ROL::StdVector<RealT> soln(soln_rcp);
     Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(&z,false);
     Teuchos::RCP<ROL::Vector<RealT> > yzp = Teuchos::rcp(&yz,false);
 
@@ -175,7 +182,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > pcon = Teuchos::rcp(&con,false);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,pp);
     // Check derivatives.
-    std::cout << "Derivatives of reduced objective" << std::endl;
+    *outStream << "Derivatives of reduced objective" << std::endl;
     robj.checkGradient(z,z,yz,true,*outStream);
     robj.checkHessVec(z,z,yz,true,*outStream);
     
@@ -198,46 +205,44 @@ int main(int argc, char *argv[]) {
     //bcon.deactivate();
     
     // Optimization 
-    std::cout << "\n Initial guess " << (*z_rcp)[0] << " " << (*z_rcp)[1] << std::endl;
-    RealT gtol = parlist->get("Gradient Tolerance",1.e-14); // norm of gradient tolerance
-    RealT stol = parlist->get("Step Tolerance",1.e-16); // norm of step tolerance
-    int maxit  = parlist->get("Maximum Number of Iterations",1000);// maximum number of iterations
+    *outStream << "\n Initial guess " << (*z_rcp)[0] << " " << (*z_rcp)[1] << std::endl;
       
     if (!use_sqp){    
       // Trust Region
-      ROL::StatusTest<RealT> status_tr(gtol, stol, maxit);    
-      ROL::TrustRegionStep<RealT> step_tr(*parlist);
-      ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
+      ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist);
       std::clock_t timer_tr = std::clock();
       algo_tr.run(z,robj,bcon,true,*outStream);
-      std::cout << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
+      *outStream << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
       *outStream << "Trust-Region required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                  << " seconds.\n";
     }
     else{
       // SQP.
-      Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
-      ROL::StdVector<RealT> gz(gz_rcp);
-      Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
+      //Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nz, 0.0) );
+      //ROL::StdVector<RealT> gz(gz_rcp);
+      //Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(&gz,false);
       Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
       ROL::StdVector<RealT> gu(gu_rcp);
       Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(&gu,false);
-      ROL::Vector_SimOpt<RealT> g(gup,gzp);
+      //ROL::Vector_SimOpt<RealT> g(gup,gzp);
+      ROL::Vector_SimOpt<RealT> g(gup,zp);
       Teuchos::RCP<std::vector<RealT> > c_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
       Teuchos::RCP<std::vector<RealT> > l_rcp = Teuchos::rcp( new std::vector<RealT> (ns, 0.0) );
       ROL::StdVector<RealT> c(c_rcp);
       ROL::StdVector<RealT> l(l_rcp);
       
-      RealT ctol = 1.e-14;
-      ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
-      ROL::CompositeStepSQP<RealT> step_sqp(*parlist);
-      ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
+      ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist);
       //x.zero();
-      std::clock_t timer_sqp = std::clock();
-      algo_sqp.run(x,g,l,c,obj,con,true,*outStream);
-      std::cout << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
-      *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
+      std::clock_t timer_cs = std::clock();
+      algo_cs.run(x,g,l,c,obj,con,true,*outStream);
+      *outStream << "\n Solution " << (*z_rcp)[0] << " " << (*z_rcp)[1] << "\n" << std::endl;
+      *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
 		 << " seconds.\n";
+    }
+    soln.axpy(-1.0, z);
+    *outStream << "Norm of error: " << soln.norm() << std::endl;
+    if (soln.norm() > 1e4*ROL::ROL_EPSILON) {
+      errorFlag = 1;
     }
   }
   catch (std::logic_error err) {

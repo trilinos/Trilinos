@@ -55,7 +55,7 @@ template <typename Adapter>
 class PartitioningSolution;
 }
 
-#include <Zoltan2_IdentifierMap.hpp>
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_GreedyMWM.hpp>
 #include <Zoltan2_Algorithm.hpp>
@@ -96,7 +96,6 @@ public:
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
 #endif
@@ -1239,13 +1238,16 @@ template <typename Adapter>
   // respect to a desired solution.  This solution may have more or
   // fewer parts that the desired solution.)
 
-  part_t lMax=0, lMin=0, gMax, gMin;
+  part_t lMax = std::numeric_limits<part_t>::min(); 
+  part_t lMin = std::numeric_limits<part_t>::max();
+  part_t gMax, gMin;
 
-  if (len > 0)
-    IdentifierTraits<part_t>::minMax(partList.getRawPtr(), len, lMin, lMax);
-
-  IdentifierTraits<part_t>::globalMinMax(*comm_, len == 0,
-                                         lMin, lMax, gMin, gMax);
+  for (size_t i = 0; i < len; i++) {
+    if (partList[i] < lMin) lMin = partList[i];
+    if (partList[i] > lMax) lMax = partList[i];
+  }
+  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MIN, 1, &lMin, &gMin);
+  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MAX, 1, &lMax, &gMax);
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
   parts_ = partList;

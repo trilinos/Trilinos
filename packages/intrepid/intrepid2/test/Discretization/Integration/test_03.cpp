@@ -106,7 +106,7 @@ double computeIntegral(shards::CellTopology & cellTopology, int cubDegree, int x
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -148,10 +148,10 @@ int main(int argc, char *argv[]) {
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
   int                                      maxDeg[2];
   int                                      numPoly[2];
-  maxDeg[0]  = INTREPID_CUBATURE_TRI_DEFAULT_MAX;
-  maxDeg[1]  = INTREPID_CUBATURE_LINE_GAUSS_MAX;
-  numPoly[0] = (INTREPID_CUBATURE_TRI_DEFAULT_MAX+1)*(INTREPID_CUBATURE_TRI_DEFAULT_MAX+2)/2;
-  numPoly[1] = (INTREPID_CUBATURE_LINE_GAUSS_MAX+1)*(INTREPID_CUBATURE_LINE_GAUSS_MAX+2)/2;
+  maxDeg[0]  = INTREPID2_CUBATURE_TRI_DEFAULT_MAX;
+  maxDeg[1]  = INTREPID2_CUBATURE_LINE_GAUSS_MAX;
+  numPoly[0] = (INTREPID2_CUBATURE_TRI_DEFAULT_MAX+1)*(INTREPID2_CUBATURE_TRI_DEFAULT_MAX+2)/2;
+  numPoly[1] = (INTREPID2_CUBATURE_LINE_GAUSS_MAX+1)*(INTREPID2_CUBATURE_LINE_GAUSS_MAX+2)/2;
 
   // get names of files with analytic values
   std::string basedir = "./data";
@@ -227,6 +227,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+Kokkos::finalize();
   return errorFlag;
 }

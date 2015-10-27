@@ -20,6 +20,7 @@
 #include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AlgebraicPermutationStrategy_decl.hpp"
@@ -591,7 +592,7 @@ namespace MueLu {
   permPTmatrix->fillComplete();
   permQTmatrix->fillComplete();
 
-  Teuchos::RCP<Matrix> permPmatrix = Utils2::Transpose(*permPTmatrix, true);
+  Teuchos::RCP<Matrix> permPmatrix = Utilities::Transpose(*permPTmatrix, true);
 
   for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
     if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
@@ -603,8 +604,8 @@ namespace MueLu {
   }
 
   // build permP * A * permQT
-  Teuchos::RCP<Matrix> ApermQt = Utils::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2));
-  Teuchos::RCP<Matrix> permPApermQt = Utils::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2));
+  Teuchos::RCP<Matrix> ApermQt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *permQTmatrix, false, GetOStream(Statistics2));
+  Teuchos::RCP<Matrix> permPApermQt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*permPmatrix, false, *ApermQt, false, GetOStream(Statistics2));
 
   /*
   MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("A.mat", *A);
@@ -637,7 +638,7 @@ namespace MueLu {
   }
   diagScalingOp->fillComplete();
 
-  Teuchos::RCP<Matrix> scaledA = Utils::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2));
+  Teuchos::RCP<Matrix> scaledA = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*diagScalingOp, false, *permPApermQt, false, GetOStream(Statistics2));
   currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(scaledA), genFactory/*this*/);
 
   currentLevel.Set("permA", Teuchos::rcp_dynamic_cast<Matrix>(permPApermQt), genFactory/*this*/);  // TODO careful with this!!!

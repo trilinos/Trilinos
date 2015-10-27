@@ -70,7 +70,7 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  typedef MueLu::Utils<SC,LO,GO,NO> Utils;
+  typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
   typedef MueLu::TpetraOperator<SC,LO,GO,NO> TpetraOperator;
 
   TEUCHOS_UNIT_TEST(TpetraOperator, Apply)

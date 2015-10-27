@@ -100,6 +100,7 @@ namespace panzer {
     Array_CellIPDimDim jac_inv;          // <Cell,IP,Dim,Dim>
     Array_CellIP jac_det;                // <Cell,IP>
     Array_CellIP weighted_measure;       // <Cell,IP>
+    Array_CellIPDim weighted_normals;    // <Cell,IP,Dim>
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
@@ -112,8 +113,10 @@ namespace panzer {
 
     // integration points
     Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>
+    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes
 
     DblArrayDynamic dyn_cub_points, dyn_side_cub_points, dyn_cub_weights;
+    DblArrayDynamic dyn_phys_cub_points, dyn_phys_cub_weights, dyn_phys_cub_norms, dyn_node_coordinates;
 
   private:
     bool alloc_arrays;
@@ -122,6 +125,7 @@ namespace panzer {
 
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
+    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
   };
 
 } // namespace panzer

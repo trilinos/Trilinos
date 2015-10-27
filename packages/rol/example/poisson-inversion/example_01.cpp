@@ -48,11 +48,12 @@
 
 #define USE_HESSVEC 1
 
+#include "ROL_Types.hpp"
 #include "ROL_PoissonInversion.hpp"
+#include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_Types.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -83,24 +84,17 @@ int main(int argc, char *argv[]) {
     int dim = 128; // Set problem dimension.
     ROL::ZOO::Objective_PoissonInversion<RealT> obj(dim, 1e-6);
 
-    Teuchos::ParameterList parlist;
-    // Basic algorithm.
-    parlist.set("Trust-Region Subproblem Solver Type",    "Truncated CG");
-    // Krylov parameters.
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    50);
-    // Define step.
-    ROL::TrustRegionStep<RealT> step(parlist);
-
-    // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
-
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo(step,status,false);
+    Teuchos::ParameterList parlist;
+    std::string stepname = "Trust Region";
+    parlist.sublist("Step").sublist(stepname).set("Subproblem Solver", "Truncated CG");
+    parlist.sublist("General").sublist("Krylov").set("Iteration Limit",50);
+    parlist.sublist("General").sublist("Krylov").set("Relative Tolerance",1e-2);
+    parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1e-4);
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname,parlist);
 
     // Iteration vector.
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -111,10 +105,7 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> x(x_rcp);
 
     // Run algorithm.
-    std::vector<std::string> output = algo.run(x, obj, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
-    }
+    algo.run(x, obj, true, *outStream);
 
     // Compute dense Hessian matrix. 
     Teuchos::SerialDenseMatrix<int, RealT> H(x.dimension(), x.dimension());
@@ -188,12 +179,10 @@ int main(int argc, char *argv[]) {
         *outStream << std::scientific << std::setprecision(20) << "1-norm of H*inv(H) - I = " << HinvH.normOne() << " > " << errtol << "\n";      
     }
 
-    // Use Newton algorithm.
-    parlist.set("Descent Type", "Newton's Method");
-    // Define step.
-    ROL::LineSearchStep<RealT> newton_step(parlist);
-    // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> newton_algo(newton_step,status,false);
+    // Use Newton algorithm with line search.
+    stepname = "Line Search";
+    parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type", "Newton-Krylov");
+    ROL::Algorithm<RealT> newton_algo(stepname,parlist);
 
     // Reset initial guess.
     for (int i=0; i<dim; i++) {
@@ -201,16 +190,15 @@ int main(int argc, char *argv[]) {
     }
 
     // Run Newton algorithm.
-    output = newton_algo.run(x, obj, false);
-    for ( unsigned i = 0; i < output.size(); i++ ) {
-      std::cout << output[i];
-    }
+    newton_algo.run(x, obj, true, *outStream);
 
     Teuchos::RCP<const ROL::AlgorithmState<RealT> > new_state = newton_algo.getState();
     Teuchos::RCP<const ROL::AlgorithmState<RealT> > old_state = algo.getState();
-    if ( std::abs(new_state->value - old_state->value) > errtol ) {
+    *outStream << "old_optimal_value = " << old_state->value << std::endl;
+    *outStream << "new_optimal_value = " << new_state->value << std::endl;
+    if ( std::abs(new_state->value - old_state->value) / std::abs(old_state->value) > errtol ) {
         errorFlag++;
-        *outStream << std::scientific << std::setprecision(20) << "\nabs(new_optimal_value - old_optimal_value) = " << std::abs(new_state->value - old_state->value) << " > " << errtol << "\n";      
+        *outStream << std::scientific << std::setprecision(20) << "\nabs(new_optimal_value - old_optimal_value) / abs(old_optimal_value)  = " << std::abs(new_state->value - old_state->value) / std::abs(old_state->value) << " > " << errtol << "\n";      
     }
 
   }

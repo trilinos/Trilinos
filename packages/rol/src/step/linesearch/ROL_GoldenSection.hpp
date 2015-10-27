@@ -66,7 +66,7 @@ public:
 
   // Constructor
   GoldenSection( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
-    tol_ = parlist.get("Bracketing Tolerance",1.e-8);
+    tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",1.e-8);
     btls_ = Teuchos::rcp(new BackTracking<Real>(parlist));
   }
 

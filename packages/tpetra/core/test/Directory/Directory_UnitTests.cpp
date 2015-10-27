@@ -46,14 +46,14 @@
 #include <Tpetra_Directory.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Tuple.hpp>
+
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace {
 
-  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::outArg;
@@ -244,7 +244,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const GO numEntries = as<GO>(numImages+1);
+    const GO numEntries = static_cast<GO>(numImages+1);
     // the last image gets two entries, others get one
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
@@ -312,9 +312,9 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // image i gets i+1 entries
-    const LO numMyEntries = as<LO>(myImageID+1);
+    const LO numMyEntries = static_cast<LO>(myImageID+1);
     // number of entries is (numImages+1)*numImages/2
-    const GO numEntries = as<GO>((numImages*numImages+numImages)/2);
+    const GO numEntries = static_cast<GO>((numImages*numImages+numImages)/2);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
     D dir;
@@ -331,7 +331,7 @@ namespace {
     for (int id = 0; id < numImages; ++id) {
       for (Teuchos_Ordinal num = 0; num < id+1; ++num) {
         expectedImageIDs.push_back(id);
-        expectedLIDs.push_back(as<LO>(num));
+        expectedLIDs.push_back(static_cast<LO>(num));
       }
     }
     {
@@ -379,7 +379,7 @@ namespace {
     const int myImageID = comm->getRank();
     // number of entries is 3*numImages
     // we will stripe the GIDs across images
-    const GO numEntries = as<GO>(3*numImages);
+    const GO numEntries = static_cast<GO>(3*numImages);
 
     out << "Creating Map" << endl;
     RCP<M> map = rcp (new M (numEntries, tuple<GO> (myImageID, myImageID+numImages, myImageID+2*numImages), 0, comm));
@@ -439,43 +439,19 @@ namespace {
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#define UNIT_TEST_GROUP( LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallUniformContig, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, UniformContig, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallContig, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Contig, LO, GO )     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, NonContig, LO, GO )  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, BadSize, LO, GO )
 
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallUniformContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, UniformContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Contig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, NonContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, BadSize, LO, GO )
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP)
 
-    UNIT_TEST_GROUP_ORDINAL( int , int )
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-    //UNIT_TEST_GROUP_ORDINAL(char , int)
-
-    UNIT_TEST_GROUP_ORDINAL(int , int)
-
-    // typedef short int ShortInt;
-    // UNIT_TEST_GROUP_ORDINAL(ShortInt , int)
-
-    // typedef long int LongInt;
-    // UNIT_TEST_GROUP_ORDINAL(int , LongInt)
-
-#   ifdef HAVE_TPETRA_INT_LONG_LONG
-      // typedef long long int LongLongInt;
-      // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
-      // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
-#   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-}
+} // namespace (anonymous)
 
 
 

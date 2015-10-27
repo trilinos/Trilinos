@@ -1,56 +1,6 @@
 /*! 
-\mainpage Trilinos/Kokkos: Core Kernels Package
+\mainpage Trilinos/KokkosClassic: "Classic" (DEPRECATED) Kernels Package
 
-\section kokkos_intro Introduction
-
-%Kokkos provides two main capabilities for Trilinos. The first is an
-abstract programming interface (API) for handling memory and
-specifying work for shared-memory parallel nodes (the
-\ref kokkos_node_api "Kokkos Node API"). The second is a collection 
-of local (i.e., not using MPI; within a single MPI process) linear
-algebra classes and the kernels needed to realized their functionality
-in parallel (the %Kokkos Linear Algebra kernels library). In addition
-to providing basic linear algebra kernels, %Kokkos also specifies APIs
-for extension via user-provided kernels (see, e.g., the
-\ref kokkos_crs_ops "Kokkos Compressed-Row Sparse API").
-
-%Kokkos is typically not used directly in applications, but instead as
-a significant component in higher-level Trilinos packages, such as
-Tpetra. The functionality contained here-in has been put in the
-%Kokkos package in order to facilitate code re-use between Trilinos
-packages and to ease experimentation for kernel researchers.
-
-\section kokkos_startup Overview of Kokkos
-
-\subsection kokkos_formulations Kokkos Classes
-
-%Kokkos contains a number of classes.  They can be categorized as follows:
-
-- %Kokkos Node API
-  - Nodes based on the KokkosClassic::CUDANodeMemoryModel: GPU nodes using the <a href="http://www.nvidia.com/object/cuda_home.html">NVIDIA/CUDA</a> graphic processing units (GPUs)
-     - KokkosClassic::ThrustGPUNode provides parallel compute capability for  via the <a href="http://code.google.com/p/thrust/">Thrust library</a>.
-  - Nodes based on the KokkosClassic::StandardNodeMemoryModel: Host-bound/CPU nodes using standard memory allocation.
-     - KokkosClassic::SerialNode: provides a simple node, where all kernels are executed in serial.
-     - KokkosClassic::TBBNode: provides support for multi-core CPUs using <a href="http://www.threadingbuildingblocks.org/">Intel TBB</a> (requires third-party library TBB).
-     - KokkosClassic::TPINode: provides support for multi-core CPUs using Pthreads, via the ThreadPool package (requires ThreadPool package and Pthreads TPL).
-- %Kokkos Linear Algebra Kernels Library
-  - Data structures:
-    - KokkosClassic::CrsMatrixBase, KokkosClassic::CrsGraphBase classes:  Classes providing an example of CRS loading structures, useful as an example or base class for implementing 
-      support for a new sparse kernels TPL.
-    - KokkosClassic::MultiVector class: A class providing the structure of a dense
-    multivector. Here, as throughout most of Trilinos, a "multivector" refers to a
-    collection of vectors.
-  - Arithmetic interfaces:
-    - KokkosClassic::DefaultArithmetic: Provides basic functionality for 
-    performing arithmetic of multivectors.
-    - KokkosClassic::DefaultHostSparseOps, KokkosClassic::DefaultDeviceSparseOps: Provides basic functionality for 
-    computing multiplication and solve of a sparse matrix against a multivector.
-  
-\subsection kokkos_trilinos Building Kokkos and using it in Trilinos
-
-Kokkos can be used as a stand-alone package. However, its primary use case is via the functionality provided to other packages, such as Tpetra,
-Ifpack2 and Isorropia.
-
-See \ref kokkos_cuda_support "Kokkos CUDA Support" for instructions on building with support for NVIDIA CUDA GPUs.
-
+The contents of this subpackage have been DEPRECATED.  Do not use them
+directly.  Use the Kokkos package (Trilinos/packages/kokkos) instead.
 */

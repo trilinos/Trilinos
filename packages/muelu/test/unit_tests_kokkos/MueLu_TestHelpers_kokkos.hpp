@@ -127,7 +127,6 @@ namespace MueLuTests {
       }
     };
 
-#if 0
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestFactory {
 #include "MueLu_UseShortNames.hpp"
@@ -137,33 +136,29 @@ namespace MueLuTests {
 
     public:
 
-      //
-      // Method that creates a map containing a specified number of local elements per process.
-      //
+      // Create a map containing a specified number of local elements per process.
       static const RCP<const Map> BuildMap(LO numElementsPerProc) {
-
-        RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-
-        const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+        RCP<const Teuchos::Comm<int> > comm   = TestHelpers_kokkos::Parameters::getDefaultComm();
+        const global_size_t           INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
         return MapFactory::Build(TestHelpers_kokkos::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
 
       } // BuildMap()
 
       // Create a matrix as specified by parameter list options
-      static RCP<Matrix> BuildMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
+      static RCP<Matrix> BuildMatrix(ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
         RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers_kokkos::Parameters::getLib();
 
-        int nx,ny,nz; //global_size_t
+        int nx, ny, nz; //global_size_t
         nx = ny = nz = 5;
-        nx = matrixList.get("nx",nx);
-        ny = matrixList.get("ny",ny);
-        nz = matrixList.get("nz",nz);
+        nx = matrixList.get("nx", nx);
+        ny = matrixList.get("ny", ny);
+        nz = matrixList.get("nz", nz);
 
-        std::string matrixType = matrixList.get("matrixType","Laplace1D");
+        std::string matrixType = matrixList.get("matrixType", "Laplace1D");
         GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
@@ -182,42 +177,62 @@ namespace MueLuTests {
         RCP<Matrix> Op = Pr->BuildMatrix();
 
         return Op;
-      } // BuildMatrix()
+      }
+
+      // Create a 1D Poisson matrix with the specified number of rows
+      // nx: global number of rows
+      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) { //global_size_t
+        ParameterList matrixList;
+        matrixList.set("nx",            nx);
+        matrixList.set("matrixType",    "Laplace1D");
+        return BuildMatrix(matrixList,lib);
+      }
+
+      // Create a 2D Poisson matrix with the specified number of rows
+      // nx: global number of rows
+      // ny: global number of rows
+      static RCP<Matrix> Build2DPoisson(int nx, int ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) { //global_size_t
+        if (ny == -1) ny = nx;
+
+        ParameterList matrixList;
+        matrixList.set("nx",            nx);
+        matrixList.set("ny",            ny);
+        matrixList.set("matrixType",    "Laplace2D");
+
+        return BuildMatrix(matrixList,lib);
+      }
 
       // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
-      // dofMap: row map of matrix
-      static RCP<Matrix> BuildTridiag(RCP<const Map> dofMap, Scalar a, Scalar b, Scalar c, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
-
+      static RCP<Matrix> BuildTridiag(RCP<const Map> rowMap, SC a, SC b, SC c, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers_kokkos::Parameters::getLib();
 
         RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-        Teuchos::RCP<Matrix> mtx = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(dofMap, 3);
+        RCP<Matrix> mtx = MatrixFactory::Build(rowMap, 3);
 
-        LocalOrdinal NumMyElements = dofMap->getNodeNumElements();
-        Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = dofMap->getNodeElementList();
-        GlobalOrdinal indexBase = dofMap->getIndexBase();
+        ArrayView<const GO> MyGlobalElements = rowMap->getNodeElementList();
+        GO indexBase = rowMap->getIndexBase();
 
-        GlobalOrdinal NumEntries;
-        LocalOrdinal  nnz = 3;
-        std::vector<Scalar>        Values(nnz);
-        std::vector<GlobalOrdinal> Indices(nnz);
+        GO NumEntries;
+        LO nnz = 3;
+        std::vector<SC> Values(nnz);
+        std::vector<GO> Indices(nnz);
 
         // access information from strided block map
         std::vector<size_t> strInfo = std::vector<size_t>();
         size_t blockSize = 1;
-        LocalOrdinal blockId = -1;
-        GlobalOrdinal offset = 0;
+        LO blockId = -1;
+        GO offset = 0;
 
-        Teuchos::RCP<const StridedMap> strdofMap = Teuchos::rcp_dynamic_cast<const StridedMap>(dofMap);
-        if(strdofMap != Teuchos::null) {
-          strInfo = strdofMap->getStridingData();
-          blockSize = strdofMap->getFixedBlockSize();
-          blockId = strdofMap->getStridedBlockId();
-          offset = strdofMap->getOffset();
+        RCP<const StridedMap> strrowMap = rcp_dynamic_cast<const StridedMap>(rowMap);
+        if (strrowMap != Teuchos::null) {
+          strInfo   = strrowMap->getStridingData();
+          blockSize = strrowMap->getFixedBlockSize();
+          blockId   = strrowMap->getStridedBlockId();
+          offset    = strrowMap->getOffset();
           TEUCHOS_TEST_FOR_EXCEPTION(blockId > -1 && strInfo[blockId]==1, MueLu::Exceptions::RuntimeError,
-                                             "MueLu::TestHelpers_kokkos::BuildTridiag: strInfo block size must be > 1.");
+                                     "MueLu::TestHelpers_kokkos::BuildTridiag: strInfo block size must be > 1.");
           // todo: write one more special case for a row being first and last bock row
         } else {
           // no striding information. emulate block matrix
@@ -225,18 +240,18 @@ namespace MueLuTests {
           strInfo.push_back(blockSize); // default block size = 1
         }
 
-        GlobalOrdinal rrmax = (dofMap->getMaxAllGlobalIndex()-offset-indexBase) / blockSize;
+        GO rrmax = (rowMap->getMaxAllGlobalIndex()-offset-indexBase) / blockSize;
 
         // loop over all rows
-        for (LocalOrdinal i = 0; i < NumMyElements; i++) {
-
-          GlobalOrdinal rr = (MyGlobalElements[i]-offset-indexBase) / blockSize + indexBase;  // node index
+        LO numMyElements = rowMap->getNodeNumElements();
+        for (LO i = 0; i < numMyElements; i++) {
+          GO rr = (MyGlobalElements[i]-offset-indexBase) / blockSize + indexBase;  // node index
 
           // distinguish 5 different cases
 
-          GlobalOrdinal blockOffset = 0;
-          for (LocalOrdinal k=0; k<blockId; k++)
-            blockOffset += Teuchos::as<GlobalOrdinal>(strInfo[k]);
+          GO blockOffset = 0;
+          for (LO k = 0; k < blockId; k++)
+            blockOffset += Teuchos::as<GO>(strInfo[k]);
 
           if (MyGlobalElements[i] == blockOffset + offset + indexBase) {
             // very first row
@@ -245,6 +260,7 @@ namespace MueLuTests {
             Indices[1] = MyGlobalElements[i] + 1;
             Values [1] = c;
             NumEntries = 2;
+
           } else if (MyGlobalElements[i] == rrmax * Teuchos::as<GO>(blockSize) + blockOffset + Teuchos::as<GO>(strInfo[blockId]) - 1 + offset + indexBase) {
             // very last row
             Indices[0] = MyGlobalElements[i] - 1;
@@ -252,6 +268,7 @@ namespace MueLuTests {
             Indices[1] = MyGlobalElements[i];
             Values [1] = a;
             NumEntries = 2;
+
           } else if (MyGlobalElements[i] == rr * Teuchos::as<GO>(blockSize) + blockOffset + Teuchos::as<GO>(strInfo[blockId]) - 1 + offset + indexBase) {
             // last row in current node block
             Indices[0] = MyGlobalElements[i] - 1;
@@ -261,6 +278,7 @@ namespace MueLuTests {
             Indices[2] = (rr+1)*blockSize + blockOffset + offset + indexBase;
             Values [2] = c;
             NumEntries = 3;
+
           } else if (MyGlobalElements[i] == rr * Teuchos::as<GO>(blockSize) + blockOffset + offset + indexBase) {
             // first row in current node block
             Indices[0] = (rr-1)*blockSize + blockOffset + strInfo[blockId] - 1 + offset + indexBase;
@@ -270,6 +288,7 @@ namespace MueLuTests {
             Indices[2] = MyGlobalElements[i] + 1;
             Values [2] = c;
             NumEntries = 3;
+
           } else {
             // usual row entries in block rows
             Indices[0] = MyGlobalElements[i] - 1;
@@ -290,39 +309,15 @@ namespace MueLuTests {
 
           // put the off-diagonal entries
           // Xpetra wants ArrayViews (sigh)
-          Teuchos::ArrayView<Scalar>        av(&Values [0], NumEntries);
-          Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
+          ArrayView<SC> av(&Values [0], NumEntries);
+          ArrayView<GO> iv(&Indices[0], NumEntries);
           mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
         }
 
         mtx->fillComplete();
 
         return mtx;
-      } // BuildTridiag()
-
-      // Create a 1D Poisson matrix with the specified number of rows
-      // nx: global number of rows
-      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
-        Teuchos::ParameterList matrixList;
-        matrixList.set("nx", nx);
-        matrixList.set("matrixType","Laplace1D");
-        RCP<Matrix> A = BuildMatrix(matrixList,lib);
-        return A;
-      } // Build1DPoisson()
-
-      // Create a 2D Poisson matrix with the specified number of rows
-      // nx: global number of rows
-      // ny: global number of rows
-      static RCP<Matrix> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
-        Teuchos::ParameterList matrixList;
-        if (ny==-1) ny=nx;
-        matrixList.set("nx", nx);
-        matrixList.set("ny", ny);
-        matrixList.set("matrixType","Laplace2D");
-        RCP<Matrix> A = BuildMatrix(matrixList,lib);
-        return A;
-      } // Build2DPoisson()
-
+      }
 
      // Create a matrix as specified by parameter list options
      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) {
@@ -371,7 +366,7 @@ namespace MueLuTests {
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
 #endif
         return Op;
-     } // BuildMatrix()
+     } // BuildBlockMatrix()
 
 
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
@@ -390,19 +385,20 @@ namespace MueLuTests {
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        fineLevel.SetFactoryManager(factoryHandler);
+        fineLevel  .SetFactoryManager(factoryHandler);
         coarseLevel.SetFactoryManager(factoryHandler);
 
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 
-        fineLevel.SetLevelID(0);
+        fineLevel  .SetLevelID(0);
         coarseLevel.SetLevelID(1);
 #ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-        fineLevel.SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
+        fineLevel  .SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
         coarseLevel.SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
 #endif
       }
 
+#if 0
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
@@ -412,15 +408,13 @@ namespace MueLuTests {
         return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
       }
 #endif
-
-    }; // class Factory
-
+#endif
+    }; // class TestFactory
 
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
-    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
+    ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string & filter);
 
-#endif
   } // namespace TestHelpers_kokkos
 
 } // namespace MueLu

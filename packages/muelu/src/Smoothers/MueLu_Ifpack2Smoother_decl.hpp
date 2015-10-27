@@ -78,10 +78,12 @@ namespace MueLu {
 
   /*!
     @class Ifpack2Smoother
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Ifpack2 smoothers.
 
-    //   This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based on the
-    //   type and ParameterList passed into the constructor. See the constructor for more information.
+    This class creates an Ifpack2 preconditioner factory. The factory creates a smoother based
+    on the type and ParameterList passed into the constructor. See the constructor for more
+    information.
     */
 
   template <class Scalar = SmootherPrototype<>::scalar_type,
@@ -252,6 +254,48 @@ namespace MueLu {
 #endif
   }
 
+#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+  /*!
+    @class Ifpack2Smoother
+    @ingroup MueLuSmootherClasses
+    @brief Class that encapsulates Ifpack2 smoothers (specialization for LO=GO=int).
+    */
+
+  // TAW: Oct 16 2015: we need the specialization of Ifpack2Smoother since it is a object living in the Tpetra stack only.
+  //                   It creates some Ifpack2 objects which are templated on GO and need GO instantiations in Tpetra.
+  //                   If Tpetra is not compiled with GO=int enabled we need dummy implementations here.
+  template <class Scalar, class Node>
+  class Ifpack2Smoother<Scalar, int, int, Node> : public SmootherPrototype<Scalar,int,int,Node>
+  {
+  public:
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+
+#ifndef _MSC_VER
+    // Avoid error C3772: invalid friend template declaration
+    template<class Scalar2, class LocalOrdinal2, class GlobalOrdinal2, class Node2>
+    friend class Ifpack2Smoother;
+#endif
+
+    Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList(), const LocalOrdinal& overlap = 0) { MUELU_TPETRA_ETI_EXCEPTION("Ifpack2Smoother<int,int>","Ifpack2Smoother<int,int>","int"); };
+
+    virtual ~Ifpack2Smoother() { }
+
+    void SetParameterList(const Teuchos::ParameterList& paramList) {}
+    void DeclareInput(Level &currentLevel) const {}
+    void Setup(Level &currentLevel) {}
+    void Apply(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, bool InitialGuessIsZero = false) const {}
+    RCP<MueLu::SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Copy() const { return Teuchos::null;}
+
+    template<typename Node2>
+    RCP<MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+    clone(const RCP<Node2>& node2, const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& A_newnode) const { return Teuchos::null; }
+    std::string description() const { return std::string(""); }
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {}
+  private:
+    void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const {}
+  }; // class Ifpack2Smoother (specialization for LO=GO=int)
+#endif
 
 } // namespace MueLu
 

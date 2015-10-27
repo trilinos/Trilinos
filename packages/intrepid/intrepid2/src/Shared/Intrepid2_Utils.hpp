@@ -239,7 +239,7 @@ Therefore:
 
   enum TypeOfExactData{
     INTREPID_UTILS_FRACTION=0,
-    INTREPID_UTILS_SCALAR
+    INTREPID2_UTILS_SCALAR
   };
 
 /***************************************************************************************************
@@ -257,7 +257,7 @@ Therefore:
     \param  iprint           [in]     -  if 0, no output; if 1, details are printed
     \param  analyticDataType [in]     -  type of analytic data for comparison:
                                          \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-                                         \li if INTREPID_UTILS_SCALAR, high-precision scalar data is read
+                                         \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
     \return 0 if pass; error code otherwise
  */
 template<class Scalar>
@@ -277,7 +277,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
     \param  iprint           [in]     -  if 0, no output; if 1, details are printed
     \param  analyticDataType [in]     -  type of analytic data for comparison:
                                          \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-                                         \li if INTREPID_UTILS_SCALAR, high-precision scalar data is read
+                                         \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
     \return 0 if pass; error code otherwise
  */
 template<class Scalar>
@@ -296,7 +296,7 @@ int compareToAnalytic(const Scalar * testMat,
     \param  inputFile        [in]     -  input file
     \param  analyticDataType [in]     -  type of analytic data for comparison:
                                          \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-                                         \li if INTREPID_UTILS_SCALAR, high-precision scalar data is read
+                                         \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
  */
 template<class Scalar>
 void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
@@ -310,7 +310,7 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
     \param  inputFile        [in]     -  input file
     \param  analyticDataType [in]     -  type of analytic data for comparison:
                                          \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
-                                         \li if INTREPID_UTILS_SCALAR, high-precision scalar data is read
+                                         \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
  */
 template<class Scalar>
 void getAnalytic(Scalar * testMat,
@@ -583,7 +583,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
-        else if (analyticDataType == INTREPID_UTILS_SCALAR)
+        else if (analyticDataType == INTREPID2_UTILS_SCALAR)
           chunkstream >> testentry;
         abstol = ( std::fabs(testentry) < reltol ?reltol : std::fabs(reltol*testentry) );
         absdiff = std::fabs(testentry - testMat[i][j]);
@@ -667,7 +667,7 @@ int compareToAnalytic(const Scalar * testMat,
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
-        else if (analyticDataType == INTREPID_UTILS_SCALAR)
+        else if (analyticDataType == INTREPID2_UTILS_SCALAR)
           chunkstream >> testentry;
         abstol = ( std::fabs(testentry) < reltol ?reltol : std::fabs(reltol*testentry) );
         absdiff = std::fabs(testentry - testMat[i*offset+j]);
@@ -730,7 +730,7 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
-        else if (analyticDataType == INTREPID_UTILS_SCALAR)
+        else if (analyticDataType == INTREPID2_UTILS_SCALAR)
           chunkstream >> testentry;
         testMat[i][j] = testentry;
       }
@@ -782,7 +782,7 @@ void getAnalytic(Scalar * testMat,
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
-        else if (analyticDataType == INTREPID_UTILS_SCALAR)
+        else if (analyticDataType == INTREPID2_UTILS_SCALAR)
           chunkstream >> testentry;
         testMat[i*offset+j] = testentry;
       }

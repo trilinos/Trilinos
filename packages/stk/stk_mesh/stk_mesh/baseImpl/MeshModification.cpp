@@ -79,7 +79,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         m_bulkData.internal_resolve_shared_membership();
 
         // Regenerate the ghosting aura around all shared mesh entities.
-        if(m_bulkData.get_automatic_aura_option() == stk::mesh::BulkData::AUTO_AURA)
+        if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();
         }
@@ -136,7 +136,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
     // Communicate entity modification state for shared entities
     // the resulting vector is sorted by entity and process.
     const bool communicate_shared = true;
-    m_bulkData.communicate_entity_modification(m_bulkData, communicate_shared, remotely_modified_shared_entities);
+    m_bulkData.communicate_entity_modification(communicate_shared, remotely_modified_shared_entities);
 
     // We iterate backwards over remote_mod to ensure that we hit the
     // higher-ranking entities first.

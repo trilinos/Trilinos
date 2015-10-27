@@ -55,6 +55,7 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
@@ -67,12 +68,7 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
-#include "XpetraExt_MatrixMatrix.hpp"
 #include "Xpetra_ExportFactory.hpp"
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Factory_decl.hpp"
-#include "Ifpack2_Factory_def.hpp"
-#include "Ifpack2_Hiptmair.hpp"
 
 namespace MueLu {
 
@@ -120,11 +116,6 @@ namespace MueLu {
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       disable_addon_(true),
-      MaxCoarseSize_(1000),
-      MaxLevels_(5),
-      Cycles_(1),
-      precType11_("CHEBYSHEV"),
-      precType22_("CHEBYSHEV"),
       mode_("additive")
     {
     }
@@ -134,11 +125,6 @@ namespace MueLu {
       Hierarchy11_(H11),
       Hierarchy22_(H22),
       disable_addon_(false),
-      MaxCoarseSize_(1000),
-      MaxLevels_(5),
-      Cycles_(1),
-      precType11_("CHEBYSHEV"),
-      precType22_("CHEBYSHEV"),
       mode_("additive")
     {
     }
@@ -236,20 +222,7 @@ namespace MueLu {
     }
 
     //! Destructor.
-    virtual ~RefMaxwell() {
-      // clean up
-      Hierarchy11_=Teuchos::null;
-      Hierarchy22_=Teuchos::null;
-      SM_Matrix_=Teuchos::null;
-      D0_Matrix_=Teuchos::null;
-      M0inv_Matrix_=Teuchos::null;
-      M1_Matrix_=Teuchos::null;
-      Ms_Matrix_=Teuchos::null;
-      Nullspace_=Teuchos::null;
-      Coords_=Teuchos::null;
-      TMT_Matrix_=Teuchos::null;
-      TMT_Agg_Matrix_=Teuchos::null;
-    }
+    virtual ~RefMaxwell() {}
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
@@ -303,6 +276,132 @@ namespace MueLu {
 
   private:
 
+    void findDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                  std::vector<LocalOrdinal>& dirichletRows) {
+      dirichletRows.resize(0);
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        int nnz=0;
+        for (int j=0; j<indices.size(); j++) {
+          // FIXME (mfh 12 Sep 2015) I just replaced abs with the
+          // appropriate ScalarTraits call.  However, this is NOT
+          // correct for arbitrary scalar types!!!  I'm guessing you
+          // should use the equivalent of LAPACK's SFMIN or machine
+          // epsilon here.
+          if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > 1.0e-16) {
+            nnz++;
+          }
+        }
+        if (nnz == 1 || nnz == 2) {
+          dirichletRows.push_back(i);
+        }
+      }
+    }
+
+    void findDirichletCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                  std::vector<LocalOrdinal>& dirichletRows,
+                                  std::vector<LocalOrdinal>& dirichletCols) {
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A->getDomainMap();
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A->getColMap();
+      Teuchos::RCP< Xpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter
+        = Xpetra::ExportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(colMap,domMap);
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ::Build(colMap,1);
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ::Build(domMap,1);
+      myColsToZero->putScalar((Scalar)0.0);
+      globalColsToZero->putScalar((Scalar)0.0);
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(dirichletRows[i],indices,values);
+        for(int j=0; j<indices.size(); j++)
+          myColsToZero->replaceLocalValue(indices[j],0,(Scalar)1.0);
+      }
+      globalColsToZero->doExport(*myColsToZero,*exporter,Xpetra::ADD);
+      myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
+      Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
+      dirichletCols.resize(colMap->getNodeNumElements());
+      for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>0.0)
+          dirichletCols[i]=1;
+        else
+          dirichletCols[i]=0;
+      }
+    }
+
+    void Apply_BCsToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                                      std::vector<LocalOrdinal>& dirichletRows) {
+      for(size_t i=0; i<dirichletRows.size(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(dirichletRows[i],indices,values);
+        std::vector<Scalar> vec;
+        vec.resize(indices.size());
+        Teuchos::ArrayView<Scalar> zerovalues(vec);
+        for(int j=0; j<indices.size(); j++)
+          zerovalues[j]=(Scalar)1.0e-32;
+        A->replaceLocalValues(dirichletRows[i],indices,zerovalues);
+      }
+    }
+
+    void Apply_BCsToMatrixCols(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
+                                      std::vector<LocalOrdinal>& dirichletCols) {
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        std::vector<Scalar> vec;
+        vec.resize(indices.size());
+        Teuchos::ArrayView<Scalar> zerovalues(vec);
+        for(int j=0; j<indices.size(); j++) {
+          if(dirichletCols[indices[j]]==1)
+            zerovalues[j]=(Scalar)1.0e-32;
+          else
+            zerovalues[j]=values[j];
+        }
+        A->replaceLocalValues(i,indices,zerovalues);
+      }
+    }
+
+    void Remove_Zeroed_Rows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, double tol=1.0e-14) {
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A->getRowMap();
+      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > DiagMatrix = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,1);
+      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > NewMatrix  = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,1);
+      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+        Teuchos::ArrayView<const LocalOrdinal> indices;
+        Teuchos::ArrayView<const Scalar> values;
+        A->getLocalRowView(i,indices,values);
+        int nnz=0;
+        for (int j=0; j<indices.size(); j++) {
+          if (Teuchos::ScalarTraits<Scalar>::magnitude(values[j]) > tol) {
+            nnz++;
+          }
+        }
+        Scalar one = (Scalar)1.0;
+        Scalar zero = (Scalar)0.0;
+        GlobalOrdinal row = rowMap->getGlobalElement(i);
+        if (nnz == 0) {
+          DiagMatrix->insertGlobalValues(row,
+                                         Teuchos::ArrayView<GlobalOrdinal>(&row,1),
+                                         Teuchos::ArrayView<Scalar>(&one,1));
+        }
+        else {
+          DiagMatrix->insertGlobalValues(row,
+                                         Teuchos::ArrayView<GlobalOrdinal>(&row,1),
+                                         Teuchos::ArrayView<Scalar>(&zero,1));
+        }
+      }
+      DiagMatrix->fillComplete();
+      A->fillComplete();
+      // add matrices together
+      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*DiagMatrix,false,(Scalar)1.0,*A,false,(Scalar)1.0,NewMatrix,*out);
+      NewMatrix->fillComplete();
+      A=NewMatrix;
+    }
+
+
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
       *
       * \param[in] D0_Matrix Discrete Gradient
@@ -320,7 +419,9 @@ namespace MueLu {
                     Teuchos::ParameterList& List);
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
-    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_;
+    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_, HierarchySmoother_;
+    //! Top Level
+    Teuchos::RCP<Level> TopLevel_;
     //! Various matrices
     Teuchos::RCP<XMat> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<XMat> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
@@ -329,13 +430,10 @@ namespace MueLu {
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
     //! Parameter lists
-    Teuchos::ParameterList parameterList_, precList11_, precList22_, hiptmairPreList_, hiptmairPostList_;
-    //! Ifpack preconditioners for pre and post smoothing
-    Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > edgePreSmoother_, edgePostSmoother_;
+    Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
     bool disable_addon_;
-    int MaxCoarseSize_, MaxLevels_, Cycles_;
-    std::string precType11_, precType22_, mode_;
+    std::string mode_;
 
   };
 

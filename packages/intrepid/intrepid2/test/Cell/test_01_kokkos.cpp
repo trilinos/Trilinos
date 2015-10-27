@@ -224,7 +224,7 @@ Kokkos::initialize();
     CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     
     // Define CubatureFactory:
-    DefaultCubatureFactory<double>  cubFactory;   
+    DefaultCubatureFactory<double,Kokkos::View<double**>,Kokkos::View<double*> >  cubFactory;   
     
     *outStream \
       << "\n"
@@ -235,13 +235,13 @@ Kokkos::initialize();
     std::vector<shards::CellTopology>::iterator cti;
     
     // Define cubature on the edge parametrization domain:
-    Teuchos::RCP<Cubature<double> > edgeCubature = cubFactory.create(paramEdge, 6); 
+    Teuchos::RCP<Cubature<double,Kokkos::View<double**>,Kokkos::View<double*> > > edgeCubature = cubFactory.create(paramEdge, 6); 
     int cubDim       = edgeCubature -> getDimension();
     int numCubPoints = edgeCubature -> getNumPoints();
 
     // Allocate storage for cubature points and weights on edge parameter domain and fill with points:
-    FieldContainer<double> paramEdgePoints(numCubPoints, cubDim);
-    FieldContainer<double> paramEdgeWeights(numCubPoints);
+    Kokkos::View<double**> paramEdgePoints("paramEdgePoints",numCubPoints, cubDim);
+    Kokkos::View<double*> paramEdgeWeights("paramEdgeWeights",numCubPoints);
     edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
 
@@ -309,7 +309,7 @@ Kokkos::initialize();
               edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
               
               // Compare with d-component of edge tangent by CellTools
-              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -326,7 +326,7 @@ Kokkos::initialize();
             // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
             if(cellDim == 2) {
               CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
-              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -338,7 +338,7 @@ Kokkos::initialize();
                   << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
                   << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
               }
-              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID2_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -366,25 +366,26 @@ Kokkos::initialize();
     // This test loops over standard 3D cells with base topologies, creates a set of nodes and tests normals 
 
     // Define cubature on the edge parametrization domain:
-    Teuchos::RCP<Cubature<double> > triFaceCubature  = cubFactory.create(paramTriFace, 6); 
-    Teuchos::RCP<Cubature<double> > quadFaceCubature = cubFactory.create(paramQuadFace, 6); 
+    Teuchos::RCP<Cubature<double,Kokkos::View<double**>, Kokkos::View<double*> > > triFaceCubature  = cubFactory.create(paramTriFace, 6); 
+    Teuchos::RCP<Cubature<double,Kokkos::View<double**>, Kokkos::View<double*> > > quadFaceCubature = cubFactory.create(paramQuadFace, 6); 
     
     int faceCubDim           = triFaceCubature -> getDimension();
     int numTriFaceCubPoints  = triFaceCubature -> getNumPoints();
     int numQuadFaceCubPoints = quadFaceCubature -> getNumPoints();    
         
     // Allocate storage for cubature points and weights on face parameter domain and fill with points:
-    FieldContainer<double> paramTriFacePointsFC(numTriFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramTriFaceWeightsFC(numTriFaceCubPoints);
-    FieldContainer<double> paramQuadFacePointsFC(numQuadFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramQuadFaceWeightsFC(numQuadFaceCubPoints);
+    Kokkos::View<double**> paramTriFacePoints("paramTriFacePoints",numTriFaceCubPoints, faceCubDim);
+    Kokkos::View<double*> paramTriFaceWeights("paramTriFaceWeights",numTriFaceCubPoints);
+    Kokkos::View<double**> paramQuadFacePoints("paramQuadFacePoints",numQuadFaceCubPoints, faceCubDim);
+    Kokkos::View<double*> paramQuadFaceWeights("paramQuadFaceWeights",numQuadFaceCubPoints);
     
-    triFaceCubature -> getCubature(paramTriFacePointsFC, paramTriFaceWeightsFC);
-    quadFaceCubature -> getCubature(paramQuadFacePointsFC, paramQuadFaceWeightsFC);
-    Kokkos::View<double**> paramTriFacePoints(&paramTriFacePointsFC[0],paramTriFacePointsFC.dimension(0),paramTriFacePointsFC.dimension(1));
-    Kokkos::View<double*> paramTriFaceWeights(&paramTriFaceWeightsFC[0],paramTriFaceWeightsFC.dimension(0));
-    Kokkos::View<double**> paramQuadFacePoints(&paramQuadFacePointsFC[0],paramQuadFacePointsFC.dimension(0),paramQuadFacePointsFC.dimension(1));
-    Kokkos::View<double*> paramQuadFaceWeights(&paramQuadFaceWeightsFC[0],paramQuadFaceWeightsFC.dimension(0));
+    triFaceCubature -> getCubature(paramTriFacePoints, paramTriFaceWeights);
+    quadFaceCubature -> getCubature(paramQuadFacePoints, paramQuadFaceWeights);
+//    Kokkos::View<double**> paramTriFacePoints("paramTriFacePoints",paramTriFacePointsFC.dimension(0),paramTriFacePointsFC.dimension(1));
+//    Kokkos::View<double*> paramTriFaceWeights("paramTriFaceWeights",paramTriFaceWeightsFC.dimension(0));
+//    Kokkos::View<double**> paramQuadFacePoints("paramQuadFacePointsFC",paramQuadFacePointsFC.dimension(0),paramQuadFacePointsFC.dimension(1));
+//    Kokkos::View<double*> paramQuadFaceWeights("paramQuadFaceWeights",paramQuadFaceWeightsFC.dimension(0));
+
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
@@ -461,7 +462,7 @@ Kokkos::initialize();
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -475,7 +476,7 @@ Kokkos::initialize();
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -533,7 +534,7 @@ Kokkos::initialize();
                   for(int d = 0; d < cellDim; d++){
                     
                     // face normal method
-                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -547,7 +548,7 @@ Kokkos::initialize();
                         << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
                     }
                     //side normal method
-                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID2_THRESHOLD ){
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"

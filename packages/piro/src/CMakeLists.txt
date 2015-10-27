@@ -101,6 +101,7 @@ IF (Piro_ENABLE_Rythmos)
     Piro_Epetra_RythmosSolver.hpp 
     Piro_RythmosSolver.hpp
     Piro_RythmosStepperFactory.hpp
+    Piro_RythmosStepControlFactory.hpp
     Piro_RythmosSolver_Def.hpp
     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp

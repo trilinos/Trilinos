@@ -107,8 +107,12 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, pftype) );
+#else
+      XPETRA_TPETRA_ETI_EXCEPTION("CrsGraphFactory<int,int>", "TpetraCrsGraph<int,int>", "int");
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

@@ -42,6 +42,9 @@
 #ifndef __Tpetra_DirectoryImpl_def_hpp
 #define __Tpetra_DirectoryImpl_def_hpp
 
+/// \file Tpetra_DirectoryImpl_def.hpp
+/// \brief Definition of implementation details of Tpetra::Directory.
+
 #include <Tpetra_DirectoryImpl_decl.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>

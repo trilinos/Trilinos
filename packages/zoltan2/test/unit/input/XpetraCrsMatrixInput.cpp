@@ -165,15 +165,11 @@ int main(int argc, char *argv[])
   tM = uinput->getUITpetraCrsMatrix();
   size_t nrows = tM->getNodeNumRows();
 
-  // To test migration in the input adapter we need a Solution
-  // object.  The Solution needs an IdentifierMap.
-
-  typedef Zoltan2::IdentifierMap<tmatrix_t> idmap_t;
+  // To test migration in the input adapter we need a Solution object. 
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
   int nWeights = 1;
-
 
   typedef Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;

@@ -121,7 +121,7 @@ namespace MueLu {
 
     RCP<Matrix> A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
-    RCP<Tpetra_CrsMatrix> tA = Utils::Op2NonConstTpetraCrs(A_);
+    RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(A_);
 
     prec_ = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(type_, tA);
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
@@ -133,9 +133,9 @@ namespace MueLu {
   void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
-    RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV2(X);
+    RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(X);
     MultiVector & BNonC = const_cast<MultiVector&>(B);
-    RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV2(BNonC);
+    RCP<Tpetra_MultiVector> tB = Utilities::MV2NonConstTpetraMV2(BNonC);
     prec_->setX(tX);
     prec_->setB(tB);
 

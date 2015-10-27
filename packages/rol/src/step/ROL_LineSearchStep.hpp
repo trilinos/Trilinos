@@ -164,42 +164,9 @@ private:
 
   std::vector<bool> useInexact_; ///< Flags for inexact objective function, gradient, and Hessian evaluation
 
-  bool              softUp_;
+  bool softUp_;
 
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
-
-  void LineSearchFactory(Teuchos::ParameterList &parlist) {
-    switch(els_) {
-      case LINESEARCH_ITERATIONSCALING: 
-        lineSearch_ = Teuchos::rcp( new IterationScaling<Real>(parlist) );     break;
-      case LINESEARCH_PATHBASEDTARGETLEVEL: 
-        lineSearch_ = Teuchos::rcp( new PathBasedTargetLevel<Real>(parlist) ); break;
-      case LINESEARCH_BACKTRACKING:
-        lineSearch_ = Teuchos::rcp( new BackTracking<Real>(parlist) );         break;
-      case LINESEARCH_BISECTION:
-        lineSearch_ = Teuchos::rcp( new Bisection<Real>(parlist) );            break;
-      case LINESEARCH_BRENTS:
-        lineSearch_ = Teuchos::rcp( new Brents<Real>(parlist) );               break;
-      case LINESEARCH_GOLDENSECTION:
-        lineSearch_ = Teuchos::rcp( new GoldenSection<Real>(parlist) );        break;
-      case LINESEARCH_CUBICINTERP:
-      default:
-        lineSearch_ = Teuchos::rcp( new CubicInterp<Real>(parlist) );          break;
-    }
-  }
-
-  void KrylovFactory(Teuchos::ParameterList &parlist) {
-    Real absTol = parlist.get("Absolute Krylov Tolerance", 1.e-4);
-    Real relTol = parlist.get("Relative Krylov Tolerance", 1.e-2);
-    int maxit   = parlist.get("Maximum Number of Krylov Iterations", 20);
-    switch(ekv_) {
-      case KRYLOV_CR:
-        krylov_ = Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,useInexact_[2]) ); break;
-      case KRYLOV_CG:
-      default:
-        krylov_ = Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,useInexact_[2]) ); break;
-    }
-  }
 
 public:
 
@@ -212,60 +179,56 @@ public:
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  LineSearchStep( Teuchos::ParameterList &parlist ) : Step<Real>() {
-    // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
-    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
-    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
-    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
-
-
+  LineSearchStep( Teuchos::ParameterList &parlist )
+    : Step<Real>(),
+      secant_(Teuchos::null), krylov_(Teuchos::null),
+      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
+      hessian_(Teuchos::null), precond_(Teuchos::null),
+      d_(Teuchos::null), gp_(Teuchos::null),
+      iterKrylov_(0), flagKrylov_(0),
+      els_(LINESEARCH_BACKTRACKING),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
+      econd_(CURVATURECONDITION_WOLFE),
+      edesc_(DESCENT_STEEPEST),
+      esec_(SECANT_LBFGS),
+      ekv_(KRYLOV_CG),
+      ls_nfval_(0), ls_ngrad_(0),
+      useSecantHessVec_(false), useSecantPrecond_(false),
+      useProjectedGrad_(false), softUp_(false) {
+    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    // Initialize Linesearch Object
+    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
+    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
+    lineSearch_ = LineSearchFactory<Real>(parlist);
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-     
-    // Initialize Linesearch Object
-    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    LineSearchFactory(parlist);
-
+    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
+    useInexact_.push_back(Glist.get("Inexact Gradient", false));
+    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);
-
-    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
-
+    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
-    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
-    krylov_ = Teuchos::null;
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
+    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      KrylovFactory(parlist);
+      krylov_ = KrylovFactory<Real>(parlist);
     }
-
     // Initialize Secant Object
-    secant_ = Teuchos::null;
+    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
+    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
+    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      int L      = parlist.get("Maximum Secant Storage",10);
-      int BBtype = parlist.get("Barzilai-Borwein Type",1);
-      secant_ = getSecant<Real>(esec_,L,BBtype);
+      secant_ = SecantFactory<Real>(parlist);
     }
-    if ( edesc_ == DESCENT_SECANT ) {
-      useSecantHessVec_ = true;
-    }
-
     // Initialize Nonlinear CG Object
-    nlcg_ = Teuchos::null;
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
-
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -276,59 +239,55 @@ public:
       @param[in]     lineSearch is a user-defined line search object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  LineSearchStep(Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::ParameterList &parlist) 
-    : Step<Real>(), lineSearch_(lineSearch) {
-    // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
-    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
-    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
-
+  LineSearchStep(Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::ParameterList &parlist)
+    : Step<Real>(),
+      secant_(Teuchos::null), krylov_(Teuchos::null),
+      nlcg_(Teuchos::null), lineSearch_(lineSearch),
+      hessian_(Teuchos::null), precond_(Teuchos::null),
+      d_(Teuchos::null), gp_(Teuchos::null),
+      iterKrylov_(0), flagKrylov_(0),
+      els_(LINESEARCH_USERDEFINED),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
+      econd_(CURVATURECONDITION_WOLFE),
+      edesc_(DESCENT_STEEPEST),
+      esec_(SECANT_LBFGS),
+      ekv_(KRYLOV_CG),
+      ls_nfval_(0), ls_ngrad_(0),
+      useSecantHessVec_(false), useSecantPrecond_(false),
+      useProjectedGrad_(false), softUp_(false) {
+    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    // Initialize Linesearch Object
+    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
+    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    els_   = LINESEARCH_USERDEFINED;
+    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-     
-    // Initialize Linesearch Object
-    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    els_ = LINESEARCH_USERDEFINED;
-
+    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
+    useInexact_.push_back(Glist.get("Inexact Gradient", false));
+    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);
-
-    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
-
+    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
-    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
-    krylov_ = Teuchos::null;
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
+    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      KrylovFactory(parlist);
+      krylov_ = KrylovFactory<Real>(parlist);
     }
-
     // Initialize Secant Object
-    secant_ = Teuchos::null;
+    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
+    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
+    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      int L      = parlist.get("Maximum Secant Storage",10);
-      int BBtype = parlist.get("Barzilai-Borwein Type",1);
-      secant_ = getSecant<Real>(esec_,L,BBtype);
+      secant_ = SecantFactory<Real>(parlist);
     }
-    if ( edesc_ == DESCENT_SECANT ) {
-      useSecantHessVec_ = true;
-    }
-
     // Initialize Nonlinear CG Object
-    nlcg_ = Teuchos::null;
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
-
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -340,54 +299,52 @@ public:
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist ) 
-    : Step<Real>(), secant_(secant) {
-    // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
-    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
-    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
-    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
-
+  LineSearchStep( Teuchos::RCP<Secant<Real> > &secant, Teuchos::ParameterList &parlist )
+    : Step<Real>(),
+      secant_(secant), krylov_(Teuchos::null),
+      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
+      hessian_(Teuchos::null), precond_(Teuchos::null),
+      d_(Teuchos::null), gp_(Teuchos::null),
+      iterKrylov_(0), flagKrylov_(0),
+      els_(LINESEARCH_BACKTRACKING),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
+      econd_(CURVATURECONDITION_WOLFE),
+      edesc_(DESCENT_STEEPEST),
+      esec_(SECANT_USERDEFINED),
+      ekv_(KRYLOV_CG),
+      ls_nfval_(0), ls_ngrad_(0),
+      useSecantHessVec_(false), useSecantPrecond_(false),
+      useProjectedGrad_(false), softUp_(false) {
+    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    // Initialize Linesearch Object
+    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method"));
+    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
+    lineSearch_ = LineSearchFactory<Real>(parlist);
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-
-    // Initialize Linesearch Object
-    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    LineSearchFactory(parlist);
-
+    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
+    useInexact_.push_back(Glist.get("Inexact Gradient", false));
+    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);
-
-    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
-
+    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
-    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
-    krylov_ = Teuchos::null;
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
+    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      KrylovFactory(parlist);
+      krylov_ = KrylovFactory<Real>(parlist);
     }
-
-    // Secant Information
-    if ( edesc_ == DESCENT_SECANT ) {
-      useSecantHessVec_ = true;
-    }
-     
+    // Initialize Secant Object
+    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
+    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
+    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     // Initialize Nonlinear CG Object
-    nlcg_ = Teuchos::null;
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
-
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -398,56 +355,51 @@ public:
       @param[in]     krylov     is a user-defined Krylov object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  LineSearchStep( Teuchos::RCP<Krylov<Real> > &krylov, Teuchos::ParameterList &parlist ) 
-    : Step<Real>(), krylov_(krylov) {
-    // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
-    els_   = StringToELineSearch(parlist.get("Linesearch Type","Cubic Interpolation"));
-    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
-    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
-
+  LineSearchStep( Teuchos::RCP<Krylov<Real> > &krylov, Teuchos::ParameterList &parlist )
+    : Step<Real>(),
+      secant_(Teuchos::null), krylov_(krylov),
+      nlcg_(Teuchos::null), lineSearch_(Teuchos::null),
+      hessian_(Teuchos::null), precond_(Teuchos::null),
+      d_(Teuchos::null), gp_(Teuchos::null),
+      iterKrylov_(0), flagKrylov_(0),
+      els_(LINESEARCH_BACKTRACKING),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
+      econd_(CURVATURECONDITION_WOLFE),
+      edesc_(DESCENT_STEEPEST),
+      esec_(SECANT_LBFGS),
+      ekv_(KRYLOV_USERDEFINED),
+      ls_nfval_(0), ls_ngrad_(0),
+      useSecantHessVec_(false), useSecantPrecond_(false),
+      useProjectedGrad_(false), softUp_(false) {
+    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    // Initialize Linesearch Object
+    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
+    els_ = StringToELineSearch(Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation") );
+    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
+    lineSearch_ = LineSearchFactory<Real>(parlist);
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-     
-    // Initialize Linesearch Object
-    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    LineSearchFactory(parlist);
-
+    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
+    useInexact_.push_back(Glist.get("Inexact Gradient", false));
+    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);
-
-    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
-
-    // Initialize Krylov Object
-    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
-
+    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Secant Object
-    secant_ = Teuchos::null;
+    esec_ = StringToESecant(Glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
+    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
+    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     if ( edesc_ == DESCENT_SECANT || (edesc_ == DESCENT_NEWTONKRYLOV && useSecantPrecond_) ) {
-      int L      = parlist.get("Maximum Secant Storage",10);
-      int BBtype = parlist.get("Barzilai-Borwein Type",1);
-      secant_ = getSecant<Real>(esec_,L,BBtype);
+      secant_ = SecantFactory<Real>(parlist);
     }
-    if ( edesc_ == DESCENT_SECANT ) {
-      useSecantHessVec_ = true;
-    }
-
     // Initialize Nonlinear CG Object
-    nlcg_ = Teuchos::null;
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
-
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
   }
 
   /** \brief Constructor.
@@ -460,53 +412,51 @@ public:
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  LineSearchStep( Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::RCP<Secant<Real> > &secant, 
-                  Teuchos::ParameterList &parlist ) : Step<Real>(), lineSearch_(lineSearch), secant_(secant) {
-    // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    enlcg_ = StringToENonlinearCG(parlist.get("Nonlinear CG Type","Hagar-Zhang"));
-    econd_ = StringToECurvatureCondition(parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
-    esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
-    ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
-
+  LineSearchStep( Teuchos::RCP<LineSearch<Real> > &lineSearch, Teuchos::RCP<Secant<Real> > &secant,
+                  Teuchos::ParameterList &parlist )
+    : Step<Real>(),
+      secant_(secant), krylov_(Teuchos::null),
+      nlcg_(Teuchos::null), lineSearch_(lineSearch),
+      hessian_(Teuchos::null), precond_(Teuchos::null),
+      d_(Teuchos::null), gp_(Teuchos::null),
+      iterKrylov_(0), flagKrylov_(0),
+      els_(LINESEARCH_USERDEFINED),
+      enlcg_(NONLINEARCG_OREN_LUENBERGER),
+      econd_(CURVATURECONDITION_WOLFE),
+      edesc_(DESCENT_STEEPEST),
+      esec_(SECANT_USERDEFINED),
+      ekv_(KRYLOV_CG),
+      ls_nfval_(0), ls_ngrad_(0),
+      useSecantHessVec_(false), useSecantPrecond_(false),
+      useProjectedGrad_(false), softUp_(false) {
+    Teuchos::ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    // Initialize Linesearch Object
+    edesc_ = StringToEDescent(Llist.sublist("Descent Method").get("Type","Quasi-Newton Method") );
+    econd_ = StringToECurvatureCondition(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
+    useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
+    acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
     // Inexactness Information
     useInexact_.clear();
-    useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
-    useInexact_.push_back(parlist.get("Use Inexact Gradient", false));
-    useInexact_.push_back(parlist.get("Use Inexact Hessian-Times-A-Vector", false));
-
-    // Initialize Linesearch Object
-    useProjectedGrad_ = parlist.get("Use Projected Gradient Criticality Measure", false);
-    els_ = LINESEARCH_USERDEFINED;
-
+    useInexact_.push_back(Glist.get("Inexact Objective Function", false));
+    useInexact_.push_back(Glist.get("Inexact Gradient", false));
+    useInexact_.push_back(Glist.get("Inexact Hessian-Times-A-Vector", false));
     // Changing Objective Functions
-    softUp_ = parlist.get("Variable Objective Function",false);
-
-    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
-
+    softUp_ = Glist.get("Variable Objective Function",false);
     // Initialize Krylov Object
-    useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
-    useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
-    krylov_ = Teuchos::null;
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
+    ekv_ = StringToEKrylov(Glist.sublist("Krylov").get("Type","Conjugate Gradients"));
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
-      KrylovFactory(parlist);
+      krylov_ = KrylovFactory<Real>(parlist);
     }
-
-    // Secant Information
-    if ( edesc_ == DESCENT_SECANT ) {
-      useSecantHessVec_ = true;
-    }
-     
+    // Initialize Secant Object
+    useSecantHessVec_ = Glist.sublist("Secant").get("Use as Hessian", false);
+    useSecantHessVec_ = ((edesc_==DESCENT_SECANT) ? true : useSecantHessVec_);
+    useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     // Initialize Nonlinear CG Object
-    nlcg_ = Teuchos::null;
+    enlcg_ = StringToENonlinearCG(Llist.sublist("Descent Method").get("Nonlinear CG Type","Oren-Luenberger"));
     if ( edesc_ == DESCENT_NONLINEARCG ) {
       nlcg_ = Teuchos::rcp( new NonlinearCG<Real>(enlcg_) );
     }
-    
-    ls_nfval_ = 0;
-    ls_ngrad_ = 0;
   }
 
   void initialize( Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g, 
@@ -685,6 +635,8 @@ public:
     x.axpy(1.0, s);
     if ( softUp_ ) {
       obj.update(x,true,algo_state.iter);
+      algo_state.value = obj.value(x,tol);
+      algo_state.nfval++;
     }
 
     // Compute new gradient

@@ -59,14 +59,16 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#ifdef HAVE_AMESOS2_EPETRA
-#  include <Epetra_Map.h>
-#endif
-
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
+
+#ifdef HAVE_TPETRA_INST_INT_INT
+#ifdef HAVE_AMESOS2_EPETRA
+#include <Epetra_Map.h>
+#endif
+#endif
 
 
 namespace Amesos2 {
@@ -108,7 +110,9 @@ namespace Amesos2 {
 		       GO indexBase = 0);
     
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
      *
@@ -141,6 +145,7 @@ namespace Amesos2 {
      */
     const RCP<const Epetra_Comm> to_epetra_comm(RCP<const Teuchos::Comm<int> > c);
 #endif	// HAVE_AMESOS2_EPETRA
+#endif // HAVE_TPETRA_INST_INT_INT
 
     /**
      * Transposes the compressed sparse matrix representation.
@@ -628,7 +633,13 @@ namespace Amesos2 {
       }
     }
 
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+
+    //#pragma message "include 3"
+    //#include <Epetra_Map.h>
+
     template <typename LO, typename GO, typename GS, typename Node>
     Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
     epetra_map_to_tpetra_map(const Epetra_BlockMap& map)
@@ -671,6 +682,7 @@ namespace Amesos2 {
       return emap;
     }
 #endif	// HAVE_AMESOS2_EPETRA
+#endif  // HAVE_TPETRA_INST_INT_INT
 
     template <typename Scalar,
 	      typename GlobalOrdinal,
