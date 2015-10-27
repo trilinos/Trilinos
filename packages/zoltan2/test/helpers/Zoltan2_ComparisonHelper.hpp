@@ -437,7 +437,7 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
         
         if(sourceA->adapter->getLocalNumIDs() != sourceB->adapter->getLocalNumIDs()){failed = 1;}
         ComparisonHelper::reduceWithMessage(comm,
-                                            "Number of partitions in Solution A != Solution B. \
+                                            "Number of parts in Solution A != Solution B. \
                                             Partitioning solution comparison FAILED.",
                                             failed,
                                             status);
