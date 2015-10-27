@@ -155,7 +155,8 @@
   
   <!-- 3. COMPARISON BLOCK DEFINITIONS -->
   
-  <ParameterList name="Comparison"> <!-- compare solutions of problems A and B-->
+<!--
+  <ParameterList name="Comparison"> 
     <Parameter name="A" type="string" value="Problem 1"/>
     <Parameter name="B" type="string" value="Problem 2"/>
   </ParameterList>
@@ -164,6 +165,7 @@
     <Parameter name="A" type="string" value="Problem 1"/>
     <Parameter name="B" type="string" value="Problem 3"/>
   </ParameterList>
+-->
   
   <ParameterList name="Comparison"> <!-- compare specified metrics of problem to a baseline reference-->
     <Parameter name="Problem" type="string" value="Problem 3"/>
