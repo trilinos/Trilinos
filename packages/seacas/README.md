@@ -1,4 +1,4 @@
-Here is a build script to build SEACAS in Trilinos. 
+# Trilinos Build Options
 
 SEACAS uses the following TPLS, some are optional: 
 
@@ -18,46 +18,65 @@ SEACAS uses the following TPLS, some are optional:
 * matio -- https://sourceforge.net/projects/matio/
 
 ========================================================================
-CMake defines used to build SEACAS:
-      -D Trilinos_ENABLE_SEACAS:BOOL=ON 
+## Defines
+### Enable SEACAS
+
+```
+-D Trilinos_ENABLE_SEACAS:BOOL=ON 
+```
   
-  EXODUS:  
-    If the exodus library should be built, then add the defines:
-      -D Trilinos_ENABLE_SEACAS:BOOL=ON 
-      -D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
-      -D Netcdf_LIBRARY_DIRS:PATH={path to netcdf library}
-      -D TPL_ENABLE_Netcdf:BOOL=ON
-      -D TPL_Netcdf_INCLUDE_DIRS:PATH={path to netcdf includes}
-    This will also enable exodus support in the ioss library.
+### Enable EXODUS:  
+If the exodus library should be built, then add the defines:
+
+```
+-D Trilinos_ENABLE_SEACAS:BOOL=ON 
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
+-D Netcdf_LIBRARY_DIRS:PATH={path to netcdf library}
+-D TPL_ENABLE_Netcdf:BOOL=ON
+-D TPL_Netcdf_INCLUDE_DIRS:PATH={path to netcdf includes}
+```
+This will also enable exodus support in the ioss library.
       
-    If using a netcdf library that is built with --enable-netcdf-4,
-    then you also need to tell it to link with the hdf5
-    libraries. There is not really a good way to do this; the best
-    option is:
+If using a netcdf library that is built with `--enable-netcdf-4`,
+then you also need to tell it to link with the hdf5
+libraries. There is not really a good way to do this; the best
+option is:
 
-    -D Trilinos_EXTRA_LINK_FLAGS="-L{path_to_hdf5_libraries} -lhdf5_hl -lhdf5 -lz -lm"
+```
+-D Trilinos_EXTRA_LINK_FLAGS="-L{path_to_hdf5_libraries} -lhdf5_hl -lhdf5 -lz -lm"
+```
 
-  PAMGEN: 
-    For pamgen support in ioss, add the defines:
-      -D Trilinos_ENABLE_Pamgen:BOOL=TRUE 
+### Enable PAMGEN
+   - For pamgen support in ioss, add the defines:
+      `-D Trilinos_ENABLE_Pamgen:BOOL=TRUE`
 
-  XDMF:
-      -D SEACAS_ENABLE_XDMF:BOOL=FALSE 
-  if xdmf enabled: (will also need hdf5 library)
-      -D TPL_XDMF_INCLUDE_DIRS:PATH={path to xdmf includes}
-      -D XDMF_LIBRARY_DIRS:PATH={path to xdmf library}
+### Enable XDMF
+```
+-D SEACAS_ENABLE_XDMF:BOOL=FALSE
+```
+If xdmf is enabled: (will also need hdf5 library)
 
-  MAT2EXO and EXO2MAT:
-      -D Matio_LIBRARY_DIRS:PATH={path to matio library source}/lib
-      -D Matio_INCLUDE_DIRS:PATH={path to matio library source}/include
+```
+ -D TPL_XDMF_INCLUDE_DIRS:PATH={path to xdmf includes}
+ -D XDMF_LIBRARY_DIRS:PATH={path to xdmf library}
+```
 
-  SEACAS/ioss can be built either in serial mode or with mpi using the
-  standard Trilinos configuration flag.  The exodus and nemesis
-  libraries can be built either way, but they have no mpi-related
-  code, so the parallel and serial libraries are the same.
+### Enable MAT2EXO and EXO2MAT
+```
+-D Matio_LIBRARY_DIRS:PATH={path to matio library source}/lib
+-D Matio_INCLUDE_DIRS:PATH={path to matio library source}/include
+```
 
+## Parallel or Serial
+SEACAS/Ioss can be built either in serial mode or with mpi using the
+standard Trilinos configuration flag.  The exodus and nemesis
+libraries can be built either way, but they have no mpi-related
+code, so the parallel and serial libraries are the same.
+
+## Example Script
 A script that can be used to build SEACAS is:
---------------------------------cut here--------------------------------
+
+```
 EXTRA_ARGS=$@
 
 #MPI=ON
@@ -92,7 +111,7 @@ cmake  \
 -D Matio_INCLUDE_DIRS:PATH=${MATIO}/include \
 -D Netcdf_LIBRARY_DIRS:PATH=${NETCDF}/lib \
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=${NETCDF}/include \
--D TPL_ENABLE_Netcdf:BOOL=ON \
+* -D TPL_ENABLE_Netcdf:BOOL=ON \
 -D TPL_ENABLE_Matio:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=${MPI} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
@@ -106,3 +125,4 @@ cmake  \
 -D Trilinos_ENABLE_TrilinosFramework:BOOL=OFF \
 $EXTRA_ARGS \
 ../
+```
