@@ -110,13 +110,11 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECma              SCOREC/ma                         SS
   SCOREC                SCOREC                            SS
   Phalanx               packages/phalanx                  SS
-  Phdmesh               packages/phdmesh                  EX # to be replaced by STK
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
-  Aristos               packages/aristos                  EX
   Stokhos               packages/stokhos                  SS
   ROL                   packages/rol                      SS
   Piro                  packages/piro                     SS
@@ -148,6 +146,13 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECspr)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Optika)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Mesquite)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ForTrilinos)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(WebTrilinos)
 
 #
 # Disable certain packages on certain platforms.
@@ -159,7 +164,6 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(MOOCHO Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phalanx Windows)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Phdmesh Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(PyTrilinos Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Sundance Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Tpetra Windows)
