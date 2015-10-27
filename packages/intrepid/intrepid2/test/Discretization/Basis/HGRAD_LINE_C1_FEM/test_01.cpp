@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
           int l =  i + j * numFields;
-           if (std::abs(vals(i,j) - basisValues[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j) - basisValues[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -321,7 +321,7 @@ int main(int argc, char *argv[]) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisDerivs[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
       
       lineBasis.getValues(vals, lineNodes, op);
       for (int i = 0; i < vals.size(); i++) {
-        if (std::abs(vals[i]) > INTREPID2_TOL) {
+        if (std::abs(vals[i]) > INTREPID_TOL) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           

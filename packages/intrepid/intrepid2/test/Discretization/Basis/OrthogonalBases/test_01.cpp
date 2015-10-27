@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
       for (int k=0;k<myCub.getNumPoints();k++) {
         cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
       }
-      if (i != j && fabs( cur ) > INTREPID2_TOL) {
+      if (i != j && fabs( cur ) > INTREPID_TOL) {
         errorFlag++;
       }
-      else if (i == j && fabs( cur ) < INTREPID2_TOL ) {
+      else if (i == j && fabs( cur ) < INTREPID_TOL ) {
         errorFlag++;
       }
 

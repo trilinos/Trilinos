@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 
   
   int errorFlag = 0;
-  double zero = 100*INTREPID2_TOL;
+  double zero = 100*INTREPID_TOL;
   outStream -> precision(20);
 
 
