@@ -8,6 +8,10 @@ General
     better messages, making it easier to debug problems that employ
     cross-language polymorphism.
 
+Teuchos
+  * Upgraded Teuchos.ParameterList to support an Array(string) value
+    type.
+
 Epetra
   * Added new Python-to-C++ converters that convert a wider variety of
     Python objects to distributed Epetra vectors (Epetra_MultiVector,
