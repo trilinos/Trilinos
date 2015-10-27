@@ -807,10 +807,10 @@ public:
       {
         u = umpa_uRandom(n-4, _u_umpa_seed);
         v = umpa_uRandom(n-4, _u_umpa_seed);
-        SWAP(a[v], a[u], tmp);
-        SWAP(a[v+1], a[u+1], tmp);
-        SWAP(a[v+2], a[u+2], tmp);
-        SWAP(a[v+3], a[u+3], tmp);
+        ZOLTAN2_ALGMJ_SWAP(a[v], a[u], tmp);
+        ZOLTAN2_ALGMJ_SWAP(a[v+1], a[u+1], tmp);
+        ZOLTAN2_ALGMJ_SWAP(a[v+2], a[u+2], tmp);
+        ZOLTAN2_ALGMJ_SWAP(a[v+3], a[u+3], tmp);
       }
     }
     else {
