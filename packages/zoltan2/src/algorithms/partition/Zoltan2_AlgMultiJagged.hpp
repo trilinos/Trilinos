@@ -302,6 +302,7 @@ struct uSortItem
 template <class IT, class WT>
 void uqsort(IT n, uSortItem<IT, WT> * arr)
 {
+
     int NSTACK = 50;
     int M = 7;
     IT         i, ir=n, j, k, l=1;
@@ -484,18 +485,18 @@ void uqSignsort(IT n, uSignedSortItem<IT, WT, SIGN> * arr){
         else
         {
             k=(l+ir) >> 1;
-            ZOLTAN2_ALGMJ_SWAP(arr[k],arr[l+1], temp)
+            ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[k],arr[l+1], temp)
             if (arr[l+1] > arr[ir])
             {
-                ZOLTAN2_ALGMJ_SWAP(arr[l+1],arr[ir],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l+1],arr[ir],temp)
             }
             if (arr[l] > arr[ir])
             {
-                ZOLTAN2_ALGMJ_SWAP(arr[l],arr[ir],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l],arr[ir],temp)
             }
             if (arr[l+1] > arr[l])
             {
-                ZOLTAN2_ALGMJ_SWAP(arr[l+1],arr[l],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l+1],arr[l],temp)
             }
             i=l+1;
             j=ir;
@@ -505,7 +506,7 @@ void uqSignsort(IT n, uSignedSortItem<IT, WT, SIGN> * arr){
                 do i++; while (arr[i] < a);
                 do j--; while (arr[j] > a);
                 if (j < i) break;
-                ZOLTAN2_ALGMJ_SWAP(arr[i],arr[j],temp);
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[i],arr[j],temp);
             }
             arr[l]=arr[j];
             arr[j]=a;
