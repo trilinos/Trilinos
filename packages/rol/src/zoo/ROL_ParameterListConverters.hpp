@@ -55,8 +55,8 @@ namespace ROL {
 namespace StringList {
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -65,9 +65,9 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -77,10 +77,10 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -91,11 +91,11 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4,
-                               const std::string &s5 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4,
+                                      const std::string &s5 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -121,15 +121,15 @@ void setParameter( Teuchos::ParameterList &parlist,
     Teuchos::ParameterList &sublist = parlist.sublist(*iter);
     setParameter(sublist,location,iter+1,value);
   }
-
+ 
 
 }
 
 
 
 /// Produce a heirarchical parameter list using the new names from a flat list of the old names
-void tierParameterList( Teuchos::ParameterList &outList, 
-                        const Teuchos::ParameterList &inList ) {
+inline void tierParameterList( Teuchos::ParameterList &outList, 
+                               const Teuchos::ParameterList &inList ) {
 
   using namespace Teuchos;
   using StringList::join;
@@ -168,8 +168,6 @@ void tierParameterList( Teuchos::ParameterList &outList,
 
   dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
   dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
-  dict["Backtracking Rate"]                                 = join("Step","Line Search","Backtracking Rate");
-  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Bracketing Tolerance");
   dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
   dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
   dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
@@ -182,10 +180,10 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
   dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
 
-  dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
+  dict["Backtracking Rate"]                                 = join("Step","Line Search","Line-Search Method","Backtracking Rate");
+  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Line-Search Method","Bracketing Tolerance");
+  dict["Linesearch Type"]                                   = join("Step","Line Search","Line-Search Method","Type");
 
-  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
-  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient Update Tolerance Scaling");
   dict["Initial Trust-Region Radius"]                       = join("Step","Trust Region","Initial Radius");
   dict["Maximum Trust-Region Radius"]                       = join("Step","Trust Region","Maximum Radius");
   dict["Radius Growing Threshold"]                          = join("Step","Trust Region","Radius Growing Threshold");
@@ -195,6 +193,8 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Trust-Region Subproblem Solver Type"]               = join("Step","Trust Region","Subproblem Solver");
   dict["Step Acceptance Parameter"]                         = join("Step","Trust Region","Step Acceptance Threshold");
 
+  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient","Relative Tolerance");
+  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient","Tolerance Scaling");
   dict["Value Update Exponent"]                             = join("Step","Trust Region","Inexact","Value","Exponent");
   dict["Value Update Forcing Sequence Initial Value"]       = join("Step","Trust Region","Inexact","Value","Forcing Sequence Initial Value");
   dict["Value Update Forcing Sequence Reduction Factor"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Reduction Factor");
@@ -220,33 +220,31 @@ void tierParameterList( Teuchos::ParameterList &outList,
     Vec location = dict[removeStringFormat(key)];
     
     // Skip if not found in map
-    if(location.size() == 0) {
-      break;
-    }
+    if(location.size() != 0) {
 
-    IterVec itvec = location.begin();
+      IterVec itvec = location.begin();
 
-    if( inList.isType<bool>(key) ) {
-      bool value = inList.get<bool>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<int>(key) ) {
-      int value = inList.get<int>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<double>(key) ) {
-      double value = inList.get<double>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<std::string>(key) ) {
-      std::string value = inList.get<std::string>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                  ">>>Error: Unhandled parameter type." );  
-    }
- 
+      if( inList.isType<bool>(key) ) {
+        bool value = inList.get<bool>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<int>(key) ) {
+        int value = inList.get<int>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<double>(key) ) {
+        double value = inList.get<double>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<std::string>(key) ) {
+        std::string value = inList.get<std::string>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>>Error: Unhandled parameter type." );  
+      }
+    } 
    
   }
 }

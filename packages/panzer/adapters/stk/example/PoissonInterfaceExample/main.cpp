@@ -63,6 +63,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
@@ -76,6 +77,8 @@
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 
@@ -95,16 +98,27 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 
 struct ProblemOptions {
+  std::string mesh_filename;
   int nxelem, nyelem;
-  std::vector<std::string> dof_names;
+  bool is3d;
+
+  bool generate_mesh_only;
+
+  std::vector<std::string>
+    dof_names, // nominally A1, A2, B, C1, C2
+    eb_names,  // two element block names
+    ss_names;  // left, interface, right sideset names
+
+  int integration_order;
+  // Use a nonlinear version of the Robin interface condition.
+  bool nonlinear_Robin;
+
   // Wrap an outer iteration around the linear solve.
   bool outer_iteration;
   // Test against finite-difference Jacobian.
   bool test_Jacobian;
   // Convergence tolerance.
   double rtol;
-  // Use a nonlinear version of the Robin interface condition.
-  bool nonlinear_Robin;
   bool check_error;
   Teuchos::RCP<Epetra_CrsMatrix> J;
 };
@@ -320,11 +334,56 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
   }
 }
 
+bool hasInterfaceCondition (const std::vector<panzer::BC>& bcs)
+{
+  for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+    if (bcit->bcType() == panzer::BCT_Interface)
+      return true;
+  return false;
+}
+
+Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+getSTKConnManager (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> > stk_conn_mgr =
+    Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_mgr);
+  TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
+                             "There are interface conditions, but the connection manager"
+                             " does not support the necessary connections.");
+  return stk_conn_mgr;
+}
+
+void buildInterfaceConnections (const std::vector<panzer::BC>& bcs,
+                                const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+    stk_conn_mgr = getSTKConnManager(conn_mgr);
+  for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+    if (bcit->bcType() == panzer::BCT_Interface)
+      stk_conn_mgr->associateElementsInSideset(bcit->sidesetID());
+}
+
+void checkInterfaceConnections (const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
+                                const Teuchos::RCP<Teuchos::Comm<int> >& comm)
+{
+  const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> >
+    stk_conn_mgr = getSTKConnManager(conn_mgr);
+  std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
+  if ( ! sidesets.empty()) {
+    std::stringstream ss;
+    ss << "Sideset IDs";
+    for (std::size_t i = 0; i < sidesets.size(); ++i)
+      ss << " " << sidesets[i];
+    ss << " did not yield associations, but these sidesets correspond to BCT_Interface BCs.";
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str());
+  }
+}
+
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::vector<panzer::BC>& bcs,
                         const ProblemOptions& po);
 
 // calls MPI_Init and MPI_Finalize
-int main (int argc,char * argv[])
+int main (int argc, char* argv[])
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -343,7 +402,7 @@ int main (int argc,char * argv[])
 
   ProblemOptions po;
   {
-    // Set this problem up with two discontinuous (A, C) and one continuous (B)
+    // Set up this problem with two discontinuous (A, C) and one continuous (B)
     // fields.
     //   On fields A are imposed Neumann and weak Dirichlet matching interface conditions.
     //   On fields C are imposed Robin interface conditions, with one-way
@@ -364,6 +423,16 @@ int main (int argc,char * argv[])
                   "Use a nonlinear Robin interface condition");
     po.rtol = 1e-10;
     clp.setOption("rtol", &po.rtol, "Tolerance on residual norm");
+    po.is3d = false;
+    clp.setOption("3d", "2d", &po.is3d, "3D test instead of 2D");
+    po.mesh_filename = "";
+    clp.setOption("mesh-filename", &po.mesh_filename, "Optionally read from an Exodus mesh");
+    po.test_Jacobian = false;
+    clp.setOption("test-jacobian", "dont-test-jacobian", &po.test_Jacobian,
+                  "Test Jacobian using finite differences.");
+    po.generate_mesh_only = false;
+    clp.setOption("generate-mesh-only", "dont-generate-mesh-only", &po.generate_mesh_only,
+                  "Generate mesh, save, and quit.");
     try {
       clp.parse(argc, argv);
     } catch (...) {
@@ -375,7 +444,9 @@ int main (int argc,char * argv[])
     po.dof_names.push_back("A");
     po.dof_names.push_back("B");
     po.dof_names.push_back("C");
-    po.test_Jacobian = 2*po.nxelem*po.nyelem <= 100;
+    po.ss_names.push_back("left");
+    po.ss_names.push_back("vertical_0");
+    po.ss_names.push_back("right");
     po.outer_iteration = true;
     po.check_error = true;
 
@@ -383,31 +454,83 @@ int main (int argc,char * argv[])
   }
   bool pass = true;
 
-  // Can be overridden by the equation set
-  const int default_integration_order = 2;
+  // Can be overridden by the equation set.
+  po.integration_order = 2;
+
+  // Construct mesh.
+  Teuchos::RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory;
+  if ( ! po.mesh_filename.empty()) {
+    mesh_factory = Teuchos::rcp(new panzer_stk_classic::STK_ExodusReaderFactory(po.mesh_filename));
+  } else {
+    if (po.is3d)
+      mesh_factory = Teuchos::rcp(new panzer_stk_classic::CubeHexMeshFactory);
+    else
+      mesh_factory = Teuchos::rcp(new panzer_stk_classic::SquareQuadMeshFactory);
+  }
+
+  if (po.mesh_filename.empty()) {
+    // set mesh factory parameters
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    if (po.is3d) pl->set("Z Blocks",1);
+    pl->set("X Elements", po.nxelem); // per block
+    pl->set("Y Elements", po.nyelem);
+    if (po.is3d) {
+      pl->set("Z Elements", po.nyelem);
+      pl->set("Build Interface Sidesets", true);
+    }
+    { // If np is even, put ranks in both x and y directions; if not, go with
+      // default, which is x direction only. The x direction is the harder case.
+      const int np = mpiSession.getNProc();
+      if (np % 2 == 0 && np >= 4) {
+        const int nxp = np/2, nyp = 2;
+        pl->set("X Procs", nxp);
+        pl->set("Y Procs", nyp);
+      }
+    }
+    mesh_factory->setParameterList(pl);
+  }
+
+  RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+  if (po.generate_mesh_only) {
+    mesh_factory->completeMeshConstruction(*mesh, MPI_COMM_WORLD);
+    mesh->writeToExodus("output.exo");
+    out << "Stopping after writing mesh because --generate-mesh-only was requested.\n";
+    PHX::FinalizeKokkosDevice();
+    return 0;
+  }
+
+  //todo mesh->getDimension() may not be right if mesh_factory is the Exodus
+  // reader.
+  po.is3d = mesh->getMetaData()->spatial_dimension() == 3;
+
+  if ( ! po.mesh_filename.empty() && ! po.is3d) {
+    // Special case.
+    po.eb_names.clear();
+    po.ss_names.clear();
+    po.eb_names.push_back("silicon1");
+    po.eb_names.push_back("silicon2");
+    po.ss_names.push_back("anode");
+    po.ss_names.push_back("interface");
+    po.ss_names.push_back("cathode");    
+  } else {
+    if (po.is3d) {
+      po.eb_names.push_back("eblock-0_0_0");
+      po.eb_names.push_back("eblock-1_0_0");
+    } else {
+      po.eb_names.push_back("eblock-0_0");
+      po.eb_names.push_back("eblock-1_0");
+    }
+  }
+
+  // construct input physics and physics block
+  ////////////////////////////////////////////////////////
 
   // factory definitions
   Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
     Teuchos::rcp(new Example::EquationSetFactory); // where poisson equation is defined
   Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
-
-  panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
-
-  // construction of uncommitted (no elements) mesh 
-  ////////////////////////////////////////////////////////
-
-  // set mesh factory parameters
-  RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-  pl->set("X Blocks",2);
-  pl->set("Y Blocks",1);
-  pl->set("X Elements", po.nxelem); // per block
-  pl->set("Y Elements", po.nyelem); // per block
-  mesh_factory.setParameterList(pl);
-
-  RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
-
-  // construct input physics and physics block
-  ////////////////////////////////////////////////////////
 
   const Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
   std::vector<panzer::BC> bcs;
@@ -418,11 +541,11 @@ int main (int argc,char * argv[])
     std::map<std::string,std::string> block_ids_to_physics_ids;
     std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
 
-    block_ids_to_physics_ids["eblock-0_0"] = "Poisson Physics Left";
-    block_ids_to_physics_ids["eblock-1_0"] = "Poisson Physics Right";
+    block_ids_to_physics_ids[po.eb_names[0]] = "Poisson Physics Left";
+    block_ids_to_physics_ids[po.eb_names[1]] = "Poisson Physics Right";
 
-    block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-    block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
+    block_ids_to_cell_topo[po.eb_names[0]] = mesh->getCellTopology(po.eb_names[0]);
+    block_ids_to_cell_topo[po.eb_names[1]] = mesh->getCellTopology(po.eb_names[1]);
       
     // GobalData sets ostream and parameter interface to physics
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
@@ -431,7 +554,7 @@ int main (int argc,char * argv[])
     panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                block_ids_to_cell_topo,
                                ipb,
-                               default_integration_order,
+                               po.integration_order,
                                workset_size,
                                eqset_factory,
                                gd,
@@ -457,7 +580,7 @@ int main (int argc,char * argv[])
         mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
     }
 
-    mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+    mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
   }
 
   // build worksets
@@ -475,40 +598,44 @@ int main (int argc,char * argv[])
 
   // build DOF Manager and linear object factory
   /////////////////////////////////////////////////////////////
- 
-  // build the connection manager 
-  const Teuchos::RCP<panzer::ConnManager<int,int> > 
-    conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
-  panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-  RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
-    = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+  RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
+  {
+    const Teuchos::RCP<panzer::ConnManager<int,int> >
+      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh)); 
+    const bool has_interface_condition = hasInterfaceCondition(bcs);
+    if (has_interface_condition)
+      buildInterfaceConnections(bcs, conn_manager);
+    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+    globalIndexerFactory.setEnableGhosting(has_interface_condition);
+    dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(
+      Teuchos::opaqueWrapper(MPI_COMM_WORLD), physicsBlocks, conn_manager, "");
+    if (has_interface_condition)
+      checkInterfaceConnections(conn_manager, dofManager->getComm());
+  }
 
   // construct some linear algebra object, build object to pass to evaluators
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
     = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
 
-  // Setup response library for checking the error in this manufactered solution
-  ////////////////////////////////////////////////////////////////////////
   std::vector<std::string> names;
   std::vector<std::vector<std::string> > eblocks;
   const int c_name_start = 3;
   {
-    const char* ebs[] = {"eblock-0_0", "eblock-1_0"};
     for (int i = 1; i <= 2; ++i) {
       names.push_back(strint(po.dof_names[0], i));
       eblocks.push_back(std::vector<std::string>());
-      eblocks.back().push_back(ebs[i-1]);
+      eblocks.back().push_back(po.eb_names[i-1]);
     }
     names.push_back(po.dof_names[1]);
     eblocks.push_back(std::vector<std::string>());
-    eblocks.back().push_back(ebs[0]);
-    eblocks.back().push_back(ebs[1]);
+    eblocks.back().push_back(po.eb_names[0]);
+    eblocks.back().push_back(po.eb_names[1]);
     if (po.dof_names.size() >= 3)
       for (int i = 1; i <= 2; ++i) {
         names.push_back(strint(po.dof_names[2], i));
         eblocks.push_back(std::vector<std::string>());
-        eblocks.back().push_back(ebs[i-1]);
+        eblocks.back().push_back(po.eb_names[i-1]);
       }
   }
   
@@ -518,7 +645,7 @@ int main (int argc,char * argv[])
     for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
       panzer::FunctionalResponse_Builder<int,int> builder;
       builder.comm = MPI_COMM_WORLD;
-      builder.cubatureDegree = default_integration_order;
+      builder.cubatureDegree = po.integration_order;
       builder.requiresCellIntegral = true;
       builder.quadPointField = names[i] + "_ERROR";
       errorResponseLibrary->addResponse(names[i] + " L2 Error", eblocks[i], builder);
@@ -528,7 +655,6 @@ int main (int argc,char * argv[])
   // setup closure model
   /////////////////////////////////////////////////////////////
  
-  // Add in the application specific closure model factory
   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
   Example::ClosureModelFactory_TemplateBuilder cm_builder;
   cm_factory.buildObjects(cm_builder);
@@ -655,20 +781,6 @@ int main (int argc,char * argv[])
     EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->get_f());
   }
 
-  // write solution
-  if (true) {
-    // redistribute solution vector to ghosted vector
-    linObjFactory->globalToGhostContainer(*ep_container,*ghost_container,
-                                          panzer::EpetraLinearObjContainer::X 
-                                          | panzer::EpetraLinearObjContainer::DxDt); 
-
-    // get X Epetra_Vector from ghosted container
-    RCP<panzer::EpetraLinearObjContainer> ep_ghost_container =
-      rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghost_container);
-    panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ep_ghost_container->get_x());
-    mesh->writeToExodus("output.exo");
-  }
-
   if (po.check_error) {
     std::vector<Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > > rfs(names.size());
     for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
@@ -697,6 +809,22 @@ int main (int argc,char * argv[])
     out << "Error = " << max_err << "\n";
   }
 
+  // Write solution except in the special case of a generated 3D mesh and #rank
+  // > 1. In that case, something in the mesh-gen and rebalance code is causing
+  // a failure in IossBridge::write_side_data_to_ioss.
+  if ( ! (po.is3d && mpiSession.getNProc() > 1 && po.mesh_filename.empty())) {
+    // redistribute solution vector to ghosted vector
+    linObjFactory->globalToGhostContainer(*ep_container,*ghost_container,
+                                          panzer::EpetraLinearObjContainer::X 
+                                          | panzer::EpetraLinearObjContainer::DxDt); 
+
+    // get X Epetra_Vector from ghosted container
+    RCP<panzer::EpetraLinearObjContainer> ep_ghost_container =
+      rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghost_container);
+    panzer_stk_classic::write_solution_data(*dofManager,*mesh,*ep_ghost_container->get_x());
+    mesh->writeToExodus("output.exo");
+  }
+
   // all done!
   /////////////////////////////////////////////////////////////
   out << (pass ? "PASS" : "FAIL") << " BASICS\n";
@@ -710,7 +838,6 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
                         const ProblemOptions& po)
 {
   const char* const pb_strings[2] = {"Poisson Physics Left", "Poisson Physics Right"};
-  const int integration_order = 2;
   const double dleft = 0.5, dright = -0.3;
   size_t bc_id = 0;
 
@@ -722,15 +849,15 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
       p.set("Model ID", "solid");
       p.set("Basis Type", "HGrad");
       p.set("Basis Order", 1);
-      p.set("Integration Order", integration_order);
+      p.set("Integration Order", po.integration_order);
       p.set("DOF Name", strint(po.dof_names[0], i+1));
     }
 
     const std::string t1_name = strint(po.dof_names[0], 1), t2_name = strint(po.dof_names[0], 2);
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "left";
-      std::string element_block_id = "eblock-0_0";
+      std::string sideset_id = po.ss_names[0];
+      std::string element_block_id = po.eb_names[0];
       std::string dof_name = t1_name;
       std::string strategy = "Constant";
       double value = dleft;
@@ -741,8 +868,8 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     }
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "right";
-      std::string element_block_id = "eblock-1_0";
+      std::string sideset_id = po.ss_names[2];
+      std::string element_block_id = po.eb_names[1];
       std::string dof_name = t2_name;
       std::string strategy = "Constant";
       double value = dright;
@@ -761,17 +888,17 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     if (neumann_match) {
       Teuchos::ParameterList p;
       p.set("Type", "Interface");
-      p.set("Sideset ID", "vertical_0");
-      p.set("Element Block ID" , "eblock-0_0");
-      p.set("Element Block ID2", "eblock-1_0");
+      p.set("Sideset ID", po.ss_names[1]);
+      p.set("Element Block ID" , po.eb_names[0]);
+      p.set("Element Block ID2", po.eb_names[1]);
       p.set("Equation Set Name" , t1_name);
       p.set("Equation Set Name2", t2_name);
       p.set("Strategy", "Neumann Match Interface");
       bcs.push_back(panzer::BC(bc_id++, p));
     } else {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "vertical_0";
-      std::string element_block_id = "eblock-0_0";
+      std::string sideset_id = po.ss_names[1];
+      std::string element_block_id = po.eb_names[0];
       std::string dof_name = t1_name;
       std::string strategy = "Constant";
       double value = -0.4;
@@ -784,17 +911,17 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     if (weak_dirichlet_match) {
       Teuchos::ParameterList p;
       p.set("Type", "Interface");
-      p.set("Sideset ID", "vertical_0");
-      p.set("Element Block ID" , "eblock-1_0");
-      p.set("Element Block ID2", "eblock-0_0");
+      p.set("Sideset ID", po.ss_names[1]);
+      p.set("Element Block ID" , po.eb_names[1]);
+      p.set("Element Block ID2", po.eb_names[0]);
       p.set("Equation Set Name" , t2_name);
       p.set("Equation Set Name2", t1_name);
       p.set("Strategy", "Weak Dirichlet Match Interface");
       bcs.push_back(panzer::BC(bc_id++, p));
     } else {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "vertical_0";
-      std::string element_block_id = "eblock-1_0";
+      std::string sideset_id = po.ss_names[1];
+      std::string element_block_id = po.eb_names[1];
       std::string dof_name = t2_name;
       std::string strategy = "Constant";
       double value = 0.4;
@@ -813,13 +940,13 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
       p.set("Model ID","solid");
       p.set("Basis Type","HGrad");
       p.set("Basis Order",1);
-      p.set("Integration Order",integration_order);
+      p.set("Integration Order",po.integration_order);
       p.set("DOF Name", po.dof_names[1]);
     }
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "left";
-      std::string element_block_id = "eblock-0_0";
+      std::string sideset_id = po.ss_names[0];
+      std::string element_block_id = po.eb_names[0];
       std::string dof_name = po.dof_names[1];
       std::string strategy = "Constant";
       double value = dleft;
@@ -830,8 +957,8 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     }
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "right";
-      std::string element_block_id = "eblock-1_0";
+      std::string sideset_id = po.ss_names[2];
+      std::string element_block_id = po.eb_names[1];
       std::string dof_name = po.dof_names[1];
       std::string strategy = "Constant";
       double value = dright;
@@ -851,15 +978,15 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
       p.set("Model ID", "solid");
       p.set("Basis Type", "HGrad");
       p.set("Basis Order", 1);
-      p.set("Integration Order", integration_order);
+      p.set("Integration Order", po.integration_order);
       p.set("DOF Name", strint(po.dof_names[2], i+1));
     }
 
     const std::string t1_name = strint(po.dof_names[2], 1), t2_name = strint(po.dof_names[2], 2);
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "left";
-      std::string element_block_id = "eblock-0_0";
+      std::string sideset_id = po.ss_names[0];
+      std::string element_block_id = po.eb_names[0];
       std::string dof_name = t1_name;
       std::string strategy = "Constant";
       double value = dleft;
@@ -870,8 +997,8 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     }
     {
       panzer::BCType bctype = panzer::BCT_Dirichlet;
-      std::string sideset_id = "right";
-      std::string element_block_id = "eblock-1_0";
+      std::string sideset_id = po.ss_names[2];
+      std::string element_block_id = po.eb_names[1];
       std::string dof_name = t2_name;
       std::string strategy = "Constant";
       double value = dright;
@@ -884,9 +1011,9 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
     for (int ibc = 0; ibc < 2; ++ibc) {
       Teuchos::ParameterList p;
       p.set("Type", "Interface");
-      p.set("Sideset ID", "vertical_0");
-      p.set("Element Block ID" , ibc == 0 ? "eblock-0_0" : "eblock-1_0");
-      p.set("Element Block ID2", ibc == 0 ? "eblock-1_0" : "eblock-0_0");
+      p.set("Sideset ID", po.ss_names[1]);
+      p.set("Element Block ID" , po.eb_names[ibc]);
+      p.set("Element Block ID2", po.eb_names[(ibc + 1) % 2]);
       p.set("Equation Set Name" , ibc == 0 ? t1_name : t2_name);
       p.set("Equation Set Name2", ibc == 0 ? t2_name : t1_name);
       p.set("Strategy", "Robin Interface");

@@ -46,8 +46,8 @@
     \author Created by P. Bochev, D. Ridzal and M. Perego.
 */
 
-#ifndef INTREPID_CUBATURE_TENSOR_PYR_HPP
-#define INTREPID_CUBATURE_TENSOR_PYR_HPP
+#ifndef INTREPID2_CUBATURE_TENSOR_PYR_HPP
+#define INTREPID2_CUBATURE_TENSOR_PYR_HPP
 
 #include "Intrepid2_CubatureTensor.hpp"
 

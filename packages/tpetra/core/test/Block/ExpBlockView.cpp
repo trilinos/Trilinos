@@ -173,7 +173,7 @@ namespace {
       if (info != 0) {
         continue; // workspace query failed; skip the rest
       }
-      lwork = static_cast<__float128> (workView[0]);
+      lwork = static_cast<int> (Teuchos::ScalarTraits<ST>::real (workView[0]));
       TEST_ASSERT( lwork >= 0 );
       if (lwork < 0) {
         continue; // workspace query failed; skip the rest

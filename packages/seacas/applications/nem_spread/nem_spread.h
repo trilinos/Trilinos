@@ -70,10 +70,6 @@ template <typename T, typename INT>
   void read_side_sets(int mesh_exoid, INT *, INT *);
 
   void read_nodal_vars(int mesh_exoid);
-  void read_aux_nodal_vars(int mesh_exoid);
-  void read_exo_nv(int exoid, int itotal_nodes, int n_glob_nodes, int proc_id,
-		   int num_proc, int n_gnv_to_read, INT *gnode, int time_index,
-		   INT *gnv_index, T **glob_var_arr);
 
   void load_lb_info();
   
@@ -93,9 +89,6 @@ template <typename T, typename INT>
   void write_var_timestep(int exoid, int proc, int time_step, 
 			  INT *eb_ids_global, INT *ss_ids_global, INT *ns_ids_global);
   
-  void comm_lb_data (int iproc, int proc_for,
-		     INT *Integer_Vector_Ptr, int read_length);
-  void recv_lb_data (INT *Integer_Vector, int indx);
   void process_lb_data (INT *Integer_Vector, int index);
   void read_proc_init(int lb_exoid, int proc_info[], int **proc_ids_ptr);
   void read_lb_init (int exoid, INT *Int_Space, 
@@ -117,7 +110,6 @@ template <typename T, typename INT>
 
   int read_var_param (int exoid, int max_name_length);
 
-  int broadcast_var_param (Restart_Description<T> *restart, int max_name_length);
   int read_vars(int exoid, int index, INT *eb_ids,
 		INT *eb_cnts, INT ***eb_map_ptr, INT **eb_cnts_local,
 		INT *ss_ids, INT *ss_cnts, INT *ns_ids, INT *ns_cnts);
@@ -135,7 +127,6 @@ template <typename T, typename INT>
 		     INT *ns_cnts);
   int read_nset_vars_1(int exoid, int index, INT *ns_ids,
 		       INT *ns_cnts, int iblk);
-  int read_nodal_vars_1 (int exoid, int index);
   int read_nodal_vars (int exoid, int index);
   int compare_mesh_param (int exoid);
 

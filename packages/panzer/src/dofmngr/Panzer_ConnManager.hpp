@@ -110,15 +110,15 @@ public:
      */
    virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
 
-   /** If element <code>el</code> has a pair across an interface, set
-     * <code>el_other</code> to that element and return true; otherwise, return
-     * false and do not modify <code>el_other</code>.
+   /** Get elements, if any, associated with <code>el</code>, excluding
+     * <code>el</code> itself.
      */
-   virtual bool getElementAcrossInterface(const LocalOrdinal& el, LocalOrdinal& el_other) const { return false; }
+   virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& el) const = 0;
 
-   /** Return whether getElementAcrossInterface will ever return true.
+   /** Return whether getAssociatedNeighbors will return true for at least one
+     * input.
      */
-   virtual bool hasElementsAcrossInterface() const { return false; }
+   virtual bool hasAssociatedNeighbors() const = 0;
 };
 
 /** Pure abstract base class templated on the

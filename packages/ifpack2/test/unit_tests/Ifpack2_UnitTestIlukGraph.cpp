@@ -102,7 +102,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   global_size_t num_rows_per_proc = 5;
 
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
+    tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
 
   int num_procs = crsgraph->getRowMap()->getComm()->getSize();
   TEST_EQUALITY( crsgraph->getRowMap()->getNodeNumElements(), num_rows_per_proc)
@@ -114,7 +115,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
   LocalOrdinal overlap_levels = 2;
   LocalOrdinal fill_levels = 0;
 
-  Ifpack2::IlukGraph<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal> > iluk0_graph(crsgraph, fill_levels, overlap_levels);
+  Ifpack2::IlukGraph<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > iluk0_graph(crsgraph, fill_levels, overlap_levels);
   iluk0_graph.initialize();
 
   //The number of nonzeros in an ILU(0) graph should be the same as the
@@ -126,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   fill_levels = 2;
 
-  Ifpack2::IlukGraph<Tpetra::CrsGraph<int,int> > iluk2_graph(crsgraph, fill_levels, overlap_levels);
+  Ifpack2::IlukGraph<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > iluk2_graph(crsgraph, fill_levels, overlap_levels);
 
   iluk2_graph.initialize();
 
@@ -141,11 +142,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
   TEST_EQUALITY( nnz2_greater_than_nnz0, true)
 }
 
-#define UNIT_TEST_GROUP_ORDINAL(LocalOrdinal,GlobalOrdinal) \
+#define UNIT_TEST_GROUP_LO_GO(LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal,GlobalOrdinal)
 
-UNIT_TEST_GROUP_ORDINAL(int, int)
+#include "Ifpack2_ETIHelperMacros.h"
 
-}//namespace <anonymous>
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+IFPACK2_INSTANTIATE_LG( UNIT_TEST_GROUP_LO_GO )
+
+} // namespace (anonymous)
 
 

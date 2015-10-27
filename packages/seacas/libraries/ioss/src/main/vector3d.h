@@ -61,8 +61,6 @@
     vector3d& operator/= (double scalar);
 
     double length () const;
-    double squared_length () const;
-    double dot (const vector3d& from) const;
     double normalize (double tolerance = 1e-06);
     vector3d cross (const vector3d& from) const;
     static vector3d plane_normal(const vector3d &v1, const vector3d &v2, const vector3d &v3);

@@ -52,7 +52,7 @@ namespace panzer {
 template <typename LO,typename GO>
 class DOFManagerFactory : public virtual UniqueGlobalIndexerFactory<LO,GO,LO,GO> {
 public:
-   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false) {}
+   DOFManagerFactory() : useDOFManagerFEI_(false), useTieBreak_(false), enableGhosting_(false) {}
 
    virtual ~DOFManagerFactory() {}
 
@@ -63,8 +63,14 @@ public:
      * \param[in] physicsBlocks A vector of physics block objects that contain
      *                          unknown field information.
      * \param[in] connMngr Connection manager that contains the mesh topology
+     * \param[in] fieldOrder Specifies the local ordering of the degrees of
+     *            freedom. This is relevant when degrees of freedom are shared
+     *            on the same geometric entity. The default is an alphabetical
+     *            ordering.
      *
-     * \returns A fully constructed UniqueGlobalIndexer object
+     * \returns A UniqueGlobalIndexer object. If buildGlobalUnknowns is true,
+     *          the object is fully constructed. If it is false, the caller must
+     *          finalize it.
      */
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
@@ -103,11 +109,16 @@ public:
    void setUseTieBreak(bool flag) 
    { useTieBreak_ = flag; }
 
-   bool getUseTieBreak()
+   bool getUseTieBreak() const
    { return useTieBreak_; }
 
-   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
+   void setEnableGhosting(bool flag)
+   { enableGhosting_ = flag; }
 
+   bool getEnableGhosting() const
+   { return enableGhosting_; }
+
+   static void buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder);
 protected:
    template <typename DOFManagerT>
    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
@@ -118,6 +129,7 @@ protected:
 
    bool useDOFManagerFEI_;
    bool useTieBreak_;
+   bool enableGhosting_;
 };
 
 }

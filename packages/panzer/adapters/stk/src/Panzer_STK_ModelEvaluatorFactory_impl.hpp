@@ -194,6 +194,7 @@ namespace panzer_stk_classic {
         p.set<bool>("Constant Mass Matrix",true);
         p.set<bool>("Apply Mass Matrix Inverse in Explicit Evaluator",true);
         p.set<bool>("Use Conservative IMEX",false);
+        p.set<bool>("Compute Real Time Derivative",false);
         p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -211,6 +212,51 @@ namespace panzer_stk_classic {
     }
     return validPL;
   }
+
+  namespace {
+    bool hasInterfaceCondition(const std::vector<panzer::BC>& bcs)
+    {
+      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+        if (bcit->bcType() == panzer::BCT_Interface)
+          return true;
+      return false;
+    }
+
+    Teuchos::RCP<STKConnManager<int> >
+    getSTKConnManager(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr =
+        Teuchos::rcp_dynamic_cast<STKConnManager<int> >(conn_mgr);
+      TEUCHOS_TEST_FOR_EXCEPTION(stk_conn_mgr.is_null(), std::logic_error,
+                                 "There are interface conditions, but the connection manager"
+                                 " does not support the necessary connections.");
+      return stk_conn_mgr;
+    }
+
+    void buildInterfaceConnections(const std::vector<panzer::BC>& bcs,
+                                   const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      for (std::vector<panzer::BC>::const_iterator bcit = bcs.begin(); bcit != bcs.end(); ++bcit)
+        if (bcit->bcType() == panzer::BCT_Interface)
+          stk_conn_mgr->associateElementsInSideset(bcit->sidesetID());
+    }
+
+    void checkInterfaceConnections(const Teuchos::RCP<panzer::ConnManagerBase<int> >& conn_mgr,
+                                   const Teuchos::RCP<Teuchos::Comm<int> >& comm)
+    {
+      const Teuchos::RCP<STKConnManager<int> > stk_conn_mgr = getSTKConnManager(conn_mgr);
+      std::vector<std::string> sidesets = stk_conn_mgr->checkAssociateElementsInSidesets(*comm);
+      if ( ! sidesets.empty()) {
+        std::stringstream ss;
+        ss << "Sideset IDs";
+        for (std::size_t i = 0; i < sidesets.size(); ++i)
+          ss << " " << sidesets[i];
+        ss << " did not yield associations, but these sidesets correspond to BCT_Interface BCs.";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str());
+      }
+    }
+  } // namespace
 
   template<typename ScalarT>
   void  ModelEvaluatorFactory<ScalarT>::buildObjects(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -369,9 +415,19 @@ namespace panzer_stk_classic {
 
     // build a workset factory that depends on STK
     ////////////////////////////////////////////////////////////////////////////////////////
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory;
+    if(m_user_wkst_factory==Teuchos::null)
+       wkstFactory = Teuchos::rcp(new panzer_stk_classic::WorksetFactory()); // build STK workset factory
+    else
+       wkstFactory = m_user_wkst_factory;
 
-    Teuchos::RCP<panzer::WorksetFactoryBase> wkstFactory
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+     // set workset factory mesh
+     wkstFactory->setMesh(mesh);
+
+    // handle boundary and interface conditions
+    ////////////////////////////////////////////////////////////////////////////////////////
+    std::vector<panzer::BC> bcs;
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     // build the connection manager
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -496,17 +552,25 @@ namespace panzer_stk_classic {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else {
+       const bool has_interface_condition = hasInterfaceCondition(bcs);
+       if (has_interface_condition)
+         buildInterfaceConnections(bcs, conn_manager);
+
        const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager_int
          = Teuchos::rcp_dynamic_cast<panzer::ConnManager<int,int> >(conn_manager,true);
 
        // use a flat DOF manager
-
        panzer::DOFManagerFactory<int,int> globalIndexerFactory;
        globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
        globalIndexerFactory.setUseTieBreak(use_load_balance);
+       globalIndexerFactory.setEnableGhosting(has_interface_condition);
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
-         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,field_order);
+         = globalIndexerFactory.buildUniqueGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager_int,
+                                                         field_order);
        globalIndexer = dofManager;
+
+       if (has_interface_condition)
+         checkInterfaceConnections(conn_manager, dofManager->getComm());
 
        linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
 
@@ -611,9 +675,6 @@ namespace panzer_stk_classic {
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
-
-    std::vector<panzer::BC> bcs;
-    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"), global_data);
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
@@ -1057,6 +1118,12 @@ namespace panzer_stk_classic {
   void ModelEvaluatorFactory<ScalarT>::setRythmosObserverFactory(const Teuchos::RCP<const panzer_stk_classic::RythmosObserverFactory>& rythmos_observer_factory)
   {
     m_rythmos_observer_factory = rythmos_observer_factory;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::setUserWorksetFactory(Teuchos::RCP<panzer_stk_classic::WorksetFactory>& user_wkst_factory)
+  {
+    m_user_wkst_factory = user_wkst_factory;
   }
 
   template<typename ScalarT>

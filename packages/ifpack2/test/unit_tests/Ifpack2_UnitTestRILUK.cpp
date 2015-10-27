@@ -130,17 +130,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
 
 } //unit test Parallel()
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, GlobalOrdinal)
+#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, SC, LO, GO )
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+#include "Ifpack2_ETIHelperMacros.h"
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
-#endif
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types.
+
+IFPACK2_INSTANTIATE_SLG( UNIT_TEST_GROUP_SC_LO_GO )
 
 }//namespace <anonymous>
 

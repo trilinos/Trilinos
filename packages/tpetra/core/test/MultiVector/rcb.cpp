@@ -74,8 +74,8 @@
 #include <sstream>
 #include <iostream>
 
-typedef int LO;
-typedef int GO;
+typedef Tpetra::Map<>::local_ordinal_type LO;
+typedef Tpetra::Map<>::global_ordinal_type GO;
 typedef double Scalar;
 
 Teuchos::RCP<Teuchos::Time> tmvBuild;

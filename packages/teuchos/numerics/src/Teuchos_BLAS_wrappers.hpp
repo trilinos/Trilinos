@@ -109,6 +109,7 @@
 #define ZSWAP_F77   F77_BLAS_MANGLE(zswap,ZSWAP)
 #define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
 #define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
+#define ZHERK_F77   F77_BLAS_MANGLE(zherk,ZHERK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
 #define ZTRSM_F77   F77_BLAS_MANGLE(ztrsm,ZTRSM)
 
@@ -151,6 +152,7 @@
 #define CSWAP_F77   F77_BLAS_MANGLE(cswap,CSWAP)
 #define CSYMM_F77   F77_BLAS_MANGLE(csymm,CSYMM)
 #define CSYRK_F77   F77_BLAS_MANGLE(csyrk,CSYRK)
+#define CHERK_F77   F77_BLAS_MANGLE(cherk,CHERK)
 #define CTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
 #define CTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
 
@@ -337,6 +339,9 @@ void PREFIX ZSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
 void PREFIX ZSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
                 const std::complex<double> *alpha, const std::complex<double> *a, const int *lda,
                 const std::complex<double> *beta, std::complex<double> *c, const int *ldc);
+void PREFIX ZHERK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const std::complex<double> *alpha, const std::complex<double> *a, const int *lda,
+                const std::complex<double> *beta, std::complex<double> *c, const int *ldc);
 void PREFIX ZTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const std::complex<double> *alpha, const std::complex<double> *a, const int * lda, std::complex<double> *b, const int *ldb);
 void PREFIX ZTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
@@ -374,6 +379,9 @@ void PREFIX CSYMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * n,
 void PREFIX CTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const std::complex<float> *alpha, const std::complex<float> *a, const int * lda, std::complex<float> *b, const int *ldb);
 void PREFIX CSYRK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
+                const std::complex<float> *alpha, const std::complex<float> *a, const int *lda,
+                const std::complex<float> *beta, std::complex<float> *c, const int *ldc);
+void PREFIX CHERK_F77(Teuchos_fcd, Teuchos_fcd, const int *n, const int * k,
                 const std::complex<float> *alpha, const std::complex<float> *a, const int *lda,
                 const std::complex<float> *beta, std::complex<float> *c, const int *ldc);
 void PREFIX CTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,

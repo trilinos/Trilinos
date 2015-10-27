@@ -234,8 +234,11 @@ public:
    
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
+   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const
    { return connMngr_; } 
+
+   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
+   { return getConnManager(); }
 
    /** build the global unknown numberings
      *   1. this builds the pattens

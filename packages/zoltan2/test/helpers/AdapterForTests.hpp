@@ -87,7 +87,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using std::string;
 
-
+/* \brief A class for constructing Zoltan2 input adapters */
 class AdapterForTests{
 public:
   
@@ -101,7 +101,7 @@ public:
   typedef UserInputForTests::xVector_t xVector_t;
   typedef UserInputForTests::xMVector_t xMVector_t;
   
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
   typedef Zoltan2::BaseAdapter<userTypes_t> base_adapter_t;
   typedef Zoltan2::BasicIdentifierAdapter<userTypes_t> basic_id_t;
   typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> xpetra_mv_adapter;
@@ -110,63 +110,92 @@ public:
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> basic_vector_adapter;
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
   
+  /*! \brief A class method for constructing an input adapter
+   *   defind in a parameter list.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the paramter list defining the data type to be used and
+   *                 adapter type to be costructed
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
+   */
   static base_adapter_t* getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
 private:
   /*! \brief Method to choose and call the correct constructor
-   *      for a BasicIdentifierAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for a BasicIdentifierAdapter from a UserInputForTests input file.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getBasicIdentiferAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra multi-vector adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraMVAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra crs graph adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra Crs matrix adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a BasicVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for a basic vector adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getBasicVectorAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
-  
+  /*! \brief Method to choose and call the correct constructor
+   *   for a Pamgen mesh adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
+   */
   static base_adapter_t*
   getPamgenMeshAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
-  /*! \brief Method to set up strided vector data from a Multivector
-   *  \param data is the Multivector
-   *  \param coords is the vector of strided data
-   *  \param strides is the vector of stride info
-   *  \param stride is stride to apply to data set
-   * \param epetra tells the method whether an epetra vector is being passed
+  
+  
+  /*! \brief Method to set up strided vector data from a multi-vector
+   *  \param[in] data is the multi-vector
+   *  \param[out] coords is the vector of strided coordinate data
+   *  \param[out] strides is the vector of strides
+   *  \param[in] stride is the stride to apply to data set
+   *
+   * \return
    */
   template <typename T>
   static void InitializeVectorData(const RCP<T> &data,
@@ -175,6 +204,14 @@ private:
                                    int stride);
   
 #ifdef HAVE_EPETRA_DATA_TYPES
+  /*! \brief Method to set up strided vector data from a multi-vector
+   *  \param[in] data is the epetra multi-vector
+   *  \param[out] coords is the vector of strided coordinate data
+   *  \param[out] strides is the vector of strides
+   *  \param[in] stride is the stride to apply to data set
+   *
+   * \return
+   */
   template <typename T>
   static void InitializeEpetraVectorData(const RCP<T> &data,
                                          vector<const zscalar_t *> &coords,
@@ -218,8 +255,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
 
 
 AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForInput(UserInputForTests *uinput,
-                                                                                    const ParameterList &pList,
-                                                                                    const RCP<const Comm<int> > &comm)
+    const ParameterList &pList,
+    const RCP<const Comm<int> > &comm)
 {
   
   if(!pList.isParameter("data type"))
@@ -232,13 +269,14 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   
   if (!uinput->hasInputDataType(input_type))
   {
-    std::cerr << "Input type:" + input_type + ", is unavailable or misspelled." << std::endl; // bad type
+    std::cerr << "Input type: " + input_type + " unavailable or misspelled."
+              << std::endl; // bad type
     return nullptr;
   }
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
-  const zzgid_t * globalIds;
+  const zgno_t * globalIds;
   size_t localCount = 0;
   
   // get weights if any
@@ -257,83 +295,83 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   if(input_type == "coordinates")
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_vector")
   {
     RCP<tVector_t> data = uinput->getUITpetraVector();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_crs_graph")
   {
     RCP<tcrsGraph_t> data = uinput->getUITpetraCrsGraph();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "tpetra_crs_matrix")
   {
     RCP<tcrsMatrix_t> data = uinput->getUITpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "xpetra_vector")
   {
     RCP<xVector_t> data = uinput->getUIXpetraVector();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_crs_graph")
   {
     RCP<xcrsGraph_t> data = uinput->getUIXpetraCrsGraph();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "xpetra_crs_matrix")
   {
     RCP<xcrsMatrix_t> data = uinput->getUIXpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   else if(input_type == "epetra_vector")
   {
     RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
   }
   else if(input_type == "epetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
   }
   else if(input_type == "epetra_crs_graph")
   {
     RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->NumMyCols();
   }
   else if(input_type == "epetra_crs_matrix")
   {
     RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->NumMyCols();
   }
 #endif
@@ -343,9 +381,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(UserInputForTests *uinput,
-                                                                              const ParameterList &pList,
-                                                                              const RCP<const Comm<int> > &comm)
+AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(
+  UserInputForTests *uinput,
+  const ParameterList &pList,
+  const RCP<const Comm<int> > &comm)
 {
   AdapterForTests::base_adapter_t * adapter = nullptr;
 
@@ -358,7 +397,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
   {
-    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled."
+              << std::endl; // bad type
     return adapter;
   }
   
@@ -432,9 +472,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput,
-                                                                                    const ParameterList &pList,
-                                                                                    const RCP<const Comm<int> > &comm)
+AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForInput(
+  UserInputForTests *uinput,
+  const ParameterList &pList,
+  const RCP<const Comm<int> > &comm)
 {
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
@@ -448,7 +489,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
   {
-    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    std::cerr << "Input type: " + input_type + ", unavailable or misspelled." 
+              << std::endl; // bad type
     return adapter;
   }
   
@@ -556,9 +598,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   
   if(adapter == nullptr)
   {
-    std::cerr << "Input data chosen not compatible with xpetra multi-vector adapter." << std::endl;
+    std::cerr << "Input data chosen not compatible with "
+              << "XpetraCrsGraph adapter." << std::endl;
     return adapter;
-  }else{
+  }
+  else if (uinput->hasUICoordinates()) {
     // make the coordinate adapter
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
@@ -570,21 +614,22 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     
     if(ca == nullptr)
     {
-      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      std::cerr << "Failed to create coordinate vector adapter for "
+                << "XpetraCrsMatrix adapter." << std::endl;
       return ca;
     }
     
     // set the coordinate adapter
     reinterpret_cast<AdapterForTests::xcrsGraph_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<AdapterForTests::xpetra_mv_adapter *>(ca));
-    return adapter;
   }
-  
+  return adapter;
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput,
-                                                                                     const ParameterList &pList,
-                                                                                     const RCP<const Comm<int> > &comm)
+AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForInput(
+  UserInputForTests *uinput,
+  const ParameterList &pList,
+  const RCP<const Comm<int> > &comm)
 {
   AdapterForTests::base_adapter_t * adapter = nullptr;
 
@@ -597,7 +642,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
   {
-    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled."
+              << std::endl; // bad type
     return adapter;
   }
   
@@ -689,10 +735,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   if(adapter == nullptr)
   {
-    std::cerr << "Input data chosen not compatible with xpetra crs-matrix adapter." << std::endl;
+    std::cerr << "Input data chosen not compatible with "
+              << "XpetraCrsMatrix adapter." << std::endl;
     return adapter;
-  }else{
-    
+  }
+  else if (uinput->hasUICoordinates()) {
     // make the coordinate adapter
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
@@ -703,21 +750,22 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
     
     if(ca == nullptr){
-      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      std::cerr << "Failed to create coordinate vector adapter for "
+                << "XpetraCrsMatrix adapter." << std::endl;
       return ca;
     }
     
     // set the coordinate adapter
     reinterpret_cast<AdapterForTests::xcrsMatrix_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<AdapterForTests::xpetra_mv_adapter *>(ca));
-    return adapter;
   }
-  
+  return adapter;
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(UserInputForTests *uinput,
-                                                                                 const ParameterList &pList,
-                                                                                 const RCP<const Comm<int> > &comm)
+AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(
+  UserInputForTests *uinput,
+  const ParameterList &pList,
+  const RCP<const Comm<int> > &comm)
 {
   
   AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
@@ -731,7 +779,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
   {
-    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled."
+              << std::endl; // bad type
     return nullptr;
   }
   
@@ -1114,7 +1163,8 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
 //        ia->print(0);
     }
   }else{
-    std::cerr << "Pamgen mesh is unavailable for PamgenMeshAdapter!" << std::endl;
+    std::cerr << "Pamgen mesh is unavailable for PamgenMeshAdapter!"
+              << std::endl;
   }
   
   return  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);

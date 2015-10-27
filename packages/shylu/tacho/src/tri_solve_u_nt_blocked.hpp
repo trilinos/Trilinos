@@ -12,8 +12,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewTypeA,
+  template<typename CrsExecViewTypeA,
            typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
@@ -59,13 +58,11 @@ namespace Tacho {
 
       // B1 = B1 - A12*B2;
       Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::invoke<ParallelForType>(policy, member, 
-                                  -1.0, A12, B2, 1.0, B1);
+        ::invoke(policy, member, -1.0, A12, B2, 1.0, B1);
 
       // B1 = inv(triu(A11))*B1
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
-        ::invoke<ParallelForType>(policy, member, 
-                                  diagA, 1.0, A11, B1);
+        ::invoke(policy, member, diagA, 1.0, A11, B1);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

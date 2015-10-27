@@ -69,14 +69,12 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
 void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
-  const RCP<const Comm<int> > &comm, bool consecutiveIds)
+  const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   int fail = 0, gfail = 0;
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags = 0;
-  if (consecutiveIds)
-    modelFlags.set(Zoltan2::GENERATE_CONSECUTIVE_IDS);
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -175,16 +173,6 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     }
   }
 
-  if (!fail && consecutiveIds){
-    bool inARow = Zoltan2::IdentifierTraits<zgno_t>::areConsecutive(
-      gids.getRawPtr(), nLocalIds);
-
-    if (!inARow) {
-      std::cerr << rank << ") getIdentifierList not consecutive " << std::endl;
-      fail = 8;
-    }
-  }
-
   gfail = globalFail(comm, fail);
 
   if (gfail)
@@ -204,19 +192,11 @@ int main(int argc, char *argv[])
 
   string fname("simple");
 
-  bool wishConsecutiveIds = true;
 
   if (rank == 0){
     std::cout << fname;
-    std::cout << ", consecutive IDs not requested" << std::endl;
   }
-  testIdentifierModel(fname, 0,0,0,comm, !wishConsecutiveIds);
-
-  if (rank == 0){
-    std::cout << fname;
-    std::cout << ", consecutive IDs are requested" << std::endl;
-  }
-  testIdentifierModel(fname, 0,0,0,comm,  wishConsecutiveIds);
+  testIdentifierModel(fname, 0,0,0,comm);
 
   if (rank==0) std::cout << "PASS" << std::endl;
 

@@ -96,6 +96,15 @@
 // Teko includes
 #include "Epetra/Teko_EpetraHelpers.hpp"
 #include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Tpetra/Teko_TpetraOperatorWrapper.hpp"
+
+// Tpetra
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 #include <cmath>
 
@@ -217,6 +226,64 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
    return gl;
 }
 
+RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil)
+{
+   // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > gl = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(stencil.getRowMap(),stencil.getColMap(),
+                                                       stencil.getGlobalMaxNumRowEntries()+1));
+
+   // allocate an additional value for the diagonal, if neccessary
+   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
+   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+
+   // loop over all the rows
+   for(LO j=0;j< (LO) gl->getNodeNumRows();j++) {
+      GO row = gl->getRowMap()->getGlobalElement(j);
+      ST diagValue = 0.0;
+      GO diagInd = -1;
+      size_t rowSz = 0;
+
+      // extract a copy of this row...put it in rowData, rowIndicies
+      stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
+ 
+      // loop over elements of row
+      for(size_t i=0;i<rowSz;i++) {
+         GO col = rowInd[i];
+
+         // is this a 0 entry masquerading as some thing else?
+         ST value = rowData[i];
+         if(value==0) continue;
+
+         // for nondiagonal entries
+         if(row!=col) {
+            ST d = dist(dim,coords,row,col);
+            rowData[i] = -1.0/d;
+            diagValue += rowData[i];
+         }
+         else 
+            diagInd = i;
+      }
+    
+      // handle diagonal entry
+      if(diagInd<0) { // diagonal not in row
+         rowData[rowSz] = -diagValue;
+         rowInd[rowSz] = row;
+         rowSz++;
+      }
+      else { // diagonal in row
+         rowData[diagInd] = -diagValue;
+         rowInd[diagInd] = row;
+      }
+
+      // insert row data into graph Laplacian matrix
+      gl->replaceGlobalValues(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData));
+   }
+
+   gl->fillComplete();
+
+   return gl;
+}
+
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
   * This function builds a graph Laplacian given a (locally complete)
@@ -293,6 +360,64 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
    }
 
    gl->FillComplete();
+
+   return gl;
+}
+
+RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO stride,const Tpetra::CrsMatrix<ST,LO,GO,NT> & stencil)
+{
+   // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > gl = rcp(new Tpetra::CrsMatrix<ST,LO,GO,NT>(stencil.getRowMap(),stencil.getColMap(),
+                                                       stencil.getGlobalMaxNumRowEntries()+1),true);
+
+   // allocate an additional value for the diagonal, if neccessary
+   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
+   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+
+   // loop over all the rows
+   for(LO j=0;j<(LO) gl->getNodeNumRows();j++) {
+      GO row = gl->getRowMap()->getGlobalElement(j);
+      ST diagValue = 0.0;
+      GO diagInd = -1;
+      size_t rowSz = 0;
+
+      // extract a copy of this row...put it in rowData, rowIndicies
+      stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
+ 
+      // loop over elements of row
+      for(size_t i=0;i<rowSz;i++) {
+         GO col = rowInd[i];
+
+         // is this a 0 entry masquerading as some thing else?
+         ST value = rowData[i];
+         if(value==0) continue;
+
+         // for nondiagonal entries
+         if(row!=col) {
+            ST d = dist(x,y,z,stride,row,col);
+            rowData[i] = -1.0/d;
+            diagValue += rowData[i];
+         }
+         else 
+            diagInd = i;
+      }
+    
+      // handle diagonal entry
+      if(diagInd<0) { // diagonal not in row
+         rowData[rowSz] = -diagValue;
+         rowInd[rowSz] = row;
+         rowSz++;
+      }
+      else { // diagonal in row
+         rowData[diagInd] = -diagValue;
+         rowInd[diagInd] = row;
+      }
+
+      // insert row data into graph Laplacian matrix
+      gl->replaceGlobalValues(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData));
+   }
+
+   gl->fillComplete();
 
    return gl;
 }
@@ -480,22 +605,34 @@ bool isZeroOp(const LinearOp op)
   */
 ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
 {
+   bool isTpetra = false;
    RCP<const Epetra_CrsMatrix> eCrsOp;
+   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
 
    try {
-      // get Epetra_Operator
-      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+      // get Epetra or Tpetra Operator
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
 
       // cast it to a CrsMatrix
-      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      if (!eOp.is_null()){
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      }   
+      else if (!tOp.is_null()){
+        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+        isTpetra = true;
+      }
+      else
+        throw std::logic_error("Neither Epetra nor Tpetra");
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -504,24 +641,51 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
       throw e;
    }
 
-   // extract diagonal
-   const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   Epetra_Vector & diag = *ptrDiag;
-   
-   // compute absolute value row sum
-   diag.PutScalar(0.0);
-   for(int i=0;i<eCrsOp->NumMyRows();i++) {
-      double * values = 0;
-      int numEntries;
-      eCrsOp->ExtractMyRowView(i,numEntries,values);
+   if(!isTpetra){
+     // extract diagonal
+     const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+     Epetra_Vector & diag = *ptrDiag;
 
-      // build abs value row sum
-      for(int j=0;j<numEntries;j++)
-         diag[i] += std::abs(values[j]);
+     // compute absolute value row sum
+     diag.PutScalar(0.0);
+     for(int i=0;i<eCrsOp->NumMyRows();i++) {
+        double * values = 0;
+        int numEntries;
+        eCrsOp->ExtractMyRowView(i,numEntries,values);
+
+        // build abs value row sum
+        for(int j=0;j<numEntries;j++)
+           diag[i] += std::abs(values[j]);
+     }
+
+     // build Thyra diagonal operator
+     return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
+   }
+   else {
+     // extract diagonal
+     const RCP<Tpetra::Vector<ST,LO,GO,NT> > ptrDiag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+     Tpetra::Vector<ST,LO,GO,NT> & diag = *ptrDiag;
+
+     // compute absolute value row sum
+     diag.putScalar(0.0);
+     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
+        std::vector<LO> indices(numEntries);
+        std::vector<ST> values(numEntries);
+        Teuchos::ArrayView<const LO> indices_av(indices);
+        Teuchos::ArrayView<const ST> values_av(values);
+        tCrsOp->getLocalRowView(i,indices_av,values_av);
+
+        // build abs value row sum
+        for(LO j=0;j<numEntries;j++)
+           diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+     }
+
+     // build Thyra diagonal operator
+     return Teko::TpetraHelpers::thyraDiagOp(ptrDiag,*tCrsOp->getRowMap(),"absRowSum( " + op->getObjectLabel() + " ))");
+
    }
 
-   // build Thyra diagonal operator
-   return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
 }
 
 /** \brief Compute inverse of the absolute row sum matrix.
@@ -534,22 +698,34 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
   */
 ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 {
+   bool isTpetra = false;
    RCP<const Epetra_CrsMatrix> eCrsOp;
+   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
 
    try {
-      // get Epetra_Operator
-      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+      // get Epetra or Tpetra Operator
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
 
       // cast it to a CrsMatrix
-      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      if (!eOp.is_null()){
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      }   
+      else if (!tOp.is_null()){
+        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+        isTpetra = true;
+      }
+      else
+        throw std::logic_error("Neither Epetra nor Tpetra");
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "Teko: getAbsRowSumInvMatrix requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -558,25 +734,53 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
       throw e;
    }
 
-   // extract diagonal
-   const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   Epetra_Vector & diag = *ptrDiag;
-   
-   // compute absolute value row sum
-   diag.PutScalar(0.0);
-   for(int i=0;i<eCrsOp->NumMyRows();i++) {
-      double * values = 0;
-      int numEntries;
-      eCrsOp->ExtractMyRowView(i,numEntries,values);
+   if(!isTpetra){
+     // extract diagonal
+     const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+     Epetra_Vector & diag = *ptrDiag;
 
-      // build abs value row sum
-      for(int j=0;j<numEntries;j++)
-         diag[i] += std::abs(values[j]);
+     // compute absolute value row sum
+     diag.PutScalar(0.0);
+     for(int i=0;i<eCrsOp->NumMyRows();i++) {
+        double * values = 0;
+        int numEntries;
+        eCrsOp->ExtractMyRowView(i,numEntries,values);
+
+        // build abs value row sum
+        for(int j=0;j<numEntries;j++)
+           diag[i] += std::abs(values[j]);
+     }
+     diag.Reciprocal(diag); // invert entries
+
+     // build Thyra diagonal operator
+     return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
    }
-   diag.Reciprocal(diag); // invert entries
+   else {
+     // extract diagonal
+     const RCP<Tpetra::Vector<ST,LO,GO,NT> > ptrDiag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+     Tpetra::Vector<ST,LO,GO,NT> & diag = *ptrDiag;
 
-   // build Thyra diagonal operator
-   return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSumInv( " + op->getObjectLabel() + " )");
+     // compute absolute value row sum
+     diag.putScalar(0.0);
+     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
+        std::vector<LO> indices(numEntries);
+        std::vector<ST> values(numEntries);
+        Teuchos::ArrayView<const LO> indices_av(indices);
+        Teuchos::ArrayView<const ST> values_av(values);
+        tCrsOp->getLocalRowView(i,indices_av,values_av);
+
+        // build abs value row sum
+        for(LO j=0;j<numEntries;j++)
+           diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+     }
+     diag.reciprocal(diag); // invert entries
+
+     // build Thyra diagonal operator
+     return Teko::TpetraHelpers::thyraDiagOp(ptrDiag,*tCrsOp->getRowMap(),"absRowSum( " + op->getObjectLabel() + " ))");
+
+   }
+
 }
 
 /** \brief Compute the lumped version of this matrix.
@@ -588,8 +792,8 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
   */
 ModifiableLinearOp getLumpedMatrix(const LinearOp & op)
 {
-   RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
-   RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
+   RCP<Thyra::VectorBase<ST> > ones = Thyra::createMember(op->domain());
+   RCP<Thyra::VectorBase<ST> > diag = Thyra::createMember(op->range());
 
    // set to all ones
    Thyra::assign(ones.ptr(),1.0);
@@ -598,7 +802,7 @@ ModifiableLinearOp getLumpedMatrix(const LinearOp & op)
    // Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
    Thyra::apply(*op,Thyra::NOTRANS,*ones,diag.ptr());
 
-   return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
+   return rcp(new Thyra::DefaultDiagonalLinearOp<ST>(diag));
 }
 
 /** \brief Compute the inverse of the lumped version of
@@ -611,8 +815,8 @@ ModifiableLinearOp getLumpedMatrix(const LinearOp & op)
   */
 ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
 {
-   RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
-   RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
+   RCP<Thyra::VectorBase<ST> > ones = Thyra::createMember(op->domain());
+   RCP<Thyra::VectorBase<ST> > diag = Thyra::createMember(op->range());
 
    // set to all ones
    Thyra::assign(ones.ptr(),1.0);
@@ -621,7 +825,7 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
    Thyra::apply(*op,Thyra::NOTRANS,*ones,diag.ptr());
    Thyra::reciprocal(*diag,diag.ptr());
 
-   return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
+   return rcp(new Thyra::DefaultDiagonalLinearOp<ST>(diag));
 }
 
 /** \brief Get the diaonal of a linear operator
@@ -637,22 +841,34 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
   */
 const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
 {
+   bool isTpetra = false;
    RCP<const Epetra_CrsMatrix> eCrsOp;
+   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
 
    try {
-      // get Epetra_Operator
-      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+      // get Epetra or Tpetra Operator
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
 
       // cast it to a CrsMatrix
-      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      if (!eOp.is_null()){
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      }   
+      else if (!tOp.is_null()){
+        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+        isTpetra = true;
+      }
+      else
+        throw std::logic_error("Neither Epetra nor Tpetra");
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "Teko: getDiagonalOp requires an Epetra_CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "Teko: getDiagonalOp requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -661,32 +877,60 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
       throw e;
    }
 
-   // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+   if(!isTpetra){
+     // extract diagonal
+     const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+     TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
-   // build Thyra diagonal operator
-   return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
+     // build Thyra diagonal operator
+     return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+   }
+   else {
+     // extract diagonal
+     const RCP<Tpetra::Vector<ST,LO,GO,NT> > diag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+     tCrsOp->getLocalDiagCopy(*diag);
+
+     // build Thyra diagonal operator
+     return Teko::TpetraHelpers::thyraDiagOp(diag,*tCrsOp->getRowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+
+   }
 }
 
 const MultiVector getDiagonal(const LinearOp & op)
 {
+   bool isTpetra = false;
    RCP<const Epetra_CrsMatrix> eCrsOp;
+   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
 
    try {
-      // get Epetra_Operator
-      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+      // get Epetra or Tpetra Operator
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
 
       // cast it to a CrsMatrix
-      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      if (!eOp.is_null()){
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      }   
+      else if (!tOp.is_null()){
+        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+        isTpetra = true;
+      }
+      else
+        throw std::logic_error("Neither Epetra nor Tpetra");
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+      *out << eOp;
+      *out << tOp;
 
-      *out << "Teko: getDiagonal requires an Epetra_CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "Teko: getDiagonal requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -695,11 +939,22 @@ const MultiVector getDiagonal(const LinearOp & op)
       throw e;
    }
 
-   // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+   if(!isTpetra){
+     // extract diagonal
+     const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+     TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
-   return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
+     return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
+   }
+   else {
+     // extract diagonal
+     const RCP<Tpetra::Vector<ST,LO,GO,NT> > diag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+     tCrsOp->getLocalDiagCopy(*diag);
+
+     // build Thyra diagonal operator
+     return Thyra::createVector<ST,LO,GO,NT>(diag,Thyra::createVectorSpace<ST,LO,GO,NT>(tCrsOp->getRowMap()));
+
+   }
 }
 
 const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
@@ -724,22 +979,39 @@ const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
   */
 const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 {
+   bool isTpetra = false;
    RCP<const Epetra_CrsMatrix> eCrsOp;
+   RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp;
 
    try {
-      // get Epetra_Operator
-      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+      // get Epetra or Tpetra Operator
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
 
       // cast it to a CrsMatrix
-      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      if (!eOp.is_null()){
+        eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(),true);
+      }   
+      else if (!tOp.is_null()){
+        tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+        isTpetra = true;
+      }
+      else
+        throw std::logic_error("Neither Epetra nor Tpetra");
    }
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  
+      RCP<const Thyra::EpetraLinearOp > eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp >(op);
+      RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+      *out << eOp;
+      *out << tOp;
 
-      *out << "Teko: getInvDiagonalOp requires an Epetra_CrsMatrix\n";
-      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "Teko: getInvDiagonalOp requires an Epetra_CrsMatrix or a Tpetra::CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator or a Tpetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
-      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix or a Tpetra_Operator to a Tpetra::CrsMatrix\n";
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -748,13 +1020,25 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
       throw e;
    }
 
-   // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-   TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
-   diag->Reciprocal(*diag);
+   if(!isTpetra){
+     // extract diagonal
+     const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+     TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
+     diag->Reciprocal(*diag);
 
-   // build Thyra diagonal operator
-   return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+     // build Thyra diagonal operator
+     return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+   }
+   else {
+     // extract diagonal
+     const RCP<Tpetra::Vector<ST,LO,GO,NT> > diag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+     tCrsOp->getLocalDiagCopy(*diag);
+     diag->reciprocal(*diag);
+
+     // build Thyra diagonal operator
+     return Teko::TpetraHelpers::thyraDiagOp(diag,*tCrsOp->getRowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+
+   }
 }
 
 /** \brief Multiply three linear operators. 
@@ -771,21 +1055,89 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetram = Teko::TpetraHelpers::isTpetraLinearOp(opm);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+ 
+   if(isTpetral && isTpetram && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
 
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtDiagScaledMatProdTransformer();
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarm = 0.0;
+      bool transpm = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpm = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarm, &transpm);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
-   // build operator and multiply
-   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
-                                     " * " + opm->getObjectLabel() +
-                                     " * " + opr->getObjectLabel() + " )");
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
-   return explicitOp;
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarm*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
+
+   } else if (isTpetral && !isTpetram && isTpetrar){ // Assume that the middle operator is diagonal
+
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
+      
+      // Cast middle operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpm = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opm,true);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpm->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
+
+      // Do the diagonal scaling
+      tCrsOplm->rightScale(*diagPtr);
+      
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
+
+   } else { // Assume Epetra and we can use transformers
+
+      // build implicit multiply
+      const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
+
+      // build transformer
+      const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+          Thyra::epetraExtDiagScaledMatProdTransformer();
+
+      // build operator and multiply
+      const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+      prodTrans->transform(*implicitOp,explicitOp.ptr());
+      explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                        " * " + opm->getObjectLabel() +
+                                        " * " + opr->getObjectLabel() + " )");
+
+      return explicitOp;
+
+   }
 }
 
 /** \brief Multiply three linear operators. 
@@ -805,31 +1157,99 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
 const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr,
                                           const ModifiableLinearOp & destOp)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetram = Teko::TpetraHelpers::isTpetraLinearOp(opm);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+ 
+   if(isTpetral && isTpetram && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
 
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtDiagScaledMatProdTransformer();
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarm = 0.0;
+      bool transpm = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpm = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarm, &transpm);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
-   // build operator destination operator
-   ModifiableLinearOp explicitOp; 
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
-   // if neccessary build a operator to put the explicit multiply into
-   if(destOp==Teuchos::null)
-      explicitOp = prodTrans->createOutputOp();
-   else
-      explicitOp = destOp;
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpm,transpm,*tCrsOplm); 
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarm*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
 
-   // perform multiplication
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
+   } else if (isTpetral && !isTpetram && isTpetrar){ // Assume that the middle operator is diagonal
 
-   // label it
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
-                                     " * " + opm->getObjectLabel() +
-                                     " * " + opr->getObjectLabel() + " )");
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
+      
+      // Cast middle operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpm = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opm,true);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpm->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
 
-   return explicitOp;
+      // Do the diagonal scaling
+      tCrsOplm->rightScale(*diagPtr);
+      
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOplm,false,*tCrsOpr,transpr,*explicitCrsOp); 
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
+
+   } else { // Assume Epetra and we can use transformers
+
+      // build implicit multiply
+      const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
+
+      // build transformer
+      const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+          Thyra::epetraExtDiagScaledMatProdTransformer();
+
+      // build operator destination operator
+      ModifiableLinearOp explicitOp; 
+
+      // if neccessary build a operator to put the explicit multiply into
+      if(destOp==Teuchos::null)
+         explicitOp = prodTrans->createOutputOp();
+      else
+         explicitOp = destOp;
+
+      // perform multiplication
+      prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+      // label it
+      explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                        " * " + opm->getObjectLabel() +
+                                        " * " + opr->getObjectLabel() + " )");
+
+      return explicitOp;
+
+   }
 }
 
 /** \brief Multiply two linear operators. 
@@ -844,25 +1264,93 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::multiply(opl,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+ 
+   if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so explicitly multiply them
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
-   // build a scaling transformer
-   RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
-         = Thyra::epetraExtDiagScalingTransformer();
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
-   // check to see if a scaling transformer works: if not use the 
-   // DiagScaledMatrixProduct transformer
-   if(not prodTrans->isCompatible(*implicitOp))
-       prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpr,transpr,*explicitCrsOp);
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
 
-   // build operator and multiply
-   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
-                                     " * " + opr->getObjectLabel() + " )");
+   } else if (isTpetral && !isTpetrar){ // Assume that the right operator is diagonal
 
-   return explicitOp;
+      // Get left Tpetra crs operator
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      
+      // Cast right operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpr = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opr);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpr->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
+      
+      explicitCrsOp->rightScale(*diagPtr);
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl);
+      explicitCrsOp->fillComplete(tCrsOpl->getDomainMap(),tCrsOpl->getRangeMap());
+      
+      return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
+
+   } else if (!isTpetral && isTpetrar){ // Assume that the left operator is diagonal
+
+      // Get right Tpetra crs operator
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
+      
+      // Cast leftt operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpl = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opl);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpl->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpr, Tpetra::Import<LO,GO,NT>(tCrsOpr->getRowMap(),tCrsOpr->getRowMap()));
+      
+      explicitCrsOp->leftScale(*diagPtr);
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpr->getRangeMap());
+      
+      return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
+
+   } else { // Assume Epetra and we can use transformers
+
+     // build implicit multiply
+     const LinearOp implicitOp = Thyra::multiply(opl,opr);
+ 
+     // build a scaling transformer
+     RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+           = Thyra::epetraExtDiagScalingTransformer();
+
+     // check to see if a scaling transformer works: if not use the 
+     // DiagScaledMatrixProduct transformer
+     if(not prodTrans->isCompatible(*implicitOp))
+         prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
+
+     // build operator and multiply
+     const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+     prodTrans->transform(*implicitOp,explicitOp.ptr());
+     explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                       " * " + opr->getObjectLabel() + " )");
+
+     return explicitOp;
+   }
 }
 
 /** \brief Multiply two linear operators. 
@@ -881,35 +1369,109 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
 const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr,
                                           const ModifiableLinearOp & destOp)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::multiply(opl,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+ 
+   if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix multiply
 
-   // build a scaling transformer
-   RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
-         = Thyra::epetraExtDiagScalingTransformer();
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
-   // check to see if a scaling transformer works: if not use the 
-   // DiagScaledMatrixProduct transformer
-   if(not prodTrans->isCompatible(*implicitOp))
-       prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp;
+      if(destOp!=Teuchos::null)
+         explicitOp = destOp;
+      else
+         explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
 
-   // build operator destination operator
-   ModifiableLinearOp explicitOp; 
+      // Do explicit matrix-matrix multiply
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
+      Tpetra::MatrixMatrix::Multiply<ST,LO,GO,NT>(*tCrsOpl,transpl,*tCrsOpr,transpr,*explicitCrsOp); 
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl*scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpl->getRangeMap());
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
 
-   // if neccessary build a operator to put the explicit multiply into
-   if(destOp==Teuchos::null)
-      explicitOp = prodTrans->createOutputOp();
-   else
-      explicitOp = destOp;
+   } else if (isTpetral && !isTpetrar){ // Assume that the right operator is diagonal
 
-   // perform multiplication
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
+      // Get left Tpetra crs operator
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      
+      // Cast right operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpr = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opr);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpr->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
 
-   // label it
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+      // Scale by the diagonal operator
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpl, Tpetra::Import<LO,GO,NT>(tCrsOpl->getRowMap(),tCrsOpl->getRowMap()));
+      explicitCrsOp->rightScale(*diagPtr);      
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarl);
+      explicitCrsOp->fillComplete(tCrsOpl->getDomainMap(),tCrsOpl->getRangeMap());
+      return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
+
+   } else if (!isTpetral && isTpetrar){ // Assume that the left operator is diagonal
+
+      // Get right Tpetra crs operator
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
+      
+      // Cast leftt operator as DiagonalLinearOp and extract diagonal as Vector
+      RCP<const Thyra::DiagonalLinearOpBase<ST> > dOpl = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<ST> >(opl,true);
+      RCP<const Thyra::TpetraVector<ST,LO,GO,NT> > tPtr = rcp_dynamic_cast<const Thyra::TpetraVector<ST,LO,GO,NT> >(dOpl->getDiag(),true);
+      RCP<const Tpetra::Vector<ST,LO,GO,NT> > diagPtr = rcp_dynamic_cast<const Tpetra::Vector<ST,LO,GO,NT> >(tPtr->getConstTpetraVector(),true);
+
+      // Scale by the diagonal operator
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::importAndFillCompleteCrsMatrix<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tCrsOpr, Tpetra::Import<LO,GO,NT>(tCrsOpr->getRowMap(),tCrsOpr->getRowMap()));
+      explicitCrsOp->leftScale(*diagPtr);
+      explicitCrsOp->resumeFill();
+      explicitCrsOp->scale(scalarr);
+      explicitCrsOp->fillComplete(tCrsOpr->getDomainMap(),tCrsOpr->getRangeMap());
+      return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);
+
+   } else { // Assume Epetra and we can use transformers
+
+     // build implicit multiply
+     const LinearOp implicitOp = Thyra::multiply(opl,opr);
+ 
+      // build a scaling transformer
+   
+      RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+            = Thyra::epetraExtDiagScalingTransformer();
+
+      // check to see if a scaling transformer works: if not use the 
+      // DiagScaledMatrixProduct transformer
+      if(not prodTrans->isCompatible(*implicitOp))
+          prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
+
+      // build operator destination operator
+      ModifiableLinearOp explicitOp; 
+
+      // if neccessary build a operator to put the explicit multiply into
+      if(destOp==Teuchos::null)
+         explicitOp = prodTrans->createOutputOp();
+      else
+         explicitOp = destOp;
+
+      // perform multiplication
+      prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+      // label it
+      explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
                                      " * " + opr->getObjectLabel() + " )");
 
-   return explicitOp;
+      return explicitOp;
+   }
 }
 
 /** \brief Add two linear operators. 
@@ -924,20 +1486,44 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
   */
 const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::add(opl,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
  
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtAddTransformer();
+   if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix add
 
-   // build operator and multiply
-   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
+
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+
+      // Do explicit matrix-matrix add
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr); 
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
+
+   }else{//Assume Epetra
+     // build implicit add
+     const LinearOp implicitOp = Thyra::add(opl,opr);
+ 
+     // build transformer
+     const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+         Thyra::epetraExtAddTransformer();
+
+     // build operator and add
+     const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+     prodTrans->transform(*implicitOp,explicitOp.ptr());
+     explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
                                      " + " + opr->getObjectLabel() + " )");
 
-   return explicitOp;
+     return explicitOp;
+   }
 }
 
 /** \brief Add two linear operators. 
@@ -955,26 +1541,55 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
 const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
                                      const ModifiableLinearOp & destOp)
 {
-   // build implicit multiply
-   const LinearOp implicitOp = Thyra::add(opl,opr);
+   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
+   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
  
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtAddTransformer();
+   if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix add
 
-   // build or reuse destination operator
-   RCP<Thyra::LinearOpBase<double> > explicitOp;
-   if(destOp!=Teuchos::null)
-      explicitOp = destOp;
-   else
-      explicitOp = prodTrans->createOutputOp();
+      // Get left and right Tpetra crs operators
+      ST scalarl = 0.0;
+      bool transpl = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
+      ST scalarr = 0.0;
+      bool transpr = false;
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
-   // perform multiplication
-   prodTrans->transform(*implicitOp,explicitOp.ptr());
-   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+      // Build output operator
+      RCP<Thyra::LinearOpBase<ST> > explicitOp;
+      if(destOp!=Teuchos::null)
+         explicitOp = destOp;
+      else
+         explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
+      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+
+      // Do explicit matrix-matrix add
+      RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > explicitCrsOp = Tpetra::MatrixMatrix::add<ST,LO,GO,NT>(scalarl,transpl,*tCrsOpl,scalarr,transpr,*tCrsOpr); 
+      tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(explicitCrsOp->getDomainMap()),explicitCrsOp);  
+      return tExplicitOp;
+
+   }else{ // Assume Epetra
+
+     // build implicit add
+     const LinearOp implicitOp = Thyra::add(opl,opr);
+ 
+     // build transformer
+     const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+         Thyra::epetraExtAddTransformer();
+
+     // build or reuse destination operator
+     RCP<Thyra::LinearOpBase<double> > explicitOp;
+     if(destOp!=Teuchos::null)
+        explicitOp = destOp;
+     else
+        explicitOp = prodTrans->createOutputOp();
+
+     // perform add
+     prodTrans->transform(*implicitOp,explicitOp.ptr());
+     explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
                                      " + " + opr->getObjectLabel() + " )");
 
-   return explicitOp;
+     return explicitOp;
+   }
 }
 
 /** \brief Sum an operator

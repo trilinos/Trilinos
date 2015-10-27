@@ -50,6 +50,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
 
+#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+
 using Teuchos::rcp;
 using Teuchos::RCP;
 
@@ -71,7 +74,9 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(LinearOp & l
   if(diagonalType_==BlkDiag) {
      // Sanity check the state
      DiagonalPrecondState & MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
-   
+
+     TEUCHOS_TEST_FOR_EXCEPTION(TpetraHelpers::isTpetraLinearOp(lo),std::runtime_error,"BlkDiag not implemented for Tpetra operators");   
+
      // Get the underlying Epetra_CrsMatrix, if we have one
      Teuchos::RCP<const Epetra_Operator> eo=Thyra::get_Epetra_Operator(*lo);
      TEUCHOS_ASSERT(eo!=Teuchos::null);

@@ -92,7 +92,6 @@ class OrderingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -148,7 +147,7 @@ public:
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  OrderingSolution<zgid_t, lno_t> *getSolution() {
+  OrderingSolution<lno_t, gno_t> *getSolution() {
     // std::cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << std::endl;
     // Compute Perm or InvPerm, if one is missing.
     if (!(solution_->havePerm()))
@@ -161,14 +160,11 @@ public:
 private:
   void createOrderingProblem();
 
-  RCP<OrderingSolution<zgid_t, lno_t> > solution_;
+  RCP<OrderingSolution<lno_t, gno_t> > solution_;
 
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -182,7 +178,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
-      this->solution_ = rcp(new OrderingSolution<zgid_t, lno_t>(nVtx));
+      this->solution_ = rcp(new OrderingSolution<lno_t, gno_t>(nVtx));
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -278,23 +274,6 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  Comm<int> *c = problemComm_.getRawPtr();
-  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
-  if (mc){
-    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
-    mpiComm_ = (*wrappedComm.getRawPtr())();
-  }
-  else{
-    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
-  }
-
-#endif
 
   // Determine which parameters are relevant here.
   // For now, assume parameters similar to Zoltan:

@@ -117,7 +117,7 @@ namespace MueLu {
 
     A_ = Get< RCP<Matrix> >(currentLevel, "A");
 
-    RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
+    RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
     linearProblem_ = rcp( new Epetra_LinearProblem() );
     linearProblem_->SetOperator(epA.get());
 
@@ -139,7 +139,7 @@ namespace MueLu {
 
     int r = prec_->NumericFactorization();
     TEUCHOS_TEST_FOR_EXCEPTION(r != 0, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Amesos solver returns value of " +
-                               Teuchos::Utils::toString(r) + " during NumericFactorization()");
+                               Teuchos::toString(r) + " during NumericFactorization()");
 
     SmootherPrototype::IsSetup(true);
   }
@@ -147,8 +147,8 @@ namespace MueLu {
   void AmesosSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
-    Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
-    Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
+    Epetra_MultiVector &epX = Utilities::MV2NonConstEpetraMV(X);
+    Epetra_MultiVector const &epB = Utilities::MV2EpetraMV(B);
     //Epetra_LinearProblem takes the right-hand side as a non-const pointer.
     //I think this const_cast is safe because Amesos won't modify the rhs.
     Epetra_MultiVector &nonconstB = const_cast<Epetra_MultiVector&>(epB);

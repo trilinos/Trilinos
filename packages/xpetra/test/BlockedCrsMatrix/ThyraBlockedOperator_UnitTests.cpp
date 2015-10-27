@@ -128,6 +128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraVectorSpace2Xpetra
 
   // TPetra version
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT // test only if LO=GO=int active
   {
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::MapFactory<LO,GO,Node>::Build(Xpetra::UseTpetra, 1000, 0, comm);
     TEST_EQUALITY(Teuchos::is_null(map),false);
@@ -146,6 +147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraVectorSpace2Xpetra
     TEST_EQUALITY(xMap->isCompatible(*map),true);
     TEST_EQUALITY(xMap->isSameAs(*map),true);
   }
+#endif
 #endif
 
   // Epetra version
@@ -182,7 +184,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
 
   // TPetra version
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT // only if LO=GO=int enabled
   libs.push_back(Xpetra::UseTpetra);
+#endif
 #endif
 
   // Epetra version
@@ -491,6 +495,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
+// all tests work only for LO=GO=int (and/or Epetra)
+// So, it is sufficient to define only a TEST_GROUP for LO=GO=int
 UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 
 }

@@ -5,6 +5,18 @@
  *      Author: Jonathan Chu
  */
 #include "GameofLifeMesh.hpp"
+#include <stddef.h>                     // for size_t
+#include "stk_io/IossBridge.hpp"        // for put_io_part_attribute
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FEMHelpers.hpp"  // for declare_element
+#include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/GetEntities.hpp"  // for get_entities
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 // Game of Life Mesh
 GameofLifeMesh::GameofLifeMesh(stk::ParallelMachine comm, stk::topology elemType, unsigned spacialDim,

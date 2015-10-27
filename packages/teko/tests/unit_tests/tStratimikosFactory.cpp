@@ -55,8 +55,11 @@
 #endif
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
+#include "MatrixMarket_Tpetra.hpp"
 
 #include "Teko_Utilities.hpp"
 #include "Teko_PreconditionerFactory.hpp"
@@ -65,10 +68,13 @@
 #include "Teko_JacobiPreconditionerFactory.hpp"
 #include "Teko_PreconditionerInverseFactory.hpp"
 #include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_TpetraOperatorWrapper.hpp"
 #include "Teko_StratimikosFactory.hpp"
 #include "Teko_StridedEpetraOperator.hpp"
+#include "Teko_StridedTpetraOperator.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -78,6 +84,11 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #define SS_ECHO(ops) { std::stringstream ss; ss << ops; ECHO(ss.str()) };
+
+typedef Teko::ST ST;
+typedef Teko::LO LO;
+typedef Teko::GO GO;
+typedef Teko::NT NT;
 
 using Teuchos::null;
 using Teuchos::RCP;
@@ -122,6 +133,44 @@ const RCP<Epetra_Operator> buildSystem(const Epetra_Comm & comm,int size)
   mat->FillComplete();
 
   return mat;
+}
+
+const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildSystem(const Teuchos::RCP<const Teuchos::Comm<int> > comm,GO size)
+{
+   RCP<Tpetra::Map<LO,GO,NT> > map = rcp(new Tpetra::Map<LO,GO,NT>(size,0,comm));
+
+   RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,0);
+
+   ST values[] = { -1.0, 2.0, -1.0};
+   GO iTemp[] = {-1,0,1}, indices[3];
+   ST * vPtr;
+   GO * iPtr;
+   for(size_t i=0;i<map->getNodeNumElements();i++) {
+      int count = 3;
+      GO gid = map->getGlobalElement(i);
+
+      vPtr = values;
+      iPtr = indices;
+
+      indices[0] = gid+iTemp[0];
+      indices[1] = gid+iTemp[1];
+      indices[2] = gid+iTemp[2];
+      
+      if(gid==0) {
+         vPtr = &values[1];
+         iPtr = &indices[1];
+         count = 2;
+      }
+      else if(gid==map->getMaxAllGlobalIndex())
+         count = 2;
+
+      mat->insertGlobalValues(gid,Teuchos::ArrayView<GO>(iPtr,count),Teuchos::ArrayView<ST>(vPtr,count));
+   }
+
+   mat->fillComplete();
+
+   return mat;
+   //return Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getDomainMap()),mat);
 }
 
 const RCP<Epetra_Operator> buildStridedSystem(const Epetra_Comm & comm,int size)
@@ -170,6 +219,56 @@ const RCP<Epetra_Operator> buildStridedSystem(const Epetra_Comm & comm,int size)
   mat->FillComplete();
 
   EpetraExt::RowMatrixToMatrixMarketFile("strided.mm",*mat);
+
+  return mat;
+}
+
+const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<Teuchos::Comm<int> > comm,GO size)
+{
+  RCP<Tpetra::Map<LO,GO,NT> >map = rcp(new Tpetra::Map<LO,GO,NT>(2*size,0,comm));
+
+  RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > mat = Tpetra::createCrsMatrix<ST,LO,GO,NT>(map,0);
+
+  int numUnks = 2;
+  ST valuesA[] = { -1.0, 2.0, 7.0, -1.0 };
+  ST valuesB[] = { -1.0, 2.0, 9.0, -1.0 };
+  GO iTempA[] = {-numUnks,0, 1,numUnks}, indices[4];
+  GO iTempB[] = {-numUnks,0,-1,numUnks};
+  ST * vPtr;
+  GO * iPtr;
+
+  for(size_t i=0;i<map->getNodeNumElements()/numUnks;i++) {
+     int count = 4;
+     GO gidA = map->getGlobalElement(2*i);
+     GO gidB = gidA+1;
+
+     for(int n=0;n<numUnks;n++) {
+        GO * iTemp = (n==0) ? iTempA : iTempB;
+        GO gid = (n==0) ? gidA : gidB;
+
+        indices[0] = gid+iTemp[0];
+        indices[1] = gid+iTemp[1];
+        indices[2] = gid+iTemp[2];
+        indices[3] = gid+iTemp[3];
+
+        vPtr = (n==0) ? valuesA : valuesB;
+        iPtr = indices;
+     
+        if(gid<numUnks) {
+           vPtr++;
+           iPtr = &indices[1];
+           count = 3;
+        }
+        else if(gid>map->getMaxAllGlobalIndex()-numUnks)
+           count = 3;
+
+        mat->insertGlobalValues(gid,Teuchos::ArrayView<GO>(iPtr,count),Teuchos::ArrayView<ST>(vPtr,count));
+     }
+  }
+
+  mat->fillComplete();
+
+  Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<ST,LO,GO,NT> >::writeSparseFile("strided.mm",mat);
 
   return mat;
 }

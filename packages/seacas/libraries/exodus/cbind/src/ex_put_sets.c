@@ -70,7 +70,7 @@ int ex_put_sets (int   exoid,
   char* numdfptr = NULL;
   char* factptr = NULL;
 
-  size_t int_size;
+  int int_type;
   
   exerrval = 0; /* clear error code */
 
@@ -207,14 +207,14 @@ int ex_put_sets (int   exoid,
 	goto error_ret;
       }
       
-      int_size = sizeof(int);
+      int_type = NC_INT;
       if (ex_int64_status(exoid) & EX_BULK_INT64_DB) {
-	int_size = sizeof(int64_t);
+	int_type = NC_INT64;
       }
       
       /* create variable array in which to store the entry lists */
       dims[0] = dimid;
-      if ((status = nc_def_var(exoid, entryptr, int_size, 1, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, entryptr, int_type, 1, dims, &varid)) != NC_NOERR) {
 	exerrval = status;
 	if (status == NC_ENAMEINUSE) {
 	  sprintf(errmsg,
@@ -232,7 +232,7 @@ int ex_put_sets (int   exoid,
       ex_compress_variable(exoid, varid, 1);
       
       if (extraptr) {
-	if ((status = nc_def_var(exoid, extraptr, int_size, 1, dims, &varid)) != NC_NOERR) {
+	if ((status = nc_def_var(exoid, extraptr, int_type, 1, dims, &varid)) != NC_NOERR) {
 	  exerrval = status;
 	  if (status == NC_ENAMEINUSE) {
 	    sprintf(errmsg,

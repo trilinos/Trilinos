@@ -29,23 +29,15 @@
 #ifndef __TSQR_Trilinos_TsqrTpetraTest_hpp
 #define __TSQR_Trilinos_TsqrTpetraTest_hpp
 
-#include "Teuchos_Tuple.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_NodeHelpers.hpp"
-#include "Kokkos_DefaultNode.hpp"
-
-#include "Teuchos_Time.hpp"
 #include "AnasaziTpetraAdapter.hpp" // sic (not "-or")
 #include "Tsqr_Random_NormalGenerator.hpp"
-
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Tuple.hpp"
+#include "Teuchos_Time.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Trilinos {

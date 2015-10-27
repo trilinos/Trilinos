@@ -68,7 +68,7 @@ enum MeshEntityType {
   MESH_REGION
 };
 
-  /*!  \brief Enumerate entity topology types for meshes: 
+  /*!  \brief Enumerate entity topology types for meshes:
    *          points,lines,polygons,triangles,quadrilaterals,
    *          polyhedrons, tetrahedrons, hexhedrons, prisms, or pyramids
    */
@@ -99,11 +99,7 @@ enum EntityTopologyType {
     \li \c scalar_t entity and adjacency weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c zgid_t    application global Ids
-    \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
-
-    See IdentifierTraits to understand why the user's global ID type
-    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
+    \li \c node_t   is a Kokkos CPU node
 
     The Kokkos node type can be safely ignored.
 
@@ -133,7 +129,6 @@ public:
   typedef typename InputTraits<User>::scalar_t              scalar_t;
   typedef typename InputTraits<User>::lno_t                 lno_t;
   typedef typename InputTraits<User>::gno_t                 gno_t;
-  typedef typename InputTraits<User>::zgid_t                zgid_t;
   typedef typename InputTraits<User>::part_t                part_t;
   typedef typename InputTraits<User>::node_t                node_t;
   typedef User                                              user_t;
@@ -166,7 +161,7 @@ public:
   {
     return etype==this->getPrimaryEntityType();
   }
-  
+
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
   //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
@@ -181,14 +176,14 @@ public:
        process.
   */
   virtual void getIDsViewOf(MeshEntityType etype,
-                            zgid_t const *&Ids) const = 0;
+                            gno_t const *&Ids) const = 0;
 
 
   /*! \brief Provide a pointer to the entity topology types
       \param Types will on return point to the list of entity topology types
       for this process.
   */
-  virtual void getTopologyViewOf(MeshEntityType etype, 
+  virtual void getTopologyViewOf(MeshEntityType etype,
                                  enum EntityTopologyType const *&Types) const
   {
     Types = NULL;
@@ -277,7 +272,7 @@ public:
          Ids for each entity.
   */
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+     const lno_t *&offsets, const gno_t *& adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -286,7 +281,7 @@ public:
 
 
   /*! \brief Returns whether a second adjacency combination is available.
-   *   If combination is not available in the MeshAdapter, Zoltan2 will 
+   *   If combination is not available in the MeshAdapter, Zoltan2 will
    *   compute them, using A^T A, where A is matrix of first adjacencies.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget,
@@ -295,8 +290,7 @@ public:
     return false;
   }
 
-
-  /*! \brief if avail2ndAdjs(), returns the number of second adjacencies 
+  /*! \brief if avail2ndAdjs(), returns the number of second adjacencies
    *   on this process.
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
@@ -318,7 +312,7 @@ public:
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
-                              const zgid_t *&adjacencyIds) const
+                              const gno_t *&adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -462,7 +456,7 @@ public:
     return getLocalNumOf(getPrimaryEntityType());
   }
 
-  void getIDsView(const zgid_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 

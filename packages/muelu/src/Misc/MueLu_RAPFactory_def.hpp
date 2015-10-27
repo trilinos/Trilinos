@@ -51,6 +51,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -60,7 +61,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+//#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -135,7 +136,7 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-        AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
+        AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
       }
       if (pL.get<bool>("Keep AP Pattern"))
         Set(coarseLevel, "AP Pattern", AP);
@@ -159,13 +160,13 @@ namespace MueLu {
       const bool doFillComplete = true;
       if (pL.get<bool>("transpose: use implicit") == true) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
+        Ac = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-implicit-")+levelstr.str());
 
       } else {
         RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
 
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
+        Ac = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage,std::string("MueLu::R*(AP)-explicit-")+levelstr.str());
       }
 
       CheckRepairMainDiagonal(Ac);
@@ -283,7 +284,7 @@ namespace MueLu {
         if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
         Ac->fillComplete(p);
       }
-      MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
+      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
       if (Ac->IsView("stridedMaps"))
         fixDiagMatrix->CreateView("stridedMaps", Ac);
 

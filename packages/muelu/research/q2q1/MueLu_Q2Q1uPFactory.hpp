@@ -800,8 +800,8 @@ namespace MueLu {
     } else {
       Set(coarseLevel, "CoordinatesVelocity", coarseCoords);
       // FIXME: why does coarse pattern matrix look like?
-      RCP<Matrix> AP  = Utils::Multiply(*AForPat, false, *P, false, GetOStream(Statistics2), true, true);
-      RCP<Matrix> RAP = Utils::Multiply(*P,       true, *AP, false, GetOStream(Statistics2), true, true);
+      RCP<Matrix> AP  = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*AForPat, false, *P, false, GetOStream(Statistics2), true, true);
+      RCP<Matrix> RAP = Xpetra::MatrixMatrix<SC,LO,GO,NO>::Multiply(*P,       true, *AP, false, GetOStream(Statistics2), true, true);
       Set(coarseLevel, "AForPat", RAP);
     }
     Set(coarseLevel, "Nullspace",   coarseNullspace);

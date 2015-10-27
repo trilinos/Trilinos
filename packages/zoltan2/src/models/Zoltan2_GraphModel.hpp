@@ -219,6 +219,19 @@ public:
     return nLocalEdges_;
   }
 
+  /*! \brief Return the vtxDist array 
+   *  Array of size comm->getSize() + 1
+   *  Array[n+1] - Array[n] is number of vertices on rank n
+   */
+  inline void getVertexDist(ArrayView<size_t> &vtxdist) 
+  {
+    vtxdist = vtxDist_();
+    if (vtxDist_.size() == 0) {
+      throw std::runtime_error("getVertexDist is available only "
+                               "when consecutiveIdsRequired");
+    }
+  }
+
   ////////////////////////////////////////////////////
   // The Model interface.
   ////////////////////////////////////////////////////
@@ -276,6 +289,10 @@ private:
                                           // or may differ due to self-edge
                                           // removal, or local graph.
 
+  ArrayRCP<size_t> vtxDist_;              // If consecutiveIdsRequired,
+                                          // vtxDist (as needed by ParMETIS
+                                          // and Scotch) is also created.
+                                          // Otherwise, it is Teuchos::null.
 };
 
 
@@ -302,7 +319,8 @@ GraphModel<Adapter>::GraphModel(
         eGids_(),
         eOffsets_(),
         nWeightsPerEdge_(0),
-        eWeights_()
+        eWeights_(),
+        vtxDist_()
 {
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
@@ -384,7 +402,8 @@ GraphModel<Adapter>::GraphModel(
         eGids_(),
         eOffsets_(),
         nWeightsPerEdge_(0),
-        eWeights_()
+        eWeights_(),
+        vtxDist_()
 {
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
@@ -467,7 +486,8 @@ GraphModel<Adapter>::GraphModel(
         eGids_(),
         eOffsets_(),
         nWeightsPerEdge_(0),
-        eWeights_()
+        eWeights_(),
+        vtxDist_()
 {
   env_->timerStart(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
 
@@ -658,18 +678,17 @@ void GraphModel<Adapter>::shared_constructor(
 
 
     // Determine vertex GIDs for the global GraphModel
-    Teuchos::ArrayRCP<size_t> vtxDist; // TODO keep vtxDist & add to interface?
     if (consecutiveIdsRequired) {
       // Allocate new memory for vertices for consecutiveIds
       vGids_ = arcp(new gno_t[nLocalVertices_], 0, nLocalVertices_, true);
 
-      // Build vtxDist array with starting vGid on each rank
+      // Build vtxDist_ array with starting vGid on each rank
       int np = comm_->getSize();
-      vtxDist = arcp(new size_t[np+1], 0, np+1, true);
-      vtxDist[0] = 0;
-      Teuchos::gatherAll(*comm_, 1, &nLocalVertices_, np, &vtxDist[1]);
+      vtxDist_ = arcp(new size_t[np+1], 0, np+1, true);
+      vtxDist_[0] = 0;
+      Teuchos::gatherAll(*comm_, 1, &nLocalVertices_, np, &vtxDist_[1]);
       for (int i = 0; i < np; i++)
-        vtxDist[i+1] += vtxDist[i];
+        vtxDist_[i+1] += vtxDist_[i];
     }
 
     // Allocate new memory for edges and offsets, as needed
@@ -736,7 +755,7 @@ void GraphModel<Adapter>::shared_constructor(
     for (size_t i = 0; i < nLocalVertices_; i++) {
 
       if (consecutiveIdsRequired)
-        vGids_[i] = vtxDist[me] + i;
+        vGids_[i] = vtxDist_[me] + i;
 
       for (lno_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
 
@@ -753,7 +772,7 @@ void GraphModel<Adapter>::shared_constructor(
           // Renumber edge using local number on remote rank plus first 
           // vtx number for remote rank
           eGids_[ecnt] = edgeRemoteLids[remoteIdx]
-                       + vtxDist[edgeRemoteRanks[remoteIdx]];  
+                       + vtxDist_[edgeRemoteRanks[remoteIdx]];  
         else
           eGids_[ecnt] = adapterEGids[j];
 
@@ -769,11 +788,11 @@ void GraphModel<Adapter>::shared_constructor(
         eOffsets_[i+1] = ecnt;
     }
     nLocalEdges_ = ecnt;
-    if (nWeightsPerEdge_) {
+    if (nWeightsPerEdge_ && (subsetGraph || removeSelfEdges)) {
       for (int w = 0; w < nWeightsPerEdge_; w++) {
         ArrayRCP<const scalar_t> wgtArray(tmpEWeights[w],
-                                          0, adapterNLocalEdges, true);
-        eWeights_[w] = input_t(wgtArray, 0);
+                                          0, nLocalEdges_, true);
+        eWeights_[w] = input_t(wgtArray, 1);
       }
       delete [] tmpEWeights;
     }

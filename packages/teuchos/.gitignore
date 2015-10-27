@@ -1,2 +1,6 @@
+# Ignore generated documentation
 doc/html/
 browser/doc/html/
+
+# Ignore kokkos dir if it is cloned or symlinked under stand-alone Teuchos
+/kokkos

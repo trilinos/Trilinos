@@ -7,10 +7,6 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
     "${ARGS} --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
 ENDIF()
 
-JOIN(allnodes   "|" FALSE ${TpetraCore_ETI_NODES}  )
-TRIBITS_ETI_TYPE_EXPANSION(conversions "SOUT=int" "SIN=double" "LO=int" "GO=int" "N=${allnodes}")
-TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore ${conversions})
-
 #
 # We break up CrsMatrix's unit tests into several files, to reduce
 # compilation time for each file and improve build parallelism.
@@ -162,53 +158,57 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# This test only makes sense for exactly 2 MPI processes.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Bug5978
-  SOURCES
+# FIXME (mfh 26 Sep 2015) Many (if not all) of these tests should not
+# depend on GO = int; they should be able to use the default GO type.
+IF (Tpetra_INST_INT_INT)
+  # This test only makes sense for exactly 2 MPI processes.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_Bug5978
+    SOURCES
     bug5978
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS
-  COMM mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS
+    COMM mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
 
-# First test for Bug 6069.  This test only makes sense for exactly 3
-# MPI processes.  Run under Valgrind for best results.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Bug6069_1
-  SOURCES
+  # First test for Bug 6069.  This test only makes sense for exactly 3
+  # MPI processes.  Run under Valgrind for best results.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_Bug6069_1
+    SOURCES
     Bug6069_1
-  ARGS
-  COMM mpi
-  NUM_MPI_PROCS 3
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS
+    COMM mpi
+    NUM_MPI_PROCS 3
+    STANDARD_PASS_OUTPUT
+    )
 
-# Second test for Bug 6069.  This test only makes sense for exactly 2
-# MPI processes.  Run under Valgrind for best results.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Bug6069_2
-  SOURCES
+  # Second test for Bug 6069.  This test only makes sense for exactly 2
+  # MPI processes.  Run under Valgrind for best results.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_Bug6069_2
+    SOURCES
     Bug6069_2
-  ARGS
-  COMM mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS
+    COMM mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
 
-# Test for Bug 6171.  This test only makes sense for exactly 2 MPI
-# processes.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Bug6171
-  SOURCES
+  # Test for Bug 6171.  This test only makes sense for exactly 2 MPI
+  # processes.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_Bug6171
+    SOURCES
     Bug6171
-  ARGS ""
-  COMM mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS ""
+    COMM mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues

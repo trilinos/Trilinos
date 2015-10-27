@@ -102,6 +102,8 @@
         (Wachieved) / (wExpected) - 1
 
 
+#define ZOLTAN2_ALGMULTIJAGGED_SWAP(a,b,temp) temp=(a);(a)=(b);(b)=temp;
+
 
 namespace Teuchos{
 
@@ -300,7 +302,6 @@ struct uSortItem
 template <class IT, class WT>
 void uqsort(IT n, uSortItem<IT, WT> * arr)
 {
-#define SWAP(a,b,temp) temp=(a);(a)=(b);(b)=temp;
     int NSTACK = 50;
     int M = 7;
     IT         i, ir=n, j, k, l=1;
@@ -333,18 +334,18 @@ void uqsort(IT n, uSortItem<IT, WT> * arr)
         else
         {
             k=(l+ir) >> 1;
-            SWAP(arr[k],arr[l+1], temp)
+            ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[k],arr[l+1], temp)
             if (arr[l+1].val > arr[ir].val)
             {
-                SWAP(arr[l+1],arr[ir],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l+1],arr[ir],temp)
             }
             if (arr[l].val > arr[ir].val)
             {
-                SWAP(arr[l],arr[ir],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l],arr[ir],temp)
             }
             if (arr[l+1].val > arr[l].val)
             {
-                SWAP(arr[l+1],arr[l],temp)
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[l+1],arr[l],temp)
             }
             i=l+1;
             j=ir;
@@ -355,7 +356,7 @@ void uqsort(IT n, uSortItem<IT, WT> * arr)
                 do i++; while (arr[i].val < aval);
                 do j--; while (arr[j].val > aval);
                 if (j < i) break;
-                SWAP(arr[i],arr[j],temp);
+                ZOLTAN2_ALGMULTIJAGGED_SWAP(arr[i],arr[j],temp);
             }
             arr[l]=arr[j];
             arr[j]=a;
@@ -4487,7 +4488,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
         // may overflow.
 
         ZOLTAN_COMM_OBJ *plan = NULL;
-        MPI_Comm mpi_comm = Teuchos2MPI (this->comm);
+        MPI_Comm mpi_comm = Teuchos::getRawMpiComm(*(this->comm));
         int num_incoming_gnos = 0;
         int message_tag = 7859;
 
@@ -5282,7 +5283,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_final_parts(
 
         //if data is migrated, then send part numbers to the original owners.
         ZOLTAN_COMM_OBJ *plan = NULL;
-        MPI_Comm mpi_comm = Teuchos2MPI (this->mj_problemComm);
+        MPI_Comm mpi_comm = Teuchos::getRawMpiComm(*(this->mj_problemComm));
 
         int incoming = 0;
         int message_tag = 7856;
@@ -6076,7 +6077,7 @@ private:
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
-    
+
 
     //when we have strided data, it returns a unstrided data in RCP form.
     //we need to hold on to that data, during the execution of mj, so that the data is not released.
@@ -6117,7 +6118,7 @@ public:
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
     ~Zoltan2_AlgMJ(){
-      if (coordinate_ArrayRCP_holder != NULL){  
+      if (coordinate_ArrayRCP_holder != NULL){
         delete [] this->coordinate_ArrayRCP_holder;
         this->coordinate_ArrayRCP_holder = NULL;
       }
@@ -6220,7 +6221,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     }
 
 #else
-    Teuchos::Hashtable<mj_gno_t, mj_lno_t> 
+    Teuchos::Hashtable<mj_gno_t, mj_lno_t>
                        localGidToLid(this->num_local_coords);
     for (mj_lno_t i = 0; i < this->num_local_coords; i++)
       localGidToLid.put(this->initial_mj_gnos[i], i);

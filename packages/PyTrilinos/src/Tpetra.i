@@ -82,6 +82,7 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
+#include "Teuchos_DefaultComm.hpp"
 
 // Tpetra includes
 #include "Tpetra_ConfigDefs.hpp"
@@ -119,7 +120,8 @@ namespace PyTrilinos
 // Protocol, or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > *
-convertPythonToTpetraMultiVector(PyObject * pyobj)
+convertPythonToTpetraMultiVector(PyObject * pyobj,
+                                 int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TMV_ptr =
@@ -133,15 +135,16 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > smartresult;
   Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Tpetra::MultiVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TMV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TMV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -152,8 +155,8 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -161,6 +164,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -178,10 +182,6 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -190,8 +190,11 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -201,6 +204,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -272,7 +276,8 @@ convertPythonToTpetraMultiVector(PyObject * pyobj)
 // or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
 Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > *
-convertPythonToTpetraVector(PyObject * pyobj)
+convertPythonToTpetraVector(PyObject * pyobj,
+                            int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TV_ptr =
@@ -286,15 +291,16 @@ convertPythonToTpetraVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > smartresult;
   Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Tpetra::Vector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -305,8 +311,8 @@ convertPythonToTpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -314,6 +320,7 @@ convertPythonToTpetraVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -331,10 +338,6 @@ convertPythonToTpetraVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
-    {
-      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
-    }
     return result;
   }
   //
@@ -343,8 +346,11 @@ convertPythonToTpetraVector(PyObject * pyobj)
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -354,6 +360,7 @@ convertPythonToTpetraVector(PyObject * pyobj)
     try
     {
       smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
     {
@@ -914,7 +921,7 @@ protected:
     return PyTrilinos::convertToDistArray(*self);
   }
 }
-// The refactor is making Tpetra::Vector difficult for SWIG to
+// The refactor is making Tpetra::MultiVector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
 namespace Tpetra
 {
@@ -1055,9 +1062,6 @@ public:
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
-  // KokkosClassic::MultiVector<Scalar, Node > getLocalMV() const;
-  // TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, Node>
-  // getLocalMVNonConst();
   // dual_view_type getDualView() const;
   template<class TargetDeviceType>
   void sync();
@@ -1125,12 +1129,12 @@ public:
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
   // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
   // normInf(const Teuchos::ArrayView<T>& norms) const;
-  void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-                    const Teuchos::ArrayView<mag_type>& norms) const;
-  template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-  normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-               const Teuchos::ArrayView<T>& norms) const;
+  // void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //                   const Teuchos::ArrayView<mag_type>& norms) const;
+  // template <typename T>
+  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //              const Teuchos::ArrayView<T>& norms) const;
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
   template <typename T>
   typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<impl_scalar_type, T>::value, void>::type
@@ -1297,7 +1301,7 @@ public:
   mag_type norm2() const;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;
   mag_type normInf() const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
+  // using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
   // mag_type
   // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::meanValue;

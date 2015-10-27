@@ -93,7 +93,6 @@ class MatchingProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
@@ -162,9 +161,6 @@ private:
   RCP<Comm<int> > problemComm_;
   RCP<const Comm<int> > problemCommConst_;
 
-#ifdef HAVE_ZOLTAN2_MPI
-  MPI_Comm mpiComm_;
-#endif
 };
 
 
@@ -235,23 +231,6 @@ void MatchingProblem<Adapter>::createMatchingProblem()
 
   problemComm_ = this->comm_->duplicate();
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // TPLs may want an MPI communicator
-
-  Comm<int> *c = problemComm_.getRawPtr();
-  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
-  if (mc){
-    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
-    mpiComm_ = (*wrappedComm.getRawPtr())();
-  }
-  else{
-    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
-  }
-
-#endif
 
   // Only graph model supported.
   // TODO: Allow hypergraph later?

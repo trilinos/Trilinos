@@ -731,26 +731,77 @@ ENDMACRO()
 
 
 #
-# Override CTEST_SUBMIT to detect failed submissions and track them as
-# queued errors.
+# Override CTEST_SUBMIT to drive multiple submits and to detect failed
+# submissions and track them as queued errors.
 #
 
-MACRO(CTEST_SUBMIT)
+MACRO(TRIBITS_CTEST_SUBMIT)
+
+  # Cache the original CTEST_DROP_SITE and CTEST_DROP_LOCATION
+  IF ("${TRIBITS_CTEST_DROP_SITE_ORIG}" STREQUAL "")
+    SET(TRIBITS_CTEST_DROP_SITE_ORIG ${CTEST_DROP_SITE})
+    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+      PRINT_VAR(TRIBITS_CTEST_DROP_SITE_ORIG)
+    ENDIF()
+  ENDIF()
+  IF ("${TRIBITS_CTEST_DROP_LOCATION_ORIG}" STREQUAL "")
+    SET(TRIBITS_CTEST_DROP_LOCATION_ORIG ${CTEST_DROP_LOCATION})
+    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+      PRINT_VAR(TRIBITS_CTEST_DROP_LOCATION_ORIG)
+    ENDIF()
+  ENDIF()
+
+  # Do the first submit
+  SET(CTEST_DROP_SITE ${TRIBITS_CTEST_DROP_SITE_ORIG})
+  SET(CTEST_DROP_LOCATION ${TRIBITS_CTEST_DROP_LOCATION_ORIG})
+  IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+    PRINT_VAR(CTEST_DROP_SITE)
+    PRINT_VAR(CTEST_DROP_LOCATION)
+  ENDIF()
+
+  TRIBITS_CTEST_SUBMIT_DRIVER(${ARGN})
+
+  # Do the second submit if requested!
+  IF (TRIBITS_2ND_CTEST_DROP_SITE OR TRIBITS_2ND_CTEST_DROP_LOCATION)
+
+    MESSAGE("\nDoing submit to second CDash site ...\n")
+
+    IF (NOT "${TRIBITS_2ND_CTEST_DROP_SITE}" STREQUAL "")
+      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+        PRINT_VAR(TRIBITS_2ND_CTEST_DROP_SITE)
+      ENDIF()
+      SET(CTEST_DROP_SITE ${TRIBITS_2ND_CTEST_DROP_SITE})
+    ENDIF()
+
+    IF (NOT "${TRIBITS_2ND_CTEST_DROP_LOCATION}" STREQUAL "")
+      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+        PRINT_VAR(TRIBITS_2ND_CTEST_DROP_LOCATION)
+      ENDIF()
+      SET(CTEST_DROP_LOCATION ${TRIBITS_2ND_CTEST_DROP_LOCATION})
+    ENDIF()
+
+    TRIBITS_CTEST_SUBMIT_DRIVER(${ARGN})
+
+  ENDIF()
+
+ENDMACRO()
+
+
+MACRO(TRIBITS_CTEST_SUBMIT_DRIVER)
 
   # If using a recent enough ctest with RETRY_COUNT, use it to overcome
   # failed submits:
-  #
   SET(retry_args "")
   SET(retry_args RETRY_COUNT 25 RETRY_DELAY 120)
   MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
 
   # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
-  #
-  _CTEST_SUBMIT(${ARGN} ${retry_args} RETURN_VALUE rv)
+  CTEST_SUBMIT(${ARGN} ${retry_args} RETURN_VALUE rv)
 
   IF(NOT "${rv}" STREQUAL "0")
     QUEUE_ERROR("error: ctest_submit failed: rv='${rv}' ARGN='${ARGN}' retry_args='${retry_args}'")
   ENDIF()
+
 ENDMACRO()
 
 
@@ -1089,6 +1140,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   ENDIF()
   SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES
     ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT})
+
+  # Set second drop site and location
+  SET_DEFAULT_AND_FROM_ENV( TRIBITS_2ND_CTEST_DROP_SITE "" )
+  SET_DEFAULT_AND_FROM_ENV( TRIBITS_2ND_CTEST_DROP_LOCATION "" )
 
   MESSAGE(
     "\n***"
@@ -1449,14 +1504,14 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   IF (UPDATE_FAILED)
     MESSAGE("The VC update failed so submitting update and stopping ...")
     IF (CTEST_DO_SUBMIT)
-      CTEST_SUBMIT( PARTS update notes )
+      TRIBITS_CTEST_SUBMIT( PARTS update notes )
     ENDIF()
     REPORT_QUEUED_ERRORS()
     RETURN()
   ENDIF()
 
   IF (CTEST_DO_SUBMIT AND EXISTS ${CDASH_SUBPROJECT_XML_FILE})
-    CTEST_SUBMIT( FILES ${CDASH_SUBPROJECT_XML_FILE})
+    TRIBITS_CTEST_SUBMIT( FILES ${CDASH_SUBPROJECT_XML_FILE})
     MESSAGE("\nSubmitted subproject dependencies XML file!")
   ELSE()
     MESSAGE("\nSkipping submitted subproject dependencies XML file on request!")
@@ -1592,7 +1647,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # Submit configure results and the notes to the dashboard
       IF (CTEST_DO_SUBMIT)
         MESSAGE("\nSubmitting configure and notes ...")
-        CTEST_SUBMIT( PARTS configure notes )
+        TRIBITS_CTEST_SUBMIT( PARTS configure notes )
       ENDIF()
 
     ENDIF()
@@ -1636,7 +1691,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # Submit the library build results to the dashboard
 
       IF (CTEST_DO_SUBMIT)
-        CTEST_SUBMIT( PARTS build )
+        TRIBITS_CTEST_SUBMIT( PARTS build )
       ENDIF()
 
       # If the build of the libraries passed, then go on the build
@@ -1666,7 +1721,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
         # Submit the build for all target
         IF (CTEST_DO_SUBMIT)
-          CTEST_SUBMIT( PARTS build )
+          TRIBITS_CTEST_SUBMIT( PARTS build )
         ENDIF()
 
         IF (CTEST_DO_TEST)
@@ -1699,7 +1754,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           #  SET(BUILD_OR_TEST_FAILED TRUE)
           #ENDIF()
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT( PARTS Test )
+            TRIBITS_CTEST_SUBMIT( PARTS Test )
           ENDIF()
         ENDIF()
 
@@ -1710,7 +1765,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
             LABELS ${TRIBITS_PACKAGE} ${TRIBITS_PACKAGE}Libs ${TRIBITS_PACKAGE}Exes
             )
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT( PARTS Coverage )
+            TRIBITS_CTEST_SUBMIT( PARTS Coverage )
           ENDIF()
         ENDIF()
 
@@ -1724,7 +1779,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
             PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
             INCLUDE_LABEL "^${TRIBITS_PACKAGE}$")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT( PARTS MemCheck )
+            TRIBITS_CTEST_SUBMIT( PARTS MemCheck )
           ENDIF()
         ENDIF()
 
@@ -1744,7 +1799,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
     IF (CTEST_DO_SUBMIT)
       MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
-      CTEST_SUBMIT( PARTS update )
+      TRIBITS_CTEST_SUBMIT( PARTS update )
     ENDIF()
 
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")

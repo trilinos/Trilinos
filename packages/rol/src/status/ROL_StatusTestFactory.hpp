@@ -51,24 +51,29 @@
 
 #include "ROL_StatusTest.hpp"
 #include "ROL_BundleStatusTest.hpp"
-#include "ROL_StatusTestSQP.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 
 namespace ROL {
   template<class Real>
-  inline Teuchos::RCP<StatusTest<Real> > StatusTestFactory(const std::string step,
-                                                           Teuchos::ParameterList &parlist) {
-    EStep els = StringToEStep(step);
-    switch(els) {
-      case STEP_BUNDLE:              return Teuchos::rcp( new BundleStatusTest<Real>(parlist) );
-      case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new StatusTestSQP<Real>(parlist) );
-      case STEP_COMPOSITESTEPSQP:    return Teuchos::rcp( new StatusTestSQP<Real>(parlist) );
-      case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new StatusTestSQP<Real>(parlist) );
-      case STEP_LINESEARCH:          return Teuchos::rcp( new StatusTest<Real>(parlist) );
-      case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new StatusTest<Real>(parlist) );
-      case STEP_TRUSTREGION:         return Teuchos::rcp( new StatusTest<Real>(parlist) );
-      default:                       return Teuchos::null;
-    } 
-  }
+  class StatusTestFactory {
+    public:
+    ~StatusTestFactory(void){}
+
+    Teuchos::RCP<StatusTest<Real> > getStatusTest(const std::string step,
+                                                  Teuchos::ParameterList &parlist) {
+      EStep els = StringToEStep(step);
+      switch(els) {
+        case STEP_BUNDLE:              return Teuchos::rcp( new BundleStatusTest<Real>(parlist) );
+        case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
+        case STEP_COMPOSITESTEP:       return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
+        case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
+        case STEP_LINESEARCH:          return Teuchos::rcp( new StatusTest<Real>(parlist) );
+        case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new StatusTest<Real>(parlist) );
+        case STEP_TRUSTREGION:         return Teuchos::rcp( new StatusTest<Real>(parlist) );
+        default:                       return Teuchos::null;
+      } 
+    }
+  };
 }
 
 #endif

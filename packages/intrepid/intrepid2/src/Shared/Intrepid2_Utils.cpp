@@ -239,7 +239,7 @@ int getDkEnumeration(const int xMult,
     
 #ifdef HAVE_INTREPID_DEBUG
     // We are in 1D: verify input - xMult is non-negative  and total order <= 10:
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= xMult) && (xMult <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= xMult) && (xMult <= INTREPID2_MAX_DERIVATIVE) ), std::out_of_range,
                         ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
     
@@ -252,7 +252,7 @@ int getDkEnumeration(const int xMult,
 #ifdef HAVE_INTREPID_DEBUG
       // We are in 2D: verify input - xMult and yMult are non-negative and total order <= 10:
       TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= xMult) && (0 <= yMult) && 
-                             ( (xMult + yMult) <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
+                             ( (xMult + yMult) <= INTREPID2_MAX_DERIVATIVE) ), std::out_of_range,
                           ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
       
@@ -267,7 +267,7 @@ int getDkEnumeration(const int xMult,
 #ifdef HAVE_INTREPID_DEBUG
       // Verify input:  total order cannot exceed 10:
       TEUCHOS_TEST_FOR_EXCEPTION(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) && 
-                              (order <= INTREPID_MAX_DERIVATIVE) ), std::out_of_range,
+                              (order <= INTREPID2_MAX_DERIVATIVE) ), std::out_of_range,
                            ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
       int enumeration = zMult;

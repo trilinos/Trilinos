@@ -118,6 +118,7 @@ LOCA.Epetra.Interface supports the following classes:
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "PyTrilinos_LinearProblem.hpp"
 
 // NOX include
 #include "NOX_Epetra_Interface_Required.H"

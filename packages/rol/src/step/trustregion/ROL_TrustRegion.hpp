@@ -191,8 +191,8 @@ public:
     }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed  -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
-    pRed_ -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed  -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    pRed_ -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = 1.0; 

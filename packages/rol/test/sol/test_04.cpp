@@ -155,10 +155,15 @@ int main(int argc, char* argv[]) {
       obj->checkHessVec(x,y,true);
     }
 
+    // Get ROL parameterlist
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+
     Teuchos::RCP<ROL::BatchManager<double> > bman =
       Teuchos::rcp(new ROL::BatchManager<double>());
     Teuchos::RCP<ROL::SampleGenerator<double> > sampler =
-      Teuchos::rcp(new ROL::SROMGenerator<double>(bman,obj,bnd,xptr,dimension,nSamp));
+      Teuchos::rcp(new ROL::SROMGenerator<double>(*parlist,bman,obj,bnd,xptr,dimension,nSamp));
 
     double val = 0., error = 0.;
     *outStream << std::endl;

@@ -659,16 +659,11 @@ private:
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
 
-#if defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
-  //! Raw pointer to the graph's array of row offsets.
-  const size_t* ptr_;
-#else
   /// \brief The graph's array of row offsets.
   ///
   /// FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
   /// mat-vec, we won't need a host version of this.
   typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptr_;
-#endif
 
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
@@ -1021,7 +1016,7 @@ public:
   /// This method computes and returns the Frobenius norm of the
   /// matrix.  The Frobenius norm \f$\|A\|_F\f$ for the matrix
   /// \f$A\f$ is defined as
-  /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
+  /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |A(i,j)|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
   virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type

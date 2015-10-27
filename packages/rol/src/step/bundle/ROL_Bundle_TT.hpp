@@ -83,6 +83,8 @@ private:
 public:
   Bundle_TT (const unsigned maxSize = 10, const Real coeff = 0.0, const unsigned remSize = 2) 
     : Bundle<Real>(maxSize,coeff,remSize), maxSize_(maxSize) {
+    INF = std::numeric_limits<double>::max();
+    maxind = std::numeric_limits<int>::max();
     Id.reshape(maxSize_,maxSize_);
     for(unsigned i=0;i<maxSize_;i++)
       Id(i,i) = 1.0;
@@ -93,12 +95,12 @@ public:
   }
 
 /***********************************************************************************************/
-/***************** DUAL CUTTUING PLANE SUBPROBLEM ROUTINES *************************************/
+/****************** DUAL CUTTING PLANE SUBPROBLEM ROUTINES *************************************/
 /***********************************************************************************************/
 private:
   int QPStatus_;
-  Real INF = DBL_MAX;
-  int maxind = INT_MAX;
+  Real INF;
+  int maxind;
   int entering_; // index of entering item
   std::vector<int> taboo_; // list of "taboo" items
   bool optimal_; // flag for optimality of restricted solution

@@ -42,6 +42,9 @@
 */
 
 #include <Tpetra_ConfigDefs.hpp>
+
+#ifdef HAVE_TPETRA_INST_INT_INT
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
@@ -117,4 +120,4 @@ TEUCHOS_UNIT_TEST( Map, ProblematicLookup )
   TEST_COMPARE_ARRAYS( nodeIDs(), tuple<int>(-1) );
 }
 
-
+#endif // HAVE_TPETRA_INST_INT_INT

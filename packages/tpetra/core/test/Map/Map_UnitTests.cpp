@@ -44,10 +44,9 @@
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
 #include <Tpetra_Map.hpp>
-#include <Teuchos_TypeTraits.hpp> // Teuchos::TypeTraits::is_same<T1,T2>::value
+#include <Tpetra_TestingUtilities.hpp>
+#include <type_traits> // std::is_same
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
@@ -499,11 +498,13 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, NodeConversion, LO, GO, N2 )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Map, NodeConversion, N2 )
   {
-    typedef Tpetra::Details::DefaultTypes::node_type N1;
-    typedef Map<LO,GO,N1> Map1;
-    typedef Map<LO,GO,N2> Map2;
+    typedef Map<>::local_ordinal_type LO;
+    typedef Map<>::global_ordinal_type GO;
+    typedef Map<>::node_type N1; // default Node type
+    typedef Map<LO, GO, N1> Map1;
+    typedef Map<LO, GO, N2> Map2;
 
     out << "Test: Map, NodeConversion" << std::endl;
     Teuchos::OSTab tab0 (out);
@@ -519,13 +520,13 @@ namespace {
     RCP<N2> n2 = getNode<N2>();
 
     // create a contiguous uniform distributed map with numLocal entries per node
-    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
-    RCP<const Map2> map2 = map1->clone(n2);
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
+    RCP<const Map2> map2 = map1->clone (n2);
     TEST_EQUALITY( map2->getNode(), n2 );
-    RCP<const Map1> map1b = map2->clone(n1);
+    RCP<const Map1> map1b = map2->clone (n1);
     TEST_EQUALITY( map1b->getNode(), n1 );
-    TEST_EQUALITY_CONST( map1->isCompatible(*map1b), true );
-    TEST_EQUALITY_CONST( map1->isSameAs(*map1b), true );
+    TEST_ASSERT( map1->isCompatible (*map1b) );
+    TEST_ASSERT( map1->isSameAs (*map1b) );
   }
 
   ////
@@ -578,7 +579,7 @@ namespace {
     // the is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
     const bool defaultLocalOrdinalIsInt =
-      Teuchos::TypeTraits::is_same<local_ordinal_type, int>::value;
+      std::is_same<local_ordinal_type, int>::value;
     TEST_ASSERT( defaultLocalOrdinalIsInt );
 
     // Verify that the default GlobalOrdinal type has size no less
@@ -613,8 +614,8 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ZeroLocalElements, LO, GO )
 #endif // HAVE_TPETRA_DEBUG
 
-#define NC_TESTS(N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, NodeConversion, int, int, N )
+#define NC_TESTS(NT) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Map, NodeConversion, NT )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
       int nIts = 9;
       H.Iterate(*B, *X, nIts);
 
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A1, *X, *B)[0];
+      ST::magnitudeType residualNorms = Utilities::ResidualNorm(*A1, *X, *B)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
       int nIts = 9;
       H.Iterate(*B, *X, nIts);
 
-      ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
+      ST::magnitudeType residualNorms = Utilities::ResidualNorm(*A2, *X, *B)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }

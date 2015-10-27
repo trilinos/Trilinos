@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
     params.set("refmaxwell: 11list",params11);
     params.set("refmaxwell: 22list",params22);
     // construct preconditioner
-    RCP<RefMaxwell> preconditioner
-      = rcp( new RefMaxwell(SM_Matrix,D0_Matrix,M0inv_Matrix,
+    RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
+      = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
             M1_Matrix,Teuchos::null,coords,params) );
 
     // setup LHS, RHS

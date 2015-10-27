@@ -39,20 +39,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 IF (${PROJECT_NAME}_ENABLE_Epetra)
-  IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES)
-  # Tpetra bug 5430:
-  # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430
-  #
-  # The bug only manifests with 4 MPI processes.  The test currently
-  # requires Epetra; it compares Epetra and Tpetra results.
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ImportBug5430
-    SOURCES
+  IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES AND Tpetra_INST_INT_INT)
+    # Tpetra bug 5430:
+    # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430
+    #
+    # The bug only manifests with 4 MPI processes.  The test currently
+    # requires Epetra; it compares Epetra and Tpetra results.
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      ImportBug5430
+      SOURCES
       ImportBug5430Test.cpp
-    COMM mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 4
-    )
+      COMM mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 4
+      )
   ENDIF ()
 ENDIF ()
 

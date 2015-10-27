@@ -114,6 +114,7 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
     return elem_side_comm;
 }
 
+/*
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
@@ -129,7 +130,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         stk::mesh::Entity elem = iter->first.entity;
         unsigned side_index    = iter->first.side_id;
         int sharing_proc       = iter->second.proc;
-        LocalId element_id     = bulkData.identifier(elem);
+        stk::mesh::EntityId element_id     = bulkData.identifier(elem);
         stk::mesh::EntityId suggested_side_id = suggested_side_ids[counter];
         ++counter;
         iter->second.side_id = suggested_side_id;
@@ -148,7 +149,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
             side_node_entity_keys[i] = bulkData.entity_key(side_nodes[i]);
         }
 
-        comm.send_buffer(sharing_proc).pack<LocalId>(element_id);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(element_id);
         comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
@@ -167,7 +168,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
     }
     return counter;
 }
-
+*/
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
 {
@@ -358,7 +359,8 @@ stk::mesh::Part* get_sides_created_during_death_part(const stk::mesh::MetaData &
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData)
 {
     stk::mesh::EntityRank side_rank = metaData.side_rank();
-    metaData.declare_part("sides_created_during_death", side_rank, true);
+    const bool forceNoInduce = true;
+    metaData.declare_part("sides_created_during_death", side_rank, forceNoInduce);
 }
 
 void add_parts_from_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::PartVector& side_parts)
@@ -493,70 +495,84 @@ stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, cons
     return side_global_id;
 }
 
-void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
+void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
+{
+    const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
+    stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
+            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
+    // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
+    // means the normals oppose
+    bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first != sideOrdinal);
+
+    if (does_local_shell_side_normal_oppose_other_element_side_normal)
+    {
+        filteredConnectedElements.push_back(connectedElem);
+    }
+}
+
+void add_shell_connections_to_this_solid_if_normals_oppose(const stk::mesh::BulkData& mesh, const stk::mesh::Entity localElement, const unsigned sideOrdinal, ConnectedElementDataVector& connectedElementData)
+{
+    ConnectedElementDataVector filteredConnectedElements;
+
+    stk::topology localElemTopology = mesh.bucket(localElement).topology();
+    stk::topology localSideTopology = localElemTopology.side_topology(sideOrdinal);
+    bool foundAnySingleElementThatIsEquivalentToLocalElement = false;
+    const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
+    stk::mesh::EntityVector localElemSideNodes;
+    localElemSideNodes.resize(localSideTopology.num_nodes());
+    localElemTopology.side_nodes(localElemNodes, sideOrdinal, localElemSideNodes.begin());
+    
+    for (const ConnectedElementData & connectedElem: connectedElementData)
+    {
+        std::pair<bool,unsigned> result = localSideTopology.equivalent(localElemSideNodes, connectedElem.m_sideNodes);
+        const bool isEquivalentNodes = result.first;
+        foundAnySingleElementThatIsEquivalentToLocalElement = foundAnySingleElementThatIsEquivalentToLocalElement || isEquivalentNodes;
+    
+        if (connectedElem.m_elementTopology.is_shell() && isEquivalentNodes)
+        {
+            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), connectedElem.m_sideNodes);
+            bool localNegativeRelativeFacePolarity = !localSideTopology.is_positive_polarity(localElemOrdAndPerm.second);
+    
+            if (localNegativeRelativeFacePolarity)
+            {
+                filteredConnectedElements.push_back(connectedElem);
+            }
+        }
+    }
+    
+    if (!filteredConnectedElements.empty()) 
+    {
+        connectedElementData.swap(filteredConnectedElements);
+    }
+
+    if (!foundAnySingleElementThatIsEquivalentToLocalElement)
+    {
+        connectedElementData.clear();
+    }
+}
+
+void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
                                               const stk::mesh::Entity localElement,
                                               const unsigned sideOrdinal,
                                               ConnectedElementDataVector & connectedElementData)
 {
-    ConnectedElementDataVector filteredConnectedElements;
     stk::topology localElemTopology = mesh.bucket(localElement).topology();
-    stk::topology localFaceTopology = localElemTopology.face_topology(sideOrdinal);
-    bool foundEquivalent = false;
-    const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
-    stk::mesh::EntityVector localElemSideNodes;
 
-    if (localElemTopology.is_shell()) {
-        // Make sure we only try to connect to volume elements on the designated
-        // side of the shell currently being processed, since elements on
-        // both sides share all of the same shell nodes.  Match with volume element
-        // sides that have opposite polarity only and ignore coincident shells.
-        //
-        for (const ConnectedElementData & connectedElem: connectedElementData) {
-            stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), connectedElem.m_sideNodes);
-            bool localNegativeRelativeFacePolarity = (localElemOrdAndPerm.first != sideOrdinal);
-
-            if (!connectedElem.m_elementTopology.is_shell() && localNegativeRelativeFacePolarity) {
-                filteredConnectedElements.push_back(connectedElem);
-            }
+    if (localElemTopology.is_shell())
+    {
+        ConnectedElementDataVector filteredConnectedElements;
+        for (const ConnectedElementData & connectedElem: connectedElementData)
+        {
+            if(mesh.identifier(localElement) == connectedElem.m_elementIdentifier) continue;
+            ThrowRequireMsg(!connectedElem.m_elementTopology.is_shell(), "Coinicident shells not supported in graph(" << mesh.identifier(localElement) << ", "
+                    << connectedElem.m_elementIdentifier << "). Contact sierra-help@sandia.gov for support.");
+            add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
         }
         connectedElementData.swap(filteredConnectedElements);
     }
-    else {
-        // The element being processed is not a shell, so we need to check
-        // the list of connected elements to see if any adjacent shells
-        // exist, because they will "block" direct connections to volume
-        // elements that also share the same side nodes.
-        //
-        for (const ConnectedElementData & connectedElem: connectedElementData) {
-            localElemSideNodes.resize(connectedElem.m_sideNodes.size());
-            localElemTopology.side_nodes(localElemNodes, sideOrdinal, localElemSideNodes.begin());
-
-            std::pair<bool,unsigned> result = localFaceTopology.equivalent(localElemSideNodes, connectedElem.m_sideNodes);
-            const bool isEquivalentNodes = result.first;
-            foundEquivalent = foundEquivalent || isEquivalentNodes;
-
-            if (connectedElem.m_elementTopology.is_shell() && isEquivalentNodes) {
-                stk::mesh::OrdinalAndPermutation localElemOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), connectedElem.m_sideNodes);
-                bool localNegativeRelativeFacePolarity = !localFaceTopology.is_positive_polarity(localElemOrdAndPerm.second);
-
-                if (localNegativeRelativeFacePolarity) {
-                    filteredConnectedElements.push_back(connectedElem);
-                }
-            }
-        }
-
-        if (!filteredConnectedElements.empty()) {
-            // Found some shells, so ignore everything else and just connect to
-            // these shells.  Otherwise, leave the original list of connected
-            // elements intact.
-            //
-            connectedElementData.swap(filteredConnectedElements);
-        }
-
-        if (!foundEquivalent) {
-            // Nothing matches at all, so flush the list of candidate elements
-            connectedElementData.clear();
-        }
+    else
+    {
+        add_shell_connections_to_this_solid_if_normals_oppose(mesh, localElement, sideOrdinal, connectedElementData);
     }
 }
 
@@ -574,6 +590,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int sharing_proc       = iter->m_procId;
         stk::mesh::EntityId chosenId = iter->m_chosenSideId;
         const bool isInPart = iter->m_isInPart;
+        const bool isAir    = iter->m_isInAir;
 
         size_t numNodes= iter->m_sharedNodes.size();
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
@@ -587,6 +604,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
         comm.send_buffer(sharing_proc).pack<bool>(isInPart);
+        comm.send_buffer(sharing_proc).pack<bool>(isAir);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)

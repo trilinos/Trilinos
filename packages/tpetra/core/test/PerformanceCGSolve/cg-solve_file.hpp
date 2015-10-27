@@ -44,28 +44,27 @@
 #ifndef CG_SOLVE_FILE_HPP
 #define CG_SOLVE_FILE_HPP
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Kokkos_ConfigDefs.hpp"
-
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_XMLPerfTestArchive.hpp>
-#include <Teuchos_Array.hpp>
-
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include <TpetraUtils_MatrixGenerator.hpp>
-#include <MatrixMarket_Tpetra.hpp>
+#include "Tpetra_Version.hpp"
+
+#include "TpetraUtils_MatrixGenerator.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_XMLPerfTestArchive.hpp"
+#include "Teuchos_Array.hpp"
+
+#include <impl/Kokkos_Timer.hpp>
+
 #include <algorithm>
 #include <functional>
 
-
-#include <impl/Kokkos_Timer.hpp>
 
 struct result_struct {
   double addtime,dottime,matvectime,final_residual;

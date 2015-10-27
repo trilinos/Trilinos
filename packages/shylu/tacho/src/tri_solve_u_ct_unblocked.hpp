@@ -12,8 +12,7 @@ namespace Tacho {
   using namespace std;
 
   template<>
-  template<typename ParallelForType,
-           typename CrsExecViewTypeA,
+  template<typename CrsExecViewTypeA,
            typename DenseExecViewTypeB>
   KOKKOS_INLINE_FUNCTION
   int
@@ -24,8 +23,7 @@ namespace Tacho {
            CrsExecViewTypeA &A,
            DenseExecViewTypeB &B) {
     return Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,AlgoTrsm::ForTriSolveBlocked>
-      ::invoke<ParallelForType>(policy, member, 
-                                diagA, 1.0, A, B);
+      ::invoke(policy, member, diagA, 1.0, A, B);
   }
 
 }

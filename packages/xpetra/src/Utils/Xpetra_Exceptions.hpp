@@ -75,6 +75,8 @@
 
 #define XPETRA_FACTORY_END TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
 
+#define XPETRA_TPETRA_ETI_EXCEPTION(cl,obj,go) TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Problem in " #cl "! Cannot create new object " #obj " with GO=" #go ". Xpetra has been compiled with Tpetra enabled bug GO!=" #go ". Please add TPETRA_INST_INT_INT to your configuration.");
+
 namespace Xpetra {
   namespace Exceptions {
 
@@ -100,6 +102,13 @@ namespace Xpetra {
     public:
       RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
+
+    //! Exception throws to report incompatible objects (like maps).
+    class Incompatible : public Teuchos::ExceptionBase {
+    public:
+      Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+    };
+
 
   }
 }

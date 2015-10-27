@@ -146,8 +146,8 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
   double                                   reltol = 1.0e+01 * INTREPID_TOL;
-  testInt.assign(INTREPID_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
-  analyticInt.assign(INTREPID_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
+  testInt.assign(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
+  analyticInt.assign(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
 
   // open file with analytic values
   std::string basedir = "./data";
@@ -162,7 +162,7 @@ Kokkos::initialize();
   // compute and compare integrals
   try {
     // compute integrals
-    for (int cubDeg=0; cubDeg <= INTREPID_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
+    for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
       testInt[cubDeg].resize(cubDeg+1);
       for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
         testInt[cubDeg][polyDeg] = computeIntegral(cubDeg, polyDeg);
@@ -175,7 +175,7 @@ Kokkos::initialize();
       filecompare.close();
     }
     // perform comparison
-    for (int cubDeg=0; cubDeg <= INTREPID_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
+    for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
       for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
         double abstol = ( analyticInt[polyDeg][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyDeg][0]) );
         double absdiff = std::fabs(analyticInt[polyDeg][0] - testInt[cubDeg][polyDeg]);

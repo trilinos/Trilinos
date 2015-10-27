@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,17 +39,17 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Matrix_t_h)
-#define Intrepid_MiniTensor_Matrix_t_h
+#if !defined(Intrepid2_MiniTensor_Matrix_t_h)
+#define Intrepid2_MiniTensor_Matrix_t_h
 
 namespace Intrepid2 {
 
 //
 // Matrix input
 //
-template<typename T, Index M, Index N>
+template<typename T, Index M, Index N,  typename ES>
 std::istream &
-operator>>(std::istream & is, Matrix<T, M, N> & A)
+operator>>(std::istream & is, Matrix<T, M, N, ES> & A)
 {
   Index const
   num_rows = A.get_num_rows();
@@ -69,9 +69,9 @@ operator>>(std::istream & is, Matrix<T, M, N> & A)
 //
 // Matrix output
 //
-template<typename T, Index M, Index N>
+template<typename T, Index M, Index N,  typename ES>
 std::ostream &
-operator<<(std::ostream & os, Matrix<T, M, N> const & A)
+operator<<(std::ostream & os, Matrix<T, M, N, ES> const & A)
 {
   Index const
   num_rows = A.get_num_rows();
@@ -86,11 +86,11 @@ operator<<(std::ostream & os, Matrix<T, M, N> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < num_rows; ++i) {
 
-    os << A(i,0);
+    os << std::setw(24) << A(i,0);
 
     for (Index j = 1; j < num_cols; ++j) {
       os << "," << std::setw(24) << A(i,j);
@@ -102,6 +102,6 @@ operator<<(std::ostream & os, Matrix<T, M, N> const & A)
   return os;
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Matrix_t_h
+#endif // Intrepid2_MiniTensor_Matrix_t_h

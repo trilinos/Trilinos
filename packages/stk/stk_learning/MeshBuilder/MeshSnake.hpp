@@ -1,10 +1,11 @@
 #ifndef _MESHSNAKE_HPP_
 #define _MESHSNAKE_HPP_
 
-#include "MeshBuilder.hpp"
-#include "CoordinateSets.hpp"
+#include <stdlib.h>                     // for rand
+class HexMeshBuilder;
+class MeshBuilder;
+class QuadMeshBuilder;
 
-#include <ctime>
 
 enum direction
 {

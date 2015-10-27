@@ -65,7 +65,7 @@ PANZER_EVALUATOR_CLASS(Product)
   
   double scaling;
   PHX::MDField<ScalarT> product;
-  std::vector< PHX::MDField<ScalarT> > values;
+  std::vector< PHX::MDField<const ScalarT> > values;
 
 PANZER_EVALUATOR_CLASS_END
 

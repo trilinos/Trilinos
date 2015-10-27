@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Vector_t_h)
-#define Intrepid_MiniTensor_Vector_t_h
+#if !defined(Intrepid2_MiniTensor_Vector_t_h)
+#define Intrepid2_MiniTensor_Vector_t_h
 
 namespace Intrepid2 {
 
@@ -50,9 +50,9 @@ namespace Intrepid2 {
 // \param is input stream
 // \return is input stream
 //
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 std::istream &
-operator>>(std::istream & is, Vector<T, N> & u)
+operator>>(std::istream & is, Vector<T, N, ES> & u)
 {
   Index const
   dimension = u.get_dimension();
@@ -70,9 +70,9 @@ operator>>(std::istream & is, Vector<T, N> & u)
 // \param os output stream
 // \return os output stream
 //
-template<typename T, Index N>
+template<typename T, Index N,  typename ES>
 std::ostream &
-operator<<(std::ostream & os, Vector<T, N> const & u)
+operator<<(std::ostream & os, Vector<T, N, ES> const & u)
 {
   Index const
   dimension = u.get_dimension();
@@ -81,9 +81,9 @@ operator<<(std::ostream & os, Vector<T, N> const & u)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
-  os << u(0);
+  os << std::setw(24) << u(0);
 
   for (Index i = 1; i < dimension; ++i) {
     os << "," << std::setw(24) << u(i);
@@ -92,6 +92,6 @@ operator<<(std::ostream & os, Vector<T, N> const & u)
   return os;
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Vector_t_h
+#endif // Intrepid2_MiniTensor_Vector_t_h

@@ -46,19 +46,19 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_COMPOSITE_TET_HPP
-#define INTREPID_CUBATURE_COMPOSITE_TET_HPP
+#ifndef INTREPID2_CUBATURE_COMPOSITE_TET_HPP
+#define INTREPID2_CUBATURE_COMPOSITE_TET_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
 #include "Teuchos_Assert.hpp"
 
-/** \def   INTREPID_CUBATURE_COMPOSITE_TET_MAX
+/** \def   INTREPID2_CUBATURE_COMPOSITE_TET_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct tetrahedron rule of the default type.
 */
 
-#define INTREPID_CUBATURE_COMPOSITE_TET_MAX 20
+#define INTREPID2_CUBATURE_COMPOSITE_TET_MAX 20
 
 
 namespace Intrepid2 {
@@ -69,12 +69,12 @@ namespace Intrepid2 {
 template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
 class CubatureCompositeTet : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
   public:
-  enum {INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM = INTREPID_CUBATURE_COMPOSITE_TET_MAX};
+  enum {INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM = INTREPID2_CUBATURE_COMPOSITE_TET_MAX};
   private:
 
   /** \brief Complete set of data defining default cubature rules for the composite tetrahedron.
   */
-  static const CubatureTemplate cubature_data_[INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM+1];
+  static const CubatureTemplate cubature_data_[INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM+1];
 
   /** \brief Names of templates for frequently used direct cubature rules.
   */
@@ -106,12 +106,12 @@ class CubatureCompositeTet : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,
 
   /** \brief Exposes cubature data, accessible without construction.
   */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM+1];
+  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM+1];
 
 }; // end class CubatureDirect 
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_COMPOSITE_TET_MAX_ENUM+1] {
+inline const CubatureTemplate (& CubatureCompositeTet<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID2_CUBATURE_COMPOSITE_TET_MAX_ENUM+1] {
   return cubature_data_;
 }
 

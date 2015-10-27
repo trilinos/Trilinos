@@ -1,5 +1,5 @@
-#ifndef INTREPID_HGRAD_TET_CN_FEM_ORTHDEF_HPP
-#define INTREPID_HGRAD_TET_CN_FEM_ORTHDEF_HPP
+#ifndef INTREPID2_HGRAD_TET_CN_FEM_ORTHDEF_HPP
+#define INTREPID2_HGRAD_TET_CN_FEM_ORTHDEF_HPP
 // @HEADER
 // ************************************************************************
 //

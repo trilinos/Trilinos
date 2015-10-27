@@ -94,6 +94,7 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
@@ -197,6 +198,15 @@ namespace MueLu {
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
+  if (!useKokkos) varName = rcp(new oldFactory()); \
+  else            varName = rcp(new newFactory());
+#endif
+
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
+  varName = rcp(new oldFactory());
+#else
+#define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
   if (!useKokkos) varName = rcp(new oldFactory()); \
   else            varName = rcp(new newFactory());
 #endif
@@ -612,7 +622,7 @@ namespace MueLu {
       throw std::runtime_error("Cannot use MATLAB evolutionary strength-of-connection - MueLu was not configured with MATLAB support.");
 #endif
     } else {
-      dropFactory = rcp(new CoalesceDropFactory());
+      MUELU_KOKKOS_FACTORY_NO_DECL(dropFactory, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       ParameterList dropParams;
       dropParams.set("lightweight wrap", true);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
@@ -620,7 +630,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
       dropFactory->SetParameterList(dropParams);
     }
-    manager.SetFactory("Graph",       dropFactory);
+    manager.SetFactory("Graph", dropFactory);
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);

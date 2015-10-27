@@ -65,14 +65,14 @@ using Teuchos::rcpFromRef;
 using Teuchos::toString;
 using Teuchos::tuple;
 
-
-RCP<Tpetra::Vector<int,int> >
-TestTpetra (const ArrayView<const int>& srcGID,
-            const ArrayView<const int>& destGID)
+RCP<Tpetra::Vector<int> >
+TestTpetra (const Teuchos::ArrayView<const Tpetra::Map<>::global_ordinal_type>& srcGID,
+            const Teuchos::ArrayView<const Tpetra::Map<>::global_ordinal_type>& destGID)
 {
-  using Tpetra::createNonContigMap;
-  using std::endl;
   typedef Tpetra::Map<int> map_type;
+  typedef map_type::global_ordinal_type GO;
+  typedef Tpetra::global_size_t GST;
+  using std::endl;
 
   RCP<FancyOStream> perr = getFancyOStream (rcpFromRef (std::cerr));
   FancyOStream& err = *perr;
@@ -86,14 +86,16 @@ TestTpetra (const ArrayView<const int>& srcGID,
     err << os.str ();
   }
 
-  RCP<const map_type> srcMap = createNonContigMap<int> (srcGID (), comm);
+  const GO indexBase = 0;
+  const GST INV = Teuchos::OrdinalTraits<GST>::invalid ();
+  RCP<const map_type> srcMap (new map_type (INV, srcGID (), indexBase, comm));
   {
     std::ostringstream os;
     os << "Proc " << myRank << ": created srcMap" << endl;
     err << os.str ();
   }
 
-  RCP<const map_type> destMap = createNonContigMap<int> (destGID (), comm);
+  RCP<const map_type> destMap (new map_type (INV, destGID (), indexBase, comm));
   {
     std::ostringstream os;
     os << "Proc " << myRank << ": created destMap" << endl;
@@ -101,7 +103,7 @@ TestTpetra (const ArrayView<const int>& srcGID,
   }
 
   Tpetra::Vector<int> srcVector (srcMap);
-  RCP<Tpetra::Vector<int> > destVector = Tpetra::createVector<int> (destMap);
+  RCP<Tpetra::Vector<int> > destVector (new Tpetra::Vector<int> (destMap));
   {
     std::ostringstream os;
     os << "Proc " << myRank << ": created vectors" << endl;
@@ -109,7 +111,7 @@ TestTpetra (const ArrayView<const int>& srcGID,
   }
   destVector->putScalar (-1);
 
-  Tpetra::Import<int> importer (srcMap, destMap);
+  Tpetra::Import<> importer (srcMap, destMap);
   {
     std::ostringstream os;
     os << "Proc " << myRank << ": created Import" << endl;
@@ -131,6 +133,8 @@ TestTpetra (const ArrayView<const int>& srcGID,
 
 TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
 {
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
   Teuchos::oblackholestream blackhole;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
@@ -153,13 +157,13 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
   // ----------------
   // destVector Processor 0: Values = [ 0 0 0 0 0 0 0 -1 -1 ]
   //            Processor 1: Values =               [ -1 -1 0 0 0 0 0 0 0 ]
-  RCP<Tpetra::Vector<int,int> > destVector;
+  RCP<Tpetra::Vector<int> > destVector;
   if (MyPid == 0) {
-    TEST_NOTHROW( destVector = TestTpetra(tuple<int>(0,1,2,3,4,5,6), tuple<int>(0,1,2,3,4,5,6,7,8) ) );
+    TEST_NOTHROW( destVector = TestTpetra(tuple<GO>(0,1,2,3,4,5,6), tuple<GO>(0,1,2,3,4,5,6,7,8) ) );
     TEST_COMPARE_ARRAYS( tuple<int>(0,0,0,0,0,0,0,-1,-1), destVector->get1dView() )
   }
   else {
-    TEST_NOTHROW( destVector = TestTpetra(tuple<int>(9,10,11,12,13,14,15), tuple<int>(7,8,9,10,11,12,13,14,15) ) );
+    TEST_NOTHROW( destVector = TestTpetra(tuple<GO>(9,10,11,12,13,14,15), tuple<GO>(7,8,9,10,11,12,13,14,15) ) );
     TEST_COMPARE_ARRAYS( tuple<int>(-1,-1,0,0,0,0,0,0,0), destVector->get1dView() )
   }
 
@@ -172,6 +176,8 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport1 )
 ////
 TEUCHOS_UNIT_TEST( DistObject, SubMapImport2 )
 {
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
   Teuchos::oblackholestream blackhole;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
@@ -192,11 +198,11 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport2 )
   //            Processor 1: Values =   0 -1
   RCP<Tpetra::Vector<int,int> > destVector;
   if (MyPid == 0) {
-    TEST_NOTHROW( destVector = TestTpetra(ArrayView<int>(), tuple<int>(0,1,2) ) )
+    TEST_NOTHROW( destVector = TestTpetra(ArrayView<GO>(), tuple<GO>(0,1,2) ) )
     TEST_COMPARE_ARRAYS( tuple<int>(0,0,-1), destVector->get1dView() )
   }
   else {
-    TEST_NOTHROW( destVector = TestTpetra(tuple<int>(0,1), tuple<int>(1,2) ) )
+    TEST_NOTHROW( destVector = TestTpetra(tuple<GO>(0,1), tuple<GO>(1,2) ) )
     TEST_COMPARE_ARRAYS( tuple<int>(0,-1), destVector->get1dView() )
   }
 
@@ -209,6 +215,8 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport2 )
 ////
 TEUCHOS_UNIT_TEST( DistObject, SubMapImport3 )
 {
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
   Teuchos::oblackholestream blackhole;
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int MyPid = comm->getRank();
@@ -229,10 +237,10 @@ TEUCHOS_UNIT_TEST( DistObject, SubMapImport3 )
   //            Processor 1: Values = -1 -1
   RCP<Tpetra::Vector<int,int> > destVector;
   if (MyPid == 0) {
-    TEST_NOTHROW( destVector = TestTpetra(ArrayView<int>(), tuple<int>(0,1) ) )
+    TEST_NOTHROW( destVector = TestTpetra(ArrayView<GO>(), tuple<GO>(0,1) ) )
   }
   else {
-    TEST_NOTHROW( destVector = TestTpetra(ArrayView<int>(), tuple<int>(0,1) ) )
+    TEST_NOTHROW( destVector = TestTpetra(ArrayView<GO>(), tuple<GO>(0,1) ) )
   }
   TEST_COMPARE_ARRAYS( tuple<int>(-1,-1), destVector->get1dView() )
 

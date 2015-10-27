@@ -50,7 +50,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
 
-#include "ROL_DefaultAlgorithmFactory.hpp"
+#include "ROL_Algorithm.hpp"
 
 #include "ROL_MomentObjective.hpp"
 #include "ROL_SROMBoundConstraint.hpp"
@@ -64,13 +64,13 @@ namespace ROL {
 template<class Real>
 class SROMGenerator : public SampleGenerator<Real> {
 private: 
+  Teuchos::ParameterList parlist_;
+
   Teuchos::RCP<Objective<Real> > obj_;
   Teuchos::RCP<BoundConstraint<Real> > bnd_;
   Teuchos::RCP<EqualityConstraint<Real> > con_;
 
-  Teuchos::RCP<DefaultAlgorithmFactory<Real> > algo_;
-
-  Teuchos::ParameterList parlist_;
+  Teuchos::RCP<Algorithm<Real> > algo_;
 
   const size_t dimension_;
   size_t nSamp_;
@@ -79,36 +79,10 @@ private:
 
   void buildOptimizer(const bool useAugLag = true) {
     if ( !useAugLag ) {
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").set("Initial Penalty Parameter",10.);
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").set("Penalty Parameter Growth Factor",1.);
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Optimality Tolerance",1.e-8);
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Feasibility Tolerance",1.e-8);
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Iteration Limit",1000);
-      parlist_.sublist("Step").sublist("Moreau-Yosida Penalty").sublist("Subproblem").set("Print History",false);
-
-      parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
-      parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
-
-      algo_ = Teuchos::rcp(new DefaultAlgorithmFactory<Real>("Moreau-Yosida Penalty",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist_,false));
     }
     else {
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",1.e1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Penalty Parameter Growth Factor",1.e2);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Optimality Tolerance Update Exponent",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Feasibility Tolerance Update Exponent",0.1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Optimality Tolerance Decrease Exponent",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Feasibility Tolerance Decrease Exponent",0.9);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Optimality Tolerance",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Initial Feasibility Tolerance",1.);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Minimum Penalty Parameter Reciprocal",0.1);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Print Intermediate Optimization History",false);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Subproblem Iteration Limit",1000);
-      parlist_.sublist("Step").sublist("Augmented Lagrangian").get("Subproblem Step Type",0);
-
-      parlist_.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
-      parlist_.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
-
-      algo_ = Teuchos::rcp(new DefaultAlgorithmFactory<Real>("Augmented Lagrangian",parlist_,false));
+      algo_ = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist_,false));
     }
   }
 
@@ -146,13 +120,15 @@ private:
   }
 
 public:
-  SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
+  SROMGenerator(Teuchos::ParameterList &parlist,
+                Teuchos::RCP<BatchManager<Real> > &bman, 
                 Teuchos::RCP<Objective<Real> > &obj,
                 const size_t dimension,
                 const size_t nSamp = 10,
                 const bool adaptive = false,
                 const size_t numNewSamps = 0 ) 
-    : SampleGenerator<Real>(bman), obj_(obj), dimension_(dimension),
+    : SampleGenerator<Real>(bman), parlist_(parlist),
+      obj_(obj), dimension_(dimension),
       nSamp_(nSamp), numNewSamps_(numNewSamps), adaptive_(adaptive) {
     // Build ROL algorithm and solve SROM optimization problem
     SROMVector<Real> x(Teuchos::rcp(new std::vector<Real>(dimension_*nSamp_,0.)),
@@ -160,9 +136,9 @@ public:
     StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
     bnd_ = Teuchos::rcp(new SROMBoundConstraint<Real>(dimension_));
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
-    bool useAugLag = false;
+    bool useAugLag = true;
     buildOptimizer(useAugLag);
-    algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
@@ -170,23 +146,25 @@ public:
     splitSamples(allPoints,allWeights);
   }
 
-  SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
+  SROMGenerator(Teuchos::ParameterList &parlist,
+                Teuchos::RCP<BatchManager<Real> > &bman, 
                 Teuchos::RCP<Objective<Real> > &obj,
                 Teuchos::RCP<BoundConstraint<Real> > &bnd,
                 const size_t dimension,
                 const size_t nSamp = 10,
                 const bool adaptive = false,
                 const size_t numNewSamps = 0 ) 
-    : SampleGenerator<Real>(bman), obj_(obj), bnd_(bnd), dimension_(dimension),
+    : SampleGenerator<Real>(bman), parlist_(parlist),
+      obj_(obj), bnd_(bnd), dimension_(dimension),
       nSamp_(nSamp), numNewSamps_(numNewSamps), adaptive_(adaptive) {
     // Build ROL algorithm and solve SROM optimization problem
     SROMVector<Real> x(Teuchos::rcp(new std::vector<Real>(dimension_*nSamp_,0.)),
                        Teuchos::rcp(new std::vector<Real>(nSamp_,0.)));
     StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
-    bool useAugLag = false;
+    bool useAugLag = true;
     buildOptimizer(useAugLag);
-    algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
@@ -194,7 +172,8 @@ public:
     splitSamples(allPoints,allWeights);
   }
 
-  SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
+  SROMGenerator(Teuchos::ParameterList &parlist,
+                Teuchos::RCP<BatchManager<Real> > &bman, 
                 Teuchos::RCP<Objective<Real> > &obj,
                 Teuchos::RCP<BoundConstraint<Real> > &bnd,
                 Teuchos::RCP<Vector<Real> > &x,
@@ -202,14 +181,15 @@ public:
                 const size_t nSamp = 10,
                 const bool adaptive = false,
                 const size_t numNewSamps = 0 ) 
-    : SampleGenerator<Real>(bman), obj_(obj), bnd_(bnd), dimension_(dimension),
-      nSamp_(nSamp), numNewSamps_(numNewSamps), adaptive_(adaptive) {
+    : SampleGenerator<Real>(bman), parlist_(parlist), obj_(obj), bnd_(bnd),
+      dimension_(dimension), nSamp_(nSamp), numNewSamps_(numNewSamps),
+      adaptive_(adaptive) {
     // Build ROL algorithm and solve SROM optimization problem
     StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
     bool useAugLag = true;
     buildOptimizer(useAugLag);
-    algo_->get()->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
+    algo_->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
     // Prune samples with zero weight and set samples/weights
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(*x);
     std::vector<std::vector<Real> > allPoints;

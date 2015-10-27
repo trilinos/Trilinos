@@ -394,6 +394,321 @@ namespace Xpetra {
 
     }; // TpetraBlockCrsMatrix class
 
+#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+  template <class Scalar, class Node>
+  class TpetraBlockCrsMatrix<Scalar,int,int,Node>
+    : public CrsMatrix<Scalar,int,int,Node>//, public TpetraRowMatrix<Scalar,int,int,Node>
+  {
+
+    // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraBlockCrsMatrixClass;
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    typedef TpetraImport<LocalOrdinal,GlobalOrdinal,Node> TpetraImportClass;
+    typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
+
+  public:
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Constructor specifying fixed number of entries for each row (not implemented)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor specifying (possibly different) number of entries in each row (not implemented)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor specifying column Map and fixed number of entries for each row (not implemented)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor specifying column Map and number of entries in each row (not implemented)
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor specifying a previously constructed graph ( not implemented )
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor specifying a previously constructed graph & blocksize
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const LocalOrdinal blockSize)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+
+
+
+    //! Constructor for a fused import ( not implemented )
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+    //! Constructor for a fused export (not implemented(
+    TpetraBlockCrsMatrix(const Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+    {XPETRA_TPETRA_ETI_EXCEPTION("TpetraBlockCrsMatrix<int,int>", "TpetraBlockCrsMatrix<int,int>", "int");}
+
+
+    //! Destructor.
+    virtual ~TpetraBlockCrsMatrix() {  }
+
+    //@}
+
+    //! @name Insertion/Removal Methods
+    //@{
+
+    //! Insert matrix entries, using global IDs (not implemented)
+    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    {}
+
+    //! Insert matrix entries, using local IDs (not implemented)
+    void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    {}
+
+    //! Replace matrix entries, using global IDs (not implemented)
+    void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)
+    {}
+
+    //! Replace matrix entries, using local IDs.
+    void replaceLocalValues (LocalOrdinal localRow,const ArrayView<const LocalOrdinal> &cols,const ArrayView<const Scalar> &vals)
+    {}
+
+    //! Set all matrix entries equal to scalarThis.
+    void setAllToScalar(const Scalar &alpha) {}
+
+    //! Scale the current values of a matrix, this = alpha*this (not implemented)
+    void scale(const Scalar &alpha)
+    {}
+
+    //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+    //** \warning This is an expert-only routine and should not be called from user code. (not implemented)
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)
+    {}
+
+    //! Sets the 1D pointer arrays of the graph (not impelmented)
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)
+    {}
+
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
+    {}
+
+    //@}
+
+    //! @name Transformational Methods
+    //@{
+
+    //!
+    void resumeFill(const RCP< ParameterList > &params=null) { /*noop*/ }
+
+    //! Signal that data entry is complete, specifying domain and range maps.
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null) { /*noop*/ }
+
+    //! Signal that data entry is complete.
+    void fillComplete(const RCP< ParameterList > &params=null) { /*noop*/ }
+
+
+    //!  Replaces the current domainMap and importer with the user-specified objects.
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
+    {}
+
+    //! Expert static fill complete
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                                  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                                  const RCP<ParameterList> &params=Teuchos::null)
+    {}
+
+    //@}
+
+    //! @name Methods implementing RowMatrix
+    //@{
+
+    //! Returns the Map that describes the row distribution in this matrix.
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { return Teuchos::null; }
+
+    //! Returns the Map that describes the column distribution in this matrix.
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { return Teuchos::null; }
+
+    //! Returns the CrsGraph associated with this matrix.
+    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const
+    {return Teuchos::null;}
+
+    //! Number of global elements in the row map of this matrix.
+    global_size_t getGlobalNumRows() const { return 0; }
+
+    //! Number of global columns in the matrix.
+    global_size_t getGlobalNumCols() const { return 0; }
+
+    //! Returns the number of matrix rows owned on the calling node.
+    size_t getNodeNumRows() const { return 0; }
+
+    //! Returns the number of columns connected to the locally owned rows of this matrix.
+    size_t getNodeNumCols() const { return 0; }
+
+    //! Returns the global number of entries in this matrix.
+    global_size_t getGlobalNumEntries() const { return 0; }
+
+    //! Returns the local number of entries in this matrix.
+    size_t getNodeNumEntries() const { return 0; }
+
+    //! Returns the current number of entries on this node in the specified local row.
+    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+
+    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
+    global_size_t getGlobalNumDiags() const { return 0; }
+
+    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
+    size_t getNodeNumDiags() const { return 0; }
+
+    //! Returns the maximum number of entries across all rows/columns on all nodes.
+    size_t getGlobalMaxNumRowEntries() const { return 0; }
+
+    //! Returns the maximum number of entries across all rows/columns on this node.
+    size_t getNodeMaxNumRowEntries() const { return 0; }
+
+    //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
+    bool isLocallyIndexed() const { return false; }
+
+    //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
+    bool isGloballyIndexed() const { return false; }
+
+    //! Returns true if the matrix is in compute mode, i.e. if fillComplete() has been called.
+    bool isFillComplete() const { return false; }
+
+    //! Returns true if the matrix is in edit mode.
+    bool isFillActive() const { return false; }
+
+    //! Returns the Frobenius norm of the matrix.
+    typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { return Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero()); }
+
+    //! Returns true if getLocalRowView() and getGlobalRowView() are valid for this class.
+    bool supportsRowViews() const { return false; }
+
+    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const {  }
+
+    //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
+    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
+
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &indices, const ArrayView< Scalar > &values, size_t &numEntries) const {  }
+
+    //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
+    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const {  }
+
+    //@}
+
+    //! @name Methods implementing Operator
+    //@{
+
+    //! Computes the sparse matrix-multivector multiplication.
+    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const {  }
+
+    //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
+
+    //!
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return Teuchos::null; }
+
+    //@}
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    //! A simple one-line description of this object.
+    std::string description() const { return std::string(""); }
+
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
+
+    //@}
+
+    //! Deep copy constructor
+    TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix) {}
+
+    //! Get a copy of the diagonal entries owned by this node, with local row idices {
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+
+    //! Get offsets of the diagonal entries in the matrix.
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {    }
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
+    {}
+
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return Teuchos::null; }
+
+    //! Import.
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)
+    {}
+
+    //! Export.
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM)
+    {}
+
+    //! Import (using an Exporter).
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM)
+    {}
+
+    //! Export (using an Importer).
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM)
+    {}
+
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
+    {}
+
+    // @}
+
+    template<class Node2>
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+
+    //! @name Xpetra specific
+    //@{
+
+    //! Does this have an underlying matrix
+    bool hasMatrix() const { return false; }
+
+    //! TpetraBlockCrsMatrix constructor to wrap a Tpetra::BlockCrsMatrix object
+    TpetraBlockCrsMatrix(const Teuchos::RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &mtx) {  }
+
+    //! Get the underlying Tpetra matrix
+    RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrix() const { return Teuchos::null; }
+
+    //! Get the underlying Tpetra matrix
+    RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return Teuchos::null; }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+
+    local_matrix_type getLocalMatrix () const {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
+      local_matrix_type ret;
+      return ret; // make compiler happy
+    }
+#endif
+   //@}
+
+    }; // TpetraBlockCrsMatrix class
+#endif // ifndef XPETRA_TPETRA_INST_INT_INT
+
   // TODO: move that elsewhere
   // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   // const Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> toTpetraBlockCrsMatrix(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &mtx) {

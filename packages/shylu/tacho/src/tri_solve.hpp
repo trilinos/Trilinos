@@ -16,8 +16,7 @@ namespace Tacho {
 
     // data-parallel interface
     // =======================
-    template<typename ParallelForType,
-             typename ExecViewTypeA,
+    template<typename ExecViewTypeA,
              typename ExecViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int invoke(typename ExecViewTypeA::policy_type &policy,
@@ -28,8 +27,7 @@ namespace Tacho {
 
     // task-data parallel interface
     // ============================
-    template<typename ParallelForType,
-             typename ExecViewTypeA,
+    template<typename ExecViewTypeA,
              typename ExecViewTypeB>
     class TaskFunctor {
     public:
@@ -58,14 +56,14 @@ namespace Tacho {
 
       // task execution
       void apply(value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType>(_policy, _policy.member_single(), 
-                                                  _diagA, _A, _B);
+        r_val = TriSolve::invoke(_policy, _policy.member_single(), 
+                                 _diagA, _A, _B);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = TriSolve::invoke<ParallelForType>(_policy, member, 
-                                                  _diagA, _A, _B);
+        r_val = TriSolve::invoke(_policy, member, 
+                                 _diagA, _A, _B);
       }
 
     };

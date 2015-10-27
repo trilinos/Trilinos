@@ -934,7 +934,7 @@ TEST( SkinMesh, test_2_hex_2_block_without_aura)
 
 void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) < 2)
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2)
     {
         const int spatialDim = 3;
         stk::mesh::MetaData meta(spatialDim);
@@ -972,7 +972,7 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
         if (mesh.is_valid(element1))
         {
             unsigned num_faces = mesh.num_faces(element1);
-            EXPECT_EQ(0u, num_faces); // should be 1 once corrected
+            EXPECT_EQ(1u, num_faces);
         }
     }
 }
@@ -1061,3 +1061,5 @@ TEST( SkinMesh, SimpleQuad)
     test_quad_2D_skin_with_aura_option(true);
     test_quad_2D_skin_with_aura_option(false);
 }
+
+

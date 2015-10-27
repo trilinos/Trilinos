@@ -220,8 +220,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   // Test that the strides of X_view are correct, for int.  Kokkos
   // Array templates the stride() method on the integer type of the
   // input.  I just want to make sure that this works for different
-  // integer types; I'll test int here and size_t (useful for
-  // KokkosClassic::MultiVector) below.
+  // integer types; I'll test int here and size_t.
   {
     int strides[3] = { 0 , 0 , 0 };
     X_view.stride (strides);
@@ -328,91 +327,3 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 }
 
 
-// FIXME (mfh 04 Dec 2013) See note at top of file.
-#if 0
-// Create a 2-D LayoutLeft HostSpace-memory View, and create a
-// KokkosClassic::MultiVector which views its memory and holds a
-// reference to the View.  The latter will ensure that the
-// KokkosClassic::MultiVector can safely be used beyond the lifetime
-// of the Tpetra::MultiVector (which created the View).
-//
-// We will use this example to implement the Tpetra::MultiVector
-// method getLocalMV().
-//
-// Preserving Tpetra's current interface will not require a way to
-// return a View that is an owning (i.e., persisting) view of a
-// KokkosClassic::MultiVector's data.  This is because the porting
-// process will start by changing the internal data storage from
-// KokkosClassic::MultiVector to View.
-TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, KMV_of_2DView ) {
-  TestDevice::initialize();
-
-  typedef Kokkos::View<double**, Kokkos::LayoutLeft, TestDevice> ka_view_type;
-  typedef KokkosClassic::MultiVector<double, KokkosClassic::DefaultNode::DefaultNodeType> KMV;
-
-  const size_t numRows = 75;
-  const size_t numCols = 5;
-  const size_t stride = 100;
-  const size_t ZERO = static_cast<size_t> (0);
-
-  ka_view_type X ("X", stride, numCols);
-  ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
-  TEST_EQUALITY(X_view.dimension_0(), numRows);
-  TEST_EQUALITY(X_view.dimension_1(), numCols);
-
-  // Test that the strides of X_view are correct, for int.  Kokkos
-  // Array templates the stride() method on the integer type of the
-  // input.  I just want to make sure that this works for different
-  // integer types; I'll test int here and size_t (useful for
-  // KokkosClassic::MultiVector) below.
-  {
-    int strides[2];
-    strides[0] = 0;
-    strides[1] = 1;
-    X_view.stride (strides);
-    TEST_EQUALITY_CONST(strides[0], 1); // stride between X_view(i,j) and X_view(i+1,j)
-    // The stride must be at least as given, but can be greater (due to possible padding for alignment).
-    TEST_ASSERT(static_cast<size_t>(strides[1]) >= stride); // stride between X_view(i,j) and X_view(i,j+1)
-  }
-
-  // Test that the strides of X_view are correct, for size_t.
-  {
-    size_t strides[2];
-    strides[0] = static_cast<size_t> (0);
-    strides[1] = static_cast<size_t> (1);
-    X_view.stride (strides);
-    TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_view(i,j) and X_view(i+1,j)
-    // The stride must be at least as given, but can be greater (due to possible padding for alignment).
-    TEST_ASSERT(strides[1] >= stride); // stride between X_view(i,j) and X_view(i,j+1)
-  }
-
-  // Create a nonowning "view" of X's data.  The ArrayRCP has a custom
-  // destructor which simply holds a reference to the View and doesn't
-  // actually deallocate memory.  That way, the ArrayRCP can use the
-  // View's raw pointer, but still defers to the View for memory
-  // management.
-  Teuchos::ArrayRCP<double> Y_values (X.ptr_on_device (), 0, stride*numCols, Deallocator<double, ka_view_type> (X), true);
-  TEST_EQUALITY(Y_values.getRawPtr(), X.ptr_on_device());
-  TEST_EQUALITY(Y_values.getRawPtr(), X_view.ptr_on_device());
-  TEST_EQUALITY(Y_values.size(), stride*numCols);
-
-  // Create a Kokkos Classic Node instance.  The
-  // KokkosClassic::MultiVector will want this.
-  Teuchos::RCP<KokkosClassic::DefaultNodeType> node;
-  {
-    Teuchos::ParameterList pl;
-    node = Teuchos::rcp (new KokkosClassic::DefaultNode::DefaultNodeType (pl));
-  }
-  // Create the KokkosClassic::MultiVector.  Initialization takes two steps.
-  KMV Y (node);
-  Y.initializeValues (numRows, numCols, Y_values, stride);
-
-  // Test that the dimensions, stride, and pointers of Y are correct.
-  TEST_EQUALITY(Y.getNumRows(), numRows);
-  TEST_EQUALITY(Y.getNumCols(), numCols);
-  TEST_EQUALITY(Y.getStride(), stride);
-  TEST_EQUALITY(Y.getValues().getRawPtr(), X.ptr_on_device());
-  TEST_EQUALITY(Y.getValues().getRawPtr(), X_view.ptr_on_device());
-  TestDevice::finalize();
-}
-#endif // 0

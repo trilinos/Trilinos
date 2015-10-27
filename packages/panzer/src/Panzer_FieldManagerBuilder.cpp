@@ -226,7 +226,9 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           const Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
           
           // register evaluators from strategy      
-          const panzer::CellData side_cell_data(wkst->second.num_cells, wkst->first, volume_cell_topology);
+          const panzer::CellData side_cell_data(wkst->second.num_cells,
+                                                wkst->second.details(block_id_index).subcell_index,
+                                                volume_cell_topology);
 
           // Copy the physics block for side integrations
           Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);

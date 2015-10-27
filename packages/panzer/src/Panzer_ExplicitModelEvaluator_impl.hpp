@@ -61,10 +61,11 @@ ExplicitModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & mode
    : Thyra::ModelEvaluatorDelegatorBase<Scalar>(model)
    , constantMassMatrix_(constantMassMatrix)
    , massLumping_(useLumpedMass)
-   , applyMassInverse_(applyMassInverse)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
+
+  this->applyMassInverse_ = applyMassInverse;
 
   // extract a panzer::ModelEvaluator if appropriate
   panzerModel_ = rcp_dynamic_cast<panzer::ModelEvaluator<Scalar> >(model);
@@ -119,7 +120,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP; 
-
   RCP<const Thyra::ModelEvaluator<Scalar> > under_me = this->getUnderlyingModel();
 
   // intialize a zero to get rid of the x-dot 
@@ -155,7 +155,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // invert the mass matrix
   Thyra::Vt_S(scrap_f_.ptr(),-1.0);
-  if(f!=Teuchos::null && applyMassInverse_) {
+  if(f!=Teuchos::null && this->applyMassInverse_) {
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr()); 
   }
   else if(f!=Teuchos::null){

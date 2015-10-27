@@ -220,7 +220,7 @@ namespace MueLuTests {
       smoother.Apply(*X, *RHS, true);  //zero initial guess
 
       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> finalNorms(1); X->norm2(finalNorms);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm1 = Utils::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
@@ -232,7 +232,7 @@ namespace MueLuTests {
       smoother.Apply(*X, *RHS, false); //nonzero initial guess
 
       X->norm2(finalNorms);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm2 = Utils::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 

@@ -1,4 +1,8 @@
 #include "PNGProcessor.hpp"
+#include <stdio.h>                      // for printf
+#include <algorithm>                    // for sort
+#include "GameOfLife/LodePNG.hpp"       // for decode
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector
 
 unsigned char greyDivisor = 0x2f;
 

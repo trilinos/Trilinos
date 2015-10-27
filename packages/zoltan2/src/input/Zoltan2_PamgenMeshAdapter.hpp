@@ -94,7 +94,6 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
@@ -121,21 +120,6 @@ public:
     return etype==MESH_REGION;
   }
 
-  /*size_t getGlobalNumOf(MeshEntityType etype) const
-  {
-
-    if ((MESH_REGION == etype && 3 == dimension_) ||
-	(MESH_FACE == etype && 2 == dimension_)) {
-      return num_elems_global_;
-    }
-
-    if (MESH_VERTEX == etype) {
-      return Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()
-    }
-
-    return 0;
-    }*/
-
   size_t getLocalNumOf(MeshEntityType etype) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
@@ -150,7 +134,7 @@ public:
     return 0;
   }
    
-  void getIDsViewOf(MeshEntityType etype, const zgid_t *&Ids) const
+  void getIDsViewOf(MeshEntityType etype, const gno_t *&Ids) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
 	(MESH_FACE == etype && 2 == dimension_)) {
@@ -245,16 +229,16 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+		   const lno_t *&offsets, const gno_t *& adjacencyIds) const
   {
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
-      adjacencyIds = (zgid_t *)elemToNode_;
+      adjacencyIds = (gno_t *)elemToNode_;
     } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
 	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
       offsets = nodeOffsets_;
-      adjacencyIds = (zgid_t *)nodeToElem_;
+      adjacencyIds = (gno_t *)nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -300,7 +284,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const zgid_t *&adjacencyIds) const
+		      const lno_t *&offsets, const gno_t *&adjacencyIds) const
   {
     if (through == MESH_VERTEX &&
 	((sourcetarget == MESH_REGION && dimension_ == 3) ||
@@ -322,12 +306,12 @@ public:
 
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
-  zgid_t *element_num_map_, *node_num_map_;
+  gno_t *element_num_map_, *node_num_map_;
   int *elemToNode_, tnoct_, *elemOffsets_;
   int *nodeToElem_, telct_, *nodeOffsets_;
   double *coords_, *Acoords_;
   lno_t *eStart_, *nStart_;
-  zgid_t *eAdj_, *nAdj_;
+  gno_t *eAdj_, *nAdj_;
   size_t nEadj_, nNadj_;
   EntityTopologyType* nodeTopology;
   EntityTopologyType* elemTopology;
@@ -343,16 +327,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr):
   dimension_(0)
 {
-  if (typestr.compare("region") == 0) {
-    this->setEntityTypes(typestr, "vertex", "vertex");
-  }
-  else if (typestr.compare("vertex") == 0) {
-    this->setEntityTypes(typestr, "region", "region");
-  }
-  else {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-  }
-
   int error = 0;
   char title[100];
   int exoid = 0;
@@ -361,12 +335,29 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 			  &num_nodes_, &num_elem_, &num_elem_blk,
 			  &num_node_sets, &num_side_sets);
 
+  if (typestr.compare("region") == 0) {
+    if (dimension_ == 3)
+      this->setEntityTypes(typestr, "vertex", "vertex");
+    else
+      // automatically downgrade primary entity if problem is only 2D
+      this->setEntityTypes("face", "vertex", "vertex");
+  }
+  else if (typestr.compare("vertex") == 0) {
+    if (dimension_ == 3)
+      this->setEntityTypes(typestr, "region", "region");
+    else 
+      this->setEntityTypes(typestr, "face", "face");
+  }
+  else {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
+
   coords_ = new double [num_nodes_ * dimension_];
 
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
   
-  element_num_map_ = new zgid_t [num_elem_];
+  element_num_map_ = new gno_t [num_elem_];
   std::vector<int> tmp;
   tmp.resize(num_elem_);
   
@@ -375,18 +366,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   // This may be a case of calling the wrong method
   error += im_ex_get_elem_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
-    element_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    element_num_map_[i] = static_cast<gno_t>(tmp[i]);
     
   tmp.clear();
   tmp.resize(num_nodes_);
-  node_num_map_ = new zgid_t [num_nodes_];
+  node_num_map_ = new gno_t [num_nodes_];
   
   // BDD cast to int did not always work!
   // error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
   // This may be a case of calling the wrong method
   error += im_ex_get_node_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
-    node_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    node_num_map_[i] = static_cast<gno_t>(tmp[i]);
   
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)
@@ -531,7 +522,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   nNadj_ = 0;
   for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
-      printf("WARNING: Node = %d has no elements\n", ncnt+1);
+      std::cout << "WARNING: Node = " << ncnt+1 << " has no elements"
+                << std::endl;
     } else {
       size_t nsur = sur_elem[ncnt].size();
       if (nsur > max_nsur)
@@ -580,7 +572,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   nodeOffsets_[num_nodes_] = telct_;
   nStart_[num_nodes_] = nNadj_;
 
-  nAdj_ = new zgid_t [nNadj_];
+  nAdj_ = new gno_t [nNadj_];
 
   for (size_t i=0; i < nNadj_; i++) {
     nAdj_[i] = nAdj[i];
@@ -849,7 +841,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   reconnect = NULL;
   eStart_[num_elem_] = nEadj_;
 
-  eAdj_ = new zgid_t [nEadj_];
+  eAdj_ = new gno_t [nEadj_];
 
   for (size_t i=0; i < nEadj_; i++) {
     eAdj_[i] = eAdj[i];

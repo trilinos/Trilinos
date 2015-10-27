@@ -94,7 +94,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCppUnit_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
     "-DCppUnit_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib"
     "-DTPL_ENABLE_Matio=OFF"
-    "-DIntrepid_ENABLE_DEBUG_INF_CHECK=OFF"
+    "-DIntrepidCore_ENABLE_DEBUG_INF_CHECK=OFF"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")

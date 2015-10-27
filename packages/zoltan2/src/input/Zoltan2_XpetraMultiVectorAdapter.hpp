@@ -82,10 +82,9 @@ template <typename User>
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
-  typedef typename InputTraits<User>::zgid_t    zgid_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef VectorAdapter<User>       base_adapter_t;
@@ -134,7 +133,7 @@ public:
 
   size_t getLocalNumIDs() const { return vector_->getLocalLength();}
 
-  void getIDsView(const zgid_t *&ids) const
+  void getIDsView(const gno_t *&ids) const
   { 
     ids = map_->getNodeElementList().getRawPtr();
   }
@@ -271,7 +270,7 @@ template <typename User>
 {
   // Get an import list (rows to be received)
   size_t numNewRows;
-  ArrayRCP<zgid_t> importList;
+  ArrayRCP<gno_t> importList;
   try{
     numNewRows = Zoltan2::getImportList<Adapter,
                                         XpetraMultiVectorAdapter<User> >
@@ -295,7 +294,7 @@ template <typename User>
 {
   // Get an import list (rows to be received)
   size_t numNewRows;
-  ArrayRCP<zgid_t> importList;
+  ArrayRCP<gno_t> importList;
   try{
     numNewRows = Zoltan2::getImportList<Adapter,
                                         XpetraMultiVectorAdapter<User> >

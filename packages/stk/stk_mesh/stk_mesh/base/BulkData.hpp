@@ -64,6 +64,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
+#include <stk_mesh/base/ModificationNotifier.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
@@ -77,13 +78,12 @@ namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
+namespace stk { namespace mesh { class ModificationObserver; } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
-
-namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
 
 namespace stk {
 namespace mesh {
@@ -172,6 +172,8 @@ public:
   bool in_modifiable_state() const { return m_meshModification.in_modifiable_state(); }
   bool in_synchronized_state() const { return m_meshModification.in_synchronized_state(); }
 
+  bool is_automatic_aura_on() const { return m_autoAuraOption == AUTO_AURA; }
+
 
   /** \brief  Count of the number of times that the bulk data has been
    *          parallel synchronized.  This count gets updated with
@@ -229,6 +231,7 @@ public:
 
   bool modification_end()
   {
+      notifier.notify_started_modification_end();
       return m_meshModification.modification_end();
   }
 
@@ -251,7 +254,9 @@ public:
    */
   void change_entity_owner( const EntityProcVec & arg_change)
   {
+      notifier.notify_elements_about_to_move_procs(arg_change);
       m_meshModification.change_entity_owner(arg_change);
+      notifier.notify_elements_moved_procs(arg_change);
   }
 
   /** \brief  Rotate the field data of multistate fields.
@@ -711,6 +716,8 @@ public:
    */
   void allocate_field_data();
 
+  void register_observer(stk::mesh::ModificationObserver *observer);
+
 protected: //functions
 
   bool make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
@@ -797,7 +804,8 @@ protected: //functions
                                      const std::vector<Part*> & add_parts ,
                                      const std::vector<Part*> & remove_parts); // Mod Mark
 
-  virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false ); // Mod Mark
+  bool internal_destroy_entity_with_notification(Entity entity, bool wasGhost = false); // Mod Mark
+  virtual bool internal_destroy_entity(Entity entity, bool wasGhost = false);
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -860,30 +868,48 @@ protected: //functions
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
 
-  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val)
+  bool entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
       m_modSummary.track_comm_map_insert(entity, val);
-      return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity));
+      EntityKey key = entity_key(entity);
+      bool didInsert = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
+      if(didInsert)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didInsert;
   }
-  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val)
+  bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
   {
       m_modSummary.track_comm_map_erase(key, val);
-      return m_entity_comm_map.erase(key,val);
+      bool didErase = m_entity_comm_map.erase(key, val);
+      if(didErase)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didErase;
   }
-  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost)
+  bool entity_comm_map_erase(const EntityKey &key, const Ghosting &ghost)
   {
       m_modSummary.track_comm_map_erase(key, ghost);
-      return m_entity_comm_map.erase(key,ghost);
+      bool didErase = m_entity_comm_map.erase(key, ghost);
+      if(didErase)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didErase;
   }
-  void entity_comm_map_clear_ghosting(const EntityKey & key )
+  void entity_comm_map_clear_ghosting(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear_ghosting(key);
       m_entity_comm_map.comm_clear_ghosting(key);
+      notifier.notify_local_entity_comm_info_changed(key.rank());
   }
   void entity_comm_map_clear(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear(key);
       m_entity_comm_map.comm_clear(key);
+      notifier.notify_local_entity_comm_info_changed(key.rank());
   }
 
   /** \brief  Regenerate the shared-entity aura,
@@ -970,8 +996,6 @@ protected: //functions
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
 
-  AutomaticAuraOption get_automatic_aura_option() const { return m_autoAuraOption; }
-
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
@@ -993,6 +1017,11 @@ protected: //functions
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
 
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
+
+  void set_modification_summary_proc_id(int proc_id) {
+      m_modSummary.set_proc_id(proc_id);
+  }
+
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -1026,12 +1055,8 @@ public:
 private:
 #endif
 
-  void communicate_entity_modification( const BulkData & mesh ,
-                                        const bool shared ,
-                                        std::vector<EntityParallelState > & data ); // Mod Mark
-  bool pack_entity_modification( const BulkData & mesh ,
-                                 const bool packShared ,
-                                 stk::CommSparse & comm );
+  void communicate_entity_modification( const bool shared , std::vector<EntityParallelState > & data ); // Mod Mark
+  bool pack_entity_modification( const bool packShared , stk::CommSparse & comm );
 
   virtual bool does_entity_need_orphan_protection(stk::mesh::Entity entity) const
   {
@@ -1195,7 +1220,6 @@ private:
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
-  friend class ::sierra::Fmwk::EntityCreationOperationList;
   friend class ::stk::mesh::ElemElemGraph;
   friend class ::stk::mesh::EntityLess;
 
@@ -1208,7 +1232,7 @@ private:
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
   friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-          const stk::mesh::PartVector& side_parts, const stk::mesh::PartVector* boundary_mesh_parts);
+          const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector* boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
@@ -1318,9 +1342,10 @@ private: // data
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
+  ModificationNotifier notifier;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-  // stk::ModificationSummary m_modSummary;
+//  stk::ModificationSummary m_modSummary;
 };
 
 

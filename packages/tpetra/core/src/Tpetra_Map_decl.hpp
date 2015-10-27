@@ -48,6 +48,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_DualView.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
@@ -90,6 +91,135 @@ namespace Tpetra {
       static OutMapType
       clone (const InMapType& mapIn,
              const Teuchos::RCP<out_node_type>& node2);
+    };
+
+    /// \class LocalMap
+    /// \brief "Local" part of Map suitable for Kokkos kernels.
+    ///
+    /// \warning This object's interface is not yet fixed.  We provide
+    ///   this object currently only as a service to advanced users.
+    ///
+    /// The "local" Map is suitable for use in Kokkos parallel
+    /// operations in the Map's native execution space, which is
+    /// <tt>Map::device_type::execution_space</tt>.
+    ///
+    /// By "local," we mean that the object performs no MPI
+    /// communication, and can only access information that would
+    /// never need MPI communication, no matter what kind of Map this
+    /// is.
+    template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+    class LocalMap {
+    public:
+      LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
+                const Kokkos::View<const GlobalOrdinal*, DeviceType>& lgMap,
+                const GlobalOrdinal indexBase,
+                const GlobalOrdinal myMinGid,
+                const GlobalOrdinal myMaxGid,
+                const GlobalOrdinal firstContiguousGid,
+                const GlobalOrdinal lastContiguousGid,
+                const LocalOrdinal numLocalElements,
+                const bool contiguous) :
+        glMap_ (glMap),
+        lgMap_ (lgMap),
+        indexBase_ (indexBase),
+        myMinGid_ (myMinGid),
+        myMaxGid_ (myMaxGid),
+        firstContiguousGid_ (firstContiguousGid),
+        lastContiguousGid_ (lastContiguousGid),
+        numLocalElements_ (numLocalElements),
+        contiguous_ (contiguous)
+      {}
+
+      //! The number of indices that live on the calling process.
+      KOKKOS_INLINE_FUNCTION LocalOrdinal getNodeNumElements () const {
+        return numLocalElements_;
+      }
+
+      //! The (global) index base.
+      KOKKOS_INLINE_FUNCTION GlobalOrdinal getIndexBase () const {
+        return indexBase_;
+      }
+
+      /// \brief Whether the Map is (locally) contiguous.
+      ///
+      /// This is conservative; a Map is "contiguous" if and only if
+      /// it is stored that way.
+      KOKKOS_INLINE_FUNCTION bool isContiguous () const {
+        return contiguous_;
+      }
+
+      //! The minimum local index.
+      KOKKOS_INLINE_FUNCTION LocalOrdinal getMinLocalIndex () const {
+        return 0;
+      }
+
+      //! The maximum local index.
+      KOKKOS_INLINE_FUNCTION LocalOrdinal
+      getMaxLocalIndex () const
+      {
+        if (numLocalElements_ == 0) {
+          return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
+        } else { // Local indices are always zero-based.
+          return static_cast<LocalOrdinal> (numLocalElements_ - 1);
+        }
+      }
+
+      //! The minimum global index on the calling process.
+      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMinGlobalIndex () const {
+        return myMinGid_;
+      }
+
+      //! The maximum global index on the calling process.
+      KOKKOS_INLINE_FUNCTION GlobalOrdinal getMaxGlobalIndex () const {
+        return myMaxGid_;
+      }
+
+      //! Get the local index corresponding to the given global index.
+      KOKKOS_INLINE_FUNCTION LocalOrdinal
+      getLocalElement (const GlobalOrdinal globalIndex) const
+      {
+        if (contiguous_) {
+          if (globalIndex < myMinGid_ || globalIndex > myMaxGid_) {
+            return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
+          }
+          return static_cast<LocalOrdinal> (globalIndex - myMinGid_);
+        }
+        else if (globalIndex >= firstContiguousGid_ &&
+                 globalIndex <= lastContiguousGid_) {
+          return static_cast<LocalOrdinal> (globalIndex - firstContiguousGid_);
+        }
+        else {
+          // If the given global index is not in the table, this returns
+          // the same value as OrdinalTraits<LocalOrdinal>::invalid().
+          return glMap_.get (globalIndex);
+        }
+      }
+
+      //! Get the global index corresponding to the given local index.
+      KOKKOS_INLINE_FUNCTION GlobalOrdinal
+      getGlobalElement (const LocalOrdinal localIndex) const
+      {
+        if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
+          return Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ();
+        }
+        if (isContiguous ()) {
+          return getMinGlobalIndex () + localIndex;
+        }
+        else {
+          return lgMap_(localIndex);
+        }
+      }
+
+    private:
+      Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
+      Kokkos::View<const GlobalOrdinal*, DeviceType> lgMap_;
+      GlobalOrdinal indexBase_;
+      GlobalOrdinal myMinGid_;
+      GlobalOrdinal myMaxGid_;
+      GlobalOrdinal firstContiguousGid_;
+      GlobalOrdinal lastContiguousGid_;
+      LocalOrdinal numLocalElements_;
+      bool contiguous_;
     };
   } // namespace Details
 
@@ -202,7 +332,7 @@ namespace Tpetra {
   /// <li>the set of global indices (over all processes) forms an
   ///   interval, </li>
   /// <li>every global index in that interval is owned by exactly one
-  ///   process in the Map's communicator, <li>
+  ///   process in the Map's communicator, </li>
   /// <li>the (ordered) list of global indices on each process p in
   ///   the Map's communicator forms a contiguous interval, and </li>
   /// <li>if process p owns a global index \f$g_p\f$ and process q
@@ -266,6 +396,31 @@ namespace Tpetra {
     typedef GlobalOrdinal global_ordinal_type;
     //! The type of the Kokkos Node.
     typedef Node node_type;
+
+    /// \brief The Kokkos device type over which to allocate Views and
+    ///   perform work.
+    ///
+    /// A Kokkos::Device is an (execution_space, memory_space) pair.
+    /// It defines where the Map's data live, and where Map might
+    /// choose to execute parallel kernels.
+    typedef typename Kokkos::Device<typename Node::execution_space,
+                                    typename Node::memory_space> device_type;
+
+    /// \brief Type of the "local" Map.
+    ///
+    /// \warning This object's interface is not yet fixed.  We provide
+    ///   this object currently only as a service to advanced users.
+    ///
+    /// The "local" Map is suitable for use in Kokkos parallel
+    /// operations in the Map's native execution space, which is
+    /// <tt>device_type::execution_space</tt>.
+    ///
+    /// By "local," we mean that the object performs no MPI
+    /// communication, and can only access information that would
+    /// never need MPI communication, no matter what kind of Map this
+    /// is.
+    typedef Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
+      local_map_type;
 
     //@}
     //! @name Constructors and destructor
@@ -542,6 +697,12 @@ namespace Tpetra {
     ///   the same value as
     ///   Teuchos::OrdinalTraits<GlobalOrdinal>::invalid().
     GlobalOrdinal getGlobalElement (LocalOrdinal localIndex) const;
+
+    /// \brief Get the local Map for Kokkos kernels.
+    ///
+    /// \warning The interface of the local Map object is SUBJECT TO
+    ///   CHANGE and is for EXPERT USERS ONLY.
+    local_map_type getLocalMap () const;
 
     /// \brief Return the process ranks and corresponding local
     ///   indices for the given global indices.
@@ -970,15 +1131,11 @@ namespace Tpetra {
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
     /// describe(), may invoke getNodeElementList().
-    mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
+    mutable Kokkos::DualView<GlobalOrdinal*, device_type> lgMap_;
 
-    //! The Kokkos device type over which to allocate Views and perform work.
-    typedef typename Kokkos::Device<typename Node::execution_space,
-                                    typename Node::memory_space> device_type;
-
-    //! Type of the table that maps global IDs to local IDs.
-    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal,
-                                    device_type> global_to_local_table_type;
+    //! Type of a mapping from global IDs to local IDs.
+    typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
+      global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -1269,16 +1426,6 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return ! map1.isSameAs (map2); }
-
-
-// Include KokkosRefactor partial specialization if enabled
-#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
-#  if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#    include "Tpetra_KokkosRefactor_Map_decl.hpp"
-#  else
-#    error "The Kokkos refactor version of Tpetra must be enabled if the Kokkos refactor version of Tpetra::Map is enabled."
-#  endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#endif // defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
 
 
 #endif // TPETRA_MAP_DECL_HPP

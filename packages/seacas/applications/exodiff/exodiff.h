@@ -37,7 +37,5 @@
 #include <string>
 
 std::string Version();
-void Echo_Usage();
-void Echo_Help(const std::string &option);
 
 #endif

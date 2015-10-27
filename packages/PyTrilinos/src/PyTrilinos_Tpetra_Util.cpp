@@ -75,7 +75,7 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
   dim_data = PyTuple_New(ndim);
   if (!dim_data) goto fail;
 
-  // If we have an extra dimension argument grreater than one, then
+  // If we have an extra dimension argument greater than one, then
   // define a dimension associated with the multiple vectors
   if (extraDim > 1)
   {
@@ -99,7 +99,7 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
   if (!dim_dict) goto fail;
   if (PyDict_SetItemString(dim_dict,
                            "size",
-                           PyInt_FromLong(tm->getNodeElementList().size())) == -1)
+                           PyInt_FromLong(tm->getGlobalNumElements())) == -1)
     goto fail;
   if (PyDict_SetItemString(dim_dict,
                            "proc_grid_size",
@@ -120,11 +120,11 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
                              PyString_FromString("b")) == -1) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "start",
-                             PyInt_FromLong(tm->getMinLocalIndex())) == -1)
+                             PyInt_FromLong(tm->getMinGlobalIndex())) == -1)
       goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "stop",
-                             PyInt_FromLong(tm->getMaxLocalIndex()+1)) == -1)
+                             PyInt_FromLong(tm->getMaxGlobalIndex()+1)) == -1)
       goto fail;
   }
   else

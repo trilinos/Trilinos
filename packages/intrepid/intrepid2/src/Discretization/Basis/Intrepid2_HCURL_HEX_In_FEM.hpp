@@ -46,8 +46,8 @@
     \author Created by R. Kirby and P. Bochev and D. Ridzal and K. Petrson.
  */
 
-#ifndef INTREPID_HCURL_HEX_In_FEM_HPP
-#define INTREPID_HCURL_HEX_In_FEM_HPP
+#ifndef INTREPID2_HCURL_HEX_In_FEM_HPP
+#define INTREPID2_HCURL_HEX_In_FEM_HPP
 #include "Intrepid2_TensorBasis.hpp"
 #include "Intrepid2_ProductTopology.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"

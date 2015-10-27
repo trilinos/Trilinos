@@ -398,10 +398,34 @@ ENDIF()
 IF(Stokhos_ENABLE_Sacado)
 
   TRIBITS_ADD_EXECUTABLE(
-    uq_handbook_example
-    SOURCES sacado/uq_handbook_example.cpp
+    uq_handbook_pce_example
+    SOURCES uq_handbook/pce_example.cpp
     COMM serial mpi
     )
+
+  TRIBITS_ADD_EXECUTABLE(
+    uq_handbook_ensemble_example
+    SOURCES uq_handbook/ensemble_example.cpp
+    COMM serial mpi
+    )
+
+  IF (Stokhos_ENABLE_EpetraExt AND
+      Stokhos_ENABLE_AztecOO AND
+      Stokhos_ENABLE_ML AND
+      Stokhos_ENABLE_Ifpack AND
+      Stokhos_ENABLE_NOX)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      uq_handbook_nonlinear_sg_example
+      SOURCES uq_handbook/nonlinear_sg_example.cpp
+              uq_handbook/SimpleME.hpp
+              uq_handbook/SimpleME.cpp
+      ARGS
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+
+  ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sacado_example

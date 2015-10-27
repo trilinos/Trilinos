@@ -246,12 +246,12 @@ initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::str
        p < p_names.size(); ++p) {
     
     // register all the scalar parameters, setting initial 
-    for(std::size_t i=0;i<p_names[p]->size();i++)
+    for(int i=0;i<p_names[p]->size();i++)
       registerScalarParameter((*p_names[p])[i],*parameter_library,(*p_values[p])[i]);
 
     parameter_library->fillVector<panzer::Traits::Residual>(*(p_names[p]), parameter_vector_[p]);
 
-    for(std::size_t i=0;i<p_names[p]->size();i++) {
+    for(int i=0;i<p_names[p]->size();i++) {
       parameter_vector_[p][i].baseValue = (*p_values[p])[i];
       parameter_vector_[p][i].family->setRealValueForAllTypes((*p_values[p])[i]);
     }

@@ -900,7 +900,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GetLocalMatrix, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
@@ -911,7 +910,10 @@ namespace {
 
     std::vector<Xpetra::UnderlyingLib> libs;
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+    // only test LO=GO=int case here
     libs.push_back(Xpetra::UseTpetra);
+#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     libs.push_back(Xpetra::UseEpetra);
@@ -937,7 +939,7 @@ namespace {
 
       // access data before fill complete!
       bool bSuccess = true;
-      TEUCHOS_TEST_THROW( local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
+      TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
       TEST_EQUALITY(bSuccess, true);
 
       A->fillComplete();
@@ -946,7 +948,11 @@ namespace {
       local_matrix_type view2 = A->getLocalMatrix();
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+
+      // check that the local_matrix_type taken the second time is the same
+      local_matrix_type view3 = A->getLocalMatrix();
+      TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
 
       for (LO r = 0; r < view2.numRows(); ++r) {
         // extract data from current row r
@@ -984,7 +990,7 @@ namespace {
 
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
       TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
 
       for (LO r = 0; r < view2.numRows(); ++r) {
         // extract data from current row r
@@ -998,6 +1004,7 @@ namespace {
           TEST_EQUALITY(vv, -123.4);
         }
       }
+
     } // endl loop over linear algebra packages
 #endif
   }
@@ -1013,8 +1020,6 @@ namespace {
     typedef typename Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node> CrsMatrixFactoryClass;
     typedef typename CrsMatrixClass::local_matrix_type local_matrix_type;
 
-    Kokkos::initialize();
-
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     int rank = comm->getRank();
@@ -1022,7 +1027,10 @@ namespace {
 
     std::vector<Xpetra::UnderlyingLib> libs;
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+    // only test LO=GO=int case here
     libs.push_back(Xpetra::UseTpetra);
+#endif
 #endif
 #ifdef HAVE_XPETRA_EPETRA
     libs.push_back(Xpetra::UseEpetra);
@@ -1190,8 +1198,6 @@ namespace {
         }
       }
     } // loop over linear Algebra frameworks
-
-    Kokkos::finalize();
 #endif
   }
 
@@ -1199,13 +1205,16 @@ namespace {
   // INSTANTIATIONS
   //
 
+// for common tests (Epetra and Tpetra...)
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node )
+// for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL1( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+// for Epetra tests only
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
 // for Kokkos-specific tests
 #define UNIT_TEST_GROUP_ORDINAL3( SC, LO, GO, Node )                     \
@@ -1214,9 +1223,35 @@ namespace {
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
+#ifdef HAVE_XPETRA_TPETRA
+
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+  // tests must not be redefined!!!
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
-  UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG // are these working??
+  // tests must not be redefined!!!
+  //UNIT_TEST_GROUP_ORDINAL(double, int, long, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL1(double, int, long, DefaultNodeType)
+  ////UNIT_TEST_GROUP_ORDINAL3(double, int, long, DefaultNodeType)
+#endif
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+  // TODO tests must not be redefined...
+  //typedef long long LongLongInt;
+  //UNIT_TEST_GROUP_ORDINAL(double, int, LongLongInt, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL1(double, int, LongLongInt, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL3(double, int, LongLongInt, DefaultNodeType)
+#endif
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+  // TODO tests must not be redefined!!
+  //UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
+  //// UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
+  //UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
+#endif
 }
 

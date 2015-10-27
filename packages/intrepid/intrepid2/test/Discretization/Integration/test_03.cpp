@@ -148,10 +148,10 @@ Kokkos::initialize();
   double                                   reltol = 1.0e+03 * INTREPID_TOL;
   int                                      maxDeg[2];
   int                                      numPoly[2];
-  maxDeg[0]  = INTREPID_CUBATURE_TRI_DEFAULT_MAX;
-  maxDeg[1]  = INTREPID_CUBATURE_LINE_GAUSS_MAX;
-  numPoly[0] = (INTREPID_CUBATURE_TRI_DEFAULT_MAX+1)*(INTREPID_CUBATURE_TRI_DEFAULT_MAX+2)/2;
-  numPoly[1] = (INTREPID_CUBATURE_LINE_GAUSS_MAX+1)*(INTREPID_CUBATURE_LINE_GAUSS_MAX+2)/2;
+  maxDeg[0]  = INTREPID2_CUBATURE_TRI_DEFAULT_MAX;
+  maxDeg[1]  = INTREPID2_CUBATURE_LINE_GAUSS_MAX;
+  numPoly[0] = (INTREPID2_CUBATURE_TRI_DEFAULT_MAX+1)*(INTREPID2_CUBATURE_TRI_DEFAULT_MAX+2)/2;
+  numPoly[1] = (INTREPID2_CUBATURE_LINE_GAUSS_MAX+1)*(INTREPID2_CUBATURE_LINE_GAUSS_MAX+2)/2;
 
   // get names of files with analytic values
   std::string basedir = "./data";

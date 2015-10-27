@@ -11,14 +11,9 @@
 #include "graph_helper_scotch.hpp"
 #include "crs_matrix_helper.hpp"
 
-#include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
-
-#include "team_factory.hpp"
 #include "task_factory.hpp"
-#include "task_team_factory.hpp"
 
 #include "chol.hpp"
 
@@ -37,10 +32,8 @@ namespace Tacho {
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-    typedef ParallelFor ForType;
+    typedef TaskFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
+      Kokkos::Experimental::Future<int,SpaceType> > TaskFactoryType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -97,8 +90,8 @@ namespace Tacho {
       CrsTaskViewType U(&UU_Unblocked);
       U.fillRowViewArray();
     
-      auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
-                                                          ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+      auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
+                                                          ::TaskFunctor<CrsTaskViewType>(U), 0);
       TaskFactoryType::Policy().spawn(future);
       Kokkos::Experimental::wait(TaskFactoryType::Policy());
     
@@ -110,7 +103,7 @@ namespace Tacho {
         HU.Value(k).fillRowViewArray();
 
       auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks>::
-                                                          TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
+                                                          TaskFunctor<CrsHierTaskViewType>(H), 0);
       TaskFactoryType::Policy().spawn(future);
       Kokkos::Experimental::wait(TaskFactoryType::Policy());
 

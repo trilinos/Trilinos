@@ -476,16 +476,14 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // auxiliary vector, Xcopy (a deep copy of X).
       RCP<const MV> Xcopy;
       // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-      if (X.getDualView ().h_view.ptr_on_device () ==
-          Y.getDualView ().h_view.ptr_on_device ()) {
-#else
-      if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
-        Xcopy = rcp (new MV (X, Teuchos::Copy));
-      }
-      else {
-        Xcopy = rcpFromRef (X);
+      {
+        auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
+        auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+        if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+          Xcopy = rcp (new MV (X, Teuchos::Copy));
+        } else {
+          Xcopy = rcpFromRef (X);
+        }
       }
 
       // Each of the following methods updates the flop count itself.

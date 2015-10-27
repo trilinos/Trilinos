@@ -47,6 +47,7 @@
 #define MUELU_SAPFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
+#include <Xpetra_IteratorOps.hpp> // containing routines to generate Jacobi iterator
 #include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
@@ -114,7 +115,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2::Transpose(*A, true); // build transpose of A explicitely
+      A = Utilities::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -133,7 +134,7 @@ namespace MueLu {
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
           Magnitude stopTol = 1e-4;
-          lambdaMax = Utils::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -143,12 +144,12 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
+        Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
 
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {
@@ -166,7 +167,7 @@ namespace MueLu {
 
     } else {
       // prolongation factory is in restriction mode
-      RCP<Matrix> R = Utils2::Transpose(*finalP, true); // use Utils2 -> specialization for double
+      RCP<Matrix> R = Utilities::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
 
       // NOTE: EXPERIMENTAL

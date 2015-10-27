@@ -19,6 +19,8 @@ APPEND_SET(HEADERS
   evaluators/Evaluator_EnergyFlux_Fourier_Def.hpp
   evaluators/Evaluator_FEInterpolation.hpp
   evaluators/Evaluator_FEInterpolation_Def.hpp
+  evaluators/Evaluator_MockDAG.hpp
+  evaluators/Evaluator_MockDAG_Def.hpp
   evaluators/Evaluator_NonlinearSource.hpp
   evaluators/Evaluator_NonlinearSource_Def.hpp
   )

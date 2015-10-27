@@ -67,7 +67,9 @@ namespace MueLu {
 
   /*!
      @class CoarseMapFactory class.
+     @ingroup MueLuTransferClasses
      @brief Factory for generating coarse level map. Used by TentativePFactory.
+
       Factory is used by TentativePFactory to generate the coarse level map (=domain map) of
       the prolongation operator. The number of DOFs is calculated by the following formula
       \f[

@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleCholUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependence, team_size, AlgoChol::UnblockedOpt1, verbose);
+      (file_input, max_task_dependence, team_size, AlgoChol::UnblockedOpt, Variant::One, verbose);
     
     Kokkos::finalize();
   }

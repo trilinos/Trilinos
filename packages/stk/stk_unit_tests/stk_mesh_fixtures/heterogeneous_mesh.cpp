@@ -156,7 +156,7 @@ static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
 
 static const stk::mesh::EntityIdVector wedge_node_ids[number_wedge] {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
-  { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
+  { 20,  19,  16,  10 ,  9 ,  6} ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
 static const stk::mesh::EntityIdVector tetra_node_ids[number_tetra] {
