@@ -5961,33 +5961,36 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         EXPECT_TRUE(mesh.is_valid(side));
 
-        std::vector<stk::mesh::shared_entity_type> shared_entity_map;
-        mesh.my_markEntitiesForResolvingSharingInfoUsingNodes(stk::topology::FACE_RANK, shared_entity_map);
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(mesh, counts);
+        EXPECT_EQ(2u, counts[stk::topology::FACE_RANK]);
 
-        ASSERT_EQ(1u, shared_entity_map.size());
+        std::vector<stk::mesh::shared_entity_type> potentially_shared_sides;
+        mesh.my_markEntitiesForResolvingSharingInfoUsingNodes(stk::topology::FACE_RANK, potentially_shared_sides);
 
-        std::sort(shared_entity_map.begin(), shared_entity_map.end());
+        ASSERT_EQ(1u, potentially_shared_sides.size());
 
-        EXPECT_EQ(side, shared_entity_map[0].entity);
+        std::sort(potentially_shared_sides.begin(), potentially_shared_sides.end());
 
-        std::vector<std::vector<stk::mesh::shared_entity_type> > shared_entities(mesh.parallel_size());
-        mesh.my_fillSharedEntities(mesh.shared_ghosting(), mesh, shared_entity_map, shared_entities);
+        EXPECT_EQ(side, potentially_shared_sides[0].entity);
+
+        std::vector<std::vector<stk::mesh::shared_entity_type> > shared_entities_by_proc(mesh.parallel_size());
+        mesh.my_fillSharedEntities(potentially_shared_sides, shared_entities_by_proc);
 
         int otherProc = 1 - procId;
-        EXPECT_TRUE(shared_entities[procId].empty());
-        EXPECT_EQ(1u, shared_entities[otherProc].size());
+        EXPECT_TRUE(shared_entities_by_proc[procId].empty());
+        EXPECT_EQ(1u, shared_entities_by_proc[otherProc].size());
 
         stk::CommSparse comm(mesh.parallel());
-        communicateSharedEntityInfo(mesh, comm, shared_entities);
-        mesh.my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, shared_entity_map);
+        communicateSharedEntityInfo(mesh, comm, shared_entities_by_proc);
+        mesh.my_unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatNeedAlsoHaveEntity(comm, potentially_shared_sides);
 
         EXPECT_TRUE(mesh.my_internal_is_entity_marked(side) == stk::mesh::BulkData::IS_SHARED);
 
-        mesh.resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
+        mesh.change_entity_key_and_update_sharing_info(potentially_shared_sides);
 
         mesh.my_modification_end_for_entity_creation(stk::topology::FACE_RANK);
 
-        std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(mesh, counts);
         EXPECT_EQ(1u, counts[stk::topology::FACE_RANK]);
     }

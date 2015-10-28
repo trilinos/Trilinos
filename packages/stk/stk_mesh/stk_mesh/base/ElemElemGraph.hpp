@@ -127,6 +127,8 @@ public:
 
     bool is_connected_to_other_element_via_side_ordinal(stk::mesh::Entity element, int sideOrdinal) const;
 
+    const impl::parallel_info& get_const_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id) const;
+
     impl::parallel_info& get_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id);
 
     size_t num_edges() const;

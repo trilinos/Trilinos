@@ -198,6 +198,16 @@ size_t ElemElemGraph::num_edges() const
     return m_graph.get_num_edges();
 }
 
+const impl::parallel_info& ElemElemGraph::get_const_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id) const
+{
+    impl::LocalId this_elem_local_id = get_local_element_id(element);
+
+    impl::ParallelGraphInfo::const_iterator iter = m_parallel_graph_info.find(std::make_pair(this_elem_local_id, remote_id));
+    ThrowRequireMsg( iter != m_parallel_graph_info.end(), "ERROR: Proc " << m_bulk_data.parallel_rank() << " failed to find parallel graph info for <"
+                     <<m_bulk_data.identifier(element)<<","<<remote_id<<">");
+    return iter->second;
+}
+
 impl::parallel_info& ElemElemGraph::get_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id)
 {
     impl::LocalId this_elem_local_id = get_local_element_id(element);
@@ -731,10 +741,10 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
 
                             std::pair<impl::LocalId, stk::mesh::EntityId> localElemRemoteIdPair(local_elem_id,
                                                                                                 elemDataFromOtherProc.m_elementIdentifier);
-                            int thisElemSide = result.second;
+                            int thisElemSidePermutation = result.second;
                             impl::parallel_info parInfo(elemDataFromOtherProc.m_procId,
                                                         elemDataFromOtherProc.m_sideIndex,
-                                                        thisElemSide,
+                                                        thisElemSidePermutation,
                                                         chosen_side_id,
                                                         elemDataFromOtherProc.m_elementTopology,
                                                         elemDataFromOtherProc.m_isInPart,

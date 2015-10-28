@@ -110,20 +110,19 @@ void BulkData::fillEntityCommInfoForEntity(stk::mesh::Ghosting &ghost_id, stk::m
   }
 }
 
-void BulkData::fillSharedEntities(stk::mesh::Ghosting& ghost_id, stk::mesh::BulkData &mesh, std::vector<shared_entity_type> & shared_entity_map,
-        std::vector<std::vector<shared_entity_type> > &shared_entities )
+void BulkData::fillVectorOfSharedEntitiesByProcessor(std::vector<shared_entity_type> & potentially_shared_sides,
+        std::vector<std::vector<shared_entity_type> > &shared_entities_by_proc )
 {
-    for(std::vector<shared_entity_type>::const_iterator itr = shared_entity_map.begin(),
-            end = shared_entity_map.end(); itr != end; ++itr)
+    for(std::vector<shared_entity_type>::const_iterator itr = potentially_shared_sides.begin(),
+            end = potentially_shared_sides.end(); itr != end; ++itr)
     {
-        EntityCommInfoVector sharing_processors;
-        fillEntityCommInfoForEntity(ghost_id, mesh, itr->nodes, sharing_processors);
+        std::vector<int> sharing_processors;
+        shared_procs_intersection(itr->nodes, sharing_processors);
 
-        for(EntityCommInfoVector::const_iterator comm_itr = sharing_processors.begin(),
-                comm_end = sharing_processors.end(); comm_itr != comm_end; ++comm_itr)
+        for(int proc_id : sharing_processors)
         {
-            if(comm_itr->proc != mesh.parallel_rank())
-                shared_entities[comm_itr->proc].push_back(*itr);
+            if(proc_id != parallel_rank())
+                shared_entities_by_proc[proc_id].push_back(*itr);
         }
     }
 }
@@ -158,14 +157,15 @@ void communicateSharedEntityInfo(stk::mesh::BulkData &mesh, stk::CommSparse &com
     comm.communicate();
 }
 
-bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_resolving_sharing, std::vector<shared_entity_type>::iterator &shared_itr, std::vector<shared_entity_type>& shared_entity_map, shared_entity_type &sentity)
+bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_resolving_sharing, const std::vector<shared_entity_type>::iterator &shared_itr,
+        const std::vector<shared_entity_type>& shared_entities_this_proc, const shared_entity_type &shared_entity_from_other_proc)
 {
-    bool entitiesHaveSameNodes = shared_itr != shared_entity_map.end() && *shared_itr == sentity;
+    bool entitiesHaveSameNodes = shared_itr != shared_entities_this_proc.end() && *shared_itr == shared_entity_from_other_proc;
     bool entitiesAreTheSame = false;
 
     if ( use_entity_ids_for_resolving_sharing )
     {
-        entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == sentity.local_key;
+        entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == shared_entity_from_other_proc.local_key;
     }
     else
     {
@@ -175,21 +175,29 @@ bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_reso
     return entitiesAreTheSame;
 }
 
-void BulkData::is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity)
+void BulkData::update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id) const
 {
-    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entity_map.begin(), shared_entity_map.end(), sentity);
+    shared_entity_this_proc.sharing_procs.push_back(proc_id);
+    if(proc_id < this->parallel_rank())
+        shared_entity_this_proc.global_key = global_key_other_proc;
+}
+
+void BulkData::update_shared_entity_this_proc(EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id)
+{
+    update_owner_global_key_and_sharing_proc(global_key_other_proc, shared_entity_this_proc, proc_id);
+    this->internal_mark_entity(shared_entity_this_proc.entity, BulkData::IS_SHARED);
+}
+
+void BulkData::check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entities_this_proc, int proc_id, const shared_entity_type &shared_entity_from_other_proc)
+{
+    std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entities_this_proc.begin(), shared_entities_this_proc.end(), shared_entity_from_other_proc);
+    size_t shared_itr_index = shared_itr - shared_entities_this_proc.begin();
     bool entitiesAreTheSame = is_received_entity_in_local_shared_entity_list(this->use_entity_ids_for_resolving_sharing(),
-           shared_itr, shared_entity_map, sentity);
+           shared_itr, shared_entities_this_proc, shared_entity_from_other_proc);
 
     if( entitiesAreTheSame )
     {
-        Entity entity = this->get_entity(shared_itr->local_key);
-        shared_itr->sharing_procs.push_back(proc_id);
-        if(proc_id < this->parallel_rank())
-        {
-            shared_itr->global_key = sentity.global_key;
-        }
-        this->internal_mark_entity(entity, BulkData::IS_SHARED);
+        update_shared_entity_this_proc(shared_entity_from_other_proc.global_key, shared_entities_this_proc[shared_itr_index], proc_id);
     }
 }
 
@@ -272,56 +280,59 @@ void BulkData::unpack_shared_entities(stk::CommSparse &comm, std::vector< std::p
     }
 }
 
-void BulkData::unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map)
+void BulkData::unpackEntityFromOtherProcAndUpdateInfoIfSharedLocally(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entities_this_proc)
 {
-    std::vector< std::pair<int, shared_entity_type> > shared_entities_and_proc;
+    std::vector< std::pair<int, shared_entity_type> > shared_entities_received_from_other_procs;
+    this->unpack_shared_entities(comm, shared_entities_received_from_other_procs);
 
-    this->unpack_shared_entities(comm, shared_entities_and_proc);
-
-    for(size_t i=0;i<shared_entities_and_proc.size();++i)
+    for(size_t i=0;i<shared_entities_received_from_other_procs.size();++i)
     {
-        this->is_entity_shared(shared_entity_map, shared_entities_and_proc[i].first, shared_entities_and_proc[i].second);
+        this->check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(shared_entities_this_proc, shared_entities_received_from_other_procs[i].first, shared_entities_received_from_other_procs[i].second);
     }
 }
 
-void BulkData::resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map)
+void BulkData::change_entity_key_to_match_owner(const std::vector<shared_entity_type> & potentially_shared_sides)
 {
-   for(size_t i = 0, e = shared_entity_map.size(); i < e; ++i)
-   {
-       Entity entity = get_entity(shared_entity_map[i].local_key);
-       if(shared_entity_map[i].global_key != shared_entity_map[i].local_key)
-       {
-           internal_change_entity_key(shared_entity_map[i].local_key, shared_entity_map[i].global_key, entity);
-       }
-       for(size_t j = 0; j < shared_entity_map[i].sharing_procs.size(); j++)
-       {
-           entity_comm_map_insert(entity, EntityCommInfo(stk::mesh::BulkData::SHARED, shared_entity_map[i].sharing_procs[j]));
-       }
-   }
+    for(size_t i = 0, e = potentially_shared_sides.size(); i < e; ++i)
+    {
+        Entity entity = potentially_shared_sides[i].entity;
+        if(potentially_shared_sides[i].global_key != potentially_shared_sides[i].local_key)
+            internal_change_entity_key(potentially_shared_sides[i].local_key, potentially_shared_sides[i].global_key, entity);
+    }
 }
 
-void BulkData::update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map)
+void BulkData::insert_sharing_info_into_comm_map(const std::vector<shared_entity_type> & potentially_shared_sides)
 {
-    std::sort(shared_entity_map.begin(), shared_entity_map.end());
+    for(size_t i = 0, e = potentially_shared_sides.size(); i < e; ++i)
+    {
+        Entity entity = potentially_shared_sides[i].entity;
+        for(size_t j = 0; j < potentially_shared_sides[i].sharing_procs.size(); j++)
+            entity_comm_map_insert(entity, EntityCommInfo(stk::mesh::BulkData::SHARED, potentially_shared_sides[i].sharing_procs[j]));
+    }
+}
 
-    // shared_edges[0] will contain all the edges this processor shares with processor 0
-    std::vector<std::vector<shared_entity_type> > shared_entities(parallel_size());
-    fillSharedEntities(shared_ghosting(), *this, shared_entity_map, shared_entities);
+void BulkData::change_entity_key_and_update_sharing_info(std::vector<shared_entity_type> & potentially_shared_sides)
+{
+   change_entity_key_to_match_owner(potentially_shared_sides);
+   insert_sharing_info_into_comm_map(potentially_shared_sides);
+}
+
+void BulkData::set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map(std::vector<shared_entity_type> & potentially_shared_sides_this_proc)
+{
+    std::sort(potentially_shared_sides_this_proc.begin(), potentially_shared_sides_this_proc.end());
+
+    std::vector<std::vector<shared_entity_type> > shared_entities_by_processor(parallel_size());
+    fillVectorOfSharedEntitiesByProcessor(potentially_shared_sides_this_proc, shared_entities_by_processor);
 
     stk::CommSparse comm(parallel());
-    communicateSharedEntityInfo(*this, comm, shared_entities);
-    unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(comm, shared_entity_map);
-    resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
+    communicateSharedEntityInfo(*this, comm, shared_entities_by_processor);
+    unpackEntityFromOtherProcAndUpdateInfoIfSharedLocally(comm, potentially_shared_sides_this_proc);
+    change_entity_key_and_update_sharing_info(potentially_shared_sides_this_proc);
 }
 
-void BulkData::resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entities)
+void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<Entity> &entities)
 {
-    std::vector<shared_entity_type> shared_entities;
-    this->markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
-    update_shared_entities_global_ids( shared_entities );
-
-    this->extract_entity_from_shared_entity_type(shared_entities, entities);
-
+    fill_shared_entities_of_rank_while_updating_sharing_info(entityRank, entities);
     std::sort(entities.begin(), entities.end(), EntityLess(*this));
 }
 
@@ -360,7 +371,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
 
     // shared_edges[0] will contain all the edges this processor shares with processor 0
     std::vector<std::vector<shared_entity_type> > shared_entities_to_each_proc(parallel_size());
-    fillSharedEntities(shared_ghosting(), *this, shared_entities, shared_entities_to_each_proc);
+    fillVectorOfSharedEntitiesByProcessor(shared_entities, shared_entities_to_each_proc);
 
     stk::CommSparse comm(parallel());
     communicateSharedEntityInfo(*this, comm, shared_entities_to_each_proc);
@@ -1232,12 +1243,12 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
   fill_sorted_procs(internal_entity_comm_map(key), procs);
 }
 
-void BulkData::comm_shared_procs( EntityKey key, std::vector<int> & procs ) const
+void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
 {
   fill_sorted_procs(internal_entity_comm_map_shared(key), procs);
 }
 
-void BulkData::shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const
+void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
 {
 
   procs.clear();
@@ -3566,12 +3577,6 @@ void BulkData::communicate_entity_modification( const bool shared , std::vector<
 //  * shared_new contains all entities that were modified/created on a
 //    different process
 
-void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(
-        stk::mesh::EntityRank entityRank, std::vector<Entity> & shared_new )
-{
-  resolve_entity_sharing(entityRank, shared_new);
-}
-
 void BulkData::extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new)
 {
     for (size_t i=0; i<shared_entities.size(); ++i)
@@ -3584,16 +3589,12 @@ void BulkData::extract_entity_from_shared_entity_type(const std::vector<shared_e
     }
 }
 
-void BulkData::fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
+void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    std::vector<shared_entity_type> shared_entities;
-    // Possibly shared entities
-    this->markEntitiesForResolvingSharingInfoUsingNodes(rank, shared_entities);
-
-    update_shared_entities_global_ids( shared_entities );
-
-    // Extract truly shared entities
-    this->extract_entity_from_shared_entity_type(shared_entities, shared_new);
+    std::vector<shared_entity_type> potentially_shared_entities;
+    this->markEntitiesForResolvingSharingInfoUsingNodes(rank, potentially_shared_entities);
+    set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map( potentially_shared_entities );
+    this->extract_entity_from_shared_entity_type(potentially_shared_entities, shared_new);
 }
 
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(
@@ -3606,8 +3607,8 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
     shared_new.reserve(shared_nodes.size()*2);
     shared_new.insert(shared_new.end(), shared_nodes.begin(), shared_nodes.end());
 
-    this->fill_shared_entities_of_rank(stk::topology::EDGE_RANK, shared_new);
-    this->fill_shared_entities_of_rank(stk::topology::FACE_RANK, shared_new);
+    this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::EDGE_RANK, shared_new);
+    this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::FACE_RANK, shared_new);
 
     std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
 }

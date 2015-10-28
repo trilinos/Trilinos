@@ -546,7 +546,7 @@ public:
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
   bool in_ghost( const Ghosting & ghost , EntityKey key , int proc ) const;     // CLEANUP: can be moved protected
-  void shared_procs_intersection( std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
+  void shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const; // CLEANUP: only used by aero
 
   // Comm-related convenience methods
 
@@ -764,7 +764,7 @@ protected: //functions
   inline entitySharing internal_is_entity_marked(Entity entity) const;
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
 
-  void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
+  virtual void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
   virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes);
 
   void gather_shared_nodes(std::vector<Entity> & shared_nodes);
@@ -834,8 +834,7 @@ protected: //functions
 
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
-  void update_shared_entities_global_ids(std::vector<shared_entity_type> & shared_entity_map);
-  void resolve_entity_sharing(stk::mesh::EntityRank entityRank, std::vector<Entity> &entity_keys);
+  void set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map(std::vector<shared_entity_type> & shared_entity_map);
   void find_and_delete_internal_faces(stk::mesh::EntityRank entityRank,
                                       const stk::mesh::Selector *only_consider_second_element_from_this_selector); // Mod Mark
 
@@ -859,7 +858,7 @@ protected: //functions
 
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
-  void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
+  void fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
@@ -980,21 +979,22 @@ protected: //functions
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
   void delete_shared_entities_which_are_no_longer_in_owned_closure(); // Mod Mark
-  virtual void is_entity_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, shared_entity_type &sentity);
+  virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, const shared_entity_type &sentity);
+  void update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc,  shared_entity_type& shared_entity_this_proc, int proc_id) const;
+  void update_shared_entity_this_proc(EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id);
   void mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vector<shared_entity_type>& shared_entity_map,
           int proc_id, shared_entity_type &sentity, std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data,
           const stk::mesh::Selector *only_consider_second_element_from_this_selector);
 
-  void fillSharedEntities(stk::mesh::Ghosting& ghost_id,
-                          stk::mesh::BulkData &mesh,
-                          std::vector<shared_entity_type> & shared_entity_map,
-                          std::vector<std::vector<shared_entity_type> > &shared_entities);
+  void fillVectorOfSharedEntitiesByProcessor(std::vector<shared_entity_type> & potentially_shared_sides, std::vector<std::vector<shared_entity_type> > &shared_entities_by_proc);
 
   void unpack_shared_entities(stk::CommSparse &comm, std::vector< std::pair<int, shared_entity_type> > &shared_entities_and_proc);
 
-  void unpackEntityInfromFromOtherProcsAndMarkEntitiesAsSharedAndTrackProcessorsThatAlsoHaveEntity(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
+  void unpackEntityFromOtherProcAndUpdateInfoIfSharedLocally(stk::CommSparse &comm, std::vector<shared_entity_type> & shared_entity_map);
 
-  virtual void resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(std::vector<shared_entity_type> & shared_entity_map);
+  virtual void change_entity_key_and_update_sharing_info(std::vector<shared_entity_type> & shared_entity_map);
+  void change_entity_key_to_match_owner(const std::vector<shared_entity_type> & potentially_shared_sides);
+  void insert_sharing_info_into_comm_map(const std::vector<shared_entity_type> & potentially_shared_sides);
 
   inline void internal_mark_entity(Entity entity, entitySharing sharedType);
 

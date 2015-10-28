@@ -29,6 +29,7 @@ protected:
         allocate_bulk(auraOption);
         stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
     }
+
     void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
@@ -51,8 +52,7 @@ protected:
         return *bulkData;
     }
 
-private:
-    void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
     }
