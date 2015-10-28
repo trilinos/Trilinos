@@ -487,16 +487,24 @@ namespace {
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)         \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
+  //Modified by JDB (Oct-19-2015)
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   UNIT_TEST_GROUP_ORDINAL(int)
-
-#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
-#    ifdef HAVE_TPETRA_INT_LONG_LONG
+  #ifdef HAVE_TPETRA_INT_LONG_LONG
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
-#    endif
-#  endif  // EXPL-INST
+  #endif
+#else  //ETI
+  #ifdef HAVE_TPETRA_INST_INT_INT
+  UNIT_TEST_GROUP_ORDINAL(int)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG
+  typedef long int LongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
+  #endif
+#endif  // EXPL-INST
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

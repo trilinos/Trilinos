@@ -200,7 +200,7 @@ Kokkos::initialize();
 
   // internal variables:
   int         errorFlag    = 0;
-  long double TOL          = INTREPID2_TOL;
+  long double TOL          = INTREPID_TOL;
   int         dimension    = 2;
   int         maxLevel     = 25;
   bool        isNormalized = true;                  
@@ -218,7 +218,7 @@ Kokkos::initialize();
   long double eta = adaptSG(sol,problem_data,TOL); 
 
   long double analyticInt = (1.0+10.0)*std::sqrt(M_PI)/2.0*erff(1.0);
-  long double abstol      = 1.0e1*std::sqrt(INTREPID2_TOL);
+  long double abstol      = 1.0e1*std::sqrt(INTREPID_TOL);
   long double absdiff     = fabs(analyticInt-sol[0]);
   try { 
     *outStream << "Adaptive Sparse Grid exited with global error " 

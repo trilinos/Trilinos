@@ -29,7 +29,7 @@ Kokkos::initialize();
       FieldContainer<double> outi_c_f_p_d(c, f, p, d1);
       FieldContainer<double> out_c_f_p_d_d(c, f, p, d1, d2);
       FieldContainer<double> outi_c_f_p_d_d(c, f, p, d1, d2);
-      double zero = INTREPID2_TOL*10000.0;
+      double zero = INTREPID_TOL*10000.0;
       
       
 

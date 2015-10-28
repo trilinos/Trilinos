@@ -325,7 +325,7 @@ previous lesson.  It then creates a distributed Tpetra Map and a
 Tpetra Vector, and shows how to read and modify the entries of the
 Vector.
 
-\include lesson02_read_modify_vec.cpp
+\include lesson02_read_modify_vec_kokkos.cpp
 
 \section Tpetra_Lesson02_Other Things not previously explained
 

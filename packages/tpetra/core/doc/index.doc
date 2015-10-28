@@ -20,8 +20,10 @@
 dense vectors.  %Tpetra is "hybrid parallel," meaning that it uses at
 least two levels of parallelism:
 
-- MPI (the Message Passing Interface) for distributed-memory parallelism, and 
-- any of various shared-memory parallel programming models within an MPI process.
+<ul>
+<li> MPI (the Message Passing Interface) for distributed-memory parallelism, and </li>
+<li> any of various shared-memory parallel programming models within an MPI process. </li>
+</ul>
 
 We say "distributed linear algebra" because %Tpetra objects may be
 distributed over one or more parallel MPI processes.  The
@@ -173,6 +175,7 @@ nightly tests on many different platforms.
 <li> \ref Tpetra_Lesson04 </li>
 <li> \ref Tpetra_Lesson05 </li>
 <li> \ref Tpetra_Lesson06 </li>
+<li> \ref Tpetra_Lesson07 </li>
 </ul>
 
 */

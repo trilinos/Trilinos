@@ -152,6 +152,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_IntVector > smartresult;
   Teuchos::RCP< Epetra_IntVector > * result;
 #ifdef HAVE_DOMI
@@ -206,9 +207,12 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<int>(comm, dap);
       *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -286,6 +290,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_MultiVector > smartresult;
   Teuchos::RCP< Epetra_MultiVector > * result;
 #ifdef HAVE_DOMI
@@ -340,9 +345,12 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<double>(comm, dap);
       *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -433,6 +441,7 @@ convertPythonToEpetraVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
+  PyObject * distarray = 0;
   Teuchos::RCP< Epetra_Vector > smartresult;
   Teuchos::RCP< Epetra_Vector > * result;
 #ifdef HAVE_DOMI
@@ -487,9 +496,12 @@ convertPythonToEpetraVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector<double>(comm, dap);
       *newmem = SWIG_CAST_NEW_MEMORY;
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {

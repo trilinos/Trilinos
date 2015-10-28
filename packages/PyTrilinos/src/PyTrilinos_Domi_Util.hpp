@@ -44,6 +44,7 @@
 #define PYTRILINOS_DOMI_UTIL_HPP
 
 // Include PyTrilinos utilities
+#include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 #include "PyTrilinos_DAP.hpp"
 
@@ -261,7 +262,15 @@ convertToMDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 #endif
 
   // Return the result
-  return Teuchos::rcp(new Domi::MDVector< Scalar >(mdMap, mdArrayRcp));
+  try
+  {
+    return Teuchos::rcp(new Domi::MDVector< Scalar >(mdMap, mdArrayRcp));
+  }
+  catch (Domi::InvalidArgument & e)
+  {
+    PyErr_SetString(PyExc_ValueError, e.what());
+    throw PythonException();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

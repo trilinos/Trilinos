@@ -814,6 +814,7 @@ public:
         ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+1], a[u+1], tmp);
         ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+2], a[u+2], tmp);
         ZOLTAN2_ALGMULTIJAGGED_SWAP(a[v+3], a[u+3], tmp);
+
       }
     }
     else {

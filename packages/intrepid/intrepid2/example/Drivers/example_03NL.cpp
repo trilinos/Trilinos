@@ -577,7 +577,7 @@ Kokkos::initialize();
     *outStream << timer_jac_fc.name()       << " " << timer_jac_fc.totalElapsedTime()       << " sec\n";
     *outStream << timer_jac_fc_g.name()     << " " << timer_jac_fc_g.totalElapsedTime()     << " sec\n\n";
 
-    if ((normMat < 1.0e4*INTREPID2_TOL)) {
+    if ((normMat < 1.0e4*INTREPID_TOL)) {
       std::cout << "End Result: TEST PASSED\n";
     }
     else {

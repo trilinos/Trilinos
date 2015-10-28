@@ -103,7 +103,15 @@ convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   }
 
   // Return the result
-  return Teuchos::rcp(new Domi::MDComm(teuchosComm, commDims, periodic));
+  try
+  {
+    return Teuchos::rcp(new Domi::MDComm(teuchosComm, commDims, periodic));
+  }
+  catch (Domi::InvalidArgument & e)
+  {
+    PyErr_SetString(PyExc_ValueError, e.what());
+    throw PythonException();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -126,7 +134,6 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
     // Check the distribution type
     if (distType == NONE)
     {
-      std::cout << "dist_type == None error!" << std::endl;
       PyErr_Format(PyExc_ValueError,
                    "'dist_type' for axis %d = 'NONE' is invalid",
                    axis);
@@ -167,10 +174,23 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
       Domi::C_ORDER : Domi::FORTRAN_ORDER;
 
   // Return the result
-  return Teuchos::rcp(new Domi::MDMap<>(mdComm,
-                                        myGlobalBounds,
-                                        padding,
-                                        layout));
+  try
+  {
+    return Teuchos::rcp(new Domi::MDMap<>(mdComm,
+                                          myGlobalBounds,
+                                          padding,
+                                          layout));
+  }
+  catch (Domi::InvalidArgument & e)
+  {
+    PyErr_SetString(PyExc_ValueError, e.what());
+    throw PythonException();
+  }
+  catch (Domi::MDMapNoncontiguousError & e)
+  {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    throw PythonException();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////

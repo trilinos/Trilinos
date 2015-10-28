@@ -325,7 +325,7 @@ Kokkos::initialize();
   << "===============================================================================\n";
 
   double testVol = 0.0;
-  double tol     = 100.0 * INTREPID2_TOL;
+  double tol     = 100.0 * INTREPID_TOL;
 
   // list of analytic volume values, listed in the enumerated reference cell order up to CELL_HEXAPRISM
   double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 1.0, 4.0/3.0, 32.0};

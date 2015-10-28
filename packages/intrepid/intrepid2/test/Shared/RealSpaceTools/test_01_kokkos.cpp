@@ -641,7 +641,7 @@ Kokkos::initialize();
       Kokkos::View<double**> vdot_x_x("vdot_x_x",i0, i1);
       Kokkos::View<double**> vnorms_x_x("vnorms_x_x",i0, i1);
       Kokkos::View<double*> vnorms_x("vnorms_x",i0);
-      double zero = INTREPID2_TOL*100.0;
+      double zero = INTREPID_TOL*100.0;
 
       // fill with random numbers
        for (unsigned int i=0; i<ma_x_x_d_d.dimension(0); i++) {
@@ -853,7 +853,7 @@ Kokkos::initialize();
       Kokkos::View<double**> vc_x_d("vc_x_d",i0, dim);
       Kokkos::View<double*> vdot_x("vdot_x",i0);
       Kokkos::View<double*> vnorms_x("vnorms_x",i0);
-      double zero = INTREPID2_TOL*100.0;
+      double zero = INTREPID_TOL*100.0;
 
       // fill with random numbers
       
