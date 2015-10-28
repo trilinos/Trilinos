@@ -120,8 +120,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   HWLOC           "cmake/TPLs/"    SS
   QTHREAD         "cmake/TPLs/"    SS
   BinUtils        "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"    SS
-  ARPREC          "cmake/TPLs/"    SS
-  QD              "cmake/TPLs/"    SS
+  ARPREC          "packages/teuchos/cmake/tpls/"    SS
+  QD              "packages/teuchos/cmake/tpls/"    SS
   MPI             "${${PROJECT_NAME}_TRIBITS_DIR}/core/std_tpls/" PS
   BLAS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
   LAPACK          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"   PS
@@ -168,7 +168,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MATLAB          "cmake/TPLs/"    EX
   CASK            "cmake/TPLs/"    EX
   SPARSKIT        "cmake/TPLs/"    SS
-  QT              "cmake/TPLs/"    SS
+  QT              "packages/teuchos/cmake/tpls/"    SS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
   BoostAlbLib     "cmake/TPLs/"    SS
@@ -188,7 +188,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Matio           "cmake/TPLs/"    SS
   PAPI            "cmake/TPLs/"    SS
   MATLABLib       "cmake/TPLs/"    EX
-  Eigen           "cmake/TPLs/"    EX
+  Eigen           "packages/teuchos/cmake/TPLs/"    EX
   X11             "cmake/TPLs/"    SS
   Lemon           "cmake/TPLs/"    EX
   GLM             "cmake/TPLs/"    EX
