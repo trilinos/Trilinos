@@ -140,7 +140,7 @@ ZOLTAN_ID_PTR lid;       /* temporary pointer to a local ID; used to pass
 ZOLTAN_COMM_OBJ *imp_plan = NULL; /* Comm obj built from import lists. */
 ZOLTAN_COMM_OBJ *exp_plan = NULL; /* Comm obj built from export lists. */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
-int total_send_size;     /* Total size of outcoming message (in #items)     */
+size_t total_send_size;  /* Total size of outcoming message (in #items)     */
 int total_recv_size;     /* Total size of incoming message (in #items)      */
 int aligned_int;         /* size of an int padded for alignment             */
 int dest;                /* temporary destination partition.                */
