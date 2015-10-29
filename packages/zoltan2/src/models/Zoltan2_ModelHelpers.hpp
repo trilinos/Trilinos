@@ -89,10 +89,10 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     const gno_t *adjacencyIds=NULL;
     ia->getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-    gno_t const *Ids=NULL;
+    const gno_t *Ids=NULL;
     ia->getIDsViewOf(sourcetarget, Ids);
 
-    gno_t const *throughIds=NULL;
+    const gno_t *throughIds=NULL;
     ia->getIDsViewOf(through, throughIds);
 
     size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
@@ -101,8 +101,6 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     /************************* BUILD MAPS FOR ADJS *************************/
     /***********************************************************************/
 
-    Array<gno_t> sourcetargetGIDs;
-    Array<gno_t> throughGIDs;
     RCP<const map_type> sourcetargetMapG;
     RCP<const map_type> throughMapG;
 
@@ -110,25 +108,19 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     size_t LocalNumOfThrough = ia->getLocalNumOf(through);
 
     // Build a list of the global sourcetarget ids...
-    sourcetargetGIDs.resize (LocalNumIDs);
-    throughGIDs.resize (LocalNumOfThrough);
     gno_t min[2];
-    min[0] = as<gno_t> (Ids[0]);
+    min[0] = std::numeric_limits<gno_t>::max();
     for (size_t i = 0; i < LocalNumIDs; ++i) {
-      sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
-
-      if (sourcetargetGIDs[i] < min[0]) {
-	min[0] = sourcetargetGIDs[i];
+      if (Ids[i] < min[0]) {
+	min[0] = Ids[i];
       }
     }
 
     // min(throughIds[i])
-    min[1] = as<gno_t> (throughIds[0]);
+    min[1] = std::numeric_limits<gno_t>::max();
     for (size_t i = 0; i < LocalNumOfThrough; ++i) {
-      throughGIDs[i] = as<gno_t> (throughIds[i]);
-
-      if (throughGIDs[i] < min[1]) {
-	min[1] = throughGIDs[i];
+      if (throughIds[i] < min[1]) {
+	min[1] = throughIds[i];
       }
     }
 
@@ -136,9 +128,10 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
     //Generate Map for sourcetarget.
+    ArrayView<const gno_t> sourceTargetGIDs(Ids, LocalNumIDs);
     sourcetargetMapG = rcp(new map_type(//ia->getGlobalNumOf(sourcetarget),
 					INVALID,
-					sourcetargetGIDs(), gmin[0], comm));
+					sourceTargetGIDs, gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
     /*RCP<const map_type> oneToOneSTMap =
@@ -152,6 +145,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 // TODO all through entities on processor, followed by call to createOneToOne
 // TODO
 
+    ArrayView<const gno_t> throughGIDs(throughIds, LocalNumOfThrough);
     throughMapG = rcp (new map_type(INVALID,//ia->getGlobalNumOf(through),
 				    throughGIDs, gmin[1], comm));
 
@@ -175,13 +169,13 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
 
       //globalRow for Tpetra Graph
-      gno_t globalRowT = as<gno_t> (Ids[localElement]);
+      gno_t globalRowT = Ids[localElement];
 
 // TODO:  can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
 // TODO:  maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
       for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-	gno_t globalCol = as<gno_t> (adjacencyIds[j]);
+	gno_t globalCol = adjacencyIds[j];
 	//create ArrayView globalCol object for Tpetra
 	ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
@@ -229,9 +223,6 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     gno_t const *Ids=NULL;
     ia->getIDsViewOf(sourcetarget, Ids);
-
-    gno_t const *throughIds=NULL;
-    ia->getIDsViewOf(through, throughIds);
 
     /* Allocate memory necessary for the adjacency */
     size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
