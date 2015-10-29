@@ -10,12 +10,14 @@ IF (Tpetra_INST_INT_INT)
     )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mapRemotes
-  SOURCES mapRemotes.cpp
-  COMM mpi
-  FAIL_REGULAR_EXPRESSION "FAIL"
-)
+# KDD:  10/29/15
+# Disabling this test for until bug 6412 is fixed.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  mapRemotes
+#  SOURCES mapRemotes.cpp
+#  COMM mpi
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#)
 
 TRIBITS_ADD_EXECUTABLE(
   testfail
