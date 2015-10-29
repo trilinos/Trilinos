@@ -131,7 +131,7 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
-  long long maxInt = 9223372036854775807LL;
+  long long maxInt = std::numeric_limits<long long>::max();
   Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
 
   // Creating mesh adapter
@@ -147,6 +147,8 @@ int main(int narg, char *arg[]) {
   inputAdapter_t::lno_t const *offsets=NULL;
   inputAdapter_t::lno_t const *moffsets=NULL;
   ia.print(me);
+
+  if (me == 0) std::cout << "REGION-BASED TEST" << std::endl;
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
@@ -172,10 +174,13 @@ int main(int narg, char *arg[]) {
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
                                                    CommT, modelFlags);
 
+    if (me == 0)
+      std::cout << "        Calling get2ndAdjsViewFromAdjs" << std::endl;
     Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel.getComm(),
                                     primaryEType,
                                       secondAdjEType, moffsets, madjacencyIds);
 
+    if (me == 0) std::cout << "        Checking results" << std::endl;
     for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
       if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
         std::cout << "Number of adjacencies do not match" << std::endl;
@@ -204,6 +209,7 @@ int main(int narg, char *arg[]) {
     return 1;
   }
 
+  if (me == 0) std::cout << "VERTEX-BASED TEST" << std::endl;
   primaryEType = ia2.getPrimaryEntityType();
   adjEType = ia2.getAdjacencyEntityType();
   secondAdjEType = ia2.getSecondAdjacencyEntityType();
@@ -226,9 +232,13 @@ int main(int narg, char *arg[]) {
     Zoltan2::GraphModel<base_adapter_t> graphModel2(baseInputAdapter, env,
                                                    CommT, modelFlags);
 
+    if (me == 0)
+      std::cout << "        Calling get2ndAdjsViewFromAdjs" << std::endl;
     Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel2.getComm(),
                                     primaryEType,
                                     secondAdjEType, moffsets, madjacencyIds);
+
+    if (me == 0) std::cout << "        Checking results" << std::endl;
 
     for (size_t tnoct = 0; tnoct < ia2.getLocalNumOf(primaryEType); tnoct++) {
       if (offsets[tnoct+1]-offsets[tnoct]!=moffsets[tnoct+1]-moffsets[tnoct]) {
