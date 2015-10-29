@@ -51,6 +51,7 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
+#include <Tpetra_Map.hpp>
 #include <vector>
 #include <cstdlib>
 
@@ -72,14 +73,13 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
-  typedef double scalar_t;
-  typedef int localId_t;
-#ifdef HAVE_ZOLTAN2_LONG_LONG_INT
-  typedef long long globalId_t;
-#else
-  typedef int globalId_t;
-#endif
+  // For convenience, we'll use the Tpetra defaults for local/global ID types
+  // Users can substitute their preferred local/global ID types
+  typedef Tpetra::Map<> Map_t;
+  typedef Map_t::local_ordinal_type localId_t;
+  typedef Map_t::global_ordinal_type globalId_t;
 
+  typedef double scalar_t;
   typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
 
   // TODO explain
