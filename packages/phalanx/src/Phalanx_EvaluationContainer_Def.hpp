@@ -50,8 +50,6 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
-#include <boost/mpl/for_each.hpp>
-#include <boost/mpl/at.hpp>
 #include <sstream>
 
 // *************************************************************************

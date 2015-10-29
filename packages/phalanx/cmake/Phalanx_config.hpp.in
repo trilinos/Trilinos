@@ -22,8 +22,6 @@
 #cmakedefine PHX_INDEX_SIZE_TYPE_LONGINT
 #cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
 
-#cmakedefine HAVE_PHALANX_TVMET
-
 #cmakedefine Phalanx_ENABLE_Intrepid
 
 @PHALANX_DEPRECATED_DECLARATIONS@

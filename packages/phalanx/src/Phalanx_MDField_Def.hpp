@@ -387,9 +387,9 @@ setFieldData(const PHX::any& a)
   m_data_set = true;
 #endif
 
-  // Boost any object is always the non-const data type.  To correctly
-  // cast the boost any object to the Kokkos::View, need to pull the
-  // const off the scalar type if this MDField has a const scalar type.
+  // any object is always the non-const data type.  To correctly cast
+  // the any object to the Kokkos::View, need to pull the const off
+  // the scalar type if this MDField has a const scalar type.
   typedef Kokkos::View<typename array_type::non_const_array_intrinsic_type,PHX::Device> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);

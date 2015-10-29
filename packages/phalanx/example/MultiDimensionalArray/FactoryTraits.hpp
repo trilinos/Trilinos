@@ -46,7 +46,7 @@
 #define EXAMPLE_FACTORY_TRAITS_HPP
 
 // mpl (Meta Programming Library) templates
-#include "boost/mpl/vector.hpp"
+#include "Sacado_mpl_vector.hpp"
 
 // User Defined Evaluator Types
 #include "Evaluator_Constant.hpp"
@@ -56,13 +56,13 @@
 #include "Evaluator_NonlinearSource.hpp"
 
 
-#include "boost/mpl/placeholders.hpp"
-using namespace boost::mpl::placeholders;
+#include "Sacado_mpl_placeholders.hpp"
+using namespace Sacado::mpl::placeholders;
 
 /*! \brief Struct to define Evaluator objects for the EvaluatorFactory.
     
     Preconditions:
-    - You must provide a boost::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
+    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects that you wish the factory to build.  Do not confuse evaluator types (concrete instances of evaluator objects) with evaluation types (types of evaluations to perform, i.e., Residual, Jacobian). 
 
 */
 template<typename Traits>
@@ -74,11 +74,11 @@ struct MyFactoryTraits {
   static const int id_feinterpolation = 3;
   static const int id_nonlinearsource = 4;
 
-  typedef boost::mpl::vector< Constant<_,Traits>,             // 0
-			      Density<_,Traits>,              // 1
-			      Fourier<_,Traits>,              // 2
-			      FEInterpolation<_,Traits>,      // 3
-			      NonlinearSource<_,Traits>       // 4
+  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
+			       Density<_,Traits>,              // 1
+			       Fourier<_,Traits>,              // 2
+			       FEInterpolation<_,Traits>,      // 3
+			       NonlinearSource<_,Traits>       // 4
   > EvaluatorTypes;
   
 };
