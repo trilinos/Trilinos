@@ -2350,8 +2350,8 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                     {
                         if(this->is_connected_elem_locally_owned(element, k))
                         {
-                            impl::LocalId local_id = get_local_element_id(element);
-                            const GraphEdge & graphEdge = m_graph.get_edge_for_element(local_id, k);
+                            impl::LocalId localId = get_local_element_id(element);
+                            const GraphEdge & graphEdge = m_graph.get_edge_for_element(localId, k);
                             stk::mesh::Entity other_element = m_local_id_to_element_entity[graphEdge.elem2];
                             if (((*m_air_selector)(m_bulk_data.bucket(other_element))) && impl::does_element_have_side(m_bulk_data, other_element))
                             {
