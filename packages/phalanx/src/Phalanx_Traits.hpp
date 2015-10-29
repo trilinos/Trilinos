@@ -42,8 +42,9 @@
 // @HEADER
 
 
-#ifndef PHX_TRAITS_BASE_HPP
-#define PHX_TRAITS_BASE_HPP
+#ifndef PHX_TRAITS_HPP
+#define PHX_TRAITS_HPP
+
 #include "Kokkos_View.hpp"
 #include "Kokkos_View_Fad.hpp"
 #include "Phalanx_config.hpp"
@@ -51,6 +52,12 @@
 namespace PHX {
   
   struct TraitsBase {};
+
+  template <typename mpl_vector> struct eval_scalar_types;
+
+  // template <typename T> 
+  // struct eval_scalar_types
+  // { PHALANX_ERROR_MissingTraitsSpecializationFor_eval_scalar_types(); };
 
 }
    

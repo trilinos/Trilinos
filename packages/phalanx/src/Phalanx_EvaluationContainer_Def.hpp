@@ -46,6 +46,7 @@
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
 #include "Teuchos_Assert.hpp"
+#include "Phalanx_Traits.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
@@ -100,7 +101,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
   for (var = var_list.begin(); var != var_list.end(); ++var) {
-    typedef typename boost::mpl::at<typename Traits::EvalToDataMap,EvalT>::type EvalDataTypes;
+    typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
     Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
 
     TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,

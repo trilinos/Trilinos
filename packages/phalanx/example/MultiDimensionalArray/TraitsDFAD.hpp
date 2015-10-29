@@ -42,17 +42,12 @@
 // @HEADER
 
 
-#ifndef PHX_TRAITS_HPP
-#define PHX_TRAITS_HPP
+#ifndef PHX_DFAD_TRAITS_HPP
+#define PHX_DFAD_TRAITS_HPP
 
-// mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_find.hpp"
-#include "boost/mpl/map.hpp"
-#include "boost/mpl/find.hpp"
-
-// traits Base Class
-#include "Phalanx_Traits_Base.hpp"
+#include "Phalanx_Traits.hpp"
 
 // Include User Data Types
 #include "Phalanx_config.hpp"
@@ -63,7 +58,7 @@
 
 namespace PHX {
 
-  struct MyTraits : public PHX::TraitsBase {
+  struct MyTraits {
     
     // ******************************************************************
     // *** Scalar Types
@@ -81,24 +76,6 @@ namespace PHX {
     typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
 
     // ******************************************************************
-    // *** Data Types
-    // ******************************************************************
-    
-    // Create the data types for each evaluation type
-    
-    // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector<RealType> ResidualDataTypes;
-  
-    // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector<FadType,RealType> JacobianDataTypes;
-
-    // Maps the key EvalType a vector of DataTypes
-    typedef boost::mpl::map<
-      boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>
-    >::type EvalToDataMap;
-
-    // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
     typedef void* SetupData;
@@ -107,6 +84,14 @@ namespace PHX {
     typedef void* PostEvalData;
 
   };
+
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<PHX::MyTraits::RealType> type; };
+
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Jacobian> 
+  { typedef Sacado::mpl::vector<PHX::MyTraits::RealType,PHX::MyTraits::FadType> type; };
 
 }
 
