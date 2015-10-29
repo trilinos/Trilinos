@@ -131,7 +131,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        SS
   Pike                  packages/pike                     SS
-  FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
 # Allow builds even if some packages are missing
