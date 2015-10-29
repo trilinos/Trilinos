@@ -73,7 +73,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
   typedef Tpetra::global_size_t GST;
-  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+  const GST dummy = Teuchos::OrdinalTraits<GST>::invalid ();
   
 /* Find the adjacency for a nodal based decomposition */
   if (ia->availAdjs(sourcetarget, through)) {
@@ -132,8 +132,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     //Generate Map for sourcetarget.
     ArrayView<const gno_t> sourceTargetGIDs(Ids, LocalNumIDs);
-    sourcetargetMapG = rcp(new map_type(//ia->getGlobalNumOf(sourcetarget),
-					INVALID,
+    sourcetargetMapG = rcp(new map_type(dummy,
 					sourceTargetGIDs, gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
@@ -149,7 +148,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 // TODO
 
     ArrayView<const gno_t> throughGIDs(throughIds, LocalNumOfThrough);
-    throughMapG = rcp (new map_type(INVALID,//ia->getGlobalNumOf(through),
+    throughMapG = rcp (new map_type(dummy,
 				    throughGIDs, gmin[1], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneTMap)
