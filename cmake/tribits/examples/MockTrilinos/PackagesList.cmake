@@ -20,7 +20,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ML                  packages/ml                     PT
   Belos               packages/belos                  ST
   Stratimikos         packages/stratimikos            PT
-  RBGen               packages/rbgen                  PT
   Phalanx             packages/phalanx                ST
   Panzer              packages/panzer                 ST
   AlwaysMissing       AlwaysMissing                   PT
