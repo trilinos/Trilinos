@@ -231,8 +231,6 @@ void AlltoAllv(const Comm<int> &comm,
               ArrayRCP<std::string> &recvBuf,
               const ArrayView<int> &recvCount);
 
-#ifdef HAVE_ZOLTAN2_LONG_LONG
-
 /* \brief Specialization for unsigned long long
  */
 template <>
@@ -242,7 +240,6 @@ void AlltoAllv(const Comm<int> &comm,
               const ArrayView<const int> &sendCount,
               ArrayRCP<unsigned long long> &recvBuf,
               const ArrayView<int> &recvCount);
-#endif
 
 /* \brief Specialization for unsigned short
  */
