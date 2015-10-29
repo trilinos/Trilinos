@@ -1,14 +1,5 @@
-// See http://www.boost.org/libs/any for Documentation.
-
 #ifndef PHALANX_ANY_HPP
 #define PHALANX_ANY_HPP
-
-// what:  variant type boost::any
-// who:   contributed by Kevlin Henney,
-//        with features contributed and bugs found by
-//        Antony Polukhin, Ed Brey, Mark Rodgers, 
-//        Peter Dimov, and James Curran
-// when:  July 2001, April 2013 - May 2013
 
 #include <algorithm>
 #include <typeinfo>
@@ -16,8 +7,6 @@
 #include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_if.hpp"
 
-// See boost/python/type_id.hpp
-// TODO: add BOOST_TYPEID_COMPARE_BY_NAME to config.hpp
 #  define BOOST_AUX_ANY_TYPE_ID_NAME
 #include <cstring>
 
@@ -246,9 +235,6 @@ namespace PHX
 #endif
 
         nonref * result = any_cast<nonref>(&operand);
-        // if(!result)
-        //     boost::throw_exception(bad_any_cast());
-
 	TEUCHOS_TEST_FOR_EXCEPTION(!result,
 				   std::runtime_error,
 				   "ERROR: failed to cast from any object to requested object type!");
@@ -258,7 +244,6 @@ namespace PHX
         // `static_cast<std::string>(*result);` 
         // which is equal to `std::string(*result);`
         typedef typename Sacado::mpl::mpl_if<
-	  // typedef typename boost::mpl::if_<
 	  std::is_reference<ValueType>,
             ValueType,
 	  typename std::add_lvalue_reference<ValueType>::type
