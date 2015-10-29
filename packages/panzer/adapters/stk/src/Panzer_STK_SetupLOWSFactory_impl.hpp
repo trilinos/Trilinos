@@ -47,6 +47,8 @@
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 
+#include "Teuchos_AbstractFactoryStd.hpp"
+
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Epetra_MpiComm.h"
