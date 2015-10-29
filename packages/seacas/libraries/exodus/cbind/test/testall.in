@@ -232,5 +232,10 @@ echo "begin test_nemesis" >> test.output
 ${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
 echo "end test_nemesis" >> test.output
 
+echo "test-empty - read an empty (only ex_create called) exodus file..."
+echo "begin test-empty" >> test.output
+${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
+echo "end test-empty" >> test.output
+
 echo "************************************************************************"
 echo "************************************************************************"
