@@ -33,5 +33,6 @@ setenv LOADED_TRIBITS_DEV_ENV $TRIBITS_DEV_ENV_GCC_VERSION
 # Shortcut for gitdist dist-repo-status and --dist-mod-only
 alias gitdist-status="gitdist dist-repo-status"
 alias gitdist-mod="gitdist --dist-mod-only"
+alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
 
 rehash

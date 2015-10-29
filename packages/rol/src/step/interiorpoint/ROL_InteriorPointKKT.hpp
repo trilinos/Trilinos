@@ -64,7 +64,7 @@ namespace ROL {
 */
 
 template<class Real>
-class InteriorPointKKT : public LinearOpertor<Real> {
+class InteriorPointKKT : public LinearOperator<Real> {
 
   typedef Vector<Real>             V;  
   typedef PartitionedVector<Real>  PV;

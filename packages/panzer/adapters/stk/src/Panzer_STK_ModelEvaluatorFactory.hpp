@@ -305,45 +305,6 @@ namespace panzer_stk_classic {
                              const Teuchos::ParameterList& user_data,
                              bool writeGraph,const std::string & graphPrefix) const;
 
-    /** This method determines a coordinate field from the DOF manager.
-      * The algorithm is to loop over all the element blocks to find a field
-      * that is defined for each. 
-      *
-      * \returns False if no unique field is found. Otherwise True is returned.
-      */
-    static bool determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName);
-
-    /** Fill a STL map with the the block ids associated with the pattern for a specific field.
-      *
-      * \param[in] fieldName Field to fill associative container with
-      * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
-      *                           argument
-      */
-    static void fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
-
-#ifdef PANZER_HAVE_FEI
-    /** Fill a STL map with the the block ids associated with the pattern for a specific field.
-      *
-      * \param[in] fieldName Field to fill associative container with
-      * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
-      *                           argument
-      */
-    template <typename GO> static
-    void fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
-#endif
-
-    /** Fill a STL map with the the block ids associated with the pattern for a specific field.
-      *
-      * \param[in] fieldName Field to fill associative container with
-      * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
-      *                           argument
-      */
-    template <typename GO> static
-    void fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer, const std::string & fieldName, 
-                             std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns);
-
     /**
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
@@ -376,14 +337,6 @@ namespace panzer_stk_classic {
                      bool writeCoordinates=false,
                      bool writeTopo=false
                      );
-
-    template <typename GO> static
-    void writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs);
-
-#ifdef PANZER_HAVE_FEI
-    template <typename GO> static
-    void writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os);
-#endif
 
   private:
 
