@@ -50,7 +50,11 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Epetra_MpiComm.h"
+#include "Epetra_Vector.h"
 #include "EpetraExt_VectorOut.h"
+
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 #ifdef HAVE_TEKO
 #include "Teko_StratimikosFactory.hpp"
