@@ -47,6 +47,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace MueLu {
 

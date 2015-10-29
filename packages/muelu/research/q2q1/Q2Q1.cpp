@@ -99,6 +99,7 @@
 #include <BelosTpetraAdapter.hpp>
 
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_Utilities.hpp"
@@ -258,7 +259,7 @@ int main(int argc, char *argv[]) {
 
       // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
       filename = prefix + "p2vMap.mm";
-      ArrayRCP<const SC> slop = Utils2::ReadMultiVector(filename.c_str(),
+      ArrayRCP<const SC> slop = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector(filename.c_str(),
                                                         Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
       p2vMap.resize(slop.size());
       for (int i = 0; i < slop.size(); i++)
@@ -337,7 +338,7 @@ int main(int argc, char *argv[]) {
     // Cyr and would be Teko operators.
 
     int numElem = A12->getRangeMap()->getNodeNumElements() + A21->getRangeMap()->getNodeNumElements();
-    RCP<const tMap> fullMap = Utils::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
+    RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
     RCP<tOperator> A;
     if (!binary)
@@ -363,7 +364,7 @@ int main(int argc, char *argv[]) {
 
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
-    ArrayRCP<const bool> dirBCs = Utils::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
+    ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
     ArrayRCP<SC>        tXdata = tX->getDataNonConst(0);
     ArrayRCP<const SC>  tBdata = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)

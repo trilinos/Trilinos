@@ -45,17 +45,60 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+
+#ifdef HAVE_MUELU_TPETRA
+#include <TpetraCore_config.h>
+#endif
+
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_LWGraph_kokkos_def.hpp"
 
-#include "TpetraCore_ETIHelperMacros.h"
+#ifdef HAVE_MUELU_TPETRA
+  #include "TpetraCore_ETIHelperMacros.h"
 
-#define MUELU_LOCAL_INSTANT(LO,GO,N) \
-        template class MueLu::LWGraph_kokkos<LO,GO,N>;
+  #define MUELU_LOCAL_INSTANT(LO,GO,N) \
+          template class MueLu::LWGraph_kokkos<LO,GO,N>;
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
+  TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
+#endif
+
+#ifdef HAVE_MUELU_EPETRA
+  #ifdef HAVE_MUELU_TPETRA
+    #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+      #ifdef HAVE_TPETRA_INST_CUDA_DEFAULT
+        // in case of Cuda being the default Node we need the default node type on the host
+        typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
+        typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+        template class MueLu::LWGraph_kokkos<int,int, default_node_type >;
+      #elif HAVE_TPETRA_INST_OPENMP_DEFAULT
+        template class MueLu::LWGraph_kokkos<int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+      #elif HAVE_TPETRA_INST_SERIAL_DEFAULT
+        template class MueLu::LWGraph_kokkos<int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+      #elif HAVE_TPETRA_INST_PTHREAD_DEFAULT
+        template class MueLu::LWGraph_kokkos<int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
+      #else
+        // TODO: there should be at least one default node active!! maybe we have to tweak MueLu CMakeLists.txt?
+        template class MueLu::LWGraph_kokkos<int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+      #endif
+    #endif
+  #else
+    #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+      // Epetra only case.  We need the host memory space and the default host execution space.
+      // We have to specify the host here, because the default execution space could be CUDA.
+      // If you don't want to use OpenMP, you could try to use Kokkos::Serial, as long as it is enabled.
+      #ifdef KOKKOS_HAVE_SERIAL
+        typedef Kokkos::Serial default_host_execution_space;
+      #else
+        typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
+      #endif // KOKKOS_HAVE_SERIAL
+      typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
+      template class MueLu::LWGraph_kokkos<int, int, default_node_type>;
+    #endif
+  #endif // HAVE_MUELU_TPETRA
+#endif // end ifdef HAVE_MUELU_EPETRA
+
 
 #endif

@@ -86,77 +86,77 @@ void testSubcellParametrizations(int&                               errorFlag,
   
 //IKT, 10/8/15: The following is a helper function that takes in a shards::CellTopology
 //and returns a pointer to the Intrepid::Basis associated with this topology.
-Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
+Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> > >
 getIntrepidBasis(const shards::CellTopology &cellTopo)
 {
-  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > > HGRAD_Basis;
+  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> > > HGRAD_Basis;
   // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
   switch( cellTopo.getKey() ){
       
     // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Triangle<3>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Quadrilateral<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Tetrahedron<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Hexahedron<8>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Wedge<6>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Pyramid<5>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     // Standard Extended topologies
     case shards::Triangle<6>::key:    
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Quadrilateral<9>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Tetrahedron<10>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Tetrahedron<11>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Hexahedron<20>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Hexahedron<27>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Wedge<15>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
         
     case shards::Wedge<18>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
 
     case shards::Pyramid<13>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::DefaultExecutionSpace> >() );
     break;
        
     // These extended topologies are not used for mapping purposes
@@ -326,7 +326,7 @@ Kokkos::initialize();
     CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     
     // Define CubatureFactory:
-    DefaultCubatureFactory<double>  cubFactory;   
+    DefaultCubatureFactory<double,Kokkos::View<double**>,Kokkos::View<double*> >  cubFactory;  
     
     *outStream \
       << "\n"
@@ -337,13 +337,13 @@ Kokkos::initialize();
     std::vector<shards::CellTopology>::iterator cti;
     
     // Define cubature on the edge parametrization domain:
-    Teuchos::RCP<Cubature<double> > edgeCubature = cubFactory.create(paramEdge, 6); 
+     Teuchos::RCP<Cubature<double,Kokkos::View<double**>,Kokkos::View<double*> > > edgeCubature = cubFactory.create(paramEdge, 6); 
     int cubDim       = edgeCubature -> getDimension();
     int numCubPoints = edgeCubature -> getNumPoints();
 
     // Allocate storage for cubature points and weights on edge parameter domain and fill with points:
-    FieldContainer<double> paramEdgePoints(numCubPoints, cubDim);
-    FieldContainer<double> paramEdgeWeights(numCubPoints);
+    Kokkos::View<double**> paramEdgePoints("paramEdgePoints",numCubPoints, cubDim);
+    Kokkos::View<double*> paramEdgeWeights("paramEdgeWeights",numCubPoints);
     edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
 
@@ -468,25 +468,21 @@ Kokkos::initialize();
     // This test loops over standard 3D cells with base topologies, creates a set of nodes and tests normals 
 
     // Define cubature on the edge parametrization domain:
-    Teuchos::RCP<Cubature<double> > triFaceCubature  = cubFactory.create(paramTriFace, 6); 
-    Teuchos::RCP<Cubature<double> > quadFaceCubature = cubFactory.create(paramQuadFace, 6); 
+   Teuchos::RCP<Cubature<double,Kokkos::View<double**>, Kokkos::View<double*> > > triFaceCubature  = cubFactory.create(paramTriFace, 6); 
+    Teuchos::RCP<Cubature<double,Kokkos::View<double**>, Kokkos::View<double*> > > quadFaceCubature = cubFactory.create(paramQuadFace, 6); 
     
     int faceCubDim           = triFaceCubature -> getDimension();
     int numTriFaceCubPoints  = triFaceCubature -> getNumPoints();
     int numQuadFaceCubPoints = quadFaceCubature -> getNumPoints();    
         
     // Allocate storage for cubature points and weights on face parameter domain and fill with points:
-    FieldContainer<double> paramTriFacePointsFC(numTriFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramTriFaceWeightsFC(numTriFaceCubPoints);
-    FieldContainer<double> paramQuadFacePointsFC(numQuadFaceCubPoints, faceCubDim);
-    FieldContainer<double> paramQuadFaceWeightsFC(numQuadFaceCubPoints);
+    Kokkos::View<double**> paramTriFacePoints("paramTriFacePoints",numTriFaceCubPoints, faceCubDim);
+    Kokkos::View<double*> paramTriFaceWeights("paramTriFaceWeights",numTriFaceCubPoints);
+    Kokkos::View<double**> paramQuadFacePoints("paramQuadFacePoints",numQuadFaceCubPoints, faceCubDim);
+    Kokkos::View<double*> paramQuadFaceWeights("paramQuadFaceWeights",numQuadFaceCubPoints);
     
-    triFaceCubature -> getCubature(paramTriFacePointsFC, paramTriFaceWeightsFC);
-    quadFaceCubature -> getCubature(paramQuadFacePointsFC, paramQuadFaceWeightsFC);
-    Kokkos::View<double**> paramTriFacePoints(&paramTriFacePointsFC[0],paramTriFacePointsFC.dimension(0),paramTriFacePointsFC.dimension(1));
-    Kokkos::View<double*> paramTriFaceWeights(&paramTriFaceWeightsFC[0],paramTriFaceWeightsFC.dimension(0));
-    Kokkos::View<double**> paramQuadFacePoints(&paramQuadFacePointsFC[0],paramQuadFacePointsFC.dimension(0),paramQuadFacePointsFC.dimension(1));
-    Kokkos::View<double*> paramQuadFaceWeights(&paramQuadFaceWeightsFC[0],paramQuadFaceWeightsFC.dimension(0));
+   triFaceCubature -> getCubature(paramTriFacePoints, paramTriFaceWeights);
+    quadFaceCubature -> getCubature(paramQuadFacePoints, paramQuadFaceWeights);
     // Loop over admissible topologies 
     for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       

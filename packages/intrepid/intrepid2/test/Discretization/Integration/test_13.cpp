@@ -229,7 +229,7 @@ Kokkos::initialize();
   // internal variables:
   int dimension = 2;
   int         errorFlag   = 0;
-  long double reltol      = 1.0e+06*INTREPID2_TOL;
+  long double reltol      = 1.0e+06*INTREPID_TOL;
   int         maxDegx     = 0; 
   int         maxDegy     = 0; 
   long double analyticInt = 0;

@@ -45,15 +45,14 @@ done
 
 # Add Utils, Utils2 at the end of the file
 
-echo "#ifdef MUELU_UTILITIES_KOKKOS_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokkos;" >> MueLu_UseShortNamesScalar.hpp
-echo "#endif" >> MueLu_UseShortNamesScalar.hpp
-
-echo "#ifdef MUELU_UTILITIES_SHORT" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;" >> MueLu_UseShortNamesScalar.hpp
-echo "typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;" >> MueLu_UseShortNamesScalar.hpp
-echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+#echo "#ifdef MUELU_UTILITIES_KOKKOS_SHORT" >> MueLu_UseShortNamesScalar.hpp
+#echo "typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;" >> MueLu_UseShortNamesScalar.hpp
+#echo "typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokkos;" >> MueLu_UseShortNamesScalar.hpp
+#echo "#endif" >> MueLu_UseShortNamesScalar.hpp
+#
+#echo "#ifdef MUELU_UTILITIES_SHORT" >> MueLu_UseShortNamesScalar.hpp
+#echo "typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;" >> MueLu_UseShortNamesScalar.hpp
+#echo "#endif" >> MueLu_UseShortNamesScalar.hpp
 
 # Add the matlab utilities to end of file
 echo "#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT" >> MueLu_UseShortNamesScalar.hpp

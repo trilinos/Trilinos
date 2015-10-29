@@ -89,6 +89,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
       "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
 
   ### PACKAGES CONFIGURATION ###
+  "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"

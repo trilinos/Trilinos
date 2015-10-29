@@ -734,6 +734,7 @@ public:
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
       const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
       Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
@@ -741,6 +742,9 @@ public:
       //18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
       //Previously, Tpetra's matrix matrix multiply did not support fillComplete.
       Tpetra::MatrixMatrix::Multiply(tpA,transposeA,tpB,transposeB,tpC,haveMultiplyDoFillComplete,label);
+#else
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
+#endif
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -1119,10 +1123,14 @@ public:
 #endif
     } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
       Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(B);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
+#else
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
+#endif
 #else
       throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
 #endif
@@ -1213,6 +1221,7 @@ public:
 #endif
     } else if (C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpA =
           Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
       const Tpetra::CrsMatrix<SC,LO,GO,NO>& tpB =
@@ -1221,6 +1230,9 @@ public:
           Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
 
       Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, transposeB, beta, tpC);
+#else
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=int enabled."));
+#endif
 #else
       throw Exceptions::RuntimeError("Xpetra must be compile with Tpetra.");
 #endif

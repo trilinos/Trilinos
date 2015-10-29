@@ -51,10 +51,7 @@
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Utils_kokkos;
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Utils2_kokkos;
+  class Utilities_kokkos;
 }
 
 #ifndef MUELU_UTILITIES_KOKKOS_SHORT

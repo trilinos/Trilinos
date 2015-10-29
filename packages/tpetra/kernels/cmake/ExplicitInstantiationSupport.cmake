@@ -138,7 +138,7 @@ TRIBITS_ETI_GENERATE_MACROS(
 # like "long long" or "std::complex<double>".  Thus, we define
 # typedefs that remove the offending characters.  The typedefs also
 # get written to the generated header file.
-TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRAKERNELS_ETI_TYPEDEFS "TPETRAKERNELS_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
+TRIBITS_ETI_GENERATE_TYPEDEF_MACRO(TPETRAKERNELS_ETI_MANGLING_TYPEDEFS "TPETRAKERNELS_ETI_MANGLING_TYPEDEFS" "${eti_typedefs}")
 
 # Generate the header file ${PACKAGE_NAME}_ETIHelperMacros.h, from the
 # file ${PACKAGE_NAME}_ETIHelperMacros.h.in (that lives in this

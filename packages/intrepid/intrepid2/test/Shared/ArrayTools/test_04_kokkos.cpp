@@ -1549,7 +1549,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 5.c scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double****> in_c_f_p_d("in_c_f_p_d",c, f, p, d1);
     Kokkos::View<double****> out_c_f_p_d("out_c_f_p_d",c, f, p, d1);
@@ -1782,7 +1782,7 @@ int main(int argc, char *argv[]) {
    */
   {// test 5.d scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double***> in_f_p_d("in_f_p_d",f, p, d1);
     Kokkos::View<double****> in_c_f_p_d("in_c_f_p_d",c, f, p, d1);
@@ -2142,7 +2142,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
    */
   {// test 6.c scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double***> in_c_p_d("in_c_p_d",c, p, d1);
     Kokkos::View<double***> out_c_p_d("out_c_p_d",c, p, d1);
@@ -2359,7 +2359,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
    */
   {// test 6.d scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double**> in_p_d("in_p_d",p, d1);
     Kokkos::View<double***> in_c_p_d("in_c_p_d",c, p, d1);
@@ -2581,7 +2581,7 @@ RealSpaceTools<double>::inverse(datainv_c_1_d_d, data_c_1_d_d);
     << "===============================================================================\n";
   {// Test 7.a scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double*****> in_c_f_p_d_d("in_c_f_p_d_d",c, f, p, d1, d1);
     Kokkos::View<double**> data_c_p("data_c_p",c, p);
@@ -2805,7 +2805,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
     << "===============================================================================\n";
   {// Test 7.b scope
     int c=5, p=9, f=7, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double****> in_f_p_d_d("in_f_p_d_d",f, p, d1, d1);
     Kokkos::View<double*****> in_c_f_p_d_d("in_c_f_p_d_d",c, f, p, d1, d1);
@@ -3039,7 +3039,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
    */
   {// test 8.a scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
     
     Kokkos::View<double****> in_c_p_d_d("in_c_p_d_d",c, p, d1, d1);
     Kokkos::View<double****> out_c_p_d_d("out_c_p_d_d",c, p, d1, d1);
@@ -3252,7 +3252,7 @@ RealSpaceTools<double>::transpose(datainvtrn_c_p_d_d, datainv_c_p_d_d);
    */
   {// test 8.b scope
     int c=5, p=9, d1=3;
-    double zero = INTREPID2_TOL*10000.0;
+    double zero = INTREPID_TOL*10000.0;
 
     Kokkos::View<double***> in_p_d_d("in_p_d_d",p, d1, d1);
     Kokkos::View<double****> in_c_p_d_d("in_c_p_d_d",c, p, d1, d1);

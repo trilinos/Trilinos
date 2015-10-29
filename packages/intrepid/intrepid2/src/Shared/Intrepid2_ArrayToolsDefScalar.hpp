@@ -50,28 +50,792 @@
 
 
 namespace Intrepid2 {
-//Kokkos Only Implementation of scalarMultiplyDataData
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ index_type numFields      = outputFields.dimension(1);
+ index_type numPoints      = outputFields.dimension(2);
+            for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)/inputData(cl, pt);
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ index_type numFields      = outputFields.dimension(1);
+ index_type numPoints      = outputFields.dimension(2);
+            for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)*inputData(cl, pt);
+                } // P-loop
+              } // F-loop
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_4 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_4 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      
+    }
+  }
 
 
-/* template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
- void ArrayTools::scalarMultiplyDataDataTemp( ArrayOutData&         outputData,
-                                              ArrayInDataLeft&      inputDataLeft,
-                                              ArrayInDataRight&     inputDataRight,
-                                              const  bool           reciprocal){
-     ArrayTools::scalarMultiplyDataData2<ArrayOutData,ArrayInDataLeft,ArrayInDataRight, void, void, Rank<ArrayInDataRight>::value,Rank<ArrayOutData>::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
- 
-     }
- #ifdef HAVE_INTREPID_KOKKOSCORE  
- template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, class Layout, class MemorySpace>
- void ArrayTools::scalarMultiplyDataDataTemp(Kokkos::View<ArrayOutData,Layout,MemorySpace>     &outputData,
-                                             Kokkos::View<ArrayInDataLeft,Layout,MemorySpace>  &inputDataLeft,
-                                             Kokkos::View<ArrayInDataRight,Layout,MemorySpace> &inputDataRight,
-                                             const bool                                        reciprocal){
-									
-	ArrayTools::scalarMultiplyDataData2Kokkos<Kokkos::View<ArrayOutData,Layout,MemorySpace>, Kokkos::View<ArrayInDataLeft,Layout,MemorySpace> , Kokkos::View<ArrayInDataRight,Layout,MemorySpace> , Layout, MemorySpace, Rank<Kokkos::View<ArrayInDataRight,Layout,MemorySpace> >::value,Rank<Kokkos::View<ArrayOutData,Layout,MemorySpace> >::value>(outputData, inputDataLeft, inputDataRight,reciprocal);
-	
-	}
-#endif    */                       
+            for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)/inputData(cl, pt);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_4 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_4 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      
+    }
+  }
+
+
+            for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)*inputData(cl, pt);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+   }
+};
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_5 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_5 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)/inputData(cl, pt);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_5 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_5 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)*inputData(cl, pt);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)/inputData(cl, 0);
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(cl, bf, pt)*inputData(cl, 0);
+                } // P-loop
+              } // F-loop
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_4_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_4_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+  
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)/inputData(cl, 0);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_4_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_4_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+  
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(cl, bf, pt, iVec)*inputData(cl, 0);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+   }
+};
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_recip_invalr_5_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_recip_invalr_5_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)/inputData(cl, 0);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_eqrank_nrecip_invalr_5_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_eqrank_nrecip_invalr_5_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(cl, bf, pt, iTens1, iTens2)*inputData(cl, 0);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_2 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ index_type numFields      = outputFields.dimension(1);
+ index_type numPoints      = outputFields.dimension(2);
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(bf, pt)/inputData(cl, pt);
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_2 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_nrecip_invalr_2 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ index_type numFields      = outputFields.dimension(1);
+ index_type numPoints      = outputFields.dimension(2);
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(bf, pt)*inputData(cl, pt);
+                } // P-loop
+              } // F-loop
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_3 {
+   ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+  
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)/inputData(cl, pt);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_nrecip_invalr_3 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+  
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)*inputData(cl, pt);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+   }
+};
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_4 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_4 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)/inputData(cl, pt);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_4 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_nrecip_invalr_4 (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)*inputData(cl, pt);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+   }
+};
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_2_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(bf, pt)/inputData(cl, 0);
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_2_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_nrecip_invalr_2_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  outputFields(cl, bf, pt) = inputFields(bf, pt)*inputData(cl, 0);
+                } // P-loop
+              } // F-loop
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+   
+    }
+  }
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)/inputData(cl, 0);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_3_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_nrecip_invalr_3_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+   
+    }
+  }
+             for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+                    outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec)*inputData(cl, 0);
+                  } // D1-loop
+                } // P-loop
+              } // F-loop
+
+   }
+};
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_recip_invalr_4_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  scalarMultiplyDataField_neqrank_recip_invalr_4_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)/inputData(cl, 0);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayInFields>
+struct scalarMultiplyDataField_neqrank_nrecip_invalr_4_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  scalarMultiplyDataField_neqrank_nrecip_invalr_4_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_,ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+  index_type outvalRank = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+              for(index_type bf = 0; bf < numFields; bf++) {
+                for(index_type pt = 0; pt < numPoints; pt++) {
+                  for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2)*inputData(cl, 0);
+                    } // D2-loop
+                  } // D1-loop
+                } // F-loop
+              } // P-loop
+   }
+};              
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
 void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
@@ -121,45 +885,22 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);
 
   // get sizes
-  size_t invalRank      = getrank(inputFields);
-  size_t outvalRank     = getrank(outputFields);
-  int numCells       = outputFields.dimension(0);
-  int numFields      = outputFields.dimension(1);
-  int numPoints      = outputFields.dimension(2);
-  int numDataPoints  = inputData.dimension(1);
-  int dim1Tens       = 0;
-  int dim2Tens       = 0;
-  if (outvalRank > 3) {
-    dim1Tens = outputFields.dimension(3);
-    if (outvalRank > 4) {
-      dim2Tens = outputFields.dimension(4);
-    }
-  }
-
+  index_type invalRank      = getrank(inputFields);
+  index_type outvalRank     = getrank(outputFields);
+  index_type numCells       = outputFields.dimension(0);
+  index_type numDataPoints  = inputData.dimension(1);
   if (outvalRank == invalRank) {
 
     if (numDataPoints != 1) { // nonconstant data
       switch(invalRank) {
         case 3: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)/inputDataWrap(cl, pt);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
 			  
 			
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)*inputDataWrap(cl, pt);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
  
           }
         }// case 3
@@ -167,56 +908,20 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
 
         case 4: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)/inputDataWrap(cl, pt);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_4<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)*inputDataWrap(cl, pt);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_4<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 4
         break;
 
         case 5: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)/inputDataWrap(cl, pt);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_5<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)*inputDataWrap(cl, pt);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_5<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 5
         break;
@@ -232,78 +937,30 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
       switch(invalRank) {
         case 3: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)/inputDataWrap(cl, 0);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(cl, bf, pt)*inputDataWrap(cl, 0);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 3
         break;
 
         case 4: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)/inputDataWrap(cl, 0);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_4_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(cl, bf, pt, iVec)*inputDataWrap(cl, 0);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_4_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 4
         break;
 
         case 5: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)/inputDataWrap(cl, 0);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_recip_invalr_5_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(cl, bf, pt, iTens1, iTens2)*inputDataWrap(cl, 0);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_eqrank_nrecip_invalr_5_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 5
         break;
@@ -323,78 +980,30 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
       switch(invalRank) {
         case 2: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)/inputDataWrap(cl, pt);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)*inputDataWrap(cl, pt);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 2
         break;
 
         case 3: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)/inputDataWrap(cl, pt);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)*inputDataWrap(cl, pt);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 3
         break;
 
         case 4: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)/inputDataWrap(cl, pt);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_4<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)*inputDataWrap(cl, pt);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_4<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 4
         break;
@@ -410,78 +1019,30 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
       switch(invalRank) {
         case 2: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)/inputDataWrap(cl, 0);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  outputFieldsWrap(cl, bf, pt) = inputFieldsWrap(bf, pt)*inputDataWrap(cl, 0);
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_2_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 2
         break;
 
         case 3: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)/inputDataWrap(cl, 0);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iVec = 0; iVec < dim1Tens; iVec++) {
-                    outputFieldsWrap(cl, bf, pt, iVec) = inputFieldsWrap(bf, pt, iVec)*inputDataWrap(cl, 0);
-                  } // D1-loop
-                } // P-loop
-              } // F-loop
-            } // C-loop
+ Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_3_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 3
         break;
 
         case 4: {
           if (reciprocal) {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)/inputDataWrap(cl, 0);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_recip_invalr_4_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
           else {
-            for(int cl = 0; cl < numCells; cl++) {
-              for(int bf = 0; bf < numFields; bf++) {
-                for(int pt = 0; pt < numPoints; pt++) {
-                  for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldsWrap(bf, pt, iTens1, iTens2)*inputDataWrap(cl, 0);
-                    } // D2-loop
-                  } // D1-loop
-                } // F-loop
-              } // P-loop
-            } // C-loop
+Kokkos::parallel_for (numCells, scalarMultiplyDataField_neqrank_nrecip_invalr_4_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>,  ArrayInFields> (outputFieldsWrap,inputDataWrap, inputFieldsWrap));
           }
         }// case 4
         break;

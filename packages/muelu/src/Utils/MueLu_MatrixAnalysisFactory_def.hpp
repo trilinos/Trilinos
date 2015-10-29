@@ -253,7 +253,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     A->apply(*ones, *res1, Teuchos::NO_TRANS, one, zero);
     checkVectorEntries(res1,std::string("after applying one vector to A"));
 
-    Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
+    Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
     checkVectorEntries(invDiag,std::string("in invDiag"));
 
     Teuchos::RCP<Vector> res2 = VectorFactory::Build(A->getRangeMap(), false);
@@ -274,7 +274,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     A->apply(*ones, *res1, Teuchos::NO_TRANS, one, zero);
     checkVectorEntries(res1,std::string("after applying a random vector to A"));
 
-    Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
+    Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
     checkVectorEntries(invDiag,std::string("in invDiag"));
 
     Teuchos::RCP<Vector> res2 = VectorFactory::Build(A->getRangeMap(), false);

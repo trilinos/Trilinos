@@ -50,6 +50,7 @@
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
 #include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_IO.hpp"
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -832,7 +833,7 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     A->SetFixedBlockSize(2);
 
-    Utils::Write("A.mm", *A);
+    Xpetra::IO<SC, LO, GO, Node>::Write("A.mm", *A);
     comm->barrier();
 
     RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter("testCoordinates.xml", *comm));

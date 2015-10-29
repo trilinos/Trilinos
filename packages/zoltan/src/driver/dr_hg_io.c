@@ -1369,7 +1369,14 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
     line = pinBuf;
     counter = 0;
-
+    // Skip any additional comment lines before pins begin
+    // Zoltan_Generate_Files adds an extra comment line here to mtxp files.
+    while (line) {
+      if (line[0] != COMMENT_CHAR)
+        break;
+      line = next_line(line, fsize);
+    }
+     
     while (line){          /* PINS */
 
       make_string(line, linestr);
@@ -1396,6 +1403,13 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
     }
 
     line = vwgtBuf;
+    // Skip any additional comment lines before vwgts begin
+    // Zoltan_Generate_Files adds an extra comment line here to mtxp files.
+    while (line) {
+      if (line[0] != COMMENT_CHAR)
+        break;
+      line = next_line(line, fsize);
+    }
 
     while(line) {        /* VERTICES and possibly WEIGHTS */
   
@@ -1425,6 +1439,13 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
     if (numew > 0){                      /* HYPEREDGE WEIGHTS */
       line = ewgtBuf;
+      // Skip any additional comment lines before ewgts begin
+      // Zoltan_Generate_Files adds an extra comment line here to mtxp files.
+      while (line) {
+        if (line[0] != COMMENT_CHAR)
+          break;
+        line = next_line(line, fsize);
+      }
 
       while(line) {   
         make_string(line, linestr);

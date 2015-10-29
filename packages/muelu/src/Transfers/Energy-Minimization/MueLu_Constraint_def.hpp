@@ -60,8 +60,9 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
-#include "MueLu_Constraint_decl.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Constraint_decl.hpp"
+
 
 namespace MueLu {
 

@@ -100,15 +100,16 @@ namespace Xpetra {
     typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
     typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+
+  public:
+    typedef Scalar          scalar_type;
+    typedef LocalOrdinal    local_ordinal_type;
+    typedef GlobalOrdinal   global_ordinal_type;
+    typedef Node            node_type;
+
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
 #endif
-
-  public:
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node node_type;
 
     //! @name Constructor/Destructor Methods
     //@{

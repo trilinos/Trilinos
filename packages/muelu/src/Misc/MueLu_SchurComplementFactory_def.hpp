@@ -99,10 +99,10 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
                                "MueLu::SchurComplementFactory::Build: input matrix A is not of type BlockedCrsMatrix!");
 
-    RCP<Matrix> A00 = Utils::Crs2Op(bA->getMatrix(0,0));
-    RCP<Matrix> A01 = Utils::Crs2Op(bA->getMatrix(0,1));
-    RCP<Matrix> A10 = Utils::Crs2Op(bA->getMatrix(1,0));
-    RCP<Matrix> A11 = Utils::Crs2Op(bA->getMatrix(1,1));
+    RCP<Matrix> A00 = Utilities::Crs2Op(bA->getMatrix(0,0));
+    RCP<Matrix> A01 = Utilities::Crs2Op(bA->getMatrix(0,1));
+    RCP<Matrix> A10 = Utilities::Crs2Op(bA->getMatrix(1,0));
+    RCP<Matrix> A11 = Utilities::Crs2Op(bA->getMatrix(1,1));
 
     // TODO move this to BlockedCrsMatrix->getMatrix routine...
     A00->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
@@ -121,7 +121,7 @@ namespace MueLu {
     bool fixing  = pL.get<bool>("fixing");
     ArrayRCP<SC> D;
     if (!lumping) {
-      D = Utils::GetMatrixDiagonal(*A00);
+      D = Utilities::GetMatrixDiagonal(*A00);
 
       if (fixing) {
         for (size_t k = 0; k < as<size_t>(D.size()); k++)
@@ -130,13 +130,13 @@ namespace MueLu {
       }
 
     } else {
-      D = Utils::GetLumpedMatrixDiagonal(*A00);
+      D = Utilities::GetLumpedMatrixDiagonal(*A00);
     }
     // Update D to use omega
     // As D is going to be used as D^{-1}, we must use -omega instead of -one/omega
     for (size_t k = 0; k < as<size_t>(D.size()); k++)
       D[k] *= -omega;
-    Utils::MyOldScaleMatrix(*T, D, true/*doInverse*/, true/*doFillComplete*/, false/*doOptimizeStorage*/);
+    Utilities::MyOldScaleMatrix(*T, D, true/*doInverse*/, true/*doFillComplete*/, false/*doOptimizeStorage*/);
 
     RCP<Matrix> S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2));
 

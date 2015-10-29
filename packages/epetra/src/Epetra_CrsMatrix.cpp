@@ -3344,6 +3344,11 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
 #elif defined(Epetra_ENABLE_CASK)
        cask_csr_dax_new(NumMyRows_, IndexOffset, Indices,
                         values, x, y, cask);
+#elif !defined(FORTRAN_DISABLED)
+   int ione = 0;
+   int NumCols = NumMyCols();
+   //std::cout << "Entering DCRSMV" << std::endl;
+   EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, values, Indices, IndexOffset, x, y);
 #else
        const double *val_ptr    = values;
        const int    *colnum_ptr = Indices;

@@ -63,16 +63,16 @@ using std::cout;
 using std::endl;
 using std::vector;
 
-typedef double                                                  scalar_type;
-typedef double                                                  mag_type;
-typedef ScalarTraits< scalar_type >                             STraits;
-typedef Tpetra::MultiVector<scalar_type, int, int>::node_type   node_type;
-typedef Tpetra::MultiVector< scalar_type, int, int, node_type > MultiVec;
-typedef Tpetra::Operator< scalar_type, int, int, node_type >    OP;
-typedef MultiVecTraits< scalar_type, MultiVec >                 MVTraits;
-typedef SerialDenseMatrix< int, scalar_type >                   serial_matrix_type;
-typedef Tpetra::Map< int, int, node_type >                      map_type;
-typedef Tpetra::CrsMatrix< scalar_type, int, int, node_type >   sparse_matrix_type;
+typedef double                                scalar_type;
+typedef double                                mag_type;
+typedef ScalarTraits<scalar_type>             STraits;
+typedef Tpetra::MultiVector<scalar_type>      MultiVec;
+typedef MultiVec::node_type                   node_type;
+typedef Tpetra::Operator<scalar_type>         OP;
+typedef MultiVecTraits<scalar_type, MultiVec> MVTraits;
+typedef SerialDenseMatrix<int, scalar_type>   serial_matrix_type;
+typedef Tpetra::Map<>                         map_type;
+typedef Tpetra::CrsMatrix<scalar_type>        sparse_matrix_type;
 
 ////////////////////////////////////////////////////////////////////////////////
 

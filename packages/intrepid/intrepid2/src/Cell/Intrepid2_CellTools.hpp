@@ -381,11 +381,11 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
     
-    template<class ArrayJac, class ArrayPoint, class ArrayCell>
+    template<class ArrayJac, class ArrayPoint, class ArrayCell, class RCPcontainer>
     static void setJacobian(ArrayJac &                   jacobian,
                             const ArrayPoint &           points,
                             const ArrayCell  &           cellWorkset,
-                            Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis,
+                            Teuchos::RCP< Basis< Scalar, RCPcontainer > > HGRAD_Basis,
                             const int &                  whichCell = -1); 
     
   

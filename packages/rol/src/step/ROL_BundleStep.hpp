@@ -45,7 +45,7 @@
 #define ROL_BUNDLE_STEP_H
 
 #include "ROL_Bundle.hpp"
-#include "ROL_Bundle_TT.hpp"
+//#include "ROL_Bundle_TT.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
 #include "ROL_Vector.hpp"
@@ -133,7 +133,8 @@ public:
     unsigned maxSize  = parlist.sublist("Step").sublist("Bundle").get("Maximum Bundle Size",            200);
     unsigned remSize  = parlist.sublist("Step").sublist("Bundle").get("Removal Size for Bundle Update", 2);
     if ( parlist.sublist("Step").sublist("Bundle").get("Cutting Plane Solver",0) == 1 ) {
-      bundle_ = Teuchos::rcp(new Bundle_TT<Real>(maxSize,coeff,remSize));
+      //bundle_ = Teuchos::rcp(new Bundle_TT<Real>(maxSize,coeff,remSize));
+      bundle_ = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));
     }
     else {
       bundle_ = Teuchos::rcp(new Bundle<Real>(maxSize,coeff,remSize));

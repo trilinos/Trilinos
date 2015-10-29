@@ -1,12 +1,11 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,41 +34,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
-// ************************************************************************
+// ***********************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_DistObject.hpp"
 
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-#include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_DistObject_def.hpp"
 
-namespace Tpetra {
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
 
- TPETRA_ETI_MANGLING_TYPEDEFS()
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
- TPETRA_INSTANTIATE_PLGN(TPETRA_DISTOBJECT_INSTANT)
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Stokhos_MueLu_UQ_PCE.hpp"
 
- // The "SLGN" stuff above doesn't work for Packet=char, which is the base class for Tpetra::CrsMatrix
- TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECT_INSTANT_CHAR)
+#include "MueLu_UtilitiesBase_def.hpp"
 
- // Tpetra uses Scalar = int for MultiVector and Vector in
- // communication routines.  This means that it needs to instantiate
- // DistObject with Packet = int.  If GO = int is disabled, the above
- // instantiations won't take care of this case, so we have to do it
- // here.
-#ifndef HAVE_TPETRA_INST_INT_INT
-#  define TPETRA_DISTOBJECT_INSTANT_INT( LO, GO, NT ) \
-  TPETRA_DISTOBJECT_INSTANT( int, LO, GO, NT )
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::UtilitiesBase<S, LO, GO, N>;
 
- TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECT_INSTANT_INT)
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
 
-#endif // HAVE_TPETRA_INST_INT_INT
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-} // namespace Tpetra
+INSTANTIATE_TPETRA_UQ_PCE_OPENMP(MUELU_INST_N)
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif
+
+

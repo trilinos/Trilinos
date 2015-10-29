@@ -49,15 +49,16 @@
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_CGSolver_decl.hpp"
-
+#include "MueLu_Utilities.hpp"
 #include "MueLu_Constraint.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
+
+
+#include "MueLu_CGSolver.hpp"
+
+
 
 namespace MueLu {
-
-  using Teuchos::rcp_const_cast;
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CGSolver(size_t Its)
@@ -96,7 +97,7 @@ namespace MueLu {
 
     SC one = Teuchos::ScalarTraits<SC>::one();
 
-    Teuchos::ArrayRCP<const SC> D = Utils::GetMatrixDiagonal(*A);
+    Teuchos::ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal(*A);
 
     // Initial P0 would only be used for multiplication
     X = rcp_const_cast<Matrix>(rcpFromRef(P0));
@@ -105,14 +106,22 @@ namespace MueLu {
     // bool optimizeStorage = false;
     bool optimizeStorage = true;
 
-    tmpAP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *X, false, mmfancy, doFillComplete, optimizeStorage);
+    tmpAP = MatrixMatrix::Multiply(*A, false, *X, false, mmfancy, doFillComplete, optimizeStorage);
     C.Apply(*tmpAP, *T);
 
     // R_0 = -A*X_0
     R = MatrixFactory2::BuildCopy(T);
 #ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+    // TAW: Oct 16 2015: MueLu::Utilities returns the Tpetra::CrsMatrix object which would not be instantiated!
+    //                   Catching this in Op2NonConstTpetraCrs is not possible as this does not affect the return type
+    //                   Tpetra::CrsMatrix!
     if (useTpetra)
-      Utils::Op2NonConstTpetraCrs(R)->resumeFill();
+      Utilities::Op2NonConstTpetraCrs(R)->resumeFill();
+#else
+    this->GetOStream(Warnings0) << "WARNING: MueLu_CGSolver: calling Xpetra::CrsMatrix::resumeFill instead of Tpetra::CrsMatrix::resumeFill. The results should be verified in this case." << std::endl;
+    R->resumeFill();
+#endif
 #endif
     R->scale(-one);
     if (useTpetra)
@@ -120,12 +129,12 @@ namespace MueLu {
 
     // Z_0 = M^{-1}R_0
     Z = MatrixFactory2::BuildCopy(R);
-    Utils::MyOldScaleMatrix(*Z, D, true, true, false);
+    Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
 
     // P_0 = Z_0
     P = MatrixFactory2::BuildCopy(Z);
 
-    oldRZ = Frobenius(*R, *Z);
+    oldRZ = Utilities::Frobenius(*R, *Z);
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
@@ -134,15 +143,15 @@ namespace MueLu {
         // This is done by default for Tpetra as the three argument version requires tmpAP
         // to *not* be locally indexed which defeats the purpose
         // TODO: need a three argument Tpetra version which allows reuse of already fill-completed matrix
-        tmpAP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false,        mmfancy, doFillComplete, optimizeStorage);
+        tmpAP = MatrixMatrix::Multiply(*A, false, *P, false,        mmfancy, doFillComplete, optimizeStorage);
       } else {
         // Reuse the MxM pattern
-        tmpAP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, tmpAP, mmfancy, doFillComplete, optimizeStorage);
+        tmpAP = MatrixMatrix::Multiply(*A, false, *P, false, tmpAP, mmfancy, doFillComplete, optimizeStorage);
       }
       C.Apply(*tmpAP, *T);
       AP = T;
 
-      app = Frobenius(*AP, *P);
+      app = Utilities::Frobenius(*AP, *P);
       if (Teuchos::ScalarTraits<SC>::magnitude(app) < Teuchos::ScalarTraits<SC>::sfmin()) {
         // It happens, for instance, if P = 0
         // For example, if we use TentativePFactory for both nonzero pattern and initial guess
@@ -163,7 +172,7 @@ namespace MueLu {
       newX->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       X.swap(newX);
 #else
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, alpha, *X, one);
+      MatrixMatrix::TwoMatrixAdd(*P, false, alpha, *X, one);
 #endif
 
       if (k == nIts_ - 1)
@@ -176,90 +185,31 @@ namespace MueLu {
       newR->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       R.swap(newR);
 #else
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*AP, false, -alpha, *R, one);
+      MatrixMatrix::TwoMatrixAdd(*AP, false, -alpha, *R, one);
 #endif
 
       // Z_{k+1} = M^{-1} R_{k+1}
       Z = MatrixFactory2::BuildCopy(R);
-      Utils::MyOldScaleMatrix(*Z, D, true, true, false);
+      Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
-      newRZ = Frobenius(*R, *Z);
+      newRZ = Utilities::Frobenius(*R, *Z);
       beta = newRZ / oldRZ;
 
       // P_{k+1} = Z_{k+1} + beta*P_k
 #ifndef TWO_ARG_MATRIX_ADD
       newP = Teuchos::null;
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
+      MatrixMatrix::TwoMatrixAdd(*P, false, beta, *Z, false, Teuchos::ScalarTraits<Scalar>::one(), newP, mmfancy);
       newP->fillComplete(P0.getDomainMap(), P0.getRangeMap());
       P.swap(newP);
 #else
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Z, false, one, *P, beta);
+      MatrixMatrix::TwoMatrixAdd(*Z, false, one, *P, beta);
 #endif
 
       oldRZ = newRZ;
     }
 
     finalP = X;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Frobenius(const Matrix& A, const Matrix& B) const {
-    // We check only row maps. Column may be different. One would hope that they are the same, as we typically
-    // calculate frobenius norm of the specified sparsity pattern with an updated matrix from the previous step,
-    // but matrix addition, even when one is submatrix of the other, changes column map (though change may be as
-    // simple as couple of elements swapped)
-    TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*B.getRowMap()),   Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: row maps are incompatible");
-    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), Exceptions::RuntimeError, "Matrices must be fill completed");
-
-    const Map& AColMap = *A.getColMap();
-    const Map& BColMap = *B.getColMap();
-
-    Teuchos::ArrayView<const LO> indA, indB;
-    Teuchos::ArrayView<const SC> valA, valB;
-    size_t nnzA = 0, nnzB = 0;
-
-    // We use a simple algorithm
-    // for each row we fill valBAll array with the values in the corresponding row of B
-    // as such, it serves as both sorted array and as storage, so we don't need to do a
-    // tricky problem: "find a value in the row of B corresponding to the specific GID"
-    // Once we do that, we translate LID of entries of row of A to LID of B, and multiply
-    // corresponding entries.
-    // The algorithm should be reasonably cheap, as it does not sort anything, provided
-    // that getLocalElement and getGlobalElement functions are reasonably effective. It
-    // *is* possible that the costs are hidden in those functions, but if maps are close
-    // to linear maps, we should be fine
-    Teuchos::Array<SC> valBAll(BColMap.getNodeNumElements());
-
-    LO     invalid = Teuchos::OrdinalTraits<LO>::invalid();
-    SC     zero    = Teuchos::ScalarTraits<SC> ::zero(),    f = zero, gf;
-    size_t numRows = A.getNodeNumRows();
-    for (size_t i = 0; i < numRows; i++) {
-      A.getLocalRowView(i, indA, valA);
-      B.getLocalRowView(i, indB, valB);
-      nnzA = indA.size();
-      nnzB = indB.size();
-
-      // Set up array values
-      for (size_t j = 0; j < nnzB; j++)
-        valBAll[indB[j]] = valB[j];
-
-      for (size_t j = 0; j < nnzA; j++) {
-        // The cost of the whole Frobenius dot product function depends on the
-        // cost of the getLocalElement and getGlobalElement functions here.
-        LO ind = BColMap.getLocalElement(AColMap.getGlobalElement(indA[j]));
-        if (ind != invalid)
-          f += valBAll[ind] * valA[j];
-      }
-
-      // Clean up array values
-      for (size_t j = 0; j < nnzB; j++)
-        valBAll[indB[j]] = zero;
-    }
-
-    MueLu_sumAll(AColMap.getComm(), f, gf);
-
-    return gf;
   }
 
 } // namespace MueLu

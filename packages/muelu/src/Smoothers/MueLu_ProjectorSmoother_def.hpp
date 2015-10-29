@@ -105,8 +105,11 @@ namespace MueLu {
     this->GetOStream(Runtime0) << "Coarse level orth indices: " << selectedIndices << std::endl;
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     // Orthonormalize
-    RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > B_ = Utils::MV2TpetraMV(B);
+    RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > B_ = Utilities::MV2TpetraMV(B);
+    // TAW: Oct 16 2015: subCopy is not part of Xpetra. One should either add it to Xpetra (with an emulator for Epetra)
+    //                   or replace this call by a local loop. I'm not motivated to do this now...
     RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Borth = B_->subCopy(selectedIndices);               // copy
     for (int i = 0; i < selectedIndices.size(); i++) {
       RCP<Tpetra::Vector<SC,LO,GO,NO> > Bi = Borth->getVectorNonConst(i);
@@ -125,6 +128,9 @@ namespace MueLu {
     }
 
     Borth_ = rcp(static_cast<MultiVector*>(new TpetraMultiVector(Borth)));
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::RuntimeError,"Tpetra with GO=int not available. The code in ProjectorSmoother should be rewritten!");
+#endif
 #endif
 
     SmootherPrototype::IsSetup(true);
@@ -134,26 +140,21 @@ namespace MueLu {
   void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     coarseSolver_->Apply(X, B, InitialGuessIsZero);
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_XPETRA_TPETRA)
     int m = Borth_->getNumVectors();
     int n = X.getNumVectors();
 
-    RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > Borth__ = Utils::MV2TpetraMV(Borth_);
-    RCP<Tpetra::MultiVector<SC,LO,GO,NO> > X_ = Utils::MV2NonConstTpetraMV(rcpFromRef(X));
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > X_ = Teuchos::rcpFromRef(X);
     for (int i = 0; i < n; i++) {
-      RCP<Tpetra::Vector<SC,LO,GO,NO> > Xi = X_->getVectorNonConst(i);
+      RCP<Xpetra::Vector<SC,LO,GO,NO> > Xi = X_->getVectorNonConst(i);
 
       Array<Scalar> dot(1);
       for (int k = 0; k < m; k++) {                                     // orthogonalize
-        RCP<const Tpetra::Vector<SC,LO,GO,NO> > Bk = Borth__->getVector(k);
+        RCP<const Xpetra::Vector<SC,LO,GO,NO> > Bk = Borth_->getVector(k);
 
         Xi->dot(*Bk, dot());
         Xi->update(-dot[0], *Bk, Teuchos::ScalarTraits<Scalar>::one());
       }
     }
-#else
-    this->GetOStream(Warnings0) << "MueLu::ProjectorSmoother::Setup(): disabling as it works only with Tpetra" << std::endl;
-#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

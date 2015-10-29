@@ -50,11 +50,18 @@ namespace Xpetra {
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
-    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false) { }
+    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
+  { }
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
@@ -62,11 +69,18 @@ namespace Xpetra {
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
-    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false) { }
+    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), maxNumEntriesPerRow, toEpetra(pftype)))), isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
+  { }
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
   {
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)));
@@ -74,11 +88,19 @@ namespace Xpetra {
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist)
-    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(graph)))), isFillResumed_(false) { }
+    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(graph)))), isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
+  { }
 
   template<class EpetraGlobalOrdinal>
   EpetraCrsMatrixT<EpetraGlobalOrdinal>::EpetraCrsMatrixT(const EpetraCrsMatrixT& matrix)
-    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(*(matrix.mtx_)))), isFillResumed_(false) { }
+    : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(*(matrix.mtx_)))), isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
+  { }
 
 
   template<class EpetraGlobalOrdinal>
@@ -88,6 +110,9 @@ namespace Xpetra {
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                                    const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
   {
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
     XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal>, importer, tImporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraImportT as an input argument.");
@@ -110,6 +135,9 @@ namespace Xpetra {
                                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
                                    const Teuchos::RCP<Teuchos::ParameterList>& params):
     isFillResumed_(false)
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+      , isInitializedLocalMatrix_(false)
+#endif
   {
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrixT<GlobalOrdinal>, *sourceMatrix, tSourceMatrix, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraCrsMatrixT as an input argument.");
     XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal>, exporter, tExporter, "Xpetra::EpetraCrsMatrixT constructor only accepts Xpetra::EpetraExportT as an input argument.");
@@ -192,6 +220,9 @@ namespace Xpetra {
 
       // call fill complete
       this->fillComplete(domainMap, rowMap, params);
+
+      // AP (2015/10/22): Could probably be optimized using provided lclMatrix, but lets not worry about that
+      isInitializedLocalMatrix_ = false;
     }
 #endif
 

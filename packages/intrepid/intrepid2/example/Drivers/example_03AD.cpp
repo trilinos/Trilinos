@@ -647,7 +647,7 @@ Kokkos::initialize();
     }
     */
 
-   if ((normMat < 1.0e4*INTREPID2_TOL) && (normVec < 1.0e4*INTREPID2_TOL)) {
+   if ((normMat < 1.0e4*INTREPID_TOL) && (normVec < 1.0e4*INTREPID_TOL)) {
      std::cout << "End Result: TEST PASSED\n";
    }
    else {

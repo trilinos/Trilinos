@@ -140,7 +140,7 @@ namespace MueLuTests {
 
     A->fillComplete();
 
-    ArrayRCP<const bool> drows = Utils::DetectDirichletRows(*A);
+    ArrayRCP<const bool> drows = Utilities::DetectDirichletRows(*A);
     TEST_EQUALITY(drows[localRowToZero], true);
     TEST_EQUALITY(drows[localRowToZero-1], false);
 
@@ -153,12 +153,12 @@ namespace MueLuTests {
     A->replaceLocalValues(localRowToZero,indices,newvalues);
 
     //row 5 should not be Dirichlet
-    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.24));
+    drows = Utilities::DetectDirichletRows(*A,Teuchos::as<SC>(0.24));
     TEST_EQUALITY(drows[localRowToZero], false);
     TEST_EQUALITY(drows[localRowToZero-1], false);
 
     //row 5 should be Dirichlet
-    drows = Utils::DetectDirichletRows(*A,Teuchos::as<SC>(0.26));
+    drows = Utilities::DetectDirichletRows(*A,Teuchos::as<SC>(0.26));
     TEST_EQUALITY(drows[localRowToZero], true);
     TEST_EQUALITY(drows[localRowToZero-1], false);
 

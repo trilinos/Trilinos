@@ -119,7 +119,7 @@ namespace Intrepid2 {
   
   /** \brief  General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
    */
-  static const double INTREPID2_TOL       = 10.0* INTREPID2_THRESHOLD;
+  static const double INTREPID_TOL       = 10.0* INTREPID2_THRESHOLD;
 
   /** \enum   Intrepid2::ECoordinates
       \brief  Enumeration of coordinate systems for geometrical entities (cells, points).

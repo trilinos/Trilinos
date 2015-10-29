@@ -376,7 +376,7 @@ Scalar IntrepidPolylib::hgj (const int i, const Scalar z, const Scalar *zgj,
 
     zi  = *(zgj+i);
     dz  = z - zi;
-    if (std::abs(dz) < INTREPID2_TOL) return 1.0;
+    if (std::abs(dz) < INTREPID_TOL) return 1.0;
 
     IntrepidPolylib::jacobd (1, &zi, &pd , np, alpha, beta);
     IntrepidPolylib::jacobfd(1, &z , &p, (Scalar*)0 , np, alpha, beta);
@@ -395,7 +395,7 @@ Scalar IntrepidPolylib::hgrjm (const int i, const Scalar z, const Scalar *zgrj,
 
     zi  = *(zgrj+i);
     dz  = z - zi;
-    if (std::abs(dz) < INTREPID2_TOL) return 1.0;
+    if (std::abs(dz) < INTREPID_TOL) return 1.0;
 
     IntrepidPolylib::jacobfd (1, &zi, &p , (Scalar*)0, np-1, alpha, beta + 1);
     // need to use this routine in case zi = -1 or 1
@@ -417,7 +417,7 @@ Scalar IntrepidPolylib::hgrjp (const int i, const Scalar z, const Scalar *zgrj,
 
     zi  = *(zgrj+i);
     dz  = z - zi;
-    if (std::abs(dz) < INTREPID2_TOL) return 1.0;
+    if (std::abs(dz) < INTREPID_TOL) return 1.0;
 
     IntrepidPolylib::jacobfd (1, &zi, &p , (Scalar*)0, np-1, alpha+1, beta );
     // need to use this routine in case z = -1 or 1
@@ -439,7 +439,7 @@ Scalar IntrepidPolylib::hglj (const int i, const Scalar z, const Scalar *zglj,
 
     zi  = *(zglj+i);
     dz  = z - zi;
-    if (std::abs(dz) < INTREPID2_TOL) return 1.0;
+    if (std::abs(dz) < INTREPID_TOL) return 1.0;
 
     IntrepidPolylib::jacobfd(1, &zi, &p , (Scalar*)0, np-2, alpha + one, beta + one);
     // need to use this routine in case z = -1 or 1
@@ -696,7 +696,7 @@ void IntrepidPolylib::Jacobz(const int n, Scalar *z, const Scalar alpha, const S
 
             delr = -poly / (pder - sum * poly);
             r   += delr;
-            if( std::abs(delr) < INTREPID2_TOL ) break;
+            if( std::abs(delr) < INTREPID_TOL ) break;
         }
         z[k]  = r;
         rlast = r;

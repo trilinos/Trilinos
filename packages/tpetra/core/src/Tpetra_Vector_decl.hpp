@@ -112,6 +112,9 @@ public:
   typedef LocalOrdinal local_ordinal_type;
   //! This class' third template parameter; the type of global indices.
   typedef GlobalOrdinal global_ordinal_type;
+  //! The Kokkos device type.
+  typedef typename Node::device_type device_type;
+
   //! The Kokkos Node type.
   typedef Node node_type;
 

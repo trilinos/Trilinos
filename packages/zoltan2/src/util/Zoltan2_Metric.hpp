@@ -775,6 +775,7 @@ template <typename Adapter>
 
   typedef GraphMetricValues<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::Vector<part_t,lno_t,gno_t,node_t>     vector_t;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -839,18 +840,13 @@ template <typename Adapter>
   // *************************** BUILD MAP FOR ADJS ***************************
   // **************************************************************************
 
-  Array<gno_t> vertexGIDs;
   RCP<const map_type> vertexMapG;
 
   // Build a list of the global vertex ids...
-  vertexGIDs.resize(localNumObj);
-  gno_t min;
-  min = as<gno_t> (Ids[0]);
+  gno_t min = std::numeric_limits<gno_t>::max();
   for (lno_t i = 0; i < localNumObj; ++i) {
-    vertexGIDs[i] = as<gno_t> (Ids[i]);
-
-    if (vertexGIDs[i] < min) {
-      min = vertexGIDs[i];
+    if (Ids[i] < min) {
+      min = Ids[i];
     }
   }
 
@@ -858,7 +854,7 @@ template <typename Adapter>
   Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,&min,&gmin);
 
   //Generate Map for vertex
-  vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
+  vertexMapG = rcp(new map_type(INVALID, Ids, gmin, comm));
 
   // **************************************************************************
   // ************************** BUILD GRAPH FOR ADJS **************************
@@ -875,10 +871,10 @@ template <typename Adapter>
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
 
     //globalRow for Tpetra Graph
-    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+    gno_t globalRowT = Ids[localElement];
 
     for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-      gno_t globalCol = as<gno_t> (edgeIds[j]);
+      gno_t globalCol = edgeIds[j];
       //create ArrayView globalCol object for Tpetra
       ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
@@ -890,48 +886,24 @@ template <typename Adapter>
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete ();
 
-  // **************************************************************************
-  // ************************ BUILD IDENTITY FOR PARTS ************************
-  // **************************************************************************
-
-  RCP<sparse_matrix_type> Ipart;
-
-  // Ipart: Identity matrix for part numbers
-  Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
-
+  // Compute part
+  RCP<vector_t> scaleVec = Teuchos::rcp( new vector_t(vertexMapG,false) );
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    part_t justPart = part[localElement];
-    ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
+    scaleVec->replaceLocalValue(localElement,part[localElement]);
+  }
 
-    // globalRow for Tpetra Matrix
-    gno_t globalRowT = as<gno_t> (Ids[localElement]);
-
-    gno_t globalCol = as<gno_t> (Ids[localElement]);
-    //create ArrayView globalCol object for Tpetra
-    ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-    //Update Tpetra Ipart matrix
-    Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
-  }// *** vertex loop ***
-
-  //Fill-complete parts Matrix
-  Ipart->fillComplete ();
-
-  // Create matrix to store adjs part
-  RCP<sparse_matrix_type> adjsPart = 
-    rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
-  Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
-				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
+  // Postmultiply adjsMatrix by part
+  adjsMatrix->rightScale(*scaleVec);
   Array<gno_t> Indices;
   Array<part_t> Values;
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++) {
       const gno_t globalRow = Ids[i];
-      size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+      size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
       Indices.resize (NumEntries);
       Values.resize (NumEntries);
-      adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
       for (size_t j=0; j < NumEntries; j++)
 	if (part[i] != Values[j])
@@ -945,10 +917,10 @@ template <typename Adapter>
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
-	size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+	size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
-	adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+	adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j=0; j < NumEntries; j++)
 	  if (part[i] != Values[j])

@@ -80,6 +80,7 @@ typedef int default_part_t;  // Restrictions in MPI interface will make it
                              // long long, since we use part_t for ranks
                              // and we sometimes broadcast arrays whose
                              // size has type part_t.
+                             // part_t must be a signed data type.
 
 // Until Kokkos node types are supported, use default
 typedef Tpetra::Map<>::node_type default_node_t;

@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
       RCP<Vector> mueluX = rcp(new Xpetra::EpetraVector(epX));
       RCP<Vector> mueluB = rcp(new Xpetra::EpetraVector(epB));
       // Print relative residual norm
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utils::ResidualNorm(*Op, *mueluX, *mueluB)[0];
+      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = Utilities::ResidualNorm(*Op, *mueluX, *mueluB)[0];
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
     }

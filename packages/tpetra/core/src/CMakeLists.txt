@@ -113,17 +113,22 @@ ENDFUNCTION(TPETRA_NODE_MACRO_NAME)
 #   TPETRA_SLG_MACRO_NAME function (see above) implements the
 #   conversion process from the original name to the macro name.
 FUNCTION(TPETRA_SC_MACRO_EXPR SC_MACRO_EXPR SC GO SC_MACRO_NAME)
-  # SC = int and SC = GO are special cases.  Tpetra doesn't have
+  # SC = int,char and SC = GO are special cases.  Tpetra doesn't have
   # macros for these cases.  That means the expression is empty.
   STRING(COMPARE EQUAL "${SC}" "int" IS_INT)
   IF(IS_INT)
     SET(SC_MACRO_EXPR_TMP "")
   ELSE()
-    STRING(COMPARE EQUAL "${SC}" "${GO}" IS_GO)
-    IF(IS_GO)
+    STRING(COMPARE EQUAL "${SC}" "char" IS_CHAR)
+    IF(IS_CHAR)
       SET(SC_MACRO_EXPR_TMP "")
     ELSE()
-      SET(SC_MACRO_EXPR_TMP "&& defined(HAVE_TPETRA_INST_${SC_MACRO_NAME})")
+      STRING(COMPARE EQUAL "${SC}" "${GO}" IS_GO)
+      IF(IS_GO)
+        SET(SC_MACRO_EXPR_TMP "")
+      ELSE()
+        SET(SC_MACRO_EXPR_TMP "&& defined(HAVE_TPETRA_INST_${SC_MACRO_NAME})")
+      ENDIF()
     ENDIF()
   ENDIF()
 
@@ -317,6 +322,15 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockCrsMatrix" "EXPERIMENTAL_BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
+
+  # DistObject requires the same Scalar type instantiations as
+  # MultiVector, plus Scalar = char (for CrsMatrix).
+  SET (DistObject_ETI_SCALARS ${MultiVector_ETI_SCALARS})
+  LIST(APPEND DistObject_ETI_SCALARS "char")
+
+  # Generate ETI .cpp files for Tpetra::DistObject.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(DISTOBJECT_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "DistObject" "DISTOBJECT" "${DistObject_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${DISTOBJECT_OUTPUT_FILES})
 
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
