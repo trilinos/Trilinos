@@ -50,14 +50,28 @@ echo "Default is '7'"
 echo ""
 }
 
+function abspath() {
+    # generate absolute path from relative path
+    # $1     : relative filename
+    # return : set FOR011 to absolute path
+    if [ -d "$1" ]; then
+        # dir
+        FOR011=`(cd "$1"; pwd)`
+    elif [ -f "$1" ]; then
+        # file
+        if [[ $1 == */* ]]; then
+            FOR011=`echo "$(cd "${1%/*}"; pwd)/${1##*/}"`
+        else
+            FOR011=`echo "$(pwd)/$1"`
+        fi
+    fi
+}
+
 codename=blot
 ACCESS=@ACCESSDIR@
 sep=@SEPARATOR@
 
 # Text color variables
-if test "${TERM}set" != xtermset ; then
-    export TERM=dumb
-fi
 txtund=$(tput sgr 0 1)    # Underline
 txtbld=$(tput bold)       # Bold
 txtred=$(tput setaf 1)    # Red
@@ -176,7 +190,10 @@ then
    exit 1
 fi
 
-# Run the code, --
+# Set filename to absolute path
+abspath ${FOR011}
+
+# Run the code
 ${ACCESS}/bin/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
 
 if [ ! -z ${filename} ] && [ "${device}" != "dual" ] && [ "${device}" != "xcps" ]

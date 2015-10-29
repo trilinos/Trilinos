@@ -80,6 +80,23 @@ echo "Default is '7'"
 echo ""
 }
 
+function abspath() {
+    # generate absolute path from relative path
+    # $1     : relative filename
+    # return : set FOR011 to absolute path
+    if [ -d "$1" ]; then
+        # dir
+        FOR011=`(cd "$1"; pwd)`
+    elif [ -f "$1" ]; then
+        # file
+        if [[ $1 == */* ]]; then
+            FOR011=`echo "$(cd "${1%/*}"; pwd)/${1##*/}"`
+        else
+            FOR011=`echo "$(pwd)/$1"`
+        fi
+    fi
+}
+
 codename=blot
 ACCESSBIN="`dirname \"$0\"`"
 ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
@@ -203,6 +220,9 @@ then
    show_device
    exit 1
 fi
+
+# Set filename to absolute path
+abspath ${FOR011}
 
 # Run the code, --
 ${ACCESSBIN}/${codename}_${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
