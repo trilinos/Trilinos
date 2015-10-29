@@ -844,10 +844,11 @@ template <typename Adapter>
 
   // Build a list of the global vertex ids...
   gno_t min = std::numeric_limits<gno_t>::max();
+  size_t maxcols = 0;
   for (lno_t i = 0; i < localNumObj; ++i) {
-    if (Ids[i] < min) {
-      min = Ids[i];
-    }
+    if (Ids[i] < min) min = Ids[i];
+    size_t ncols = offsets[i+1] - offsets[i];
+    if (ncols > maxcols) maxcols = ncols;
   }
 
   gno_t gmin;
@@ -865,23 +866,15 @@ template <typename Adapter>
   // Construct Tpetra::CrsGraph objects.
   adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  part_t justOne = 1;
-  ArrayView<part_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+  Array<part_t> justOneA(maxcols, 1);
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
-
-    //globalRow for Tpetra Graph
-    gno_t globalRowT = Ids[localElement];
-
-    for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-      gno_t globalCol = edgeIds[j];
-      //create ArrayView globalCol object for Tpetra
-      ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-      //Update Tpetra adjs Graph
-      adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
-    }// *** edge loop ***
-  }// *** vertex loop ***
+    // Insert all columns for global row Ids[localElement] 
+    size_t ncols = offsets[localElement+1] - offsets[localElement];
+    adjsMatrix->insertGlobalValues(Ids[localElement],
+                                   edgeIds(offsets[localElement], ncols),
+                                   justOneA(0, ncols));
+  }
 
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete ();

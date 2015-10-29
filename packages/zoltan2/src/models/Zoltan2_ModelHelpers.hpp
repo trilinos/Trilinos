@@ -109,11 +109,14 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     // Build a list of the global sourcetarget ids...
     gno_t min[2];
+    size_t maxcols = 0;
     min[0] = std::numeric_limits<gno_t>::max();
     for (size_t i = 0; i < LocalNumIDs; ++i) {
       if (Ids[i] < min[0]) {
 	min[0] = Ids[i];
       }
+      size_t ncols = offsets[i+1] - offsets[i];
+      if (ncols > maxcols) maxcols = ncols;
     }
 
     // min(throughIds[i])
@@ -163,25 +166,15 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG,//oneToOneSTMap,
 					      0));
 
-    nonzero_t justOne = 1;
-    ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+    Array<nonzero_t> justOneA(maxcols, 1);
+    ArrayView<const gno_t> adjacencyIdsAV(adjacencyIds, offsets[LocalNumIDs]);
 
     for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
-
-      //globalRow for Tpetra Graph
-      gno_t globalRowT = Ids[localElement];
-
-// TODO:  can we insert all adjacencies at once instead of one at a time
-// (since they are contiguous in adjacencyIds)?
-// TODO:  maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
-      for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-	gno_t globalCol = adjacencyIds[j];
-	//create ArrayView globalCol object for Tpetra
-	ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-	//Update Tpetra adjs Graph
-	adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
-      }// *** through loop ***
+      // Insert all columns for global row Ids[localElement] 
+      size_t ncols = offsets[localElement+1] - offsets[localElement];
+      adjsMatrix->insertGlobalValues(Ids[localElement],
+                              adjacencyIdsAV(offsets[localElement], ncols),
+                              justOneA(0, ncols));
     }// *** source loop ***
 
     //Fill-complete adjs Graph
