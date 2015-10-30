@@ -240,56 +240,100 @@ void BulkDataFaceSharingTester::check_if_entity_from_other_proc_exists_on_this_p
 
 ///////////////////////////
 
+stk::mesh::EntityVector BulkDataElemGraphFaceSharingTester::get_local_sides() const
+{
+    stk::mesh::EntityVector sides;
+    stk::mesh::get_selected_entities(locally_owned_part(), buckets(side_rank()), sides);
+    return sides;
+}
+
+stk::mesh::EntityVector get_nodes_of_entity(const BulkDataElemGraphFaceSharingTester& bulkData, stk::mesh::Entity entity)
+{
+    ThrowRequireMsg(bulkData.num_nodes(entity)>0, "Program error. Contact sierra-help@sandia.gov for support.");
+    stk::mesh::EntityVector nodes(bulkData.begin_nodes(entity), bulkData.end_nodes(entity));
+    return nodes;
+}
+
+std::vector<stk::mesh::EntityKey> convert_entities_to_keys(const BulkDataElemGraphFaceSharingTester& bulkData, const stk::mesh::EntityVector& nodes)
+{
+    std::vector<stk::mesh::EntityKey> node_keys(nodes.size());
+    for(size_t i=0;i<node_keys.size();++i)
+        node_keys[i] = bulkData.entity_key(nodes[i]);
+    return node_keys;
+}
+
+std::vector<stk::mesh::EntityKey> get_node_keys_of_entity(const BulkDataElemGraphFaceSharingTester& bulkData, stk::mesh::Entity entity)
+{
+    stk::mesh::EntityVector nodes = get_nodes_of_entity(bulkData, entity);
+    return convert_entities_to_keys(bulkData, nodes);
+}
+
+void add_shared_entity(const BulkDataElemGraphFaceSharingTester &bulkData, stk::mesh::Entity side, std::vector<shared_entity_type>& shared_entities)
+{
+    shared_entity_type sentity(bulkData.entity_key(side), side, bulkData.get_entity_topology(side));
+    sentity.nodes = get_node_keys_of_entity(bulkData, side);
+    shared_entities.push_back(sentity);
+}
+
+void BulkDataElemGraphFaceSharingTester::add_side_if_remote_element_connection_exists(int num_connected_elems, stk::mesh::Entity element, stk::mesh::Entity side, const stk::mesh::ElemElemGraph& egraph,
+        std::vector<shared_entity_type>& shared_entities)
+{
+    for(int k=0;k<num_connected_elems;++k)
+    {
+        if(!egraph.is_connected_elem_locally_owned(element, k))
+        {
+            add_shared_entity(*this, side, shared_entities);
+            break;
+        }
+    }
+}
+
+void BulkDataElemGraphFaceSharingTester::determine_if_side_is_shared_across_proc_boundary_and_add(const stk::mesh::EntityVector& elements, stk::mesh::Entity side,
+        const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities)
+{
+    for(stk::mesh::Entity element : elements)
+    {
+        if(is_entity_owned(element))
+        {
+            int num_connected_elems = egraph.get_num_connected_elems(element);
+            add_side_if_remote_element_connection_exists(num_connected_elems, element, side, egraph, shared_entities);
+        }
+    }
+}
+
+void BulkDataElemGraphFaceSharingTester::fill_shared_entities_that_need_fixing(const stk::mesh::EntityVector& sides, const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities)
+{
+    for(stk::mesh::Entity side : sides)
+    {
+        if(entityWasCreatedThisModCycle(side))
+        {
+            std::vector<stk::mesh::Entity> elements(begin_elements(side),end_elements(side));
+            determine_if_side_is_shared_across_proc_boundary_and_add(elements, side, egraph, shared_entities);
+        }
+    }
+}
+
+void BulkDataElemGraphFaceSharingTester::mark_entities_as_possibly_shared(const std::vector<shared_entity_type>& sentities)
+{
+    for(shared_entity_type sentity : sentities)
+        internal_mark_entity(sentity.entity, BulkData::POSSIBLY_SHARED);
+}
+
+void BulkDataElemGraphFaceSharingTester::use_elem_elem_graph_to_determine_shared_entities(std::vector<shared_entity_type>& shared_entities)
+{
+    stk::mesh::ElemElemGraph egraph(*this, mesh_meta_data().universal_part());
+    stk::mesh::EntityVector sides = get_local_sides();
+    fill_shared_entities_that_need_fixing(sides, egraph, shared_entities);
+    mark_entities_as_possibly_shared(shared_entities);
+}
+
+
 void BulkDataElemGraphFaceSharingTester::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities)
 {
     if(entityRank == mesh_meta_data().side_rank())
-    {
-        stk::mesh::ElemElemGraph egraph(*this, mesh_meta_data().universal_part());
-
-        stk::mesh::EntityVector sides;
-        stk::mesh::get_selected_entities(mesh_meta_data().locally_owned_part(), buckets(mesh_meta_data().side_rank()), sides);
-
-        for(stk::mesh::Entity side : sides)
-        {
-            unsigned numberElements = num_elements(side);
-            const stk::mesh::Entity* elements = begin_elements(side);
-            for(unsigned j=0;j<numberElements;++j)
-            {
-                if(bucket(elements[j]).owned())
-                {
-                    int num_connected_elems = egraph.get_num_connected_elems(elements[j]);
-                    for(int k=0;k<num_connected_elems;++k)
-                    {
-                        if(!egraph.is_connected_elem_locally_owned(elements[j], k))
-                        {
-                            shared_entity_type sentity;
-                            sentity.entity = side;
-                            sentity.topology = bucket(side).topology();
-                            unsigned num_nodes_on_entity = num_nodes(side);
-                            sentity.nodes.resize(num_nodes_on_entity);
-                            sentity.need_update_nodes = false;
-                            const stk::mesh::Entity* nodes = begin_nodes(side);
-                            for(size_t n = 0; n < num_nodes_on_entity; ++n)
-                            {
-                                sentity.nodes[n]=this->entity_key(nodes[n]);
-                            }
-                            //Sort will have to go away
-                            this->sortNodesIfNeeded(sentity.nodes);
-                            const EntityKey &entity_key = this->entity_key(side);
-                            sentity.local_key = entity_key;
-                            sentity.global_key = entity_key;
-                            shared_entities.push_back(sentity);
-                            this->internal_mark_entity(side, BulkData::POSSIBLY_SHARED);
-                        }
-                    }
-                }
-            }
-        }
-    }
+        use_elem_elem_graph_to_determine_shared_entities(shared_entities);
     else
-    {
         BulkData::markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
-    }
 }
 
 } } } // namespace stk mesh unit_test

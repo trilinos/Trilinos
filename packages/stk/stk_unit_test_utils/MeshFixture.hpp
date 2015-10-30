@@ -1,3 +1,6 @@
+#ifndef UNITTEST_MESHFIXTURE_HPP
+#define UNITTEST_MESHFIXTURE_HPP
+
 #include <mpi.h>
 #include <gtest/gtest.h>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -77,3 +80,6 @@ protected:
 };
 
 }}
+
+#endif
+

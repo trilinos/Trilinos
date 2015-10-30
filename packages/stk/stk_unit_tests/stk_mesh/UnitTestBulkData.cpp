@@ -5999,7 +5999,6 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 //
 TEST(BulkData, test_parallel_entity_sharing)
 {
-    stk::mesh::shared_entity_type sentity;
 
     stk::mesh::Entity entity;
     stk::mesh::EntityKey quad(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
@@ -6014,33 +6013,24 @@ TEST(BulkData, test_parallel_entity_sharing)
 
     stk::topology topo = stk::topology::QUAD_4_2D;
 
-    sentity.entity = entity;
-    sentity.topology = topo;
+    stk::mesh::shared_entity_type sentity(quad, entity, topo);
     sentity.nodes.resize(num_nodes_on_entity);
     for(size_t n = 0; n < num_nodes_on_entity; ++n)
     {
         sentity.nodes[n]=keys[n];
     }
 
-    sentity.local_key = quad;
-    sentity.global_key = quad;
-
     std::vector<stk::mesh::shared_entity_type> shared_entity_map;
     shared_entity_map.push_back(sentity);
 
-    stk::mesh::shared_entity_type entity_from_other_proc;
+    stk::mesh::shared_entity_type entity_from_other_proc(quad, entity, topo);
 
-    entity_from_other_proc.entity = entity;
-    entity_from_other_proc.topology = topo;
     entity_from_other_proc.nodes.resize(num_nodes_on_entity);
     for(size_t n = 0; n < num_nodes_on_entity; ++n)
     {
         int index = num_nodes_on_entity - n - 1;
         entity_from_other_proc.nodes[n]=keys[index];
     }
-
-    entity_from_other_proc.local_key = quad;
-    entity_from_other_proc.global_key = quad;
 
     int matching_index = stk::mesh::unit_test::does_entity_exist_in_list(shared_entity_map, entity_from_other_proc);
     EXPECT_TRUE(matching_index >= 0);

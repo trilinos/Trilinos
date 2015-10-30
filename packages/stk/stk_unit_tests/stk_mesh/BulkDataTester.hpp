@@ -41,6 +41,8 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/ElemElemGraph.hpp>
+
 #include "BucketTester.hpp"
 
 namespace stk { namespace mesh { namespace unit_test {
@@ -404,6 +406,22 @@ public:
     ~BulkDataElemGraphFaceSharingTester(){}
 
     virtual void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
+
+    stk::mesh::Part& locally_owned_part() const { return mesh_meta_data().locally_owned_part(); }
+    stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
+    stk::mesh::EntityVector get_local_sides() const;
+    bool entityWasCreatedThisModCycle(stk::mesh::Entity entity) const { return state(entity)==stk::mesh::Created; }
+    stk::topology get_entity_topology(stk::mesh::Entity entity) const { return bucket(entity).topology(); }
+    bool is_entity_owned(stk::mesh::Entity entity) const { return bucket(entity).owned(); }
+
+protected:
+    void determine_if_side_is_shared_across_proc_boundary_and_add(const stk::mesh::EntityVector& elements, stk::mesh::Entity side,
+            const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities);
+    void use_elem_elem_graph_to_determine_shared_entities(std::vector<shared_entity_type>& shared_entities);
+    void fill_shared_entities_that_need_fixing(const stk::mesh::EntityVector& sides, const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities);
+    void add_side_if_remote_element_connection_exists(int num_connected_elems, stk::mesh::Entity element, stk::mesh::Entity side, const stk::mesh::ElemElemGraph& egraph,
+            std::vector<shared_entity_type>& shared_entities);
+    void mark_entities_as_possibly_shared(const std::vector<shared_entity_type>& entities);
 };
 
 } } } // namespace stk mesh unit_test

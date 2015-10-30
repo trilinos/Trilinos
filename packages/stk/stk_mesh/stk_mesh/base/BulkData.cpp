@@ -262,7 +262,7 @@ void BulkData::unpack_shared_entities(stk::CommSparse &comm, std::vector< std::p
             CommBuffer & buf = comm.recv_buffer(ip);
             while(buf.remaining())
             {
-                shared_entity_type sentity;
+                shared_entity_type sentity(stk::mesh::EntityKey(), stk::mesh::Entity(), stk::topology::INVALID_TOPOLOGY);
 
                 buf.unpack<stk::topology::topology_t>(sentity.topology);
                 stk::topology entity_topology(sentity.topology);
@@ -5542,20 +5542,14 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
 
                     if(shared_entity)
                     {
-                        shared_entity_type sentity;
-                        sentity.entity = entity;
-                        sentity.topology = topology;
+                        shared_entity_type sentity(this->entity_key(entity), entity, topology);
                         sentity.nodes.resize(num_nodes_on_entity);
-                        sentity.need_update_nodes = false;
                         for(size_t n = 0; n < num_nodes_on_entity; ++n)
                         {
                             sentity.nodes[n]=this->entity_key(nodes[n]);
                         }
                         //Sort will have to go away
                         this->sortNodesIfNeeded(sentity.nodes);
-                        const EntityKey &entity_key = this->entity_key(entity);
-                        sentity.local_key = entity_key;
-                        sentity.global_key = entity_key;
                         shared_entities.push_back(sentity);
                         this->internal_mark_entity(entity, BulkData::POSSIBLY_SHARED);
                     }
