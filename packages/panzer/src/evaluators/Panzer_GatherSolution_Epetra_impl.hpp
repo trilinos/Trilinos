@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -303,6 +304,25 @@ preEvaluate(typename TRAITS::PreEvalData d)
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
+  // Extract dxdp vectors -- if they are there, otherwise we assume they are 0
+  std::vector<std::string> activeParameters =
+    rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
+  dxdp_vectors_.clear();
+  for(std::size_t i=0;i<activeParameters.size();i++) {
+    // Use name of first evaluated field for extracting name of global tangent vector container
+    std::string name = gatherFields_[0].fieldTag().name() + " " + activeParameters[i];
+    if (d.gedc.containsDataObject(name)) {
+      RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(name);
+      RCP<LOCPair_GlobalEvaluationData> loc_pair =
+        rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged, true);
+      RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
+      RCP<EpetraLinearObjContainer> epetra_loc =
+        rcp_dynamic_cast<EpetraLinearObjContainer>(loc, true);
+      RCP<Epetra_Vector> vec = epetra_loc->get_x();
+      dxdp_vectors_.push_back(vec);
+    }
+  }
+
   RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
 
   // try to extract linear object container
@@ -367,7 +387,13 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
+            if (dxdp_vectors_.size() == 0)
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
+            else {
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = x[lid];
+              for (std::size_t i=0; i<dxdp_vectors_.size(); ++i)
+                (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) = (*dxdp_vectors_[i])[lid];
+            }
          }
       }
    }

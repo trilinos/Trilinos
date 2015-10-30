@@ -174,6 +174,7 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<Epetra_Vector> x_;
+  std::vector<Teuchos::RCP<Epetra_Vector> > dxdp_vectors_;
 
   GatherSolution_Epetra();
 };
