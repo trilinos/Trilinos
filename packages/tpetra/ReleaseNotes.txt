@@ -2,8 +2,26 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
-Development version (12.3)
+Development version (12.5)
 --------------------------
+
+* Block(Multi)Vector: Add "offset view" constructors (Bug 6450)
+
+Tpetra::Experimental::{BlockMultiVector, BlockVector} now have two
+"offset view" constructors.  They behave analogously to the offsetView
+and offsetViewNonConst methods of Tpetra::MultiVector.
+
+The constructors view an existing BlockMultiVector with a different
+mesh Map, and an optional local row offset from which to start the
+view on each process.  The offset is a mesh offset (it gets multiplied
+by the block size internally in order to find the point offset).  The
+two constructors differ only in that one lets you supply the new point
+Map, while the other computes it for you.
+
+This fixes Bug 6450 (which was a feature request).
+
+Trilinos 12.4
+-------------
 
 * Changed CMake option for setting default Node type
 
