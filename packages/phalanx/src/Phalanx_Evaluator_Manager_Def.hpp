@@ -87,12 +87,10 @@ requireField(const PHX::FieldTag& t)
 {
   FTPredRef pred(t);
   std::vector< Teuchos::RCP<PHX::FieldTag> >::iterator i = 
-    std::find_if(fields_.begin(), fields_.end(), pred);
+    std::find_if(required_fields_.begin(), required_fields_.end(), pred);
   
-  if (i == fields_.end()) {
-    fields_.push_back(t.clone());
+  if (i == required_fields_.end())
     required_fields_.push_back(t.clone());
-  }
 }
 
 //=======================================================================
@@ -100,11 +98,6 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
-  varProviders.push_back(p);
-  providerVariables.push_back(p->evaluatedFields());
-  providerRequirements.push_back(p->dependentFields());
-  providerNames.push_back(p->getName());
-
 #ifdef PHX_TEUCHOS_TIME_MONITOR
   // Add counter to name so that all timers have unique names
   static int count=0;
@@ -168,7 +161,7 @@ sortAndOrderEvaluators()
   for (auto& n : nodes_)
     n.resetDfsParams(PHX::Color::WHITE);
 
-  providerEvalOrderIndex.clear();
+  topoSortEvalIndex.clear();
 
   // Loop over required fields
   int time = 0;
@@ -198,8 +191,8 @@ sortAndOrderEvaluators()
 
   // Create a list of fields to allocate
   fields_.clear();
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++) {
-    const auto& fields = (nodes_[providerEvalOrderIndex[i]]).get()->evaluatedFields();
+  for (std::size_t i = 0; i < topoSortEvalIndex.size(); i++) {
+    const auto& fields = (nodes_[topoSortEvalIndex[i]]).get()->evaluatedFields();
     fields_.insert(fields_.end(),fields.cbegin(),fields.cend());
   }
 
@@ -292,7 +285,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
   node.setColor(PHX::Color::BLACK);
   time += 1;
   node.setFinalTime(time);
-  providerEvalOrderIndex.push_back(node.index()); // for topo sort
+  topoSortEvalIndex.push_back(node.index()); // for topo sort
 }
 
 //=======================================================================
@@ -301,14 +294,17 @@ void PHX::EvaluatorManager<Traits>::
 printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 {
   os << "Name=" << e.getName() << "\n";
-  os << "  Evaluated:\n";
+  os << "  *Evaluated Fields:\n";
   for (const auto& f : e.evaluatedFields()) 
     os << "    " << f->identifier() << "\n";
-  os << "  Dependent:\n";
-  for (const auto& f : e.dependentFields()) 
-    os << "    " << f->identifier() << "\n";
-  // os << "Dependent:\n";
-  //    <<
+  os << "  *Dependent Fields:\n";
+  if (e.dependentFields().size() > 0) {
+    for (const auto& f : e.dependentFields()) 
+      os << "    " << f->identifier() << "\n";
+  }
+  else {
+    os << "    None!\n";
+  }
 }
 
 //=======================================================================
@@ -318,8 +314,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
   // Call each providers' post registration setup
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
-    (varProviders[providerEvalOrderIndex[i]])->postRegistrationSetup(d,vm);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+    nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
 }
 
 //=======================================================================
@@ -327,11 +323,11 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++) {
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor Time(*evalTimers[providerEvalOrderIndex[i]]);
+    Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
-    (varProviders[providerEvalOrderIndex[i]])->evaluateFields(d);
+    nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
   }
 }
 
@@ -340,8 +336,8 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
-    (varProviders[providerEvalOrderIndex[i]])->preEvaluate(d);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+    nodes_[topoSortEvalIndex[n]].getNonConst()->preEvaluate(d);
 }
 
 //=======================================================================
@@ -349,8 +345,8 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
-    (varProviders[providerEvalOrderIndex[i]])->postEvaluate(d);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+    nodes_[topoSortEvalIndex[n]].getNonConst()->postEvaluate(d);
 }
 
 //=======================================================================
@@ -513,7 +509,7 @@ bool PHX::EvaluatorManager<Traits>::sortingCalled() const
 template<typename Traits>
 const std::vector<int>& 
 PHX::EvaluatorManager<Traits>::getEvaluatorInternalOrdering() const
-{return providerEvalOrderIndex;}
+{return topoSortEvalIndex;}
 
 //=======================================================================
 template<typename Traits>
@@ -525,50 +521,27 @@ void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
   os << "******************************************************" << std::endl;
 
   os << "\n** Starting Required Field List" << std::endl;
-  for (std::size_t i = 0; i < fields_.size(); i++) {
-    os << *(this->fields_[i]) << std::endl;
+  for (std::size_t i = 0; i < required_fields_.size(); i++) {
+    os << *(this->required_fields_[i]) << std::endl;
   }
   os << "** Finished Required Field List" << std::endl;
 
   os << "\n** Starting Registered Field Evaluators" << std::endl;
-  for (std::size_t i = 0; i < varProviders.size(); i++) {
-    os << "Evaluator[" << i << "]: " << providerNames[i] << std::endl;
-    os << "  *Evaluates:" << std::endl;
-    for (std::size_t j = 0; j < providerVariables[i].size(); j++)
-      os << "    " << *((this->providerVariables[i])[j]) << std::endl;
-    os << "  *Dependencies:";
-    if (providerRequirements[i].size() == 0) {
-      os << " None!" << std::endl;
-    }
-    else {
-      os << std::endl;
-      for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
-	os << "    " << *((this->providerRequirements[i])[j]) << std::endl;
-    }
+  for (std::size_t n=0; n < nodes_.size(); ++n) {
+    os << "Evaluator[" << n << "]: ";
+    this->printEvaluator(*(nodes_[n].get()),os);
   }
   os << "** Finished Registered Field Evaluators" << std::endl;
 
 
   os << "\n** Starting Evaluator Order" << std::endl;
-  for (std::size_t k = 0; k < providerEvalOrderIndex.size(); k++) {
-    os << k << "    " << providerEvalOrderIndex[k] << std::endl;
+  for (std::size_t k = 0; k < topoSortEvalIndex.size(); ++k) {
+    os << k << "    " << topoSortEvalIndex[k] << std::endl;
   }
   os << "\nDetails:\n";
-  for (std::size_t k = 0; k < providerEvalOrderIndex.size(); k++) {
-    int i = providerEvalOrderIndex[k];
-    os << "Evaluator[" << i << "]: " << providerNames[i] << std::endl;
-    os << "  *Evaluates:" << std::endl;
-    for (std::size_t j = 0; j < providerVariables[i].size(); j++)
-      os << "    " << *((this->providerVariables[i])[j]) << std::endl;
-    os << "  *Dependencies:";
-    if (providerRequirements[i].size() == 0) {
-      os << " None!" << std::endl;
-    }
-    else {
-      os << std::endl;
-      for (std::size_t j = 0; j < providerRequirements[i].size(); j++)
-	os << "    " << *((this->providerRequirements[i])[j]) << std::endl;
-    }
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    os << "Evaluator[" << topoSortEvalIndex[n] << "]: ";
+    this->printEvaluator(*(nodes_[topoSortEvalIndex[n]].get()),os);    
   }
   os << "** Finished Provider Evaluation Order" << std::endl;
 

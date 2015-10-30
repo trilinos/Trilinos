@@ -171,48 +171,19 @@ namespace PHX {
 
     //! Hash map of field key to evaluator index.
     std::unordered_map<std::string,int> field_to_node_index_;
-
-    // *******************************
-    // Begin old sorting data
-    // *******************************
     
-    //! Fields required by the user.
+    //! All fields that are needed for the evaluation.
     std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
-    
-    //@{
-    /*!
-      @name Evaluator Objects
-      @brief Stores information about variable provider objects.
-    */    
-    std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > 
-    varProviders;
-    
-    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
-    providerVariables;
-
-    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
-    providerRequirements;
-
-    std::vector<std::string> providerNames;
-
-    // *******************************
-    // End old sorting data
-    // *******************************
 
     // Timers used when configured with Phalanx_ENABLE_TEUCHOS_TIME_MONITOR.
     std::vector<Teuchos::RCP<Teuchos::Time> > evalTimers;
 
-    //@}
-
-    
-    //@{
     /*! @name Evaluation Order Objects
       
-        Stores information about the order that providers need to be
-        called to evaluate fields correctly.
+        Stores results from a topological sort on the evaluator DAG:
+        the order to call evaluators to evaluate fields correctly.
     */
-    std::vector<int> providerEvalOrderIndex;
-    //@}
+    std::vector<int> topoSortEvalIndex;
 
     //! Use this name for graphviz file output for DAG construction errors.
     std::string graphviz_filename_for_errors_;
