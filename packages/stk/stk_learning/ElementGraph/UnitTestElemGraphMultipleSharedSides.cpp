@@ -175,20 +175,29 @@ TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
      }
 }
 
+stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData)
+{
+    stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+    if (bulkData.is_valid(elem2) && bulkData.bucket(elem2).owned())
+    {
+        return {elem2};
+    }
+    return stk::mesh::EntityVector();
+}
+
+void test_element_death_with_multiple_shared_sides(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePart, stk::mesh::Part& skinPart)
+{
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
+    remove_element_from_part(bulkData, 2, activePart);
+    process_killed_elements(bulkData, elem_elem_graph, get_killed_elements(bulkData), activePart, {&activePart, &skinPart});
+    test_total_sides_and_sides_per_element(bulkData, 2u, {2u, 2u});
+}
+
 TEST_F(TwoElemTwoSharedSideTester, elem_death)
 {
      if(bulkData.parallel_size() <= 2)
      {
-         stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
-         stk::mesh::EntityVector killedElements;
-         if (bulkData.is_valid(elem2) && bulkData.bucket(elem2).owned())
-         {
-             killedElements.push_back(elem2);
-         }
-         process_killed_elements(bulkData, elem_elem_graph, killedElements, activePart, {&activePart, &skinPart});
-         test_total_sides_and_sides_per_element(bulkData, 2u, {2u, 2u});
+         test_element_death_with_multiple_shared_sides(bulkData, activePart, skinPart);
      }
 }
 
