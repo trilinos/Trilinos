@@ -106,6 +106,8 @@ typedef struct DD_Node  {
                                /* lid starts at gid + dd->gid_length    */
                                /*(user) data starts at                 */
                                /* gid + dd->gid_length + dd->lid_length */
+  int              free;       /* flag indicating whether node is
+                                  free or used */
 } DD_Node;
 
 
@@ -139,6 +141,8 @@ struct Zoltan_DD_Struct {
   DD_Cleanup_fn *cleanup; /* Functioned to free our hash data      */
 
   MPI_Comm comm;          /* Dup of original MPI Comm(KDD)         */
+  DD_NodeIdx nodecnt;     /* Number of nodes used in nodelist      */
+                          /* AKA Number of local entries in directory      */
   DD_Node *nodelist;      /* Memory for storing all nodes in the directory */
   char *nodedata;         /* Memory for storing all data in the directory  */
   DD_NodeIdx nodelistlen; /* Length of the nodelist. */
