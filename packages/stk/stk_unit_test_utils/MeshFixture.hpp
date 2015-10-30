@@ -22,6 +22,9 @@ protected:
 
     }
 
+    MeshFixture(unsigned spatial_dim)
+    : communicator(MPI_COMM_WORLD), metaData(spatial_dim), bulkData(nullptr) {}
+
     virtual ~MeshFixture()
     {
         delete bulkData;
@@ -44,7 +47,7 @@ protected:
         return communicator;
     }
 
-    stk::mesh::MetaData& get_meta()
+    virtual stk::mesh::MetaData& get_meta()
     {
         return metaData;
     }

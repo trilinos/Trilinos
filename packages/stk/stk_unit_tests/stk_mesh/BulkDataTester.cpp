@@ -229,6 +229,48 @@ void BulkDataFaceSharingTester::update_shared_entity_this_proc2(EntityKey global
     this->internal_mark_entity(entity, BulkData::IS_SHARED);
 }
 
+stk::mesh::EntityVector get_elements_connected_to_all_nodes(const BulkDataFaceSharingTester& bulkData, const stk::mesh::EntityVector& nodes)
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, nodes.size(), nodes.data(), elements);
+    return elements;
+}
+
+void add_side_to_shared_entities(stk::mesh::Entity side, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, const stk::mesh::shared_entity_type &shared_entity_other_proc, int other_proc_id)
+{
+    stk::mesh::shared_entity_type sentity(shared_entity_other_proc.global_key, side, shared_entity_other_proc.topology);
+    sentity.nodes = shared_entity_other_proc.nodes;
+    sentity.sharing_procs.push_back(other_proc_id);
+    shared_entities_this_proc.push_back(sentity);
+}
+
+stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity element, stk::mesh::EntityRank side_rank, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
+        stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id, stk::mesh::Part& root_topo_part)
+{
+    stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), side_rank, root_topo_part);
+    ThrowRequireMsg(bulkData.is_valid(side), "Program error. Contact sierra-help@sandia.gov for support.");
+    add_side_to_shared_entities(side, shared_entities_this_proc, shared_entity_other_proc, other_proc_id);
+    return side;
+}
+
+void BulkDataFaceSharingTester::connect_side_from_other_proc_to_local_elements(const stk::mesh::EntityVector& elements, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
+        stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id)
+{
+    for(stk::mesh::Entity element : elements)
+    {
+        stk::mesh::Entity side = create_side_and_add_to_shared_entity_list(element, side_rank(), nodes, shared_entity_other_proc, *this,
+                shared_entities_this_proc, other_proc_id, get_topology_root_part(shared_entity_other_proc.topology));
+        this->internal_mark_entity(side, BulkData::IS_SHARED);
+    }
+}
+
+void BulkDataFaceSharingTester::create_and_connect_shared_face_on_this_proc(const stk::mesh::shared_entity_type &shared_entity_other_proc, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id)
+{
+    stk::mesh::EntityVector nodes = convert_keys_to_entities(shared_entity_other_proc.nodes);
+    stk::mesh::EntityVector elements = get_elements_connected_to_all_nodes(*this, nodes);
+    connect_side_from_other_proc_to_local_elements(elements, nodes, shared_entity_other_proc, *this, shared_entities_this_proc, other_proc_id);
+}
+
 void BulkDataFaceSharingTester::check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc,
         int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc)
 {
@@ -236,6 +278,8 @@ void BulkDataFaceSharingTester::check_if_entity_from_other_proc_exists_on_this_p
     bool entitiesAreTheSame = matching_index >= 0;
     if( entitiesAreTheSame )
         update_shared_entity_this_proc2(shared_entity_other_proc.global_key, shared_entities_this_proc[matching_index], proc_id, shared_entity_other_proc.nodes);
+    else
+        create_and_connect_shared_face_on_this_proc(shared_entity_other_proc, shared_entities_this_proc, proc_id);
 }
 
 ///////////////////////////
@@ -268,10 +312,11 @@ std::vector<stk::mesh::EntityKey> get_node_keys_of_entity(const BulkDataElemGrap
     return convert_entities_to_keys(bulkData, nodes);
 }
 
-void add_shared_entity(const BulkDataElemGraphFaceSharingTester &bulkData, stk::mesh::Entity side, std::vector<shared_entity_type>& shared_entities)
+void add_shared_entity(const BulkDataElemGraphFaceSharingTester &bulkData, stk::mesh::Entity side, std::vector<shared_entity_type>& shared_entities, int proc_id)
 {
     shared_entity_type sentity(bulkData.entity_key(side), side, bulkData.get_entity_topology(side));
     sentity.nodes = get_node_keys_of_entity(bulkData, side);
+    sentity.sharing_procs.push_back(proc_id);
     shared_entities.push_back(sentity);
 }
 
@@ -282,7 +327,7 @@ void BulkDataElemGraphFaceSharingTester::add_side_if_remote_element_connection_e
     {
         if(!egraph.is_connected_elem_locally_owned(element, k))
         {
-            add_shared_entity(*this, side, shared_entities);
+            add_shared_entity(*this, side, shared_entities, egraph.get_owning_proc_id_of_remote_element(element, k));
             break;
         }
     }
@@ -313,10 +358,10 @@ void BulkDataElemGraphFaceSharingTester::fill_shared_entities_that_need_fixing(c
     }
 }
 
-void BulkDataElemGraphFaceSharingTester::mark_entities_as_possibly_shared(const std::vector<shared_entity_type>& sentities)
+void BulkDataElemGraphFaceSharingTester::mark_entities_as_shared(const std::vector<shared_entity_type>& sentities)
 {
     for(shared_entity_type sentity : sentities)
-        internal_mark_entity(sentity.entity, BulkData::POSSIBLY_SHARED);
+        internal_mark_entity(sentity.entity, BulkData::IS_SHARED);
 }
 
 void BulkDataElemGraphFaceSharingTester::use_elem_elem_graph_to_determine_shared_entities(std::vector<shared_entity_type>& shared_entities)
@@ -324,7 +369,7 @@ void BulkDataElemGraphFaceSharingTester::use_elem_elem_graph_to_determine_shared
     stk::mesh::ElemElemGraph egraph(*this, mesh_meta_data().universal_part());
     stk::mesh::EntityVector sides = get_local_sides();
     fill_shared_entities_that_need_fixing(sides, egraph, shared_entities);
-    mark_entities_as_possibly_shared(shared_entities);
+    mark_entities_as_shared(shared_entities);
 }
 
 

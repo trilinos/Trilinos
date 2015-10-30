@@ -388,6 +388,18 @@ public:
             int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc);
 
     virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes) {}
+
+    stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
+    Part &get_topology_root_part(stk::topology topology) const
+    {
+        return mesh_meta_data().get_topology_root_part(topology);
+    }
+
+protected:
+
+    void create_and_connect_shared_face_on_this_proc(const stk::mesh::shared_entity_type &shared_entity_other_proc, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id);
+    void connect_side_from_other_proc_to_local_elements(const stk::mesh::EntityVector& elements, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
+            stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id);
 };
 
 class BulkDataElemGraphFaceSharingTester : public BulkDataFaceSharingTester
@@ -408,7 +420,6 @@ public:
     virtual void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
 
     stk::mesh::Part& locally_owned_part() const { return mesh_meta_data().locally_owned_part(); }
-    stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
     stk::mesh::EntityVector get_local_sides() const;
     bool entityWasCreatedThisModCycle(stk::mesh::Entity entity) const { return state(entity)==stk::mesh::Created; }
     stk::topology get_entity_topology(stk::mesh::Entity entity) const { return bucket(entity).topology(); }
@@ -421,7 +432,7 @@ protected:
     void fill_shared_entities_that_need_fixing(const stk::mesh::EntityVector& sides, const stk::mesh::ElemElemGraph& egraph, std::vector<shared_entity_type>& shared_entities);
     void add_side_if_remote_element_connection_exists(int num_connected_elems, stk::mesh::Entity element, stk::mesh::Entity side, const stk::mesh::ElemElemGraph& egraph,
             std::vector<shared_entity_type>& shared_entities);
-    void mark_entities_as_possibly_shared(const std::vector<shared_entity_type>& entities);
+    void mark_entities_as_shared(const std::vector<shared_entity_type>& entities);
 };
 
 } } } // namespace stk mesh unit_test
