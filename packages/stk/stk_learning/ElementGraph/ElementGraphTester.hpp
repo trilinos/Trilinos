@@ -39,15 +39,37 @@ public:
     void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
 
     stk::mesh::Graph & get_graph() { return m_graph; }
-    stk::mesh::impl::ParallelGraphInfo & get_parallel_graph_info() { return m_parallel_graph_info; }
+    stk::mesh::impl::ParallelGraphInfo & get_parallel_graph_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
+    stk::mesh::ParallelInfoForGraphEdges& get_parallel_graph() { return m_parallelInfoForGraphEdges; }
+
     stk::mesh::BulkData & get_bulk_data() { return m_bulk_data; }
     size_t get_graph_size() { return m_local_id_to_element_entity.size(); }
+
+    stk::mesh::EntityId get_entity_id(stk::mesh::impl::LocalId localId)
+    {
+        stk::mesh::EntityId id = -localId;
+        if(localId >= 0)
+            id = get_bulk_data().identifier(m_local_id_to_element_entity[localId]);
+        return id;
+    }
+
+    int get_first_encountered_side_between_elems(stk::mesh::impl::LocalId elemId, stk::mesh::EntityId elem2Id)
+    {
+        for(size_t i=0; i<m_graph.get_num_edges_for_element(elemId); i++)
+        {
+            if(get_entity_id(m_graph.get_edge_for_element(elemId, i).elem2) == elem2Id)
+            {
+                return m_graph.get_edge_for_element(elemId, i).side1;
+            }
+        }
+        return -1;
+    }
 
     int check_local_connectivity(stk::mesh::Entity elem1, stk::mesh::Entity elem2)
     {
         int side=-1;
         if (is_valid_graph_element(elem1) && is_valid_graph_element(elem2)) {
-            side = get_side_from_element1_to_locally_owned_element2(elem1, elem2);
+            side = get_first_encountered_side_between_elems(get_local_element_id(elem1), get_bulk_data().identifier(elem2));
         }
         return side;
     }
@@ -56,7 +78,7 @@ public:
     {
         int side=-1;
         if (is_valid_graph_element(elem)) {
-            side = get_side_from_element1_to_remote_element2(elem, other_elem_id);
+            side = get_first_encountered_side_between_elems(get_local_element_id(elem), other_elem_id);
         }
         return side;
     }

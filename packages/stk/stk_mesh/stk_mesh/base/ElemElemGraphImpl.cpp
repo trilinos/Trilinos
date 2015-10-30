@@ -182,17 +182,16 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
     for(size_t i=0;i<elements_to_comm.size();++i)
     {
         int remote_proc = elements_to_comm[i].m_proc_id;
-        stk::mesh::EntityId localId = elements_to_comm[i].m_localElementId;
-        stk::mesh::EntityId remoteId = elements_to_comm[i].m_remoteElementId;
-
-        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(localId);
-        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(remoteId);
+        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(elements_to_comm[i].m_localElementId);
+        comm.send_buffer(remote_proc).pack<int>(elements_to_comm[i].m_localSide);
+        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(elements_to_comm[i].m_remoteElementId);
+        comm.send_buffer(remote_proc).pack<int>(elements_to_comm[i].m_remoteSide);
     }
 }
 
-std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm)
+std::vector<graphEdgeProc> communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm)
 {
-    std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > remote_edges;
+    std::vector<graphEdgeProc> remote_edges;
     stk::CommSparse comm(communicator);
     pack_elements_to_comm(comm, elements_to_comm);
     comm.allocate_buffers();
@@ -205,10 +204,14 @@ std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_ki
         while(comm.recv_buffer(i).remaining())
         {
             stk::mesh::EntityId remoteId;
+            int remoteSide;
             stk::mesh::EntityId localId;
+            int localSide;
             comm.recv_buffer(i).unpack<stk::mesh::EntityId>(remoteId);
+            comm.recv_buffer(i).unpack<int>(remoteSide);
             comm.recv_buffer(i).unpack<stk::mesh::EntityId>(localId);
-            remote_edges.push_back(std::make_pair(localId, remoteId));
+            comm.recv_buffer(i).unpack<int>(localSide);
+            remote_edges.push_back(graphEdgeProc(localId, localSide, remoteId, remoteSide, i));
         }
     }
     return remote_edges;
@@ -386,13 +389,10 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
     return side_parts;
 }
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info,
+        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts)
 {
-    int side_id = elementGraph.get_side_from_element1_to_remote_element2(local_element, remote_id);
-    ThrowRequireMsg(side_id != -1, "Program error. Please contact sierra-help@sandia.gov for support.");
-
     stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
     std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";

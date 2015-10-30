@@ -127,8 +127,9 @@ private:
         if(!egraph.is_connected_elem_locally_owned(element, element_index))
         {
             stk::mesh::impl::IdViaSidePair sidePair = egraph.get_connected_remote_id_and_via_side(element, element_index);
-            const stk::mesh::impl::parallel_info &p_info = egraph.get_const_parallel_edge_info(element, sidePair.id);
-            test_parallel_info_for_side(p_info, element, side, egraph.get_side_from_element1_to_remote_element2(element,sidePair.id));
+            int remoteSideOrdinal = egraph.get_connected_elements_side(element, element_index);
+            const stk::mesh::impl::parallel_info &p_info = egraph.get_const_parallel_edge_info(element, sidePair.side, sidePair.id, remoteSideOrdinal);
+            test_parallel_info_for_side(p_info, element, side, sidePair.side);
         }
     }
 

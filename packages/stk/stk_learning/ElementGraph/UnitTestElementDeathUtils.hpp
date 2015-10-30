@@ -46,6 +46,32 @@ inline void deactivate_elements(const stk::mesh::EntityVector &deactivated_elems
     bulkData.modification_end();
 }
 
+inline int get_side_between_elements(const stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph& graph, stk::mesh::Entity elem1, stk::mesh::EntityId elem2Id)
+{
+    size_t numConnected = graph.get_num_connected_elems(elem1);
+    for(size_t i=0; i<numConnected; ++i)
+    {
+        stk::mesh::EntityId id = 0;
+        int side = -1;
+        if (graph.is_connected_elem_locally_owned(elem1, i))
+        {
+            stk::mesh::impl::ElementViaSidePair elemViaSidePair = graph.get_connected_element_and_via_side(elem1, i);
+            id = bulkData.identifier(elemViaSidePair.element);
+            side = elemViaSidePair.side;
+        }
+        else
+        {
+            stk::mesh::impl::IdViaSidePair idViaSidePair = graph.get_connected_remote_id_and_via_side(elem1, i);
+            id = idViaSidePair.id;
+            side = idViaSidePair.side;
+        }
+        if (id == elem2Id) {
+            return side;
+        }
+    }
+    return -1;
+}
+
 inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& graph, stk::mesh::BulkData& bulkData, stk::mesh::EntityId elem1Id, stk::mesh::EntityId elem2Id)
 {
     stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, elem1Id);
@@ -58,19 +84,19 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
 
     if(isElem1LocallyOwnedAndValid && isElem2LocallyOwnedAndValid)
     {
-        int side = graph.get_side_from_element1_to_locally_owned_element2(elem1, elem2);
+        int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
         face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
     }
     else if(isElem1LocallyOwnedAndValid)
     {
-        int side = graph.get_side_from_element1_to_remote_element2(elem1, elem2Id);
+        int side = get_side_between_elements(bulkData, graph, elem1, elem2Id);
         EXPECT_TRUE(side != -1);
         face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
     }
     else if(isElem2LocallyOwnedAndValid)
     {
-        int side = graph.get_side_from_element1_to_remote_element2(elem2, elem1Id);
+        int side = get_side_between_elements(bulkData, graph, elem2, elem1Id);
         EXPECT_TRUE(side != -1);
         face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem2, side);
     }
