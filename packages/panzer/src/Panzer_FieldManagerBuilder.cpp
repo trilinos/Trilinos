@@ -132,7 +132,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     gEvalFact.registerEvaluators(*fm,wd,*pb);
 
     // setup derivative information
-    setKokkosExtendedDataTypeDimensions(wd.getElementBlock(),*globalIndexer,*fm);
+    setKokkosExtendedDataTypeDimensions(wd.getElementBlock(),*globalIndexer,user_data,*fm);
 
     // build the setup data using passed in information
     fm->postRegistrationSetup(setupData);
@@ -256,6 +256,8 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           derivative_dimensions.push_back(gid_count);
           fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
           derivative_dimensions[0] = 1;
+          if (user_data.isType<int>("Tangent Dimension"))
+            derivative_dimensions[0] = user_data.get<int>("Tangent Dimension");
           fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
         }
 
@@ -318,7 +320,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	setupData.worksets_ = worksets;
 
 	// setup derivative information
-	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,fm);
+	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);
 
         fm.postRegistrationSetup(setupData);
       }
@@ -381,6 +383,7 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
 void panzer::FieldManagerBuilder::
 setKokkosExtendedDataTypeDimensions(const std::string & eblock,
                                     const panzer::UniqueGlobalIndexerBase & globalIndexer,
+                                    const Teuchos::ParameterList& user_data,
                                     PHX::FieldManager<panzer::Traits> & fm) const
 {
   // setup Jacobian derivative terms
@@ -394,7 +397,8 @@ setKokkosExtendedDataTypeDimensions(const std::string & eblock,
   {
     std::vector<PHX::index_size_type> derivative_dimensions;
     derivative_dimensions.push_back(1);
-
+    if (user_data.isType<int>("Tangent Dimension"))
+      derivative_dimensions[0] = user_data.get<int>("Tangent Dimension");
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
   }
 }
