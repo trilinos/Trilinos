@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>
 
-namespace ElementDeathUtils
+namespace ElemGraphTestUtils
 {
 
 class ElementDeathBulkDataTester : public stk::mesh::BulkData
@@ -117,6 +117,25 @@ inline void skin_part(stk::mesh::BulkData& bulkData, const stk::mesh::Part &acti
 
     stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
     elem_elem_graph.skin_mesh(skin_parts);
+}
+
+inline void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)
+{
+    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+    if(bulkData.is_valid(element))
+    {
+        unsigned num_faces_this_elem = bulkData.num_faces(element);
+        EXPECT_EQ(gold_num_faces_this_elem, num_faces_this_elem);
+    }
+}
+
+inline void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, const std::vector<size_t>& gold_num_faces_per_elem)
+{
+    for(size_t i=0;i<gold_num_faces_per_elem.size();++i)
+    {
+        stk::mesh::EntityId element_id = i+1;
+        test_num_faces_on_this_element(bulkData, element_id, gold_num_faces_per_elem[i]);
+    }
 }
 
 } // end namespace

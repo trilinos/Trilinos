@@ -33,7 +33,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
-#include "UnitTestElementDeathUtils.hpp"
+#include "ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
@@ -1933,7 +1933,7 @@ TEST(ElementGraph, make_items_inactive)
         stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::mesh::PartVector boundary_mesh_parts { &faces_part };
         stk::io::put_io_part_attribute(faces_part);
-        ElementDeathUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+        ElemGraphTestUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
 
         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
 
@@ -1962,7 +1962,7 @@ TEST(ElementGraph, make_items_inactive)
             deactivated_elems.push_back(elem3);
         }
 
-        ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData, active);
+        ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData, active);
         bulkData.modification_begin();
         bulkData.my_de_induce_unranked_part_from_nodes(deactivated_elems, active);
 
@@ -5909,7 +5909,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
 
         boundary_mesh_parts.push_back(&active);
 
-        ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+        ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
         stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
@@ -5917,7 +5917,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
         {
             stk::mesh::EntityId elem1Id = 1;
             stk::mesh::EntityId elem2Id = 2;
-            stk::mesh::Entity face_between_elem1_and_elem2 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem1Id, elem2Id);
+            stk::mesh::Entity face_between_elem1_and_elem2 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem1Id, elem2Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem1_and_elem2));
             EXPECT_TRUE(bulkData.bucket(face_between_elem1_and_elem2).member(active));
@@ -5931,7 +5931,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
         {
             stk::mesh::EntityId elem3Id = 3;
             stk::mesh::EntityId elem4Id = 4;
-            stk::mesh::Entity face_between_elem3_and_elem4 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem3Id, elem4Id);
+            stk::mesh::Entity face_between_elem3_and_elem4 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem3Id, elem4Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem3_and_elem4));
             EXPECT_TRUE(bulkData.bucket(face_between_elem3_and_elem4).member(active));
@@ -6015,7 +6015,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
 
         boundary_mesh_parts.push_back(&active);
 
-        ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+        ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
         stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
@@ -6027,7 +6027,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
         {
             stk::mesh::EntityId elem2Id = 2;
             stk::mesh::EntityId elem5Id = 5;
-            stk::mesh::Entity face_between_elem2_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem5Id);
+            stk::mesh::Entity face_between_elem2_and_elem5 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem5Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem5));
             EXPECT_TRUE(bulkData.bucket(face_between_elem2_and_elem5).member(active));
@@ -6043,8 +6043,8 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
             stk::mesh::EntityId elem4Id = 4;
             stk::mesh::EntityId elem5Id = 5;
             stk::mesh::EntityId elem6Id = 6;
-            stk::mesh::Entity face_between_elem4_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem4Id, elem5Id);
-            stk::mesh::Entity face_between_elem6_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem6Id, elem5Id);
+            stk::mesh::Entity face_between_elem4_and_elem5 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem4Id, elem5Id);
+            stk::mesh::Entity face_between_elem6_and_elem5 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem6Id, elem5Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem4_and_elem5));
             EXPECT_TRUE(bulkData.bucket(face_between_elem4_and_elem5).member(active));
@@ -6067,7 +6067,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
         {
             stk::mesh::EntityId elem8Id = 8;
             stk::mesh::EntityId elem5Id = 5;
-            stk::mesh::Entity face_between_elem8_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem8Id, elem5Id);
+            stk::mesh::Entity face_between_elem8_and_elem5 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem8Id, elem5Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem8_and_elem5));
             EXPECT_TRUE(bulkData.bucket(face_between_elem8_and_elem5).member(active));
@@ -6557,25 +6557,6 @@ void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
     bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
 }
 
-void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)
-{
-    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-    if(bulkData.is_valid(element))
-    {
-        unsigned num_faces_this_elem = bulkData.num_faces(element);
-        EXPECT_EQ(gold_num_faces_this_elem, num_faces_this_elem);
-    }
-}
-
-void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, const std::vector<size_t>& gold_num_faces_per_elem)
-{
-    for(size_t i=0;i<gold_num_faces_per_elem.size();++i)
-    {
-        stk::mesh::EntityId element_id = i+1;
-        test_num_faces_on_this_element(bulkData, element_id, gold_num_faces_per_elem[i]);
-    }
-}
-
 void add_element_to_block(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::Part& block)
 {
     bulkData.change_entity_parts(element, {&block}, {});
@@ -6628,7 +6609,7 @@ std::vector<size_t> get_num_faces_per_elements(const stk::mesh::BulkData& bulkDa
 
 void skin_block_and_test(stk::mesh::BulkData& bulkData, const std::vector<size_t>& num_gold_faces_per_element, const size_t gold_num_faces, const stk::mesh::Part& block, const stk::mesh::PartVector &skin_parts, const stk::mesh::EntityVector& elements)
 {
-    ElementDeathUtils::skin_part(bulkData, block, skin_parts);
+    ElemGraphTestUtils::skin_part(bulkData, block, skin_parts);
 
     std::vector<size_t> num_faces_on_element = get_num_faces_per_elements(bulkData, elements);
     for(size_t i=0; i<elements.size(); ++i)
@@ -6717,258 +6698,14 @@ TEST(ElementGraph, skin_exposed_boundary)
          stk::mesh::BulkData bulkData(meta, comm);
          make_2_hex_mesh_with_element1_inactive(bulkData);
          stk::mesh::PartVector skin_parts = get_skin_parts(meta);
-         ElementDeathUtils::skin_boundary(bulkData, *meta.get_part("active"), skin_parts);
-         test_num_faces_per_element(bulkData, {5u, 0u});
+         ElemGraphTestUtils::skin_boundary(bulkData, *meta.get_part("active"), skin_parts);
+         ElemGraphTestUtils::test_num_faces_per_element(bulkData, {5u, 0u});
          std::vector<size_t> global_mesh_counts;
          stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
          EXPECT_EQ(5u, global_mesh_counts[meta.side_rank()]);
      }
 }
 
-void create_element(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePart, stk::mesh::EntityId id)
-{
-    stk::mesh::Part& hexPart = bulkData.mesh_meta_data().get_topology_root_part(stk::topology::HEX_8);
-    stk::mesh::Entity elem = stk::mesh::declare_element(bulkData, hexPart, id, nodeIds[id-1]);
-    bulkData.change_entity_parts(elem, {&activePart});
-}
-
-bool i_should_create_elem_1(stk::mesh::BulkData& bulkData)
-{
-    return bulkData.parallel_size() == 1 || bulkData.parallel_rank() == 0;
-}
-
-bool i_should_create_elem_2(stk::mesh::BulkData& bulkData)
-{
-    return bulkData.parallel_size() == 1 || bulkData.parallel_rank() == 1;
-}
-
-void create_elements(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePart)
-{
-    if(i_should_create_elem_1(bulkData))
-        create_element(bulkData, nodeIds, activePart, 1);
-    if(i_should_create_elem_2(bulkData))
-        create_element(bulkData, nodeIds, activePart, 2);
-}
-
-void add_shared_nodes(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId>& sharedNodeIds)
-{
-    int otherProc = 1 - bulkData.parallel_rank();
-    for(stk::mesh::EntityId nodeID : sharedNodeIds) {
-        stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, nodeID);
-        bulkData.add_node_sharing(node, otherProc);
-    }
-}
-
-class TwoElemMultipleSharedSideTester : public ::testing::Test
-{
-public:
-    TwoElemMultipleSharedSideTester(const std::vector<stk::mesh::EntityId> nodeIDs[2], const std::vector<stk::mesh::EntityId> &sharedNodeIds)
-    : meta(3),
-      skinPart(meta.declare_part_with_topology("skin", stk::topology::QUAD_4)),
-      activePart(meta.declare_part("active")),
-      bulkData(meta, MPI_COMM_WORLD)
-    {
-        if (bulkData.parallel_size() <= 2)
-        {
-            make_mesh_2_hexes_connected_through_multiple_sides(nodeIDs, sharedNodeIds);
-        }
-    }
-
-    void make_mesh_2_hexes_connected_through_multiple_sides(const std::vector<stk::mesh::EntityId> nodeIDs[2], const std::vector<stk::mesh::EntityId> &sharedNodeIds)
-    {
-        bulkData.modification_begin();
-        create_elements(bulkData, nodeIDs, activePart);
-        add_shared_nodes(bulkData, sharedNodeIds);
-        bulkData.modification_end();
-    }
-
-protected:
-    stk::mesh::MetaData meta;
-    stk::mesh::Part& skinPart;
-    stk::mesh::Part& activePart;
-    stk::mesh::BulkData bulkData;
-};
-
-const std::vector<stk::mesh::EntityId> twoElemTwoSharedSideNodeIDs[2] = {
-         {1, 2, 3, 4, 5, 6, 7, 8},
-         {3, 2, 9, 4, 7, 6, 10, 8} };
-const std::vector<stk::mesh::EntityId> twoElemTwoSharedSideSharedNodeIds = {2, 3, 4, 6, 7, 8};
-class TwoElemTwoSharedSideTester : public TwoElemMultipleSharedSideTester
-{
-public:
-    TwoElemTwoSharedSideTester() :
-        TwoElemMultipleSharedSideTester(twoElemTwoSharedSideNodeIDs, twoElemTwoSharedSideSharedNodeIds)
-    {}
-};
-
-void remove_part_if_owned(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::Part& part)
-{
-    if (bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
-    {
-        bulkData.change_entity_parts(entity, {}, {&part});
-    }
-}
-
-void remove_element_from_part(stk::mesh::BulkData& bulkData, stk::mesh::EntityId elemId, stk::mesh::Part& activePart)
-{
-    stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-    bulkData.modification_begin();
-    remove_part_if_owned(bulkData, elem, activePart);
-    bulkData.modification_end();
-}
-
-void test_skinned_mesh(stk::mesh::BulkData& bulkData, size_t expectedNumFacesPerElement)
-{
-    test_num_faces_per_element(bulkData, {expectedNumFacesPerElement, expectedNumFacesPerElement});
-    std::vector<size_t> global_mesh_counts;
-    stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
-    EXPECT_EQ(expectedNumFacesPerElement*global_mesh_counts[stk::topology::ELEMENT_RANK], global_mesh_counts[bulkData.mesh_meta_data().side_rank()]);
-}
-
-void test_skinned_1_hex(stk::mesh::BulkData& bulkData, size_t expectedNumSharedFaces)
-{
-    test_num_faces_per_element(bulkData, {6u, expectedNumSharedFaces});
-    std::vector<size_t> global_mesh_counts;
-    stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
-    EXPECT_EQ(6u, global_mesh_counts[bulkData.mesh_meta_data().side_rank()]);
-}
-
-TEST_F(TwoElemTwoSharedSideTester, skin_mesh)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         {
-             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
-             elem_elem_graph.skin_mesh({&activePart, &skinPart});
-         }
-         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData, 4u);
-     }
-}
-
-TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Selector activeSelector = activePart;
-         {
-             stk::mesh::Selector sel = activeSelector;
-             stk::mesh::Selector air = !activeSelector;
-
-             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
-             elem_elem_graph.skin_mesh({&activePart, &skinPart});
-         }
-         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
-         test_skinned_1_hex(bulkData, 2u);
-     }
-}
-
-stk::mesh::EntityId get_connected_elem_id(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
-{
-    if(bulkData.parallel_size() > 1)
-    {
-        return elem_elem_graph.get_connected_remote_id_and_via_side(localElem, i).id;
-    }
-    else
-    {
-        return bulkData.identifier(elem_elem_graph.get_connected_element_and_via_side(localElem, i).element);
-    }
-}
-
-bool is_connected_elem_local(int numProcs, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
-{
-    if(numProcs > 1)
-    {
-        return !elem_elem_graph.is_connected_elem_locally_owned(localElem, i);
-    }
-    else
-    {
-        return elem_elem_graph.is_connected_elem_locally_owned(localElem, i);
-    }
-}
-
-void test_local_or_remote_connections(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::EntityId expectedRemoteId, stk::mesh::Entity localElem, size_t i)
-{
-    EXPECT_TRUE(is_connected_elem_local(bulkData.parallel_size(), elem_elem_graph, localElem, i));
-    EXPECT_EQ(expectedRemoteId, get_connected_elem_id(bulkData, elem_elem_graph, localElem, i));
-}
-
-void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, stk::mesh::EntityId remoteId, size_t numTimesConnected)
-{
-    ASSERT_EQ(numTimesConnected, elem_elem_graph.get_num_connected_elems(localElem));
-    for(size_t i=0; i<numTimesConnected; ++i)
-    {
-        test_local_or_remote_connections(bulkData, elem_elem_graph, remoteId, localElem, i);
-    }
-}
-
-void test_hexes_kissing_n_times(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePart, size_t numKisses)
-{
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
-    stk::mesh::EntityId id = 1 + bulkData.parallel_rank();
-    stk::mesh::EntityId remoteId = 2u-bulkData.parallel_rank();
-    test_elements_connected_n_times(bulkData, elem_elem_graph, bulkData.get_entity(stk::topology::ELEM_RANK, id), remoteId, numKisses);
-}
-
-TEST_F(TwoElemTwoSharedSideTester, double_kissing_hexes)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_hexes_kissing_n_times(bulkData, activePart, 2);
-     }
-}
-
-const std::vector<stk::mesh::EntityId> twoElemThreeSharedSideNodeIDs[2] = {
-         {1, 2, 3, 4, 5, 6, 7, 8},
-         {3, 2, 1, 4, 7, 6, 10, 8} };
-const std::vector<stk::mesh::EntityId> twoElemThreeSharedSideSharedNodeIds = {1, 2, 3, 4, 6, 7, 8};
-class TwoElemThreeSharedSideTester : public TwoElemMultipleSharedSideTester
-{
-public:
-    TwoElemThreeSharedSideTester() :
-        TwoElemMultipleSharedSideTester(twoElemThreeSharedSideNodeIDs, twoElemThreeSharedSideSharedNodeIds)
-    {}
-};
-
-TEST_F(TwoElemThreeSharedSideTester, triple_kissing_hexes)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_hexes_kissing_n_times(bulkData, activePart, 3);
-     }
-}
-
-TEST_F(TwoElemThreeSharedSideTester, skin_mesh)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         {
-             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
-             elem_elem_graph.skin_mesh({&activePart, &skinPart});
-         }
-         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData, 3u);
-     }
-}
-
-TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Selector activeSelector = activePart;
-         {
-             stk::mesh::Selector sel = activeSelector;
-             stk::mesh::Selector air = !activeSelector;
-
-             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
-             elem_elem_graph.skin_mesh({&activePart, &skinPart});
-         }
-         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
-         test_skinned_1_hex(bulkData, 3u);
-     }
-}
 
 TEST(ElementGraph, skin_part)
 {
@@ -6982,8 +6719,8 @@ TEST(ElementGraph, skin_part)
          stk::mesh::BulkData bulkData(meta, comm);
          make_2_hex_mesh_with_element1_inactive(bulkData);
          stk::mesh::PartVector skin_parts = get_skin_parts(meta);
-         ElementDeathUtils::skin_part(bulkData, *meta.get_part("active"), skin_parts);
-         test_num_faces_per_element(bulkData, {6u, 1u});
+         ElemGraphTestUtils::skin_part(bulkData, *meta.get_part("active"), skin_parts);
+         ElemGraphTestUtils::test_num_faces_per_element(bulkData, {6u, 1u});
          std::vector<size_t> global_mesh_counts;
          stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
          EXPECT_EQ(6u, global_mesh_counts[meta.side_rank()]);
@@ -7092,7 +6829,7 @@ TEST(ElementGraph, heterogeneous_mesh)
 
         stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
-        EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
         EXPECT_EQ(23u, mesh_counts[meta_data.side_rank()]);
@@ -7175,7 +6912,7 @@ TEST(ElementGraph, degenerate_mesh)
         stk::io::put_io_part_attribute(skin);
         stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
-        EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
         EXPECT_EQ(10u, mesh_counts[meta_data.side_rank()]);
@@ -7258,7 +6995,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
         stk::io::put_io_part_attribute(skin);
         stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
-        EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
         EXPECT_EQ(8u, mesh_counts[meta_data.side_rank()]);
