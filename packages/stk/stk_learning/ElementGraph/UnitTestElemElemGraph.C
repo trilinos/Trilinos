@@ -6817,17 +6817,17 @@ void remove_element_from_part(stk::mesh::BulkData& bulkData, stk::mesh::EntityId
     bulkData.modification_end();
 }
 
-void test_skinned_mesh(stk::mesh::BulkData& bulkData)
+void test_skinned_mesh(stk::mesh::BulkData& bulkData, size_t expectedNumFacesPerElement)
 {
-    test_num_faces_per_element(bulkData, {4u, 4u});
+    test_num_faces_per_element(bulkData, {expectedNumFacesPerElement, expectedNumFacesPerElement});
     std::vector<size_t> global_mesh_counts;
     stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
-    EXPECT_EQ(8u, global_mesh_counts[bulkData.mesh_meta_data().side_rank()]);
+    EXPECT_EQ(expectedNumFacesPerElement*global_mesh_counts[stk::topology::ELEMENT_RANK], global_mesh_counts[bulkData.mesh_meta_data().side_rank()]);
 }
 
-void test_skinned_1_hex(stk::mesh::BulkData& bulkData)
+void test_skinned_1_hex(stk::mesh::BulkData& bulkData, size_t expectedNumSharedFaces)
 {
-    test_num_faces_per_element(bulkData, {6u, 2u});
+    test_num_faces_per_element(bulkData, {6u, expectedNumSharedFaces});
     std::vector<size_t> global_mesh_counts;
     stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
     EXPECT_EQ(6u, global_mesh_counts[bulkData.mesh_meta_data().side_rank()]);
@@ -6842,7 +6842,7 @@ TEST_F(TwoElemTwoSharedSideTester, skin_mesh)
              elem_elem_graph.skin_mesh({&activePart, &skinPart});
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData);
+         test_skinned_mesh(bulkData, 4u);
      }
 }
 
@@ -6860,17 +6860,46 @@ TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
              elem_elem_graph.skin_mesh({&activePart, &skinPart});
          }
          //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
-         test_skinned_1_hex(bulkData);
+         test_skinned_1_hex(bulkData, 2u);
      }
 }
 
-void test_elements_connected_n_times(stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, stk::mesh::EntityId remoteId, size_t numTimesConnected)
+stk::mesh::EntityId get_connected_elem_id(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
+{
+    if(bulkData.parallel_size() > 1)
+    {
+        return elem_elem_graph.get_connected_remote_id_and_via_side(localElem, i).id;
+    }
+    else
+    {
+        return bulkData.identifier(elem_elem_graph.get_connected_element_and_via_side(localElem, i).element);
+    }
+}
+
+bool is_connected_elem_local(int numProcs, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, size_t i)
+{
+    if(numProcs > 1)
+    {
+        return !elem_elem_graph.is_connected_elem_locally_owned(localElem, i);
+    }
+    else
+    {
+        return elem_elem_graph.is_connected_elem_locally_owned(localElem, i);
+    }
+}
+
+void test_local_or_remote_connections(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::EntityId expectedRemoteId, stk::mesh::Entity localElem, size_t i)
+{
+    EXPECT_TRUE(is_connected_elem_local(bulkData.parallel_size(), elem_elem_graph, localElem, i));
+    EXPECT_EQ(expectedRemoteId, get_connected_elem_id(bulkData, elem_elem_graph, localElem, i));
+}
+
+void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph& elem_elem_graph, stk::mesh::Entity localElem, stk::mesh::EntityId remoteId, size_t numTimesConnected)
 {
     ASSERT_EQ(numTimesConnected, elem_elem_graph.get_num_connected_elems(localElem));
     for(size_t i=0; i<numTimesConnected; ++i)
     {
-        EXPECT_TRUE(!elem_elem_graph.is_connected_elem_locally_owned(localElem, i));
-        EXPECT_EQ(remoteId, elem_elem_graph.get_connected_remote_id_and_via_side(localElem, i).id);
+        test_local_or_remote_connections(bulkData, elem_elem_graph, remoteId, localElem, i);
     }
 }
 
@@ -6879,7 +6908,7 @@ void test_hexes_kissing_n_times(stk::mesh::BulkData& bulkData, stk::mesh::Part& 
     stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
     stk::mesh::EntityId id = 1 + bulkData.parallel_rank();
     stk::mesh::EntityId remoteId = 2u-bulkData.parallel_rank();
-    test_elements_connected_n_times(elem_elem_graph, bulkData.get_entity(stk::topology::ELEM_RANK, id), remoteId, numKisses);
+    test_elements_connected_n_times(bulkData, elem_elem_graph, bulkData.get_entity(stk::topology::ELEM_RANK, id), remoteId, numKisses);
 }
 
 TEST_F(TwoElemTwoSharedSideTester, double_kissing_hexes)
@@ -6907,6 +6936,37 @@ TEST_F(TwoElemThreeSharedSideTester, triple_kissing_hexes)
      if(bulkData.parallel_size() <= 2)
      {
          test_hexes_kissing_n_times(bulkData, activePart, 3);
+     }
+}
+
+TEST_F(TwoElemThreeSharedSideTester, skin_mesh)
+{
+     if(bulkData.parallel_size() <= 2)
+     {
+         {
+             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, activePart);
+             elem_elem_graph.skin_mesh({&activePart, &skinPart});
+         }
+         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart});
+         test_skinned_mesh(bulkData, 3u);
+     }
+}
+
+TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
+{
+     if(bulkData.parallel_size() <= 2)
+     {
+         remove_element_from_part(bulkData, 2, activePart);
+         stk::mesh::Selector activeSelector = activePart;
+         {
+             stk::mesh::Selector sel = activeSelector;
+             stk::mesh::Selector air = !activeSelector;
+
+             stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
+             elem_elem_graph.skin_mesh({&activePart, &skinPart});
+         }
+         //stk::mesh::skin_mesh( bulkData, activePart, {&activePart, &skinPart}, &activeSelector);
+         test_skinned_1_hex(bulkData, 3u);
      }
 }
 
