@@ -46,10 +46,6 @@
  */
 #cmakedefine SHOW_ZOLTAN2_SCOTCH_MEMORY
 
-/* Define if Teuchos was compiled to support "long long".
- */
-#cmakedefine HAVE_ZOLTAN2_LONG_LONG
-
 /* Zoltan is included in the Trilinos build.  */
 #cmakedefine HAVE_ZOLTAN2_ZOLTAN
 

@@ -267,6 +267,23 @@ public:
                     const map_type& meshMap,
                     const LO blockSize);
 
+  /// \brief View an existing BlockMultiVector using a different mesh
+  ///   Map, supplying the corresponding point Map.
+  ///
+  /// This method corresponds to MultiVector's "offset view" constructor.
+  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                    const map_type& newMeshMap,
+                    const map_type& newPointMap,
+                    const size_t offset = 0);
+
+  /// \brief View an existing BlockMultiVector using a different mesh
+  ///   Map; compute the new point Map.
+  ///
+  /// This method corresponds to MultiVector's "offset view" constructor.
+  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                    const map_type& newMeshMap,
+                    const size_t offset = 0);
+
   /// \brief Default constructor.
   ///
   /// Creates an empty BlockMultiVector.  An empty BlockMultiVector

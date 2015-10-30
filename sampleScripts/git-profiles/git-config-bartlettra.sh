@@ -10,4 +10,4 @@ git config --global push.default tracking
 git config --global rerere.enabled 1
 # Set up some shortcut commands
 _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
-$_SCRIPT_DIR/../../cmake/tribits/common_tools/git/git-config-alias.sh
+$_SCRIPT_DIR/../../cmake/tribits/python_utils/git-config-alias.sh

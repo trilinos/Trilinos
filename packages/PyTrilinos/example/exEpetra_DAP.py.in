@@ -105,7 +105,7 @@ def main():
         x1  = numpy.zeros((size,), dtype='d')
         b1  = numpy.ones((size,), dtype='d')
         lp1 = Epetra.LinearProblem(matrix, x1, b1)
-        print "P%d: Successfully built Epetra.LinearProblem with NumPyarrays" % rank
+        print "P%d: Successfully built Epetra.LinearProblem with NumPy arrays" % rank
         if not (lp1.GetLHS() == 0.0).all():
             print "P%d: Error with serial NumPy LHS vector" % rank
             errors += 1

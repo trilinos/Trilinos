@@ -1,28 +1,23 @@
 
-IF (${PROJECT_NAME}_ENABLE_Zoltan)
-  # mfh 22 Oct 2015: If Tpetra is OFF, it's possible for
-  # Tpetra_INST_INT_INT not to be defined at all.  It doesn't hurt to
-  # check.  Otherwise, if Tpetra_INST_INT_INT is not defined, asking
-  # "IF (Tpetra_INST_INT_INT)" will raise a CMake syntax error.
-  IF (DEFINED Tpetra_INST_INT_INT)
-    IF (Tpetra_INST_INT_INT)
-      TRIBITS_ADD_EXECUTABLE_AND_TEST(
-        multivectorTest
-        SOURCES multivectorTest.cpp
-        ARGS
-        "401"
-        NUM_MPI_PROCS 4
-        COMM mpi serial
-        )
-    ENDIF()
-  ENDIF()
+IF (Tpetra_INST_INT_INT)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    multivectorTest
+    SOURCES multivectorTest.cpp
+    ARGS
+    "401"
+    NUM_MPI_PROCS 4
+    COMM mpi serial
+    )
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mapRemotes
-  SOURCES mapRemotes.cpp
-  COMM mpi
-)
+# KDD:  10/29/15
+# Disabling this test for until bug 6412 is fixed.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  mapRemotes
+#  SOURCES mapRemotes.cpp
+#  COMM mpi
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#)
 
 TRIBITS_ADD_EXECUTABLE(
   testfail
