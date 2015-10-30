@@ -14,7 +14,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
-#include "UnitTestElementDeathUtils.hpp"  // for deactivate_elements, etc
+#include "ElemGraphTestUtils.hpp"  // for deactivate_elements, etc
 #include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -134,7 +134,7 @@ TEST(ElementDeath, replicate_random_death_test)
         boundary_mesh_parts.push_back(&active);
 
         stk::mesh::ElemElemGraph graph(bulkData, active);
-        GraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
+        ElemGraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
         EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::Selector sel = death_1_part;
@@ -154,7 +154,7 @@ TEST(ElementDeath, replicate_random_death_test)
             elements_to_kill.push_back(elems[0]);
         }
 
-        GraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
+        ElemGraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
         EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
@@ -226,13 +226,13 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             boundary_mesh_parts.push_back(&active);
 
-            GraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+            ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = GraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
 
             test_face_membership_for_death(bulkData, internal_faces_of_elem2, boundary_mesh_parts);
@@ -269,13 +269,13 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             boundary_mesh_parts.push_back(&active);
 
-            GraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+            ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             stk::mesh::EntityId face_id;
 
             stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = GraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             EXPECT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
             face_id = bulkData.identifier(face_between_elem2_and_elem3);
             ASSERT_FALSE(bulkData.bucket(face_between_elem2_and_elem3).member(active));
@@ -351,13 +351,13 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
             boundary_mesh_parts.push_back(&active);
 
-            GraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+            ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
             stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = GraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
         }
@@ -393,9 +393,9 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
             boundary_mesh_parts.push_back(&active);
 
-            GraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+            ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = GraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
@@ -436,7 +436,7 @@ void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk:
     }
 
     stk::mesh::PartVector boundary_mesh_parts={&active, &skin};
-    GraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+    ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
     stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 }
 
@@ -500,7 +500,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
          stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
          stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
-         GraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});
+         ElemGraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});
 
          std::vector<size_t> num_gold_skinned_faces = { 18 };
          compare_skin(num_gold_skinned_faces, bulkData, skin, active);
@@ -508,7 +508,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
          stk::mesh::Entity element1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
          kill_element(element1, bulkData, active, skin);
 
-         GraphTestUtils::skin_part(bulkData, active, {&skin, &active});
+         ElemGraphTestUtils::skin_part(bulkData, active, {&skin, &active});
 
          num_gold_skinned_faces[0] = 14;
          compare_skin(num_gold_skinned_faces, bulkData, skin, active);
