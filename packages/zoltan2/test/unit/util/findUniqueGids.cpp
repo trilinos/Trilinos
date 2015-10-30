@@ -60,22 +60,14 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <unordered_set>
+#include <Zoltan2_findUniqueGids.hpp>
 
-
-template <typename scalar_t, typename lno_t, typename gno_t>
-size_t findUniqueGids(
-  Tpetra::MultiVector<scalar_t, lno_t, gno_t> &keys,
-  Tpetra::Vector<scalar_t, lno_t, gno_t> &gids
-)
-{
-  std::cout << "Placeholder function for compilation" << std::endl;
-  return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////
 // Test for correct number of unique Gids
 
 static const std::string fail = "FAIL ";
+static const std::string pass = "     ";
 
 void checkNUnique(std::string &name, size_t nUniqueGids, size_t nExpected)
 {  
@@ -83,36 +75,56 @@ void checkNUnique(std::string &name, size_t nUniqueGids, size_t nExpected)
     std::cout << fail << name 
               << "nUniqueGids " << nUniqueGids << " != " << nExpected
               << std::endl;
+  else
+    std::cout << pass << name << "nUniqueGids is correct" << std::endl;
 }
 
 // Test for correct maximum Gid
-template <typename scalar_t, typename lno_t, typename gno_t>
+template <typename vec_t, typename scalar_t>
 void checkMaxGid(
   std::string &name, 
-  Tpetra::Vector<scalar_t, lno_t, gno_t> &gids,
-  scalar_t maxExpected)
+  vec_t &gids,
+  scalar_t maxExpected,
+  const Teuchos::Comm<int> &comm 
+)
 {
-  scalar_t maxGid = gids.normInf();
-  if (maxGid != maxExpected)
+  scalar_t maxGid = 0, gmaxGid = 0;
+  size_t len = gids.size();
+  for (size_t i = 0; i < len; i++)
+    if (gids[i] > maxGid) maxGid = gids[i];
+
+  Teuchos::reduceAll<int, scalar_t>(comm, Teuchos::REDUCE_MAX, 1,
+                                    &maxGid, &gmaxGid);
+  if (gmaxGid != maxExpected)
     std::cout << fail << name 
-              << "max Gid " << maxGid << " != " << maxExpected
+              << "max Gid " << gmaxGid << " != " << maxExpected
               << std::endl;
+  else
+    std::cout << pass << name << "maxGid is correct" << std::endl;
 }
   
 // Test for correct minimum Gid
-template <typename scalar_t, typename lno_t, typename gno_t>
+template <typename vec_t, typename scalar_t>
 void checkMinGid(
   std::string &name, 
-  Tpetra::Vector<scalar_t, lno_t, gno_t> &gids,
-  scalar_t minExpected)
+  vec_t &gids,
+  scalar_t minExpected,
+  const Teuchos::Comm<int> &comm 
+)
 {
-  gids.scale(scalar_t(-1));
-  scalar_t minGid = gids.normInf();
-  if (minGid != minExpected)
+  scalar_t minGid = std::numeric_limits<scalar_t>::max(), gminGid = 0;
+  size_t len = gids.size();
+  for (size_t i = 0; i < len; i++)
+    if (gids[i] < minGid) minGid = gids[i];
+
+  Teuchos::reduceAll<int, scalar_t>(comm, Teuchos::REDUCE_MAX, 1,
+                                    &minGid, &gminGid);
+  if (gminGid != minExpected)
     std::cout << fail << name 
-              << "min Gid " << minGid << " != " << minExpected
+              << "min Gid " << gminGid << " != " << minExpected
               << std::endl;
-  gids.scale(scalar_t(-1));
+  else
+    std::cout << pass << name << "minGid is correct" << std::endl;
 }
 
 // Test for number of locally unique Gids 
@@ -140,6 +152,9 @@ void checkNLocallyUnique(
     std::cout << fail << name 
               << "num locally unique Gids " << nUnique << " != " << nExpected
               << std::endl;
+  else
+    std::cout << pass << name << "num locally unique Gids is correct" 
+              << std::endl;
 }
 
 
@@ -161,6 +176,7 @@ int main(int argc, char *argv[])
   // Keys are in range [1,np]
 
   std::string name = "test1: ";
+  if (me == 0) std::cout << "Starting " << name << std::endl;
 
   typedef int scalar_t;
   typedef int lno_t;
@@ -173,7 +189,8 @@ int main(int argc, char *argv[])
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm));
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
 
   Tpetra::MultiVector<scalar_t, lno_t, gno_t> keys(map, nVecs);
   Tpetra::Vector<scalar_t, lno_t, gno_t> gids(map);
@@ -181,14 +198,15 @@ int main(int argc, char *argv[])
   for (size_t i = 0; i < nKeys; i++)
     keys.replaceLocalValue(i, 0, i+1);
 
-  size_t nUniqueGids = findUniqueGids<scalar_t, lno_t, gno_t>(keys, gids);
+  size_t nUniqueGids = Zoltan2::findUniqueGids<scalar_t,lno_t,gno_t>(keys,gids);
 
   // Test for correctness
   checkNUnique(name, nUniqueGids, size_t(np));
 
-  checkMaxGid(name, gids, scalar_t(np-1));
+  Teuchos::ArrayRCP<const scalar_t> gidsData = gids.getData();
+  checkMaxGid(name, gidsData, scalar_t(np-1), *comm);
 
-  checkMinGid(name, gids, scalar_t(0));
+  checkMinGid(name, gidsData, scalar_t(0), *comm);
 
   checkNLocallyUnique(name, gids, nKeys);
   }
@@ -202,6 +220,7 @@ int main(int argc, char *argv[])
   // Each rank has three unique and three non-unique keys
 
   std::string name = "test2: ";
+  if (me == 0) std::cout << "Starting " << name << std::endl;
 
   typedef int scalar_t;
   typedef int lno_t;
@@ -215,7 +234,8 @@ int main(int argc, char *argv[])
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm));
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
 
   Tpetra::MultiVector<scalar_t, lno_t, gno_t> keys(map, nVecs);
   Tpetra::Vector<scalar_t, lno_t, gno_t> gids(map);
@@ -229,20 +249,21 @@ int main(int argc, char *argv[])
     keys.replaceLocalValue(i+nKeysHalf, 1, i+1);
   }
 
-  size_t nUniqueGids = findUniqueGids<scalar_t, lno_t, gno_t>(keys, gids);
+  size_t nUniqueGids = Zoltan2::findUniqueGids<scalar_t,lno_t,gno_t>(keys,gids);
 
   // Test for correctness
   checkNUnique(name, nUniqueGids, size_t(nKeysHalf*np));
 
-  checkMaxGid(name, gids, scalar_t(nKeysHalf*np-1));
+  Teuchos::ArrayRCP<const scalar_t> gidsData = gids.getData();
+  checkMaxGid(name, gidsData, scalar_t(nKeysHalf*np-1), *comm);
 
-  checkMinGid(name, gids, scalar_t(0));
+  checkMinGid(name, gidsData, scalar_t(0), *comm);
   
   }
 
   {
   // Test 3:
-  // Key has three long long entries
+  // Key has three int entries
   // Each proc has 2*np keys
   // np Keys are {x, x, x} for x in {0, 1, ..., np-1}
   // np Keys are {rank, rank, x} for x in {0, 1, ..., np-1}
@@ -250,10 +271,11 @@ int main(int argc, char *argv[])
   // Each proc contributes np unique keys
 
   std::string name = "test3: ";
+  if (me == 0) std::cout << "Starting " << name << std::endl;
 
-  typedef long long scalar_t;
+  typedef int scalar_t;
   typedef int lno_t;
-  typedef long long gno_t;
+  typedef int gno_t;
 
   const size_t nVecs = 3;
   const size_t nKeys = 2*np;
@@ -263,7 +285,8 @@ int main(int argc, char *argv[])
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm));
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
 
   Tpetra::MultiVector<scalar_t, lno_t, gno_t> keys(map, nVecs);
   Tpetra::Vector<scalar_t, lno_t, gno_t> gids(map);
@@ -279,29 +302,31 @@ int main(int argc, char *argv[])
     keys.replaceLocalValue(i, 2, scalar_t(i));
   }
 
-  size_t nUniqueGids = findUniqueGids<scalar_t, lno_t, gno_t>(keys, gids);
+  size_t nUniqueGids = Zoltan2::findUniqueGids<scalar_t,lno_t,gno_t>(keys,gids);
 
   // Test for correctness
   checkNUnique(name, nUniqueGids, size_t(np*np));
 
-  checkMaxGid(name, gids, scalar_t(np*np-1));
+  Teuchos::ArrayRCP<const scalar_t> gidsData = gids.getData();
+  checkMaxGid(name, gidsData, scalar_t(np*np-1), *comm);
 
-  checkMinGid(name, gids, scalar_t(0));
+  checkMinGid(name, gidsData, scalar_t(0), *comm);
   
-  checkNLocallyUnique(name, gids, size_t(nKeysHalf-1));
+  checkNLocallyUnique(name, gids, size_t(nKeys-1));
   }
 
   {
   // Test 4:
-  // Key has four long long entries
+  // Key has four int entries
   // Each proc has (rank+1)%2 keys; odd-numbered ranks are empty
   // Keys are all identical {0, 1, 2, 3}
 
   std::string name = "test4: ";
+  if (me == 0) std::cout << "Starting " << name << std::endl;
 
-  typedef long long scalar_t;
+  typedef int scalar_t;
   typedef int lno_t;
-  typedef long long gno_t;
+  typedef int gno_t;
 
   const size_t nVecs = 4;
   const size_t nKeys = (me+1)%2;
@@ -310,7 +335,8 @@ int main(int argc, char *argv[])
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm));
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
 
   Tpetra::MultiVector<scalar_t, lno_t, gno_t> keys(map, nVecs);
   Tpetra::Vector<scalar_t, lno_t, gno_t> gids(map);
@@ -322,14 +348,15 @@ int main(int argc, char *argv[])
     keys.replaceLocalValue(i, 3, scalar_t(3));
   }
 
-  size_t nUniqueGids = findUniqueGids<scalar_t, lno_t, gno_t>(keys, gids);
+  size_t nUniqueGids = Zoltan2::findUniqueGids<scalar_t,lno_t,gno_t>(keys,gids);
 
   // Test for correctness
   checkNUnique(name, nUniqueGids, size_t(1));
 
-  checkMaxGid(name, gids, scalar_t(0));
+  Teuchos::ArrayRCP<const scalar_t> gidsData = gids.getData();
+  checkMaxGid(name, gidsData, scalar_t(0), *comm);
 
-  checkMinGid(name, gids, scalar_t(0));
+  checkMinGid(name, gidsData, scalar_t(0), *comm);
   
   checkNLocallyUnique(name, gids, (nKeys ? size_t(1): size_t(0)));
   }
