@@ -16,38 +16,6 @@ protected:
     {
         bulkData = new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(metaData, communicator, auraOption);
     }
-
-    void test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face()
-    {
-        only_proc_0_makes_a_face();
-        test_that_num_sides_is_expected_value(1);
-        test_that_each_proc_has_num_sides_with_expected_value(1);
-    }
-
-    virtual void create_faces(stk::mesh::Entity element, stk::mesh::EntityVector& nodes_of_face)
-    {
-        get_bulk().modification_begin();
-        if(get_bulk().parallel_rank()==0)
-        {
-            create_face_per_proc(element, nodes_of_face);
-        }
-        test_that_num_sides_is_expected_value(1);
-        get_bulk().modification_end();
-    }
-
-    void only_proc_0_makes_a_face()
-    {
-        unsigned id = get_bulk().parallel_rank()+1;
-        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, id);
-        stk::mesh::EntityVector nodes_of_face = get_nodes_of_face_for_this_proc();
-        create_faces(elem, nodes_of_face);
-    }
-
-    void test_that_each_proc_has_num_sides_with_expected_value(unsigned expected_num_sides)
-    {
-        unsigned num_local_sides = stk::mesh::count_selected_entities(get_bulk().mesh_meta_data().globally_shared_part(), get_bulk().buckets(get_bulk().mesh_meta_data().side_rank()));
-        EXPECT_EQ(expected_num_sides, num_local_sides);
-    }
 };
 
 
