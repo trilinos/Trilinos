@@ -76,6 +76,23 @@ namespace Experimental {
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
+  BlockVector (const BlockVector<Scalar, LO, GO, Node>& X,
+               const map_type& newMeshMap,
+               const map_type& newPointMap,
+               const size_t offset) :
+    base_type (X, newMeshMap, newPointMap, offset)
+  {}
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockVector<Scalar, LO, GO, Node>::
+  BlockVector (const BlockVector<Scalar, LO, GO, Node>& X,
+               const map_type& newMeshMap,
+               const size_t offset) :
+    base_type (X, newMeshMap, offset)
+  {}
+
+  template<class Scalar, class LO, class GO, class Node>
+  BlockVector<Scalar, LO, GO, Node>::
   BlockVector () : base_type () {}
 
   template<class Scalar, class LO, class GO, class Node>
