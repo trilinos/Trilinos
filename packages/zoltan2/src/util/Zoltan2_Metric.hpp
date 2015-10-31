@@ -57,11 +57,10 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_GraphModel.hpp>
 
-#include <Epetra_SerialDenseVector.h>
-
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 namespace Zoltan2{
 
@@ -1121,7 +1120,7 @@ template <typename scalar_t, typename part_t>
   }
 
   double uniformSize = 1.0 / targetNumParts;
-  ArrayRCP<double> sizeVec(new double [numSizes], 0, numSizes, true);
+  std::vector<double> sizeVec(numSizes);
   for (int i=0; i < numSizes; i++){
     sizeVec[i] = uniformSize;
   }
@@ -1138,13 +1137,14 @@ template <typename scalar_t, typename part_t>
 
     // Vector of target amounts: T
 
-    for (int i=0; i < numSizes; i++)
+    double targetNorm = 0;
+    for (int i=0; i < numSizes; i++) {
       if (psizes[i].size() > 0)
         sizeVec[i] = psizes[i][p];
-
-    Epetra_SerialDenseVector target(View, sizeVec.getRawPtr(), numSizes);
-    target.Scale(sumVals);
-    double targetNorm = target.Norm2();
+      sizeVec[i] *= sumVals;
+      targetNorm += (sizeVec[i] * sizeVec[i]);
+    }
+    targetNorm = sqrt(targetNorm);
 
     // If part is supposed to be empty, we don't compute an
     // imbalance.  Same argument as above.
@@ -1153,15 +1153,18 @@ template <typename scalar_t, typename part_t>
 
       // Vector of actual amounts: A
 
-      Epetra_SerialDenseVector actual(numSizes);
-      for (int i=0; i < numSizes; i++)
+      std::vector<double> actual(numSizes);
+      double actualNorm = 0.;
+      for (int i=0; i < numSizes; i++) {
         actual[i] = vals[p] * -1.0;
+        actual[i] += sizeVec[i];
+        actualNorm += (actual[i] * actual[i]);
+      }
+      actualNorm = sqrt(actualNorm);
       
-      actual += target;
-
       //  |A - T| / |T|
 
-      scalar_t imbalance = actual.Norm2() / targetNorm;
+      scalar_t imbalance = actualNorm / targetNorm;
 
       if (imbalance < min)
         min = imbalance;
