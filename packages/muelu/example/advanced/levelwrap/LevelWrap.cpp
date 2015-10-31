@@ -55,6 +55,9 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
+#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+
+#include "Xpetra_ConfigDefs.hpp"
 #include <Xpetra_MatrixMatrix.hpp>
 
 #include <MueLu.hpp>
@@ -73,8 +76,6 @@
 #include <MueLu_CreateEpetraPreconditioner.hpp>
 #endif
 
-#include <MueLu_UseDefaultTypes.hpp>
-
 // Belos
 #ifdef HAVE_MUELU_BELOS
 #include "BelosConfigDefs.hpp"
@@ -88,6 +89,12 @@
 #include "BelosEpetraAdapter.hpp"
 #endif
 #endif
+
+// Define default data types
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 
 using Teuchos::RCP;
@@ -139,10 +146,31 @@ namespace MueLuExamples {
 #endif
 #ifdef HAVE_MUELU_EPETRA
     if(lib==Xpetra::UseEpetra) {
-      RCP<Epetra_CrsMatrix>      Ae = Xpetra::Helpers<SC,LO,GO>::Op2NonConstEpetraCrs(A);
-      RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(H));
-      RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra(*X),false);
-      RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra(*B),false);
+      //RCP<Epetra_CrsMatrix>      Ae = Xpetra::Helpers<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(A);
+
+      RCP<Epetra_CrsMatrix> Ae;
+      // Get the underlying Epetra Mtx
+      try {
+        RCP<const Xpetra::CrsMatrixWrap<SC, LO, GO, Node> > crsOp = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC, LO, GO, Node> >(A);
+        RCP<const Xpetra::CrsMatrix<SC, LO, GO, Node> > tmp_CrsMtx = crsOp->getCrsMatrix();
+        const RCP<const Xpetra::EpetraCrsMatrixT<GO,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,Node> >(tmp_CrsMtx);
+        if (tmp_ECrsMtx == Teuchos::null)
+          throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
+        const RCP<const Xpetra::EpetraCrsMatrixT<GO,Kokkos::Compat::KokkosSerialWrapperNode> > &tmp_ECrsMtxSer = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,Kokkos::Compat::KokkosSerialWrapperNode> >(tmp_ECrsMtx);
+        if (tmp_ECrsMtxSer == Teuchos::null)
+          throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::EpetraCrsMatrix<...,Node> to Xpetra::EpetraCrsMatrix<...,Kokkos::Compat::KokkosSerialWrapperNode> failed"));
+        //RCP<const Epetra_CrsMatrix> constEpMat = tmp_ECrsMtxSer->getEpetra_CrsMatrix();
+        //Ae = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(constEpMat);
+        Ae = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(tmp_ECrsMtxSer->getEpetra_CrsMatrix());
+      } catch(...) {
+        throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
+      }
+      RCP<MueLu::Hierarchy<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode> > epH = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode> >(H);
+      if (epH == Teuchos::null)
+        throw(Xpetra::Exceptions::BadCast("Cast from MueLu::Hierarchy<...,Node> to MueLu::Hierarchy<...,Kokkos::Compat::KokkosSerialWrapperNode> failed"));
+      RCP<MueLu::EpetraOperator> Me = rcp(new MueLu::EpetraOperator(epH));
+      RCP<Epetra_MultiVector>    Xe = rcp(&Xpetra::toEpetra<GO,Node>(*X),false);
+      RCP<Epetra_MultiVector>    Be = rcp(&Xpetra::toEpetra<GO,Node>(*B),false);
       typedef Epetra_MultiVector MV;
       typedef Epetra_Operator OP;
       RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(Ae, Xe, Be));

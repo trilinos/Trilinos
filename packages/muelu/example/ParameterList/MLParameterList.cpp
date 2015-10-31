@@ -47,6 +47,8 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
+#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
+
 #include <Teuchos_XMLParameterListHelpers.hpp> // getParametersFromXmlFile()
 //#include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
@@ -78,7 +80,17 @@
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
+// Define default data types
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+
+// choose computational node
+#ifdef HAVE_MUELU_EPETRA
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+#elif defined(HAVE_MUELU_TPETRA)
+  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+#endif
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
@@ -127,9 +139,9 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    // TODO: check -ml and --linAlgebra
-
     if (comm->getRank() == 0) { std::cout << xpetraParameters << matrixParameters; }
+
+    // choose ML and Tpetra
     if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
       ml = false;
       std::cout << "ML preconditionner can only be built if --linAlgebra=Epetra. Option --ml ignored" << std::endl;

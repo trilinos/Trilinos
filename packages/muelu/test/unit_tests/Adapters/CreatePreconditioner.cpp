@@ -84,11 +84,6 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
   {
-
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
-
     out << "version: " << MueLu::Version() << std::endl;
 
     using Teuchos::RCP;
@@ -125,6 +120,10 @@ namespace MueLuTests {
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
       std::string xmlFileName = "test.xml";
+
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+      typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
 
       RCP<tpetra_crsmatrix_type> tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
@@ -237,8 +236,6 @@ namespace MueLuTests {
  TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_XMLOnList)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
@@ -274,6 +271,8 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_TPETRA
       Teuchos::ParameterList mylist;
       mylist.set("xml parameter file","test.xml");
+
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
@@ -374,8 +373,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_PDESystem)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
 
@@ -416,6 +413,8 @@ namespace MueLuTests {
 
       if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
+        typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
@@ -478,8 +477,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(PetraOperator, ReusePreconditioner)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
@@ -506,6 +503,8 @@ namespace MueLuTests {
     std::string xmlFileName = "testReuse.xml";
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
