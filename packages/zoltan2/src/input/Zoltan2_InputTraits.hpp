@@ -55,8 +55,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsGraph.hpp>
+
+#ifdef HAVE_ZOLTAN2_EPETRA
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
+#endif
+
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_RowMatrix.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
@@ -238,6 +242,7 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   static inline std::string name() {return "Tpetra::CrsMatrix";}
 };
 
+#ifdef HAVE_ZOLTAN2_EPETRA
 template < >
 struct InputTraits<Epetra_CrsMatrix>
 {
@@ -248,6 +253,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_CrsMatrix";}
 };
+#endif
 
 template <typename Scalar,
           typename LocalOrdinal,
@@ -303,6 +309,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   static inline std::string name() {return "Tpetra::CrsGraph";}
 };
 
+#ifdef HAVE_ZOLTAN2_EPETRA
 template < >
 struct InputTraits<Epetra_CrsGraph>
 {
@@ -313,6 +320,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_CrsGraph";}
 };
+#endif
 
 template <typename Scalar,
           typename LocalOrdinal,
@@ -345,6 +353,7 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   static inline std::string name() {return "Tpetra::Vector";}
 };
 
+#ifdef HAVE_ZOLTAN2_EPETRA
 template < >
 struct InputTraits<Epetra_Vector>
 {
@@ -355,6 +364,7 @@ struct InputTraits<Epetra_Vector>
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_Vector";}
 };
+#endif
 
 template <typename Scalar,
           typename LocalOrdinal,
@@ -384,6 +394,7 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   static inline std::string name() {return "Tpetra::MultiVector";}
 };
 
+#ifdef HAVE_ZOLTAN2_EPETRA
 template < >
 struct InputTraits<Epetra_MultiVector>
 {
@@ -394,6 +405,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "Epetra_MultiVector";}
 };
+#endif
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

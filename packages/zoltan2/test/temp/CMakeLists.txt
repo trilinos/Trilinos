@@ -1,13 +1,15 @@
 
-IF (Tpetra_INST_INT_INT)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    multivectorTest
-    SOURCES multivectorTest.cpp
-    ARGS
-    "401"
-    NUM_MPI_PROCS 4
-    COMM mpi serial
+IF (${PROJECT_NAME}_ENABLE_Epetra)
+  IF (Tpetra_INST_INT_INT)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      multivectorTest
+      SOURCES multivectorTest.cpp
+      ARGS
+      "401"
+      NUM_MPI_PROCS 4
+      COMM mpi serial
     )
+  ENDIF()
 ENDIF()
 
 # KDD:  10/29/15

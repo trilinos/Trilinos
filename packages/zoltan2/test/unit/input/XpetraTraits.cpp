@@ -64,11 +64,8 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 
+#ifdef HAVE_ZOLTAN_EPETRA
 #include <Xpetra_EpetraUtils.hpp>
-#ifdef HAVE_ZOLTAN2_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
 #endif
 
 using namespace std;

@@ -55,7 +55,9 @@
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningHelpers.hpp>
 
+#ifdef HAVE_ZOLTAN2_EPETRA
 #include <Xpetra_EpetraMultiVector.hpp>
+#endif
 #include <Xpetra_TpetraMultiVector.hpp>
 
 namespace Zoltan2 {
@@ -94,7 +96,6 @@ public:
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
   typedef Xpetra::TpetraMultiVector<
     scalar_t, lno_t, gno_t, node_t> xt_mvector_t;
-  typedef Xpetra::EpetraMultiVector xe_mvector_t;
 #endif
 
   /*! \brief Destructor
@@ -244,6 +245,8 @@ template <typename User>
     }
   }
   else if (map_->lib() == Xpetra::UseEpetra){
+#ifdef HAVE_ZOLTAN2_EPETRA
+    typedef Xpetra::EpetraMultiVector xe_mvector_t;
     const xe_mvector_t *evector = 
       dynamic_cast<const xe_mvector_t *>(vector_.get());
       
@@ -255,6 +258,10 @@ template <typename User>
       // a case when this code should never execute.
       elements = reinterpret_cast<const scalar_t *>(data.get());
     }
+#else
+    throw std::logic_error("Epetra requested, but Trilinos is not "
+                           "built with Epetra");
+#endif
   }
   else{
     throw std::logic_error("invalid underlying lib");

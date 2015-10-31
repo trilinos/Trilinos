@@ -57,7 +57,8 @@ TRIBITS_ADD_TEST(
 )
 
 # MultiJagged Tests
-TRIBITS_ADD_TEST(
+IF (${PROJECT_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_TEST(
     test_driver
     NAME coordinateDriverTest
     NUM_MPI_PROCS 4
@@ -66,7 +67,8 @@ TRIBITS_ADD_TEST(
     "./driverinputs/galeriTest.xml"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
-)
+  )
+ENDIF()
 
 TRIBITS_ADD_TEST(
     test_driver

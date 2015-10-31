@@ -62,7 +62,10 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_BasicVectorAdapter.hpp>
+
+#ifdef HAVE_ZOLTAN2_PAMGEN
 #include <Zoltan2_PamgenMeshAdapter.hpp>
+#endif
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -108,7 +111,14 @@ public:
   typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> xcrsGraph_adapter;
   typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> basic_vector_adapter;
+
+#ifdef HAVE_ZOLTAN2_PAMGEN
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
+#else
+  // This typedef exists only to satisfy the compiler.
+  // PamgenMeshAdapter cannot be used when Trilinos is not built with Pamgen
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> pamgen_adapter_t;
+#endif
   
   /*! \brief A class method for constructing an input adapter
    *   defind in a parameter list.
@@ -1151,6 +1161,7 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
                                               const ParameterList &pList,
                                               const RCP<const Comm<int> > &comm)
 {
+#ifdef HAVE_ZOLTAN2_PAMGEN
   pamgen_adapter_t * ia = nullptr; // pointer for basic vector adapter
   if(uinput->hasPamgenMesh())
   {
@@ -1168,6 +1179,10 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
   }
   
   return  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
+#else
+  throw std::runtime_error("Pamgen input requested but Trilinos is not "
+                           "built with Pamgen");
+#endif
 }
 #endif
 
