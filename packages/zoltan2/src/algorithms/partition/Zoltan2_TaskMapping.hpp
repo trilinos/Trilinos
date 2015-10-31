@@ -11,13 +11,12 @@
 #include "Teuchos_ReductionOp.hpp"
 #include "Zoltan2_XpetraMultiVectorAdapter.hpp"
 
-#include "Teuchos_ConfigDefs.hpp" // define HAVE_MPI
 #include "Teuchos_Comm.hpp"
-#ifdef HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
 #else
 #  include "Teuchos_DefaultSerialComm.hpp"
-#endif // HAVE_MPI
+#endif // HAVE_ZOLTAN2_MPI
 
 //#define gnuPlot
 

@@ -355,7 +355,7 @@ void AlgPTScotch<Adapter>::partition(
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
 
-#else // DO NOT HAVE_MPI
+#else // DO NOT HAVE MPI
 
   // TODO:  Handle serial case with calls to Scotch.
   // TODO:  For now, assign everything to rank 0 and assume only one part.
@@ -372,7 +372,7 @@ void AlgPTScotch<Adapter>::partition(
 
   solution->setParts(partList);
 
-#endif // DO NOT HAVE_MPI
+#endif // DO NOT HAVE MPI
 }
 
 /////////////////////////////////////////////////////////////////////////////
