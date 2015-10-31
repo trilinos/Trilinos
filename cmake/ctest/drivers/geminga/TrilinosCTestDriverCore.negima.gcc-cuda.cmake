@@ -66,28 +66,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j12 -i" )
+  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "12" )
+  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
   SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-
-  SET(OPENMP          "OFF")
-  SET(CUDA_ARCH       "35")
-
-  SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} -DKOKKOS_USE_CUDA_UVM -Xcompiler")
-
-  IF(OPENMP STREQUAL "ON")
-    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wall,-ansi,-fopenmp")
-  ELSE()
-    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wall,-ansi")
-  ENDIF()
-
-  IF(BUILD_TYPE STREQUAL "DEBUG")
-    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g")
-  ELSE()
-    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3")
-  ENDIF()
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
@@ -95,14 +78,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DBUILD_SHARED_LIBS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
+      "-DTrilinos_ENABLE_CXX11:BOOL=ON"
+        "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
+      "-DCMAKE_CXX_FLAGS:STRING='-g -G -Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###
       "-DTPL_ENABLE_CUDA:BOOL=ON"
-          "-DCUDA_VERBOSE_BUILD:BOOL=OFF"
-          "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
-          "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
-          "-DTPL_ENABLE_HWLOC:BOOL=ON"
+      "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
+      "-DTPL_ENABLE_HWLOC:BOOL=ON"
 
       ### PACKAGE CONFIGURATION ###
           "-DKokkos_ENABLE_Cuda:BOOL=ON"
@@ -113,7 +97,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
   )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.4")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.9.2")
 
   # Ensure that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -128,8 +112,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-4.8.4/bin/g++"
-        "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-4.8.4/bin/gcc"
+        "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/g++"
+        "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-4.9.2/bin/gcc"
       )
 
   ENDIF()
