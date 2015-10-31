@@ -200,15 +200,15 @@ inline void JacobiT(
 
 inline void JacobiInt(
     double omega,
-    const Xpetra::Vector<double,int,int> & Dinv,
-    const Xpetra::Matrix<double,int,int> & A,
-    const Xpetra::Matrix<double,int,int> & B,
-    Xpetra::Matrix<double,int,int> &C,
+    const Xpetra::Vector<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
+    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & A,
+    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & B,
+    Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> &C,
     bool call_FillComplete_on_result,
     bool doOptimizeStorage,
     const std::string & label) {
 
-  typedef Xpetra::Vector<double, int, int>::node_type NO;
+  typedef Xpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>::node_type NO;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
@@ -230,11 +230,11 @@ inline void JacobiInt(
 #       ifndef HAVE_XPETRA_EPETRAEXT
     throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
 #else
-    Epetra_CrsMatrix & epA = Xpetra::Helpers<double,int,int,NO>::Op2NonConstEpetraCrs(A);
-    Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,int,NO>::Op2NonConstEpetraCrs(B);
-    Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,int,NO>::Op2NonConstEpetraCrs(C);
+    Epetra_CrsMatrix & epA = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(A);
+    Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(B);
+    Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(C);
     //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<int COMMA typename Xpetra::Map<int COMMA int>::node_type>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<int COMMA typename Xpetra::Map<int COMMA Kokkos::Compat::KokkosSerialWrapperNode>::node_type>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -247,10 +247,10 @@ inline void JacobiInt(
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
 #ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    const Tpetra::CrsMatrix<double, int, int, NO> & tpA = Xpetra::Helpers<double,int,int,NO>::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<double, int, int, NO> & tpB = Xpetra::Helpers<double,int,int,NO>::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<double, int, int, NO>       & tpC = Xpetra::Helpers<double,int,int,NO>::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<double, int, int, NO>  >          & tpD = toTpetra(Dinv);
+    const Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> & tpA = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> & tpB = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>       & tpC = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstTpetraCrs(C);
+    const RCP<Tpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>  >          & tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
     throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Teptra GO=int enabled."));
@@ -267,8 +267,8 @@ inline void JacobiInt(
   }
 
   // transfer striding information
-  Teuchos::RCP<Xpetra::Matrix<double, int, int, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, NO> >(Teuchos::rcpFromRef(A));
-  Teuchos::RCP<Xpetra::Matrix<double, int, int, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, NO> >(Teuchos::rcpFromRef(B));
+  Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(Teuchos::rcpFromRef(A));
+  Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 
@@ -276,10 +276,10 @@ inline void JacobiInt(
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 inline void Jacobi(
     double omega,
-    const Xpetra::Vector<double,int,int> & Dinv,
-    const Xpetra::Matrix<double,int,int> & A,
-    const Xpetra::Matrix<double,int,int> & B,
-    Xpetra::Matrix<double,int,int> &C,
+    const Xpetra::Vector<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
+    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & A,
+    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & B,
+    Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> &C,
     bool call_FillComplete_on_result,
     bool doOptimizeStorage,
     const std::string & label) {
@@ -290,10 +290,10 @@ inline void Jacobi(
 #ifdef HAVE_XPETRA_INT_LONG_LONG
 inline void Jacobi(
     double omega,
-    const Xpetra::Vector<double,int,long long> & Dinv,
-    const Xpetra::Matrix<double,int,long long> & A,
-    const Xpetra::Matrix<double,int,long long> & B,
-    Xpetra::Matrix<double,int,long long> &C,
+    const Xpetra::Vector<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
+    const Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & A,
+    const Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & B,
+    Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> &C,
     bool call_FillComplete_on_result,
     bool doOptimizeStorage,
     const std::string & label) {
@@ -309,9 +309,9 @@ inline void Jacobi(
 
  */
 template <class Scalar,
-class LocalOrdinal  = int,
-class GlobalOrdinal = LocalOrdinal,
-class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+class LocalOrdinal  /*= int*/,
+class GlobalOrdinal /*= LocalOrdinal*/,
+class Node          /*= KokkosClassic::DefaultNode::DefaultNodeType*/>
 class IteratorOps {
 
 private:

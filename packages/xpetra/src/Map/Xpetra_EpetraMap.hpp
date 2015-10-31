@@ -93,7 +93,7 @@ namespace Xpetra {
         // Use this function for default arguments rather than calling
         // what is the return value below.  Also helps in reducing
         // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
+        return KokkosClassic::Details::getNode<Node>(); // TODO fix this
     }
 
     //! @name Constructors and destructor
@@ -201,7 +201,9 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>();
+      return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
+      //typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+      //return default_node_type;
     }
 
     //@}
@@ -263,21 +265,12 @@ namespace Xpetra {
   // specialization on GO=int and Node=Serial
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
-#ifdef HAVE_XPETRA_TPETRA
   class EpetraMapT<int, Kokkos::Compat::KokkosSerialWrapperNode>
     : public virtual Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode>
-#else // Epetra only
-  class EpetraMapT<int, int /* dummy node type */>
-    : public virtual Map<int, int, int  /* dummy node type */>
-#endif
   {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-#ifdef HAVE_XPETRA_TPETRA
     typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-#else // Epetra only
-    typedef int Node;
-#endif
 
   public:
     typedef LocalOrdinal local_ordinal_type;
@@ -540,7 +533,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>();
+      return KokkosClassic::Details::getNode<Node>(); // TODO fix this
     }
 
     //@}
@@ -705,21 +698,12 @@ namespace Xpetra {
 // specialization on GO=long long and Node=Serial
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
-#ifdef HAVE_XPETRA_TPETRA
   class EpetraMapT<long long, Kokkos::Compat::KokkosSerialWrapperNode>
     : public virtual Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode>
-#else // Epetra only
-  class EpetraMapT<long long, int /* dummy node type */>
-    : public virtual Map<int, long long, int /* dummy node type */>
-#endif
   {
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-#ifdef HAVE_XPETRA_TPETRA
     typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-#else // Epetra only
-    typedef int Node;
-#endif
 
   public:
     typedef LocalOrdinal local_ordinal_type;

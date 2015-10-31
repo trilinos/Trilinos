@@ -106,7 +106,7 @@ template const Epetra_MultiVector & toEpetra<int, default_node_type >(const Mult
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraMultiVectorT<int, default_node_type >;
 template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
@@ -143,7 +143,7 @@ template const Epetra_MultiVector & toEpetra<long long, default_node_type >(cons
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraMultiVectorT<long long, default_node_type >;
 template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);

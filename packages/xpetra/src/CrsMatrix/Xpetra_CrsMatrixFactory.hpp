@@ -62,13 +62,13 @@
 
 namespace Xpetra {
 
-  template <class Scalar = CrsMatrix<>::scalar_type,
-            class LocalOrdinal =
-              typename CrsMatrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar /*= CrsMatrix<>::scalar_type*/,
+            class LocalOrdinal /*=
+              typename CrsMatrix<Scalar>::local_ordinal_type*/,
+            class GlobalOrdinal /*=
+              typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type*/,
+            class Node /*=
+              typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
   class CrsMatrixFactory {
   private:
     //! Private constructor. This is a static class.
@@ -199,13 +199,15 @@ namespace Xpetra {
 
   };
 
+  // Specializtion for SC=double, LO=int, GO=int and Node=Serial
+  // Used both for Epetra and Tpetra
   template <>
-  class CrsMatrixFactory<double, int, int,
-      typename CrsMatrix<double, int, int>::node_type> {
+  class CrsMatrixFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef CrsMatrix<double,int,int>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
   private:
     //! Private constructor. This is a static class.
     CrsMatrixFactory() {}
@@ -401,13 +403,15 @@ namespace Xpetra {
 
   };
 
+  // Specializtion for SC=double, LO=int, GO=long long and Node=Serial
+  // Used both for Epetra and Tpetra
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class CrsMatrixFactory<double, int, long long, typename CrsMatrix<double, int, long long>::node_type> {
+  class CrsMatrixFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.

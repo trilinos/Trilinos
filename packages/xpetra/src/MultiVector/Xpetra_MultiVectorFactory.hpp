@@ -108,13 +108,16 @@ namespace Xpetra {
 
   };
 
+  // Specialization for Scalar=double, LO=GO=int and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class MultiVectorFactory<double, int, int> {
+  class MultiVectorFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -169,14 +172,17 @@ namespace Xpetra {
 
   };
 
+  // Specialization for Scalar=double, LO=int, GO=long long and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class MultiVectorFactory<double, int, long long> {
+  class MultiVectorFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.

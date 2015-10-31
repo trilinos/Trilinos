@@ -134,7 +134,7 @@ template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_no
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA
@@ -161,7 +161,7 @@ template RCP<const Import<int, long long, default_node_type> > toXpetra<long lon
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA

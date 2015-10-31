@@ -340,7 +340,7 @@ template class EpetraIntVectorT<int, default_node_type >;
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraIntVectorT<int, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif
@@ -362,7 +362,7 @@ template class EpetraIntVectorT<long long, default_node_type >;
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraIntVectorT<long long, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif

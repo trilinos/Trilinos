@@ -245,7 +245,7 @@ template const Epetra_CrsGraph & toEpetra<int, default_node_type >(const RCP< co
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraCrsGraphT<int, default_node_type >;
 template RCP< const CrsGraph<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<int, default_node_type >(const RCP< const CrsGraph<int, int, default_node_type > > &graph);
@@ -277,7 +277,7 @@ template const Epetra_CrsGraph & toEpetra<long long, default_node_type >(const R
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef int default_node_type;
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
 template class EpetraCrsGraphT<long long, default_node_type >;
 template RCP< const CrsGraph<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<long long, default_node_type >(const RCP< const CrsGraph<int, long long, default_node_type > > &graph);

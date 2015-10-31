@@ -61,8 +61,8 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = Import<>::local_ordinal_type,
-            class GlobalOrdinal = typename Import<LocalOrdinal>::global_ordinal_type,
+  template <class LocalOrdinal/* = Import<>::local_ordinal_type*/,
+            class GlobalOrdinal/* = typename Import<LocalOrdinal>::global_ordinal_type*/,
             class Node = typename Import<LocalOrdinal, GlobalOrdinal>::node_type>
   class ImportFactory {
   private:
@@ -88,12 +88,14 @@ namespace Xpetra {
 
   };
 
+  // Specialization on LO=GO=int with serial node.
+  // Used for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class ImportFactory<int, int> {
-
+  class ImportFactory<int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Import<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -126,13 +128,16 @@ namespace Xpetra {
 
   };
 
+  // Specialization on LO=int, GO=long long with serial node.
+  // Used for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class ImportFactory<int, long long> {
+  class ImportFactory<int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Import<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.

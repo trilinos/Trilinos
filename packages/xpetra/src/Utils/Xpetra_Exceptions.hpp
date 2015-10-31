@@ -69,7 +69,7 @@
 #ifdef HAVE_XPETRA_EPETRA
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)                            \
   if ((lib) == ::Xpetra::UseEpetra)                                     \
-    TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and LocalOrdinal=GlobalOrdinal=int on a serial node");
 #else
 #define XPETRA_FACTORY_ERROR_IF_EPETRA(lib)
 #endif

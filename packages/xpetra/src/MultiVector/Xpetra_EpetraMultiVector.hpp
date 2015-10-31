@@ -325,22 +325,13 @@ namespace Xpetra {
   // specialization for Node=Kokkos::Compat::KokkosSerialWrapperNode
 
   template<class EpetraGlobalOrdinal>
-#ifdef HAVE_XPETRA_TPETRA
   class EpetraMultiVectorT<EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
     : public virtual MultiVector<double, int, EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
-#else
-  class EpetraMultiVectorT<EpetraGlobalOrdinal, int /* dummy node */>
-    : public virtual MultiVector<double, int, int /* dummy node */>
-#endif
   {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-#ifdef HAVE_XPETRA_TPETRA
     typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-#else
-    typedef int Node; /* dummy node */
-#endif
 
   public:
 

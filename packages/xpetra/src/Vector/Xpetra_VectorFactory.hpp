@@ -61,10 +61,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar = Vector<>::scalar_type,
-            class LocalOrdinal = typename Vector<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type,
-            class Node = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar/* = Vector<>::scalar_type*/,
+            class LocalOrdinal/* = typename Vector<Scalar>::local_ordinal_type*/,
+            class GlobalOrdinal/* = typename Vector<Scalar, LocalOrdinal>::local_ordinal_type*/,
+            class Node/* = typename Vector<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
   class VectorFactory {
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -91,13 +91,16 @@ namespace Xpetra {
   };
 #define XPETRA_VECTORFACTORY_SHORT
 
+  // Specialization for Scalar=double, LO=GO=int and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<double, int, int> {
-
+  class VectorFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
     typedef int                                 GlobalOrdinal;
-    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -131,14 +134,18 @@ namespace Xpetra {
 
   };
 
+  // Specialization for Scalar=double, LO=int, GO=long long and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class VectorFactory<double, int, long long> {
+  class VectorFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
     typedef long long                           GlobalOrdinal;
-    typedef Vector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -169,13 +176,17 @@ namespace Xpetra {
 
 #define XPETRA_VECTORFACTORY_SHORT
 
+  // Specialization for Scalar=int, LO=GO=int and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<int, int, int> {
+  class VectorFactory<int, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
 
-    typedef int                              Scalar;
-    typedef int                              LocalOrdinal;
-    typedef int                              GlobalOrdinal;
-    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
+    typedef int                                 Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef int                                 GlobalOrdinal;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -205,14 +216,18 @@ namespace Xpetra {
 
   };
 
+  // Specialization for Scalar=int, LO=int, GO=long long and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class VectorFactory<int, int, long long> {
+  class VectorFactory<int, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
-    typedef int                              Scalar;
-    typedef int                              LocalOrdinal;
-    typedef long long                        GlobalOrdinal;
-    typedef Vector<int, int, GlobalOrdinal>::node_type Node;
+    typedef int                                 Scalar;
+    typedef int                                 LocalOrdinal;
+    typedef long long                           GlobalOrdinal;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
 
@@ -245,4 +260,3 @@ namespace Xpetra {
 
 #define XPETRA_VECTORFACTORY_SHORT
 #endif
-// TODO: one factory for both Vector and MultiVector ?
