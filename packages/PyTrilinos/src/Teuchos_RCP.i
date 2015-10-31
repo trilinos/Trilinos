@@ -119,7 +119,7 @@
   %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor(Teuchos::RCP< TYPE > *),
 				 SWIG_POINTER_OWN));
 }
-// Convert virtual method plain pointer input argument to a Pythno object
+// Convert virtual method plain pointer input argument to a Python object
 %typemap(directorin) CONST TYPE *
 {
   Teuchos::RCP< CONST TYPE > *temp$argnum = new Teuchos::RCP< CONST TYPE >($1_name, false);

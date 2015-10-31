@@ -698,24 +698,10 @@ public:
 
 #ifdef HAVE_TPETRA
 
-  /** \brief Return a view of this MDVector as an Tpetra::Vector
+  /** \brief Return a view of this MDVector as a Tpetra::Vector
    *
    * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.  Currently, if the
-   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Tpetra::Vectors are contiguous, and this is a
-   * view transform.  In this case, getTpetraVectorView() should be
-   * called on the parent, or getTpetraVectorCopy() should be called
-   * on this non-contiguous MDVector.
-   */
-  template< class LocalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
-  getTpetraVectorView() const;
-
-  /** \brief Return a view of this MDVector as an Tpetra::Vector
-   *
-   * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.  Currently, if the
+   * order to be expressed as a Tpetra::Vector.  Currently, if the
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
    * will be thrown, as Tpetra::Vectors are contiguous, and this is a
    * view transform.  In this case, getTpetraVectorView() should be
@@ -723,51 +709,12 @@ public:
    * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal,
-            class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
-  getTpetraVectorView() const;
-
-  /** \brief Return a view of this MDVector as an Tpetra::Vector
-   *
-   * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.  Currently, if the
-   * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
-   * will be thrown, as Tpetra::Vectors are contiguous, and this is a
-   * view transform.  In this case, getTpetraVectorView() should be
-   * called on the parent, or getTpetraVectorCopy() should be called
-   * on this non-contiguous MDVector.
-   */
-  template< class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node2 >
+            class GlobalOrdinal = LocalOrdinal,
+            class Node2 = Node>
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraVectorView() const;
 
-  /** \brief Return a view of this MDVector as an Tpetra::MultiVector
-   *
-   * This method will attempt to utilize either the leading dimension
-   * (if the layout is C-order) or the trailing dimension (if the
-   * layout is Fortran-order) to serve as the Tpetra::MultiVector
-   * vector index.  This dimension must be non-distributed (i.e., the
-   * corresponding commDim must be 1) in order for this mapping to
-   * work.  There must also be no padding associated with this axis.
-   * If these requirements are not met, then the entire MDVector will
-   * be treated as a single vector, that is the number of vectors will
-   * equal 1.
-   *
-   * Currently, if the MDVector is non-contiguous, a
-   * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Tpetra::MultiVectors are contiguous, and this is a view
-   * transform.
-   */
-  template < class LocalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                     LocalOrdinal,
-                                     LocalOrdinal,
-                                     Node > >
-  getTpetraMultiVectorView() const;
-
-  /** \brief Return a view of this MDVector as an Tpetra::MultiVector
+  /** \brief Return a view of this MDVector as a Tpetra::MultiVector
    *
    * This method will attempt to utilize either the leading dimension
    * (if the layout is C-order) or the trailing dimension (if the
@@ -785,89 +732,26 @@ public:
    * transform.
    */
   template < class LocalOrdinal,
-             class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                     LocalOrdinal,
-                                     GlobalOrdinal,
-                                     Node > >
-  getTpetraMultiVectorView() const;
-
-  /** \brief Return a view of this MDVector as an Tpetra::MultiVector
-   *
-   * This method will attempt to utilize either the leading dimension
-   * (if the layout is C-order) or the trailing dimension (if the
-   * layout is Fortran-order) to serve as the Tpetra::MultiVector
-   * vector index.  This dimension must be non-distributed (i.e., the
-   * corresponding commDim must be 1) in order for this mapping to
-   * work.  There must also be no padding associated with this axis.
-   * If these requirements are not met, then the entire MDVector will
-   * be treated as a single vector, that is the number of vectors will
-   * equal 1.
-   *
-   * Currently, if the MDVector is non-contiguous, a
-   * Domi::MDMapNoncontiguous exception will be thrown, as
-   * Tpetra::MultiVectors are contiguous, and this is a view
-   * transform.
-   */
-  template < class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node2 >
+             class GlobalOrdinal = LocalOrdinal,
+             class Node2 = Node >
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
                                      Node2 > >
   getTpetraMultiVectorView() const;
 
-  /** \brief Return a copy of this MDVector as an Tpetra::Vector
+  /** \brief Return a copy of this MDVector as a Tpetra::Vector
    *
    * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.
-   */
-  template< class LocalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
-  getTpetraVectorCopy() const;
-
-  /** \brief Return a copy of this MDVector as an Tpetra::Vector
-   *
-   * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.
+   * order to be expressed as a Tpetra::Vector.
    */
   template< class LocalOrdinal,
-            class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
-  getTpetraVectorCopy() const;
-
-  /** \brief Return a copy of this MDVector as an Tpetra::Vector
-   *
-   * The multiple dimensions of the MDVector will be flattened in
-   * order to be expressed as an Tpetra::Vector.
-   */
-  template< class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node2 >
+            class GlobalOrdinal = LocalOrdinal,
+            class Node2 = Node >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraVectorCopy() const;
 
-  /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
-   *
-   * This method will attempt to utilize either the leading dimension
-   * (if the layout is C-order) or the trailing dimension (if the
-   * layout is Fortran-order) to serve as the Tpetra::MultiVector
-   * vector index.  This dimension must be non-distributed (i.e., the
-   * corresponding commDim must be 1) in order for this mapping to
-   * work.  There must also be no padding associated with this axis.
-   * If these requirements are not met, then the entire MDVector will
-   * be treated as a single vector, that is the number of vectors will
-   * equal 1.
-   */
-  template < class LocalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                     LocalOrdinal,
-                                     LocalOrdinal,
-                                     Node > >
-  getTpetraMultiVectorCopy() const;
-
-  /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
+  /** \brief Return a copy of this MDVector as a Tpetra::MultiVector
    *
    * This method will attempt to utilize either the leading dimension
    * (if the layout is C-order) or the trailing dimension (if the
@@ -880,28 +764,8 @@ public:
    * equal 1.
    */
   template < class LocalOrdinal,
-             class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                     LocalOrdinal,
-                                     GlobalOrdinal,
-                                     Node > >
-  getTpetraMultiVectorCopy() const;
-
-  /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
-   *
-   * This method will attempt to utilize either the leading dimension
-   * (if the layout is C-order) or the trailing dimension (if the
-   * layout is Fortran-order) to serve as the Tpetra::MultiVector
-   * vector index.  This dimension must be non-distributed (i.e., the
-   * corresponding commDim must be 1) in order for this mapping to
-   * work.  There must also be no padding associated with this axis.
-   * If these requirements are not met, then the entire MDVector will
-   * be treated as a single vector, that is the number of vectors will
-   * equal 1.
-   */
-  template < class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node2 >
+             class GlobalOrdinal = LocalOrdinal,
+             class Node2 = Node >
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
@@ -2256,29 +2120,6 @@ getEpetraMultiVectorCopy() const
 #ifdef HAVE_TPETRA
 
 template< class Scalar, class Node >
-template< class LocalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
-MDVector< Scalar, Node >::
-getTpetraVectorView() const
-{
-  return getTpetraVectorView< LocalOrdinal, LocalOrdinal, Node >();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template< class LocalOrdinal,
-          class GlobalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
-MDVector< Scalar, Node >::
-getTpetraVectorView() const
-{
-  return getTpetraVectorView< LocalOrdinal, GlobalOrdinal, Node >();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal,
           class Node2 >
@@ -2305,29 +2146,6 @@ getTpetraVectorView() const
                                           GlobalOrdinal,
                                           Node2 >(tpetraMap,
                                                   _mdArrayView.arrayView()));
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template< class LocalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
-MDVector< Scalar, Node >::
-getTpetraVectorCopy() const
-{
-  return getTpetraVectorCopy< LocalOrdinal, LocalOrdinal, Node >();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template< class LocalOrdinal,
-          class GlobalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
-MDVector< Scalar, Node >::
-getTpetraVectorCopy() const
-{
-  return getTpetraVectorCopy< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -2367,35 +2185,6 @@ getTpetraVectorCopy() const
 
   // Return the result
   return result;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template < class LocalOrdinal >
-Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                   LocalOrdinal,
-                                   LocalOrdinal,
-                                   Node > >
-MDVector< Scalar, Node >::
-getTpetraMultiVectorView() const
-{
-  return getTpetraMultiVectorView< LocalOrdinal, LocalOrdinal, Node >();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template < class LocalOrdinal,
-           class GlobalOrdinal >
-Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                   LocalOrdinal,
-                                   GlobalOrdinal,
-                                   Node > >
-MDVector< Scalar, Node >::
-getTpetraMultiVectorView() const
-{
-  return getTpetraMultiVectorView< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -2459,35 +2248,6 @@ getTpetraMultiVectorView() const
                                                        _mdArrayView.arrayView(),
                                                        lda,
                                                        numVectors));
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template < class LocalOrdinal >
-Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                   LocalOrdinal,
-                                   LocalOrdinal,
-                                   Node > >
-MDVector< Scalar, Node >::
-getTpetraMultiVectorCopy() const
-{
-  return getTpetraMultiVectorCopy< LocalOrdinal, LocalOrdinal, Node >();
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Scalar, class Node >
-template < class LocalOrdinal,
-           class GlobalOrdinal >
-Teuchos::RCP< Tpetra::MultiVector< Scalar,
-                                   LocalOrdinal,
-                                   GlobalOrdinal,
-                                   Node > >
-MDVector< Scalar, Node >::
-getTpetraMultiVectorCopy() const
-{
-  return getTpetraMultiVectorCopy< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 ////////////////////////////////////////////////////////////////////////

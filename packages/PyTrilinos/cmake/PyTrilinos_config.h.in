@@ -184,6 +184,13 @@
 
 /**********************************************************************/
 
+/* PyTrilinos ordinal types */
+
+#define PYTRILINOS_GLOBAL_ORD long
+#define PYTRILINOS_LOCAL_ORD  int
+
+/**********************************************************************/
+
 #ifdef SWIG
 
   #define COMPILER_ID @CMAKE_CXX_COMPILER_ID@

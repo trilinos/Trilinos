@@ -54,21 +54,54 @@
 # @HEADER
 
 
-IF (MSVC AND NOT
-    (LAPACK_LIBRARY_DIRS  OR
-     (NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "lapack lapack_win32" AND
-      NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "") OR
-     LAPACK_INCLUDE_DIRS  OR
-     LAPACK_INCLUDE_NAMES OR
-     (NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "lapack" AND
-      NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "") OR
-     TPL_LAPACK_INCLUDE_DIRS)
-   )
-  IF(CLAPACK_FOUND)
-    ADVANCED_SET(TPL_LAPACK_LIBRARIES lapack
-        CACHE FILEPATH "Set from MSVC CLAPACK specialization")
-  ENDIF()
-ENDIF()
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc-cuda.cmake")
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( LAPACK
-  REQUIRED_LIBS_NAMES "lapack lapack_win32")
+#
+# Set the options specific to this build case
+#
+
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_KOKKOS_REFACTOR_OPENMP)
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
+
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+
+SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
+    "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
+    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=ON"
+    "-DTpetra_INST_SERIAL:BOOL=ON"
+    "-DKokkos_ENABLE_Serial:BOOL=ON"
+
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
+
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
+      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
+      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
+  "-DTPL_ENABLE_HWLOC:BOOL=ON"
+
+  ### PACKAGES CONFIGURATION ###
+  "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+)
+
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
+
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

@@ -73,7 +73,7 @@
 
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
+// #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRAEXT
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -86,7 +86,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <EpetraExt_CrsMatrixIn.h>
 #endif  // HAVE_AMESOS2_EPETRAEXT
-#endif
+//#endif
 
 using std::string;
 
