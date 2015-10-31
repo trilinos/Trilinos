@@ -146,8 +146,9 @@ namespace Galeri {
         return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-      if (lib == ::Xpetra::UseEpetra)
-        return privateCreateMapEpetra<LocalOrdinal, GlobalOrdinal>::CreateMap(mapType, comm, list);
+      if (lib == ::Xpetra::UseEpetra) {
+        return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
+      }
 #endif
       XPETRA_FACTORY_END;
     }

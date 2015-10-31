@@ -286,9 +286,9 @@ namespace Thyra {
       }
 #endif
       TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::ThyraPreconditionerFactory: Hierarchy has no levels in it");
+                                 "Thyra::MueLuPreconditionerFactory: Hierarchy has no levels in it");
       TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::ThyraPreconditionerFactory: Hierarchy has no fine level operator");
+                                 "Thyra::MueLuPreconditionerFactory: Hierarchy has no fine level operator");
       RCP<MueLu::Level> level0 = H->GetLevel(0);
       RCP<XpOp>    O0 = level0->Get<RCP<XpOp> >("A");
       RCP<XpMat>   A0 = rcp_dynamic_cast<XpMat>(O0);
@@ -318,8 +318,10 @@ namespace Thyra {
 
 #ifdef HAVE_MUELU_EPETRA
     if (bIsEpetra) {
-      RCP<MueLu::Hierarchy<double,int,int> > epetraH =
-          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int> >(H);
+      RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > epetraH =
+          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> >(H);
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(epetraH), MueLu::Exceptions::RuntimeError,
+                                 "Thyra::MueLuPreconditionerFactory: Failed to cast Hierarchy to Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>. Epetra runs only on the Serial node.");
       RCP<MueEpOp> muelu_epetraOp = rcp(new MueEpOp(epetraH));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_epetraOp));
       // attach fwdOp to muelu_epetraOp to guarantee that it will not go away

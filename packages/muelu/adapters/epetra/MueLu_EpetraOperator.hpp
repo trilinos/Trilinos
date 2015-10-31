@@ -62,7 +62,7 @@ namespace MueLu {
     typedef double                                              SC;
     typedef int                                                 LO;
     typedef int                                                 GO;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode             NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;

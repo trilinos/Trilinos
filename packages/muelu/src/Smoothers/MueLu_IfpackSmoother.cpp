@@ -291,7 +291,7 @@ namespace MueLu {
   RCP<MueLu::SmootherPrototype<double, int, int> > IfpackSmoother::Copy() const {
     RCP<IfpackSmoother> smoother = rcp(new IfpackSmoother(*this) );
     smoother->SetParameterList(this->GetParameterList());
-    return smoother;
+    return Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<double, int, int> >(smoother);
   }
 
   std::string IfpackSmoother::description() const {

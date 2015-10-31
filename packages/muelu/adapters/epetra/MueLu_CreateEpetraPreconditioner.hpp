@@ -41,7 +41,7 @@ namespace MueLu {
     typedef double                                                              SC;
     typedef int                                                                 LO;
     typedef int                                                                 GO;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode                             NO;
 
     using   Teuchos::ParameterList;
 
@@ -163,7 +163,7 @@ namespace MueLu {
     typedef double                                                              SC;
     typedef int                                                                 LO;
     typedef int                                                                 GO;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode                             NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
     typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;

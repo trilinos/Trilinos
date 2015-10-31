@@ -100,7 +100,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   //TODO: This code is not pretty
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null) {
     RCP<const Xpetra::EpetraCrsMatrix> tmp_ECrsMtx = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(epbA->getMatrix(0,0));
     if (tmp_ECrsMtx == Teuchos::null)
@@ -122,7 +122,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
   RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getDomainMap());
 
@@ -138,7 +138,7 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
 const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
   RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getRangeMap());
 
