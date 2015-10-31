@@ -49,6 +49,14 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
+    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_negima.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 420
+    )
+
   if(RUN_HEAVY_MEMORY_TESTS)
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
