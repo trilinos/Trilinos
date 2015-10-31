@@ -207,10 +207,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
   xmaps.push_back(xvelmap);
   xmaps.push_back(xpremap);
 
-  Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xfullmap,xmaps);
+  Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xfullmap,xmaps);
 
   // build blocked operator
-  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
+  Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
   bOp->setMatrix(0,0,xA11);
   bOp->setMatrix(0,1,xA12);
   bOp->setMatrix(1,0,xA21);
@@ -220,13 +220,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
 
   // build vector
   Teuchos::RCP<Xpetra::EpetraVectorT<GO,Node> > xx  = Teuchos::rcp(new Xpetra::EpetraVectorT<GO,Node>(x));
-  Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO> > result =  Xpetra::VectorFactory<Scalar,LO,GO>::Build(xfullmap ,true);
+  Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > result =  Xpetra::VectorFactory<Scalar,LO,GO,Node>::Build(xfullmap ,true);
 
   // matrix vector product
   bOp->apply(*xx,*result,Teuchos::NO_TRANS);
 
   // check results
-  Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > result2 =  Xpetra::VectorFactory<Scalar,LO,GO>::Build(xfullmap ,true);
+  Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > result2 =  Xpetra::VectorFactory<Scalar,LO,GO,Node>::Build(xfullmap ,true);
   xfuA->apply(*xx,*result2);
 
   result2->update(1.0,*result,-1.0);
@@ -531,7 +531,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
+typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 
 UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 

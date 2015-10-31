@@ -493,7 +493,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, SC, LO, GO, Node ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, SC, LO, GO, Node)
 
-typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
+// TODO: fix me
+typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 
 // all tests work only for LO=GO=int (and/or Epetra)
 // So, it is sufficient to define only a TEST_GROUP for LO=GO=int
