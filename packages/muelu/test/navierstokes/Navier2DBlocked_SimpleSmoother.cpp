@@ -103,9 +103,6 @@
 //TODO is it really needed?
 #include "MueLu_HierarchyHelpers.hpp"
 
-
-#include "MueLu_UseDefaultTypes.hpp"
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
@@ -119,6 +116,12 @@
 
 
 int main(int argc, char *argv[]) {
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -233,10 +236,10 @@ int main(int argc, char *argv[]) {
     /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
 
     /////////////////////////////////////// generate MapExtractor object
 
@@ -245,11 +248,11 @@ int main(int argc, char *argv[]) {
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xstridedfullmap,xmaps);
+    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap,xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
     bOp->setMatrix(0,0,xA11);
     bOp->setMatrix(0,1,xA12);
     bOp->setMatrix(1,0,xA21);
@@ -355,17 +358,17 @@ int main(int argc, char *argv[]) {
     M->SetFactory("PostSmoother",    smootherFact);
 
     MueLu::SetFactoryManager SFMCoarse(Finest, M);
-    Finest->Request(MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>(M, "Smoother"));
+    Finest->Request(MueLu::TopSmootherFactory<Scalar,LO,GO,Node>(M, "Smoother"));
 
     // call setup (= extract blocks and extract diagonal of F)
     SimpleSm->Setup(*Finest);
 
     RCP<MultiVector> xtest = MultiVectorFactory::Build(xstridedfullmap,1);
-    xtest->putScalar( (SC) 0.0);
+    xtest->putScalar( (Scalar) 0.0);
 
     RCP<Vector> xR = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
     // calculate initial (absolute) residual
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+    Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
 
     xR->norm2(norms);
     *out << "Test: ||x_0|| = " << norms[0] << std::endl;
@@ -376,7 +379,7 @@ int main(int argc, char *argv[]) {
     xtest->norm2(norms);
     *out << "Test: ||x_1|| = " << norms[0] << std::endl;
 
-    Teuchos::Array<Teuchos::ScalarTraits<double>::magnitudeType> test = MueLu::Utilities<double, int, int>::ResidualNorm(*bOp, *xtest, *xR);
+    Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> test = MueLu::Utilities<Scalar, LO, GO, Node>::ResidualNorm(*bOp, *xtest, *xR);
     *out << "residual norm: " << test[0] << std::endl;
 
     success = (test[0] < 1.0e-7);

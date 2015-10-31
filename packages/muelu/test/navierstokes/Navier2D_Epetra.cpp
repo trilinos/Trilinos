@@ -105,8 +105,6 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #endif
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
@@ -117,6 +115,12 @@
 
 
 int main(int argc, char *argv[]) {
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -207,7 +211,7 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epA));
     RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
     RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
 

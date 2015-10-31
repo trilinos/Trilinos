@@ -69,7 +69,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #include <Epetra_LinearProblem.h>
@@ -77,8 +76,14 @@
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 
-
 #include <MueLu_EpetraOperator.hpp>
+
+// prescribe types
+// run plain Epetra
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
 
 
 int main(int argc, char *argv[]) {
@@ -161,7 +166,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(Galeri::CreateCrsMatrix("Recirc2D", epMap.get(), GaleriList));
 
     // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
     Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
 
     RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);

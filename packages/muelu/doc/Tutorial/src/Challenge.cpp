@@ -90,9 +90,12 @@
 #include <MueLu_EpetraOperator.hpp>
 #endif
 
-
-
-#include "MueLu_UseDefaultTypes.hpp"
+// prescribe types
+// run plain Epetra
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
 
 /*!
  *  2d structural mechanics example for Epetra

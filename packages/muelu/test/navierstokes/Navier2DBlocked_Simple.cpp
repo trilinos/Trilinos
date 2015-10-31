@@ -114,8 +114,6 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
@@ -129,6 +127,12 @@
 
 
 int main(int argc, char *argv[]) {
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -195,8 +199,6 @@ int main(int argc, char *argv[]) {
 
     EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
     EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
-    //EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    //EpetraExt::MatrixMarketFileToVector("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/b_re1000_5932.txt",*fullmap,ptrf);
 
     RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
     RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
@@ -219,10 +221,10 @@ int main(int argc, char *argv[]) {
     /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A11));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A12));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A21));
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(A22));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A11));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A12));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A21));
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>(A22));
 
     /////////////////////////////////////// generate MapExtractor object
 
@@ -230,11 +232,11 @@ int main(int argc, char *argv[]) {
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal>::Build(xstridedfullmap,xmaps);
+    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(xstridedfullmap,xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>(map_extractor,map_extractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map_extractor,map_extractor,10));
     bOp->setMatrix(0,0,xA11);
     bOp->setMatrix(0,1,xA12);
     bOp->setMatrix(1,0,xA21);
