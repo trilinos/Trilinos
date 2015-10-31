@@ -1019,8 +1019,9 @@ template <typename scalar_t, typename part_t>
   if (!psizes){
     scalar_t target = sumVals / targetNumParts;
     for (part_t p=0; p < numParts; p++){
-      scalar_t diff = abs(vals[p] - target);
-      scalar_t tmp = diff / target;
+      scalar_t diff = vals[p] - target;
+      scalar_t adiff = (diff >= 0 ? diff : -diff);
+      scalar_t tmp = adiff / target;
       avg += tmp;
       if (tmp > max) max = tmp;
       if (tmp < min) min = tmp;
@@ -1037,8 +1038,9 @@ template <typename scalar_t, typename part_t>
       if (psizes[p] > 0){
         if (p < numParts){
           scalar_t target = sumVals * psizes[p];
-          scalar_t diff = abs(vals[p] - target);
-          scalar_t tmp = diff / target;
+          scalar_t diff = vals[p] - target;
+          scalar_t adiff = (diff >= 0 ? diff : -diff);
+          scalar_t tmp = adiff / target;
           avg += tmp;
           if (tmp > max) max = tmp;
           if (tmp < min) min = tmp;
@@ -1337,7 +1339,7 @@ template <typename Adapter>
       numCriteria, partSizes.view(0, numCriteria),
       metrics[1].getGlobalSum(), wgts,
       min, max, avg);
-  
+
     metrics[1].setMinImbalance(1.0 + min);
     metrics[1].setMaxImbalance(1.0 + max);
     metrics[1].setAvgImbalance(1.0 + avg);
