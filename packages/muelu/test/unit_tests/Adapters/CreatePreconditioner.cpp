@@ -74,6 +74,8 @@
 #include "MueLu_EpetraOperator.hpp"
 #endif
 
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
+
 #include "MueLu_UseDefaultTypes.hpp"
 
 namespace MueLuTests {
@@ -556,3 +558,5 @@ namespace MueLuTests {
   }
 
 }//namespace MueLuTests
+
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_SERIAL

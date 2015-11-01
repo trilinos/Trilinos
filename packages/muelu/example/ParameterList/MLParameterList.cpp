@@ -86,7 +86,7 @@ typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
 
 // choose computational node
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #elif defined(HAVE_MUELU_TPETRA)
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_AZTECOO)
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
@@ -353,7 +353,7 @@ int main(int argc, char *argv[]) {
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_AZTECOO)
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner

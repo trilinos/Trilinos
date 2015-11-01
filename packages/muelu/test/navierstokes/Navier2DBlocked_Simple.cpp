@@ -127,6 +127,7 @@
 
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
@@ -561,4 +562,8 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  std::cout << "Epetra needs Serial node. Please recompile MueLu with the Serial node enabled." << std::endl;
+  return EXIT_SUCCESS;
+#endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

@@ -76,6 +76,7 @@
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_EpetraOperator.hpp>
 
 // prescribe types
@@ -84,9 +85,10 @@ typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
 typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
-
+#endif
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
@@ -427,4 +429,8 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 } //main
+

@@ -71,6 +71,12 @@
 
 #cmakedefine HAVE_MUELU_CGAL
 
+/* Flags for active Tpetra nodes if Tpetra is enabled */
+#cmakedefine HAVE_MUELU_SERIAL
+#cmakedefine HAVE_MUELU_PTHREAD
+#cmakedefine HAVE_MUELU_OPENMP
+#cmakedefine HAVE_MUELU_CUDA
+
 /*  
  If deprecated warnings are on, and the compiler supports them, then
  define MUELU_DEPRECATED to emit deprecated warnings.  Otherwise,

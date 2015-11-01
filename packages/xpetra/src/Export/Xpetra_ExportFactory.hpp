@@ -87,12 +87,15 @@ namespace Xpetra {
 
   };
 
+  // Specialization on Serial Node (mainly used for Epetra)
+#ifdef HAVE_XPETRA_SERIAL
+
   template <>
-  class ExportFactory<int, int> {
+  class ExportFactory<int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Export<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -128,11 +131,11 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class ExportFactory<int, long long> {
+  class ExportFactory<int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Export<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -162,6 +165,8 @@ namespace Xpetra {
 
   };
 #endif // HAVE_XPETRA_INT_LONG_LONG
+#endif // HAVE_XPETRA_SERIAL
+
 }
 
 #define XPETRA_EXPORTFACTORY_SHORT

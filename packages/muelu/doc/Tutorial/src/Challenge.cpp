@@ -79,16 +79,15 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-//#include <Xpetra_Parameters.hpp>
 
 // MueLu
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_EpetraOperator.hpp>
-#endif
+
 
 // prescribe types
 // run plain Epetra
@@ -96,6 +95,7 @@ typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
 typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+#endif
 
 /*!
  *  2d structural mechanics example for Epetra
@@ -107,6 +107,7 @@ typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
 
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include "MueLu_UseShortNames.hpp"
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -261,4 +262,7 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif  // #ifdef defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 }

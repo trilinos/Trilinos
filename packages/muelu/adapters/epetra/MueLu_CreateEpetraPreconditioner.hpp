@@ -19,7 +19,7 @@
 
 //! @file
 //! @brief Various adapters that will create a MueLu preconditioner that is an Epetra_Operator.
-
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 namespace MueLu {
 
   /*!
@@ -192,5 +192,6 @@ namespace MueLu {
   }
 
 } //namespace
+#endif // HAVE_MUELU_SERIAL and HAVE_MUELU_EPETRA
 
 #endif //ifndef MUELU_CREATE_EPETRA_PRECONDITIONER_HPP

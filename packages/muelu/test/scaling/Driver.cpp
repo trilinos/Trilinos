@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_TPETRA
 
           } else {
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
             RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
             RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
             RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > myH = eH->GetHierarchy();

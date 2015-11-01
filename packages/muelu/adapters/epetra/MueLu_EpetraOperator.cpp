@@ -51,6 +51,8 @@
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_Level.hpp"
 
+#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+
 namespace MueLu {
 
 int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
@@ -152,3 +154,5 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
 }
 
 } // namespace
+
+#endif // #if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)

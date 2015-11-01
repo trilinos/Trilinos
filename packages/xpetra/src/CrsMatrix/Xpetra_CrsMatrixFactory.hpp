@@ -199,6 +199,9 @@ namespace Xpetra {
 
   };
 
+  // Specializations on SerialNode (mainly for Epetra)
+#ifdef HAVE_XPETRA_SERIAL
+
   // Specializtion for SC=double, LO=int, GO=int and Node=Serial
   // Used both for Epetra and Tpetra
   template <>
@@ -578,7 +581,7 @@ namespace Xpetra {
 
   };
 #endif // HAVE_XPETRA_INT_LONG_LONG
-
+#endif // HAVE_XPETRA_SERIAL
 }
 
 #define XPETRA_CRSMATRIXFACTORY_SHORT

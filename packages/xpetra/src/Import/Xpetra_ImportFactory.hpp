@@ -88,6 +88,9 @@ namespace Xpetra {
 
   };
 
+  // Specialization on Serial Node (mainly used for Epetra)
+#ifdef HAVE_XPETRA_SERIAL
+
   // Specialization on LO=GO=int with serial node.
   // Used for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
@@ -166,7 +169,7 @@ namespace Xpetra {
 
   };
 #endif // HAVE_XPETRA_INT_LONG_LONG
-
+#endif // HAVE_XPETRA_SERIAL
 }
 
 #define XPETRA_IMPORTFACTORY_SHORT

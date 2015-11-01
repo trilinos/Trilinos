@@ -144,10 +144,8 @@ namespace MueLuExamples {
         throw std::runtime_error("Belos failed to converge");
     }
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
     if(lib==Xpetra::UseEpetra) {
-      //RCP<Epetra_CrsMatrix>      Ae = Xpetra::Helpers<SC,LO,GO,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(A);
-
       RCP<Epetra_CrsMatrix> Ae;
       // Get the underlying Epetra Mtx
       try {
@@ -219,7 +217,7 @@ namespace MueLuExamples {
         throw std::runtime_error("Belos failed to converge");
     }
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
     if(lib==Xpetra::UseEpetra) {
       RCP<Epetra_CrsMatrix>   Ae = Xpetra::Helpers<SC,LO,GO>::Op2NonConstEpetraCrs(A);
       RCP<Epetra_Operator>    Me = MueLu::CreateEpetraPreconditioner(Ae,MueLuList);

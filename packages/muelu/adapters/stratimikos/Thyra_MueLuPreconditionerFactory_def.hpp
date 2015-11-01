@@ -134,7 +134,7 @@ namespace Thyra {
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TpOp;
     typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyTpLinOp;
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
     typedef MueLu::EpetraOperator                                         MueEpOp;
     typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
 #endif
@@ -277,7 +277,7 @@ namespace Thyra {
         H = muelu_precOp->GetHierarchy();
       }
 #endif
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
       if (bIsEpetra) {
         RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
         RCP<MueEpOp>    muelu_precOp = rcp_dynamic_cast<MueEpOp>(epetr_precOp->epetra_op(),true);
@@ -316,7 +316,7 @@ namespace Thyra {
     }
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
     if (bIsEpetra) {
       RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > epetraH =
           rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> >(H);

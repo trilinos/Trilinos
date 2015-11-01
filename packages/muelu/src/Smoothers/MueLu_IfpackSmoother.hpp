@@ -210,6 +210,8 @@ namespace MueLu {
     return Teuchos::null;
   }
 
+  // Specialization for serial node (used for Epetra)
+#ifdef HAVE_MUELU_SERIAL
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
   GetIfpackSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
@@ -233,6 +235,7 @@ namespace MueLu {
         Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(smoo);
     return ret;
   }
+#endif
 
 } // namespace MueLu
 

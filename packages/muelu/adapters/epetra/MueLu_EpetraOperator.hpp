@@ -52,6 +52,8 @@
 #include "MueLu_Hierarchy.hpp"
 //TODO: Kokkos headers
 
+#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+
 namespace MueLu {
 
 /*! @class EpetraOperator
@@ -159,5 +161,7 @@ namespace MueLu {
   };
 
 } // namespace
+
+#endif // HAVE_MUELU_EPETRA and HAVE_MUELU_SERIAL
 
 #endif // MUELU_EPETRAOPERATOR_HPP

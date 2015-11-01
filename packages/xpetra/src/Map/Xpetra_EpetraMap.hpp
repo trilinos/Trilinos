@@ -260,7 +260,8 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
   }; // EpetraMapT class
 
-
+// Specializations for Epetra (and Tpetra) using the Serial Node
+#ifdef HAVE_XPETRA_SERIAL
 
   // specialization on GO=int and Node=Serial
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -1127,41 +1128,7 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-
-
-#if 0
-  // TODO fix me
-  template<class EpetraGlobalOrdinal, class Node> inline
-  Teuchos::ArrayView< const EpetraGlobalOrdinal > Xpetra::EpetraMapT<EpetraGlobalOrdinal, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const EpetraGlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
-#endif
-
-
-#if 0
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  //template<class Node> inline
-  template<class EpetraGlobalOrdinal, class Node> inline
-  //Teuchos::ArrayView< const int > Xpetra::EpetraMapT<EpetraGlobalOrdinal, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const EpetraGlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
-  Teuchos::ArrayView< const EpetraGlobalOrdinal > Xpetra::EpetraMapT<EpetraGlobalOrdinal, Node>::getNodeElementList() const {
-    XPETRA_MONITOR("EpetraMapT::getNodeElementList");
-    const bool bIsGlobalOrdinal = std::is_same<EpetraGlobalOrdinal, long long>::value;
-    if(bIsGlobalOrdinal)
-      return ArrayView< const EpetraGlobalOrdinal >(map_->MyGlobalElements64(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */
-    else
-      return ArrayView< const EpetraGlobalOrdinal >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */
-  }
-#endif
-#endif
-
-#if 0
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  //template<class Node> inline
-  template<class EpetraGlobalOrdinal, class Node> inline
-  Teuchos::ArrayView< const long long > EpetraMapT<long long, Node>::getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const EpetraGlobalOrdinal >(map_->MyGlobalElements64(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
-#endif
-#endif
-
-
-
+#endif // HAVE_XPETRA_SERIAL
 
 } // Xpetra namespace
 

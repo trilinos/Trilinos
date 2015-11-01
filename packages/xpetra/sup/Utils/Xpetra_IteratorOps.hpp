@@ -198,6 +198,7 @@ inline void JacobiT(
   C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 
+#ifdef HAVE_XPETRA_SERIAL
 inline void JacobiInt(
     double omega,
     const Xpetra::Vector<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
@@ -300,6 +301,8 @@ inline void Jacobi(
   JacobiT(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
 #endif // HAVE_XPETRA_INT_LONG_LONG
+
+#endif // HAVE_XPETRA_SERIAL
 
 /*!
     @class IteratorOps
@@ -421,7 +424,11 @@ public:
     if (C == Teuchos::null)
       C = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(B.getRowMap(),Teuchos::OrdinalTraits<LocalOrdinal>::zero());
 
+#ifdef HAVE_XPETRA_SERIAL
     Xpetra::JacobiInt(omega, Dinv, A, B, *C, true,true,label);
+#else
+    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Serial Node (either with Epetra or Tpetra enabled on the serial node)."));
+#endif
     C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
     return C;
   } //Jacobi
