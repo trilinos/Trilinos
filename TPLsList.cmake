@@ -188,7 +188,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Matio           "cmake/TPLs/"    SS
   PAPI            "cmake/TPLs/"    SS
   MATLABLib       "cmake/TPLs/"    EX
-  Eigen           "packages/teuchos/cmake/TPLs/"    EX
+  Eigen           "packages/teuchos/cmake/tpls/"    EX
   X11             "cmake/TPLs/"    SS
   Lemon           "cmake/TPLs/"    EX
   GLM             "cmake/TPLs/"    EX
