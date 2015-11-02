@@ -150,6 +150,13 @@ public:
     ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
   }
 
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
+      Real val = ::Thyra::get_ele(*thyra_vec_,i);
+      ::Thyra::set_ele(i,f.apply(val),thyra_vec_.ptr());
+    }
+  }
+
 }; // class ThyraVector
 
 } // namespace ROL
