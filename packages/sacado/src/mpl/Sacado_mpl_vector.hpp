@@ -41,7 +41,6 @@
 
 // Specializations needed for various mpl operations
 #include "Sacado_mpl_vector_size_spec.hpp"
-#include "Sacado_mpl_vector_at_spec.hpp"
 
 namespace Sacado {
 
@@ -51,40 +50,11 @@ namespace Sacado {
     struct vector_tag {};
 
     // vector
-    template <class T0 = mpl::none,
-              class T1 = mpl::none,
-              class T2 = mpl::none,
-              class T3 = mpl::none,
-              class T4 = mpl::none,
-              class T5 = mpl::none,
-              class T6 = mpl::none,
-              class T7 = mpl::none,
-              class T8 = mpl::none,
-              class T9 = mpl::none,
-              class T10 = mpl::none,
-              class T11 = mpl::none,
-              class T12 = mpl::none,
-              class T13 = mpl::none,
-              class T14 = mpl::none>
+    template <typename... Args>
     struct vector :
-      vector_size<T0,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14> {
+      vector_size<Args...> {
       typedef vector_tag tag;
       typedef vector type;
-      typedef T0 t0;
-      typedef T1 t1;
-      typedef T2 t2;
-      typedef T3 t3;
-      typedef T4 t4;
-      typedef T5 t5;
-      typedef T6 t6;
-      typedef T7 t7;
-      typedef T8 t8;
-      typedef T9 t9;
-      typedef T10 t10;
-      typedef T11 t11;
-      typedef T12 t12;
-      typedef T13 t13;
-      typedef T14 t14;
     };
 
     // iterator
@@ -126,15 +96,6 @@ namespace Sacado {
       typedef vector_iterator<Vector,Pos+1> type;
     };
 
-
-
-    // at
-    template <int Pos>
-    struct at_impl<vector_tag, Pos> {
-      template <class Vector>
-      struct apply : vector_at<Vector,Pos> {};
-    };
-
     // deref
     template <class Vector, int Pos>
     struct deref< vector_iterator<Vector,Pos> > : mpl::at<Vector,Pos> {};
@@ -143,16 +104,24 @@ namespace Sacado {
 
 }
 
+#include "Sacado_mpl_vector_at_spec.hpp"
 #include "Sacado_mpl_vector_push_back_spec.hpp"
 
 namespace Sacado {
   namespace mpl {
 
+    // at
+    template <int Pos>
+    struct at_impl<vector_tag, Pos> {
+      template <class Vector>
+      struct apply : vector_at<Vector,Pos> {};
+    };
+
     // push_back
     template <>
     struct push_back_impl<vector_tag> {
       template <class Vector, class T>
-      struct apply : vector_push_back<Vector, T, mpl::size<Vector>::value> {};
+      struct apply : vector_push_back<Vector, T> {};
     };
 
   }

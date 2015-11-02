@@ -36,65 +36,14 @@ namespace Sacado {
 
     template <class Vector, int Pos> struct vector_at {};
 
-    template <class Vector>
-    struct vector_at<Vector,0> {
-      typedef typename Vector::t0 type;
+    template <typename T, typename...Args>
+    struct vector_at<mpl::vector<T,Args...>, 0> {
+      typedef T type;
     };
-    template <class Vector>
-    struct vector_at<Vector,1> {
-      typedef typename Vector::t1 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,2> {
-      typedef typename Vector::t2 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,3> {
-      typedef typename Vector::t3 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,4> {
-      typedef typename Vector::t4 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,5> {
-      typedef typename Vector::t5 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,6> {
-      typedef typename Vector::t6 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,7> {
-      typedef typename Vector::t7 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,8> {
-      typedef typename Vector::t8 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,9> {
-      typedef typename Vector::t9 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,10> {
-      typedef typename Vector::t10 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,11> {
-      typedef typename Vector::t11 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,12> {
-      typedef typename Vector::t12 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,13> {
-      typedef typename Vector::t13 type;
-    };
-    template <class Vector>
-    struct vector_at<Vector,14> {
-      typedef typename Vector::t14 type;
+
+    template <typename T, typename...Args, int Pos>
+    struct vector_at<mpl::vector<T,Args...>, Pos> {
+      typedef typename vector_at<mpl::vector<Args...>, Pos-1>::type type;
     };
 
   }
