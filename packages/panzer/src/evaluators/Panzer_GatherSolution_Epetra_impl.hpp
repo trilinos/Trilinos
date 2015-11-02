@@ -232,6 +232,7 @@ GatherSolution_Epetra(
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
   , globalDataKey_("Solution Gather Container")
+  , has_tangent_fields_(false)
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -247,9 +248,30 @@ GatherSolution_Epetra(
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFields_[fd] = 
+    gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+  }
+
+  // Setup dependent tangent fields if requested
+  // Note:  these could be stored as doubles and not ScalarT
+  Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
+  if (p.isType< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names")) {
+    tangent_field_names = p.get< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names");
+    if (tangent_field_names != Teuchos::null) {
+      TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names->size());
+
+      has_tangent_fields_ = true;
+      tangentFields_.resize(gatherFields_.size());
+      for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+        tangentFields_[fd].resize((*tangent_field_names)[fd].size());
+        for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
+          tangentFields_[fd][i] =
+            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+          this->addDependentField(tangentFields_[fd][i]);
+        }
+      }
+    }
   }
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
@@ -291,6 +313,12 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
+  }
+
+  if (has_tangent_fields_) {
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
+      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
+        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
@@ -387,8 +415,14 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            if (dxdp_vectors_.size() == 0)
+            if (!has_tangent_fields_ && dxdp_vectors_.size() == 0)
               (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
+            else if (has_tangent_fields_) {
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = x[lid];
+              for (std::size_t i=0; i<tangentFields_[fieldIndex].size(); ++i)
+                (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) =
+                  tangentFields_[fieldIndex][i](worksetCellIndex,basis).val();
+            }
             else {
               (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = x[lid];
               for (std::size_t i=0; i<dxdp_vectors_.size(); ++i)

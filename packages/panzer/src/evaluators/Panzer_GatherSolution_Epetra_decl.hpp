@@ -176,6 +176,9 @@ private:
   Teuchos::RCP<Epetra_Vector> x_;
   std::vector<Teuchos::RCP<Epetra_Vector> > dxdp_vectors_;
 
+  bool has_tangent_fields_;
+  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+
   GatherSolution_Epetra();
 };
 
