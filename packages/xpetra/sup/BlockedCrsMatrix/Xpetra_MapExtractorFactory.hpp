@@ -54,10 +54,10 @@
 namespace Xpetra {
 
   // factory class
-  template <class Scalar /*= MapExtractor<>::scalar_type*/,
-            class LocalOrdinal /* = typename MapExtractor<Scalar>::local_ordinal_type*/,
-            class GlobalOrdinal /* = typename MapExtractor<Scalar, LocalOrdinal>::global_ordinal_type*/,
-            class Node        /*  = typename MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class MapExtractorFactory {
 #undef XPETRA_MAPEXTRACTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -73,9 +73,10 @@ namespace Xpetra {
     /// (Tpetra or Epetra).
     static Teuchos::RCP<Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     Build (const Teuchos::RCP<const Map>& fullmap,
-           const std::vector<Teuchos::RCP<const Map> >& maps)
+           const std::vector<Teuchos::RCP<const Map> >& maps,
+           bool bThyraMode = false)
     {
-      return rcp (new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fullmap, maps));
+      return rcp (new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fullmap, maps, bThyraMode));
     }
   };
 
