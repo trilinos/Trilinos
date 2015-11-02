@@ -67,22 +67,21 @@
 namespace MueLu {
 
   // import Teuchos memory management classes into MueLu
-  using Teuchos::arcp;
-  using Teuchos::arcpFromArrayView;
-  using Teuchos::arcp_reinterpret_cast;
-  using Teuchos::Array;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::null;
-  using Teuchos::ParameterList;
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::arcp;
+  using Teuchos::arcpFromArrayView;
   using Teuchos::rcpFromRef;
+  using Teuchos::null;
+  using Teuchos::arcp_reinterpret_cast;
+  using Teuchos::Array;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_implicit_cast;
-  using Teuchos::rcp_static_cast;
+  using Teuchos::rcpFromRef;
+  using Teuchos::as;
+  using Teuchos::ParameterList;
 
   // verbose levels
   using Teuchos::VERB_DEFAULT;

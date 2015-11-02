@@ -96,6 +96,8 @@ namespace MueLu {
     void Iterate(const Matrix& A, const Constraint& C, const Matrix& P0, RCP<Matrix>& P) const;
 
     //@}
+  private:
+    SC Frobenius(const Matrix& A, const Matrix& B) const;
 
   private:
     size_t nIts_;           //!< Number of performed iterations

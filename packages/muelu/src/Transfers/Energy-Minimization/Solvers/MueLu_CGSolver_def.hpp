@@ -60,6 +60,8 @@
 
 namespace MueLu {
 
+  using Teuchos::rcp_const_cast;
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CGSolver(size_t Its)
   : nIts_(Its)
@@ -134,7 +136,7 @@ namespace MueLu {
     // P_0 = Z_0
     P = MatrixFactory2::BuildCopy(Z);
 
-    oldRZ = Utilities::Frobenius(*R, *Z);
+    oldRZ = Frobenius(*R, *Z);
 
     for (size_t k = 0; k < nIts_; k++) {
       // AP = constrain(A*P)
@@ -151,7 +153,7 @@ namespace MueLu {
       C.Apply(*tmpAP, *T);
       AP = T;
 
-      app = Utilities::Frobenius(*AP, *P);
+      app = Frobenius(*AP, *P);
       if (Teuchos::ScalarTraits<SC>::magnitude(app) < Teuchos::ScalarTraits<SC>::sfmin()) {
         // It happens, for instance, if P = 0
         // For example, if we use TentativePFactory for both nonzero pattern and initial guess
@@ -193,7 +195,7 @@ namespace MueLu {
       Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
 
       // beta = (R_{k+1}, Z_{k+1})/(R_k, Z_k)
-      newRZ = Utilities::Frobenius(*R, *Z);
+      newRZ = Frobenius(*R, *Z);
       beta = newRZ / oldRZ;
 
       // P_{k+1} = Z_{k+1} + beta*P_k
@@ -210,6 +212,65 @@ namespace MueLu {
     }
 
     finalP = X;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Frobenius(const Matrix& A, const Matrix& B) const {
+    // We check only row maps. Column may be different. One would hope that they are the same, as we typically
+    // calculate frobenius norm of the specified sparsity pattern with an updated matrix from the previous step,
+    // but matrix addition, even when one is submatrix of the other, changes column map (though change may be as
+    // simple as couple of elements swapped)
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*B.getRowMap()),   Exceptions::Incompatible, "MueLu::CGSolver::Frobenius: row maps are incompatible");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), Exceptions::RuntimeError, "Matrices must be fill completed");
+
+    const Map& AColMap = *A.getColMap();
+    const Map& BColMap = *B.getColMap();
+
+    Teuchos::ArrayView<const LO> indA, indB;
+    Teuchos::ArrayView<const SC> valA, valB;
+    size_t nnzA = 0, nnzB = 0;
+
+    // We use a simple algorithm
+    // for each row we fill valBAll array with the values in the corresponding row of B
+    // as such, it serves as both sorted array and as storage, so we don't need to do a
+    // tricky problem: "find a value in the row of B corresponding to the specific GID"
+    // Once we do that, we translate LID of entries of row of A to LID of B, and multiply
+    // corresponding entries.
+    // The algorithm should be reasonably cheap, as it does not sort anything, provided
+    // that getLocalElement and getGlobalElement functions are reasonably effective. It
+    // *is* possible that the costs are hidden in those functions, but if maps are close
+    // to linear maps, we should be fine
+    Teuchos::Array<SC> valBAll(BColMap.getNodeNumElements());
+
+    LO     invalid = Teuchos::OrdinalTraits<LO>::invalid();
+    SC     zero    = Teuchos::ScalarTraits<SC> ::zero(),    f = zero, gf;
+    size_t numRows = A.getNodeNumRows();
+    for (size_t i = 0; i < numRows; i++) {
+      A.getLocalRowView(i, indA, valA);
+      B.getLocalRowView(i, indB, valB);
+      nnzA = indA.size();
+      nnzB = indB.size();
+
+      // Set up array values
+      for (size_t j = 0; j < nnzB; j++)
+        valBAll[indB[j]] = valB[j];
+
+      for (size_t j = 0; j < nnzA; j++) {
+        // The cost of the whole Frobenius dot product function depends on the
+        // cost of the getLocalElement and getGlobalElement functions here.
+        LO ind = BColMap.getLocalElement(AColMap.getGlobalElement(indA[j]));
+        if (ind != invalid)
+          f += valBAll[ind] * valA[j];
+      }
+
+      // Clean up array values
+      for (size_t j = 0; j < nnzB; j++)
+        valBAll[indB[j]] = zero;
+    }
+
+    MueLu_sumAll(AColMap.getComm(), f, gf);
+
+    return gf;
   }
 
 } // namespace MueLu
