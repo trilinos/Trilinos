@@ -189,6 +189,16 @@ public:
     return false; //bIsEpetra;
   }
 
+  static bool isBlockedOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > & op){
+    // Check whether it is a blocked operator.
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > ThyBlockedOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(op);
+    if(ThyBlockedOp != Teuchos::null) {
+      return true;
+    }
+    return false;
+  }
+
   static Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   toXpetra(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >& op) {
 
@@ -443,6 +453,7 @@ public:
 #endif
 #endif
 
+#if 0
     // Check whether it is a blocked operator.
     // If yes, grab the (0,0) block and check the underlying linear algebra
     // Note: we expect that the (0,0) block exists!
@@ -457,6 +468,7 @@ public:
         bIsTpetra = isTpetra(b00);
       }
     }
+#endif
 
     return bIsTpetra;
   }
@@ -464,17 +476,19 @@ public:
   static bool isEpetra(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > & op){
     // check whether we have an Epetra based Thyra operator
     bool bIsEpetra = false;
+
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<const Thyra::EpetraLinearOp> epetra_op = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
+    Teuchos::RCP<const Thyra::EpetraLinearOp> epetra_op = Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op,false);
     bIsEpetra = Teuchos::is_null(epetra_op) ? false : true;
 #endif
 
+#if 0
     // Check whether it is a blocked operator.
     // If yes, grab the (0,0) block and check the underlying linear algebra
     // Note: we expect that the (0,0) block exists!
     if(bIsEpetra == false) {
       Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > ThyBlockedOp =
-          Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(op);
+          Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(op,false);
       if(ThyBlockedOp != Teuchos::null) {
         TEUCHOS_TEST_FOR_EXCEPT(ThyBlockedOp->blockExists(0,0)==false);
         Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > b00 =
@@ -483,8 +497,19 @@ public:
         bIsEpetra = isEpetra(b00);
       }
     }
+#endif
 
     return bIsEpetra;
+  }
+
+  static bool isBlockedOperator(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > & op){
+    // Check whether it is a blocked operator.
+    Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > ThyBlockedOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(op);
+    if(ThyBlockedOp != Teuchos::null) {
+      return true;
+    }
+    return false;
   }
 
   static Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
