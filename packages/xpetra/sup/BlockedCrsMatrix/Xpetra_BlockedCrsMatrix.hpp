@@ -155,7 +155,7 @@ namespace Xpetra {
       int numDomainBlocks = productDomainSpace->numBlocks();
 
       // build range map extractor from Thyra::BlockedLinearOpBase object
-      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subRangeMaps(numRangeBlocks);
+      std::vector<Teuchos::RCP<const Map> > subRangeMaps(numRangeBlocks);
       for (size_t r=0; r<Teuchos::as<size_t>(numRangeBlocks); ++r) {
         for (size_t c=0; c<Teuchos::as<size_t>(numDomainBlocks); ++c) {
           if (thyraOp->blockExists(r,c)) {
@@ -164,6 +164,8 @@ namespace Xpetra {
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
+            //StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
+
             break;
           }
         }
@@ -401,7 +403,7 @@ namespace Xpetra {
           Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
 
           if (Ablock != Teuchos::null && !Ablock->isFillComplete())
-            Ablock->fillComplete(getDomainMap(c), getRangeMap(r), params);
+            Ablock->fillComplete(getDomainMap(c, bThyraMode_), getRangeMap(r, bThyraMode_), params);
         }
 
       // get full row map
