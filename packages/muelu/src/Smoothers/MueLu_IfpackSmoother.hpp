@@ -66,18 +66,17 @@ namespace MueLu {
 
   /*!
     @class IfpackSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Ifpack smoothers.
 
     This class creates an Ifpack preconditioner factory. The factory creates a smoother based on the
     type and ParameterList passed into the constructor. See the constructor for more information.
   */
-
-  class IfpackSmoother : public SmootherPrototype<double,int,int> {
+  template <class Node = typename SmootherPrototype<double,int,int>::node_type>
+  class IfpackSmoother : public MueLu::SmootherPrototype<double,int,int,Node> {
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -211,29 +210,15 @@ namespace MueLu {
   }
 
   // Specialization for serial node (used for Epetra)
-#ifdef HAVE_MUELU_SERIAL
+#if defined(HAVE_MUELU_SERIAL)
   template <>
   inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
   GetIfpackSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
                                        const Teuchos::ParameterList& paramList,
                                        const int& overlap)
   {
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
-    typedef typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
-
-    // Note: the IfpackSmoother is defined on the node type of SmootherPrototype.
-    //       Try to dynamically cast the Node type to Kokkos::Compat::KokkosSerialWrapperNode. This cast
-    //       cannot fail as this is the specialization for Kokkos::Compat::KokkosSerialWrapperNode, the only
-    //       one that Epetra/Ifpack is defined for. We need the dynamic cast to make the compiler happy as the
-    //       interface (return type) should not be hard-coded to Kokkos::Compat::KokkosSerialWrapperNode in the
-    //       general (non-specialized) implementation above.
-    RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > smoo =
-        rcp (new IfpackSmoother (type, paramList, overlap));
-    RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> > ret =
-        Teuchos::rcp_dynamic_cast<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(smoo);
-    return ret;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    return rcp (new MueLu::IfpackSmoother<Node> (type, paramList, overlap));
   }
 #endif
 
