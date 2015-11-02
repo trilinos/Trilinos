@@ -20,7 +20,6 @@
 namespace stk { namespace mesh {
 
 const impl::LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
-const int INVALID_SIDE_ID = -1;
 
 impl::ElemSideToProcAndFaceId ElemElemGraph::get_element_side_ids_to_communicate() const
 {
@@ -2291,7 +2290,6 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                     std::vector<unsigned> side_counts(bucket.topology().num_sides(),0);
                     for(size_t k=0;k<this->get_num_connected_elems(element);++k)
                     {
-                        impl::LocalId local_id = get_local_element_id(element);
                         const GraphEdge & graphEdge = m_graph.get_edge_for_element(local_id, k);
                         if(this->is_connected_elem_locally_owned(element, k))
                         {
