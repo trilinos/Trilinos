@@ -585,10 +585,27 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Residual>,panzer::Asse
   // extract the residual response
   RCP<Response_Residual<EvalT> > resp = rcp_dynamic_cast<Response_Residual<EvalT> >(getResponse<EvalT>("RESIDUAL"));
   resp->initializeResponse();
+
+  // setup the local ghosted container
+  if(ghostedContainer_==Teuchos::null)
+    ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
+
+  // copy everything from input
+  const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
+  {
+    const RCP<ThyraObjContainer<ScalarT> > original_thGhostedContainer =
+      Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
+    thGhostedContainer->set_x_th(original_thGhostedContainer->get_x_th());
+    thGhostedContainer->set_dxdt_th(original_thGhostedContainer->get_dxdt_th());
+    thGhostedContainer->set_f_th(original_thGhostedContainer->get_f_th());
+    thGhostedContainer->set_A_th(original_thGhostedContainer->get_A_th());
+  }
+
+  // replace ghosted container with local one
+  input_args.ghostedContainer_ = ghostedContainer_;
   
   // convert responses into thyra object
-  const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
-    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
   const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
   // set the ghosted and unique residual
@@ -615,10 +632,27 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::Asse
   // extract the residual response
   RCP<Response_Residual<EvalT> > resp = rcp_dynamic_cast<Response_Residual<EvalT> >(getResponse<EvalT>("RESIDUAL"));
   resp->initializeResponse();
-  
-  // convert responses into thyra object
+
+  // setup the local ghosted container
+  if(ghostedContainer_==Teuchos::null)
+    ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
+
+  // copy everything from input
   const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
-    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
+  {
+    const RCP<ThyraObjContainer<ScalarT> > original_thGhostedContainer =
+      Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
+    thGhostedContainer->set_x_th(original_thGhostedContainer->get_x_th());
+    thGhostedContainer->set_dxdt_th(original_thGhostedContainer->get_dxdt_th());
+    thGhostedContainer->set_f_th(original_thGhostedContainer->get_f_th());
+    thGhostedContainer->set_A_th(original_thGhostedContainer->get_A_th());
+  }
+
+  // replace ghosted container with local one
+  input_args.ghostedContainer_ = ghostedContainer_;
+
+  // convert responses into thyra object
   const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
 
