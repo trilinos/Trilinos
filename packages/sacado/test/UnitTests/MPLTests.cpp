@@ -259,7 +259,9 @@ TEUCHOS_UNIT_TEST( MPL, Vector )
   static_assert( is_same< at<vec15,14>::type, T5>::value, "");
   static_assert( size<vec15>::value == 15, "" );
 
-  // 15 is the current maximum length
+  // The implementation now uses variatic templates, so there
+  // is no hard limit on the length of mpl::vector.  However
+  // sizes up to 15 still seems like a good length to test.
 
   // Check find
   static_assert( Sacado::mpl::find<vec5, T1>::value == 0, "" );
