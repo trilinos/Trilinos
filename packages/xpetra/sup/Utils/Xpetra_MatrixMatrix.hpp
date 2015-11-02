@@ -225,9 +225,9 @@ public:
 };
 
 template <class Scalar,
-class LocalOrdinal  = int,
-class GlobalOrdinal = LocalOrdinal,
-class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+class LocalOrdinal  /*= int*/,
+class GlobalOrdinal /*= LocalOrdinal*/,
+class Node          /*= KokkosClassic::DefaultNode::DefaultNodeType*/>
 class MatrixMatrix {
 
 private:
@@ -643,12 +643,13 @@ public:
 
 
 // specialization MatrixMatrix for SC=double, LO=GO=int
-template<>
-class MatrixMatrix<double,int,int> {
+template<class Node>
+class MatrixMatrix<double,int,int,Node> {
   typedef double                                                     SC;
   typedef int                                                        LO;
   typedef int                                                        GO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
+  /*typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;*/
+  typedef Node                                                       NO;
   typedef Xpetra::Map<int,int,NO>                                    Map;
   typedef Xpetra::Matrix<double,int,int,NO>                          Matrix;
   typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;
