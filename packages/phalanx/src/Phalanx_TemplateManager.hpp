@@ -55,8 +55,7 @@
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "Sacado_mpl_for_each.hpp"
-
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 #include "Phalanx_config.hpp"
 
@@ -129,7 +128,7 @@ namespace PHX {
       //! Returns a new rcp for an object of type ObjectT<ScalarT>
       template<class ScalarT>
       Teuchos::RCP<BaseT> build() const {
-	typedef typename boost::mpl::apply<ObjectT,ScalarT>::type type;
+	typedef typename Sacado::mpl::apply<ObjectT,ScalarT>::type type;
 	return Teuchos::rcp( dynamic_cast<BaseT*>( new type ) );
       }
 
@@ -158,11 +157,11 @@ namespace PHX {
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RCP< typename boost::mpl::apply<ObjectT,ScalarT>::type > getAsObject();
+    Teuchos::RCP< typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject();
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RCP< const typename boost::mpl::apply<ObjectT,ScalarT>::type > getAsObject() const;
+    Teuchos::RCP< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject() const;
 
     //! Return an iterator that points to the first type object
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();

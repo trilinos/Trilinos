@@ -71,7 +71,7 @@ APPEND_SET(HEADERS
   Phalanx_TemplateIterator.hpp
   Phalanx_TemplateManager_Def.hpp
   Phalanx_TemplateManager.hpp
-  Phalanx_Traits_Base.hpp
+  Phalanx_Traits.hpp
   Phalanx_TypeStrings.hpp
   Phalanx_MDField_Utilities.hpp
   Phalanx_MDField_Utilities_Def.hpp

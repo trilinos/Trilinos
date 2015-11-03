@@ -50,8 +50,8 @@
 
 #include "Panzer_ResponseEvaluatorFactory.hpp"
 
-#include "boost/mpl/placeholders.hpp"
-using namespace boost::mpl::placeholders;
+#include "Sacado_mpl_placeholders.hpp"
+using namespace Sacado::mpl::placeholders;
 
 namespace panzer {
 

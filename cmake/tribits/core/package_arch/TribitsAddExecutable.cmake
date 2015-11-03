@@ -74,7 +74,7 @@ INCLUDE(ParseVariableArguments)
 #     [IMPORTEDLIBS <lib0> <lib1> ...]
 #     [COMM [serial] [mpi]]
 #     [LINKER_LANGUAGE (C|CXX|Fortran)]
-#     [DEFINES -D<define0> -D<define1> ...]
+#     [TARGET_DEFINES -D<define0> -D<define1> ...]
 #     [INSTALLABLE]
 #     [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
 #     )
@@ -209,11 +209,12 @@ INCLUDE(ParseVariableArguments)
 #     are passed in through ``SOURCES`` but a C++ linker is needed because
 #     there are upstream C++ libraries.
 #
-#   ``DEFINES -D<define0> -D<define1> ...``
+#   ``TARGET_DEFINES -D<define0> -D<define1> ...``
 #
-#     Add the listed defines using ``ADD_DEFINITIONS()``.  These should only
+#     Add the listed defines using
+#     ``TARGET_COMPILE_DEFINITIONS(<exeTargetName> ...)``.  These should only
 #     affect the listed sources for the built executable and not other
-#     compiles in this directory due to the FUNCTION scoping.
+#     targets.
 #
 #   ``INSTALLABLE``
 #
@@ -307,7 +308,7 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
+    "SOURCES;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;DIRECTORY;TESTONLYLIBS;IMPORTEDLIBS;DEPLIBS;COMM;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT"
     #options
     "NOEXEPREFIX;NOEXESUFFIX;ADD_DIR_TO_NAME;INSTALLABLE"
     ${ARGN}
@@ -465,6 +466,12 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
   ENDFOREACH()
 
   IF (PARSE_DEFINES)
+    MESSAGE(WARNING "WARNING: Passing extra defines through 'DEFINES' ${PARSE_DEFINES}"
+      " is deprecated.  Instead, pass them through 'TARGET_DEFINES'.  The 'DEFINES'"
+      " argument was incorrectly implemented by calling ADD_DEFINITIONS() which has"
+      " directory scope and not function scope as was documented.  This resulted in"
+      " confusing behavior.  If one wishes to set defines at the directly level,"
+      " just call ADD_DEFINITIONS() directly.")
     ADD_DEFINITIONS(${PARSE_DEFINES})
   ENDIF()
 
@@ -476,6 +483,10 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE EXE_NAME)
 
   IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
     SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
+  ENDIF()
+
+  IF (PARSE_TARGET_DEFINES)
+    TARGET_COMPILE_DEFINITIONS(${EXE_BINARY_NAME} PUBLIC ${PARSE_TARGET_DEFINES})
   ENDIF()
 
   IF(PARSE_NOEXESUFFIX AND NOT WIN32)
