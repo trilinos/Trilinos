@@ -18,6 +18,7 @@ APPEND_SET(SOURCES
   MueLu_UnitTests_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
+  CoarseMapFactory_kokkos.cpp
   SaPFactory_kokkos.cpp
 )
 

@@ -15,6 +15,7 @@ CGSolver
 CoalesceDropFactory
 CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseMapFactory
+CoarseMapFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory

@@ -53,6 +53,9 @@ typedef MueLu::CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory;
 #endif
+#ifdef MUELU_COARSEMAPFACTORY_KOKKOS_SHORT
+typedef MueLu::CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory_kokkos;
+#endif
 #ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 typedef MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseningVisualizationFactory;
 #endif
