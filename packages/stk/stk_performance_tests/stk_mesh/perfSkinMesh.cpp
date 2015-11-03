@@ -67,3 +67,13 @@ TEST_F(StkPerformance, skin_mesh)
     test_skin_mesh();
     print_stats();
 }
+
+TEST_F(StkPerformance, skin_mesh_with_file_already_decomposed)
+{
+    const std::string meshSpec = unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+    setup_mesh(meshSpec, stk::mesh::BulkData::AUTO_AURA);
+
+    test_skin_mesh();
+    print_stats();
+}
+
