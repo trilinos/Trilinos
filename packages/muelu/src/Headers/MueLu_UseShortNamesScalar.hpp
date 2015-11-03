@@ -65,6 +65,9 @@ typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Constra
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 typedef MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory;
 #endif
+#ifdef MUELU_COORDINATESTRANSFERFACTORY_KOKKOS_SHORT
+typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory_kokkos;
+#endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
 #endif
