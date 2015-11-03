@@ -9,12 +9,51 @@ TRIBITS_PACKAGE(Teko)
 #
 # B) Set up package-specific options
 #
+
+# mfh 02 Nov 2015: Teko currently wants GlobalOrdinal (GO) = int by
+# default, and only wants to use GO = long long if
+# Teko_USE_LONGLONG_GO (see below) is set.  I want to preserve this
+# behavior, but allow Tpetra to disable GO = int.
+
+IF (DEFINED Tpetra_INST_INT_INT)
+  IF (Tpetra_INST_INT_INT)
+    SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT ON)
+  ELSE ()
+    SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
+  ENDIF ()
+ELSE () # NOT DEFINED Tpetra_INST_INT_INT
+  IF (DEFINED Tpetra_INST_INT_LONG_LONG)
+    IF (Tpetra_INST_INT_LONG_LONG)
+      SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT ON)
+    ELSE ()
+      # FIXME (mfh 02 Nov 2015) If Tpetra enables neither
+      # GlobalOrdinal = long long nor GlobalOrdinal = int,
+      # I can't preserve Teko's current behavior.  The right
+      # thing for Teko to do would be to have logic to use
+      # any enabled Tpetra GlobalOrdinal type.
+      SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
+    ENDIF ()
+  ENDIF ()
+ENDIF () # DEFINED Tpetra_INST_INT_INT
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_USE_LONGLONG_GO
   HAVE_${PACKAGE_NAME}_USE_LONGLONG_GO
   "Use long long for global ordinal"
-  OFF
+  ${${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT}
   )
+
+ASSERT_DEFINED(${PACKAGE_NAME}_USE_LONGLONG_GO)
+IF (${PACKAGE_NAME}_USE_LONGLONG_GO)
+  IF (DEFINED Tpetra_INST_INT_LONG_LONG)
+    IF (NOT Tpetra_INST_INT_LONG_LONG)
+      MESSAGE(FATAL_ERROR "Teko: If GO=long long is disabled in Tpetra, you may not set ${PACKAGE_NAME}_USE_LONGLONG_GO = ON.  First, set Tpetra_INST_INT_LONG_LONG=ON to enable GO=long long in Tpetra.")
+    ENDIF ()
+  ELSE () # NOT DEFINED Tpetra_INST_INT_LONG_LONG
+    MESSAGE(FATAL_ERROR "Teko: If GO=long long is disabled in Tpetra, you may not set ${PACKAGE_NAME}_USE_LONGLONG_GO = ON.  First, set Tpetra_INST_INT_LONG_LONG=ON to enable GO=long long in Tpetra.")      
+  ENDIF ()
+ENDIF ()
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Ifpack2_Trilinos
