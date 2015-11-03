@@ -122,7 +122,7 @@ namespace Galeri {
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
     template <> struct privateCreateMapEpetra<int, int> {
       static RCP< ::Xpetra::Map<int, int, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
-        return Galeri::Xpetra::CreateMap<int, int, ::Xpetra::EpetraMapT<int> >(mapType, comm, list);
+        return Galeri::Xpetra::CreateMap<int, int, ::Xpetra::EpetraMapT<int, KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
       }
     };
 #endif
@@ -130,7 +130,7 @@ namespace Galeri {
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
     template <> struct privateCreateMapEpetra<int, long long> {
       static RCP< ::Xpetra::Map<int, long long, KokkosClassic::DefaultNode::DefaultNodeType> > CreateMap(const std::string & mapType, const Teuchos::RCP<const Teuchos::Comm<int> > & comm, Teuchos::ParameterList & list) {
-        return Galeri::Xpetra::CreateMap<int, long long, ::Xpetra::EpetraMapT<long long> >(mapType, comm, list);
+        return Galeri::Xpetra::CreateMap<int, long long, ::Xpetra::EpetraMapT<long long, KokkosClassic::DefaultNode::DefaultNodeType> >(mapType, comm, list);
       }
     };
 #endif
@@ -146,8 +146,9 @@ namespace Galeri {
         return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-      if (lib == ::Xpetra::UseEpetra)
-        return privateCreateMapEpetra<LocalOrdinal, GlobalOrdinal>::CreateMap(mapType, comm, list);
+      if (lib == ::Xpetra::UseEpetra) {
+        return CreateMap<LocalOrdinal, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
+      }
 #endif
       XPETRA_FACTORY_END;
     }
@@ -166,7 +167,7 @@ namespace Galeri {
 #endif
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == ::Xpetra::UseEpetra)
-        return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal> >(mapType, comm, list);
+        return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
       XPETRA_FACTORY_END;
     }
@@ -186,7 +187,7 @@ namespace Galeri {
 #endif
 #ifdef HAVE_XPETRA_EPETRA
       if (lib == ::Xpetra::UseEpetra)
-        return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal> >(mapType, comm, list);
+        return CreateMap<int, GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> >(mapType, comm, list);
 #endif
       XPETRA_FACTORY_END;
     }

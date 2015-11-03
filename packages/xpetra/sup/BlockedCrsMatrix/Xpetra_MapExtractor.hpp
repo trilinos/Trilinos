@@ -65,10 +65,10 @@
 
 namespace Xpetra {
 
-  template <class Scalar = MultiVector<>::scalar_type,
-            class LocalOrdinal = Map<>::local_ordinal_type,
-            class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
-            class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar /*= MultiVector<>::scalar_type*/,
+            class LocalOrdinal /*= Map<>::local_ordinal_type*/,
+            class GlobalOrdinal /*= typename Map<LocalOrdinal>::global_ordinal_type*/,
+            class Node /*= typename Map<LocalOrdinal, GlobalOrdinal>::node_type*/>
   class MapExtractor : public Teuchos::Describable {
   public:
     typedef Scalar scalar_type;
@@ -89,7 +89,7 @@ namespace Xpetra {
       importers_.resize(maps_.size());
       for (unsigned i = 0; i < maps_.size(); ++i)
         if (maps[i] != null)
-          importers_[i] = ImportFactory::Build(fullmap_, maps[i]);
+          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps[i]);
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
                                  "logic error. full map and sub maps are inconsistently distributed over the processors.");
     }

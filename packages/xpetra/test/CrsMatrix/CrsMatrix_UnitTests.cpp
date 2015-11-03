@@ -883,7 +883,7 @@ namespace {
 
     A->apply(*v, *r, Teuchos::NO_TRANS, 1.0, 0.0);
 
-    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > Acopy(new Xpetra::EpetraCrsMatrix(*(Teuchos::rcp_static_cast<Xpetra::EpetraCrsMatrix>(A))));
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > Acopy(new Xpetra::EpetraCrsMatrixT<GO,Node>(*(Teuchos::rcp_static_cast<Xpetra::EpetraCrsMatrixT<GO,Node> >(A))));
     A = Teuchos::null;
 
     Acopy->apply(*v, *rcopy, Teuchos::NO_TRANS, 1.0, 0.0);

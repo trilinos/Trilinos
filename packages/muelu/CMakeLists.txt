@@ -188,6 +188,30 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "<double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "<complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
 
+  # If Tpetra is enabled, determine which Nodes are used
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_PTHREAD ${Tpetra_INST_PTHREAD})
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
+  ELSE ()
+    # If Epetra only is active, only activate SerialNode by default
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
+  ENDIF ()
+  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
+  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_PTHREAD      : ${HAVE_${PACKAGE_NAME_UC}_PTHREAD}")
+  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
+  MESSAGE(STATUS "HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
+ELSE()
+  # ETI is turned off
+
+  # If Epetra only is enabled, ETI is off by default. We have to make sure that
+  # the HAVE_MUELU_SERIAL variable is set such that the IfpackSmoother and other
+  # purely Epetra-related routines are enabled properly
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+    # If Epetra only is active, only activate SerialNode by default
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
+  ENDIF()
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:

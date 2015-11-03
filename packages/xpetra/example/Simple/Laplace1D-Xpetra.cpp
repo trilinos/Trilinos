@@ -62,6 +62,7 @@ typedef int    GlobalOrdinal;
 #else
 typedef long long GlobalOrdinal;
 #endif
+typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
 
 int main(int argc, char *argv[]) {
 
@@ -78,12 +79,12 @@ int main(int argc, char *argv[]) {
     GlobalOrdinal numGlobalElements = 256; // problem size
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
 
-    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal>::createUniformContigMap(lib, numGlobalElements, comm);
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::createUniformContigMap(lib, numGlobalElements, comm);
 
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
-    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 3);
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);
 
     for (size_t i = 0; i < numMyElements; i++) {
       if (myGlobalElements[i] == 0) {

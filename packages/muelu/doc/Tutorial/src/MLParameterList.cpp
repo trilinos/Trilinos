@@ -58,9 +58,8 @@
 #include <AztecOO.h>
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_EpetraOperator.hpp>
-#endif
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
@@ -70,11 +69,18 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
+// prescribe types
+// run plain Epetra
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+#endif
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;
@@ -245,7 +251,7 @@ int main(int argc, char *argv[]) {
       { // TODO: simplify this
         RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
         RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-        RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+        RCP<EpetraCrsMatrixT<int,Node> >   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrixT<int,Node> >(xCrsMtx, true);
         eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
       }
 
@@ -291,17 +297,17 @@ int main(int argc, char *argv[]) {
 
     // Multigrid Hierarchy
     // TUTORIALSPLIT ===========================================================
-    RCP<CrsMatrixWrap>    crsOp         = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-    RCP<CrsMatrix>        crsMtx        = crsOp->getCrsMatrix();
-    RCP<EpetraCrsMatrix>  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsMtx, true);
+    RCP<CrsMatrixWrap>                crsOp         = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+    RCP<CrsMatrix>                    crsMtx        = crsOp->getCrsMatrix();
+    RCP<EpetraCrsMatrixT<int,Node> >  epetraCrsMtx  = Teuchos::rcp_dynamic_cast<EpetraCrsMatrixT<int,Node> >(crsMtx, true);
     RCP<const Epetra_CrsMatrix> epetra_CrsMtx = epetraCrsMtx->getEpetra_CrsMatrix();
 
     RCP<Epetra_CrsMatrix> eA;
     {
       // TUTORIALSPLIT ===========================================================
-      RCP<CrsMatrixWrap>     xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
-      RCP<CrsMatrix>         xCrsMtx = xCrsOp->getCrsMatrix();
-      RCP<EpetraCrsMatrix>   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(xCrsMtx, true);
+      RCP<CrsMatrixWrap>                 xCrsOp  = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true);
+      RCP<CrsMatrix>                     xCrsMtx = xCrsOp->getCrsMatrix();
+      RCP<EpetraCrsMatrixT<int,Node> >   eCrsMtx = Teuchos::rcp_dynamic_cast<EpetraCrsMatrixT<int,Node> >(xCrsMtx, true);
       eA = eCrsMtx->getEpetra_CrsMatrixNonConst();
       // TUTORIALSPLIT ===========================================================
     }
@@ -352,7 +358,6 @@ int main(int argc, char *argv[]) {
 
 
 #endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
-
+#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
   return EXIT_SUCCESS;
 }
-

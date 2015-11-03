@@ -86,6 +86,8 @@
 // These files must be included last
 #include <MueLu_UseDefaultTypes.hpp>
 
+
+#ifdef HAVE_MUELU_BELOS
 namespace Belos {
 
   template<class SC, class MV, class OP>
@@ -123,6 +125,7 @@ namespace Belos {
     MagnitudeType curNorm_;
   };
 }
+#endif
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>

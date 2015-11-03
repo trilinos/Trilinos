@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file Zoltan2_XpetraMultiVectorAdapter.hpp
-    \brief Defines the XpetraMultiVectorAdapter 
+    \brief Defines the XpetraMultiVectorAdapter
 */
 
 #ifndef _ZOLTAN2_XPETRAMULTIVECTORADAPTER_HPP_
@@ -64,7 +64,7 @@ namespace Zoltan2 {
 
 /*!  \brief An adapter for Xpetra::MultiVector.
 
-    The template parameter is the user's input object: 
+    The template parameter is the user's input object:
     \li \c Epetra_MultiVector
     \li \c Tpetra::MultiVector
     \li \c Xpetra::MultiVector
@@ -102,7 +102,7 @@ public:
    */
   ~XpetraMultiVectorAdapter() { }
 
-  /*! \brief Constructor   
+  /*! \brief Constructor
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
    *  \param weights  a list of pointers to arrays of weights.
@@ -135,7 +135,7 @@ public:
   size_t getLocalNumIDs() const { return vector_->getLocalLength();}
 
   void getIDsView(const gno_t *&ids) const
-  { 
+  {
     ids = map_->getNodeElementList().getRawPtr();
   }
 
@@ -185,13 +185,13 @@ template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
-      invector_(invector), vector_(), map_(), 
+      invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
 {
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  RCP<x_mvector_t> tmp = 
+  RCP<x_mvector_t> tmp =
            XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
   vector_ = rcp_const_cast<const x_mvector_t>(tmp);
   map_ = vector_->getMap();
@@ -204,7 +204,7 @@ template <typename User>
     for (int w=0; w < numWeights_; w++){
       if (weightStrides.size())
         stride = weightStrides[w];
-      ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*length, false); 
+      ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*length, false);
       weights_[w] = input_t(wgtV, stride);
     }
   }
@@ -215,11 +215,11 @@ template <typename User>
 template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector):
-      invector_(invector), vector_(), map_(), 
+      invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
       numWeights_(0), weights_()
 {
-  RCP<x_mvector_t> tmp = 
+  RCP<x_mvector_t> tmp =
            XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
   vector_ = rcp_const_cast<const x_mvector_t>(tmp);
   map_ = vector_->getMap();
@@ -235,9 +235,9 @@ template <typename User>
   stride = 1;
   elements = NULL;
   if (map_->lib() == Xpetra::UseTpetra){
-    const xt_mvector_t *tvector = 
+    const xt_mvector_t *tvector =
       dynamic_cast<const xt_mvector_t *>(vector_.get());
-     
+
     vecsize = tvector->getLocalLength();
     if (vecsize > 0){
       ArrayRCP<const scalar_t> data = tvector->getData(idx);
@@ -246,10 +246,10 @@ template <typename User>
   }
   else if (map_->lib() == Xpetra::UseEpetra){
 #ifdef HAVE_ZOLTAN2_EPETRA
-    typedef Xpetra::EpetraMultiVector xe_mvector_t;
-    const xe_mvector_t *evector = 
+    typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
+    const xe_mvector_t *evector =
       dynamic_cast<const xe_mvector_t *>(vector_.get());
-      
+
     vecsize = evector->getLocalLength();
     if (vecsize > 0){
       ArrayRCP<const double> data = evector->getData(idx);
@@ -272,7 +272,7 @@ template <typename User>
 template <typename User>
   template <typename Adapter>
     void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
-      const User &in, User *&out, 
+      const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
 {
   // Get an import list (rows to be received)
@@ -291,12 +291,12 @@ template <typename User>
   out = outPtr.get();
   outPtr.release();
 }
-  
+
 ////////////////////////////////////////////////////////////////////////////
 template <typename User>
   template <typename Adapter>
     void XpetraMultiVectorAdapter<User>::applyPartitioningSolution(
-      const User &in, RCP<User> &out, 
+      const User &in, RCP<User> &out,
       const PartitioningSolution<Adapter> &solution) const
 {
   // Get an import list (rows to be received)
@@ -315,5 +315,5 @@ template <typename User>
 }
 
 }  //namespace Zoltan2
-  
+
 #endif

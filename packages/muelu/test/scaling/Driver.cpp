@@ -387,10 +387,12 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_TPETRA
 
           } else {
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
             RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
             RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
-            H = eH->GetHierarchy();
+            RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > myH = eH->GetHierarchy();
+            H = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC, LO, GO, NO> >(myH);
+            TEUCHOS_TEST_FOR_EXCEPTION(H == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: ScalingDriver: Dynamic cast to Hierarchy failed. Epetra needs SC=double, LO=GO=int and Node=Serial.");
 #endif
           }
         }

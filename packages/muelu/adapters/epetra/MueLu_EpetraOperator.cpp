@@ -51,18 +51,20 @@
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_Level.hpp"
 
+#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+
 namespace MueLu {
 
 int EpetraOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   try {
     // There is no rcpFromRef(const T&), so we need to do const_cast
-    const Xpetra::EpetraMultiVector eX(rcpFromRef(const_cast<Epetra_MultiVector&>(X)));
-    Xpetra::EpetraMultiVector       eY(rcpFromRef(Y));
+    const Xpetra::EpetraMultiVectorT<GO,NO> eX(rcpFromRef(const_cast<Epetra_MultiVector&>(X)));
+    Xpetra::EpetraMultiVectorT<GO,NO>       eY(rcpFromRef(Y));
 
     // Generally, we assume two different vectors, but AztecOO uses a single vector
     if (X.Values() == Y.Values()) {
       // X and Y point to the same memory, use an additional vector
-      RCP<Xpetra::EpetraMultiVector> tmpY = Teuchos::rcp(new Xpetra::EpetraMultiVector(eY.getMap(), eY.getNumVectors()));
+      RCP<Xpetra::EpetraMultiVectorT<GO,NO> > tmpY = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(eY.getMap(), eY.getNumVectors()));
 
       // InitialGuessIsZero in MueLu::Hierarchy.Iterate() does not zero out components, it
       // only assumes that user provided an already zeroed out vector
@@ -100,7 +102,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
   RCP<Matrix> A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
   //TODO: This code is not pretty
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null) {
     RCP<const Xpetra::EpetraCrsMatrix> tmp_ECrsMtx = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(epbA->getMatrix(0,0));
     if (tmp_ECrsMtx == Teuchos::null)
@@ -122,7 +124,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
   RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getDomainMap());
 
@@ -138,7 +140,7 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
 const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
   RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Hierarchy_->GetLevel(0)->Get<RCP<Matrix> >("A");
 
-  RCP<Xpetra::BlockedCrsMatrix<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<double, int, int> >(A);
+  RCP<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<SC, LO, GO, NO> >(A);
   if (epbA != Teuchos::null)
     return Xpetra::toEpetra(epbA->getRangeMap());
 
@@ -152,3 +154,5 @@ const Epetra_Map & EpetraOperator::OperatorRangeMap() const {
 }
 
 } // namespace
+
+#endif // #if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)

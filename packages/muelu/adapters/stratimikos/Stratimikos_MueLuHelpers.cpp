@@ -66,9 +66,16 @@ namespace Stratimikos {
                                "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because it is already included in builder!");
 
     typedef Thyra::PreconditionerFactoryBase<double>                  Base;
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
     typedef Thyra::MueLuPreconditionerFactory<double, int, int> Impl;
-
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+#elif defined(HAVE_MUELU_EPETRA) && not defined(HAVE_MUELU_TPETRA)
+    typedef Thyra::MueLuPreconditionerFactory<double, int, int> Impl;
+    builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because MueLu is compiled without support for GO=int.\n Add support for GO=int in Tpetra or compile only for Epetra.");
+#endif
   }
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)

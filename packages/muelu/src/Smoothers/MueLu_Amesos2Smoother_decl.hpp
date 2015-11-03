@@ -63,7 +63,7 @@ namespace MueLu {
 
   /*!
     @class Amesos2Smoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Amesos2 direct solvers.
 
     This class creates an Amesos2 preconditioner factory.  The factory is capable of generating direct solvers
@@ -144,6 +144,32 @@ namespace MueLu {
     RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > prec_;
 
   }; // class Amesos2Smoother
+
+#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+  /*!
+    @class Amesos2Smoother
+    @ingroup MueLuSmootherClasses
+    @brief Class that encapsulates Amesos2 direct solvers.
+    */
+
+  // TAW: Oct 16 2015: we need the specialization of Amesos2Smoother since it is a object living in the Tpetra stack only.
+  //                   It creates some Amesos2 objects which are templated on GO and need GO instantiations in Tpetra.
+  //                   If Tpetra is not compiled with GO=int enabled we need dummy implementations here.
+  template <class Scalar, class Node>
+  class Amesos2Smoother<Scalar, int, int, Node> : public SmootherPrototype<Scalar,int,int,Node>
+  {
+    typedef Xpetra::MultiVector<Scalar, int, int, Node> MultiVector;
+  public:
+    Amesos2Smoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList()) {MUELU_TPETRA_ETI_EXCEPTION("Amesos2Smoother<int,int>","Amesos2Smoother<int,int>","int"); };
+    virtual ~Amesos2Smoother() {};
+    void DeclareInput(Level& currentLevel) const {};
+    void Setup(Level& currentLevel) {};
+    void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {};
+    RCP<SmootherPrototype<Scalar,int,int,Node> > Copy() const { return Teuchos::null; };
+    std::string description() const { return std::string(""); };
+    void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const {};
+  }; // class Amesos2Smoother (specialization on LO=GO=int)
+#endif // #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
 
 } // namespace MueLu
 

@@ -110,6 +110,25 @@ namespace MueLu {
 
   };  //class Zoltan2Interface
 
+#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+  /*!
+    @class Zoltan2Interface
+    @brief Interface to Zoltan2 library.
+    */
+
+  // TAW: Oct 16 2015: we need the specialization of Zoltan2Interface since it is a object living in the Tpetra stack only.
+  //                   If Tpetra is not compiled with GO=int enabled we need dummy implementations here.
+  template <class Scalar, class Node>
+  class Zoltan2Interface<Scalar,int,int,Node> : public SingleLevelFactoryBase {
+  public:
+    Zoltan2Interface() {};
+    virtual ~Zoltan2Interface() { }
+    RCP<const ParameterList> GetValidParameterList() const { return Teuchos::null; };
+    void DeclareInput(Level & level) const {};
+    void Build(Level &level) const {};
+  };  //class Zoltan2Interface (specialization for LO=GO=int)
+#endif
+
 } //namespace MueLu
 
 #define MUELU_ZOLTAN2INTERFACE_SHORT
