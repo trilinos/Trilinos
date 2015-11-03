@@ -6829,6 +6829,7 @@ TEST(ElementGraph, heterogeneous_mesh)
 
         stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+        unlink(fileName.c_str());
         EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
@@ -6912,6 +6913,7 @@ TEST(ElementGraph, degenerate_mesh)
         stk::io::put_io_part_attribute(skin);
         stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+        unlink(fileName.c_str());
         EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
@@ -6995,6 +6997,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
         stk::io::put_io_part_attribute(skin);
         stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+        unlink(fileName.c_str());
         EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);

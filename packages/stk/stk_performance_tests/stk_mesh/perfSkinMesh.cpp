@@ -2,6 +2,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
+#include <stk_mesh/base/Comm.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -42,7 +43,14 @@ protected:
     {
         double maxTime = stk::get_max_time_across_procs(duration, get_comm());
         double maxHwmInMB = stk::get_max_hwm_across_procs(get_comm()) / (1024.0 * 1024.0);
-        stk::print_stats_for_performance_compare(std::cerr, maxTime, maxHwmInMB, numSkinFaces, get_comm());
+        stk::print_stats_for_performance_compare(std::cerr, maxTime, maxHwmInMB, get_num_global_faces(), get_comm());
+    }
+
+    size_t get_num_global_faces()
+    {
+        std::vector<size_t> meshCounts;
+        stk::mesh::comm_mesh_counts(get_bulk(), meshCounts);
+        return meshCounts[stk::topology::FACE_RANK];
     }
 
     stk::mesh::Part &skinPart;
@@ -53,7 +61,8 @@ protected:
 TEST_F(StkPerformance, skin_mesh)
 {
     const std::string meshSpec = unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
-    setup_mesh(meshSpec, stk::mesh::BulkData::AUTO_AURA);
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "rcb");
 
     test_skin_mesh();
     print_stats();
