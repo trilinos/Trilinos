@@ -233,6 +233,7 @@ void AlltoAllv(const Comm<int> &comm,
 
 /* \brief Specialization for unsigned long long
  */
+#ifdef HAVE_TPETRA_INT_LONG_LONG
 template <>
 void AlltoAllv(const Comm<int> &comm,
               const Environment &env,
@@ -240,6 +241,7 @@ void AlltoAllv(const Comm<int> &comm,
               const ArrayView<const int> &sendCount,
               ArrayRCP<unsigned long long> &recvBuf,
               const ArrayView<int> &recvCount);
+#endif
 
 /* \brief Specialization for unsigned short
  */
