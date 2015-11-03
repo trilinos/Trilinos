@@ -1,0 +1,142 @@
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_unit_test_utils/unittestMeshUtils.hpp>
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/ElemElemGraph.hpp>
+#include <unit_tests/BulkDataTester.hpp>
+#include "FaceCreatorFixture.hpp"
+
+namespace
+{
+
+class FaceCreatorVaryingPerumutations : public FaceCreatorFixture
+{
+protected:
+
+    void run_test(const std::vector<std::vector<int>> input_permutations)
+    {
+        set_permutations_for_both_procs(input_permutations);
+        setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+        test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary();
+    }
+
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        bulkData = new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(metaData, communicator, auraOption);
+    }
+
+    void set_permutations_for_both_procs(const std::vector<std::vector<int>> input_permutations)
+    {
+        m_permutations_per_proc = input_permutations;
+    }
+
+    virtual unsigned get_permuted_index(unsigned i)
+    {
+        std::vector<std::vector<unsigned> > index_for_proc = {
+                {0, 1, 2, 3},
+                {3, 2, 1, 0}
+        };
+        return index_for_proc[get_bulk().parallel_rank()][i];
+    }
+private:
+    std::vector<std::vector<int> > m_permutations_per_proc;
+};
+
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation0)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {0, 1, 2, 3},
+                {0, 3, 2, 1}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation1)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {1, 2, 3, 0},
+                {3, 2, 1, 0}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation2)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {2, 3, 0, 1},
+                {2, 1, 0, 3}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation3)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {3, 0, 1, 2},
+                {1, 0, 3, 2}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation4)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {0, 3, 2, 1},
+                {0, 1, 2, 3}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation5)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {3, 2, 1, 0},
+                {1, 2, 3, 0}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation6)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {2, 1, 0, 3},
+                {2, 3, 0, 1}
+        };
+        run_test(permutation);
+    }
+}
+
+TEST_F(FaceCreatorVaryingPerumutations, twoHexesTwoProcsCreateTwoFacesPermutation7)
+{
+    if(stk::parallel_machine_size(get_comm())==2)
+    {
+        std::vector<std::vector<int>> permutation = {
+                {1, 0, 3, 2},
+                {3, 0, 1, 2}
+        };
+        run_test(permutation);
+    }
+}
+
+}
