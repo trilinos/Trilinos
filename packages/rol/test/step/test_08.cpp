@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     using ROL::InteriorPoint::CompositeConstraint;  
 
     // Interior point constraint
-    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29) );
+    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29, *vc) );
 
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 
