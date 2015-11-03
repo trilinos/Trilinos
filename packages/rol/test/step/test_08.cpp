@@ -126,16 +126,19 @@ int main(int argc, char *argv[]) {
     // Barrier objective
     RCP<ROL::Objective<RealT> > barrier = rcp( new ROL::LogBarrierObjective<RealT> );
 
+    using ROL::InteriorPoint::PenalizedObjective;
+
     // Interior Point objective
     RCP<ROL::Objective<RealT> > ipobj = 
-      rcp( new ROL::InteriorPointObjective<RealT>(obj_hs29,barrier,1.0) );
+      rcp( new PenalizedObjective<RealT>(obj_hs29,barrier,*x,1.0) );
 
     RCP<ROL::EqualityConstraint<RealT> > incon_hs29 = 
       rcp( new ROL::ZOO::InequalityConstraint_HS29<RealT> );
 
+    using ROL::InteriorPoint::CompositeConstraint;  
+
     // Interior point constraint
-    RCP<ROL::EqualityConstraint<RealT> > ipcon = 
-      rcp( new ROL::InteriorPointEqualityConstraint<RealT>(incon_hs29) );
+    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29) );
 
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 

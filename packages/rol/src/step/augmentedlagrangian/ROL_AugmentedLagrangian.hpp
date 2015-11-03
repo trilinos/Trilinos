@@ -162,7 +162,7 @@ public:
   Real getObjectiveValue(const Vector<Real> &x) {
     Real tol = std::sqrt(ROL_EPSILON);
     if ( !isValueComputed_ ) {
-      // Evaluate constraint
+      // Evaluate objective function value
       fval_ = obj_->value(x,tol);
       nfval_++;
       isValueComputed_ = true;
