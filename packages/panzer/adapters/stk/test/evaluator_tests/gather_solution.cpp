@@ -110,8 +110,23 @@ namespace panzer {
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
   void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb);
   Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
+  void testGatherScatter(const bool enable_tangents, Teuchos::FancyOStream& out, bool& success);
 
-  TEUCHOS_UNIT_TEST(epetra_assembly, gather_solution)
+  // Test without tangent fields in gather evaluator
+  TEUCHOS_UNIT_TEST(epetra_assembly, gather_solution_no_tangents)
+  {
+    testGatherScatter(false,out,success);
+  }
+
+  // Test with tangent fields in gather evaluator
+  TEUCHOS_UNIT_TEST(epetra_assembly, gather_solution_tangents)
+  {
+    testGatherScatter(true,out,success);
+  }
+
+  // enable_tangents determines whether tangent fields dx/dp are added to gather evaluator.
+  // These are used when computing df/dx*dx/dp with the tangent evaluation type
+  void testGatherScatter(const bool enable_tangents, Teuchos::FancyOStream& out, bool& success)
   {
     PHX::KokkosDeviceSession session;
 
@@ -128,6 +143,7 @@ namespace panzer {
     const std::string fieldName1_q1 = "U";
     const std::string fieldName2_q1 = "V";
     const std::string fieldName_qedge1 = "B";
+    const int num_tangent = enable_tangents ? 5 : 0;
 
     Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
 
@@ -180,6 +196,22 @@ namespace panzer {
     Teuchos::RCP<Thyra::VectorBase<double> > x_vec = e_loc->get_x_th();
     Thyra::assign(x_vec.ptr(),123.0+myRank);
 
+    // Setup tangent data containers
+    std::vector< Teuchos::RCP<LinearObjContainer> > tan_locs;
+    if (enable_tangents) {
+      for (int i=0; i<num_tangent; ++i) {
+        Teuchos::RCP<LinearObjContainer> tan_loc = e_lof->buildGhostedLinearObjContainer();
+        e_lof->initializeGhostedContainer(LinearObjContainer::X,*tan_loc);
+
+        Teuchos::RCP<EpetraLinearObjContainer> e_tan_loc
+          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(tan_loc);
+        Teuchos::RCP<Thyra::VectorBase<double> > tan_vec = e_tan_loc->get_x_th();
+        Thyra::assign(tan_vec.ptr(),0.123+myRank+i);
+
+        tan_locs.push_back(tan_loc);
+      }
+    }
+
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
  
@@ -188,6 +220,13 @@ namespace panzer {
     std::vector<PHX::index_size_type> derivative_dimensions;
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+    std::vector<PHX::index_size_type> tan_derivative_dimensions;
+    if (enable_tangents)
+      tan_derivative_dimensions.push_back(num_tangent);
+    else
+      tan_derivative_dimensions.push_back(0);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(tan_derivative_dimensions);
 
     Teuchos::RCP<PHX::FieldTag> evalField_q1, evalField_qedge1;
     {
@@ -266,13 +305,150 @@ namespace panzer {
        fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
     }
 
+    {
+       using Teuchos::RCP;
+       using Teuchos::rcp;
+       RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
+       names->push_back(fieldName1_q1);
+       names->push_back(fieldName2_q1);
+
+       Teuchos::ParameterList pl;
+       pl.set("Basis", basis_q1);
+       pl.set("DOF Names",names);
+       pl.set("Indexer Names",names);
+
+       if (enable_tangents) {
+         RCP<std::vector< std::vector<std::string> > > tangent_names =
+           rcp(new std::vector< std::vector<std::string> >(2));
+         for (int i=0; i<num_tangent; ++i) {
+           std::stringstream ss1, ss2;
+           ss1 << fieldName1_q1 << " Tangent " << i;
+           ss2 << fieldName2_q1 << " Tangent " << i;
+           (*tangent_names)[0].push_back(ss1.str());
+           (*tangent_names)[1].push_back(ss2.str());
+         }
+         pl.set("Tangent Names", tangent_names);
+       }
+
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
+
+       TEST_EQUALITY(evaluator->evaluatedFields().size(),2);
+
+       fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+       fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+    }
+    {
+       using Teuchos::RCP;
+       using Teuchos::rcp;
+       RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
+       names->push_back(fieldName_qedge1);
+
+       Teuchos::ParameterList pl; 
+       pl.set("Basis", basis_qedge1);
+       pl.set("DOF Names",names);
+       pl.set("Indexer Names",names);
+
+       if (enable_tangents) {
+         RCP<std::vector< std::vector<std::string> > > tangent_names =
+           rcp(new std::vector< std::vector<std::string> >(1));
+         for (int i=0; i<num_tangent; ++i) {
+           std::stringstream ss;
+           ss << fieldName_qedge1 << " Tangent " << i;
+           (*tangent_names)[0].push_back(ss.str());
+         }
+         pl.set("Tangent Names", tangent_names);
+       }
+
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Tangent>(pl);
+
+       TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
+
+       fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+       fm.requireField<panzer::Traits::Tangent>(*evaluator->evaluatedFields()[0]);
+    }
+
+    if (enable_tangents) {
+      for (int i=0; i<num_tangent; ++i) {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
+        RCP<std::vector<std::string> > tangent_names = rcp(new std::vector<std::string>);
+        names->push_back(fieldName1_q1);
+        names->push_back(fieldName2_q1);
+        {
+          std::stringstream ss1, ss2;
+          ss1 << fieldName1_q1 << " Tangent " << i;
+          ss2 << fieldName2_q1 << " Tangent " << i;
+          tangent_names->push_back(ss1.str());
+          tangent_names->push_back(ss2.str());
+        }
+
+        Teuchos::ParameterList pl;
+        pl.set("Basis", basis_q1);
+        pl.set("DOF Names",tangent_names);
+        pl.set("Indexer Names",names);
+
+        {
+          std::stringstream ss;
+          ss << "Tangent Container " << i;
+          pl.set("Global Data Key", ss.str());
+        }
+
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator =
+          lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
+
+        TEST_EQUALITY(evaluator->evaluatedFields().size(),2);
+
+        fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+      for (int i=0; i<num_tangent; ++i) {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        RCP<std::vector<std::string> > names = rcp(new std::vector<std::string>);
+        RCP<std::vector<std::string> > tangent_names = rcp(new std::vector<std::string>);
+        names->push_back(fieldName_qedge1);
+        {
+          std::stringstream ss;
+          ss << fieldName_qedge1 << " Tangent " << i;
+          tangent_names->push_back(ss.str());
+        }
+
+        Teuchos::ParameterList pl;
+        pl.set("Basis", basis_qedge1);
+        pl.set("DOF Names",tangent_names);
+        pl.set("Indexer Names",names);
+
+        {
+          std::stringstream ss;
+          ss << "Tangent Container " << i;
+          pl.set("Global Data Key", ss.str());
+        }
+
+        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator =
+          lof->buildGatherTangent<panzer::Traits::Tangent>(pl);
+
+        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
+
+        fm.registerEvaluator<panzer::Traits::Tangent>(evaluator);
+      }
+    }
+
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
     panzer::Traits::PreEvalData ped;
     ped.gedc.addDataObject("Solution Gather Container",loc);
+    if (enable_tangents) {
+      for (int i=0; i<num_tangent; ++i) {
+        std::stringstream ss;
+        ss << "Tangent Container " << i;
+        ped.gedc.addDataObject(ss.str(),tan_locs[i]);
+      }
+    }
+
     fm.preEvaluate<panzer::Traits::Residual>(ped);
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
+    fm.preEvaluate<panzer::Traits::Tangent>(ped);
 
     // run tests
     /////////////////////////////////////////////////////////////
@@ -285,6 +461,7 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
+    fm.evaluateFields<panzer::Traits::Tangent>(workset);
 
     // test Residual fields
     {
@@ -359,6 +536,69 @@ namespace panzer {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
           TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
           TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),12);
+        }
+       }
+    }
+
+    // test Tangent fields
+    {
+       PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
+          fieldData1_q1(fieldName1_q1,basis_q1->functional);
+       PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
+          fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
+
+       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData2_q1);
+
+       for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) {
+        for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
+          if (enable_tangents) {
+            TEST_EQUALITY(fieldData1_q1(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),num_tangent);
+            for (int i=0; i<num_tangent; ++i)
+              TEST_EQUALITY(fieldData1_q1(cell,pt).dx(i),0.123+myRank+i);
+          }
+          else {
+            TEST_EQUALITY(fieldData1_q1(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),0);
+          }
+        }
+       }
+       for(unsigned int cell=0;cell<fieldData2_q1.dimension_0();++cell) {
+        for(unsigned int pt=0;pt<fieldData2_q1.dimension_1();pt++) {
+          if (enable_tangents) {
+            TEST_EQUALITY(fieldData2_q1(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),num_tangent);
+            for (int i=0; i<num_tangent; ++i) {
+              TEST_EQUALITY(fieldData1_q1(cell,pt).dx(i),0.123+myRank+i);
+              TEST_EQUALITY(fieldData2_q1(cell,pt).dx(i),0.123+myRank+i);
+            }
+          }
+          else {
+            TEST_EQUALITY(fieldData2_q1(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),0);
+          }
+        }
+       }
+    }
+    {
+       PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
+          fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
+
+       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData_qedge1);
+
+       for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
+        for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
+          if (enable_tangents) {
+            TEST_EQUALITY(fieldData_qedge1(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),num_tangent);
+            for (int i=0; i<num_tangent; ++i)
+              TEST_EQUALITY(fieldData_qedge1(cell,pt).dx(i),0.123+myRank+i);
+          }
+          else {
+            TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),0);
+          }
         }
        }
     }
