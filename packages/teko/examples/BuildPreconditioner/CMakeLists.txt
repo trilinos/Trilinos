@@ -3,18 +3,23 @@ ADD_SUBDIRECTORY(step1)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_EXECUTABLE(
-   BuildPreconditioner_Driver_Example
-   SOURCES 
-      example-driver.cpp
-   COMM mpi
-   )
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack2)
+ASSERT_DEFINED(Tpetra_INST_DOUBLE)
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (Tpetra_INST_DOUBLE)
   TRIBITS_ADD_EXECUTABLE(
-     BuildPreconditioner_Driver_Example-Belos
-     SOURCES 
-        example-driver-belos.cpp
+    BuildPreconditioner_Driver_Example
+    SOURCES 
+      example-driver.cpp
      COMM mpi
-     )
-ENDIF()
+  )
+
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
+    TRIBITS_ADD_EXECUTABLE(
+      BuildPreconditioner_Driver_Example-Belos
+      SOURCES 
+        example-driver-belos.cpp
+       COMM mpi
+    )
+  ENDIF()
+ENDIF ()
