@@ -73,14 +73,44 @@ if(USE_TRIBITS)
     HEADERS	${HEADERS}
     SOURCES ${SOURCES}
   )
+
+if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
+  add_executable(aprepro_test_app apr_test.cc)
+  target_link_libraries(aprepro_test_app aprepro_lib)
+
+TRIBITS_ADD_ADVANCED_TEST(
+ aprepro_lib_unit_test
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
+  OUTPUT_FILE test.output
+  PASS_ANY
+ TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++ 
+		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
+  OUTPUT_FILE filtered.output
+  PASS_ANY
+ TEST_2 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
+		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
+ COMM serial		      
+ FINAL_PASS_REGULAR_EXPRESSION 
+)
+
+TRIBITS_ADD_ADVANCED_TEST(
+ aprepro_lib_array_test
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app
+	ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
+  OUTPUT_FILE test-array.out
+  PASS_ANY
+ TEST_1 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.gold
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.out
+ COMM serial		      
+ FINAL_PASS_REGULAR_EXPRESSION 
+)
+endif()
+
   TRIBITS_SUBPACKAGE_POSTPROCESS()
 
 else()
   add_library(aprepro_lib ${HEADERS} ${SOURCES})
 endif()
 
-option(BUILD_TEST_APP "Build the test application" OFF)
-if(BUILD_TEST_APP)
-  add_executable(aprepro_test_app apr_test.cc)
-  target_link_libraries(aprepro_test_app aprepro_lib)
-endif()
