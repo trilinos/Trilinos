@@ -40,9 +40,9 @@ protected:
 
     void print_stats()
     {
-        if(get_bulk().parallel_rank() == 0)
-            std::cerr << "skin faces = " << numSkinFaces << std::endl;
-        stk::parallel_print_time_for_performance_compare(get_comm(), duration, std::cerr);
+        double maxTime = stk::get_max_time_across_procs(duration, get_comm());
+        double maxHwmInMB = stk::get_max_hwm_across_procs(get_comm()) / (1024.0 * 1024.0);
+        stk::print_stats_for_performance_compare(std::cerr, maxTime, maxHwmInMB, numSkinFaces, get_comm());
     }
 
     stk::mesh::Part &skinPart;

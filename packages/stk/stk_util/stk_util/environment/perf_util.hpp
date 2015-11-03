@@ -153,18 +153,18 @@ void print_tagged_stat(std::ostream& out, const std::string &tag, VALUETYPE valu
 }
 
 inline
-void print_stats(std::ostream& out, double maxTime, size_t maxHwm)
+void print_stats(std::ostream& out, double maxTime, size_t maxHwm, unsigned numSteps)
 {
     print_tagged_stat(out, "### Total Wall Clock Run Time Used ###: ", maxTime);
-    print_tagged_stat(out, "### Total Number of Steps Taken ###: ", 1);
+    print_tagged_stat(out, "### Total Number of Steps Taken ###: ", numSteps);
     print_tagged_stat(out, "Total Memory In Use ", maxHwm);
 }
 
 inline
-void print_stats_for_performance_compare(std::ostream& out, double maxTime, size_t maxHwm, MPI_Comm comm)
+void print_stats_for_performance_compare(std::ostream& out, double maxTime, size_t maxHwm, unsigned numSteps, MPI_Comm comm)
 {
     if (stk::parallel_machine_rank(comm) == 0)
-        print_stats(out, maxTime, maxHwm);
+        print_stats(out, maxTime, maxHwm, numSteps);
 }
 
 inline
@@ -172,7 +172,7 @@ void parallel_print_time_for_performance_compare(MPI_Comm comm, double time_on_t
 {
     double maxTime = get_max_time_across_procs(time_on_this_proc, comm);
     size_t maxHwm = get_max_hwm_across_procs(comm);
-    print_stats_for_performance_compare(out, maxTime, maxHwm, comm);
+    print_stats_for_performance_compare(out, maxTime, maxHwm, 1, comm);
 }
 
 }
