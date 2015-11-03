@@ -72,7 +72,6 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
 
 ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData &bulkData);
 
-
 void test_similarity_on_both_procs(const std::vector<stk::mesh::EntityId> &ids_in_use, stk::ParallelMachine comm)
 {
     std::vector<stk::mesh::EntityId> global_ids_in_use;
@@ -191,34 +190,6 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
     test_similarity_on_both_procs(chosen_ids, bulkData.parallel());
 
     return elem_graph;
-}
-
-TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_on)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-
-    if (2 == stk::parallel_machine_size(comm))
-    {
-        const unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::BulkData bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
-
-        test_add_elements_to_pre_existing_graph_and_mesh(bulkData);
-    }
-}
-
-TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_off)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-
-    if (2 == stk::parallel_machine_size(comm))
-    {
-        const unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::BulkData bulkData(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
-
-        test_add_elements_to_pre_existing_graph_and_mesh(bulkData);
-    }
 }
 
 void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vector<stk::mesh::EntityId> &ids_to_delete)

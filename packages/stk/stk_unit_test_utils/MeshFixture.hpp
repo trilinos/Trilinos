@@ -30,6 +30,10 @@ protected:
         delete bulkData;
     }
 
+    void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        allocate_bulk(auraOption);
+    }
     void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
