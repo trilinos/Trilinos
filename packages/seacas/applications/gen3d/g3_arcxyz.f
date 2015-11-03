@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: arcxyz.f,v 1.8 2005/03/30 19:18:52 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE ARCXYZ (XN, YN, XN3, YN3, ZN3, IXNP, NRNP, NPCEN,
      &   SINANG, COSANG)

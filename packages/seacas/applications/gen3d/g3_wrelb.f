@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: wrelb.f,v 1.5 2003/08/19 17:56:43 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE WRELB (A, IA, BLKTYP, NAMELB, IBPARM,
      &   IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB, ELATTR,
@@ -92,28 +91,31 @@ C   --   Uses NEREPL of /PARAMS/
       INTEGER IXNP(*), NRNP(*)
 
 C ... Update block names
-      DO 5 I = 1, NELBLK
+      DO I = 1, NELBLK
         IF (NAMELB(I)(:4) .EQ. 'QUAD' .OR.
-     *       NAMELB(I)(:4) .EQ. 'quad' .OR.
-     *       NAMELB(I) .EQ. ' ')
-     *       NAMELB(I) = 'HEX'
-        IF (NAMELB(I)(:3) .EQ. 'BAR'  .OR.
-     *       NAMELB(I)(:3) .EQ. 'bar'  .OR.
-     *       NAMELB(I)(:5) .EQ. 'TRUSS'.OR.
-     *       NAMELB(I)(:5) .EQ. 'truss'.OR.
-     *       NAMELB(I)(:4) .EQ. 'BEAM' .OR.
-     *       NAMELB(I)(:4) .EQ. 'beam')
-     *       NAMELB(I) = 'SHELL'
- 5    CONTINUE
+     *    NAMELB(I)(:4) .EQ. 'quad' .OR.
+     *    NAMELB(I) .EQ. ' ') then
+          NAMELB(I) = 'HEX'
+        else IF (NAMELB(I)(:3) .EQ. 'BAR'  .OR.
+     *      NAMELB(I)(:3) .EQ. 'bar'  .OR.
+     *      NAMELB(I)(:5) .EQ. 'TRUSS'.OR.
+     *      NAMELB(I)(:5) .EQ. 'truss'.OR.
+     *      NAMELB(I)(:4) .EQ. 'BEAM' .OR.
+     *      NAMELB(I)(:4) .EQ. 'beam') then
+          NAMELB(I) = 'SHELL'
+        else if (NAMELB(I)(:3) .EQ. 'TRI') then
+          NAMELB(I) = 'WEDGE'
+        end if
+      end do
       
       MAXID = 0
       MAXEL = 0
       MAXATR = 0
-      DO 10 IELB = 1, NELBLK
-         MAXID = MAX (MAXID, IDELB(IELB))
-         MAXEL = MAX (MAXEL, NUMELB(IELB))
-         MAXATR = MAX (MAXATR, NUMATR(IELB))
-   10 CONTINUE
+      DO IELB = 1, NELBLK
+        MAXID = MAX (MAXID, IDELB(IELB))
+        MAXEL = MAX (MAXEL, NUMELB(IELB))
+        MAXATR = MAX (MAXATR, NUMATR(IELB))
+      end do
       CALL MDRSRV ('LINK3', KLINK3, 8 * MAXEL*NEREPL)
       CALL MDRSRV ('ATRIB3', KATR3, MAXATR * MAXEL*NEREPL)
       CALL MDSTAT (NERR, MEM)
@@ -122,10 +124,9 @@ C ... Update block names
       IEL = 1
       IATR = 1
 
-      DO 40 IELB = 1, NELBLK
+      DO IELB = 1, NELBLK
 
 C      --Block id and start/end for blocks that become multiple blocks
-
          NRSTRT = 1
          IDEBL3 = IDELB(IELB)
          IBLK = 1
@@ -150,10 +151,10 @@ C      --Block id and start/end for blocks that become multiple blocks
 C      --Number of elements in the block
 
          IF (BLKTYP(IELB) .EQ. 'C') THEN
-            NELB3 = 0
-            DO 30 I = 1, NUMELB(IELB)
-               NELB3 = NELB3 + NREL(IEL+I-1)
-   30       CONTINUE
+           NELB3 = 0
+           DO  I = 1, NUMELB(IELB)
+             NELB3 = NELB3 + NREL(IEL+I-1)
+           end do
          ELSE
             NELB3 = NUMELB(IELB) * (NREND - NRSTRT + 1)
          END IF
@@ -223,7 +224,7 @@ C      --Write 3D
 
          IEL = IEL + NUMELB(IELB)
          IATR = IATR + NUMATR(IELB) * NUMELB(IELB)
-   40 CONTINUE
+       end do
 
    50 CONTINUE
       CALL MDDEL ('LINK3')
