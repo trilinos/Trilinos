@@ -56,8 +56,6 @@
 // mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_find.hpp"
-#include "boost/mpl/map.hpp"
-#include "boost/mpl/find.hpp"
 
 // Scalar types
 #include "Sacado.hpp"
@@ -65,8 +63,7 @@
 //#include "Sacado_ELRFad_DFad.hpp"
 //#include "Sacado_ELRCacheFad_DFad.hpp"
 
-// traits Base Class
-#include "Phalanx_Traits_Base.hpp"
+#include "Phalanx_Traits.hpp"
 
 // Include User Data Types
 //#include "Phalanx_Allocator_Contiguous.hpp"
@@ -87,7 +84,7 @@ namespace panzer {
   
   class LinearObjContainer;
 
-  struct Traits : public PHX::TraitsBase {
+  struct Traits {
 
     // ******************************************************************
     // *** Scalar Types
@@ -125,42 +122,6 @@ namespace panzer {
                                > EvalTypes;
 
     // ******************************************************************
-    // *** Data Types
-    // ******************************************************************
-    
-    // Create the data types for each evaluation type
-    
-    // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType,bool > ResidualDataTypes;
-  
-    // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType, RealType, bool > JacobianDataTypes;
-
-    // Tangent (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;
-
-    #ifdef HAVE_STOKHOS
-       typedef Sacado::mpl::vector< SGType,bool > SGResidualDataTypes;
-       typedef Sacado::mpl::vector< SGFadType,bool > SGJacobianDataTypes;
-    #endif
-
-    // Maps the key EvalType a vector of DataTypes
-    typedef boost::mpl::map<
-      boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>,
-      boost::mpl::pair<Tangent, TangentDataTypes>
-      #ifdef HAVE_STOKHOS
-         , boost::mpl::pair<SGResidual, SGResidualDataTypes>
-         , boost::mpl::pair<SGJacobian, SGJacobianDataTypes>
-      #endif
-    >::type EvalToDataMap;
-
-    // ******************************************************************
-    // *** Allocator Type
-    // ******************************************************************
- //   typedef PHX::ContiguousAllocator<double> Allocator;
-
-    // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
 
@@ -181,62 +142,22 @@ namespace panzer {
 
   };
  
-  // ******************************************************************
-  // ******************************************************************
-  // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in the phalanx/src/Phalanx_TypeStrings.hpp file.
-  // ******************************************************************
-  // ******************************************************************
-
 }
-/*
+
 namespace PHX {
-  
-  // Evaluation Types
-  template<> struct TypeString<panzer::Traits::Residual> 
-  { static const std::string value; };
 
-  template<> struct TypeString<panzer::Traits::Jacobian> 
-  { static const std::string value; };
+  template<>
+  struct eval_scalar_types<panzer::Traits::Residual> 
+  { typedef Sacado::mpl::vector<panzer::Traits::RealType,bool> type; };
 
-  template<> struct TypeString<panzer::Traits::Tangent> 
-  { static const std::string value; };
+  template<>
+  struct eval_scalar_types<panzer::Traits::Jacobian> 
+  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
-  #ifdef HAVE_STOKHOS
-     template<> struct TypeString<panzer::Traits::SGResidual> 
-     { static const std::string value; };
-   
-     template<> struct TypeString<panzer::Traits::SGJacobian> 
-     { static const std::string value; };
-  #endif 
-
-  // Data Types
-  template<> struct TypeString<double> 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::Fad::DFad<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::CacheFad::DFad<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::ELRFad::DFad<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< Sacado::ELRCacheFad::DFad<double> > 
-  { static const std::string value; };
-
-  #ifdef HAVE_STOKHOS
-     template<> struct TypeString<panzer::Traits::SGType> 
-     { static const std::string value; };
-   
-     template<> struct TypeString< panzer::Traits::SGFadType> 
-     { static const std::string value; };
-  #endif 
-
-  template<> struct TypeString<bool> 
-  { static const std::string value; };
+  template<>
+  struct eval_scalar_types<panzer::Traits::Tangent> 
+  { typedef Sacado::mpl::vector<panzer::Traits::FadType,bool> type; };
 
 }
-*/
+
 #endif

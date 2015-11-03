@@ -45,7 +45,7 @@
 #define USER_APP_STK_CLOSURE_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Base.hpp"
 #include "user_app_STKClosureModel_Factory.hpp"

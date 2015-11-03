@@ -44,7 +44,7 @@
 #define __Example_ClosureModel_Factory_TemplateBuilder_hpp__
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Example_ClosureModel_Factory.hpp"
 
