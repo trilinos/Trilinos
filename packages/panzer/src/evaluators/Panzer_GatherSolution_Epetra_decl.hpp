@@ -64,7 +64,7 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
 
-/** \brief Gathers solution values from the Newton solution vector into 
+/** \brief Gathers solution values from the Newton solution vector into
     the nodal fields of the field manager
 
     Currently makes an assumption that the stride is constant for dofs
@@ -81,33 +81,33 @@ template<typename EvalT, typename TRAITS,typename LO,typename GO> class GatherSo
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class GatherSolution_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
-   
-  
+
+
 public:
-  
+
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
      globalIndexer_(indexer) {}
 
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
+                             PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
-  
+
 private:
 
   typedef typename panzer::Traits::Residual EvalT;
@@ -126,41 +126,49 @@ private:
 
   Teuchos::RCP<Epetra_Vector> x_;
 
+  // Fields for storing tangent components dx/dp of solution vector x
+  // These are not actually used by the residual specialization of this evaluator,
+  // even if they are supplied, but it is useful to declare them as dependencies anyway
+  // when saving the tangent components to the output file
+  bool has_tangent_fields_;
+  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+
   GatherSolution_Epetra();
 };
 
 // **************************************************************
-// Tangent 
+// Tangent
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class GatherSolution_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
-   
-  
+
+
 public:
-  
+
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
      globalIndexer_(indexer) {}
 
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
+                             PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
-  
+
 private:
 
   typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  //typedef typename panzer::Traits::RealType RealT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -174,8 +182,8 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<Epetra_Vector> x_;
-  std::vector<Teuchos::RCP<Epetra_Vector> > dxdp_vectors_;
 
+  // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
 
@@ -190,24 +198,24 @@ class GatherSolution_Epetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
      globalIndexer_(indexer) {}
-  
+
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
+                             PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
-  
+
 private:
 
   typedef typename panzer::Traits::Jacobian EvalT;

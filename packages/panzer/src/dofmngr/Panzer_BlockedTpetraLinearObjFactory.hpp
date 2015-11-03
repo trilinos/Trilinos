@@ -61,6 +61,7 @@
 
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_GatherSolution_BlockedTpetra.hpp"
+#include "Panzer_GatherTangent_BlockedTpetra.hpp"
 #include "Panzer_ScatterResidual_BlockedTpetra.hpp"
 #include "Panzer_ScatterDirichletResidual_BlockedTpetra.hpp"
 #include "Panzer_ScatterInitialCondition_BlockedTpetra.hpp"
@@ -151,6 +152,11 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
    { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
+   { return Teuchos::rcp(new GatherTangent_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>

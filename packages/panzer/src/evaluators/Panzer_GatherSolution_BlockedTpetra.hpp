@@ -70,7 +70,7 @@ class UniqueGlobalIndexer; //forward declaration
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class BlockedDOFManager; //forward declaration
 
-/** \brief Gathers solution values from the Newton solution vector into 
+/** \brief Gathers solution values from the Newton solution vector into
     the nodal fields of the field manager
 
     Currently makes an assumption that the stride is constant for dofs
@@ -94,8 +94,8 @@ public:
    virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,TRAITS,S,LO,GO>(Teuchos::null,pl)); }
 
-   void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm) 
-   { } 
+   void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm)
+   { }
 
    void evaluateFields(typename TRAITS::EvalData d)
    { std::cout << "unspecialized version of \"GatherSolution_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
@@ -110,26 +110,26 @@ public:
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 class GatherSolution_BlockedTpetra<panzer::Traits::Residual,TRAITS,S,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
-   
-  
+
+
 public:
-  
+
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : gidIndexer_(indexer) {}
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
-  
+                             PHX::FieldManager<TRAITS>& vm);
+
   void preEvaluate(typename TRAITS::PreEvalData d);
 
   void evaluateFields(typename TRAITS::EvalData d);
@@ -137,7 +137,7 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Residual,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
 
-  
+
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
@@ -163,30 +163,37 @@ private:
 
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
 
+  // Fields for storing tangent components dx/dp of solution vector x
+  // These are not actually used by the residual specialization of this evaluator,
+  // even if they are supplied, but it is useful to declare them as dependencies anyway
+  // when saving the tangent components to the output file
+  bool has_tangent_fields_;
+  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+
   GatherSolution_BlockedTpetra();
 };
 
 // **************************************************************
-// Tangent 
+// Tangent
 // **************************************************************
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 class GatherSolution_BlockedTpetra<panzer::Traits::Tangent,TRAITS,S,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
-   
-  
+
+
 public:
-  
+
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : gidIndexer_(indexer) {}
 
    GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                 const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
-  
+                             PHX::FieldManager<TRAITS>& vm);
+
   void preEvaluate(typename TRAITS::PreEvalData d);
 
   void evaluateFields(typename TRAITS::EvalData d);
@@ -194,9 +201,10 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Tangent,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
 
-  
+
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  //typedef typename panzer::Traits::RealType RealT;
 
   typedef BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> ContainerType;
   typedef Tpetra::Vector<S,LO,GO,NodeT> VectorType;
@@ -220,6 +228,10 @@ private:
 
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
 
+  // Fields for storing tangent components dx/dp of solution vector x
+  bool has_tangent_fields_;
+  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+
   GatherSolution_BlockedTpetra();
 };
 
@@ -231,24 +243,24 @@ class GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO,NodeT
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : gidIndexer_(indexer) {}
 
   GatherSolution_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
+                             PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
-  
+
 private:
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
 

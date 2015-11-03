@@ -136,6 +136,11 @@ public:
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
+   { return epetraFact_->template buildGatherTangent<EvalT>(); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
    { return epetraFact_->template buildGatherOrientation<EvalT>(); }
 
