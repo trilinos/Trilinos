@@ -1,0 +1,145 @@
+#+TITLE: Frequently asked questions (FAQ) about Tpetra
+#+AUTHOR: Mark Hoemmen
+#+DATE: Time-stamp: "2015-11-03 14:43:20 mhoemme"
+
+* Tpetra's choices of default enabled template parameters
+
+** How does Tpetra pick its default Kokkos execution space?
+
+Tpetra enables exactly one Kokkos execution space by default.  This
+keeps down build times and library sizes.  Tpetra uses the following
+rules to decide which execution space to use by default:
+
+  - If CUDA is enabled, use ~Kokkos::Cuda~.
+  - Else, if OpenMP is enabled, use ~Kokkos::OpenMP~.
+  - Else, if Kokkos::Serial is enabled, use ~Kokkos::Serial~.
+  - Else, if Kokkos::Threads is enabled, use ~Kokkos::Threads~.
+  - Otherwise, report an error (no Kokkos execution spaces are enabled).
+
+** How do I enable other Kokkos execution spaces in Tpetra?
+
+  - Set ~Tpetra_INST_CUDA=ON~ to enable ~Kokkos::Cuda~
+  - Set ~Tpetra_INST_OPENMP=ON~ to enable ~Kokkos::OpenMP~
+  - Set ~Tpetra_INST_PTHREAD=ON~ to enable ~Kokkos::Threads~
+  - Set ~Tpetra_INST_SERIAL=ON~ to enable ~Kokkos::Serial~
+
+** Why is performance bad when I use both ~Kokkos::OpenMP~ and ~Kokkos::Threads~?
+
+Please don't do that.  ~Kokkos::Threads~ uses Pthreads; OpenMP uses
+its own threads.  The two sets of worker threads fight over hardware
+resources.  As soon as you start up either of these execution spaces
+in the same executable, it dominates the hardware and makes life hard
+for the other one.  Pick one of these two (we prefer OpenMP) and stick
+to it.
+
+** What GlobalOrdinal (GO) types does Tpetra allow?
+
+Tpetra has support for the following GlobalOrdinal (GO) types:
+
+  - ~long long~ (preferred)
+  - ~long~
+  - ~int~
+  - ~unsigned long~ (NOT preferred)
+  - ~unsigned~ (REALLY NOT preferred)
+
+However, the type(s) you use /must/ have been enabled.  You may enable
+GO types by setting the following CMake options at configure time:
+
+  - Set ~Tpetra_INST_INT_LONG_LONG=ON~ to enable ~long long~
+  - Set ~Tpetra_INST_INT_LONG=ON~ to enable ~long~
+  - Set ~Tpetra_INST_INT_INT=ON~ to enable ~int~
+  - Set ~Tpetra_INST_INT_UNSIGNED_LONG=ON~ to enable ~unsigned long~
+  - Set ~Tpetra_INST_INT_UNSIGNED=ON~ to enable ~unsigned~
+
+See the next frequently asked question to learn how Tpetra picks what
+GO types it enables by default.
+
+** How does Tpetra pick which GO types to enable by default?
+
+By default, Tpetra currently enables ~GO = int~, and exactly one of
+~GO = long long~ or ~GO = long~.  This ensures coverage of both the
+32-bit case (~int~) and the 64-bit case (~long long~ always, or ~long~
+on most platforms other than Windows).  Bug 6358 prevents Tpetra from
+disabling ~GO = int~ by default.  Tpetra does not enable more types by
+default, because that would increase build times and library sizes.
+
+If the user /explicitly/ enables either ~long long~ or ~long~ (by
+setting ~Tpetra_INST_INT_LONG_LONG=ON~
+resp. ~Tpetra_INST_INT_LONG=ON~), Tpetra uses that type and does not
+enable the other by default.
+
+If the user did /not/ explicitly enable either ~long long~ or ~long~,
+Tpetra picks one of these.  Tpetra /prefers/ ~GO = long long~.  This
+is because the C++11 standard requires that ~long long~ have at least
+64 bits, while it only requires that ~long~ have at least 32 bits.  In
+particular, ~long~ is 32 bits on Windows.  Thus, Tpetra enables ~GO =
+long long~ by default.  However, two things prevent Tpetra from doing
+this:
+
+  1. CUDA lacks support for ~long long~, so Tpetra enables ~long~ by
+     default instead if CUDA is enabled.
+  2. Tpetra currently requires Teuchos to have support for ~long
+     long~.  Specifically, the CMake option
+     ~Teuchos_ENABLE_LONG_LONG_INT~ must be ON.  If it's not, Tpetra
+     enables ~long~ by default instead.
+
+** What Scalar types does Tpetra allow?
+
+Tpetra has support for the following Scalar types:
+
+  - ~double~ (preferred)
+  - ~float~
+  - ~std::complex<double>~
+  - ~std::complex<float>~
+  - ~__float128~ (GCC extension; NOT allowed with CUDA)
+
+However, the type(s) you use /must/ have been enabled.  You may enable
+GO types by setting the following CMake options at configure time:
+
+  - Set ~Tpetra_INST_INT_DOUBLE=ON~ to enable ~double~
+  - Set ~Tpetra_INST_INT_FLOAT=ON~ to enable ~float~
+  - Set ~Tpetra_INST_INT_COMPLEX_DOUBLE=ON~ to enable
+    ~std::complex<double>~
+  - Set ~Tpetra_INST_INT_COMPLEX_FLOAT=ON~ to enable
+    ~std::complex<float>~
+  - Set ~Tpetra_INST_INT_FLOAT128=ON~ and enable the "libquadmath" TPL
+    to enable ~__float128~
+
+Some of these are enabled by default.  See the next frequently asked
+question to learn how Tpetra picks what Scalar types it enables by
+default.
+
+** How does Tpetra pick which Scalar types to enable by default?
+
+In a release build, Tpetra only enables ~Scalar = double~ by default.
+In a debug build, Tpetra enables both ~Scalar = double~ and ~Scalar =
+std::complex<double>~ by default.
+
+* Explicit template instantiation (ETI)
+
+** Can I use non-enabled types in Tpetra when ETI is OFF?
+
+Q: If ETI is OFF and Tpetra_INST_FLOAT = OFF, can someone still build
+and run a test with ~Scalar = float~?  I thought that, if we built
+with ETI=OFF, we could use whatever data types we wanted (as long as
+we had time to wait for the compilation).
+
+A. If ETI is OFF, Tpetra will work with whatever data types Tpetra
+supports.  For example, you can use ~Scalar = float~.
+
+Nevertheless, Tpetra still has a notion of the set of enabled type
+combinations, whether or not ETI is enabled.  The enabled type
+combinations go into those ~TPETRA_INSTANTIATE_*~ macros (that live in
+the generated header file ~TpetraCore_ETIHelperMacros.h~).  Those
+macros exist whether or not ETI is enabled.  Many Tpetra (and
+downstream) tests use those macros to instantiate templated tests.
+Thus, the set of /enabled/ types is the set of /tested/ types.
+
+Note that Stratimikos, LinearSolverFactory, and anything else that
+does automatic run-time registration, must have a finite enumerated
+set of "enabled" template parameter combinations over which to do
+registration.  This is independent of whether ETI is enabled.  For
+example, if ~Scalar = float~ is disabled, LinearSolverFactory won't be
+able to create solvers for ~Scalar = float~, unless users register
+packages' factors with that type manually.  However, Tpetra will work
+fine regardless.
