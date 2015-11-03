@@ -44,6 +44,7 @@
 #ifndef ROL_THYRAVECTOR_H
 #define ROL_THYRAVECTOR_H
 
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "ROL_Vector.hpp"
 
