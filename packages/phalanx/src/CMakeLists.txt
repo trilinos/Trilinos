@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # FAD
 APPEND_SET(HEADERS
   Phalanx.hpp
+  Phalanx_any.hpp
   Phalanx_DAG_Node.hpp
   Phalanx_DataLayout_MDALayout_Def.hpp
   Phalanx_DataLayout_MDALayout.hpp
