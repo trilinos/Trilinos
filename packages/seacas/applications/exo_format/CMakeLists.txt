@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsLibraryMacros)
 
-SEACAS_PACKAGE(Exo_format)
+TRIBITS_SUBPACKAGE(Exo_format)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -24,5 +24,5 @@ IF(NOT __LINUX_COMPILER_PGI)
   install_executable(exo_format)
 ENDIF()
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

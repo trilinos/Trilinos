@@ -1,6 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
-SEACAS_PACKAGE(Genshell)
+
+TRIBITS_SUBPACKAGE(Genshell)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -20,6 +22,6 @@ TRIBITS_ADD_EXECUTABLE(
 
 install_executable(genshell)
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 
 

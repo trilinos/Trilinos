@@ -1,5 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
-SEACAS_PACKAGE(Nemspread)
+INCLUDE(TribitsLibraryMacros)
+
+TRIBITS_SUBPACKAGE(Nemspread)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -17,6 +20,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(nem_spread)
 
-SEACAS_POSTPROCESS()
-
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

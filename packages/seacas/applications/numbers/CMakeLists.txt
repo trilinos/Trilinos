@@ -1,6 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
-SEACAS_PACKAGE(Numbers)
+
+TRIBITS_SUBPACKAGE(Numbers)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -19,5 +21,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(numbers)
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

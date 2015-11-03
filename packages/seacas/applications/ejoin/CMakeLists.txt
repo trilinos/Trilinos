@@ -1,7 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(TribitsLibraryMacros)
 
-SEACAS_PACKAGE(Ejoin)
+TRIBITS_SUBPACKAGE(Ejoin)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -19,5 +20,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(ejoin)
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

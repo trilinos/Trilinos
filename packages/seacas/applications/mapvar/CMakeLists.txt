@@ -1,6 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
-SEACAS_PACKAGE(Mapvar)
+
+TRIBITS_SUBPACKAGE(Mapvar)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -18,5 +20,5 @@ TRIBITS_ADD_EXECUTABLE(
   )
 install_executable(mapvar)
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 

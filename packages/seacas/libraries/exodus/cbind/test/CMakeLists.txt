@@ -25,29 +25,6 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${ExoIICTests}
 )
 
-TRIBITS_ADD_TEST(
-  ExoIICTests
-  NAME CreateEdgeFaceWithConcats
-  COMM mpi serial
-  NUM_MPI_PROCS 1
-  ARGS "CreateEdgeFace -pcab -pcset -pvpax"
-)
-
-TRIBITS_ADD_TEST(
-  ExoIICTests
-  NAME ReadEdgeFaceWithConcats
-  COMM mpi serial
-  NUM_MPI_PROCS 1
-  ARGS ReadEdgeFace
-)
-
-# Should be a better way to do this, but...
-if (TPL_ENABLE_MPI)
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats_MPI_1)
-ELSE()
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats)
-ENDIF()
-
 find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
 	     NAME ncdump
 	     PATHS 
@@ -58,8 +35,32 @@ find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
 		ENV PATH
 	     )
 	     
+TRIBITS_ADD_TEST(
+	ExoIICTests
+	NAME CreateEdgeFaceWithConcats
+	COMM mpi serial
+	NUM_MPI_PROCS 1
+	ARGS "CreateEdgeFace -pcab -pcset -pvpax"
+)
+
+TRIBITS_ADD_TEST(
+	ExoIICTests
+	NAME ReadEdgeFaceWithConcats
+	COMM mpi serial
+	NUM_MPI_PROCS 1
+	ARGS ReadEdgeFace
+)
+
+# Should be a better way to do this, but...
+if (TPL_ENABLE_MPI)
+  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats_MPI_1)
+ELSE()
+  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats)
+ENDIF()
 
 # ===============================================
+
+
 IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
   SET( cbind_OLDTESTS
@@ -109,20 +110,20 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       a dependency.  These are C++ libraries and result in unresolved depedencies
   #       when built with shareable libraries on some platforms....
 
-FOREACH ( testName ${cbind_OLDTESTS} )
-  TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
-ENDFOREACH ( testName )
+  FOREACH ( testName ${cbind_OLDTESTS} )
+    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
+  ENDFOREACH ( testName )
 
-TRIBITS_ADD_ADVANCED_TEST(
- exodus_unit_tests
- TEST_0 CMND /bin/sh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
-  OUTPUT_FILE exodus_unit_tests.out
-  PASS_ANY
- TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
-	         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
- COMM serial		      
- FINAL_PASS_REGULAR_EXPRESSION 
-)
+  TRIBITS_ADD_ADVANCED_TEST(
+   exodus_unit_tests
+   TEST_0 CMND /bin/sh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
+	  OUTPUT_QUIET ERROR_FILE exodus_unit_tests.out
+	  PASS_ANY
+   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
+		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+   COMM serial		      
+   FINAL_PASS_REGULAR_EXPRESSION 
+  )
 ELSE()
   MESSAGE(STATUS
       "WARNING: ${PACKAGE_NAME}: Exodus unit tests will not be run due to failure finding ncdump executable.")

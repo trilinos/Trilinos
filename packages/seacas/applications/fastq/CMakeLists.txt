@@ -1,6 +1,8 @@
+INCLUDE(TribitsSubPackageMacros)
 INCLUDE(TribitsAddExecutable)
 INCLUDE(FortranSettings)
-SEACAS_PACKAGE(Fastq)
+
+TRIBITS_SUBPACKAGE(Fastq)
 
 INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -36,7 +38,6 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdx11cps.F
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps_dual.f
-	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/cgi_dummy.c
   COMM serial mpi
   )
 install_executable(fastq_xcps)
@@ -48,10 +49,9 @@ TRIBITS_ADD_EXECUTABLE(
   LINKER_LANGUAGE Fortran
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fastq.f
 	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/vdicps.f
-	  ${CMAKE_CURRENT_SOURCE_DIR}/cgi/cgi_dummy.c
   COMM serial mpi
   )
 install_executable(fastq_cps)
 
-SEACAS_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()
 
