@@ -80,7 +80,7 @@ C     --   Uses ROT3D, ROTMAT of /XYZROT/
       CHARACTER*32 SHOTYP, SMTYP
       CHARACTER*80 STRING
       REAL RNUM(9)
-      CHARACTER*20 RSTR(9)
+      CHARACTER*20 RSTR(12)
       CHARACTER*20 STRA, STRB
       
       CHARACTER*32 SHOTBL(2)
@@ -168,17 +168,9 @@ C     --Determine the show option
       ELSE IF (SHOTYP .EQ. 'REVOLVE' .OR. SHOTYP .EQ. 'ROTATE') THEN
         IF (ROT3D) THEN
           WRITE (*, 40) 'Rotation matrix for generated mesh:'
-          DO 20 I = 1, 3
-            IX = (I-1) * 3
-            DO 10 J = 1, 3
-              RNUM(IX+J) = ROTMAT(I,J)
- 10         CONTINUE
- 20       CONTINUE
-          CALL NUMSTR (9, 4, RNUM, RSTR, LR)
-          DO 30 I = 1, 3
-            IX = (I-1) * 3
-            WRITE (*, 40) ('   ', RSTR(IX+J)(:LR), J=1,3)
- 30       CONTINUE
+          DO I = 1, 3
+            write (*,50) (rotmat(i,j),j=1,3)
+          end do
         ELSE
           WRITE (*, 40) 'No rotation defined for generated mesh'
         END IF
@@ -239,7 +231,7 @@ C     --Determine the show option
         
       ELSE IF (SHOTYP .EQ. 'SNAP' .OR. SHOTYP .EQ. 'MOVE') THEN
         if (numsnp .gt. 0) then
-          do 35 i=1, numsnp
+          do i=1, numsnp
             call intstr(1, 0, IDSSSL(i), STRA,  LR1)
             call intstr(1, 0, IDSSMA(i), STRB,  LR2)
             call numstr(1, 4, snptol(i), RSTR(4), LR4)
@@ -279,7 +271,7 @@ C     --Determine the show option
      *          ' max delta ', RSTR(5)(:LR5),
      *          ' gap ', RSTR(6)(:LR6)
             end if
- 35       continue
+          end do
         else
           write (*, 40) 'No sideset snapping or moving specified'
         end if
@@ -315,4 +307,5 @@ C     --Determine the show option
       
       RETURN
  40   FORMAT (1X, 20A)
+ 50   format (8x, 3(1pE12.5,4x))
       END

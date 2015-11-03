@@ -80,7 +80,7 @@ int ex_get_var_time( int   exoid,
 {
   int dimid, varid, numel = 0, offset;
   int status;
-  int *stat_vals;
+  int *stat_vals = NULL;
   size_t num_obj, i;
   size_t num_entries_this_obj = 0;
   size_t start[2], count[2];
