@@ -63,7 +63,8 @@
 
 namespace MueLu {
 
-  AmesosSmoother::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
+  template <class Node>
+  AmesosSmoother<Node>::AmesosSmoother(const std::string& type, const Teuchos::ParameterList& paramList)
     : type_(type) {
     this->SetParameterList(paramList);
 
@@ -103,19 +104,19 @@ namespace MueLu {
     }
   }
 
-  AmesosSmoother::~AmesosSmoother() {}
-
-  void AmesosSmoother::DeclareInput(Level &currentLevel) const {
-    Input(currentLevel, "A");
+  template <class Node>
+  void AmesosSmoother<Node>::DeclareInput(Level &currentLevel) const {
+    this->Input(currentLevel, "A");
   }
 
-  void AmesosSmoother::Setup(Level& currentLevel) {
+  template <class Node>
+  void AmesosSmoother<Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
-      GetOStream(Warnings0) << "MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::AmesosSmoother::Setup(): Setup() has already been called" << std::endl;
 
-    A_ = Get< RCP<Matrix> >(currentLevel, "A");
+    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
     RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
     linearProblem_ = rcp( new Epetra_LinearProblem() );
@@ -144,7 +145,8 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
-  void AmesosSmoother::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  template <class Node>
+  void AmesosSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Apply(): Setup() has not been called");
 
     Epetra_MultiVector &epX = Utilities::MV2NonConstEpetraMV(X);
@@ -163,11 +165,13 @@ namespace MueLu {
     linearProblem_->SetRHS(0);
   }
 
-  RCP<MueLu::SmootherPrototype<double,int,int> > AmesosSmoother::Copy() const {
-    return rcp( new AmesosSmoother(*this) );
+  template <class Node>
+  RCP<MueLu::SmootherPrototype<double,int,int,Node> > AmesosSmoother<Node>::Copy() const {
+    return rcp( new AmesosSmoother<Node>(*this) );
   }
 
-  std::string AmesosSmoother::description() const {
+  template <class Node>
+  std::string AmesosSmoother<Node>::description() const {
     std::ostringstream out;
     out << SmootherPrototype::description();
     out << "{type = " << type_ << "}";
@@ -175,7 +179,8 @@ namespace MueLu {
   }
 
   //using MueLu::Describable::describe; // overloading, not hiding
-  void AmesosSmoother::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  template <class Node>
+  void AmesosSmoother<Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0)
@@ -203,5 +208,26 @@ namespace MueLu {
   }
 
 } // namespace MueLu
+
+// ETI
+// The AmesosSmoother is only templated on the Node, since it is an Epetra only object
+// Therefore we do not need the full ETI instantiations as we do for the other MueLu
+// objects which are instantiated on all template parameters.
+#if defined(HAVE_MUELU_SERIAL)
+template class MueLu::AmesosSmoother<Kokkos::Compat::KokkosSerialWrapperNode >;
+#endif
+
+//#if defined(HAVE_MUELU_PTHREAD)
+//template class MueLu::AmesosSmoother<Kokkos::Compat::KokkosThreadsWrapperNode >;
+//#endif
+
+//#if defined(HAVE_MUELU_OPENMP)
+//template class MueLu::AmesosSmoother<Kokkos::Compat::KokkosOpenMPWrapperNode >;
+//#endif
+
+//#if defined(HAVE_MUELU_CUDA)
+//template class MueLu::AmesosSmoother<Kokkos::Compat::KokkosCudaWrapperNode >;
+//#endif
+
 
 #endif // HAVE_MUELU_EPETRA && HAVE_MUELU_AMESOS

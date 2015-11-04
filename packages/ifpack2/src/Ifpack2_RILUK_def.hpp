@@ -435,10 +435,17 @@ void RILUK<MatrixType>::initialize ()
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::initialize: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  const char prefix[] = "Ifpack2::RILUK::initialize: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The matrix is null.  Please "
+     "call setMatrix() with a nonnull input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_->isFillComplete (), std::runtime_error, prefix << "The matrix is not "
+     "fill complete.  You may not invoke initialize() or compute() with this "
+     "matrix until the matrix is fill complete.  If your matrix is a "
+     "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
+     "range Maps, if appropriate) before calling this method.");
 
   Teuchos::Time timer ("RILUK::initialize");
   { // Start timing
@@ -667,13 +674,20 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  const char prefix[] = "Ifpack2::RILUK::compute: ";
+
   // initialize() checks this too, but it's easier for users if the
   // error shows them the name of the method that they actually
   // called, rather than the name of some internally called method.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::compute: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The matrix is null.  Please "
+     "call setMatrix() with a nonnull input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_->isFillComplete (), std::runtime_error, prefix << "The matrix is not "
+     "fill complete.  You may not invoke initialize() or compute() with this "
+     "matrix until the matrix is fill complete.  If your matrix is a "
+     "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
+     "range Maps, if appropriate) before calling this method.");
 
   if (! isInitialized ()) {
     initialize (); // Don't count this in the compute() time

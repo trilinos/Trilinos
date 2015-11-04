@@ -69,9 +69,6 @@
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
 #include <Galeri_Utils.h>
-//
-
-//#include <Teuchos_ArrayRCP.hpp>
 
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
@@ -80,7 +77,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
 #include <Epetra_LinearProblem.h>
@@ -88,11 +84,19 @@
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 
-
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_EpetraOperator.hpp>
 
+// prescribe types
+// run plain Epetra
+typedef double Scalar;
+typedef int LocalOrdinal;
+typedef int GlobalOrdinal;
+typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+#endif
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers
@@ -195,7 +199,7 @@ int main(int argc, char *argv[]) {
 
     // TUTORIALSPLIT ===========================================================
     // Epetra -> Xpetra
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,Node>(epA));
     Teuchos::RCP<CrsMatrixWrap> exAWrap = Teuchos::rcp(new CrsMatrixWrap(exA));
 
     RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(exAWrap);
@@ -209,9 +213,9 @@ int main(int argc, char *argv[]) {
     X->PutScalar(0.0);
 
     // Epetra -> Xpetra
-    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
-    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
-    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
+    RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(B));
+    RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(X));
+    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epCoord));
 
     xX->setSeed(100);
     xX->randomize();
@@ -418,7 +422,7 @@ int main(int argc, char *argv[]) {
 
     // export map
     RCP<const Map> Amap = A->getRowMap();
-    RCP<const Xpetra::EpetraMap> epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(Amap);
+    RCP<const Xpetra::EpetraMapT<int,Node> > epAmap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<int,Node> >(Amap);
 
     //Epetra_Map* eMap;
     //int rv = EpetraExt::MatrixMarketFileToMap(fileName.c_str(), *(Xpetra::toEpetra(comm)), eMap);
@@ -446,4 +450,7 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif // #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
 } //main

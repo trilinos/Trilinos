@@ -48,9 +48,9 @@
 
 namespace Xpetra {
 
-  template<class EpetraGlobalOrdinal>
-  EpetraImportT<EpetraGlobalOrdinal>::EpetraImportT(const Teuchos::RCP<const map_type > & source, const Teuchos::RCP<const map_type > & target)
-    : import_(rcp(new Epetra_Import(toEpetra(target), toEpetra(source)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
+  template<class EpetraGlobalOrdinal, class Node>
+  EpetraImportT<EpetraGlobalOrdinal, Node>::EpetraImportT(const Teuchos::RCP<const map_type > & source, const Teuchos::RCP<const map_type > & target)
+    : import_(rcp(new Epetra_Import(toEpetra<EpetraGlobalOrdinal,Node>(target), toEpetra<EpetraGlobalOrdinal,Node>(source)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
   // //! copy constructor.
   // EpetraImportT<EpetraGlobalOrdinal>::EpetraImportT(const Import<int,GlobalOrdinal> & import) { // TODO: refactoring
@@ -66,61 +66,105 @@ namespace Xpetra {
   //     return *tpetraImport.getEpetra_Import();
   //   }
 
-  template<class GlobalOrdinal>
-  RCP< const Import<int, GlobalOrdinal > > toXpetra(const Epetra_Import *import) {
+  template<class GlobalOrdinal, class Node>
+  RCP< const Import<int, GlobalOrdinal, Node > > toXpetra(const Epetra_Import *import) {
     if (import != NULL) {
       RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*import)); //NOTE: non consitent: return pointer, take ref
-      return rcp(new Xpetra::EpetraImportT<GlobalOrdinal>(imp));
+      return rcp(new Xpetra::EpetraImportT<GlobalOrdinal, Node>(imp));
     }
 
     return Teuchos::null;
   }
   //
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getExportPIDs() const { XPETRA_MONITOR("EpetraImportT::getExportImageIDs"); return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getExportPIDs() const { XPETRA_MONITOR("EpetraImportT::getExportImageIDs"); return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
 
-  template<class EpetraGlobalOrdinal>
-  size_t EpetraImportT<EpetraGlobalOrdinal>::getNumRemoteIDs() const { XPETRA_MONITOR("EpetraImportT::getNumRemoteIDs"); return import_->NumRemoteIDs(); }
-  template<class EpetraGlobalOrdinal>
-  size_t EpetraImportT<EpetraGlobalOrdinal>::getNumExportIDs() const { XPETRA_MONITOR("EpetraImportT::getNumExportIDs"); return import_->NumExportIDs(); }
+  template<class EpetraGlobalOrdinal, class Node>
+  size_t EpetraImportT<EpetraGlobalOrdinal, Node>::getNumRemoteIDs() const { XPETRA_MONITOR("EpetraImportT::getNumRemoteIDs"); return import_->NumRemoteIDs(); }
+  template<class EpetraGlobalOrdinal, class Node>
+  size_t EpetraImportT<EpetraGlobalOrdinal, Node>::getNumExportIDs() const { XPETRA_MONITOR("EpetraImportT::getNumExportIDs"); return import_->NumExportIDs(); }
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getPermuteFromLIDs() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getPermuteFromLIDs() const {
     XPETRA_MONITOR("EpetraImportT::getPermuteFromLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getExportImageIDs not implemented"); }
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getPermuteToLIDs() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getPermuteToLIDs() const {
     XPETRA_MONITOR("EpetraImportT::getPermuteToLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getPermuteToLIDs not implemented"); }
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getRemoteLIDs() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getRemoteLIDs() const {
     XPETRA_MONITOR("EpetraImportT::getRemoteLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getRemoteLIDs not implemented"); }
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getRemotePIDs() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getRemotePIDs() const {
     XPETRA_MONITOR("EpetraImportT::getRemotePIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getRemotePIDs not implemented"); }
 
-  template<class EpetraGlobalOrdinal>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal>::getExportLIDs() const {
+  template<class EpetraGlobalOrdinal, class Node>
+  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getExportLIDs() const {
     XPETRA_MONITOR("EpetraImportT::getExportLIDs");
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getExportLIDs not implemented"); }
 
-  template<class EpetraGlobalOrdinal>
-  void EpetraImportT<EpetraGlobalOrdinal>::print(std::ostream &os) const { XPETRA_MONITOR("EpetraImportT::print"); import_->Print(os); }
+  template<class EpetraGlobalOrdinal, class Node>
+  void EpetraImportT<EpetraGlobalOrdinal, Node>::print(std::ostream &os) const { XPETRA_MONITOR("EpetraImportT::print"); import_->Print(os); }
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-template class EpetraImportT<int>;
-template RCP< const Import<int, int> > toXpetra<int>(const Epetra_Import *);
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_SERIAL
+template class EpetraImportT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
+template RCP<const Import<int,int,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Import *);
 #endif
+#ifdef HAVE_XPETRA_PTHREAD
+template class EpetraImportT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template RCP<const Import<int,int,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Import *);
+#endif
+#ifdef HAVE_XPETRA_OPENMP
+template class EpetraImportT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template RCP<const Import<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
+#endif
+#ifdef HAVE_XPETRA_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraImportT<int, default_node_type >;
+template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
+#endif
+#else
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+template class EpetraImportT<int, default_node_type >;
+template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
+#endif // HAVE_XPETRA_TPETRA
+#endif // XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-template class EpetraImportT<long long>;
-template RCP< const Import<int, long long> > toXpetra<long long>(const Epetra_Import *);
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_SERIAL
+template class EpetraImportT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
+template RCP<const Import<int,long long,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Import *);
+#endif
+#ifdef HAVE_XPETRA_PTHREAD
+template class EpetraImportT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template RCP<const Import<int,long long,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Import *);
+#endif
+#ifdef HAVE_XPETRA_OPENMP
+template class EpetraImportT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template RCP<const Import<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
+#endif
+#ifdef HAVE_XPETRA_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraImportT<long long, default_node_type >;
+template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
+#endif
+#else
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+template class EpetraImportT<long long, default_node_type >;
+template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
+#endif // HAVE_XPETRA_TPETRA
 #endif
 
 } // Xpetra namespace

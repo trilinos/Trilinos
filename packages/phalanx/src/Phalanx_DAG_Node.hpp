@@ -42,6 +42,7 @@ namespace PHX {
     DagNode<Traits>& operator=(const DagNode<Traits>& ) = default;
     int index() const {return index_;}
     Teuchos::RCP<const PHX::Evaluator<Traits>> get() const {return e_;}
+    Teuchos::RCP<PHX::Evaluator<Traits>> getNonConst() const {return e_;}
     void setColor(const PHX::Color& c) {c_ = c;}
     PHX::Color color() const {return c_;}
     int discoveryTime() const {return discovery_time_;}

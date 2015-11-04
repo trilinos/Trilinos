@@ -338,7 +338,8 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
         if(worksets[i].num_cells<=0) continue;
 
         // int array0_sz = worksets[i].num_cells;
-        int array0_sz = getWorksetSize();
+        // int array0_sz = getWorksetSize();
+        int array0_sz = Teuchos::as<int>(needs.cellData.numCells());
         int array1_sz = basis.functional->dimension(1);
         Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 

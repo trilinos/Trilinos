@@ -579,6 +579,7 @@ namespace MueLuTests {
       ifpackType = "RELAXATION";
       ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
       smooProto = Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
+      TEUCHOS_TEST_FOR_EXCEPTION(smooProto == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: UnitTest::Hierarchy::SetupHierarchy3levelFacManagers: Dynamic cast to IfpackSmoother failed. Epetra needs SC=double, LO=GO=int and Node=Serial.");
 
       RCP<SmootherFactory> preSmooFact;
       RCP<SmootherFactory> postSmooFact;

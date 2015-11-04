@@ -98,22 +98,22 @@ PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::getAsBase() const
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
 template<typename ScalarT>
-Teuchos::RCP< typename boost::mpl::apply<ObjectT,ScalarT>::type >
+Teuchos::RCP< typename Sacado::mpl::apply<ObjectT,ScalarT>::type >
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject()
 {
   int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
-  return Teuchos::rcp_dynamic_cast< typename boost::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], true);
+  return Teuchos::rcp_dynamic_cast< typename Sacado::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], true);
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
 template<typename ScalarT>
-Teuchos::RCP< const typename boost::mpl::apply<ObjectT,ScalarT>::type >
+Teuchos::RCP< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type >
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject() const
 {
   int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
-  return Teuchos::rcp_dynamic_cast< const typename boost::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], 
+  return Teuchos::rcp_dynamic_cast< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], 
 							     true);
 }
 

@@ -46,7 +46,7 @@
 #define PHX_FIELDEVALUATOR_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -64,7 +64,7 @@ namespace PHX {
 
     template <typename ScalarT>
     Teuchos::RCP< PHX::EvaluatorBase<Traits> > build() const {
-      typedef typename boost::mpl::apply<ObjectT,ScalarT>::type type;
+      typedef typename Sacado::mpl::apply<ObjectT,ScalarT>::type type;
       return Teuchos::rcp( static_cast< PHX::EvaluatorBase<Traits>* > (new type(*p)) );
     }
     

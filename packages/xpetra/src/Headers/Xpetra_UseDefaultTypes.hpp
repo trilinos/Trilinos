@@ -46,7 +46,7 @@
 #ifndef XPETRA_USEDEFAULTTYPES_HPP
 #define XPETRA_USEDEFAULTTYPES_HPP
 
-#include <Kokkos_DefaultNode.hpp> // Note: we should not need this header for Epetra
+#include <Kokkos_DefaultNode.hpp> // For Epetra only runs this points to FakeKokkos in Xpetra
 #include "Xpetra_ConfigDefs.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

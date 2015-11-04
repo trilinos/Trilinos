@@ -293,24 +293,24 @@ namespace MueLu {
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
     // @{
     static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const Vec) {
-      RCP<const Xpetra::EpetraMultiVector > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVector>(Vec);
+      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>  > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
       return tmpVec->getEpetra_MultiVector();
     }
     static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
-      RCP<const Xpetra::EpetraMultiVector> tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVector>(Vec);
+      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
       return tmpVec->getEpetra_MultiVector();
     }
 
     static const Epetra_MultiVector&                        MV2EpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec) {
-      const Xpetra::EpetraMultiVector& tmpVec = dynamic_cast<const Xpetra::EpetraMultiVector&>(Vec);
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
       return *(tmpVec.getEpetra_MultiVector());
     }
     static       Epetra_MultiVector&                        MV2NonConstEpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec) {
-      const Xpetra::EpetraMultiVector& tmpVec = dynamic_cast<const Xpetra::EpetraMultiVector&>(Vec);
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
       return *(tmpVec.getEpetra_MultiVector());
     }
 
@@ -318,7 +318,7 @@ namespace MueLu {
       RCP<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Op);
       if (crsOp == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-      const RCP<const Xpetra::EpetraCrsMatrix>& tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+      const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >& tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(crsOp->getCrsMatrix());
       if (tmp_ECrsMtx == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
       return tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -327,7 +327,7 @@ namespace MueLu {
       RCP<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Op);
       if (crsOp == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-      const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+      const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(crsOp->getCrsMatrix());
       if (tmp_ECrsMtx == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
       return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
@@ -337,7 +337,7 @@ namespace MueLu {
       try {
         const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>& crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Op);
         try {
-          const Xpetra::EpetraCrsMatrix& tmp_ECrsMtx = dynamic_cast<const Xpetra::EpetraCrsMatrix&>(*crsOp.getCrsMatrix());
+          const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> & tmp_ECrsMtx = dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> &>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getEpetra_CrsMatrix();
         } catch (std::bad_cast) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
@@ -350,7 +350,7 @@ namespace MueLu {
       try {
         Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Op);
         try {
-          Xpetra::EpetraCrsMatrix& tmp_ECrsMtx = dynamic_cast<Xpetra::EpetraCrsMatrix&>(*crsOp.getCrsMatrix());
+          Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> & tmp_ECrsMtx = dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> &>(*crsOp.getCrsMatrix());
           return *tmp_ECrsMtx.getEpetra_CrsMatrixNonConst();
         } catch (std::bad_cast) {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
@@ -361,7 +361,7 @@ namespace MueLu {
     }
 
     static const Epetra_Map&                                Map2EpetraMap(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & map) {
-      RCP<const Xpetra::EpetraMap> xeMap = rcp_dynamic_cast<const Xpetra::EpetraMap>(rcpFromRef(map));
+      RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > xeMap = rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(rcpFromRef(map));
       if (xeMap == Teuchos::null)
         throw Exceptions::BadCast("Utilities::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
       return xeMap->getEpetra_Map();
@@ -762,7 +762,7 @@ namespace MueLu {
         transposer.ReleaseTranspose(); // So we can keep A in Muelu...
 
         RCP<Epetra_CrsMatrix> rcpA(A);
-        RCP<Xpetra::EpetraCrsMatrix>            AA   = rcp(new Xpetra::EpetraCrsMatrix(rcpA));
+        RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >            AA   = rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> (rcpA));
         RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >     AAA  = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(AA);
         RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AAAA = rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(AAA));
         AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());

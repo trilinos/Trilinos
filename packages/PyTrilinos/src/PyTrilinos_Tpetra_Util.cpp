@@ -50,7 +50,8 @@ namespace PyTrilinos
 ////////////////////////////////////////////////////////////////////////
 
 PyObject *
-convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
+convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                                        PYTRILINOS_GLOBAL_ORD > > & tm,
                  int   extraDim)
 {
   // Initialization

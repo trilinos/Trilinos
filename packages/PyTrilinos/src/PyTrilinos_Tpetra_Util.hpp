@@ -77,7 +77,8 @@ namespace PyTrilinos
 // Tpetra::Map with variable element sizes is currently not supported
 // and results in an error.
 PyObject *
-convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
+convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                                        PYTRILINOS_GLOBAL_ORD > > & tm,
                  int   extraDim=1);
 
 ////////////////////////////////////////////////////////////
@@ -86,7 +87,9 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
 // with the DistArray Protocol.  If an error occurs, return NULL.
 template< class Scalar >
 PyObject *
-convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv);
+convertToDistArray(const Tpetra::MultiVector< Scalar,
+                                              PYTRILINOS_LOCAL_ORD,
+                                              PYTRILINOS_GLOBAL_ORD > & tmv);
 
 ////////////////////////////////////////////////////////////////////////
 // *** Implementations ***
@@ -94,7 +97,9 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv);
 
 template< class Scalar >
 PyObject *
-convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv)
+convertToDistArray(const Tpetra::MultiVector< Scalar,
+                                              PYTRILINOS_LOCAL_ORD,
+                                              PYTRILINOS_GLOBAL_ORD > & tmv)
 {
   // Initialization
   PyObject   * dap       = NULL;
@@ -109,8 +114,9 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv)
   npy_intp     dims[3];
   Teuchos::ArrayRCP< const Scalar > data;
 
-  // Get the underlying Tpetra::Map< long, long >
-  Teuchos::RCP< const Tpetra::Map< long, long > > tm = tmv.getMap();
+  // Get the underlying Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD > > tm = tmv.getMap();
 
   // Allocate the DistArray Protocol object and set the version key
   // value

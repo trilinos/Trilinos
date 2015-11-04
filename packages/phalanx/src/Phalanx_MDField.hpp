@@ -47,7 +47,7 @@
 
 #include <iostream>
 #include <string>
-#include <boost/any.hpp>
+#include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Kokkos_View.hpp"
@@ -262,7 +262,7 @@ namespace PHX {
 
     void setFieldTag(const PHX::Tag<DataT>& t);
     
-    void setFieldData(const boost::any& a);
+    void setFieldData(const PHX::any& a);
     
     void print(std::ostream& os, bool printValues = false) const;
 
@@ -422,7 +422,7 @@ namespace PHX {
 
     void setFieldTag(const PHX::Tag<DataT>& t);
     
-    void setFieldData(const boost::any& a);
+    void setFieldData(const PHX::any& a);
     
     void print(std::ostream& os, bool printValues = false) const;
 

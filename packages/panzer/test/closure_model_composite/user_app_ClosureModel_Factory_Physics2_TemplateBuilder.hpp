@@ -44,7 +44,7 @@
 #define USER_APP_CLOSURE_MODEL_FACTORY_PHYSICS_2_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "user_app_ClosureModel_Factory_Physics2.hpp"
 

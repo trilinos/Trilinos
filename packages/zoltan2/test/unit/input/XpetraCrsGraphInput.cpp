@@ -72,7 +72,6 @@ using Teuchos::ArrayView;
 
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tgraph_t;
 typedef Xpetra::CrsGraph<zlno_t, zgno_t, znode_t> xgraph_t;
-typedef Epetra_CrsGraph egraph_t;
 
 void printGraph(RCP<const Comm<int> > &comm, zlno_t nvtx,
     const zgno_t *vtxIds, const zlno_t *offsets, const zgno_t *edgeIds)
@@ -309,6 +308,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsGraph
+  typedef Epetra_CrsGraph egraph_t;
   if (!gfail){
     RCP<egraph_t> eG = uinput->getUIEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);

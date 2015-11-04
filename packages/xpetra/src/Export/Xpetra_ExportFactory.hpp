@@ -87,12 +87,15 @@ namespace Xpetra {
 
   };
 
+  // Specialization on Serial Node (mainly used for Epetra)
+#ifdef HAVE_XPETRA_SERIAL
+
   template <>
-  class ExportFactory<int, int> {
+  class ExportFactory<int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Export<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -117,7 +120,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraExportT<int>(source, target));
+        return rcp( new EpetraExportT<int, Node>(source, target));
 #endif
 #endif
 
@@ -128,11 +131,11 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class ExportFactory<int, long long> {
+  class ExportFactory<int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Export<int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -153,7 +156,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (source->lib() == UseEpetra)
-        return rcp( new EpetraExportT<long long>(source, target));
+        return rcp( new EpetraExportT<long long, Node>(source, target));
 #endif
 #endif
 
@@ -162,6 +165,8 @@ namespace Xpetra {
 
   };
 #endif // HAVE_XPETRA_INT_LONG_LONG
+#endif // HAVE_XPETRA_SERIAL
+
 }
 
 #define XPETRA_EXPORTFACTORY_SHORT

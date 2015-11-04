@@ -52,11 +52,12 @@
 
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
+#include <Teuchos_as.hpp>
 #include <vector>
 #include <string>
 
 #include <pamgen_im_exodusII.h>
-#include "pamgen_im_ne_nemesisI.h"
+#include <pamgen_im_ne_nemesisI.h>
 
 namespace Zoltan2 {
 
@@ -91,14 +92,14 @@ template <typename User>
 
 public:
 
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
-  typedef std::map<int, int> MapType;
+  typedef std::map<gno_t, gno_t> MapType;
 
   /*! \brief Constructor for mesh with identifiers but no coordinates or edges
    *  \param etype is the mesh entity type of the identifiers
@@ -234,11 +235,11 @@ public:
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
-      adjacencyIds = (gno_t *)elemToNode_;
+      adjacencyIds = elemToNode_;
     } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
 	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
       offsets = nodeOffsets_;
-      adjacencyIds = (gno_t *)nodeToElem_;
+      adjacencyIds = nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -280,7 +281,6 @@ public:
     }
 
     return 0;
-
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
@@ -307,8 +307,12 @@ public:
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
   gno_t *element_num_map_, *node_num_map_;
-  int *elemToNode_, tnoct_, *elemOffsets_;
-  int *nodeToElem_, telct_, *nodeOffsets_;
+  gno_t *elemToNode_;
+  lno_t tnoct_, *elemOffsets_;
+  gno_t *nodeToElem_; 
+  lno_t telct_, *nodeOffsets_;
+  // TODO:  coords_ and Acoords_ should be scalar_t
+  // TODO:  or should check that scalar_t == double
   double *coords_, *Acoords_;
   lno_t *eStart_, *nStart_;
   gno_t *eAdj_, *nAdj_;
@@ -327,6 +331,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr):
   dimension_(0)
 {
+  using Teuchos::as;
+
   int error = 0;
   char title[100];
   int exoid = 0;
@@ -357,7 +363,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
   
-  element_num_map_ = new gno_t [num_elem_];
+  element_num_map_ = new gno_t[num_elem_];
   std::vector<int> tmp;
   tmp.resize(num_elem_);
   
@@ -414,7 +420,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   num_attr = NULL;
   Acoords_ = new double [num_elem_ * dimension_];
   int a = 0;
-  std::vector<std::vector<int> > sur_elem;
+  std::vector<std::vector<gno_t> > sur_elem;
   sur_elem.resize(num_nodes_);
 
   for(int b = 0; b < num_elem_blk; b++) {
@@ -466,9 +472,9 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   delete[] elem_blk_ids;
   elem_blk_ids = NULL;
   int nnodes_per_elem = num_nodes_per_elem[0];
-  elemToNode_ = new int [num_elem_ * nnodes_per_elem];
+  elemToNode_ = new gno_t[num_elem_ * nnodes_per_elem];
   int telct = 0;
-  elemOffsets_ = new int [num_elem_+1];
+  elemOffsets_ = new lno_t [num_elem_+1];
   tnoct_ = 0;
   int **reconnect = new int * [num_elem_];
   size_t max_nsur = 0;
@@ -479,8 +485,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       reconnect[telct] = new int [num_nodes_per_elem[b]];
 
       for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	elemToNode_[tnoct_]=
-	  node_num_map_[connect[b][i*num_nodes_per_elem[b] + j]-1];
+	elemToNode_[tnoct_]= 
+          as<gno_t>(node_num_map_[connect[b][i*num_nodes_per_elem[b] + j]-1]);
 	reconnect[telct][j] = connect[b][i*num_nodes_per_elem[b] + j];
 	++tnoct_;
       }
@@ -531,8 +537,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     }
   }
 
-  nodeToElem_ = new int [num_nodes_ * max_nsur];
-  nodeOffsets_ = new int [num_nodes_+1];
+  nodeToElem_ = new gno_t[num_nodes_ * max_nsur];
+  nodeOffsets_ = new lno_t[num_nodes_+1];
   telct_ = 0;
 
   for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
@@ -548,7 +554,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
 	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
 	  for (int j = 0; j < nnodes_per_elem; j++) {
-	    MapType::iterator iter =
+	    typename MapType::iterator iter =
 	      nAdjMap.find(elemToNode_[elemOffsets_[ecnt]+j]);
 
 	    if (node_num_map_[ncnt] != elemToNode_[elemOffsets_[ecnt]+j] &&
@@ -575,7 +581,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   nAdj_ = new gno_t [nNadj_];
 
   for (size_t i=0; i < nNadj_; i++) {
-    nAdj_[i] = nAdj[i];
+    nAdj_[i] = as<gno_t>(nAdj[i]);
   }
 
   int nprocs = comm.getSize();
@@ -671,8 +677,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       }
     }
 
-    int *rbuf = NULL;
-    if (totalrecv) rbuf = new int[totalrecv];
+    gno_t *rbuf = NULL;
+    if (totalrecv) rbuf = new gno_t[totalrecv];
 
     requests = new RCP<CommRequest<int> > [nrecvranks];
 
@@ -698,7 +704,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	  try {
 	    requests[rcnt++] =
 	      Teuchos::
-	      ireceive<int,int>(comm,
+	      ireceive<int,gno_t>(comm,
 				Teuchos::arcp(&rbuf[offset], 0,
 					      recvCount[node_proc_ids[i][0]],
 					      false),
@@ -723,8 +729,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	throw std::bad_alloc();
     }
 
-    int *sbuf = NULL;
-    if (totalsend) sbuf = new int[totalsend];
+    gno_t *sbuf = NULL;
+    if (totalsend) sbuf = new gno_t[totalsend];
     a = 0;
 
     for(int j = 0; j < num_node_cmaps; j++) {
@@ -747,10 +753,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
     delete[] node_ids;
     node_ids = NULL;
-    ArrayRCP<int> sendBuf;
+    ArrayRCP<gno_t> sendBuf;
 
     if (totalsend)
-      sendBuf = ArrayRCP<int>(sbuf, 0, totalsend, true);
+      sendBuf = ArrayRCP<gno_t>(sbuf, 0, totalsend, true);
     else
       sendBuf = Teuchos::null;
 
@@ -759,11 +765,10 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     for (int i = 0; i < num_node_cmaps; i++) {
       if (sendCount[node_proc_ids[i][0]]) {
 	try{
-	  Teuchos::readySend<int,
-	    int>(comm,
+	  Teuchos::readySend<int, gno_t>(comm,
 		 Teuchos::arrayView(&sendBuf[offset],
 				    sendCount[node_proc_ids[i][0]]),
-		 node_proc_ids[i][0]);
+ 		 node_proc_ids[i][0]);
 	}
 	Z2_FORWARD_EXCEPTIONS;
       }
@@ -818,7 +823,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       int node = reconnect[ecnt][ncnt]-1;
       for(size_t i=0; i < sur_elem[node].size(); i++) {
 	int entry = sur_elem[node][i];
-	MapType::iterator iter = eAdjMap.find(entry);
+	typename MapType::iterator iter = eAdjMap.find(entry);
 
 	if(element_num_map_[ecnt] != entry &&
 	   iter == eAdjMap.end()) {
@@ -844,7 +849,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   eAdj_ = new gno_t [nEadj_];
 
   for (size_t i=0; i < nEadj_; i++) {
-    eAdj_[i] = eAdj[i];
+    eAdj_[i] = as<gno_t>(eAdj[i]);
   }
 
   delete[] side_nodes;

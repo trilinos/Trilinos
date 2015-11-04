@@ -48,7 +48,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace KokkosClassic {
+/*namespace KokkosClassic {
 namespace DoNotUse {
 
   class SerialNode {
@@ -57,6 +57,18 @@ namespace DoNotUse {
   };
 
 } // end of DoNotUse namespace
-} // end of KokkosClassic namespace
+} // end of KokkosClassic namespace*/
+
+// This is the node definition used if Epetra is enabled only
+namespace Kokkos {
+namespace Compat {
+  //typedef KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
+  class KokkosSerialWrapperNode {
+  public:
+    KokkosSerialWrapperNode(Teuchos::ParameterList &pl) {}
+    KokkosSerialWrapperNode() {}
+  };
+} // end of Compat namespace
+} // end of Kokkos namespace
 
 #endif

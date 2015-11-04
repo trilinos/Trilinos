@@ -134,8 +134,6 @@ namespace Xpetra {
       RCP<const Map> domainMap = Teuchos::null;
       RCP<const Map> rangeMap  = Teuchos::null;
 
-      typedef Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node> StridedMapFactory;
-
       const size_t        blkSize = 1;
       std::vector<size_t> stridingInfo(1, blkSize);
       LocalOrdinal        stridedBlockId = -1;
@@ -150,8 +148,8 @@ namespace Xpetra {
         domainMap = transposeA ? A->getRangeMap()        : A->getDomainMap();
 
         if (viewLabel == "stridedMaps") {
-          rangeMap  = StridedMapFactory::Build(rangeMap,  stridingInfo, stridedBlockId);
-          domainMap = StridedMapFactory::Build(domainMap, stridingInfo, stridedBlockId);
+          rangeMap  = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(rangeMap,  stridingInfo, stridedBlockId);
+          domainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(domainMap, stridingInfo, stridedBlockId);
         }
       }
 
@@ -165,7 +163,7 @@ namespace Xpetra {
           domainMap = transposeB ? B->getRangeMap()        : B->getDomainMap();
 
           if (viewLabel == "stridedMaps")
-            domainMap = StridedMapFactory::Build(domainMap, stridingInfo, stridedBlockId);
+            domainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(domainMap, stridingInfo, stridedBlockId);
         }
       }
 

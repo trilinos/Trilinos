@@ -44,6 +44,7 @@
 #ifndef ROL_THYRAVECTOR_H
 #define ROL_THYRAVECTOR_H
 
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "ROL_Vector.hpp"
 
@@ -148,6 +149,13 @@ public:
   void set(const Vector<Real> &x ) {
     const ThyraVector &ex = Teuchos::dyn_cast<const ThyraVector>(x);
     ::Thyra::copy( *ex.getVector(), thyra_vec_.ptr() );
+  }
+
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    for(::Thyra::Ordinal i=0;i<thyra_vec_->space()->dim();i++) {
+      Real val = ::Thyra::get_ele(*thyra_vec_,i);
+      ::Thyra::set_ele(i,f.apply(val),thyra_vec_.ptr());
+    }
   }
 
 }; // class ThyraVector

@@ -86,28 +86,14 @@ namespace PHX {
     //! If set to true, a graphviz file will be written during for DAG construction errors.
     void setWriteGraphvizFileOnError(bool write_file);
 
-    /*! Sets up all field dependencies.  This should only be called
-      once all variables and DOFs have been added and all providers
-      have been registered.  Sorts variable and creates dependency
-      lists and evaluation order
+    /*! Builds the evaluation DAG.  This should only be called after
+      all required fields and evaluators are registered. Must be
+      called prior to making calls to postRegistrationSetup(),
+      evaluateFields(), preEvaluate(), and postEvaluate().  This can
+      be called multiple times to build a new DAG if requirements have
+      changed or more evaluators have been added.
     */
     void sortAndOrderEvaluators();
-    
-    /*! Sets up all field dependencies.  Must be called prior to
-        making calls to postRegistrationSetup(), evaluateFields(),
-        preEvaluate(), and postEvaluate().  This can be called
-        multiple times to build a new DAG if requirements have changed
-        or more evaluators have been added.
-    */
-    void sortAndOrderEvaluatorsOld();
-    
-    /*! Sets up all field dependencies.  Must be called prior to
-        making calls to postRegistrationSetup(), evaluateFields(),
-        preEvaluate(), and postEvaluate().  This can be called
-        multiple times to build a new DAG if requirements have changed
-        or more evaluators have been added.
-    */
-    void sortAndOrderEvaluatorsNew();
     
     /*! Calls post registration setup on all variable providers.
     */
@@ -147,11 +133,6 @@ namespace PHX {
 			   bool writeDependentFields,
 			   bool debugRegisteredEvaluators) const;
 
-    void writeGraphvizFileOld(const std::string filename,
-			      bool writeEvaluatedFields,
-			      bool writeDependentFields,
-			      bool debugRegisteredEvaluators) const;
-
     void writeGraphvizFileNew(const std::string filename,
 			      bool writeEvaluatedFields,
 			      bool writeDependentFields) const;
@@ -162,13 +143,6 @@ namespace PHX {
     const std::vector<int>& getEvaluatorInternalOrdering() const;
 
   protected:
-    
-    /*! @brief Create and arrange the dependency list in the correct
-     *  order it should be evaluated.
-     *
-     * NOTE: Deprecated!
-     */
-    void createProviderEvaluationOrder();
 
     /*! @brief Depth-first search algorithm. */ 
     void dfsVisit(PHX::DagNode<Traits>& node, int& time);
@@ -197,48 +171,19 @@ namespace PHX {
 
     //! Hash map of field key to evaluator index.
     std::unordered_map<std::string,int> field_to_node_index_;
-
-    // *******************************
-    // Begin old sorting data
-    // *******************************
     
-    //! Fields required by the user.
+    //! All fields that are needed for the evaluation.
     std::vector< Teuchos::RCP<PHX::FieldTag> > fields_;
-    
-    //@{
-    /*!
-      @name Evaluator Objects
-      @brief Stores information about variable provider objects.
-    */    
-    std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > 
-    varProviders;
-    
-    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
-    providerVariables;
-
-    std::vector< std::vector< Teuchos::RCP<PHX::FieldTag> > > 
-    providerRequirements;
-
-    std::vector<std::string> providerNames;
-
-    // *******************************
-    // End old sorting data
-    // *******************************
 
     // Timers used when configured with Phalanx_ENABLE_TEUCHOS_TIME_MONITOR.
     std::vector<Teuchos::RCP<Teuchos::Time> > evalTimers;
 
-    //@}
-
-    
-    //@{
     /*! @name Evaluation Order Objects
       
-        Stores information about the order that providers need to be
-        called to evaluate fields correctly.
+        Stores results from a topological sort on the evaluator DAG:
+        the order to call evaluators to evaluate fields correctly.
     */
-    std::vector<int> providerEvalOrderIndex;
-    //@}
+    std::vector<int> topoSortEvalIndex;
 
     //! Use this name for graphviz file output for DAG construction errors.
     std::string graphviz_filename_for_errors_;
@@ -250,9 +195,6 @@ namespace PHX {
 
     //! Flag to tell the setup has been called.
     bool sorting_called_;
-    
-    //! Use refactored DFS algorithm.
-    bool use_new_dfs_algorithm_;
 
     //! Backwards compatibility option: set to true to disable a check that throws if multiple registered evaluators can evaluate the same field. Original DFS algortihm allowed this.  Refactor checks and throws.   
     bool allow_multiple_evaluators_for_same_field_;

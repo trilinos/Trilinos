@@ -14,9 +14,9 @@ distRepoStatusLegend = r"""Legend:
 usageHelp = r"""gitdist [gitdist arguments] [git arguments]
        gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over extra repos multi-repository git projects.  Also
-includes other tools like printing a repo status table and tracking versions
-through RepoVersion.txt files.
+Run git recursively over set of git repos in a multi-repository git project.
+This script also includes other tools like printing a repo status table and
+tracking versions through RepoVersion.txt files.
 
 Instead of typing:
 
@@ -29,10 +29,11 @@ type:
 This will distribute git commands across all the listed git repos, including
 the base git repo.  The options in [gitdist options] are prefixed with
 '--dist-' and are pulled out before passing the remaining arguments in [git
-arguments] to all the git repos.  See --help to see the [gitdist options].
+arguments] to git for each processed git repo.  See --help to see [gitdist
+options].
 
-For example, consider the following git repos with other git repos cloned
-under it:
+For example, consider the following base git repo 'BaseRepo' with other git
+repos cloned under it:
 
   BaseRepo/
     .git/
@@ -41,16 +42,30 @@ under it:
     ExtraRep2/
       .git/
 
-The gitdist command is run in the base git repo 'BaseRepo' and the git
-commands are run on it as well as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
+The gitdist command is run in the base git repo 'BaseRepo' which runs the git
+command in the base repo as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
 
-The set of repos processed is determined by the argument --dist-extra-repos or
-the files .gitdist or .gitdist.default.  If --dist-extra-repos="", then the
-list of extra repos will be read from the file '.gitdist' in the current
-working directory.  If the file '.gitdist' does not exist, then the list of
-extra repos will be read from the file '.gitdist.default' in the current
-working directory.  The format of this files '.gitdist' and '.gitdist.default'
-is to have one repo directory/name per line as in:
+The gitdist tool allows managing a set of git repos like one big continuously
+integrated git repo.  For example, after cloning a set of git repos like shown
+above, one can perform basic operations like for single git repos like for
+example, creating a new release branch and pushing it:
+
+  $ gitdist pull
+  $ gitdist checkout -b release-2.3
+  $ gitdist push origin -u release 2.3
+  $ gitdist checkout master
+
+The above command creates the same branch 'release-2.3' in all of the git
+repos and pushes them to their 'origin' git repo.
+
+The set of repos processed by gitdist is determined by the argument
+--dist-extra-repos or the files .gitdist or .gitdist.default.  If
+--dist-extra-repos="", then the list of extra repos will be read from the file
+'.gitdist' in the current working directory.  If the file '.gitdist' does not
+exist, then the list of extra repos will be read from the file
+'.gitdist.default' in the current working directory.  The format of this files
+'.gitdist' and '.gitdist.default' is to have one repo directory/name per line
+as in:
 
   ExtraRepo1
   ExtraRepo2
@@ -59,7 +74,7 @@ is to have one repo directory/name per line as in:
 where each repo is the relative path to the repo under the base git repo
 (e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
 to the base git repo so that gitdist is ready to use right away after the
-extra repos are cloned (see the tool clone_extra_repos.py).
+extra repos are cloned (see the tool clone_extra_repos.py for example).
 
 If an extra repository directory listed in the .gitdist file (or specified
 using --dist-extra-repos) does not exist, then it will be ignored by the
@@ -84,11 +99,11 @@ TIPS:
 
  - By default, gitdist will use 'git' in the environment.  If it can't find
    'git' in the environment, it will require that the user specify the git
-   command to run with --dist-use-git=<the command>.
+   command to run with --dist-use-git=<git command>.
 
  - Pass in --dist-not-base-repo and/or
    --dist-not-extra-repos=RepoX,RepoZ,... to exclude the processing of either
-   the base git repo and/or other git repos listed in .gitdist, respectively.
+   the base git repo and/or other git repos, respectively.
 
 SUMMARY OF REPO STATUS:
 
@@ -111,6 +126,24 @@ If the option --dist-legend is passed in, it will print the legend:
 
 """+distRepoStatusLegend+\
 r"""
+One can also show the status of only changed repos with:
+
+  $ gitdist dist-repo-status --dist-mod-only
+
+which prints a table like:
+
+  ----------------------------------------------------------------
+  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------|--------|-----------------|---|----|---|
+  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
+  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
+  ----------------------------------------------------------------
+
+Note the base repo was left out but the repo indexes are the same.  This
+allows one to effectively show the status of changes in multiple repos even
+when there are many git repos by filtering out rows for repos that have no
+changes w.r.t. their tracking branches.
+
 REPO VERSION FILES:
 
 This script supports the options --dist-version-file=<versionFile> and
@@ -136,34 +169,40 @@ Third summary message
 
 Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
-with this script using, for example, using:
+with this script listing three lines per repo (as shown above) using, for
+example:
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
-using three lines per repo, or just:
+or two lines per repo using, for example:
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
-
-using two lines per repo in the output file.
 
 This allows checking out consistent versions of the repos, diffing two
 consistent versions of the repos, etc.
 
 To checkout an older set of consistent versions of the set of repos
-represented by the set of versions given in the file RepoVersion.<date>.txt,
+represented by the set of versions given in a file RepoVersion.<date>.txt,
 use:
 
   $ gitdist fetch origin
   $ gitdist --dist-version-file=RepoVersion.<date>.txt checkout _VERSION_
 
 The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
+(NOTE: this puts one on a detached head state for all the repos you one has to
+know what that means.)
 
-To tag and branch the set of repos using a consistent set of versions, use:
+To tag a set of repos using a consistent set of versions, use, for example:
 
   $ gitdist --dist-version-file=RepoVersion.<date>.txt \
       tag -a <some_tag> _VERSION_
+
+To create a branch off of a consistent set of versions, use, for example:
+
+  $ gitdist --dist-version-file=RepoVersion.<date>.txt \
+      checkout -b some-branch _VERSION_
 
 To diff two sets of versions of the repos, for example, use:
 
@@ -179,21 +218,32 @@ arguments (SHA1s) using this approach.
 
 Note that the set of repos listed in the RepoVersion.txt file must be a
 super-set of those processed by this script or an error will occur and the
-script will stop.
+script will stop.  If there are additional repos RepoX, RepoY, ... not listed
+in the RepVersion.txt file one can exclude them with:
+
+  $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
+    --dist-version-file=RepoVersion.txt \
+   [other arguments]
 
 USEFUL ALIASES:
 
-Two very useful Linux/Unix aliases are:
+A few very useful Linux/Unix aliases are:
 
   $ alias gitdist-status="gitdist dist-repo-status"
   $ alias gitdist-mod="gitdist --dist-mod-only"
+  $ alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
 
 This avoids lot of typing as these arguments are used a lot when working with
-many git repos.  For example, to see the status of all your repos, do:
+many git repos.  For example, to see the status table of all your repos, do:
 
-  $ gitdist-status | less
+  $ gitdist-status
 
-To see the changes in the repos use:
+To just see the status table of changed repos only, do:
+
+  $ gitdist-mod-status
+
+To process only repos that have changes and see commits in these repos
+w.r.t. their tracking branches, use:
 
   $ gitdist-mod log --name-status HEAD ^origin/master
 
@@ -798,17 +848,15 @@ class RepoStatTable:
       { "label" : "M", "align":"R", "fields" : [] },
       { "label" : "?", "align":"R", "fields" : [] },
       ]
-    self.ID = 0
 
-  def insertRepoStat(self, repoDir, repoStat):
-    self.tableData[0]["fields"].append(str(self.ID))
+  def insertRepoStat(self, repoDir, repoStat, repoID):
+    self.tableData[0]["fields"].append(str(repoID))
     self.tableData[1]["fields"].append(repoDir)
     self.tableData[2]["fields"].append(repoStat.branch)
     self.tableData[3]["fields"].append(repoStat.trackingBranch)
     self.tableData[4]["fields"].append(convertZeroStrToEmpty(repoStat.numCommits))
     self.tableData[5]["fields"].append(convertZeroStrToEmpty(repoStat.numModified))
     self.tableData[6]["fields"].append(convertZeroStrToEmpty(repoStat.numUntracked))
-    self.ID += 1
 
   def getTableData(self):
     return self.tableData
@@ -866,10 +914,12 @@ if __name__ == '__main__':
   elif options.modifiedOnly and not baseRepoStats.hasLocalChanges():
     processBaseRepo = False
 
+  repoID = 0
+
   # Process the base git repo
   if processBaseRepo:
     if distRepoStatus:
-      repoStatTable.insertRepoStat(baseRepoName+" (Base)", baseRepoStats)
+      repoStatTable.insertRepoStat(baseRepoName+" (Base)", baseRepoStats, repoID)
     else:
       print ""
       print "*** Base Git Repo: "+addColorToRepoDir(options.useColor, baseRepoName)
@@ -880,6 +930,8 @@ if __name__ == '__main__':
       runRepoCmnd(options, cmndLineArgsArray, baseRepoName, baseDir,
         repoVersionDict, repoVersionDict2)
 
+  repoID += 1
+
   for extraRepo in extraReposFullList:
 
     # Determine if we should process this extra repo
@@ -887,6 +939,7 @@ if __name__ == '__main__':
     if not repoExistsAndNotExcluded(options, extraRepo, notExtraReposList):
       processThisExtraRepo = False
     if processThisExtraRepo:
+      repoDoesExistsAndNotExcluded = True
       # cd into extrarepo dir
       if options.debug:
         print "\n*** Changing to directory "+extraRepo,
@@ -899,11 +952,13 @@ if __name__ == '__main__':
       # See if we should process based on --dist-mod-only
       if options.modifiedOnly and not extraRepoStats.hasLocalChanges():
          processThisExtraRepo = False
+    else:
+      repoDoesExistsAndNotExcluded = False
 
     # Process the extra repo
     if processThisExtraRepo:
       if distRepoStatus:
-        repoStatTable.insertRepoStat(extraRepo, extraRepoStats)
+        repoStatTable.insertRepoStat(extraRepo, extraRepoStats, repoID)
         processThisExtraRepo = False
       else:
         print ""
@@ -916,6 +971,9 @@ if __name__ == '__main__':
           repoVersionDict, repoVersionDict2)
         if options.debug:
           print "*** Changing to directory "+baseDir
+
+    if repoDoesExistsAndNotExcluded:
+      repoID += 1
 
     os.chdir(baseDir)
 
