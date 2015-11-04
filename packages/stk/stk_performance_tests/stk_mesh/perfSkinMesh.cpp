@@ -13,23 +13,13 @@ class StkPerformance : public stk::unit_test_util::MeshFixture
 protected:
     StkPerformance() :
             skinPart(get_meta().declare_part("skinPart")),
-            numSkinFaces(0),
             duration(0.0)
     {}
 
     void test_skin_mesh()
     {
         stk::mesh::Selector thingToSkin = get_meta().universal_part();
-        create_faces_with_skin_mesh(thingToSkin);
-        EXPECT_GT(numSkinFaces, 0u);
-    }
-
-    void create_faces_with_skin_mesh(stk::mesh::Selector thingToSkin)
-    {
-        unsigned numFacesBefore = stk::mesh::count_selected_entities(skinPart, get_bulk().buckets(stk::topology::FACE_RANK));
         time_skin_mesh(thingToSkin);
-        unsigned numFacesAfter = stk::mesh::count_selected_entities(skinPart, get_bulk().buckets(stk::topology::FACE_RANK));
-        numSkinFaces = numFacesAfter - numFacesBefore;
     }
 
     void time_skin_mesh(stk::mesh::Selector thingToSkin)
@@ -54,7 +44,6 @@ protected:
     }
 
     stk::mesh::Part &skinPart;
-    unsigned numSkinFaces;
     double duration;
 };
 
