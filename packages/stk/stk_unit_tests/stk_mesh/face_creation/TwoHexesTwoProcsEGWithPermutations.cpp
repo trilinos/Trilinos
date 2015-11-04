@@ -32,12 +32,9 @@ protected:
 
     virtual unsigned get_permuted_index(unsigned i)
     {
-        std::vector<std::vector<unsigned> > index_for_proc = {
-                {0, 1, 2, 3},
-                {3, 2, 1, 0}
-        };
-        return index_for_proc[get_bulk().parallel_rank()][i];
+        return m_permutations_per_proc[get_bulk().parallel_rank()][i];
     }
+
 private:
     std::vector<std::vector<int> > m_permutations_per_proc;
 };
