@@ -83,13 +83,13 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar = Matrix<>::scalar_type,
-            class LocalOrdinal =
-              typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar /*= Matrix<>::scalar_type*/,
+            class LocalOrdinal /*=
+              typename Matrix<Scalar>::local_ordinal_type*/,
+            class GlobalOrdinal /*=
+              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type*/,
+            class Node /*=
+              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type*/>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:

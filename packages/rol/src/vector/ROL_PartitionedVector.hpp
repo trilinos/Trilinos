@@ -265,6 +265,61 @@ Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( Teuchos::RCP<const Ve
   return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+2) ) ) );
 }
 
+template<class Real> 
+Teuchos::RCP<Vector<Real> > CreatePartitionedVector( Teuchos::RCP<Vector<Real> > &a, 
+                                                     Teuchos::RCP<Vector<Real> > &b,
+                                                     Teuchos::RCP<Vector<Real> > &c ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<Vector<Real> >      RCPV;
+  typedef PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b,c};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+3) ) ) );
+}
+
+template<class Real> 
+Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( Teuchos::RCP<const Vector<Real> > &a, 
+                                                           Teuchos::RCP<const Vector<Real> > &b,
+                                                           Teuchos::RCP<const Vector<Real> > &c ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<const Vector<Real> >      RCPV;
+  typedef const PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b,c};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+3) ) ) );
+}
+
+template<class Real> 
+Teuchos::RCP<Vector<Real> > CreatePartitionedVector( Teuchos::RCP<Vector<Real> > &a, 
+                                                     Teuchos::RCP<Vector<Real> > &b,
+                                                     Teuchos::RCP<Vector<Real> > &c,
+                                                     Teuchos::RCP<Vector<Real> > &d ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<Vector<Real> >      RCPV;
+  typedef PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b,c,d};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+4) ) ) );
+}
+
+template<class Real> 
+Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( Teuchos::RCP<const Vector<Real> > &a, 
+                                                           Teuchos::RCP<const Vector<Real> > &b,
+                                                           Teuchos::RCP<const Vector<Real> > &c,
+                                                           Teuchos::RCP<const Vector<Real> > &d ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<const Vector<Real> >      RCPV;
+  typedef const PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b,c,d};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+4) ) ) );
+}
+
+
 
 
 } // namespace ROL

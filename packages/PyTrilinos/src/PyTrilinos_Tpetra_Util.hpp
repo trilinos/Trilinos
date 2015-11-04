@@ -43,6 +43,9 @@
 #ifndef PYTRILINOS_TPETRA_UTIL_HPP
 #define PYTRILINOS_TPETRA_UTIL_HPP
 
+// Standard includes
+#include <string.h>
+
 // Include the Python prototypes
 #include "Python.h"
 
@@ -74,7 +77,8 @@ namespace PyTrilinos
 // Tpetra::Map with variable element sizes is currently not supported
 // and results in an error.
 PyObject *
-convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
+convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                                        PYTRILINOS_GLOBAL_ORD > > & tm,
                  int   extraDim=1);
 
 ////////////////////////////////////////////////////////////
@@ -83,7 +87,9 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< long, long > > & tm,
 // with the DistArray Protocol.  If an error occurs, return NULL.
 template< class Scalar >
 PyObject *
-convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv);
+convertToDistArray(const Tpetra::MultiVector< Scalar,
+                                              PYTRILINOS_LOCAL_ORD,
+                                              PYTRILINOS_GLOBAL_ORD > & tmv);
 
 ////////////////////////////////////////////////////////////////////////
 // *** Implementations ***
@@ -91,20 +97,26 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv);
 
 template< class Scalar >
 PyObject *
-convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv)
+convertToDistArray(const Tpetra::MultiVector< Scalar,
+                                              PYTRILINOS_LOCAL_ORD,
+                                              PYTRILINOS_GLOBAL_ORD > & tmv)
 {
   // Initialization
-  PyObject   * dap      = NULL;
-  PyObject   * dim_data = NULL;
-  PyObject   * dim_dict = NULL;
-  PyObject   * size     = NULL;
-  PyObject   * buffer   = NULL;
-  Py_ssize_t   ndim     = 1;
+  PyObject   * dap       = NULL;
+  PyObject   * dim_data  = NULL;
+  PyObject   * dim_dict  = NULL;
+  PyObject   * dist_type = NULL;
+  PyObject   * start     = NULL;
+  PyObject   * stop      = NULL;
+  PyObject   * indices   = NULL;
+  PyObject   * buffer    = NULL;
+  Py_ssize_t   ndim      = 1;
   npy_intp     dims[3];
   Teuchos::ArrayRCP< const Scalar > data;
 
-  // Get the underlying Tpetra::Map< long, long >
-  Teuchos::RCP< const Tpetra::Map< long, long > > tm = tmv.getMap();
+  // Get the underlying Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD > > tm = tmv.getMap();
 
   // Allocate the DistArray Protocol object and set the version key
   // value
@@ -117,8 +129,7 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv)
   // Get the Dimension Data and the number of dimensions.  If the
   // underlying Tpetra::BlockMap has variable element sizes, an error
   // will be detected here.
-  dim_data = convertToDimData(tm,
-                              tmv.getNumVectors());
+  dim_data = convertToDimData(tm, tmv.getNumVectors());
   if (!dim_data) goto fail;
   ndim = PyTuple_Size(dim_data);
 
@@ -133,10 +144,31 @@ convertToDistArray(const Tpetra::MultiVector< Scalar,long,long > & tmv)
   {
     dim_dict = PyTuple_GetItem(dim_data, i);
     if (!dim_dict) goto fail;
-    size = PyDict_GetItemString(dim_dict, "size");
-    if (!size) goto fail;
-    dims[i] = PyInt_AsLong(size);
-    if (PyErr_Occurred()) goto fail;
+    dist_type = PyDict_GetItemString(dim_dict, "dist_type");
+    if (!dist_type) goto fail;
+    if (strcmp(PyString_AsString(dist_type), "b") == 0)
+    {
+      start = PyDict_GetItemString(dim_dict, "start");
+      if (!start) goto fail;
+      stop = PyDict_GetItemString(dim_dict, "stop");
+      if (!stop) goto fail;
+      dims[i] = PyInt_AsLong(stop) - PyInt_AsLong(start);
+      if (PyErr_Occurred()) goto fail;
+    }
+    else if (strcmp(PyString_AsString(dist_type), "u") == 0)
+    {
+      indices = PyDict_GetItemString(dim_dict, "indices");
+      if (!indices) goto fail;
+      dims[i] = PyArray_DIM((PyArrayObject*)indices,0);
+      if (PyErr_Occurred()) goto fail;
+    }
+    else
+    {
+      PyErr_Format(PyExc_ValueError,
+                   "Unsupported distribution type '%s'",
+                   PyString_AsString(dist_type));
+      goto fail;
+    }
   }
   data = tmv.getData(0);
   buffer = PyArray_SimpleNewFromData(ndim,

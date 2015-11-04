@@ -46,7 +46,7 @@
 #define PHX_FIELDTAG_TAG_DEF_HPP
 
 #include <sstream>
-#include <boost/type_traits.hpp>
+#include <type_traits>
 #include "Phalanx_TypeStrings.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -103,7 +103,7 @@ const PHX::DataLayout& PHX::Tag<DataT>::dataLayout() const
 template<typename DataT>
 const std::type_info& PHX::Tag<DataT>::dataTypeInfo() const
 { 
-  typename boost::remove_const<DataT>::type tmp;
+  typename std::remove_const<DataT>::type tmp;
   return typeid(tmp);
 }
 

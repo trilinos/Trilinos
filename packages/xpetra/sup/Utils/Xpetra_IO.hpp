@@ -111,7 +111,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
 //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
 template<>
 inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT > (RCP<Epetra_CrsMatrix> &epAB) {
-  RCP<Xpetra::EpetraCrsMatrix> tmpC1 = rcp(new Xpetra::EpetraCrsMatrix(epAB));
+  RCP<Xpetra::EpetraCrsMatrixT<int,KDNT> > tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<int,KDNT>(epAB));
   RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
   RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
   return tmpC3;
@@ -150,7 +150,7 @@ public:
     static       Epetra_CrsMatrix&                          Op2NonConstEpetraCrs(Matrix& Op);*/
 
   static const Epetra_Map&  Map2EpetraMap(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& map) {
-    RCP<const Xpetra::EpetraMap> xeMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(Teuchos::rcpFromRef(map));
+    RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > xeMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(Teuchos::rcpFromRef(map));
     if (xeMap == Teuchos::null)
       throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
     return xeMap->getEpetra_Map();
@@ -193,7 +193,7 @@ public:
   static void Write(const std::string& fileName, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & M) {
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > tmp_Map = rcpFromRef(M);
 #ifdef HAVE_XPETRA_EPETRAEXT
-    const RCP<const Xpetra::EpetraMap>& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(tmp_Map);
+    const RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(tmp_Map);
     if (tmp_EMap != Teuchos::null) {
 #ifdef HAVE_XPETRA_EPETRAEXT
       int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
@@ -227,7 +227,7 @@ public:
 
     RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(Vec);
 #ifdef HAVE_XPETRA_EPETRA
-    const RCP<const Xpetra::EpetraMultiVector>& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVector>(tmp_Vec);
+    const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
     if (tmp_EVec != Teuchos::null) {
 #ifdef HAVE_XPETRA_EPETRAEXT
       int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
@@ -268,7 +268,7 @@ public:
         dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
     RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
 #if defined(HAVE_XPETRA_EPETRA)
-    const RCP<const EpetraCrsMatrix>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
 #if defined(HAVE_XPETRA_EPETRAEXT)
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -588,7 +588,7 @@ public:
   //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
   // @{
   static const Epetra_Map&  Map2EpetraMap(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& map) {
-    RCP<const Xpetra::EpetraMap> xeMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(Teuchos::rcpFromRef(map));
+    RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > xeMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(Teuchos::rcpFromRef(map));
     if (xeMap == Teuchos::null)
       throw Exceptions::BadCast("IO::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
     return xeMap->getEpetra_Map();
@@ -614,7 +614,7 @@ public:
   static void Write(const std::string& fileName, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & M) {
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > tmp_Map = rcpFromRef(M);
 #ifdef HAVE_XPETRA_EPETRA
-    const RCP<const Xpetra::EpetraMap>& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(tmp_Map);
+    const RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(tmp_Map);
     if (tmp_EMap != Teuchos::null) {
 #ifdef HAVE_XPETRA_EPETRAEXT
       int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
@@ -650,7 +650,7 @@ public:
 
     RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(Vec);
 #ifdef HAVE_XPETRA_EPETRA
-    const RCP<const Xpetra::EpetraMultiVector>& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVector>(tmp_Vec);
+    const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
     if (tmp_EVec != Teuchos::null) {
 #ifdef HAVE_XPETRA_EPETRAEXT
       int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
@@ -693,7 +693,7 @@ public:
         dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
     RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
 #if defined(HAVE_XPETRA_EPETRA)
-    const RCP<const EpetraCrsMatrix>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
 #if defined(HAVE_XPETRA_EPETRAEXT)
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -955,7 +955,7 @@ public:
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       Epetra_MultiVector * MV;
       EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
-      return Xpetra::toXpetra<int>(rcp(MV));
+      return Xpetra::toXpetra<int,Node>(rcp(MV));
 #else
       throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
 #endif
@@ -997,7 +997,7 @@ public:
         throw Exceptions::RuntimeError("Error reading matrix with EpetraExt::MatrixMarketToMap (returned " + Teuchos::toString(rv) + ")");
 
       RCP<Epetra_Map> eMap1 = rcp(new Epetra_Map(*eMap));
-      return Xpetra::toXpetra<int>(*eMap1);
+      return Xpetra::toXpetra<int,Node>(*eMap1);
 #else
       throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
 #endif

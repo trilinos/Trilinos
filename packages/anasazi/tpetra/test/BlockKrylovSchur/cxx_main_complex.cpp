@@ -58,6 +58,9 @@ using std::vector;
 
 int main(int argc, char *argv[])
 {
+#ifndef HAVE_TPETRA_COMPLEX_DOUBLE
+#  error "Anasazi: This test requires Scalar = std::complex<double> to be enabled in Tpetra."
+#else
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
@@ -67,8 +70,9 @@ int main(int argc, char *argv[])
   typedef std::complex<double>                ST;
   typedef Teuchos::ScalarTraits<ST>          SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef Tpetra::MultiVector<ST,int>         MV;
-  typedef Tpetra::Operator<ST,int>            OP;
+  typedef Tpetra::MultiVector<ST>             MV;
+  typedef MV::global_ordinal_type             GO;
+  typedef Tpetra::Operator<ST>                OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
 
@@ -156,8 +160,8 @@ int main(int argc, char *argv[])
     return -1;
   }
   // create map
-  RCP<const Map<int> > map = rcp (new Map<int> (dim, 0, comm));
-  RCP<CrsMatrix<ST,int> > K = rcp (new CrsMatrix<ST,int> (map, rnnzmax));
+  RCP<const Map<> > map = rcp (new Map<> (dim, 0, comm));
+  RCP<CrsMatrix<ST> > K = rcp (new CrsMatrix<ST> (map, rnnzmax));
   if (MyPID == 0) {
     // Convert interleaved doubles to complex values
     // HB format is compressed column. CrsMatrix is compressed row.
@@ -165,7 +169,7 @@ int main(int argc, char *argv[])
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
+        K->insertGlobalValues (static_cast<GO> (*rptr++ - 1), tuple<GO> (c), tuple (ST (dptr[0], dptr[1])));
         dptr += 2;
       }
     }
@@ -282,4 +286,5 @@ int main(int argc, char *argv[])
   }
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#endif // HAVE_TPETRA_COMPLEX_DOUBLE
 }

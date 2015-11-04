@@ -46,11 +46,10 @@
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
 #include "Teuchos_Assert.hpp"
+#include "Phalanx_Traits.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
-#include <boost/mpl/for_each.hpp>
-#include <boost/mpl/at.hpp>
 #include <sstream>
 
 // *************************************************************************
@@ -100,7 +99,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   std::vector< Teuchos::RCP<PHX::FieldTag> >::const_iterator  var;
 
   for (var = var_list.begin(); var != var_list.end(); ++var) {
-    typedef typename boost::mpl::at<typename Traits::EvalToDataMap,EvalT>::type EvalDataTypes;
+    typedef typename PHX::eval_scalar_types<EvalT>::type EvalDataTypes;
     Sacado::mpl::for_each<EvalDataTypes>(PHX::KokkosViewFactoryFunctor<EvalT>(fields_,*(*var),kokkos_extended_data_type_dimensions_));
 
     TEUCHOS_TEST_FOR_EXCEPTION(fields_.find((*var)->identifier()) == fields_.end(),std::runtime_error,
@@ -174,11 +173,11 @@ getKokkosExtendedDataTypeDimensions() const
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-boost::any
+PHX::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   //return fields_[f.identifier()];
-  boost::unordered_map<std::string,boost::any>::iterator a= fields_.find(f.identifier());
+  std::unordered_map<std::string,PHX::any>::iterator a= fields_.find(f.identifier());
    if (a==fields_.end()){
     std::cout << " PHX::EvaluationContainer<EvalT, Traits>::getFieldData can't find an f.identifier() "<<  f.identifier() << std::endl;
    }
@@ -212,7 +211,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "Evaluation Type = " << type << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->vp_manager_ << std::endl;
-  for (boost::unordered_map<std::string,boost::any>::const_iterator i = 
+  for (std::unordered_map<std::string,PHX::any>::const_iterator i = 
 	 fields_.begin(); i != fields_.end(); ++i)
     os << i->first << std::endl;
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;

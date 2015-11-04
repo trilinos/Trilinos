@@ -74,15 +74,15 @@ using Teuchos::RCP;
 
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
-{  
+{
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
-  
+
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> CRSG;
 
   // Useful matrices and such (tridiagonal test)
   global_size_t num_rows_per_proc = 5;
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc); 
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   // ====================================== //
@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdin
     MyPart.setParameters(List);
     MyPart.compute();
     const Teuchos::ArrayView<const LocalOrdinal>  & myview = MyPart.nonOverlappingPartition();
-    
+
     Teuchos::Array<LocalOrdinal> correct_solution((int)num_rows_per_proc);
     for(int i=0;i<(int)num_rows_per_proc;i++)
       correct_solution[i]=i;
@@ -114,23 +114,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Partitioning, Test0, Scalar, LocalOrdin
     MyPart.setParameters(List);
     MyPart.compute();
     const Teuchos::ArrayView<const LocalOrdinal>  & myview = MyPart.nonOverlappingPartition();
-    
+
     Teuchos::Array<LocalOrdinal> correct_solution((int)num_rows_per_proc);
     for(int i=0;i<(int)num_rows_per_proc;i++)
       correct_solution[i]=0;
 
     TEST_COMPARE_ARRAYS(myview,correct_solution);
   }
-
-
 }
 
+#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Partitioning, Test0, SC, LO, GO )
 
+#include "Ifpack2_ETIHelperMacros.h"
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Partitioning, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
+IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types.
+
+IFPACK2_INSTANTIATE_SLG( UNIT_TEST_GROUP_SC_LO_GO )

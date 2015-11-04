@@ -184,7 +184,7 @@ Kokkos::initialize();
           for (int k=0; k<spaceDim; k++) {
 
              // check values of cubature points
-             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " At multi-index { ";
@@ -194,7 +194,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature points
-             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -206,7 +206,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature weights
-             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -222,7 +222,7 @@ Kokkos::initialize();
           }
 
           // check values of cubature weights
-          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID2_TOL) {
+          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
              *outStream << " At multi-index { ";
@@ -324,7 +324,7 @@ Kokkos::initialize();
           for (int k=0; k<spaceDim; k++) {
 
              // check values of cubature points
-             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " At multi-index { ";
@@ -334,7 +334,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature points
-             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -346,7 +346,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature weights
-             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -362,7 +362,7 @@ Kokkos::initialize();
           }
 
           // check values of cubature weights
-          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID2_TOL) {
+          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
              *outStream << " At multi-index { ";
@@ -472,7 +472,7 @@ Kokkos::initialize();
           for (int k=0; k<spaceDim; k++) {
 
              // check values of cubature points
-             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " At multi-index { ";
@@ -482,7 +482,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature points
-             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -494,7 +494,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature weights
-             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -510,7 +510,7 @@ Kokkos::initialize();
           }
 
           // check values of cubature weights
-          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID2_TOL) {
+          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
              *outStream << " At multi-index { ";
@@ -626,7 +626,7 @@ Kokkos::initialize();
           for (int k=0; k<spaceDim; k++) {
 
              // check values of cubature points
-             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(cubPoints(i,j,k) - exactCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 *outStream << " At multi-index { ";
@@ -636,7 +636,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature points
-             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubPoints(i,j,k) - exactSideCubPoints[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -648,7 +648,7 @@ Kokkos::initialize();
              }
 
              // check values of side cubature weights
-             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID2_TOL) {
+             if (std::abs(sideCubWeights(i,j,k) - exactSideCubWeights[countp]) > Intrepid2::INTREPID_TOL) {
                 errorFlag++;
                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -664,7 +664,7 @@ Kokkos::initialize();
           }
 
           // check values of cubature weights
-          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID2_TOL) {
+          if (std::abs(cubWeights(i,j) - exactCubWeights[countw]) > Intrepid2::INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
              *outStream << " At multi-index { ";
@@ -719,7 +719,7 @@ Kokkos::initialize();
     for (int i=0; i<numPoints; i++) {
        total_area += cubWeights(0,i);
     }
-    if (std::abs(total_area - exact_area) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(total_area - exact_area) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Sum of sub-control volume areas: ";
@@ -762,7 +762,7 @@ Kokkos::initialize();
     for (int i=0; i<numPoints; i++) {
        total_area += cubWeights(0,i);
     }
-    if (std::abs(total_area - exact_area) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(total_area - exact_area) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Sum of sub-control volume areas: ";
@@ -810,7 +810,7 @@ Kokkos::initialize();
     for (int i=0; i<numPoints; i++) {
        total_vol += cubWeights(0,i);
     }
-    if (std::abs(total_vol - exact_vol) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(total_vol - exact_vol) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Sum of sub-control volumes: ";
@@ -854,7 +854,7 @@ Kokkos::initialize();
     for (int i=0; i<numPoints; i++) {
        total_vol += cubWeights(0,i);
     }
-    if (std::abs(total_vol - exact_vol) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(total_vol - exact_vol) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Sum of sub-control volumes: ";
@@ -963,7 +963,7 @@ Kokkos::initialize();
     // contributions from fourth cell 
       volumeInt += (a+b)*cubWeights(3,0);
 
-    if (std::abs(surfaceInt - volumeInt) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(surfaceInt - volumeInt) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Integral of (F cdot n) over surface : ";
@@ -1063,7 +1063,7 @@ Kokkos::initialize();
     // contributions from fourth cell 
       volumeInt += (a+b)*cubWeights(3,2);
 
-    if (std::abs(surfaceInt - volumeInt) > Intrepid2::INTREPID2_TOL) {
+    if (std::abs(surfaceInt - volumeInt) > Intrepid2::INTREPID_TOL) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " Integral of (F cdot n) over surface : ";

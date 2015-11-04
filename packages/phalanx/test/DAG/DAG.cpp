@@ -148,26 +148,24 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   TEST_ASSERT(em.sortingCalled());
   //std::cout << em << std::endl;
 
-  const auto& order_new = em.getEvaluatorInternalOrdering();
+  {
+    const auto& order_new = em.getEvaluatorInternalOrdering();
+    TEST_EQUALITY(order_new[0],3);
+    TEST_EQUALITY(order_new[1],2);
+    TEST_EQUALITY(order_new[2],1);
+    TEST_EQUALITY(order_new[3],0);
+  }
 
-  TEST_EQUALITY(order_new[0],3);
-#ifdef PHX_ENABLE_NEW_DFS_ALGORITHM
-  TEST_EQUALITY(order_new[1],2);
-  TEST_EQUALITY(order_new[2],1);
-#else
-  TEST_EQUALITY(order_new[1],1);
-  TEST_EQUALITY(order_new[2],2);
-#endif
-  TEST_EQUALITY(order_new[3],0);
-
-  em.sortAndOrderEvaluatorsNew();
-  //std::cout << em << std::endl;
-
-  TEST_EQUALITY(order_new[0],3);
-  TEST_EQUALITY(order_new[1],2);
-  TEST_EQUALITY(order_new[2],1);
-  TEST_EQUALITY(order_new[3],0);
-
+  // Make sure we can call again
+  em.sortAndOrderEvaluators();
+  {
+    const auto& order_new = em.getEvaluatorInternalOrdering();
+    //std::cout << em << std::endl;
+    TEST_EQUALITY(order_new[0],3);
+    TEST_EQUALITY(order_new[1],2);
+    TEST_EQUALITY(order_new[2],1);
+    TEST_EQUALITY(order_new[3],0);
+  }
   //Teuchos::TimeMonitor::summarize();
 }
 
@@ -189,7 +187,7 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   PHX::Tag<MyTraits::Residual::ScalarT> tag("A",dl);
   em.requireField(tag);
 
-  TEST_THROW(em.sortAndOrderEvaluatorsNew(),PHX::circular_dag_exception);
+  TEST_THROW(em.sortAndOrderEvaluators(),PHX::circular_dag_exception);
 }
 
 // Catch multiple evaluators that evaluate the same field
@@ -229,7 +227,7 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   PHX::Tag<MyTraits::Residual::ScalarT> tag("A",dl);
   em.requireField(tag);
 
-  TEST_THROW(em.sortAndOrderEvaluatorsNew(),PHX::missing_evaluator_exception);
+  TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
 }
 
 // Catch missing evalautor in subtree 
@@ -250,11 +248,5 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   PHX::Tag<MyTraits::Residual::ScalarT> tag("A",dl);
   em.requireField(tag);
 
-  TEST_THROW(em.sortAndOrderEvaluatorsNew(),PHX::missing_evaluator_exception);
-}
-
-// Rebuild at runtime
-TEUCHOS_UNIT_TEST(dag, rebuild)
-{
-  // Need to remove checks
+  TEST_THROW(em.sortAndOrderEvaluators(),PHX::missing_evaluator_exception);
 }

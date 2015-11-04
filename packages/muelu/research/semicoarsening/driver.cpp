@@ -84,7 +84,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node
 #include <MueLu_Utilities.hpp>
 #include <MueLu_SemiCoarsenPFactory_decl.hpp>
 
-
+#ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
@@ -92,6 +92,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
+#endif
 
 int main(int argc, char *argv[]) {
   // Most MueLu and Xpetra classes are templated on some or all of the
@@ -358,7 +359,7 @@ printf("after level print\n");
     B->scale(one/norms[0]);
     X->putScalar(zero);
   }
-
+#ifdef HAVE_MUELU_BELOS
   typedef MultiVector          MV;
   typedef Belos::OperatorT<MV> OP;
 
@@ -426,7 +427,9 @@ printf("after level print\n");
     out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
   else
     out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
+#else
+  out << std::endl << "MueLu has been compiled without Belos support!" << std::endl;
+#endif
   // GlobalMPISession calls MPI_Finalize() in its destructor, if
   // appropriate. You don't have to do anything here!  Just return
   // from main(). Isn't that helpful?

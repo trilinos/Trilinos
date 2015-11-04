@@ -162,9 +162,10 @@ int main(int argc, char *argv[]) {
     // Barrier objective
     RCP<ROL::Objective<RealT> > barrier = rcp( new ROL::LogBarrierObjective<RealT> );
 
+    using ROL::InteriorPoint::PenalizedObjective;
+
     // Interior Point objective
-    RCP<ROL::Objective<RealT> > ipobj = 
-      rcp( new ROL::InteriorPointObjective<RealT>(obj_hs32,barrier,1.0) );
+    RCP<ROL::Objective<RealT> > ipobj = rcp( new PenalizedObjective<RealT>(obj_hs32,barrier,*x,1.0) );
 
     RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
       rcp( new ROL::ZOO::EqualityConstraint_HS32<RealT> );
@@ -172,9 +173,10 @@ int main(int argc, char *argv[]) {
     RCP<ROL::EqualityConstraint<RealT> > incon_hs32 = 
       rcp( new ROL::ZOO::InequalityConstraint_HS32<RealT> );
 
+    using ROL::InteriorPoint::CompositeConstraint;
+
     // Interior point constraint
-    RCP<ROL::EqualityConstraint<RealT> > ipcon = 
-      rcp( new ROL::InteriorPointEqualityConstraint<RealT>(incon_hs32,eqcon_hs32) );
+    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs32,eqcon_hs32,*vc) );
 
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 

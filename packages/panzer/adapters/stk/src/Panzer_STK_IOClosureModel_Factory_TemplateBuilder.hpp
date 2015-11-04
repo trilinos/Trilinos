@@ -44,7 +44,7 @@
 #define PANZER_STK_IOCLOSURE_MODEL_FACTORY_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_Base.hpp"
 #include "Panzer_STK_IOClosureModel_Factory.hpp"

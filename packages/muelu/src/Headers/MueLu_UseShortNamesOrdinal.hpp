@@ -81,7 +81,7 @@ typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggre
 typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;
 #endif
 #ifdef MUELU_AMESOSSMOOTHER_SHORT
-typedef MueLu::AmesosSmoother AmesosSmoother;
+typedef MueLu::AmesosSmoother<Node> AmesosSmoother;
 #endif
 
 #ifdef MUELU_FACTORY_SHORT
@@ -97,7 +97,7 @@ typedef MueLu::FactoryManagerBase FactoryManagerBase;
 #endif
 
 #ifdef MUELU_IFPACKSMOOTHER_SHORT
-typedef MueLu::IfpackSmoother IfpackSmoother;
+typedef MueLu::IfpackSmoother<Node> IfpackSmoother;
 #endif
 
 #ifdef MUELU_LEVEL_SHORT

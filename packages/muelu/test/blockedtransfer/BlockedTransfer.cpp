@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       Op22->describe(*out,Teuchos::VERB_EXTREME);*/
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
 
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat11 = Op11->getCrsMatrix();
     Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > crsMat22 = Op22->getCrsMatrix();

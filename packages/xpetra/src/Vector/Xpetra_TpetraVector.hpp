@@ -96,7 +96,6 @@ namespace Xpetra {
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;                 // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;                 // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;               // overloading, not hiding
-    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;          // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue;             // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue;    // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue;    // overloading, not hiding
@@ -237,7 +236,6 @@ namespace Xpetra {
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;                 // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;                 // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;               // overloading, not hiding
-    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;          // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue;             // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue;    // overloading, not hiding
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue;    // overloading, not hiding

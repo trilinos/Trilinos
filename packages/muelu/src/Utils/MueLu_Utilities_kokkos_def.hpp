@@ -106,8 +106,8 @@
 namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
-  using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
-  using Xpetra::EpetraMultiVector;
+  //using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
+  //using Xpetra::EpetraMultiVector;
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

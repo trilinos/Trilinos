@@ -1,29 +1,29 @@
 /*
 // @HEADER
-// 
+//
 // ***********************************************************************
-// 
+//
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation 
-//  
+//                  Copyright 2010 Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//  
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//  
+//
 // 1. Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
-//  
+//
 // 2. Redistributions in binary form must reproduce the above copyright
 // notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
-//  
+//
 // 3. Neither the name of the Corporation nor the names of the
 // contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission. 
-//  
+// this software without specific prior written permission.
+//
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -32,14 +32,14 @@
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//  
+//
 // Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-// 
+//
 // ***********************************************************************
-// 
+//
 // @HEADER
 
 */
@@ -101,16 +101,19 @@ RCP<Teuchos::ParameterList> buildLibPL();
 
 int main(int argc,char * argv[])
 {
-   typedef double                            ST;
-   typedef Thyra::MultiVectorBase<ST>        MV;
-   typedef Thyra::LinearOpBase<ST>           OP;
+   typedef double                      ST;
+   typedef Thyra::MultiVectorBase<ST>  MV;
+   typedef Thyra::LinearOpBase<ST>     OP;
 
-   typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
-   typedef Tpetra::CrsMatrix<ST,int,int> TP_Crs;
-   typedef Tpetra::Operator<ST,int,int> TP_Op;
-   typedef Tpetra::Vector<ST,int,int> TP_Vec;
+   typedef Tpetra::Vector<ST>          TP_Vec;
+   typedef Tpetra::CrsMatrix<ST>       TP_Crs;
+   typedef Tpetra::Operator<ST>        TP_Op;
 
-   typedef Thyra::PreconditionerFactoryBase<double> Base;
+   typedef TP_Vec::local_ordinal_type  LO;
+   typedef TP_Vec::global_ordinal_type GO;
+   typedef TP_Vec::node_type           NT;
+
+   typedef Thyra::PreconditionerFactoryBase<ST>        Base;
    typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
 
    // calls MPI_Init and MPI_Finalize
@@ -144,8 +147,8 @@ int main(int argc,char * argv[])
    b0_tp->randomize();
    b1_tp->randomize();
 
-   RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > domain = Thyra::tpetraVectorSpace<ST>(Mat->getDomainMap());
-   RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > range = Thyra::tpetraVectorSpace<ST>(Mat->getRangeMap());
+   RCP<const Thyra::TpetraVectorSpace<ST,LO,GO,NT> > domain = Thyra::tpetraVectorSpace<ST>(Mat->getDomainMap());
+   RCP<const Thyra::TpetraVectorSpace<ST,LO,GO,NT> > range = Thyra::tpetraVectorSpace<ST>(Mat->getRangeMap());
 
    // Build Teko compatible matrices and vectors
    /////////////////////////////////////////////////////////
@@ -165,13 +168,13 @@ int main(int argc,char * argv[])
    Teko::LinearOp thMat = Thyra::tpetraLinearOp<double>(range,domain,Mat);
    Teko::LinearOp thZero = Thyra::tpetraLinearOp<double>(range,domain,zeroMat);
    Teko::LinearOp A = Thyra::block2x2(thMat,thZero,thZero,thMat); // build an upper triangular 2x2
-  
-   // Build the preconditioner 
+
+   // Build the preconditioner
    /////////////////////////////////////////////////////////
 
    // build an InverseLibrary
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*buildLibPL(),linearSolverBuilder);
-   
+
    // build the inverse factory needed by the example preconditioner
    RCP<Teko::InverseFactory> inverse  = invLib->getInverseFactory("Gauss-Seidel");
 

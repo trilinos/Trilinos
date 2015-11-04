@@ -231,10 +231,9 @@ void AlltoAllv(const Comm<int> &comm,
               ArrayRCP<std::string> &recvBuf,
               const ArrayView<int> &recvCount);
 
-#ifdef HAVE_ZOLTAN2_LONG_LONG
-
 /* \brief Specialization for unsigned long long
  */
+#ifdef HAVE_TPETRA_INT_LONG_LONG
 template <>
 void AlltoAllv(const Comm<int> &comm,
               const Environment &env,

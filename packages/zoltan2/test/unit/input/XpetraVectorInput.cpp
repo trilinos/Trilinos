@@ -70,7 +70,6 @@ using Teuchos::DefaultComm;
 
 typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
 typedef Xpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
-typedef Epetra_Vector evector_t;
 
 void printVector(RCP<const Comm<int> > &comm, zlno_t vlen,
     const zgno_t *vtxIds, const zscalar_t *vals)
@@ -332,6 +331,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////
   // User object is Epetra_Vector
+  typedef Epetra_Vector evector_t;
   if (!gfail){ 
     RCP<evector_t> eV = 
         rcp(new Epetra_Vector(uinput->getUIEpetraCrsGraph()->RowMap()));

@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
       FieldContainer<double> interpolant( 1 , numInterpPoints );
       
       // set test tolerance
-      double zero = (basis_order+1)*(basis_order+1)*100*INTREPID2_TOL;
+      double zero = (basis_order+1)*(basis_order+1)*100*INTREPID_TOL;
       
       // build matrices outside the loop, and then just do the rhs
       // for each iteration

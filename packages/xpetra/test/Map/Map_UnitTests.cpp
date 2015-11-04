@@ -68,10 +68,11 @@
 
 namespace {
 #ifdef HAVE_XPETRA_EPETRA
+typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 #ifndef XPETRA_TEST_USE_LONGLONG_GO
-  typedef Xpetra::EpetraMap EpetraMap;
+  typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
 #else
-  typedef Xpetra::EpetraMap64 EpetraMap;
+  typedef Xpetra::EpetraMapT<long long, Node> EpetraMap;
 #endif
 #endif
   using Teuchos::Array;

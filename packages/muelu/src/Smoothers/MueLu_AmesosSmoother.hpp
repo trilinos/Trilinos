@@ -66,20 +66,18 @@ namespace MueLu {
 
   /*!
     @class AmesosSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Amesos direct solvers.
 
     This class creates an Amesos preconditioner factory.  The factory is capable of generating direct solvers
     based on the type and ParameterList passed into the constructor.  See the constructor for more information.
   */
-
-  class AmesosSmoother : public SmootherPrototype<double, int, int>
+  template <class Node = typename SmootherPrototype<double,int,int>::node_type>
+  class AmesosSmoother : public SmootherPrototype<double, int, int, Node>
   {
     typedef double Scalar;
     typedef int    LocalOrdinal;
     typedef int    GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
 
 #undef MUELU_AMESOSSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -118,7 +116,7 @@ namespace MueLu {
     AmesosSmoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList());
 
     //! Destructor
-    virtual ~AmesosSmoother();
+    virtual ~AmesosSmoother() { };
 
     //@}
 
@@ -199,13 +197,17 @@ namespace MueLu {
     return Teuchos::null;
   }
 
+  // specialization for Epetra
+#if defined(HAVE_MUELU_SERIAL)
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int> >
-  GetAmesosSmoother<double, int, int> (const std::string& type,
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
+  GetAmesosSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
                                        const Teuchos::ParameterList& paramList)
   {
-    return rcp (new AmesosSmoother (type, paramList));
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    return rcp (new MueLu::AmesosSmoother<Node>(type, paramList));
   }
+#endif // HAVE_MUELU_SERIAL
 
 } // namespace MueLu
 

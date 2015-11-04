@@ -1016,7 +1016,7 @@ public:
   /// This method computes and returns the Frobenius norm of the
   /// matrix.  The Frobenius norm \f$\|A\|_F\f$ for the matrix
   /// \f$A\f$ is defined as
-  /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
+  /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |A(i,j)|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
   virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type

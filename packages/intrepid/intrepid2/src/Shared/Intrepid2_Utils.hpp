@@ -238,7 +238,7 @@ Therefore:
  ***************************************************************************************************/
 
   enum TypeOfExactData{
-    INTREPID2_UTILS_FRACTION=0,
+    INTREPID_UTILS_FRACTION=0,
     INTREPID2_UTILS_SCALAR
   };
 
@@ -256,7 +256,7 @@ Therefore:
     \param  reltol           [in]     -  relative tolerance for equality comparisons
     \param  iprint           [in]     -  if 0, no output; if 1, details are printed
     \param  analyticDataType [in]     -  type of analytic data for comparison:
-                                         \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
+                                         \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
                                          \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
     \return 0 if pass; error code otherwise
  */
@@ -265,7 +265,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
                       std::ifstream & inputFile,
                       Scalar reltol,
                       int iprint,
-                      TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION);
+                      TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
 
 /** \brief  Compares the values in the test matrix <var><b>testMat</b></var> to precomputed
             analytic values stored in a file, where the input matrix is a single contiguous
@@ -276,7 +276,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
     \param  reltol           [in]     -  relative tolerance for equality comparisons
     \param  iprint           [in]     -  if 0, no output; if 1, details are printed
     \param  analyticDataType [in]     -  type of analytic data for comparison:
-                                         \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
+                                         \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
                                          \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
     \return 0 if pass; error code otherwise
  */
@@ -285,7 +285,7 @@ int compareToAnalytic(const Scalar * testMat,
                       std::ifstream & inputFile,
                       Scalar reltol,
                       int iprint,
-                      TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION);
+                      TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
 
 
 
@@ -295,13 +295,13 @@ int compareToAnalytic(const Scalar * testMat,
     \param  testMat          [in]     -  test matrix
     \param  inputFile        [in]     -  input file
     \param  analyticDataType [in]     -  type of analytic data for comparison:
-                                         \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
+                                         \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
                                          \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
  */
 template<class Scalar>
 void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
                  std::ifstream & inputFile,
-                 TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION);
+                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
 
 /** \brief  Loads analytic values stored in a file into the matrix <var><b>testMat</b></var>,
             where the output matrix is a single contiguous array.
@@ -309,13 +309,13 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
     \param  testMat          [in]     -  test matrix
     \param  inputFile        [in]     -  input file
     \param  analyticDataType [in]     -  type of analytic data for comparison:
-                                         \li if INTREPID2_UTILS_FRACTION, analytic fractions are parsed and computed
+                                         \li if INTREPID_UTILS_FRACTION, analytic fractions are parsed and computed
                                          \li if INTREPID2_UTILS_SCALAR, high-precision scalar data is read
  */
 template<class Scalar>
 void getAnalytic(Scalar * testMat,
                  std::ifstream & inputFile,
-                 TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION);
+                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION);
 
 
 
@@ -579,7 +579,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
       }
       else {
         std::istringstream chunkstream(chunk);
-        if (analyticDataType == INTREPID2_UTILS_FRACTION) {
+        if (analyticDataType == INTREPID_UTILS_FRACTION) {
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
@@ -663,7 +663,7 @@ int compareToAnalytic(const Scalar * testMat,
       }
       else {
         std::istringstream chunkstream(chunk);
-        if (analyticDataType == INTREPID2_UTILS_FRACTION) {
+        if (analyticDataType == INTREPID_UTILS_FRACTION) {
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
@@ -726,7 +726,7 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
       }
       else {
         std::istringstream chunkstream(chunk);
-        if (analyticDataType == INTREPID2_UTILS_FRACTION) {
+        if (analyticDataType == INTREPID_UTILS_FRACTION) {
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }
@@ -778,7 +778,7 @@ void getAnalytic(Scalar * testMat,
       }
       else {
         std::istringstream chunkstream(chunk);
-        if (analyticDataType == INTREPID2_UTILS_FRACTION) {
+        if (analyticDataType == INTREPID_UTILS_FRACTION) {
           chunkstream >> num1;
           testentry = (Scalar)(num1);
         }

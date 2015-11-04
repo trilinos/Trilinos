@@ -144,7 +144,7 @@ public:
               const RCP<graphModel_t> &model__) :
     env(env__), problemComm(problemComm__), 
 #ifdef HAVE_ZOLTAN2_MPI
-    mpicomm(TeuchosConst2MPI(problemComm__)),
+    mpicomm(Teuchos::getRawMpiComm(*problemComm__)),
 #endif
     model(model__)
   { }
@@ -216,10 +216,12 @@ void AlgPTScotch<Adapter>::partition(
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets, env);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets,
+                                                          env);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds, env);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds,
+                                                          env);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
@@ -347,13 +349,13 @@ void AlgPTScotch<Adapter>::partition(
   env->memory("Zoltan2-Scotch: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
-  TPL_Traits<SCOTCH_Num, gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
+  TPL_Traits<SCOTCH_Num, const lno_t>::DELETE_TPL_T_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, const gno_t>::DELETE_TPL_T_ARRAY(&edgeloctab);
 
   if (nVwgts) delete [] velotab;
   if (nEwgts) delete [] edlotab;
 
-#else // DO NOT HAVE_MPI
+#else // DO NOT HAVE MPI
 
   // TODO:  Handle serial case with calls to Scotch.
   // TODO:  For now, assign everything to rank 0 and assume only one part.
@@ -370,7 +372,7 @@ void AlgPTScotch<Adapter>::partition(
 
   solution->setParts(partList);
 
-#endif // DO NOT HAVE_MPI
+#endif // DO NOT HAVE MPI
 }
 
 /////////////////////////////////////////////////////////////////////////////

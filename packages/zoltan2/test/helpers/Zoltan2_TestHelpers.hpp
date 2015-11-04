@@ -144,6 +144,11 @@ typedef Tpetra::Map<>::node_type znode_t;
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#ifndef HAVE_ZOLTAN2_EPETRA
+#  undef HAVE_EPETRA_SCALAR_TYPE
+#  undef HAVE_EPETRA_DATA_TYPES
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 
 #define MEMORY_CHECK(iPrint, msg) \

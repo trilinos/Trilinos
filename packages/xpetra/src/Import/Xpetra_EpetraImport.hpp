@@ -58,22 +58,17 @@
 
 namespace Xpetra {
 
-  // TODO: move that elsewhere
-  //   template<class GlobalOrdinal>
-  //   const Epetra_Import & toEpetra(const Import<int, GlobalOrdinal> &);
-
-  template<class GlobalOrdinal>
-  RCP< const Import<int, GlobalOrdinal > > toXpetra(const Epetra_Import *import);
+  template<class GlobalOrdinal, class Node>
+  RCP< const Import<int, GlobalOrdinal, Node > > toXpetra(const Epetra_Import *import);
   //
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraImportT
-    : public Import<int, EpetraGlobalOrdinal>
+    : public Import<int, EpetraGlobalOrdinal, Node>
   {
 
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef typename Import<int, GlobalOrdinal>::node_type Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
@@ -132,10 +127,10 @@ namespace Xpetra {
     ArrayView< const int > getExportPIDs() const;
 
     //! The Source Map used to construct this Import object.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraImportT::getSourceMap"); return toXpetra<GlobalOrdinal>(import_->SourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraImportT::getSourceMap"); return toXpetra<GlobalOrdinal, Node>(import_->SourceMap()); }
 
     //! The Target Map used to construct this Import object.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImportT::getTargetMap"); return toXpetra<GlobalOrdinal>(import_->TargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraImportT::getTargetMap"); return toXpetra<GlobalOrdinal, Node>(import_->TargetMap()); }
 
     //@}
 
@@ -163,14 +158,6 @@ namespace Xpetra {
     RCP<const Epetra_Import> import_;
 
   }; // EpetraImportT class
-
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraImportT<int> EpetraImport;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraImportT<long long> EpetraImport64;
-#endif
 
 } // Xpetra namespace
 

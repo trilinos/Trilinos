@@ -71,7 +71,6 @@ using Teuchos::DefaultComm;
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
-typedef Epetra_CrsMatrix ematrix_t;
 
 void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
     const zgno_t *rowIds, const zlno_t *offsets, const zgno_t *colIds)
@@ -308,6 +307,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EPETRA_DATA_TYPES
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsMatrix
+  typedef Epetra_CrsMatrix ematrix_t;
   if (!gfail){ 
     RCP<ematrix_t> eM = uinput->getUIEpetraCrsMatrix();
     RCP<const ematrix_t> ceM = rcp_const_cast<const ematrix_t>(eM);

@@ -44,7 +44,7 @@
 #define PANZER_ASSEMBLY_ENGINE_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine.hpp"

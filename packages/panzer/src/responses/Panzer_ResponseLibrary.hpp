@@ -74,6 +74,7 @@ namespace panzer {
 
 template <typename TraitsT> class ResponseContainerBase;
 template <typename EvalT,typename TraitsT> class ResponseContainer;
+class LinearObjContainer;
 
 /** This contains, collects and serves as a resource for
   * responses computed by panzer. This functions as a library
@@ -338,6 +339,8 @@ private:
    bool residualType_;
 
    bool responseEvaluatorsBuilt_;
+
+   mutable Teuchos::RCP<LinearObjContainer> ghostedContainer_;
 
    struct Printer {
      const Response_TemplateManager & tm_;

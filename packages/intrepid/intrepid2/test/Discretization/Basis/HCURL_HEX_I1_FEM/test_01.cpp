@@ -414,7 +414,7 @@ Kokkos::initialize();
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
           int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         
@@ -437,7 +437,7 @@ Kokkos::initialize();
 
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         
@@ -516,12 +516,12 @@ Kokkos::initialize();
         for(int d=0;d<spaceDim;d++) 
            tangent += bvals(i,j,d)*tangents(j,d);
 
-        if ((i != j) && (std::abs(tangent - 0.0) > INTREPID2_TOL)) {
+        if ((i != j) && (std::abs(tangent - 0.0) > INTREPID_TOL)) {
           errorFlag++;
           sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), tangent, 0.0);
           *outStream << buffer;
         }
-        else if ((i == j) && (std::abs(tangent - 1.0) > INTREPID2_TOL)) {
+        else if ((i == j) && (std::abs(tangent - 1.0) > INTREPID_TOL)) {
           errorFlag++;
           sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), tangent, 1.0);
           *outStream << buffer;

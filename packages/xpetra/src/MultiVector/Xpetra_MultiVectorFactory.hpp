@@ -108,13 +108,19 @@ namespace Xpetra {
 
   };
 
+  // Specializations for Serial Node (mainly used for Epetra)
+#ifdef HAVE_XPETRA_SERIAL
+
+  // Specialization for Scalar=double, LO=GO=int and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class MultiVectorFactory<double, int, int> {
+  class MultiVectorFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -137,7 +143,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<int,Node>(map, NumVectors, zeroOut) );
 #endif
 #endif
 
@@ -160,7 +166,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<int>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<int,Node>(map, ArrayOfPtrs, NumVectors) );
 #endif
 #endif
 
@@ -169,14 +175,17 @@ namespace Xpetra {
 
   };
 
+  // Specialization for Scalar=double, LO=int, GO=long long and Serial node
+  // Used both for Epetra and Tpetra
+  // For any other node definition the general default implementation is used which allows Tpetra only
 #ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
-  class MultiVectorFactory<double, int, long long> {
+  class MultiVectorFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef MultiVector<double, int, GlobalOrdinal>::node_type Node;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -195,7 +204,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long>(map, NumVectors, zeroOut) );
+        return rcp( new EpetraMultiVectorT<long long,Node>(map, NumVectors, zeroOut) );
 #endif
 #endif
 
@@ -214,7 +223,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
-        return rcp( new EpetraMultiVectorT<long long>(map, ArrayOfPtrs, NumVectors) );
+        return rcp( new EpetraMultiVectorT<long long,Node>(map, ArrayOfPtrs, NumVectors) );
 #endif
 #endif
 
@@ -223,6 +232,7 @@ namespace Xpetra {
 
   };
 #endif // HAVE_XPETRA_INT_LONG_LONG
+#endif // HAVE_XPETRA_SERIAL
 
 }
 

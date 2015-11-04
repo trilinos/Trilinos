@@ -145,7 +145,7 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+03 * INTREPID2_TOL;
+  double                                   reltol = 1.0e+03 * INTREPID_TOL;
   int                                      maxDeg[2];
   int                                      numPoly[2];
   maxDeg[0]  = INTREPID2_CUBATURE_TRI_DEFAULT_MAX;

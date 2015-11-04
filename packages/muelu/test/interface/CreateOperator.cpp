@@ -117,7 +117,7 @@ namespace MueLuExamples {
       }
     }
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
     if (lib == Xpetra::UseEpetra) {
       if (myRank == 0) {
         // Redirect output

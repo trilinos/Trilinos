@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
     // COMPARE SOLUTIONS
     Teuchos::RCP<ROL::Vector<RealT> > err = x.clone();
     err->set(x); err->axpy(-1.,*xMY);
-    errorFlag += ((err->norm() > 1.e-2*x.norm()) ? 1 : 0);
+    errorFlag += ((err->norm() > 1.e-7*x.norm()) ? 1 : 0);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

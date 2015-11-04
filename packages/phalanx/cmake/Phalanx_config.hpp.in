@@ -7,7 +7,6 @@
 
 #cmakedefine PHX_TEUCHOS_TIME_MONITOR
 
-#cmakedefine PHX_ENABLE_NEW_DFS_ALGORITHM
 #cmakedefine PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
 
 #cmakedefine PHX_ETI
@@ -22,8 +21,6 @@
 #cmakedefine PHX_INDEX_SIZE_TYPE_UINT
 #cmakedefine PHX_INDEX_SIZE_TYPE_LONGINT
 #cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
-
-#cmakedefine HAVE_PHALANX_TVMET
 
 #cmakedefine Phalanx_ENABLE_Intrepid
 

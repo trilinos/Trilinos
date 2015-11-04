@@ -50,8 +50,11 @@
 
 
 namespace MueLu {
+  template <class Node>
   class AmesosSmoother;
 }
+
+
 
 #ifndef MUELU_AMESOSSMOOTHER_SHORT
 #define MUELU_AMESOSSMOOTHER_SHORT

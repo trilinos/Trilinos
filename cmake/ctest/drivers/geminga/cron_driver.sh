@@ -51,8 +51,8 @@ module unload openmpi
 # ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
 module load openmpi/1.10.0
-module load gcc/4.8.4
-module load cuda/6.5-gcc
+module load gcc/4.9.2
+module load cuda/7.5-gcc
 module load nvcc-wrapper/gcc
 
 echo "Configuration = $CONFIGURATION"

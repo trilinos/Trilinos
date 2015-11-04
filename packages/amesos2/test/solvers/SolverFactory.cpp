@@ -95,6 +95,7 @@ namespace {
                     const Tpetra::global_size_t gblNumRows)
   {
     using Teuchos::Comm;
+    using Teuchos::tuple;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
@@ -111,21 +112,39 @@ namespace {
 
     const GO indexBase = 0;
     RCP<const map_type> rowMap (new map_type (gblNumRows, indexBase, comm));
-    // For this particular row matrix, the row Map and the column Map
-    // are the same.  Giving a column Map to CrsMatrix's constructor
-    // lets us use local indices.
+    // The simple matrix with just row and column map the same and a diagonal
+    // causes trouble for lot of reasons. One example being the parmetis call
+    // from Superlu_dist which will fail with a null array, and a diagonal
+    // matrix results in a null array as parmetis doesn't like self edges.
+    // We will use a simple tridiagonal matrix instead as our test. -Siva
     RCP<const map_type> colMap = rowMap;
-    const size_t maxNumEntPerRow = 1;
-    RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    const size_t maxNumEntPerRow = 3;
+    const SC two = static_cast<SC> (2.0);
+    const SC minusOne = static_cast<SC> (-1.0);
+    RCP<MAT> A (new MAT (rowMap, maxNumEntPerRow, Tpetra::DynamicProfile));
 
     if (rowMap->getNodeNumElements () != 0) {
-      Teuchos::Array<SC> vals (1);
-      Teuchos::Array<LO> inds (1);
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
-        inds[0] = lclRow;
-        vals[0] = STS::one ();
-        A->insertLocalValues (lclRow, inds (), vals ());
+        const GO gblRow = rowMap->getGlobalElement(lclRow);
+        if (gblRow == rowMap->getMinAllGlobalIndex())
+        {
+          A->insertGlobalValues (gblRow,
+               tuple<GO> (gblRow, gblRow + 1),
+               tuple<SC> (two, minusOne));
+        }
+        else if ( gblRow == rowMap->getMaxAllGlobalIndex())
+        {
+          A->insertGlobalValues (gblRow,
+               tuple<GO> (gblRow - 1, gblRow),
+               tuple<SC> (minusOne, two));
+        }
+        else
+        {
+          A->insertGlobalValues (gblRow,
+               tuple<GO> (gblRow - 1, gblRow, gblRow+1),
+               tuple<SC> (minusOne, two, minusOne));
+        }
       }
     }
 
@@ -136,7 +155,7 @@ namespace {
   }
 
   // Create a very simple square test linear system (matrix,
-  // right-hand side(s), and exact solution(s).  We use the identity
+  // right-hand side(s), and exact solution(s).  We use the tridiagonal
   // matrix here.  The point of this test is NOT to exercise the
   // solver; it's just to check that its LinearSolverFactory can
   // create working solvers.  Amesos2 has more rigorous tests for each
@@ -315,6 +334,7 @@ namespace {
           << ", GO = " << TypeNameTraits<GO>::name ()
           << ", and NT = " << TypeNameTraits<NT>::name () << "." << endl;
     }
+    TEST_ASSERT ( success == true);
   }
 
   // Define typedefs that make the Tpetra macros work.

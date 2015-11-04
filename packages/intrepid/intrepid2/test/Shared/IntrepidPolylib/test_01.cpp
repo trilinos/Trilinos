@@ -60,7 +60,7 @@ using namespace Intrepid2;
 
 #define NPLOWER  5
 #define NPUPPER 15
-#define TEST_EPS  1000*INTREPID2_TOL
+#define TEST_EPS  1000*INTREPID_TOL
 
 #define GAUSS_INT            1
 #define GAUSS_RADAUM_INT     1

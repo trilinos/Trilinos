@@ -74,6 +74,8 @@
 #include "MueLu_EpetraOperator.hpp"
 #endif
 
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
+
 #include "MueLu_UseDefaultTypes.hpp"
 
 namespace MueLuTests {
@@ -84,11 +86,6 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
   {
-
-    typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
-    typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
-
     out << "version: " << MueLu::Version() << std::endl;
 
     using Teuchos::RCP;
@@ -123,8 +120,12 @@ namespace MueLuTests {
 #endif
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
       std::string xmlFileName = "test.xml";
+
+      typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+      typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
 
       RCP<tpetra_crsmatrix_type> tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
@@ -187,8 +188,8 @@ namespace MueLuTests {
 #endif
 
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available (with GO=int enabled)");
+#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -237,8 +238,6 @@ namespace MueLuTests {
  TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_XMLOnList)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
@@ -271,9 +270,11 @@ namespace MueLuTests {
 #endif
 
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
       Teuchos::ParameterList mylist;
       mylist.set("xml parameter file","test.xml");
+
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
@@ -322,8 +323,8 @@ namespace MueLuTests {
 #endif
 
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available (with GO=int enabled)");
+#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -374,8 +375,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_PDESystem)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
 
@@ -415,7 +414,9 @@ namespace MueLuTests {
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
       if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+        typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
@@ -444,8 +445,8 @@ namespace MueLuTests {
         out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
             Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
-#endif
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available (with GO=int enabled)");
+#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
       } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -478,8 +479,6 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(PetraOperator, ReusePreconditioner)
   {
     out << "version: " << MueLu::Version() << std::endl;
-
-    typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
     using Teuchos::RCP;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
@@ -505,7 +504,9 @@ namespace MueLuTests {
 
     std::string xmlFileName = "testReuse.xml";
     if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+      typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
@@ -527,8 +528,8 @@ namespace MueLuTests {
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available");
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Tpetra is not available (with GO=int enabled)");
+#endif // #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
@@ -557,3 +558,5 @@ namespace MueLuTests {
   }
 
 }//namespace MueLuTests
+
+#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_SERIAL

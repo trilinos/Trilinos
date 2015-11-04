@@ -163,7 +163,7 @@ public:
       Teuchos::RCP<const Epetra_Map> rgEpetraMap = Thyra::get_Epetra_Map(*vectorSpace, epComm);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgEpetraMap));
 
-      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node > > rgXpetraMap = Teuchos::rcp(new Xpetra::EpetraMap(rgEpetraMap));
+      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node > > rgXpetraMap = Teuchos::rcp(new Xpetra::EpetraMapT<GlobalOrdinal,Node>(rgEpetraMap));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
       return rgXpetraMap;
     }
@@ -229,8 +229,8 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epetra_ncnstcrsmat = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(epetra_crsmat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetra_ncnstcrsmat));
 
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpetraCrsMat =
-          Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epetra_ncnstcrsmat));
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > xEpetraCrsMat =
+          Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> (epetra_ncnstcrsmat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpetraCrsMat));
 
       Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ret =
@@ -271,8 +271,8 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epetra_crsmat = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(epetra_rowmat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetra_crsmat));
 
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpetraCrsMat =
-          Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epetra_crsmat));
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > xEpetraCrsMat =
+          Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> (epetra_crsmat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpetraCrsMat));
       return xEpetraCrsMat;
     }
@@ -304,9 +304,9 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<const Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(mat);
+    Teuchos::RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
     if(epetraMat!=Teuchos::null) {
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(mat);
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpCrsMat));
       Teuchos::RCP<const Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrix();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
@@ -343,9 +343,9 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(mat);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
     if(epetraMat!=Teuchos::null) {
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(mat);
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpCrsMat));
       Teuchos::RCP<Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrixNonConst();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
@@ -374,7 +374,7 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(Ablock);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
 
@@ -476,7 +476,7 @@ public:
       Teuchos::RCP<const Epetra_Map> rgEpetraMap = Thyra::get_Epetra_Map(*vectorSpace, epComm);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgEpetraMap));
 
-      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node > > rgXpetraMap = Teuchos::rcp(new Xpetra::EpetraMap(rgEpetraMap));
+      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node > > rgXpetraMap = Teuchos::rcp(new Xpetra::EpetraMapT<GlobalOrdinal,Node>(rgEpetraMap));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
       return rgXpetraMap;
     }
@@ -548,8 +548,8 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epetra_ncnstcrsmat = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(epetra_crsmat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetra_ncnstcrsmat));
 
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpetraCrsMat =
-          Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epetra_ncnstcrsmat));
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpetraCrsMat =
+          Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> (epetra_ncnstcrsmat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpetraCrsMat));
 
       Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ret =
@@ -594,8 +594,8 @@ public:
       Teuchos::RCP<Epetra_CrsMatrix> epetra_crsmat = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(epetra_rowmat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetra_crsmat));
 
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpetraCrsMat =
-          Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epetra_crsmat));
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpetraCrsMat =
+          Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> (epetra_crsmat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpetraCrsMat));
       return xEpetraCrsMat;
     }
@@ -631,9 +631,9 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<const Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(mat);
+    Teuchos::RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
     if(epetraMat!=Teuchos::null) {
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(mat);
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpCrsMat));
       Teuchos::RCP<const Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrix();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
@@ -674,9 +674,9 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(mat);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(mat);
     if(epetraMat!=Teuchos::null) {
-      Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(mat);
+      Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  > xEpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node>  >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpCrsMat));
       Teuchos::RCP<Epetra_CrsMatrix> epCrsMat = xEpCrsMat->getEpetra_CrsMatrixNonConst();
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epCrsMat));
@@ -709,7 +709,7 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrix> epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrix>(Ablock);
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
     if(epetraMat!=Teuchos::null) bEpetra = true;
 #endif
 

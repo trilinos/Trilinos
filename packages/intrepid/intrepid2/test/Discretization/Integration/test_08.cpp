@@ -162,8 +162,8 @@ Kokkos::initialize();
   Teuchos::Array< Teuchos::Array<double> > testInt;
   Teuchos::Array< Teuchos::Array<double> > analyticInt;
   Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+04 * INTREPID2_TOL;
-  int maxDeg                             = 20; // can be as large as INTREPID_CUBATURE_SPARSE3D_GAUSS_MAX, but runtime is excessive
+  double                                   reltol = 1.0e+04 * INTREPID_TOL;
+  int maxDeg                             = 20; // can be as large as INTREPID2_CUBATURE_SPARSE3D_GAUSS_MAX, but runtime is excessive
   int maxOffset                          = INTREPID2_CUBATURE_LINE_GAUSS_MAX;
   int numPoly                            = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
   int numAnalytic                        = (maxOffset+1)*(maxOffset+2)*(maxOffset+3)/6;
@@ -178,7 +178,7 @@ Kokkos::initialize();
   namestream >> filename;
 
   // format of data files with analytic values
-  TypeOfExactData dataFormat = INTREPID2_UTILS_FRACTION;
+  TypeOfExactData dataFormat = INTREPID_UTILS_FRACTION;
 
   // compute and compare integrals
   try {

@@ -468,8 +468,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    typedef Xpetra::EpetraMultiVector                  EpetraMultiVector;
-    typedef MultiVecTraits   <Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
+    typedef Xpetra::EpetraMultiVectorT<GO,Node>            EpetraMultiVector;
+    typedef MultiVecTraits   <Scalar, Epetra_MultiVector>  MultiVecTraitsEpetra;
 #endif
 
   public:

@@ -52,6 +52,8 @@
 #include "MueLu_Hierarchy.hpp"
 //TODO: Kokkos headers
 
+#if defined(HAVE_MUELU_SERIAL) and defined(HAVE_MUELU_EPETRA)
+
 namespace MueLu {
 
 /*! @class EpetraOperator
@@ -62,7 +64,7 @@ namespace MueLu {
     typedef double                                              SC;
     typedef int                                                 LO;
     typedef int                                                 GO;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType         NO;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode             NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;
@@ -159,5 +161,7 @@ namespace MueLu {
   };
 
 } // namespace
+
+#endif // HAVE_MUELU_EPETRA and HAVE_MUELU_SERIAL
 
 #endif // MUELU_EPETRAOPERATOR_HPP

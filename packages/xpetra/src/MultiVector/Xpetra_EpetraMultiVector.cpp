@@ -56,37 +56,99 @@
 namespace Xpetra {
 
 // TODO: move that elsewhere
-  template<class GlobalOrdinal>
-  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, GlobalOrdinal> & x) {
-    XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal>, x, tX, "toEpetra");
+  template<class GlobalOrdinal,class Node>
+  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, GlobalOrdinal,Node> & x) {
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
 
-  template<class GlobalOrdinal>
-  Epetra_MultiVector & toEpetra(MultiVector<double, int, GlobalOrdinal> & x) {
-    XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal>, x, tX, "toEpetra");
+  template<class GlobalOrdinal,class Node>
+  Epetra_MultiVector & toEpetra(MultiVector<double, int, GlobalOrdinal,Node> & x) {
+    XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal COMMA Node>, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
   //
 
-  template<class GlobalOrdinal>
-  RCP<MultiVector<double, int, GlobalOrdinal> > toXpetra(RCP<Epetra_MultiVector> vec) {
+  template<class GlobalOrdinal,class Node>
+  RCP<MultiVector<double, int, GlobalOrdinal,Node> > toXpetra(RCP<Epetra_MultiVector> vec) {
     if (!vec.is_null())
-      return rcp(new EpetraMultiVectorT<GlobalOrdinal>(vec));
+      return rcp(new EpetraMultiVectorT<GlobalOrdinal,Node>(vec));
 
     return Teuchos::null;
   }
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-template RCP<MultiVector<double, int, int> > toXpetra<int>(RCP<Epetra_MultiVector>);
-template const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> &);
-template Epetra_MultiVector & toEpetra(MultiVector<double, int, int> &);
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_SERIAL
+template class EpetraMultiVectorT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
+template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosSerialWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosSerialWrapperNode>(MultiVector<double, int, int,Kokkos::Compat::KokkosSerialWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosSerialWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_PTHREAD
+template class EpetraMultiVectorT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosThreadsWrapperNode>(MultiVector<double, int, int,Kokkos::Compat::KokkosThreadsWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosThreadsWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosThreadsWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_OPENMP
+template class EpetraMultiVectorT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(MultiVector<double, int, int,Kokkos::Compat::KokkosOpenMPWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosOpenMPWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraMultiVectorT<int, default_node_type >;
+template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<int, default_node_type >(const MultiVector<double, int, int, default_node_type > &);
+#endif
+#else
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+template class EpetraMultiVectorT<int, default_node_type >;
+template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<int, default_node_type >(const MultiVector<double, int, int, default_node_type > &);
+#endif // HAVE_XPETRA_TPETRA
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-template RCP<MultiVector<double, int, long long> > toXpetra<long long>(RCP<Epetra_MultiVector>);
-template const Epetra_MultiVector & toEpetra(const MultiVector<double, int, long long> &);
-template Epetra_MultiVector & toEpetra(MultiVector<double, int, long long> &);
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_SERIAL
+template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
+template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosSerialWrapperNode>(MultiVector<double, int, long long,Kokkos::Compat::KokkosSerialWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosSerialWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_PTHREAD
+template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
+template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosThreadsWrapperNode>(MultiVector<double, int, long long,Kokkos::Compat::KokkosThreadsWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosThreadsWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosThreadsWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_OPENMP
+template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(MultiVector<double, int, long long,Kokkos::Compat::KokkosOpenMPWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode > &);
+#endif
+#ifdef HAVE_XPETRA_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraMultiVectorT<long long, default_node_type >;
+template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<long long, default_node_type >(const MultiVector<double, int, long long, default_node_type > &);
+#endif
+#else
+// Tpetra is disabled and Kokkos not available: use dummy node type
+typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+template class EpetraMultiVectorT<long long, default_node_type >;
+template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);
+template const Epetra_MultiVector & toEpetra<long long, default_node_type >(const MultiVector<double, int, long long, default_node_type > &);
+#endif // HAVE_XPETRA_TPETRA
 #endif
 
 } // namespace Xpetra

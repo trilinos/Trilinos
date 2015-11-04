@@ -102,7 +102,7 @@ KLU2<Matrix,Vector>::~KLU2( )
   //}
 
   // only root allocated these SuperMatrices.
-  //if ( data_.L.Store != NULL ){	// will only be true for this->root_
+  //if ( data_.L.Store != NULL ){       // will only be true for this->root_
       // destroy ..
   //}
 }
@@ -170,7 +170,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
-  global_size_type info_st = as<global_size_type>(info);
+  //global_size_type info_st = as<global_size_type>(info); // unused
   /* TODO : Proper error messages
   TEUCHOS_TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
     std::runtime_error,
@@ -224,7 +224,7 @@ KLU2<Matrix,Vector>::solve_impl(
 #endif
     ::KLU2::klu_solve<slu_type, local_ordinal_type>
                 (data_.symbolic_, data_.numeric_,
-                (local_ordinal_type)this->globalNumCols_, 
+                (local_ordinal_type)this->globalNumCols_,
                 (local_ordinal_type)nrhs,
                 bValues.getRawPtr(),  &(data_.common_)) ;
 
@@ -235,7 +235,7 @@ KLU2<Matrix,Vector>::solve_impl(
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
-  global_size_type ierr_st = as<global_size_type>(ierr);
+  // global_size_type ierr_st = as<global_size_type>(ierr); // unused
   // TODO
   //TEUCHOS_TEST_FOR_EXCEPTION( ierr < 0,
                       //std::invalid_argument,
@@ -285,12 +285,12 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   using Teuchos::ParameterEntryValidator;
 
   RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
-  
+
   if(parameterList->isParameter("Trans"))
     {}
-      
-   
-  
+
+
+
 
   // The KLU2 transpose option can override the Amesos2 option
   //if( parameterList->isParameter("Trans") ){
@@ -367,7 +367,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template<class Matrix, class Vector>
 const char* KLU2<Matrix,Vector>::name = "KLU2";
-  
+
 
 } // end namespace Amesos2
 

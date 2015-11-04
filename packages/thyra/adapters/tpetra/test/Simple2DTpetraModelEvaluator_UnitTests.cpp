@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -82,27 +82,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, construct, Scal
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(
     Simple2DTpetraModelEvaluator, construct )
 #endif
-    
+
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(
     Simple2DTpetraModelEvaluator, construct )
 #endif
-    
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
 {
-
-  using Teuchos::tuple;
-  using Teuchos::ArrayView;
+  using Thyra::LinearOpBase;
+  using Thyra::VectorBase;
   using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::tuple;
+  typedef Thyra::TpetraOperatorVectorExtraction<Scalar> ConverterT;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
-  using Thyra::VectorBase;
-  using Thyra::LinearOpBase;
-  typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
 
   RCP<Simple2DTpetraModelEvaluator<Scalar> > model = simple2DTpetraModelEvaluator<Scalar>();
 
@@ -124,30 +124,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
   model->evalModel(inArgs, outArgs);
 
   const ScalarMag tol = 100.0 * SMT::eps();
-  
-  const RCP<const Tpetra::Vector<Scalar,int> > f_tpetra = 
+
+  const RCP<const Tpetra::Vector<Scalar> > f_tpetra =
     ConverterT::getConstTpetraVector(f);
 
   const ArrayRCP<const Scalar> f_tpetra_vals = f_tpetra->get1dView();
   TEST_FLOATING_EQUALITY(f_tpetra_vals[0], as<Scalar>(x_0 + x_1*x_1 - p_0), tol);
   TEST_FLOATING_EQUALITY(f_tpetra_vals[1], as<Scalar>(d * (x_0*x_0 - x_1 - p_1)), tol);
 
-  const RCP<const Tpetra::CrsMatrix<Scalar,int> > W_tpetra = 
-    rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar,int> >(
+  const RCP<const Tpetra::CrsMatrix<Scalar> > W_tpetra =
+    rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar> >(
       ConverterT::getTpetraOperator(W_op));
 
-  ArrayView<const int> row_indices;
+  ArrayView<const LO> row_indices;
   ArrayView<const Scalar> row_values;
 
   W_tpetra->getLocalRowView(0, row_indices, row_values);
-  TEST_EQUALITY( row_indices[0], 0 );
-  TEST_EQUALITY( row_indices[1], 1 );
+  // FIXME (mfh 22 Oct 2015) This test assumes that local indices
+  // occur in a particular order.  Tpetra does not necessarily
+  // guarantee this.
+  TEST_EQUALITY( row_indices[0], static_cast<LO> (0) );
+  TEST_EQUALITY( row_indices[1], static_cast<LO> (1) );
   TEST_FLOATING_EQUALITY( row_values[0], as<Scalar>(1.0), tol );
   TEST_FLOATING_EQUALITY( row_values[1], as<Scalar>(2.0*x_1), tol );
 
   W_tpetra->getLocalRowView(1, row_indices, row_values);
-  TEST_EQUALITY( row_indices[0], 0 );
-  TEST_EQUALITY( row_indices[1], 1 );
+  TEST_EQUALITY( row_indices[0], static_cast<LO> (0) );
+  TEST_EQUALITY( row_indices[1], static_cast<LO> (1) );
   TEST_FLOATING_EQUALITY( row_values[0], as<Scalar>(d*2.0*x_0), tol );
   TEST_FLOATING_EQUALITY( row_values[1], as<Scalar>(-d), tol );
 
@@ -157,12 +160,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(
       Simple2DTpetraModelEvaluator, eval )
 #endif
-    
+
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(
       Simple2DTpetraModelEvaluator, eval )
 #endif
-    
+
 
 
 } // namespace

@@ -71,14 +71,14 @@
 
 namespace Xpetra {
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraCrsMatrixT
-    : public CrsMatrix<double, int, EpetraGlobalOrdinal>
+    : public CrsMatrix<double, int, EpetraGlobalOrdinal, Node>
   {
-    typedef EpetraGlobalOrdinal                                                 GlobalOrdinal;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::scalar_type         Scalar;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::local_ordinal_type  LocalOrdinal;
-    typedef typename CrsMatrix<double, int, GlobalOrdinal>::node_type           Node;
+    typedef EpetraGlobalOrdinal                                                       GlobalOrdinal;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type         Scalar;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type  LocalOrdinal;
+
 
     // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
@@ -217,13 +217,13 @@ namespace Xpetra {
     const RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraCrsMatrixT::getComm"); return toXpetra(mtx_->Comm()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRowMap"); return toXpetra<GlobalOrdinal>(mtx_->RowMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->RowMap()); }
 
     //! Returns the Map that describes the column distribution in this matrix.
-    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getColMap"); return toXpetra<GlobalOrdinal>(mtx_->ColMap()); }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getColMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->ColMap()); }
 
     //! Returns the CrsGraph associated with this matrix.
-    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrixT::getCrsGraph"); return toXpetra<GlobalOrdinal>(mtx_->Graph()); }
+    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { XPETRA_MONITOR("EpetraCrsMatrixT::getCrsGraph"); return toXpetra<GlobalOrdinal,Node>(mtx_->Graph()); }
 
     //! Number of global elements in the row map of this matrix.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsMatrixT::getGlobalNumRows"); return mtx_->NumGlobalRows64(); }
@@ -289,7 +289,7 @@ namespace Xpetra {
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const;
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra<EpetraGlobalOrdinal,Node>(diag)); }
 
     //! Get offsets of the diagonal entries in the matrix.
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
@@ -310,10 +310,10 @@ namespace Xpetra {
     void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const;
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getDomainMap"); return toXpetra<GlobalOrdinal>(mtx_->DomainMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getDomainMap"); return toXpetra<GlobalOrdinal, Node>(mtx_->DomainMap()); }
 
     //!
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRangeMap"); return toXpetra<GlobalOrdinal>(mtx_->RangeMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getRangeMap"); return toXpetra<GlobalOrdinal, Node>(mtx_->RangeMap()); }
 
     //@}
 
@@ -335,7 +335,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getMap"); return toXpetra<GlobalOrdinal>(mtx_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrixT::getMap"); return toXpetra<GlobalOrdinal,Node>(mtx_->Map()); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -373,57 +373,51 @@ namespace Xpetra {
     local_matrix_type getLocalMatrix () const {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
                                  "Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+      if (isInitializedLocalMatrix_)
+        return localMatrix_;
+
       RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
-      const int nnz = matrix->NumMyNonzeros();
+      const int numRows = matrix->NumMyRows();
+      const int numCols = matrix->NumMyCols();
+      const int nnz     = matrix->NumMyNonzeros();
+
       int*      rowptr;
       int*      colind;
       double*   vals;
       int       rv = matrix->ExtractCrsDataPointers(rowptr, colind, vals);
       TEUCHOS_TEST_FOR_EXCEPTION(rv, std::runtime_error, "Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
-      rowptr_ = Teuchos::arcp<typename local_matrix_type::size_type>(nnz+1);
-      for (int i = 0; i < nnz; i++)
-        rowptr_[i] = Teuchos::asSafe<typename local_matrix_type::size_type>(rowptr[i]);
-      rowptr_[nnz] = nnz;
+
+      // Transform int* rowptr array to size_type* array
+      typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr("local row map", numRows+1);
+      for (size_t i = 0; i < kokkosRowPtr.size(); i++)
+        kokkosRowPtr(i) = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
 
       // create Kokkos::Views
-      typedef typename local_matrix_type::row_map_type  row_map_type;
-      typedef typename local_matrix_type::index_type    index_type;
-      typedef typename local_matrix_type::values_type   values_type;
+      typename local_matrix_type::index_type   kokkosColind(colind,              nnz);
+      typename local_matrix_type::values_type  kokkosVals  (vals,                nnz);
 
-      row_map_type      kokkosRowptr = row_map_type(rowptr_.getRawPtr(), nnz+1);
-      index_type        kokkosColind = index_type  (colind,    nnz);
-      values_type       kokkosVals   = values_type (vals,      nnz);
+      localMatrix_ = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
+      isInitializedLocalMatrix_ = true;
 
-      const int         numRows = matrix->NumMyRows();
-      const int         numCols = matrix->NumMyCols();
-      const std::string label("LocalMatrix");
-
-      local_matrix_type ret(label, numRows, numCols, nnz, kokkosVals, kokkosRowptr, kokkosColind);
-
-      return ret;
+      return localMatrix_;
     }
 #endif
    //@}
 
   private:
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    mutable Teuchos::ArrayRCP<typename local_matrix_type::size_type> rowptr_;  ///< locally shared rowptr for Kokkos::View. This is annoying but a local reinterpret_cast produces segfaults. Note that the rowptr are somewhat special compared to colids and values...
-#endif
-
     RCP<Epetra_CrsMatrix> mtx_;
 
     bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    mutable
+      local_matrix_type localMatrix_;
+    mutable
+      bool              isInitializedLocalMatrix_;
+#endif
+
   }; // EpetraCrsMatrixT class
-
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<int> EpetraCrsMatrix;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraCrsMatrixT<long long> EpetraCrsMatrix64;
-#endif
 
 } // Xpetra namespace
 

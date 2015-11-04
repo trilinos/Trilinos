@@ -52,8 +52,10 @@
 
 // Stratimikos needs Thyra, so we don't need special guards for Thyra here
 #include "Thyra_DefaultPreconditioner.hpp"
+#ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
+#endif
 
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -132,7 +134,7 @@ namespace Thyra {
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TpOp;
     typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyTpLinOp;
 #endif
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
     typedef MueLu::EpetraOperator                                         MueEpOp;
     typedef Thyra::EpetraLinearOp                                         ThyEpLinOp;
 #endif
@@ -221,7 +223,7 @@ namespace Thyra {
         if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
           doubleCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
           paramList.remove("Coordinates");
-          RCP<Xpetra::EpetraMultiVector> epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVector(doubleCoords));
+          RCP<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(doubleCoords));
           RCP<Xpetra::MultiVector<double,int,int,Node> > epCoordinatesMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(epCoordinates);
           coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(epCoordinatesMult);
           TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
@@ -251,7 +253,7 @@ namespace Thyra {
         if (paramList.isType<RCP<Epetra_MultiVector> >("Nullspace")) {
           epetra_nullspace = paramList.get<RCP<Epetra_MultiVector> >("Nullspace");
           paramList.remove("Nullspace");
-          RCP<Xpetra::EpetraMultiVector> xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVector(epetra_nullspace));
+          RCP<Xpetra::EpetraMultiVectorT<int,Node> > xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epetra_nullspace));
           RCP<Xpetra::MultiVector<double,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(xpEpNullspace);
           nullspace = rcp_dynamic_cast<XpMultVec>(xpEpNullspaceMult);
           TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(nullspace));
@@ -275,7 +277,7 @@ namespace Thyra {
         H = muelu_precOp->GetHierarchy();
       }
 #endif
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
       if (bIsEpetra) {
         RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
         RCP<MueEpOp>    muelu_precOp = rcp_dynamic_cast<MueEpOp>(epetr_precOp->epetra_op(),true);
@@ -284,9 +286,9 @@ namespace Thyra {
       }
 #endif
       TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::ThyraPreconditionerFactory: Hierarchy has no levels in it");
+                                 "Thyra::MueLuPreconditionerFactory: Hierarchy has no levels in it");
       TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::ThyraPreconditionerFactory: Hierarchy has no fine level operator");
+                                 "Thyra::MueLuPreconditionerFactory: Hierarchy has no fine level operator");
       RCP<MueLu::Level> level0 = H->GetLevel(0);
       RCP<XpOp>    O0 = level0->Get<RCP<XpOp> >("A");
       RCP<XpMat>   A0 = rcp_dynamic_cast<XpMat>(O0);
@@ -314,10 +316,12 @@ namespace Thyra {
     }
 #endif
 
-#ifdef HAVE_MUELU_EPETRA
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
     if (bIsEpetra) {
-      RCP<MueLu::Hierarchy<double,int,int> > epetraH =
-          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int> >(H);
+      RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > epetraH =
+          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> >(H);
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(epetraH), MueLu::Exceptions::RuntimeError,
+                                 "Thyra::MueLuPreconditionerFactory: Failed to cast Hierarchy to Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>. Epetra runs only on the Serial node.");
       RCP<MueEpOp> muelu_epetraOp = rcp(new MueEpOp(epetraH));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_epetraOp));
       // attach fwdOp to muelu_epetraOp to guarantee that it will not go away

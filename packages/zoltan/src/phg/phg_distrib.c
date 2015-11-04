@@ -343,7 +343,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
                        sizeof(int), (char *) nhg->pref_part);
         if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
             MPI_Bcast(nhg->pref_part, nVtx, MPI_INT, 0, ncomm->col_comm);
-    }    
+    }
 
     /* this comm plan is no longer needed. */
     Zoltan_Comm_Destroy(&plan);
@@ -471,7 +471,7 @@ int Zoltan_PHG_Redistribute(
     PHGComm *ocomm = ohg->comm;
     int     *v2Col, *n2Row, ierr=ZOLTAN_OK, i, *ranks;
     int     reqx=hgp->nProc_x_req, reqy=hgp->nProc_y_req;
-    float   frac;
+    double   frac;
     MPI_Group allgrp, newgrp;
     MPI_Comm  nmpicomm;
 
@@ -523,13 +523,16 @@ int Zoltan_PHG_Redistribute(
      * results due to differences in n2Row and v2Col, respectively.  
      * Neither answer is wrong,
      * but the linux results result in FAILED test in test_zoltan.
+     * KDDKDD 10/28/15:  Round-off error when using floats can cause v2Col 
+     * and n2Row to have invalid results, which exhibited in Comm_Do_Post. 
+     * Changing to doubles solved the problem (for now, at least).
      */
-    frac = (float) ohg->nVtx / (float) ncomm->nProc_x;
-    for (i=0; i<ohg->nVtx; ++i) 
-        v2Col[i] = (int) ((float) i / frac);
-    frac = (float) ohg->nEdge / (float) ncomm->nProc_y;
+    frac = (double) ohg->nVtx / (double) ncomm->nProc_x;
+    for (i=0; i<ohg->nVtx; ++i)
+        v2Col[i] = (int) ((double) i / frac);
+    frac = (double) ohg->nEdge / (double) ncomm->nProc_y;
     for (i=0; i<ohg->nEdge; ++i) 
-        n2Row[i] = (int) ((float) i / frac);
+        n2Row[i] = (int) ((double) i / frac);
 
     ierr |= Zoltan_PHG_Redistribute_Hypergraph(zz, hgp, ohg, lo, 
                                                v2Col, n2Row, ncomm, 

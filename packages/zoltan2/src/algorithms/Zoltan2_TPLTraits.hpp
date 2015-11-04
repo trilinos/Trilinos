@@ -89,7 +89,7 @@ struct TPL_Traits {
     }
   }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<const zno_t> &b,
+  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<zno_t> &b,
                                         const RCP<const Environment> &env)
   {
     // Allocate array a; copy b values into a.
@@ -131,7 +131,7 @@ struct TPL_Traits<tpl_t, tpl_t> {
                                   const RCP<const Environment> &env)
   { a = b; }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<const tpl_t> &b,
+  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<tpl_t> &b,
                                         const RCP<const Environment> &env)
   {
     if (b.size() > 0)

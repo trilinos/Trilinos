@@ -47,6 +47,119 @@
 */
 
 namespace Intrepid2 {
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct cloneFields_2 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  cloneFields_2 (ArrayOutFieldsWrap outputFields_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputFields (inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+        for(index_type bf = 0; bf < numFields; bf++) {
+          for(index_type pt = 0; pt < numPoints; pt++) {
+            outputFields(cl, bf, pt) = inputFields(bf, pt);
+          } // P-loop
+        } // F-loop
+ 
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct cloneFields_3 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  cloneFields_3 (ArrayOutFieldsWrap outputFields_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputFields (inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type outvalRank     = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+   
+    }
+  }
+       for(index_type bf = 0; bf < numFields; bf++) {
+          for(index_type pt = 0; pt < numPoints; pt++) {
+            for( index_type iVec = 0; iVec < dim1Tens; iVec++) {
+              outputFields(cl, bf, pt, iVec) = inputFields(bf, pt, iVec);
+            } // D1-loop
+          } // P-loop
+        } // F-loop
+ 
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct cloneFields_4 {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  // Views have "view semantics."  This means that they behave like
+  // pointers, not like std::vector.  Their copy constructor and
+  // operator= only do shallow copies.  Thus, you can pass View
+  // objects around by "value"; they won't do a deep copy unless you
+  // explicitly ask for a deep copy.
+  cloneFields_4 (ArrayOutFieldsWrap outputFields_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputFields (inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numCells       = outputFields.dimension(0);
+  index_type numFields      = outputFields.dimension(1);
+  index_type numPoints      = outputFields.dimension(2);
+  index_type dim1Tens       = 0;
+  index_type dim2Tens       = 0;
+index_type outvalRank     = outputFields.rank();
+  if (outvalRank > 3) {
+    dim1Tens = outputFields.dimension(3);
+    if (outvalRank > 4) {
+      dim2Tens = outputFields.dimension(4);
+    }
+  }
+         for(index_type bf = 0; bf < numFields; bf++) {
+          for(index_type pt = 0; pt < numPoints; pt++) {
+            for( index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+              for( index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                outputFields(cl, bf, pt, iTens1, iTens2) = inputFields(bf, pt, iTens1, iTens2);
+              } // D2-loop
+            } // D1-loop
+          } // P-loop
+        } // F-loop
+ 
+   }
+};
+
+
 	template<class Scalar, class ArrayOutFields, class ArrayInFields>
 void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
                              const ArrayInFields &  inputFields) {
@@ -66,61 +179,28 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
 	  }
 #endif
     ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value,false>outputFieldsWrap(outputFields);
-    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldswrap(inputFields);
+    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);
 
 
   // get sizes
   size_t invalRank      = getrank(inputFields);
   size_t outvalRank     = getrank(outputFields);
   int numCells       = outputFields.dimension(0);
-  int numFields      = outputFields.dimension(1);
-  int numPoints      = outputFields.dimension(2);
-  int dim1Tens       = 0;
-  int dim2Tens       = 0;
-  if (outvalRank > 3) {
-    dim1Tens = outputFields.dimension(3);
-    if (outvalRank > 4) {
-      dim2Tens = outputFields.dimension(4);
-    }
-  }
+
 
   switch(invalRank) {
     case 2: {
-      for(int cl = 0; cl < numCells; cl++) {
-        for(int bf = 0; bf < numFields; bf++) {
-          for(int pt = 0; pt < numPoints; pt++) {
-            outputFieldsWrap(cl, bf, pt) = inputFieldswrap(bf, pt);
-          } // P-loop
-        } // F-loop
-      } // C-loop
+ Kokkos::parallel_for (numCells, cloneFields_2<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value,false>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>, ArrayOutFields > (outputFieldsWrap,inputFieldsWrap));
     }// case 2
     break;
 
     case 3: {
-      for(int cl = 0; cl < numCells; cl++) {
-        for(int bf = 0; bf < numFields; bf++) {
-          for(int pt = 0; pt < numPoints; pt++) {
-            for( int iVec = 0; iVec < dim1Tens; iVec++) {
-              outputFieldsWrap(cl, bf, pt, iVec) = inputFieldswrap(bf, pt, iVec);
-            } // D1-loop
-          } // P-loop
-        } // F-loop
-      } // C-loop
+ Kokkos::parallel_for (numCells, cloneFields_3<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value,false>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>, ArrayOutFields > (outputFieldsWrap,inputFieldsWrap));
     }// case 3
     break;
 
     case 4: {
-      for(int cl = 0; cl < numCells; cl++) {
-        for(int bf = 0; bf < numFields; bf++) {
-          for(int pt = 0; pt < numPoints; pt++) {
-            for( int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-              for( int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                outputFieldsWrap(cl, bf, pt, iTens1, iTens2) = inputFieldswrap(bf, pt, iTens1, iTens2);
-              } // D2-loop
-            } // D1-loop
-          } // P-loop
-        } // F-loop
-      } // C-loop
+Kokkos::parallel_for (numCells, cloneFields_4<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value,false>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>, ArrayOutFields > (outputFieldsWrap,inputFieldsWrap));
     }// case 4
     break;
 

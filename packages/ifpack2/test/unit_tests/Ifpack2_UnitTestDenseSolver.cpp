@@ -399,13 +399,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseSolver, LapackComparison, ScalarType, Loc
 }
 
 // Define the set of unit tests to instantiate in this file.
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+#define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DenseSolver, LapackComparison, Scalar, LocalOrdinal, GlobalOrdinal)
 
-// Instantiate the unit tests for Scalar=double, LO=int, and GO=int.
-// It's not necessary to exercise other Scalar types, as that would
-// just be a Teuchos::LAPACK test, not an Ifpack2 test.
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+#include "Ifpack2_ETIHelperMacros.h"
 
-}//namespace <anonymous>
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types, where Scalar is real.
+
+IFPACK2_INSTANTIATE_SLG_REAL( UNIT_TEST_GROUP_SC_LO_GO )
+
+} // namespace (anonymous)
 

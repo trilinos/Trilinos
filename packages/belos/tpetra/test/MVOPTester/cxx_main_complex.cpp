@@ -104,7 +104,7 @@ namespace {
   }
 
   template<class Scalar, class O1, class O2>
-  RCP<CrsMatrix<Scalar,O1,O2,Node> > constructDiagMatrix(const RCP<const Map<O1,O2,Node> > &map) 
+  RCP<CrsMatrix<Scalar,O1,O2,Node> > constructDiagMatrix(const RCP<const Map<O1,O2,Node> > &map)
   {
     RCP<CrsMatrix<Scalar,O1,O2,Node> > op = rcp( new CrsMatrix<Scalar,O1,O2,Node>(map,1) );
     for (size_t i=0; i<map->getNodeNumElements(); ++i) {
@@ -116,7 +116,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestDist, O1, O2, Scalar )
@@ -214,54 +214,15 @@ namespace {
   // INSTANTIATIONS
   //
 
-#ifdef HAVE_TPETRA_INST_FLOAT
-#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)\
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, float)
-#else
-#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)
-#endif
+#define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, LO, GO, SCALAR )
 
-#ifdef HAVE_TPETRA_INST_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)\
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double)
-#else
-#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)
-#endif
+#include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)\
-     typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexFloat)
-#else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)
-#endif
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)\
-     typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexDouble)
-#else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
-#endif
-
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( O1, O2, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, O1, O2, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, O1, O2, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, O1, O2, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, O1, O2, SCALAR )
-
-#define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
-        UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)         \
-        UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)        \
-        UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
-        UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
-
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
-
-  UNIT_TEST_GROUP_ORDINAL(int)
+  TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 }

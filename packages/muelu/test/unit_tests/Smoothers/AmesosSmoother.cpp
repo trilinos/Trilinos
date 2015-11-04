@@ -60,7 +60,7 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
-      testApplyNoSetup(MueLu::AmesosSmoother(), out, success);
+      testApplyNoSetup(MueLu::AmesosSmoother<Node>(), out, success);
     }
   }
 
@@ -68,14 +68,14 @@ namespace MueLuTests {
   {
     MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
     {
-      Teuchos::RCP<MueLu::AmesosSmoother> smoother;
+      Teuchos::RCP<MueLu::AmesosSmoother<Node> > smoother;
 #ifdef HAVE_AMESOS_KLU
-      smoother = rcp(new MueLu::AmesosSmoother("Klu"));
+      smoother = rcp(new MueLu::AmesosSmoother<Node>("Klu"));
       testDirectSolver(*smoother, out, success);
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
-      smoother = rcp(new MueLu::AmesosSmoother("Superlu"));
+      smoother = rcp(new MueLu::AmesosSmoother<Node>("Superlu"));
       testDirectSolver(*smoother, out, success);
 #endif
     }

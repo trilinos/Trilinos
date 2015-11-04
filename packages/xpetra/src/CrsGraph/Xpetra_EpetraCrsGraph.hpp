@@ -62,21 +62,20 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  template<class GlobalOrdinal>
-  RCP< const CrsGraph<int, GlobalOrdinal> >
+  template<class GlobalOrdinal, class Node>
+  RCP< const CrsGraph<int, GlobalOrdinal, Node> >
   toXpetra (const Epetra_CrsGraph& graph);
 
-  template<class GlobalOrdinal>
+  template<class GlobalOrdinal, class Node>
   const Epetra_CrsGraph&
-  toEpetra (const RCP<const CrsGraph<int, GlobalOrdinal> > &graph);
+  toEpetra (const RCP<const CrsGraph<int, GlobalOrdinal, Node> > &graph);
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraCrsGraphT
-    : public CrsGraph<int, EpetraGlobalOrdinal>
+    : public CrsGraph<int, EpetraGlobalOrdinal, Node>
   {
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type Node;
     //! The specialization of Map used by this class.
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
@@ -139,22 +138,22 @@ namespace Xpetra {
     }
 
     //! Returns the Map that describes the row distribution in this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRowMap"); return toXpetra<GlobalOrdinal>(graph_->RowMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RowMap()); }
 
     //! Returns the Map that describes the column distribution in this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getColMap"); return toXpetra<GlobalOrdinal>(graph_->ColMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getColMap"); return toXpetra<GlobalOrdinal,Node>(graph_->ColMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getDomainMap"); return toXpetra<GlobalOrdinal>(graph_->DomainMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getDomainMap"); return toXpetra<GlobalOrdinal,Node>(graph_->DomainMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRangeMap"); return toXpetra<GlobalOrdinal>(graph_->RangeMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRangeMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RangeMap()); }
 
     //! Returns the importer associated with this graph.
-    RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getImporter"); return toXpetra<GlobalOrdinal>(graph_->Importer()); }
+    RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getImporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Importer()); }
 
     //! Returns the exporter associated with this graph.
-    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getExporter"); return toXpetra<GlobalOrdinal>(graph_->Exporter()); }
+    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getExporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Exporter()); }
 
     //! Returns the number of global rows in the graph.
     global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumRows"); return graph_->NumGlobalRows64(); }
@@ -245,7 +244,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getMap"); return toXpetra<GlobalOrdinal>(graph_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getMap"); return toXpetra<GlobalOrdinal,Node>(graph_->Map()); }
 
     //! Import.
     void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -279,14 +278,6 @@ namespace Xpetra {
     RCP<Epetra_CrsGraph> graph_;
 
   }; // EpetraCrsGraphT class
-
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraCrsGraphT<int> EpetraCrsGraph;
-#endif
-
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-  typedef EpetraCrsGraphT<long long> EpetraCrsGraph64;
-#endif
 
 } // Xpetra namespace
 
