@@ -1,6 +1,16 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2015-11-03 16:52:15 mhoemme"
+#+DATE: Time-stamp: "2015-11-03 17:01:14 mhoemme"
+
+* If this is just a text file, why does it have strange mark-up?
+
+This file /is/ indeed a plain text file.  It uses Emacs' org-mode for
+mark-up.  Do a web search for "Emacs org-mode", or look at the
+following website: http://orgmode.org
+
+This file is best viewed and edited using Emacs (version >= 23), but
+you may view and edit it using any text editor.  Editors, please defer
+to the mark-up conventions already existing in this document.
 
 * What is the "Node" template parameter?  How does it relate to Kokkos?
 
