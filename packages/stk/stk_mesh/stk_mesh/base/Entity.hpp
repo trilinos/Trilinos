@@ -81,6 +81,8 @@ namespace stk{
 
       bool operator!=(Entity entity) const { return m_value != entity.m_value; }
 
+      bool operator!=(Entity_t val) const { return m_value != val; }
+
       bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
     };
