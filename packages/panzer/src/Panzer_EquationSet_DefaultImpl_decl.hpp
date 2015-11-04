@@ -374,6 +374,10 @@ namespace panzer {
     //! Maps the dof name into a DOFDescriptor.  Should be private, but is protected so that the aux equaiton sets can access it.
     std::map<std::string,DOFDescriptor> m_provided_dofs_desc;
 
+    // Tangent parameter names for setting up tangent fields -- will be initialized in derived classes if
+    // equation set supports tangent vectors within tangent evaluation type
+    std::vector<std::string> tangentParamNames;
+
   private:
 
     //! For convenience, declare the DOFDescriptor iterator

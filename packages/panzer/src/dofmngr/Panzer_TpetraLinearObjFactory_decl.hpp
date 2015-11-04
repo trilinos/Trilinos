@@ -60,6 +60,7 @@
 #include "Panzer_ScatterDirichletResidual_Tpetra.hpp"
 #include "Panzer_ScatterInitialCondition_Tpetra.hpp"
 #include "Panzer_GatherSolution_Tpetra.hpp"
+#include "Panzer_GatherTangent_Tpetra.hpp"
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
@@ -141,6 +142,11 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
    { return Teuchos::rcp(new GatherSolution_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
+   Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
+   { return Teuchos::rcp(new GatherTangent_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
