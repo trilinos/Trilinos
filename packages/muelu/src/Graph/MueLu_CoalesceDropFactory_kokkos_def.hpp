@@ -340,7 +340,7 @@ namespace MueLu {
         graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
         graph->SetBoundaryNodeMap(boundaryNodes);
 
         numTotal = A->getNodeNumEntries();
@@ -360,7 +360,7 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Block systems without filtering are not implemented");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundary_nodes_type pointBoundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
 
       } else if (blkSize > 1 && threshold != STS::zero()) {
         //
@@ -369,7 +369,7 @@ namespace MueLu {
         throw Exceptions::RuntimeError("Block systems with filtering are not implemented");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
-        boundary_nodes_type pointBoundaryNodes = Utils_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+        boundary_nodes_type pointBoundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
       }
 
 
