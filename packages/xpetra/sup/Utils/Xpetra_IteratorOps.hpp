@@ -209,7 +209,7 @@ inline void JacobiInt(
     bool doOptimizeStorage,
     const std::string & label) {
 
-  typedef Xpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>::node_type NO;
+  //typedef Xpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>::node_type NO;
 
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
