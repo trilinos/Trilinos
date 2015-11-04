@@ -219,6 +219,7 @@ void ElemElemGraph::get_element_side_pairs(const stk::mesh::MeshIndex &meshIndex
 {
     stk::mesh::EntityVector side_nodes;
     stk::mesh::EntityVector connected_elements;
+    impl::ConnectedElementDataVector connectedElementDataVector;
     stk::mesh::Entity element = (*meshIndex.bucket)[meshIndex.bucket_ordinal];
     stk::topology topology = meshIndex.bucket->topology();
     int num_sides = topology.num_sides();
@@ -230,7 +231,7 @@ void ElemElemGraph::get_element_side_pairs(const stk::mesh::MeshIndex &meshIndex
         side_nodes.resize(num_side_nodes);
         topology.side_nodes(elem_nodes, side_index, side_nodes.begin());
         connected_elements.clear();
-        impl::ConnectedElementDataVector connectedElementDataVector;
+        connectedElementDataVector.clear();
         impl::find_locally_owned_elements_these_nodes_have_in_common(m_bulk_data, num_side_nodes, side_nodes.data(), connected_elements);
         add_local_elements_to_connected_list(connected_elements, side_nodes, connectedElementDataVector);
         impl::filter_out_invalid_solid_shell_connections(m_bulk_data, element, side_index, connectedElementDataVector);
@@ -1002,10 +1003,12 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
                                                          const stk::mesh::EntityVector & side_nodes_received,
                                                          impl::ConnectedElementDataVector & element_data_received) const
 {
+    impl::ConnectedElementData elemData;
+    stk::mesh::EntityVector connectedSideNodes;
     for (const stk::mesh::Entity & local_element: local_elements_attached_to_side_nodes)
     {
-        impl::ConnectedElementData elemData;
-        stk::mesh::EntityVector connectedSideNodes;
+        elemData.m_sideNodes.clear();
+        connectedSideNodes.clear();
         stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(m_bulk_data, local_element, m_bulk_data.mesh_meta_data().side_rank(), side_nodes_received);
         const stk::mesh::Bucket & connectedBucket = m_bulk_data.bucket(local_element);
         const stk::mesh::Entity* connectedElemNodes = m_bulk_data.begin_nodes(local_element);

@@ -319,9 +319,8 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity p
     const Entity* elemNodes = mesh.begin_nodes(parent_entity);
     stk::topology elemTopology = mesh.bucket(parent_entity).topology();
     unsigned num_entities_of_sub_topology = elemTopology.num_sub_topology(to_rank);
-    unsigned max_nodes_possible = 100;
-    stk::mesh::EntityVector nodes_of_sub_topology;
-    nodes_of_sub_topology.reserve(max_nodes_possible);
+    const unsigned max_nodes_possible = 100;
+    stk::mesh::Entity nodes_of_sub_topology[max_nodes_possible];
     std::pair<bool, unsigned> result;
 
     for (unsigned i=0;i<num_entities_of_sub_topology;++i)
@@ -336,8 +335,7 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity p
 
         ThrowRequireMsg(num_nodes == nodes_of_sub_rank.size(), "AHA! num_nodes != nodes_of_sub_rank.size()");
         ThrowRequireMsg(num_nodes<=max_nodes_possible, "Program error. Exceeded expected array dimensions. Contact sierra-help for support.");
-        nodes_of_sub_topology.resize(num_nodes);
-        elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology.begin());
+        elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology);
         if (!elemTopology.is_shell() || (to_rank == stk::topology::EDGE_RANK))
         {
            result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
