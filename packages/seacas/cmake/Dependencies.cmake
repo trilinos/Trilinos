@@ -37,7 +37,6 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Numbers     applications/numbers    SS  REQUIRED
   Txtexo      applications/txtexo     SS  REQUIRED
   Ex2ex1v2    applications/ex2ex1v2   SS  OPTIONAL
-  Conex       applications/conex      SS  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)
