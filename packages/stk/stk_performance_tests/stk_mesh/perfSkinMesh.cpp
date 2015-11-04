@@ -16,10 +16,11 @@ protected:
             duration(0.0)
     {}
 
-    void test_skin_mesh()
+    void run_skin_mesh_performance_test()
     {
         stk::mesh::Selector thingToSkin = get_meta().universal_part();
         time_skin_mesh(thingToSkin);
+        print_stats();
     }
 
     void time_skin_mesh(stk::mesh::Selector thingToSkin)
@@ -43,26 +44,27 @@ protected:
         return meshCounts[stk::topology::FACE_RANK];
     }
 
+    std::string get_mesh_spec()
+    {
+        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+    }
+
     stk::mesh::Part &skinPart;
     double duration;
 };
 
-TEST_F(StkPerformance, skin_mesh)
+TEST_F(StkPerformance, skin_mesh_with_auto_decomp)
 {
-    const std::string meshSpec = unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
-    stk::unit_test_util::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "rcb");
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
-    test_skin_mesh();
-    print_stats();
+    run_skin_mesh_performance_test();
 }
 
-TEST_F(StkPerformance, skin_mesh_with_file_already_decomposed)
+TEST_F(StkPerformance, skin_mesh)
 {
-    const std::string meshSpec = unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
-    setup_mesh(meshSpec, stk::mesh::BulkData::AUTO_AURA);
+    setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
 
-    test_skin_mesh();
-    print_stats();
+    run_skin_mesh_performance_test();
 }
 
