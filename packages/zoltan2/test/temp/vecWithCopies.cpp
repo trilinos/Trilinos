@@ -1,8 +1,8 @@
 ///  Small test program showing how to take GIDs that may have
 ///  duplicates across processors (e.g., mesh vertices that are copied
-///  at part boundaries in an element-based decomposition) and assign 
+///  at part boundaries in an element-based decomposition) and assign
 ///  unique owners to them.
-///  Then, the test creates Vectors using the maps and transfers data 
+///  Then, the test creates Vectors using the maps and transfers data
 ///  between them
 
 #include "Teuchos_CommHelpers.hpp"
@@ -20,8 +20,9 @@
 
 int main(int narg, char **arg)
 {
-  typedef int lno_t;
-  typedef int gno_t;
+  typedef Tpetra::Map<> map_t;
+  typedef map_t::local_ordinal_type lno_t;
+  typedef map_t::global_ordinal_type gno_t;
   typedef int scalar_t;
 
   // Usual Teuchos MPI stuff
@@ -32,16 +33,16 @@ int main(int narg, char **arg)
 
   // Create a map with duplicated entries (mapWithCopies)
   // Each rank has 15 IDs, the last five of which overlap with the next rank.
-  typedef Tpetra::Map<lno_t, gno_t> map_t;
+
 
   lno_t numLocalCoords = 15;
   lno_t offset = me * 10;
 
   Teuchos::Array<gno_t> gids(numLocalCoords);
-  for (lno_t i = 0 ; i < numLocalCoords; i++) 
-    gids[i] = offset + i;
-    
-  Tpetra::global_size_t numGlobalCoords = 
+  for (lno_t i = 0 ; i < numLocalCoords; i++)
+    gids[i] = static_cast<gno_t> (offset + i);
+
+  Tpetra::global_size_t numGlobalCoords =
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   Teuchos::RCP<const map_t> mapWithCopies =
           rcp(new map_t(numGlobalCoords, gids(), 0, comm));
@@ -61,21 +62,21 @@ int main(int narg, char **arg)
     oneToOneVec.replaceLocalValue(i, me);
 
   // Now import oneToOneVec's values back to vecWithCopies
-  Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer = 
+  Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer =
       Tpetra::createImport<lno_t, gno_t>(oneToOneMap, mapWithCopies);
   vecWithCopies.doImport(oneToOneVec, *importer, Tpetra::REPLACE);
 
   // Print the entries of each vector
-  std::cout << me << " ONE TO ONE VEC  (" 
+  std::cout << me << " ONE TO ONE VEC  ("
                   << oneToOneMap->getGlobalNumElements() << "):  ";
   lno_t nlocal = lno_t(oneToOneMap->getNodeNumElements());
   for (lno_t i = 0; i < nlocal; i++)
-    std::cout << "[" << oneToOneMap->getGlobalElement(i) << " " 
+    std::cout << "[" << oneToOneMap->getGlobalElement(i) << " "
               << oneToOneVec.getData()[i] << "] ";
   std::cout << std::endl;
 
   // Should see copied vector values when print VEC WITH COPIES
-  std::cout << me << " VEC WITH COPIES (" 
+  std::cout << me << " VEC WITH COPIES ("
                   << mapWithCopies->getGlobalNumElements() << "):  ";
   nlocal = lno_t(mapWithCopies->getNodeNumElements());
   for (lno_t i = 0; i < nlocal; i++)

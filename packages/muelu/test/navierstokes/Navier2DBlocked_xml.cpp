@@ -111,8 +111,6 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include <MueLu_ParameterListInterpreter.hpp>
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
@@ -126,15 +124,19 @@
 
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
   using Teuchos::rcp;
   using namespace MueLuTests;
   using namespace Teuchos;
-
-  typedef Xpetra::StridedMap<int,int>        StridedMap;
-  typedef Xpetra::StridedMapFactory<int,int> StridedMapFactory;
 
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -233,10 +235,10 @@ int main(int argc, char *argv[]) {
     /////////////////////////////////////// transform Epetra objects to Xpetra (needed for MueLu)
 
     // build Xpetra objects from Epetra_CrsMatrix objects
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrix(A11));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrix(A12));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrix(A21));
-    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrix(A22));
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
+    RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
 
     /////////////////////////////////////// generate MapExtractor object
 
@@ -244,11 +246,11 @@ int main(int argc, char *argv[]) {
     xmaps.push_back(xstridedvelmap);
     xmaps.push_back(xstridedpremap);
 
-    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO>::Build(xstridedfullmap,xmaps);
+    RCP<const Xpetra::MapExtractor<Scalar,LO,GO,Node> > map_extractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(xstridedfullmap,xmaps);
 
     /////////////////////////////////////// build blocked transfer operator
     // using the map extractor
-    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(map_extractor,map_extractor,10));
+    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(map_extractor,map_extractor,10));
     bOp->setMatrix(0,0,xA11);
     bOp->setMatrix(0,1,xA12);
     bOp->setMatrix(1,0,xA21);
@@ -306,7 +308,7 @@ int main(int argc, char *argv[]) {
       xLsg->putScalar( (SC) 0.0);
 
       // Epetra_Vector -> Xpetra::Vector
-      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVector(epv));
+      RCP<Vector> xRhs = rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
 
       // calculate initial (absolute) residual
       Array<ScalarTraits<SC>::magnitudeType> norms(1);
@@ -351,4 +353,8 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  std::cout << "Epetra needs Serial node. Please recompile MueLu with the Serial node enabled." << std::endl;
+  return EXIT_SUCCESS;
+#endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

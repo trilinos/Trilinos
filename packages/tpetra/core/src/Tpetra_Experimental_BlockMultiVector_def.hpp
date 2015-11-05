@@ -220,6 +220,39 @@ BlockMultiVector (const mv_type& X_mv,
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
+BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                  const map_type& newMeshMap,
+                  const map_type& newPointMap,
+                  const size_t offset) :
+  dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
+  meshMap_ (newMeshMap),
+  pointMap_ (newPointMap),
+  mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
+  mvData_ (getRawPtrFromMultiVector (mv_)),
+  blockSize_ (X.getBlockSize ())
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+BlockMultiVector<Scalar, LO, GO, Node>::
+BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                  const map_type& newMeshMap,
+                  const size_t offset) :
+  dist_object_type (Teuchos::rcp (new map_type (newMeshMap))), // shallow copy
+  meshMap_ (newMeshMap),
+  pointMap_ (makePointMap (newMeshMap, X.getBlockSize ())),
+  mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
+  mvData_ (getRawPtrFromMultiVector (mv_)),
+  blockSize_ (X.getBlockSize ())
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+BlockMultiVector<Scalar, LO, GO, Node>::
 BlockMultiVector () :
   dist_object_type (Teuchos::null),
   mvData_ (NULL),

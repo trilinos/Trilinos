@@ -119,13 +119,16 @@ namespace PyTrilinos
 // wrapped Domi::MDVector, or an object that supports the DistArray
 // Protocol, or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
-Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > *
+Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                   PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD,
+                                   DefaultNodeType > > *
 convertPythonToTpetraMultiVector(PyObject * pyobj,
                                  int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TMV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >*");
+    SWIG_TypeQuery("Teuchos::RCP< Tpetra::MultiVector< Scalar,PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD,DefaultNodeType > >*");
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector< Scalar,Domi::DefaultNode::DefaultNodeType > >*");
   //
@@ -135,8 +138,15 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > smartresult;
-  Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * result;
+  PyObject * distarray = 0;
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                     PYTRILINOS_LOCAL_ORD,
+                                     PYTRILINOS_GLOBAL_ORD,
+                                     DefaultNodeType > > smartresult;
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                     PYTRILINOS_LOCAL_ORD,
+                                     PYTRILINOS_GLOBAL_ORD,
+                                     DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
@@ -147,7 +157,10 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   if (SWIG_IsOK(res))
   {
     result =
-      reinterpret_cast< Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * >(argp);
+      reinterpret_cast< Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                                           PYTRILINOS_LOCAL_ORD,
+                                                           PYTRILINOS_GLOBAL_ORD,
+                                                           DefaultNodeType > > * >(argp);
     return result;
   }
 
@@ -162,7 +175,9 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
       *reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
     try
     {
-      smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      smartresult =
+        dmdv_rcp->template getTpetraMultiVectorView< PYTRILINOS_LOCAL_ORD,
+                                                     PYTRILINOS_GLOBAL_ORD >();
       *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
@@ -180,7 +195,10 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
       PyErr_SetString(PyExc_IndexError, e.what());
       return NULL;
     }
-    result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                                    PYTRILINOS_LOCAL_ORD,
+                                                    PYTRILINOS_GLOBAL_ORD,
+                                                    DefaultNodeType > >(smartresult);
     return result;
   }
   //
@@ -189,8 +207,11 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -199,7 +220,9 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
     }
     try
     {
-      smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+      smartresult =
+        dmdv_rcp->template getTpetraMultiVectorView< PYTRILINOS_LOCAL_ORD,
+                                                     PYTRILINOS_GLOBAL_ORD>();
       *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
@@ -217,7 +240,11 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
       PyErr_SetString(PyExc_IndexError, e.what());
       return NULL;
     }
-    result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    result =
+      new Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                             PYTRILINOS_LOCAL_ORD,
+                                             PYTRILINOS_GLOBAL_ORD,
+                                             DefaultNodeType > >(smartresult);
     return result;
   }
 #endif
@@ -247,11 +274,24 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
       }
       Scalar * data = (Scalar*) PyArray_DATA(array);
       Teuchos::ArrayView< Scalar > arrayView(data, vecLen*numVec);
-      Teuchos::RCP< const Tpetra::Map< long,long,DefaultNodeType > > map =
-        Teuchos::rcp(new Tpetra::Map< long,long,DefaultNodeType >(vecLen, 0, comm));
+      Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                       PYTRILINOS_GLOBAL_ORD,DefaultNodeType > >
+        map = Teuchos::rcp(new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                            PYTRILINOS_GLOBAL_ORD,
+                                            DefaultNodeType >(vecLen, 0, comm));
       smartresult =
-        Teuchos::rcp(new Tpetra::MultiVector< Scalar,long,long,DefaultNodeType >(map, arrayView, vecLen, numVec));
-      result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+        Teuchos::rcp(new Tpetra::MultiVector< Scalar,
+                                              PYTRILINOS_LOCAL_ORD,
+                                              PYTRILINOS_GLOBAL_ORD,
+                                              DefaultNodeType >(map,
+                                                                arrayView,
+                                                                vecLen,
+                                                                numVec));
+      result =
+        new Teuchos::RCP< Tpetra::MultiVector< Scalar,
+                                               PYTRILINOS_LOCAL_ORD,
+                                               PYTRILINOS_GLOBAL_ORD,
+                                               DefaultNodeType > >(smartresult);
       return result;
     }
   }
@@ -271,13 +311,16 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
 // Domi::MDVector, or an object that supports the DistArray Protocol,
 // or, if the environment is serial, a simple NumPy array.
 template< class Scalar >
-Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > *
+Teuchos::RCP< Tpetra::Vector< Scalar,
+                              PYTRILINOS_LOCAL_ORD,
+                              PYTRILINOS_GLOBAL_ORD,
+                              DefaultNodeType > > *
 convertPythonToTpetraVector(PyObject * pyobj,
                             int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_TV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >*");
+    SWIG_TypeQuery("Teuchos::RCP< Tpetra::Vector< Scalar,PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD,DefaultNodeType > >*");
   static swig_type_info * swig_DMDV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector< Scalar,Domi::DefaultNode::DefaultNodeType > >*");
   //
@@ -287,8 +330,15 @@ convertPythonToTpetraVector(PyObject * pyobj,
   //
   // Result objects
   void *argp = 0;
-  Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > smartresult;
-  Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * result;
+  PyObject * distarray = 0;
+  Teuchos::RCP< Tpetra::Vector< Scalar,
+                                PYTRILINOS_LOCAL_ORD,
+                                PYTRILINOS_GLOBAL_ORD,
+                                DefaultNodeType > > smartresult;
+  Teuchos::RCP< Tpetra::Vector< Scalar,
+                                PYTRILINOS_LOCAL_ORD,
+                                PYTRILINOS_GLOBAL_ORD,
+                                DefaultNodeType > > * result;
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
@@ -299,7 +349,10 @@ convertPythonToTpetraVector(PyObject * pyobj,
   if (SWIG_IsOK(res))
   {
     result =
-      reinterpret_cast< Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * >(argp);
+      reinterpret_cast< Teuchos::RCP< Tpetra::Vector< Scalar,
+                                                      PYTRILINOS_LOCAL_ORD,
+                                                      PYTRILINOS_GLOBAL_ORD,
+                                                      DefaultNodeType > > * >(argp);
     return result;
   }
 
@@ -314,7 +367,9 @@ convertPythonToTpetraVector(PyObject * pyobj,
       *reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
     try
     {
-      smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      smartresult =
+        dmdv_rcp->template getTpetraVectorView< PYTRILINOS_LOCAL_ORD,
+                                                PYTRILINOS_GLOBAL_ORD >();
       *newmem = *newmem | SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
@@ -332,7 +387,10 @@ convertPythonToTpetraVector(PyObject * pyobj,
       PyErr_SetString(PyExc_IndexError, e.what());
       return NULL;
     }
-    result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    result = new Teuchos::RCP< Tpetra::Vector< Scalar,
+                                               PYTRILINOS_LOCAL_ORD,
+                                               PYTRILINOS_GLOBAL_ORD,
+                                               DefaultNodeType > >(smartresult);
     return result;
   }
   //
@@ -341,8 +399,11 @@ convertPythonToTpetraVector(PyObject * pyobj,
   {
     try
     {
-      DistArrayProtocol dap(pyobj);
+      if (!(distarray = PyObject_CallMethod(pyobj, (char*) "__distarray__", (char*) "")))
+        return NULL;
+      DistArrayProtocol dap(distarray);
       dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+      Py_DECREF(distarray);
     }
     catch (PythonException & e)
     {
@@ -351,7 +412,9 @@ convertPythonToTpetraVector(PyObject * pyobj,
     }
     try
     {
-      smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+      smartresult =
+        dmdv_rcp->template getTpetraVectorView< PYTRILINOS_LOCAL_ORD,
+                                                PYTRILINOS_GLOBAL_ORD >();
       *newmem = SWIG_CAST_NEW_MEMORY;
     }
     catch (Domi::TypeError & e)
@@ -369,7 +432,10 @@ convertPythonToTpetraVector(PyObject * pyobj,
       PyErr_SetString(PyExc_IndexError, e.what());
       return NULL;
     }
-    result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    result = new Teuchos::RCP< Tpetra::Vector< Scalar,
+                                               PYTRILINOS_LOCAL_ORD,
+                                               PYTRILINOS_GLOBAL_ORD,
+                                               DefaultNodeType > >(smartresult);
     return result;
   }
 #endif
@@ -389,11 +455,22 @@ convertPythonToTpetraVector(PyObject * pyobj,
       for (int i=1; i < ndim; ++i) vecLen *= PyArray_DIM(array, i);
       Scalar * data = (Scalar*) PyArray_DATA(array);
       Teuchos::ArrayView< const Scalar > arrayView(data, vecLen);
-      Teuchos::RCP< const Tpetra::Map< long,long,DefaultNodeType > > map =
-        Teuchos::rcp(new Tpetra::Map< long,long,DefaultNodeType >(vecLen, 0, comm));
+      Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                       PYTRILINOS_GLOBAL_ORD,
+                                       DefaultNodeType > > map =
+        Teuchos::rcp(new Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                      PYTRILINOS_GLOBAL_ORD,
+                                      DefaultNodeType >(vecLen, 0, comm));
       smartresult =
-        Teuchos::rcp(new Tpetra::Vector< Scalar,long,long,DefaultNodeType >(map, arrayView));
-      result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+        Teuchos::rcp(new Tpetra::Vector< Scalar,
+                                         PYTRILINOS_LOCAL_ORD,
+                                         PYTRILINOS_GLOBAL_ORD,
+                                         DefaultNodeType >(map, arrayView));
+      result =
+        new Teuchos::RCP< Tpetra::Vector< Scalar,
+                                          PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType > >(smartresult);
       return result;
     }
   }
@@ -724,15 +801,21 @@ __version__ = version()
 // directives below are redundant, because it is the same as the
 // default template argument.  But SWIG is much more acurate when
 // comparing types when all template arguments are specified.
-%teuchos_rcp(Tpetra::Map< long, long, DefaultNodeType >)
-%template(Map_default) Tpetra::Map< long, long, DefaultNodeType >;
+%teuchos_rcp(Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                          PYTRILINOS_GLOBAL_ORD,
+                          DefaultNodeType >)
+%template(Map_default) Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                    PYTRILINOS_GLOBAL_ORD,
+                                    DefaultNodeType >;
 %pythoncode
 {
 Map = Map_default
 }
 %inline
 %{
-  typedef Tpetra::Map< long, long, DefaultNodeType > DefaultMapType;
+  typedef Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                       PYTRILINOS_GLOBAL_ORD,
+                       DefaultNodeType > DefaultMapType;
 %}
 
 /////////////////////////////
@@ -773,16 +856,23 @@ public:
 };
 } // namespace Details
 } // namespace Tpetra
-%teuchos_rcp(Tpetra::Details::Transfer< long, long, DefaultNodeType >)
-%template(Transfer_default)
-    Tpetra::Details::Transfer< long, long, DefaultNodeType >;
+%teuchos_rcp(Tpetra::Details::Transfer< PYTRILINOS_LOCAL_ORD,
+                                        PYTRILINOS_GLOBAL_ORD,
+                                        DefaultNodeType >)
+%template(Transfer_default) Tpetra::Details::Transfer< PYTRILINOS_LOCAL_ORD,
+                                                       PYTRILINOS_GLOBAL_ORD,
+                                                       DefaultNodeType >;
 
 ///////////////////////////
 // Tpetra Export support //
 ///////////////////////////
 %include "Tpetra_Export_decl.hpp"
-%teuchos_rcp(Tpetra::Export< long, long, DefaultNodeType >)
-%template(Export_default) Tpetra::Export< long, long, DefaultNodeType >;
+%teuchos_rcp(Tpetra::Export< PYTRILINOS_LOCAL_ORD,
+                             PYTRILINOS_GLOBAL_ORD,
+                             DefaultNodeType >)
+%template(Export_default) Tpetra::Export< PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType >;
 %pythoncode
 {
 Export = Export_default
@@ -792,8 +882,12 @@ Export = Export_default
 // Tpetra Import support //
 ///////////////////////////
 %include "Tpetra_Import_decl.hpp"
-%teuchos_rcp(Tpetra::Import< long, long, DefaultNodeType >)
-%template(Import_default) Tpetra::Import< long, long, DefaultNodeType >;
+%teuchos_rcp(Tpetra::Import< PYTRILINOS_LOCAL_ORD,
+                             PYTRILINOS_GLOBAL_ORD,
+                             DefaultNodeType >)
+%template(Import_default) Tpetra::Import< PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType >;
 %pythoncode
 {
 Import = Import_default
@@ -913,7 +1007,7 @@ protected:
     return PyTrilinos::convertToDistArray(*self);
   }
 }
-// The refactor is making Tpetra::Vector difficult for SWIG to
+// The refactor is making Tpetra::MultiVector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
 namespace Tpetra
 {
@@ -1121,12 +1215,12 @@ public:
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
   // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
   // normInf(const Teuchos::ArrayView<T>& norms) const;
-  void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-                    const Teuchos::ArrayView<mag_type>& norms) const;
-  template <typename T>
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-  normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
-               const Teuchos::ArrayView<T>& norms) const;
+  // void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //                   const Teuchos::ArrayView<mag_type>& norms) const;
+  // template <typename T>
+  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
+  //              const Teuchos::ArrayView<T>& norms) const;
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
   template <typename T>
   typename Kokkos::Impl::enable_if<! Kokkos::Impl::is_same<impl_scalar_type, T>::value, void>::type
@@ -1293,7 +1387,7 @@ public:
   mag_type norm2() const;
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;
   mag_type normInf() const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
+  // using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
   // mag_type
   // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::meanValue;
@@ -1351,17 +1445,28 @@ public:
 //     SCALAR_NAME  Suffix name (int, longlong, ...)
 //
 %define %tpetra_class(CLASS, SCALAR, SCALAR_NAME)
-    %warnfilter(315) Tpetra::CLASS< SCALAR,long,long,DefaultNodeType >;
-    %template(CLASS ## _ ## SCALAR_NAME)
-        Tpetra::CLASS< SCALAR,long,long,DefaultNodeType >;
+    %warnfilter(315) Tpetra::CLASS< SCALAR,
+                                    PYTRILINOS_LOCAL_ORD,
+                                    PYTRILINOS_GLOBAL_ORD,
+                                    DefaultNodeType >;
+    %template(CLASS ## _ ## SCALAR_NAME) Tpetra::CLASS< SCALAR,
+                                                        PYTRILINOS_LOCAL_ORD,
+                                                        PYTRILINOS_GLOBAL_ORD,
+                                                        DefaultNodeType >;
 %enddef
 
 %define %tpetra_scalars(SCALAR, SCALAR_NAME)
-    %teuchos_rcp(Tpetra::DistObject< SCALAR,long,long,DefaultNodeType >)
+    %teuchos_rcp(Tpetra::DistObject< SCALAR,
+                                     PYTRILINOS_LOCAL_ORD,
+                                     PYTRILINOS_GLOBAL_ORD,
+                                     DefaultNodeType >)
     %tpetra_class(DistObject, SCALAR, SCALAR_NAME)
 
     %teuchos_rcp_dap(PyTrilinos::convertPythonToTpetraMultiVector< SCALAR >,
-                     Tpetra::MultiVector< SCALAR,long,long,DefaultNodeType >)
+                     Tpetra::MultiVector< SCALAR,
+                                          PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType >)
     %tpetra_class(MultiVector, SCALAR, SCALAR_NAME)
     %pythoncode
     %{
@@ -1369,7 +1474,10 @@ public:
     %}
 
     %teuchos_rcp_dap(PyTrilinos::convertPythonToTpetraVector< SCALAR >,
-                     Tpetra::Vector< SCALAR,long,long,DefaultNodeType >)
+                     Tpetra::Vector< SCALAR,
+                                     PYTRILINOS_LOCAL_ORD,
+                                     PYTRILINOS_GLOBAL_ORD,
+                                     DefaultNodeType >)
     %tpetra_class(Vector, SCALAR, SCALAR_NAME)
     %pythoncode
     %{

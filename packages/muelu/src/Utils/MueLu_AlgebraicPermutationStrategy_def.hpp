@@ -29,23 +29,16 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AlgebraicPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
-#ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
 
   const Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
   int numProcs = comm->getSize();
   int myRank   = comm->getRank();
-
-  /*if( permRowMap == Teuchos::null ) {
-    permRowMap = A->getRowMap(); // use full row map of A
-  }*/
 
   size_t nDofsPerNode = 1;
   if (A->IsView("stridedMaps")) {
     Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
     nDofsPerNode = Teuchos::rcp_dynamic_cast<const StridedMap>(permRowMapStrided)->getFixedBlockSize();
   }
-
-  //GetOStream(Runtime0) << "Perform generation of permutation operators on " << mapName_ << " map with " << permRowMap->getGlobalNumElements() << " elements" << std::endl;
 
   std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> > permutedDiagCandidates;
   std::vector<std::pair<GlobalOrdinal, GlobalOrdinal> > keepDiagonalEntries;
@@ -69,8 +62,9 @@ namespace MueLu {
 
     // find column entry with max absolute value
     GlobalOrdinal gMaxValIdx = 0;
-    Scalar norm1 = 0.0;
-    Scalar maxVal = 0.0;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    MT norm1 = Teuchos::ScalarTraits<MT>::zero ();
+    MT maxVal = Teuchos::ScalarTraits<MT>::zero ();
     for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
       norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
       if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > maxVal) {
@@ -99,8 +93,9 @@ namespace MueLu {
 
     // find column entry with max absolute value
     GlobalOrdinal gMaxValIdx = 0;
-    Scalar norm1 = 0.0;
-    Scalar maxVal = 0.0;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    MT norm1 = Teuchos::ScalarTraits<MT>::zero ();
+    MT maxVal = Teuchos::ScalarTraits<MT>::zero ();
     for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
       norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
       if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > maxVal) {
@@ -109,7 +104,7 @@ namespace MueLu {
       }
     }
 
-    if(Teuchos::ScalarTraits<Scalar>::magnitude(maxVal) > 0.0) { // keep only max Entries \neq 0.0
+    if(maxVal > Teuchos::ScalarTraits<MT>::zero ()) { // keep only max Entries \neq 0.0
       permutedDiagCandidates.push_back(std::make_pair(grow,gMaxValIdx));
       Weights.push_back(maxVal/(norm1*Teuchos::as<Scalar>(nnz)));
     } else {
@@ -153,13 +148,13 @@ namespace MueLu {
     GlobalOrdinal gcol = pp.second;
 
     LocalOrdinal lcol = A->getColMap()->getLocalElement(gcol);
-    //Teuchos::ArrayRCP< Scalar > ddata = gColVec->getDataNonConst(0);
-    if(ddata[lcol] > 0.0){
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    if(Teuchos::ScalarTraits<Scalar>::real (ddata[lcol]) > Teuchos::ScalarTraits<MT>::zero ()){
       continue; // skip lcol: column already handled by another row
     }
 
     // mark column as already taken
-    ddata[lcol]++;
+    ddata[lcol] += Teuchos::ScalarTraits<Scalar>::one ();
 
     permutedDiagCandidatesFiltered.push_back(std::make_pair(grow,gcol));
     gColId2Weight[gcol] = Weights[permutation[i]];
@@ -182,9 +177,16 @@ namespace MueLu {
 
   for(size_t sz = 0; sz<gDomVec->getLocalLength(); ++sz) {
     Teuchos::ArrayRCP< const Scalar > arrDomVec = gDomVec->getData(0);
-    if(arrDomVec[sz] > 1.0) {
+    //
+    // FIXME (mfh 30 Oct 2015) I _think_ it's OK to check just the
+    // real part, because this is a count.  (Shouldn't MueLu use
+    // mag_type instead of Scalar here to save space?)
+    //
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+    if(Teuchos::ScalarTraits<Scalar>::real (arrDomVec[sz]) > Teuchos::ScalarTraits<MT>::one ()) {
       multipleColRequests.push_back(gDomVec->getMap()->getGlobalElement(sz));
-    } else if(arrDomVec[sz] == 0.0) {
+    } else if(Teuchos::ScalarTraits<Scalar>::real (arrDomVec[sz]) ==
+              Teuchos::ScalarTraits<MT>::zero ()) {
       unusedColIdx.push(gDomVec->getMap()->getGlobalElement(sz));
     }
   }
@@ -242,11 +244,12 @@ namespace MueLu {
       if(gColVec->getMap()->isNodeGlobalElement(globColId)) {
         // note: 2 procs could have the same weight for a column index.
         // pick the first one.
-        Scalar winnerValue = 0.0;
+        typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+        MT winnerValue = 0.0;
         int winnerProcRank = 0;
         for (int proc = 0; proc < numProcs; proc++) {
-          if(GlobalWeightForColId[proc] > winnerValue) {
-            winnerValue = GlobalWeightForColId[proc];
+          if(Teuchos::ScalarTraits<Scalar>::real (GlobalWeightForColId[proc]) > winnerValue) {
+            winnerValue = Teuchos::ScalarTraits<Scalar>::real (GlobalWeightForColId[proc]);
             winnerProcRank = proc;
           }
         }
@@ -582,9 +585,12 @@ namespace MueLu {
   Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1,Xpetra::StaticProfile));
 
   for(size_t row=0; row<A->getNodeNumRows(); row++) {
-    Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(PpermData[row])); // column idx for Perm^T
-    Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(QpermData[row])); // column idx for Qperm
-    Teuchos::ArrayRCP<Scalar> valout(1,1.0);
+    // FIXME (mfh 30 Oct 2015): Teuchos::as doesn't know how to
+    // convert from complex Scalar to GO, so we have to take the real
+    // part first.  I think that's the right thing to do in this case.
+    Teuchos::ArrayRCP<GlobalOrdinal> indoutP(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(PpermData[row]))); // column idx for Perm^T
+    Teuchos::ArrayRCP<GlobalOrdinal> indoutQ(1,Teuchos::as<GO>(Teuchos::ScalarTraits<Scalar>::real(QpermData[row]))); // column idx for Qperm
+    Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
     permPTmatrix->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indoutP.view(0,indoutP.size()), valout.view(0,valout.size()));
     permQTmatrix->insertGlobalValues (A->getRowMap()->getGlobalElement(row), indoutQ.view(0,indoutQ.size()), valout.view(0,valout.size()));
   }
@@ -622,9 +628,9 @@ namespace MueLu {
   permPApermQt->getLocalDiagCopy(*diagVec);
   for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
     if(diagVecData[i] != 0.0)
-      invDiagVecData[i] = 1/diagVecData[i];
+      invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one () / diagVecData[i];
     else {
-      invDiagVecData[i] = 1.0;
+      invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one ();
       GetOStream(Statistics0) << "MueLu::PermutationFactory: found zero on diagonal in row " << i << std::endl;
     }
   }
@@ -686,11 +692,7 @@ namespace MueLu {
   GetOStream(Statistics0) << "#Row    permutations/max possible permutations: " << gNumRowPermutations << "/" << diagPVec->getMap()->getGlobalNumElements() << std::endl;
   GetOStream(Statistics0) << "#Column permutations/max possible permutations: " << gNumColPermutations << "/" << diagQTVec->getMap()->getGlobalNumElements() << std::endl;
   GetOStream(Runtime1) << "#wide range row permutations: " << gWideRangeRowPermutations << " #wide range column permutations: " << gWideRangeColPermutations << std::endl;
-
-#endif // #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
-
-
-  }
+}
 
 } // namespace MueLu
 

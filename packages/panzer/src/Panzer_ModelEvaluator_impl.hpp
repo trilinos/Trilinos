@@ -467,8 +467,8 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient than
   // zeroing out all objects in the container here.
-  const RCP<panzer::ThyraObjContainer<Scalar> > thGhostedContainer = 
-    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
+  // const RCP<panzer::ThyraObjContainer<Scalar> > thGhostedContainer = 
+  //   Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
   
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.

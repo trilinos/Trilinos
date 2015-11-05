@@ -105,8 +105,6 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #endif
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 
@@ -117,6 +115,13 @@
 
 
 int main(int argc, char *argv[]) {
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+  typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -207,19 +212,19 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epA));
     RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
     RCP<Matrix> Op = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
 
     Op->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
 
     // Epetra_Vector -> Xpetra::Vector
-    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));
+    RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(epv));
 
-    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVector(epNS));
+    RCP<MultiVector> xNS = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epNS));
 
     // Epetra_Map -> Xpetra::Map
-    const RCP< const Map> map = Xpetra::toXpetra<GO>(emap);
+    const RCP< const Map> map = Xpetra::toXpetra<int,Node>(emap);
 
     RCP<Hierarchy> H = rcp ( new Hierarchy() );
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -450,4 +455,8 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  std::cout << "Epetra needs Serial node. Please recompile MueLu with the Serial node enabled." << std::endl;
+  return EXIT_SUCCESS;
+#endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

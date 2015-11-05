@@ -214,7 +214,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints(pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints(pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -251,7 +251,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -298,7 +298,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -410,7 +410,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints(pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints(pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -457,7 +457,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -495,7 +495,7 @@ Kokkos::initialize();
         for(int pt = 0; pt < numPts; pt++){
           for(int d = 0; d < cellDim; d++){
             
-            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID2_TOL ){
+            if( abs( controlPoints3(cellOrd, pt, d) - cubPoints(pt, d) ) > 100.0*INTREPID_TOL ){
               errorFlag++;
               *outStream
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"

@@ -45,8 +45,11 @@
 #define AMESOS2_ABSTRACTCONCRETEMATRIXADAPTER_DEF
 
 #include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#endif
 #endif
 
 #endif

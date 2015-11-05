@@ -205,8 +205,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Xpetra::EpetraMultiVector tX(rcpFromRef(temp_x));
-      Xpetra::EpetraMultiVector tY(rcpFromRef(y));
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> tX(rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>       tY(rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);

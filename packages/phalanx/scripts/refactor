@@ -1,0 +1,8 @@
+#!/bin/bash
+for f in *.hpp *.cpp
+do
+  echo "$f"
+  perl ./string-replace.pl \<boost/any.hpp\> \"Phalanx_any.hpp\" $f $f
+  perl ./string-replace.pl "boost/any.hpp" "Phalanx_any.hpp" $f $f
+  perl ./string-replace.pl boost::any PHX::any $f $f
+done

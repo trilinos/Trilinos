@@ -50,6 +50,8 @@
 #ifndef PAMGEN_MESH_STRUCTURE
 #define PAMGEN_MESH_STRUCTURE
 
+#ifdef HAVE_ZOLTAN2_PAMGEN
+
 #include <Pamgen_config.h>
 #include <create_inline_mesh.h>
 #include <limits.h>
@@ -708,5 +710,7 @@ void PamgenMesh::createMesh(char * file_data, int dimension, const RCP<const Com
 //  }
   
 }
+
+#endif
 
 #endif

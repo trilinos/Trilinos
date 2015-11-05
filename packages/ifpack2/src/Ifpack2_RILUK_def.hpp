@@ -264,13 +264,25 @@ setParameters (const Teuchos::ParameterList& params)
 
   if (! gotFillLevel) {
     try {
+      // Try global_ordinal_type.  The cast to int must succeed.
+      fillLevel = as<int> (params.get<global_ordinal_type> ("fact: iluk level-of-fill"));
+      gotFillLevel = true;
+    }
+    catch (InvalidParameterType&) {
+      // Try the next type.
+    }
+    // Don't catch InvalidParameterName here; we've already done that above.
+  }
+
+  if (! gotFillLevel) {
+    try {
       // Try magnitude_type, for compatibility with ILUT.
       // The cast from magnitude_type to int must succeed.
       fillLevel = as<int> (params.get<magnitude_type> ("fact: iluk level-of-fill"));
       gotFillLevel = true;
     }
     catch (InvalidParameterType&) {
-      // Try double next.
+      // Try the next type.
     }
     // Don't catch InvalidParameterName here; we've already done that above.
   }
@@ -423,10 +435,17 @@ void RILUK<MatrixType>::initialize ()
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::initialize: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  const char prefix[] = "Ifpack2::RILUK::initialize: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The matrix is null.  Please "
+     "call setMatrix() with a nonnull input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_->isFillComplete (), std::runtime_error, prefix << "The matrix is not "
+     "fill complete.  You may not invoke initialize() or compute() with this "
+     "matrix until the matrix is fill complete.  If your matrix is a "
+     "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
+     "range Maps, if appropriate) before calling this method.");
 
   Teuchos::Time timer ("RILUK::initialize");
   { // Start timing
@@ -655,13 +674,20 @@ initAllValues (const row_matrix_type& A)
 template<class MatrixType>
 void RILUK<MatrixType>::compute ()
 {
+  const char prefix[] = "Ifpack2::RILUK::compute: ";
+
   // initialize() checks this too, but it's easier for users if the
   // error shows them the name of the method that they actually
   // called, rather than the name of some internally called method.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::compute: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, prefix << "The matrix is null.  Please "
+     "call setMatrix() with a nonnull input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_->isFillComplete (), std::runtime_error, prefix << "The matrix is not "
+     "fill complete.  You may not invoke initialize() or compute() with this "
+     "matrix until the matrix is fill complete.  If your matrix is a "
+     "Tpetra::CrsMatrix, please call fillComplete on it (with the domain and "
+     "range Maps, if appropriate) before calling this method.");
 
   if (! isInitialized ()) {
     initialize (); // Don't count this in the compute() time

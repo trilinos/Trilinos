@@ -52,8 +52,8 @@
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
-// #include "boost/mpl/placeholders.hpp"
-// using namespace boost::mpl::placeholders;
+// #include "Sacado_mpl_placeholders.hpp"
+// using namespace Sacado::mpl::placeholders;
 
 namespace panzer {
 
@@ -242,6 +242,11 @@ public:
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
+   Teuchos::RCP<PHX::Evaluator<Traits> > buildGatherTangent(const Teuchos::ParameterList & pl) const
+   { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(gatherTangentManager_->template getAsBase<EvalT>()->clone(pl)); }
+
+   //! Use preconstructed gather evaluators
+   template <typename EvalT>
    Teuchos::RCP<PHX::Evaluator<Traits> > buildGatherDomain(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(gatherDomainManager_->template getAsBase<EvalT>()->clone(pl)); }
 
@@ -277,6 +282,7 @@ private:
    Teuchos::RCP<Evaluator_TemplateManager> scatterDirichletManager_;
    Teuchos::RCP<Evaluator_TemplateManager> scatterInitialConditionManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherManager_;
+   Teuchos::RCP<Evaluator_TemplateManager> gatherTangentManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherDomainManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherOrientManager_;
 
@@ -325,6 +331,17 @@ private:
    };
 
    template <typename BuilderT>
+   struct GatherTangent_Builder {
+      Teuchos::RCP<const BuilderT> builder_;
+
+      GatherTangent_Builder(const Teuchos::RCP<const BuilderT> & builder)
+         : builder_(builder) {}
+
+      template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> build() const
+      { return builder_->template buildGatherTangent<EvalT>(); }
+   };
+
+   template <typename BuilderT>
    struct GatherDomain_Builder {
       Teuchos::RCP<const BuilderT> builder_;
 
@@ -366,6 +383,9 @@ buildGatherScatterEvaluators(const BuilderT & builder)
 
    gatherManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
    gatherManager_->buildObjects(Gather_Builder<BuilderT>(rcpFromRef(builder)));
+
+   gatherTangentManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
+   gatherTangentManager_->buildObjects(GatherTangent_Builder<BuilderT>(rcpFromRef(builder)));
 
    gatherDomainManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
    gatherDomainManager_->buildObjects(GatherDomain_Builder<BuilderT>(rcpFromRef(builder)));

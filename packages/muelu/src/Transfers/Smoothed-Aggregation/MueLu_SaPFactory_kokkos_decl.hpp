@@ -51,6 +51,8 @@
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
@@ -92,8 +94,20 @@ namespace MueLu {
     | P       | SaPFactory_kokkos   | Smoothed prolongator
 
   */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class SaPFactory_kokkos : public PFactory {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class SaPFactory_kokkos;
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  class SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+  public:
+    typedef LocalOrdinal                                        local_ordinal_type;
+    typedef GlobalOrdinal                                       global_ordinal_type;
+    typedef typename DeviceType::execution_space                execution_space;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+
+  private:
+    // For compatibility
+    typedef node_type                                           Node;
 #undef MUELU_SAPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 

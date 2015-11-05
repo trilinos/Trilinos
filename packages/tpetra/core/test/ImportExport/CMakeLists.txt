@@ -56,15 +56,17 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
   ENDIF ()
 ENDIF ()
 
-# Test whether Export to a CrsMatrix with a static graph works.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExportToStaticGraphCrsMatrix
-  SOURCES
-    ExportToStaticGraphCrsMatrix.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 4
-  )
+IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED_LONG OR Tpetra_INST_INT_UNSIGNED)
+  # Test whether Export to a CrsMatrix with a static graph works.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ExportToStaticGraphCrsMatrix
+    SOURCES
+      ExportToStaticGraphCrsMatrix.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    )
+ENDIF()
 
 # Test Tpetra::Details::makeOptimizedColMap and
 # Tpetra::Details::makeOptimizedColMapAndImport.

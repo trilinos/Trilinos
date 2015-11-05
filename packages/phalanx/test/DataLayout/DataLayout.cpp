@@ -190,7 +190,7 @@ const Ordinal8 & Ordinal8::tag()
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-TEUCHOS_UNIT_TEST(DataLayout, DataLayout)
+TEUCHOS_UNIT_TEST(DataLayout, basic)
 {
   using namespace std;
   using namespace Teuchos;

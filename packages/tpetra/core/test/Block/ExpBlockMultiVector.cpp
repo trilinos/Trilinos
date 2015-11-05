@@ -362,6 +362,142 @@ namespace {
     }
   }
 
+  //
+  // Make sure that BlockMultiVector's "offset view" constructors work.
+  //
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, OffsetView, Scalar, LO, GO, Node )
+  {
+    using Tpetra::TestingUtilities::getDefaultComm;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef typename map_type::device_type device_type;
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef typename MV::mag_type MT;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int numProcs = comm->getSize ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocalMeshPoints = 20;
+    const LO blockSize = 4;
+    const LO numVecs = 3;
+    const GO indexBase = 0;
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm);
+
+    // Create a BlockMultiVector to view.  Fill it with 1s.
+    BMV X (meshMap, blockSize, numVecs);
+    const Scalar one = STS::one ();
+    X.putScalar (one);
+
+    // View X as two row blocks [X1; X2], where X1 has 11 rows and X2
+    // has 9 rows.  Note that X2's Map has 9 rows, as X2 should have;
+    // we account for X2's starting position with the offset argument
+    // to the offset view constructor.
+    map_type X1_meshMap (INVALID, (meshMap.getNodeElementList ()) (0, 11), indexBase, comm);
+    map_type X2_meshMap (INVALID, (meshMap.getNodeElementList ()) (11, 9), indexBase+11, comm);
+
+    TEST_EQUALITY_CONST( X1_meshMap.getNodeNumElements (), static_cast<size_t> (11) );
+    TEST_EQUALITY_CONST( X2_meshMap.getNodeNumElements (), static_cast<size_t> (9) );
+
+    BMV X1 (X, X1_meshMap);
+    BMV X2 (X, X2_meshMap, static_cast<size_t> (11));
+
+    TEST_EQUALITY( X1.getMultiVectorView ().getLocalLength (),
+                   static_cast<size_t> (11 * blockSize) );
+    TEST_EQUALITY( X2.getMultiVectorView ().getLocalLength (),
+                   static_cast<size_t> (9 * blockSize) );
+    TEST_EQUALITY( X1.getMultiVectorView ().getNumVectors (),
+                   static_cast<size_t> (numVecs) );
+    TEST_EQUALITY( X2.getMultiVectorView ().getNumVectors (),
+                   static_cast<size_t> (numVecs) );
+
+    Kokkos::View<MT*, device_type> norms ("norms", numVecs);
+    auto norms_h = Kokkos::create_mirror_view (norms);
+
+    // Fill X1 with 2s and X2 with 3s.
+    // Since X1 and X2 are both views, this should affect X.
+    const Scalar two = one + one;
+    X1.putScalar (two);
+    const Scalar three = two + one;
+    X2.putScalar (three);
+
+    // The one-norm of X1 should be numProcs*11*2*blockSize, ...
+    const MT X1_expectedOneNorm =
+      static_cast<MT> (numProcs) * static_cast<MT> (11) *
+      static_cast<MT> (2) * static_cast<MT> (blockSize);
+    X1.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X1_expectedOneNorm );
+    }
+
+    // ... and the one-norm of X2 should be numProcs*9*3*blockSize.
+    const MT X2_expectedOneNorm =
+      static_cast<MT> (numProcs) * static_cast<MT> (9) *
+      static_cast<MT> (3) * static_cast<MT> (blockSize);
+    X2.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X2_expectedOneNorm );
+    }
+
+    // The one-norm of X should now be numProcs*(11*2 + 9*3)*blockSize.
+    const MT X_expectedOneNorm = static_cast<MT> (numProcs) *
+      (static_cast<MT> (11) * static_cast<MT> (2) +
+       static_cast<MT> (9) * static_cast<MT> (3)) *
+      static_cast<MT> (blockSize);
+    X.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X_expectedOneNorm );
+    }
+
+    // Repeat the test, but exercise the four-argument offset view
+    // constructor instead.
+    X.putScalar (one);
+    X1 = BMV (X, X1_meshMap, BMV::makePointMap (X1_meshMap, blockSize));
+    X2 = BMV (X, X2_meshMap, BMV::makePointMap (X2_meshMap, blockSize),
+              static_cast<size_t> (11));
+
+    TEST_EQUALITY( X1.getMultiVectorView ().getLocalLength (),
+                   static_cast<size_t> (11 * blockSize) );
+    TEST_EQUALITY( X2.getMultiVectorView ().getLocalLength (),
+                   static_cast<size_t> (9 * blockSize) );
+    TEST_EQUALITY( X1.getMultiVectorView ().getNumVectors (),
+                   static_cast<size_t> (numVecs) );
+    TEST_EQUALITY( X2.getMultiVectorView ().getNumVectors (),
+                   static_cast<size_t> (numVecs) );
+
+    // Fill X1 with 2s and X2 with 3s.
+    // Since X1 and X2 are both views, this should affect X.
+    X1.putScalar (two);
+    X2.putScalar (three);
+
+    // The one-norm of X1 should be numProcs*11*2*blockSize, ...
+    X1.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X1_expectedOneNorm );
+    }
+
+    // ... and the one-norm of X2 should be numProcs*9*3*blockSize.
+    X2.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X2_expectedOneNorm );
+    }
+
+    // The one-norm of X should now be numProcs*(11*2 + 9*3)*blockSize.
+    X.getMultiVectorView ().norm1 (norms);
+    Kokkos::deep_copy (norms_h, norms);
+    for (LO j = 0; j < numVecs; ++j) {
+      TEST_EQUALITY( norms_h(j), X_expectedOneNorm );
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -369,7 +505,8 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, ctor, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, MVView, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, Import, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, Import, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, OffsetView, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

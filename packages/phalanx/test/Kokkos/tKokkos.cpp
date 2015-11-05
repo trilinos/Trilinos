@@ -49,8 +49,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
-#include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
+#include <Phalanx_any.hpp>
+#include <unordered_map>
 #include <map>
 
 #include "Sacado.hpp"
@@ -108,11 +108,11 @@ namespace phalanx_test {
     Kokkos::View<double**,PHX::Device>::HostMirror host_P = Kokkos::create_mirror_view(P);
     Kokkos::View<double**,PHX::Device>::HostMirror host_T = Kokkos::create_mirror_view(T);
 
-    boost::unordered_map<std::string,boost::any> data_container;
+    std::unordered_map<std::string,PHX::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<double**,PHX::Device> rhoInAnotherEvaluator = 
-      boost::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
+      PHX::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<double**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
@@ -210,11 +210,11 @@ namespace phalanx_test {
     host_T = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
     host_k = Kokkos::View<FadType*,PHX::Device>::HostMirror("host_k",1,deriv_dim);
 
-    boost::unordered_map<std::string,boost::any> data_container;
+    std::unordered_map<std::string,PHX::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<FadType**,PHX::Device> rhoInAnotherEvaluator = 
-      boost::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
+      PHX::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
 
     Kokkos::View<FadType**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
@@ -272,7 +272,7 @@ namespace phalanx_test {
       Kokkos::View from the const data type.  This is needed because
       the FieldManager allocates the arrays as non-const but when a
       const MDField needs to bind to the memory of the field, we need
-      to cast the boost::any using the non-const array.
+      to cast the any object using the non-const array.
    */
   TEUCHOS_UNIT_TEST(kokkos, ConstNonConstTranslation)
   {

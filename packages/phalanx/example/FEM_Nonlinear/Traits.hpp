@@ -48,8 +48,6 @@
 // mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_find.hpp"
-#include "boost/mpl/map.hpp"
-#include "boost/mpl/find.hpp"
 
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"
@@ -96,13 +94,6 @@ namespace PHX {
 
     // Jacobian Vector Product (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector<JvFadType> JvDataTypes;
-
-    // Maps the key EvalType a vector of DataTypes
-    typedef boost::mpl::map<
-      boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>,
-      boost::mpl::pair<Jv, JvDataTypes>
-    >::type EvalToDataMap;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method

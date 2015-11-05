@@ -44,7 +44,7 @@
 #define PANZER_CLOSURE_MODEL_FACTORY_COMPOSITE_TEMPLATE_BUILDER_HPP
 
 #include <string>
-#include "boost/mpl/apply.hpp"
+#include "Sacado_mpl_apply.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Panzer_ClosureModel_Factory_Composite.hpp"
 

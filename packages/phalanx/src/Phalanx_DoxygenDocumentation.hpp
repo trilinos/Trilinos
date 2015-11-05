@@ -603,8 +603,6 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
  
  - <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
 
- - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  This is a third party library (TPL) that must be installed on your machine.  You must enable the TPL and point to the path to the Boost library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/build_scripts/build_phalanx_gcc.sh.
-
 \subsection ug_step1_performance B. Performance Example Requirements
 
  - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  You must enable the tvmet TPL add the path to the TVMET library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/build_scripts/build_phalanx_gcc.sh.
@@ -623,11 +621,7 @@ To build the example problem in "phalanx/example/FEM_Nonlinear", distributed vec
 
 This example will be disabled if the above packages are not enabled.
 
-\subsection da D. Install Boost
-
-You must have boost installed on your system.  As we only require the MPL library headers, you only need to untar the source code and should not even need to run the configure script.
-
-\subsection db E. Configure Trilinos/Phalanx
+\subsection db D. Configure Trilinos/Phalanx
 The general instructions for building trilinos can be found at <a href="http://trilinos.sandia.gov/documentation.html">Trilinos Documentation Page</a>.  Of particular importance are the Overview, User Guide, and Tutorial documents.  At a minimum you must enable the Teuchos, Sacado, and Phalanx packages.  An example configure script is:
 
 \verbinclude reconfigure.linux
@@ -743,12 +737,6 @@ Next we need to link the data types to the evaluation type.  Note that one could
 				 MyVector<FadType>,
 				 MyTensor<FadType> 
     > JacobianDataTypes;
-
-    // Maps the key EvalType a vector of DataTypes
-    typedef boost::mpl::map<
-      boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>
-    >::type EvalToDataMap;
      .
      .
      .
@@ -1076,8 +1064,8 @@ To build an PHX::EvaluatorFactory, you must provide a factory traits class that 
 #include "Evaluator_NonlinearSource.hpp"
 
 
-#include "boost/mpl/placeholders.hpp"
-using namespace boost::mpl::placeholders;
+#include "Sacado_mpl_placeholders.hpp"
+using namespace Sacado::mpl::placeholders;
 
 template<typename Traits>
 struct MyFactoryTraits {

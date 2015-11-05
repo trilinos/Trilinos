@@ -2734,91 +2734,85 @@ namespace Tpetra {
     return origView_.dimension_1 ();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  offsetView (const Teuchos::RCP<const map_type>& subMap,
-              const size_t offset) const
+  template <class Scalar, class LO, class GO, class Node, const bool classic>
+  MultiVector<Scalar, LO, GO, Node, classic>::
+  MultiVector (const MultiVector<Scalar, LO, GO, Node, classic>& X,
+               const map_type& subMap,
+               const size_t offset) :
+    base_type (Teuchos::null) // to be replaced below
   {
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    typedef MultiVector<Scalar, LO, GO, Node, classic> MV;
+    const char prefix[] = "Tpetra::MultiVector constructor (offsetView): ";
 
-    const size_t newNumRows = subMap->getNodeNumElements ();
-    const bool tooManyElts = newNumRows + offset > this->getOrigNumLocalRows ();
+    const size_t newNumRows = subMap.getNodeNumElements ();
+    const bool tooManyElts = newNumRows + offset > X.getOrigNumLocalRows ();
     if (tooManyElts) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
+      const int myRank = X.getMap ()->getComm ()->getRank ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows + offset > this->getLocalLength (), std::runtime_error,
-        "Tpetra::MultiVector::offsetView(NonConst): Invalid input Map.  The "
-        "input Map owns " << newNumRows << " entries on process " << myRank <<
-        ".  offset = " << offset << ".  Yet, the MultiVector contains only "
-        << this->getOrigNumLocalRows () << " rows on this process.");
+        newNumRows + offset > X.getLocalLength (), std::runtime_error,
+        prefix << "Invalid input Map.  The input Map owns " << newNumRows <<
+        " entries on process " << myRank << ".  offset = " << offset << ".  "
+        "Yet, the MultiVector contains only " << X.getOrigNumLocalRows () <<
+        " rows on this process.");
     }
 
 #ifdef HAVE_TPETRA_DEBUG
-    const size_t strideBefore = this->isConstantStride () ?
-      this->getStride () :
-      static_cast<size_t> (0);
-    const size_t lclNumRowsBefore = this->getLocalLength ();
-    const size_t numColsBefore = this->getNumVectors ();
+    const size_t strideBefore =
+      X.isConstantStride () ? X.getStride () : static_cast<size_t> (0);
+    const size_t lclNumRowsBefore = X.getLocalLength ();
+    const size_t numColsBefore = X.getNumVectors ();
     const impl_scalar_type* hostPtrBefore =
-      this->getDualView ().h_view.ptr_on_device ();
+      X.getDualView ().h_view.ptr_on_device ();
 #endif // HAVE_TPETRA_DEBUG
 
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
     // FIXME (mfh 10 May 2014) Use of origView_ instead of view_ for
     // the second argument may be wrong, if view_ resulted from a
     // previous call to offsetView with offset != 0.
-    dual_view_type newView =
-      subview (origView_, rowRng, ALL ());
+    dual_view_type newView = subview (X.origView_, rowRng, ALL ());
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some
     // reason, the ([0,0], [0,2]) subview of a 0 x 2 DualView is 0 x
     // 0.  We work around by creating a new empty DualView of the
     // desired (degenerate) dimensions.
     if (newView.dimension_0 () == 0 &&
-        newView.dimension_1 () != view_.dimension_1 ()) {
-      newView = allocDualView<Scalar,
-                              LocalOrdinal,
-                              GlobalOrdinal,
-                              Node> (size_t (0),
-                                     this->getNumVectors ());
+        newView.dimension_1 () != X.view_.dimension_1 ()) {
+      newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
+                                                     X.getNumVectors ());
     }
-    RCP<const MV> subViewMV;
-    if (isConstantStride ()) {
-      subViewMV = rcp (new MV (subMap, newView, origView_));
-    } else {
-      subViewMV = rcp (new MV (subMap, newView, origView_, whichVectors_ ()));
-    }
+
+    MV subViewMV = X.isConstantStride () ?
+      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_) :
+      MV (Teuchos::rcp (new map_type (subMap)), newView, X.origView_, X.whichVectors_ ());
 
 #ifdef HAVE_TPETRA_DEBUG
-    const size_t strideAfter = this->isConstantStride () ?
-      this->getStride () :
+    const size_t strideAfter = X.isConstantStride () ?
+      X.getStride () :
       static_cast<size_t> (0);
-    const size_t lclNumRowsAfter = this->getLocalLength ();
-    const size_t numColsAfter = this->getNumVectors ();
+    const size_t lclNumRowsAfter = X.getLocalLength ();
+    const size_t numColsAfter = X.getNumVectors ();
     const impl_scalar_type* hostPtrAfter =
-      this->getDualView ().h_view.ptr_on_device ();
+      X.getDualView ().h_view.ptr_on_device ();
 
-    const size_t strideRet = subViewMV->isConstantStride () ?
-      subViewMV->getStride () :
+    const size_t strideRet = subViewMV.isConstantStride () ?
+      subViewMV.getStride () :
       static_cast<size_t> (0);
-    const size_t lclNumRowsRet = subViewMV->getLocalLength ();
-    const size_t numColsRet = subViewMV->getNumVectors ();
+    const size_t lclNumRowsRet = subViewMV.getLocalLength ();
+    const size_t numColsRet = subViewMV.getNumVectors ();
 
-    const char prefix[] = "Tpetra::MultiVector::offsetView: ";
     const char suffix[] = ".  This should never happen.  Please report this "
       "bug to the Tpetra developers.";
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! subMap.is_null () && lclNumRowsRet != subMap->getNodeNumElements (),
+      lclNumRowsRet != subMap.getNodeNumElements (),
       std::logic_error, prefix << "Returned MultiVector has a number of rows "
       "different than the number of local indices in the input Map.  "
-      "lclNumRowsRet: " << lclNumRowsRet << ", subMap->getNodeNumElements(): "
-      << subMap->getNodeNumElements () << suffix);
+      "lclNumRowsRet: " << lclNumRowsRet << ", subMap.getNodeNumElements(): "
+      << subMap.getNodeNumElements () << suffix);
     TEUCHOS_TEST_FOR_EXCEPTION(
       strideBefore != strideAfter || lclNumRowsBefore != lclNumRowsAfter ||
       numColsBefore != numColsAfter || hostPtrBefore != hostPtrAfter,
@@ -2842,9 +2836,18 @@ namespace Tpetra {
       "numColsRet: " << numColsRet << suffix);
 #endif // HAVE_TPETRA_DEBUG
 
-    return subViewMV;
+    *this = subViewMV; // shallow copy
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  offsetView (const Teuchos::RCP<const map_type>& subMap,
+              const size_t offset) const
+  {
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    return Teuchos::rcp (new MV (*this, *subMap, offset));
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >
@@ -2853,9 +2856,8 @@ namespace Tpetra {
                       const size_t offset)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    return Teuchos::rcp_const_cast<MV> (this->offsetView (subMap, offset));
+    return Teuchos::rcp (new MV (*this, *subMap, offset));
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> >

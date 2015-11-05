@@ -1,3 +1,28 @@
+Release Notes for Domi for Trilinos 12.4
+========================================
+
+Various bug fixes:
+------------------
+  * Fixed a bug where a periodic axis under a serial build would not
+    update communication padding.  The parallel version uses MPI
+    capabilities to do this, so a serial-only capability had to be
+    added for this corner case.
+
+  * Fixed a test that was doing a dynamic type comparison to be more
+    robust.
+
+  * Fixed some minor bugs in the MDVector getTpetraMultiVector()
+    method.
+
+  * The MDArrayView size() method was made const, as it should be
+
+Created serial tests
+--------------------
+  * Domi does not provide much in the way of unique capabilities if it
+    is compiled in serial.  Nevertheless, all tests that run on 1
+    processor were updated to run under a serial build of Trilinos as
+    well.
+
 Release Notes for Domi for Trilinos 12.0
 ========================================
 

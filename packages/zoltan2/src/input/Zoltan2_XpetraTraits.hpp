@@ -53,13 +53,16 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_Standards.hpp>
 
-#include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
-#include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_EpetraUtils.hpp>
 #include <Tpetra_Vector.hpp>
+
+#ifdef HAVE_ZOLTAN2_EPETRA
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#include <Xpetra_EpetraVector.hpp>
+#include <Xpetra_EpetraUtils.hpp>
+#endif
 
 namespace Zoltan2 {
 
@@ -70,22 +73,22 @@ namespace Zoltan2 {
  *
  *    Definitions are provided for:
  *
- * \li Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> 
+ * \li Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>
  * \li Epetra_CrsMatrix
- * \li Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> 
- * \li Xpetra::CrsMatrix<double, int, int, node_t> 
- * \li Tpetra::CrsGraph<lno_t, gno_t, node_t> 
+ * \li Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t>
+ * \li Xpetra::CrsMatrix<double, int, int, node_t>
+ * \li Tpetra::CrsGraph<lno_t, gno_t, node_t>
  * \li Epetra_CrsGraph
- * \li Xpetra::CrsGraph<lno_t, gno_t, node_t> 
- * \li Xpetra::CrsGraph<int, int, node_t> 
- * \li Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Xpetra::CrsGraph<lno_t, gno_t, node_t>
+ * \li Xpetra::CrsGraph<int, int, node_t>
+ * \li Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>
  * \li Epetra_Vector
- * \li Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> 
- * \li Xpetra::Vector<double, int, int, node_t> 
- * \li Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> 
+ * \li Xpetra::Vector<scalar_t, lno_t, gno_t, node_t>
+ * \li Xpetra::Vector<double, int, int, node_t>
+ * \li Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>
  * \li Epetra_MultiVector
- * \li Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> 
- * \li Xpetra::MultiVector<double, int, int, node_t> 
+ * \li Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>
+ * \li Xpetra::MultiVector<double, int, int, node_t>
  */
 
 template <typename User>
@@ -93,7 +96,7 @@ struct XpetraTraits
 {
   /*! \brief Convert the object to its Xpetra wrapped version.
    */
-  static inline RCP<User> convertToXpetra(const RCP<User> &a) 
+  static inline RCP<User> convertToXpetra(const RCP<User> &a)
   {
     return a;
   }
@@ -128,11 +131,11 @@ template <typename scalar_t,
           typename node_t>
 struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 {
-  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> 
+  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t>
                    xmatrix_t;
-  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t> 
+  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t>
                    xtmatrix_t;
-  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> 
+  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t>
                    tmatrix_t;
 
   static inline RCP<xmatrix_t> convertToXpetra(const RCP<tmatrix_t> &a)
@@ -163,10 +166,10 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 
     // number of non zeros in my new rows
     typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-    vector_t numOld(smap);  // TODO These vectors should have scalar = size_t, 
+    vector_t numOld(smap);  // TODO These vectors should have scalar = size_t,
     vector_t numNew(tmap);  // but explicit instantiation does not yet support that.
     for (int lid=0; lid < oldNumElts; lid++){
-      numOld.replaceGlobalValue(smap->getGlobalElement(lid), 
+      numOld.replaceGlobalValue(smap->getGlobalElement(lid),
         scalar_t(from.getNumEntriesInLocalRow(lid)));
     }
     numNew.doImport(numOld, importer, Tpetra::INSERT);
@@ -190,8 +193,8 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_ZOLTAN2_EPETRA
 // Epetra_CrsMatrix
-
 template <>
 struct XpetraTraits<Epetra_CrsMatrix>
 {
@@ -203,7 +206,7 @@ struct XpetraTraits<Epetra_CrsMatrix>
   static inline RCP<Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> >
   convertToXpetra(const RCP<Epetra_CrsMatrix> &a)
   {
-    return rcp(new Xpetra::EpetraCrsMatrix(a));
+    return rcp(new Xpetra::EpetraCrsMatrixT<gno_t, node_t>(a));
   }
 
 
@@ -247,6 +250,7 @@ struct XpetraTraits<Epetra_CrsMatrix>
     return M;
   }
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::CrsMatrix
@@ -260,7 +264,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 {
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
   typedef Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
-  typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t; 
+  typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t;
 
   static inline RCP<x_matrix_t> convertToXpetra(const RCP<x_matrix_t > &a)
   {
@@ -300,9 +304,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
   typedef int gno_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
   typedef Xpetra::TpetraCrsMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
-  typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t; 
-  typedef Xpetra::EpetraCrsMatrix xe_matrix_t;
-  typedef Epetra_CrsMatrix e_matrix_t; 
+  typedef Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t;
 
   static inline RCP<x_matrix_t> convertToXpetra(const RCP<x_matrix_t > &a)
   {
@@ -315,6 +317,9 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
+#ifdef HAVE_ZOLTAN_EPETRA
+      typedef Epetra_CrsMatrix e_matrix_t;
+      typedef Xpetra::EpetraCrsMatrix xe_matrix_t;
       // Do the import with the Epetra_CrsMatrix traits object
       const xe_matrix_t *xem = dynamic_cast<const xe_matrix_t *>(&from);
       RCP<const e_matrix_t> em = xem->getEpetra_CrsMatrix();
@@ -325,6 +330,10 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
       RCP<x_matrix_t> xmnew = XpetraTraits<e_matrix_t>::convertToXpetra(emnew);
 
       return xmnew;
+#else
+      throw std::runtime_error("Xpetra with Epetra requested, but "
+                               "Trilinos is not built with Epetra");
+#endif
     } else{
       // Do the import with the Tpetra::CrsMatrix traits object
       const xt_matrix_t *xtm = dynamic_cast<const xt_matrix_t *>(&from);
@@ -417,6 +426,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_ZOLTAN2_EPETRA
 // Epetra_CrsGraph
 template < >
 struct XpetraTraits<Epetra_CrsGraph>
@@ -427,7 +437,7 @@ struct XpetraTraits<Epetra_CrsGraph>
   static inline RCP<Xpetra::CrsGraph<lno_t,gno_t,node_t> >
   convertToXpetra(const RCP<Epetra_CrsGraph> &a)
   {
-    return rcp(new Xpetra::EpetraCrsGraph(a));
+    return rcp(new Xpetra::EpetraCrsGraphT<gno_t,node_t>(a));
   }
 
   static RCP<Epetra_CrsGraph> doMigration(const Epetra_CrsGraph &from,
@@ -442,7 +452,7 @@ struct XpetraTraits<Epetra_CrsGraph>
 
     // target map
     const Epetra_Comm &comm = from.Comm();
-    Epetra_BlockMap tmap(numGlobalRows, numLocalRows, 
+    Epetra_BlockMap tmap(numGlobalRows, numLocalRows,
        myNewRows, 1, base, comm);
     lno_t newNumElts = tmap.NumMyElements();
 
@@ -472,6 +482,7 @@ struct XpetraTraits<Epetra_CrsGraph>
   }
 
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::CrsGraph
@@ -484,7 +495,7 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
 {
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> x_graph_t;
   typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xt_graph_t;
-  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> t_graph_t; 
+  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> t_graph_t;
 
   static inline RCP<x_graph_t> convertToXpetra(const RCP<x_graph_t> &a)
   {
@@ -524,7 +535,7 @@ struct XpetraTraits<Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> >
 {
   typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> x_matrix_t;
   typedef Xpetra::TpetraRowMatrix<scalar_t, lno_t, gno_t, node_t> xt_matrix_t;
-  typedef Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t; 
+  typedef Tpetra::RowMatrix<scalar_t,lno_t,gno_t,node_t> t_matrix_t;
 
   static inline RCP<x_matrix_t> convertToXpetra(const RCP<x_matrix_t > &a)
   {
@@ -562,9 +573,7 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
   typedef int gno_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> x_graph_t;
   typedef Xpetra::TpetraCrsGraph<lno_t, gno_t, node_t> xt_graph_t;
-  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> t_graph_t; 
-  typedef Xpetra::EpetraCrsGraph xe_graph_t;
-  typedef Epetra_CrsGraph e_graph_t; 
+  typedef Tpetra::CrsGraph<lno_t,gno_t,node_t> t_graph_t;
 
   static inline RCP<x_graph_t> convertToXpetra(const RCP<x_graph_t> &a)
   {
@@ -577,6 +586,9 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
+#ifdef HAVE_ZOLTAN2_EPETRA
+      typedef Xpetra::EpetraCrsGraphT<gno_t,node_t> xe_graph_t;
+      typedef Epetra_CrsGraph e_graph_t;
       // Do the import with the Epetra_CrsGraph traits object
       const xe_graph_t *xeg = dynamic_cast<const xe_graph_t *>(&from);
       RCP<const e_graph_t> eg = xeg->getEpetra_CrsGraph();
@@ -587,6 +599,10 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
       RCP<x_graph_t> xgnew = XpetraTraits<e_graph_t>::convertToXpetra(egnew);
 
       return xgnew;
+#else
+      throw std::runtime_error("Xpetra with Epetra requested, but "
+                               "Trilinos is not built with Epetra");
+#endif
     } else{
       // Do the import with the Tpetra::CrsGraph traits object
       const xt_graph_t *xtg = dynamic_cast<const xt_graph_t *>(&from);
@@ -638,8 +654,8 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
-    // target vector 
-    RCP<t_vector_t> V = 
+    // target vector
+    RCP<t_vector_t> V =
       Tpetra::createVector<scalar_t,lno_t,gno_t,node_t>(tmap);
     V->doImport(from, importer, Tpetra::INSERT);
 
@@ -648,6 +664,7 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_ZOLTAN2_EPETRA
 // Epetra_Vector
 template < >
 struct XpetraTraits<Epetra_Vector>
@@ -656,12 +673,12 @@ struct XpetraTraits<Epetra_Vector>
   typedef InputTraits<Epetra_Vector>::gno_t    gno_t;
   typedef InputTraits<Epetra_Vector>::node_t   node_t;
   typedef InputTraits<Epetra_Vector>::scalar_t   scalar_t;
-  
+
   typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
 
   static inline RCP<x_vector_t> convertToXpetra(const RCP<Epetra_Vector> &a)
   {
-    RCP<Xpetra::EpetraVector> xev = rcp(new Xpetra::EpetraVector(a));
+    RCP<Xpetra::EpetraVectorT<gno_t,node_t> > xev = rcp(new Xpetra::EpetraVectorT<gno_t,node_t>(a));
     return rcp_implicit_cast<x_vector_t>(xev);
   }
 
@@ -675,13 +692,13 @@ struct XpetraTraits<Epetra_Vector>
 
     // target map
     const Epetra_Comm &comm = from.Comm();
-    const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts, 
+    const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
       1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);
 
-    // target vector 
+    // target vector
     RCP<Epetra_Vector> V = rcp(new Epetra_Vector(tmap, true));
     Epetra_CombineMode c = Insert;
     V->Import(from, importer, c);
@@ -689,6 +706,7 @@ struct XpetraTraits<Epetra_Vector>
     return V;
   }
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::Vector
@@ -740,8 +758,6 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
   typedef Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> x_vector_t;
   typedef Xpetra::TpetraVector<scalar_t, lno_t, gno_t, node_t> xt_vector_t;
   typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> t_vector_t;
-  typedef Xpetra::EpetraVector xe_vector_t;
-  typedef Epetra_Vector e_vector_t;
 
   static inline RCP<x_vector_t> convertToXpetra(const RCP<x_vector_t> &a)
   {
@@ -754,6 +770,9 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
+#ifdef HAVE_ZOLTAN2_EPETRA
+      typedef Epetra_Vector e_vector_t;
+      typedef Xpetra::EpetraVectorT<gno_t,node_t> xe_vector_t;
       // Do the import with the Epetra_Vector traits object
       const xe_vector_t *xev = dynamic_cast<const xe_vector_t *>(&from);
       RCP<const e_vector_t> ev = rcp(xev->getEpetra_Vector());
@@ -762,8 +781,12 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
         *ev, numLocalRows, myNewRows);
 
       RCP<x_vector_t> xvnew = XpetraTraits<e_vector_t>::convertToXpetra(evnew);
-          
+
       return xvnew;
+#else
+      throw std::runtime_error("Xpetra with Epetra requested, but "
+                               "Trilinos is not built with Epetra");
+#endif
     } else{
       // Do the import with the Tpetra::Vector traits object
       const xt_vector_t *xtv = dynamic_cast<const xt_vector_t *>(&from);
@@ -815,7 +838,7 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
-    // target vector 
+    // target vector
     RCP<t_vector_t> MV = rcp(
       new t_vector_t(tmap, from.getNumVectors(), true));
     MV->doImport(from, importer, Tpetra::INSERT);
@@ -825,6 +848,7 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_ZOLTAN2_EPETRA
 // Epetra_MultiVector
 template < >
 struct XpetraTraits<Epetra_MultiVector>
@@ -838,7 +862,7 @@ struct XpetraTraits<Epetra_MultiVector>
   static inline RCP<x_mvector_t> convertToXpetra(
     const RCP<Epetra_MultiVector> &a)
   {
-    RCP<Xpetra::EpetraMultiVector> xemv = rcp(new Xpetra::EpetraMultiVector(a));
+    RCP<Xpetra::EpetraMultiVectorT<gno_t,node_t> > xemv = rcp(new Xpetra::EpetraMultiVectorT<gno_t,node_t>(a));
     return rcp_implicit_cast<x_mvector_t>(xemv);
   }
 
@@ -852,13 +876,13 @@ struct XpetraTraits<Epetra_MultiVector>
 
     // target map
     const Epetra_Comm &comm = from.Comm();
-    const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts, 
+    const Epetra_BlockMap tmap(numGlobalElts, numLocalElts, myNewElts,
       1, base, comm);
 
     // importer
     Epetra_Import importer(tmap, smap);
 
-    // target vector 
+    // target vector
     RCP<Epetra_MultiVector> MV = rcp(
       new Epetra_MultiVector(tmap, from.NumVectors(), true));
     Epetra_CombineMode c = Insert;
@@ -867,6 +891,7 @@ struct XpetraTraits<Epetra_MultiVector>
     return MV;
   }
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Xpetra::MultiVector
@@ -918,8 +943,6 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
   typedef Xpetra::TpetraMultiVector<scalar_t, lno_t, gno_t, node_t> xt_mvector_t;
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> t_mvector_t;
-  typedef Xpetra::EpetraMultiVector xe_mvector_t;
-  typedef Epetra_MultiVector e_mvector_t;
 
   static inline RCP<x_mvector_t> convertToXpetra(const RCP<x_mvector_t> &a)
   {
@@ -932,6 +955,9 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
+#ifdef HAVE_ZOLTAN2_EPETRA
+      typedef Epetra_MultiVector e_mvector_t;
+      typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
       // Do the import with the Epetra_MultiVector traits object
       const xe_mvector_t *xev = dynamic_cast<const xe_mvector_t *>(&from);
       RCP<e_mvector_t> ev = xev->getEpetra_MultiVector();
@@ -942,7 +968,10 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
       RCP<x_mvector_t> xvnew = XpetraTraits<e_mvector_t>::convertToXpetra(evnew);
 
       return xvnew;
-
+#else
+      throw std::runtime_error("Xpetra with Epetra requested, but "
+                               "Trilinos is not built with Epetra");
+#endif
     } else{
       // Do the import with the Tpetra::MultiVector traits object
       const xt_mvector_t *xtv = dynamic_cast<const xt_mvector_t *>(&from);

@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

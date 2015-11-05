@@ -63,34 +63,33 @@
 namespace Xpetra {
 
   // TODO: move that elsewhere
-  template<class GlobalOrdinal>
-  Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal> &);
+  template<class GlobalOrdinal, class Node>
+  Epetra_Vector & toEpetra(Vector<double, int, GlobalOrdinal, Node> &);
 
-  template<class GlobalOrdinal>
-  const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal> &);
+  template<class GlobalOrdinal, class Node>
+  const Epetra_Vector & toEpetra(const Vector<double, int, GlobalOrdinal, Node> &);
   //
 
-  template<class EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
   class EpetraVectorT
-    : public virtual Vector<double,int,EpetraGlobalOrdinal>, public EpetraMultiVectorT<EpetraGlobalOrdinal>
+    : public virtual Vector<double,int,EpetraGlobalOrdinal, Node>, public EpetraMultiVectorT<EpetraGlobalOrdinal, Node>
   {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef EpetraGlobalOrdinal GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   public:
 
-    using EpetraMultiVectorT<GlobalOrdinal>::dot;          // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::norm1;        // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::norm2;        // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::normInf;      // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::meanValue;    // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::replaceGlobalValue;    // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::sumIntoGlobalValue;    // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::replaceLocalValue;    // overloading, not hiding
-    using EpetraMultiVectorT<GlobalOrdinal>::sumIntoLocalValue;    // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::dot;          // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::norm1;        // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::norm2;        // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::normInf;      // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::meanValue;    // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::replaceGlobalValue;    // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::sumIntoGlobalValue;    // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::replaceLocalValue;    // overloading, not hiding
+    using EpetraMultiVectorT<GlobalOrdinal, Node>::sumIntoLocalValue;    // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -162,10 +161,10 @@ namespace Xpetra {
     //@{
 
     //! EpetraMultiVectorT constructor to wrap a Epetra_Vector object
-    EpetraVectorT(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVectorT<GlobalOrdinal>(vec) { } // TODO: removed const of Epetra::Vector
+    EpetraVectorT(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVectorT<GlobalOrdinal, Node>(vec) { } // TODO: removed const of Epetra::Vector
 
     //! Get the underlying Epetra vector
-    Epetra_Vector * getEpetra_Vector() const { return (*this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector())(0); }
+    Epetra_Vector * getEpetra_Vector() const { return (*this->EpetraMultiVectorT<GlobalOrdinal, Node>::getEpetra_MultiVector())(0); }
     //RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVectorT<GlobalOrdinal>::getEpetra_MultiVector()->getVectorNonConst(0); }
 
     //! This constructor creates a Vector which is a view of column j of the MultiVector 'mv'.
@@ -177,7 +176,7 @@ namespace Xpetra {
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      return this->EpetraMultiVectorT<GlobalOrdinal>::getHostLocalView();
+      return this->EpetraMultiVectorT<GlobalOrdinal,Node>::getHostLocalView();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
@@ -216,14 +215,6 @@ namespace Xpetra {
     const RCP<const Epetra_MultiVector> internalRefToBaseMV_;
 
   }; // EpetraVectorT class
-
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-  typedef EpetraVectorT<int> EpetraVector;
-#endif
-
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-  typedef EpetraVectorT<long long> EpetraVector64;
-#endif
 
 } // Xpetra namespace
 

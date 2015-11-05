@@ -233,11 +233,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 }
 
 
-
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+#define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Filtering, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+#include "Ifpack2_ETIHelperMacros.h"
+
+IFPACK2_ETI_MANGLING_TYPEDEFS()
+
+// Test all enabled combinations of Scalar (SC), LocalOrdinal (LO),
+// and GlobalOrdinal (GO) types, where Scalar is real.
+
+IFPACK2_INSTANTIATE_SLG_REAL( UNIT_TEST_GROUP_SC_LO_GO )

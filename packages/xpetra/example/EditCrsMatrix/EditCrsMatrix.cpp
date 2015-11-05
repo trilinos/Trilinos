@@ -60,8 +60,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
 
-//#include <Xpetra_EditCrsMatrix.hpp>
-
+// Introduce typedefs for this example
 typedef double Scalar;
 typedef int    LocalOrdinal;
 #ifndef HAVE_XPETRA_INT_LONG_LONG
@@ -69,6 +68,7 @@ typedef int    GlobalOrdinal;
 #else
 typedef long long GlobalOrdinal;
 #endif
+typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
 
 int main(int argc, char *argv[]) {
   GlobalOrdinal numGlobalElements = 10; // problem size
@@ -107,12 +107,12 @@ int main(int argc, char *argv[]) {
     // Build matrix
     //
 
-    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal>::createUniformContigMap(lib, numGlobalElements, comm);
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::createUniformContigMap(lib, numGlobalElements, comm);
 
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
 
-    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal>::Build(map, 3);
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A =  Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
     for (size_t i = 0; i < numMyElements; i++) {

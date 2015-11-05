@@ -46,9 +46,9 @@
 #define PHX_FIELD_EVALUATOR_FACTORY_DEF_HPP
 
 #include <sstream>
-#include "boost/mpl/size.hpp"
-#include "boost/mpl/for_each.hpp"
-#include "boost/mpl/range_c.hpp"
+#include "Sacado_mpl_size.hpp"
+#include "Sacado_mpl_for_each.hpp"
+#include "Sacado_mpl_range_c.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_Evaluator_Factory_UFO.hpp"
 
@@ -73,8 +73,8 @@ buildEvaluators(const std::map<std::string, Teuchos::RCP<Teuchos::ParameterList>
 
     bool found_type = false;
     int object_type = p->get<int>("Type");
-    static const int size = boost::mpl::size<typename FactoryTraits::EvaluatorTypes>::value;
-    boost::mpl::for_each< boost::mpl::range_c<int,0,size> >( UFO<Traits,FactoryTraits>(object_type, p, tm, found_type) );
+    static const int size = Sacado::mpl::size<typename FactoryTraits::EvaluatorTypes>::value;
+    Sacado::mpl::for_each< Sacado::mpl::range_c<int,0,size> >( UFO<Traits,FactoryTraits>(object_type, p, tm, found_type) );
 
     if (!found_type) {
       std::ostringstream msg;

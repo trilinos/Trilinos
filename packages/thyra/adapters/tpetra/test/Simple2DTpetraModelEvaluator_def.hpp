@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -73,12 +73,12 @@ Simple2DTpetraModelEvaluator<Scalar>::Simple2DTpetraModelEvaluator()
   //
   // A) Create the structure for the problem
   //
-  
+
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
   prototypeInArgs_ = inArgs;
-  
+
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports(MEB::OUT_ARG_f);
@@ -91,18 +91,19 @@ Simple2DTpetraModelEvaluator<Scalar>::Simple2DTpetraModelEvaluator()
 
   const RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
-  
-  const RCP<const Tpetra::Map<int> > map = 
-    rcp(new Tpetra::Map<int>(dim, 0, comm));
 
-  W_op_graph_ = rcp(new Tpetra::CrsGraph<int>(map, dim));
-  W_op_graph_->insertGlobalIndices(0, tuple<int>(0, 1)());
-  W_op_graph_->insertGlobalIndices(1, tuple<int>(0, 1)());
+  const RCP<const Tpetra::Map<> > map = rcp(new Tpetra::Map<> (dim, 0, comm));
+
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+
+  W_op_graph_ = rcp(new Tpetra::CrsGraph<> (map, dim));
+  W_op_graph_->insertGlobalIndices(0, tuple<GO>(0, 1)());
+  W_op_graph_->insertGlobalIndices(1, tuple<GO>(0, 1)());
   W_op_graph_->fillComplete();
 
   p_.resize(dim, ST::zero());
 
-  x0_ = rcp(new Tpetra::Vector<Scalar, int>(map));
+  x0_ = rcp(new Tpetra::Vector<Scalar>(map));
   x0_->putScalar(ST::zero());
 
   //
@@ -223,7 +224,8 @@ void Simple2DTpetraModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::tuple;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Thyra::TpetraOperatorVectorExtraction<Scalar> ConverterT;
 
   const RCP<const Tpetra::Vector<Scalar, int> > x_vec =
     ConverterT::getConstTpetraVector(inArgs.get_x());
@@ -246,8 +248,8 @@ void Simple2DTpetraModelEvaluator<Scalar>::evalModelImpl(
 
   if (nonnull(W)) {
     W->setAllToScalar(ST::zero());
-    W->sumIntoGlobalValues(0, tuple<int>(0, 1), tuple<Scalar>(1.0, 2.0*x[1]));
-    W->sumIntoGlobalValues(1, tuple<int>(0, 1), tuple<Scalar>(2.0*d_*x[0], -d_));
+    W->sumIntoGlobalValues(0, tuple<GO>(0, 1), tuple<Scalar>(1.0, 2.0*x[1]));
+    W->sumIntoGlobalValues(1, tuple<GO>(0, 1), tuple<Scalar>(2.0*d_*x[0], -d_));
   }
 
 }

@@ -98,9 +98,11 @@ int DD_Memory_Alloc_Nodelist(
          nodeidx++, ptr++, dataptr += dd->nodedata_size) {
       ptr->next = nodeidx + 1;
       ptr->gid = (ZOLTAN_ID_PTR) dataptr;
+      ptr->free = 1;
     }
     dd->nodelist[len-1].next = -1;  /* NULL value at end of list */
   }
+  dd->nodecnt = 0;
 
   return ierr;
 }
@@ -137,15 +139,20 @@ DD_NodeIdx returnnode;
 
     /* Initialize free list in the newly extended memory */
     dd->nextfreenode = dd->nodelistlen;
-    for (nodeidx = dd->nodelistlen; nodeidx < newlen-1; nodeidx++)
+    for (nodeidx = dd->nodelistlen; nodeidx < newlen-1; nodeidx++) {
       dd->nodelist[nodeidx].next = nodeidx+1;
+      dd->nodelist[nodeidx].free = 1;
+    }
     dd->nodelist[newlen-1].next = -1;
+    dd->nodelist[newlen-1].free = 1;
     dd->nodelistlen = newlen;
   }
 
   returnnode = dd->nextfreenode;
   dd->nextfreenode = dd->nodelist[returnnode].next;
   dd->nodelist[returnnode].next = -1;
+  dd->nodelist[returnnode].free = 0;
+  dd->nodecnt++;
 
   return returnnode;
 }
@@ -162,7 +169,9 @@ void DD_Memory_Free_Node(
   /* TODO Error check:  freenode should be < nodelistlen */
 
   dd->nodelist[freenode].next = dd->nextfreenode;
+  dd->nodelist[freenode].free = 1;
   dd->nextfreenode = freenode;
+  dd->nodecnt--;
 }
 
 #ifdef __cplusplus

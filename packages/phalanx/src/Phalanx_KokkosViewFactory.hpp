@@ -5,7 +5,7 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_DataLayout.hpp"
-#include <boost/any.hpp>
+#include "Phalanx_any.hpp"
 #include "Sacado.hpp"
 #include <vector>
 
@@ -14,7 +14,7 @@ namespace PHX {
   template<typename ScalarT, typename Device>
   class KokkosViewFactory {
   public:
-    static boost::any buildView(const PHX::FieldTag& t, const std::vector<PHX::index_size_type>& extended_dimensions = std::vector<PHX::index_size_type>(0));
+    static PHX::any buildView(const PHX::FieldTag& t, const std::vector<PHX::index_size_type>& extended_dimensions = std::vector<PHX::index_size_type>(0));
   };
 
   // *********************************************
@@ -22,11 +22,11 @@ namespace PHX {
   // partial specializations below.
   // *********************************************
   template<typename ScalarT, typename Device>
-  boost::any 
+  PHX::any 
   KokkosViewFactory<ScalarT,Device>::buildView(const PHX::FieldTag& t,
 					       const std::vector<PHX::index_size_type>& )
   {
-    boost::any a;
+    PHX::any a;
     const PHX::DataLayout& dl = t.dataLayout();
 
     if (dl.rank() == 1)
@@ -81,14 +81,14 @@ namespace PHX {
   class KokkosViewFactory<Sacado::Fad::DFad<ScalarT>,Device> {
   public:
     static 
-    boost::any 
+    PHX::any 
     buildView(const PHX::FieldTag& t,
 	      const std::vector<PHX::index_size_type>& derivative_dimensions)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(derivative_dimensions.size() != 1,std::runtime_error,
 				 "Error in PHX::KokkosViewFactory::buildView() the Sacado Fad type requires a runtime specified array dimension size of the number of derivitives.  Please set this using the function \"setKokkosExtendedDataTypeDimensions()\" on the field manager!");
 
-      boost::any a;
+      PHX::any a;
       const PHX::DataLayout& dl = t.dataLayout();
       // DFad type contains a hidden dimension of the size of the number
       // of derivatives.  We add one to this for the value of the
@@ -157,14 +157,14 @@ namespace PHX {
   class KokkosViewFactory<Sacado::ELRCacheFad::DFad<ScalarT>,Device> {
   public:
     static 
-    boost::any 
+    PHX::any 
     buildView(const PHX::FieldTag& t,
 	      const std::vector<PHX::index_size_type>& derivative_dimensions)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(derivative_dimensions.size() != 1,std::runtime_error,
 				 "Error in PHX::KokkosViewFactory::buildView() the Sacado Fad type requires a runtime specified array dimension size of the number of derivitives.  Please set this using the function \"setKokkosExtendedDataTypeDimensions()\" on the field manager!");
 
-      boost::any a;
+      PHX::any a;
       const PHX::DataLayout& dl = t.dataLayout();
       // DFad type contains a hidden dimension of the size of the number
       // of derivatives.  We add one to this for the value of the
@@ -234,14 +234,14 @@ namespace PHX {
   class KokkosViewFactory<Sacado::Fad::SLFad<ScalarT,N>,Device> {
   public:
     static 
-    boost::any 
+    PHX::any 
     buildView(const PHX::FieldTag& t,
 	      const std::vector<PHX::index_size_type>& derivative_dimensions)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(derivative_dimensions.size() != 1,std::runtime_error,
 				 "Error in PHX::KokkosViewFactory::buildView() the Sacado Fad type requires a runtime specified array dimension size of the number of derivitives.  Please set this using the function \"setKokkosExtendedDataTypeDimensions()\" on the field manager!");
 
-      boost::any a;
+      PHX::any a;
       const PHX::DataLayout& dl = t.dataLayout();
       // DFad type contains a hidden dimension of the size of the number
       // of derivatives.  We add one to this for the value of the

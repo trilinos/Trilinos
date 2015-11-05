@@ -9,6 +9,7 @@ cmake \
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
 -D Trilinos_ENABLE_Xpetra:BOOL=OFF \
 -D Trilinos_ENABLE_MueLu:BOOL=OFF \
+-D Trilinos_ENABLE_Tpetra:BOOL=OFF \
 -D Trilinos_ENABLE_Phalanx:BOOL=ON \
 -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
 -D Trilinos_ENABLE_TESTS:BOOL=OFF \
@@ -18,14 +19,16 @@ cmake \
 -D Phalanx_ENABLE_TESTS:BOOL=ON \
 -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
 -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \
+-D Phalanx_ENABLE_NEW_DFS_ALGORITHM:BOOL=ON \
+-D Phalanx_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD:BOOL=OFF \
 -D HAVE_INTREPID_KOKKOSCORE:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
 -D MPI_BASE_DIR:PATH="/home/rppawlo/install/gnu4.8.2/mpich" \
 -D TPL_ENABLE_HWLOC:BOOL=ON \
 -D HWLOC_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/include" \
 -D HWLOC_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/hwloc/lib" \
--D TPL_ENABLE_Boost:BOOL=ON \
--D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost_1_57/include" \
+-D TPL_ENABLE_Boost:BOOL=OFF \
+-D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install/gnu4.8.2/boost/include" \
 -D TPL_BLAS_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/blas/libblas.a" \
 -D TPL_LAPACK_LIBRARIES:PATH="/home/rppawlo/install/gnu4.8.2/lapack/liblapack.a" \
 -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpicxx" \
@@ -34,6 +37,7 @@ cmake \
 -D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
 -D CMAKE_C_FLAGS:STRING="" \
 -D CMAKE_Fortran_FLAGS:STRING="" \
+-D CMAKE_EXE_LINKER_FLAGS="-Wl,-fuse-ld=gold" \
 -D Trilinos_ENABLE_CXX11:BOOL=ON \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \

@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
         for (int k = 0; k < spaceDim; k++) {
           // compute offset for (F,P,D) data layout: indices are F->i, P-> j, D->k
 	  int l = i * numPoints * spaceDim + j * spaceDim + k; 
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -358,7 +358,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
           int l =  j + i * numPoints;
-           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID2_TOL) {
+           if (std::abs(vals(i,j) - basisDivs[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

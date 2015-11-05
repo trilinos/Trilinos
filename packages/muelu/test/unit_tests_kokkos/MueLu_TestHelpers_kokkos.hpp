@@ -91,19 +91,30 @@
 #endif
 
 namespace MueLuTests {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
   using Teuchos::arcp;
   using Teuchos::arcpFromArrayView;
-  using Teuchos::rcpFromRef;
-  using Teuchos::null;
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::as;
+  using Teuchos::null;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp;
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
   using Teuchos::rcpFromRef;
+  using Teuchos::rcp_implicit_cast;
+
+#define RUN_EPETRA_ONLY_WITH_SERIAL_NODE(NO) \
+  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) { \
+    NO node; \
+    std::string nodeName = typeid(node).name(); \
+    if (nodeName.find("Serial") == std::string::npos) { \
+      out << "Skipping Epetra for non-Serial nodes" << std::endl; \
+      return; \
+    } \
+  }
 
   namespace TestHelpers_kokkos {
 

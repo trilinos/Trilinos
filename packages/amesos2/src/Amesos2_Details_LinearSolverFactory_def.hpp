@@ -55,9 +55,12 @@
 #include "Trilinos_Details_LinearSolverFactory.hpp"
 #include <type_traits>
 
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include "Epetra_CrsMatrix.h"
 #endif // HAVE_AMESOS2_EPETRA
+#endif // HAVE_TPETRA_INST_INT_INT
 
 // mfh 23 Jul 2015: Tpetra is currently a required dependency of Amesos2.
 #ifndef HAVE_AMESOS2_TPETRA
@@ -80,11 +83,14 @@ template<class OP>
 struct GetMatrixType {
   typedef int type; // flag (see below)
 
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   static_assert(! std::is_same<OP, Epetra_MultiVector>::value,
                 "Amesos2::Details::GetMatrixType: OP = Epetra_MultiVector.  "
                 "This probably means that you mixed up MV and OP.");
 #endif // HAVE_AMESOS2_EPETRA
+#endif // HAVE_TPETRA_INST_INT_INT
 
 #ifdef HAVE_AMESOS2_TPETRA
   static_assert(! std::is_same<OP, Tpetra::MultiVector<typename OP::scalar_type,
@@ -95,12 +101,15 @@ struct GetMatrixType {
 #endif // HAVE_AMESOS2_TPETRA
 };
 
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 template<>
 struct GetMatrixType<Epetra_Operator> {
   typedef Epetra_CrsMatrix type;
 };
 #endif // HAVE_AMESOS2_EPETRA
+#endif // HAVE_TPETRA_INST_INT_INT
+
 
 #ifdef HAVE_AMESOS2_TPETRA
 template<class S, class LO, class GO, class NT>
@@ -114,6 +123,8 @@ class LinearSolver :
     public Trilinos::Details::LinearSolver<MV, OP, NormType>,
     virtual public Teuchos::Describable
 {
+
+#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   static_assert(! std::is_same<OP, Epetra_MultiVector>::value,
                 "Amesos2::Details::LinearSolver: OP = Epetra_MultiVector.  "
@@ -122,6 +133,7 @@ class LinearSolver :
                 "Amesos2::Details::LinearSolver: MV = Epetra_Operator.  "
                 "This probably means that you mixed up MV and OP.");
 #endif // HAVE_AMESOS2_EPETRA
+#endif // HAVE_TPETRA_INST_INT_INT
 
 public:
   /// \brief Type of the CrsMatrix specialization corresponding to OP.

@@ -79,6 +79,8 @@ template<class MatrixType>
 void
 RBILUK<MatrixType>::setMatrix (const Teuchos::RCP<const block_crs_matrix_type>& A)
 {
+  // FIXME (mfh 04 Nov 2015) What about A_?  When does that get (re)set?
+
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
   // Regardless, setting the matrix invalidates any previous
@@ -181,15 +183,30 @@ void RBILUK<MatrixType>::initialize ()
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
+  const char prefix[] = "Ifpack2::Experimental::RBILUK::initialize: ";
 
-  if (A_block_.is_null()) {
-    TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null(), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
-      "The matrix is null.  Please call setMatrix() with a nonnull input before calling this method.");
-    RCP<const LocalFilter<row_matrix_type> > filteredA = rcp_dynamic_cast<const LocalFilter<row_matrix_type> >(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(filteredA.is_null(), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
-      "Cannot cast to filtered matrix.");
-    RCP<const OverlappingRowMatrix<row_matrix_type> > overlappedA = rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> >(filteredA->getUnderlyingMatrix());
-    if (overlappedA != Teuchos::null) {
+  // FIXME (mfh 04 Nov 2015) Apparently it's OK for A_ to be null.
+  // That probably means that this preconditioner was created with a
+  // BlockCrsMatrix directly, so it doesn't need the LocalFilter.
+
+  // TEUCHOS_TEST_FOR_EXCEPTION
+  //   (A_.is_null (), std::runtime_error, prefix << "The matrix (A_, the "
+  //    "RowMatrix) is null.  Please call setMatrix() with a nonnull input "
+  //    "before calling this method.");
+
+  if (A_block_.is_null ()) {
+    // FIXME (mfh 04 Nov 2015) Why does the input have to be a
+    // LocalFilter?  Why can't we just take a regular matrix, and
+    // apply a LocalFilter only if necessary, like other "local"
+    // Ifpack2 preconditioners already do?
+    RCP<const LocalFilter<row_matrix_type> > filteredA =
+      rcp_dynamic_cast<const LocalFilter<row_matrix_type> >(A_);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (filteredA.is_null (), std::runtime_error, prefix <<
+       "Cannot cast to filtered matrix.");
+    RCP<const OverlappingRowMatrix<row_matrix_type> > overlappedA =
+      rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> > (filteredA->getUnderlyingMatrix ());
+    if (! overlappedA.is_null ()) {
       A_block_ = rcp_dynamic_cast<const block_crs_matrix_type>(overlappedA->getUnderlyingMatrix());
     } else {
       //If there is no overlap, filteredA could be the block CRS matrix
@@ -197,10 +214,16 @@ void RBILUK<MatrixType>::initialize ()
     }
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_block_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_block_.is_null (), std::runtime_error, prefix << "The matrix (A_block_, "
+     "the BlockCrsMatrix) is null.  Please call setMatrix() with a nonnull "
+     "input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_block_->isFillComplete (), std::runtime_error, prefix << "The matrix "
+     "(A_block_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
+     "initialize() or compute() with this matrix until the matrix is fill "
+     "complete.  Note: BlockCrsMatrix is fill complete if and only if its "
+     "underlying graph is fill complete.");
 
   blockSize_ = A_block_->getBlockSize();
 
@@ -374,13 +397,21 @@ initAllValues (const block_crs_matrix_type& A)
 template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
 {
+  const char prefix[] = "Ifpack2::Experimental::RBILUK::compute: ";
+
   // initialize() checks this too, but it's easier for users if the
   // error shows them the name of the method that they actually
   // called, rather than the name of some internally called method.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    A_block_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-    "The matrix is null.  Please call setMatrix() with a nonnull input "
-    "before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_block_.is_null (), std::runtime_error, prefix << "The matrix (A_block_, "
+     "the BlockCrsMatrix) is null.  Please call setMatrix() with a nonnull "
+     "input before calling this method.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! A_block_->isFillComplete (), std::runtime_error, prefix << "The matrix "
+     "(A_block_, the BlockCrsMatrix) is not fill complete.  You may not invoke "
+     "initialize() or compute() with this matrix until the matrix is fill "
+     "complete.  Note: BlockCrsMatrix is fill complete if and only if its "
+     "underlying graph is fill complete.");
 
   if (! this->isInitialized ()) {
     initialize (); // Don't count this in the compute() time

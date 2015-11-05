@@ -57,11 +57,10 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Zoltan2_GraphModel.hpp>
 
-#include <Epetra_SerialDenseVector.h>
-
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 namespace Zoltan2{
 
@@ -775,6 +774,7 @@ template <typename Adapter>
 
   typedef GraphMetricValues<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::Vector<part_t,lno_t,gno_t,node_t>     vector_t;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -843,10 +843,11 @@ template <typename Adapter>
 
   // Build a list of the global vertex ids...
   gno_t min = std::numeric_limits<gno_t>::max();
+  size_t maxcols = 0;
   for (lno_t i = 0; i < localNumObj; ++i) {
-    if (Ids[i] < min) {
-      min = Ids[i];
-    }
+    if (Ids[i] < min) min = Ids[i];
+    size_t ncols = offsets[i+1] - offsets[i];
+    if (ncols > maxcols) maxcols = ncols;
   }
 
   gno_t gmin;
@@ -864,69 +865,37 @@ template <typename Adapter>
   // Construct Tpetra::CrsGraph objects.
   adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  part_t justOne = 1;
-  ArrayView<part_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+  Array<part_t> justOneA(maxcols, 1);
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
-
-    //globalRow for Tpetra Graph
-    gno_t globalRowT = Ids[localElement];
-
-    for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-      gno_t globalCol = edgeIds[j];
-      //create ArrayView globalCol object for Tpetra
-      ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-      //Update Tpetra adjs Graph
-      adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
-    }// *** edge loop ***
-  }// *** vertex loop ***
+    // Insert all columns for global row Ids[localElement] 
+    size_t ncols = offsets[localElement+1] - offsets[localElement];
+    adjsMatrix->insertGlobalValues(Ids[localElement],
+                                   edgeIds(offsets[localElement], ncols),
+                                   justOneA(0, ncols));
+  }
 
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete ();
 
-  // **************************************************************************
-  // ************************ BUILD IDENTITY FOR PARTS ************************
-  // **************************************************************************
-
-  RCP<sparse_matrix_type> Ipart;
-
-  // Ipart: Identity matrix for part numbers
-  Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
-
+  // Compute part
+  RCP<vector_t> scaleVec = Teuchos::rcp( new vector_t(vertexMapG,false) );
   for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
-    part_t justPart = part[localElement];
-    ArrayView<part_t> justPartAV = Teuchos::arrayView (&justPart, 1);
+    scaleVec->replaceLocalValue(localElement,part[localElement]);
+  }
 
-    // globalRow for Tpetra Matrix
-    gno_t globalRowT = Ids[localElement];
-
-    gno_t globalCol = Ids[localElement];
-    //create ArrayView globalCol object for Tpetra
-    ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-    //Update Tpetra Ipart matrix
-    Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
-  }// *** vertex loop ***
-
-  //Fill-complete parts Matrix
-  Ipart->fillComplete ();
-
-  // Create matrix to store adjs part
-  RCP<sparse_matrix_type> adjsPart = 
-    rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
-  Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
-				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
+  // Postmultiply adjsMatrix by part
+  adjsMatrix->rightScale(*scaleVec);
   Array<gno_t> Indices;
   Array<part_t> Values;
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++) {
       const gno_t globalRow = Ids[i];
-      size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+      size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
       Indices.resize (NumEntries);
       Values.resize (NumEntries);
-      adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
       for (size_t j=0; j < NumEntries; j++)
 	if (part[i] != Values[j])
@@ -940,10 +909,10 @@ template <typename Adapter>
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
-	size_t NumEntries = adjsPart->getNumEntriesInGlobalRow (globalRow);
+	size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
 	Indices.resize (NumEntries);
 	Values.resize (NumEntries);
-	adjsPart->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+	adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
 	for (size_t j=0; j < NumEntries; j++)
 	  if (part[i] != Values[j])
@@ -1050,8 +1019,9 @@ template <typename scalar_t, typename part_t>
   if (!psizes){
     scalar_t target = sumVals / targetNumParts;
     for (part_t p=0; p < numParts; p++){
-      scalar_t diff = abs(vals[p] - target);
-      scalar_t tmp = diff / target;
+      scalar_t diff = vals[p] - target;
+      scalar_t adiff = (diff >= 0 ? diff : -diff);
+      scalar_t tmp = adiff / target;
       avg += tmp;
       if (tmp > max) max = tmp;
       if (tmp < min) min = tmp;
@@ -1068,8 +1038,9 @@ template <typename scalar_t, typename part_t>
       if (psizes[p] > 0){
         if (p < numParts){
           scalar_t target = sumVals * psizes[p];
-          scalar_t diff = abs(vals[p] - target);
-          scalar_t tmp = diff / target;
+          scalar_t diff = vals[p] - target;
+          scalar_t adiff = (diff >= 0 ? diff : -diff);
+          scalar_t tmp = adiff / target;
           avg += tmp;
           if (tmp > max) max = tmp;
           if (tmp < min) min = tmp;
@@ -1151,7 +1122,7 @@ template <typename scalar_t, typename part_t>
   }
 
   double uniformSize = 1.0 / targetNumParts;
-  ArrayRCP<double> sizeVec(new double [numSizes], 0, numSizes, true);
+  std::vector<double> sizeVec(numSizes);
   for (int i=0; i < numSizes; i++){
     sizeVec[i] = uniformSize;
   }
@@ -1168,13 +1139,14 @@ template <typename scalar_t, typename part_t>
 
     // Vector of target amounts: T
 
-    for (int i=0; i < numSizes; i++)
+    double targetNorm = 0;
+    for (int i=0; i < numSizes; i++) {
       if (psizes[i].size() > 0)
         sizeVec[i] = psizes[i][p];
-
-    Epetra_SerialDenseVector target(View, sizeVec.getRawPtr(), numSizes);
-    target.Scale(sumVals);
-    double targetNorm = target.Norm2();
+      sizeVec[i] *= sumVals;
+      targetNorm += (sizeVec[i] * sizeVec[i]);
+    }
+    targetNorm = sqrt(targetNorm);
 
     // If part is supposed to be empty, we don't compute an
     // imbalance.  Same argument as above.
@@ -1183,15 +1155,18 @@ template <typename scalar_t, typename part_t>
 
       // Vector of actual amounts: A
 
-      Epetra_SerialDenseVector actual(numSizes);
-      for (int i=0; i < numSizes; i++)
+      std::vector<double> actual(numSizes);
+      double actualNorm = 0.;
+      for (int i=0; i < numSizes; i++) {
         actual[i] = vals[p] * -1.0;
+        actual[i] += sizeVec[i];
+        actualNorm += (actual[i] * actual[i]);
+      }
+      actualNorm = sqrt(actualNorm);
       
-      actual += target;
-
       //  |A - T| / |T|
 
-      scalar_t imbalance = actual.Norm2() / targetNorm;
+      scalar_t imbalance = actualNorm / targetNorm;
 
       if (imbalance < min)
         min = imbalance;
@@ -1364,7 +1339,7 @@ template <typename Adapter>
       numCriteria, partSizes.view(0, numCriteria),
       metrics[1].getGlobalSum(), wgts,
       min, max, avg);
-  
+
     metrics[1].setMinImbalance(1.0 + min);
     metrics[1].setMaxImbalance(1.0 + max);
     metrics[1].setAvgImbalance(1.0 + avg);

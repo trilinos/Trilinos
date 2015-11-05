@@ -1,19 +1,48 @@
 
-IF (${PROJECT_NAME}_ENABLE_Zoltan)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    multivectorTest
-    SOURCES multivectorTest.cpp
-    ARGS
-    "401"
-    NUM_MPI_PROCS 4
-    COMM mpi serial
-  )
+IF (${PROJECT_NAME}_ENABLE_Epetra)
+  IF (Tpetra_INST_INT_INT)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      multivectorTest
+      SOURCES multivectorTest.cpp
+      ARGS
+      "401"
+      NUM_MPI_PROCS 4
+      COMM mpi serial
+    )
+  ENDIF()
 ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mapRemotes
-  SOURCES mapRemotes.cpp
-  COMM mpi
+# KDD:  10/29/15
+# Disabling this test for until bug 6412 is fixed.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  mapRemotes
+#  SOURCES mapRemotes.cpp
+#  COMM mpi
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+
+TRIBITS_ADD_EXECUTABLE(
+  testfail
+  SOURCES testfail.cpp
+  COMM mpi serial
+)
+
+TRIBITS_ADD_TEST(
+  testfail
+  NAME testfail1
+  ARGS "FAIL"
+  WILL_FAIL 
+  FAIL_REGULAR_EXPRESSION "FAIL;BUMMER"
+  COMM mpi serial
+)
+
+TRIBITS_ADD_TEST(
+  testfail
+  NAME testfail2
+  ARGS "BUMMER"
+  WILL_FAIL 
+  FAIL_REGULAR_EXPRESSION "FAIL;BUMMER"
+  COMM mpi serial
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

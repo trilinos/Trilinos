@@ -198,12 +198,12 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     cout << "Testing setFieldData()...";
     const size_type derivative_dim = 8;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
-    boost::any a_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(a.fieldTag());
-    boost::any b_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag());
-    boost::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(c.fieldTag(),ddims);
-    boost::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(d.fieldTag(),ddims);
-    boost::any e_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(e.fieldTag());
-    boost::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f.fieldTag(),ddims);
+    PHX::any a_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(a.fieldTag());
+    PHX::any b_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(b.fieldTag());
+    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(c.fieldTag(),ddims);
+    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(d.fieldTag(),ddims);
+    PHX::any e_mem = PHX::KokkosViewFactory<double,PHX::Device>::buildView(e.fieldTag());
+    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,PHX::Device>::buildView(f.fieldTag(),ddims);
     
     a.setFieldData(a_mem);
     b.setFieldData(b_mem);
@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
-    // boost::any.  the field manager always sotres the non-const
+    // PHX::any.  the field manager always sotres the non-const
     // version.
     {
       MDField<const double,Cell> c_f1("CONST Test1",d1);
@@ -372,7 +372,7 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for debug build array rank enforcement
-    TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),boost::bad_any_cast);
+    TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream

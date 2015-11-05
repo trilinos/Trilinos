@@ -124,10 +124,10 @@ int main(int argc, char *argv[]) {
         for (int k=0;k<myCub.getNumPoints();k++) {
           cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
         }
-        if (i != j && fabs( cur ) > INTREPID2_TOL) {
+        if (i != j && fabs( cur ) > INTREPID_TOL) {
           errorFlag++;
         }
-        else if (i == j && fabs( cur ) < INTREPID2_TOL ) {
+        else if (i == j && fabs( cur ) < INTREPID_TOL ) {
           errorFlag++;
         }
         
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<polydim;i++) {
       for (int j=0;j<np_lattice;j++) {
         for (int k=0;k<2;k++) {
-          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > INTREPID2_TOL ) {
+          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > INTREPID_TOL ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
@@ -409,7 +409,7 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<polydim;i++) {
       for (int j=0;j<np_lattice;j++) {
         for (int k=0;k<3;k++) {
-          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*INTREPID2_TOL ) {
+          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*INTREPID_TOL ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             

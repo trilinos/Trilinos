@@ -66,17 +66,17 @@ namespace MueLu {
 
   /*!
     @class IfpackSmoother
-    @ingroup MueLuSmootherClasses 
+    @ingroup MueLuSmootherClasses
     @brief Class that encapsulates Ifpack smoothers.
 
     This class creates an Ifpack preconditioner factory. The factory creates a smoother based on the
     type and ParameterList passed into the constructor. See the constructor for more information.
   */
-  class IfpackSmoother : public SmootherPrototype<double,int,int> {
-    typedef double                                                              Scalar;
-    typedef int                                                                 LocalOrdinal;
-    typedef int                                                                 GlobalOrdinal;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType                         Node;
+  template <class Node = typename SmootherPrototype<double,int,int>::node_type>
+  class IfpackSmoother : public MueLu::SmootherPrototype<double,int,int,Node> {
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
 #undef MUELU_IFPACKSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -209,14 +209,18 @@ namespace MueLu {
     return Teuchos::null;
   }
 
+  // Specialization for serial node (used for Epetra)
+#if defined(HAVE_MUELU_SERIAL)
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int> >
-  GetIfpackSmoother<double, int, int> (const std::string& type,
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
+  GetIfpackSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
                                        const Teuchos::ParameterList& paramList,
                                        const int& overlap)
   {
-    return rcp (new IfpackSmoother (type, paramList, overlap));
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    return rcp (new MueLu::IfpackSmoother<Node> (type, paramList, overlap));
   }
+#endif
 
 } // namespace MueLu
 

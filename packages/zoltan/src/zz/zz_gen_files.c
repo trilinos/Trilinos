@@ -235,7 +235,7 @@ int gen_geom, int gen_graph, int gen_hg)
        * weights for a given edge.
        */
       gno_val = (ZOLTAN_GNO_TYPE)nEwgts;
-      MPI_Reduce(&nEwgts, &glob_ewgts, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
+      MPI_Reduce(&gno_val, &glob_ewgts, 1, zoltan_gno_mpi_type, MPI_SUM, 0, zz->Communicator);
 
       /* We assume the Edge IDs and Vertex IDs are integers and
        * are contiguous.  Figure out what the lowest ID is.

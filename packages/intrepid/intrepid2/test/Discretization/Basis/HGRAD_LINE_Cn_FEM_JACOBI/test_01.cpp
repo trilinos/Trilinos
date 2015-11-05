@@ -265,14 +265,14 @@ int main(int argc, char *argv[]) {
           for (int j=0; j<numFieldsRight; j++) {
 
             if (i==j) {
-              if ( std::abs(massMatrix(0,i,j)-(double)(2.0/(2.0*j+1.0))) > INTREPID2_TOL ) {
+              if ( std::abs(massMatrix(0,i,j)-(double)(2.0/(2.0*j+1.0))) > INTREPID_TOL ) {
                 *outStream << "Incorrect ii (\"diagonal\") value for i=" << i << ", j=" << j << ": "
                            << massMatrix(0,i,j) << " != " << "2/(2*" << j << "+1)\n\n";
                 errorFlag++;
               }
             }
             else {
-              if ( std::abs(massMatrix(0,i,j)) > INTREPID2_TOL ) {
+              if ( std::abs(massMatrix(0,i,j)) > INTREPID_TOL ) {
                 *outStream << "Incorrect ij (\"off-diagonal\") value for i=" << i << ", j=" << j << ": "
                            << massMatrix(0,i,j) << " != " << "0\n\n";
                 errorFlag++;
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
         
         // Compute offset for (F,P) container
         int l =  j + i * numPoints;
-	if (std::abs(vals(i,j) - basisValues[l]) > INTREPID2_TOL) {
+	if (std::abs(vals(i,j) - basisValues[l]) > INTREPID_TOL) {
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 	  
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
         
         // Compute offset for (F,P) container
         int l =  j + i * numPoints;
-	if (std::abs(vals(i,j,0) - basisD1Values[l]) > INTREPID2_TOL) {
+	if (std::abs(vals(i,j,0) - basisD1Values[l]) > INTREPID_TOL) {
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 	  
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
         
         // Compute offset for (F,P) container
         int l =  j + i * numPoints;
-	if (std::abs(vals(i,j,0) - basisD2Values[l]) > INTREPID2_TOL) {
+	if (std::abs(vals(i,j,0) - basisD2Values[l]) > INTREPID_TOL) {
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 	  
@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
         
         // Compute offset for (F,P) container
         int l =  j + i * numPoints;
-	if (std::abs(vals(i,j,0) - basisD3Values[l]) > INTREPID2_TOL) {
+	if (std::abs(vals(i,j,0) - basisD3Values[l]) > INTREPID_TOL) {
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 	  

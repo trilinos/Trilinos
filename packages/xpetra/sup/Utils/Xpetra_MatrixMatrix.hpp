@@ -105,7 +105,7 @@ public:
     if (crsOp == Teuchos::null)
       throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp->getCrsMatrix();
-    const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
       throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -119,7 +119,7 @@ public:
     if (crsOp == Teuchos::null)
       throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
     RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp->getCrsMatrix();
-    const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null)
       throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
     A = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
@@ -132,7 +132,7 @@ public:
     try {
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & >(Op);
       RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
-      const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(tmp_CrsMtx);
+      const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
         throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
       A = tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -148,7 +148,7 @@ public:
     try {
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & crsOp = dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> & >(Op);
       RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
-      const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal> >(tmp_CrsMtx);
+      const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
         throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
       A = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(tmp_ECrsMtx->getEpetra_CrsMatrix());
@@ -225,9 +225,9 @@ public:
 };
 
 template <class Scalar,
-class LocalOrdinal  = int,
-class GlobalOrdinal = LocalOrdinal,
-class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+class LocalOrdinal  /*= int*/,
+class GlobalOrdinal /*= LocalOrdinal*/,
+class Node          /*= KokkosClassic::DefaultNode::DefaultNodeType*/>
 class MatrixMatrix {
 
 private:
@@ -643,12 +643,13 @@ public:
 
 
 // specialization MatrixMatrix for SC=double, LO=GO=int
-template<>
-class MatrixMatrix<double,int,int> {
+template<class Node>
+class MatrixMatrix<double,int,int,Node> {
   typedef double                                                     SC;
   typedef int                                                        LO;
   typedef int                                                        GO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;
+  /*typedef KokkosClassic::DefaultNode::DefaultNodeType                NO;*/
+  typedef Node                                                       NO;
   typedef Xpetra::Map<int,int,NO>                                    Map;
   typedef Xpetra::Matrix<double,int,int,NO>                          Matrix;
   typedef Xpetra::MultiVector<double,int,int,NO>                     MultiVector;

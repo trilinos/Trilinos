@@ -122,12 +122,12 @@ int main(int argc, char *argv[]) {
     // test for Kronecker property
     for (int i=0;i<nbf;i++) {
       for (int j=0;j<np_lattice;j++) {
-        if ( i==j && std::abs( vals(i,j) - 1.0 ) > 100.0 * INTREPID2_TOL ) {
+        if ( i==j && std::abs( vals(i,j) - 1.0 ) > 100.0 * INTREPID_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not have unit value at its node\n";
         }
-        if ( i!=j && std::abs( vals(i,j) ) > 100.0 * INTREPID2_TOL ) {
+        if ( i!=j && std::abs( vals(i,j) ) > 100.0 * INTREPID_TOL ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
