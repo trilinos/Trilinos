@@ -122,17 +122,12 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   using Teuchos::RCP; 
   RCP<const Thyra::ModelEvaluator<Scalar> > under_me = this->getUnderlyingModel();
 
-  // intialize a zero to get rid of the x-dot 
-  if(zero_==Teuchos::null) {
-    zero_ = Thyra::createMember(*under_me->get_x_space());
-    Thyra::assign(zero_.ptr(),0.0);
-  }
-
   MEB::InArgs<Scalar> under_inArgs = under_me->createInArgs();
   under_inArgs.setArgs(inArgs);
-  under_inArgs.set_x_dot(zero_); // no time derivative...this may be a problem
-                                 // for VMS stabilization in particular
-                                 // or more importantly cause performance to suck!
+
+  // read in the supplied time derivative in case it is needed by the explicit model (e.g. for stabilization) and make sure alpha is set to zero
+  under_inArgs.set_x_dot(inArgs.get_x_dot());
+  under_inArgs.set_alpha(0.0);
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f();
 
@@ -240,7 +235,7 @@ buildArgsPrototypes()
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_alpha,false);
   inArgs.setSupports(MEB::IN_ARG_beta,false);
-  inArgs.setSupports(MEB::IN_ARG_x_dot,false);
+  inArgs.setSupports(MEB::IN_ARG_x_dot,true);
   prototypeInArgs_ = inArgs;
 
   MEB::OutArgsSetup<Scalar> outArgs(this->getUnderlyingModel()->createOutArgs());
