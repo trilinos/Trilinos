@@ -47,6 +47,9 @@
 
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <Tpetra_Details_PackTraits.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Tpetra_HashTable.hpp>
+
 
 namespace Tpetra {
 namespace Experimental {
