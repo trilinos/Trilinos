@@ -272,10 +272,13 @@ namespace Xpetra {
         typename dual_view_type::t_host_um>::type
     getLocalView () const {
       if(Kokkos::Impl::is_same<
-          typename dev_execution_space::memory_space,
-          typename TargetDeviceType::memory_space>::value) {
+                   typename host_execution_space::memory_space,
+                   typename TargetDeviceType::memory_space
+         >::value) {
+        return getHostLocalView();
+      } else {
         return getDeviceLocalView();
-      } else return getHostLocalView();
+      }
     }
 
     virtual typename dual_view_type::t_host_um getHostLocalView ()  const {
