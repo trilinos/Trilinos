@@ -87,4 +87,48 @@ inline unsigned read_file_shared_faces_different_elements_stk(std::string filena
     return count_shared_faces_between_different_elements(mesh);
 }
 
+inline unsigned count_shared_faces_between_same_element(stk::mesh::BulkData& mesh) {
+    unsigned shared_face_count = 0;
+    stk::mesh::BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
+    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
+        stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
+        for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
+            stk::mesh::Entity face = bucket[face_count];
+            bool is_face_shared = false;
+            stk::mesh::Entity const * elements = mesh.begin_elements(face);
+            for (unsigned elem_count = 0; elem_count < mesh.num_elements(face); ++elem_count) {
+                for (unsigned other_elem_count = elem_count;
+                        other_elem_count < mesh.num_elements(face); ++other_elem_count) {
+                    if ((elem_count != other_elem_count) &&
+                            (elements[elem_count] == elements[other_elem_count])) {
+                        is_face_shared = true;
+                        break;
+                    }
+                }
+            }
+            if (is_face_shared) {
+                ++shared_face_count;
+            }
+        }
+    }
+    return shared_face_count;
+}
+
+inline unsigned read_file_shared_faces_same_elements_stk(std::string filename, bool create_faces) {
+    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
+    stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
+
+    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
+    if (create_faces) {
+        stk::mesh::create_faces(mesh);
+    }
+    return count_shared_faces_between_same_element(mesh);
+
+}
+
+
+
 #endif

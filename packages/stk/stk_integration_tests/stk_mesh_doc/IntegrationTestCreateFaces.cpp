@@ -58,34 +58,6 @@ namespace
 {
 
 
-
-unsigned count_shared_faces_between_same_element(stk::mesh::BulkData& mesh) {
-    unsigned shared_face_count = 0;
-    stk::mesh::BucketVector const & face_buckets = mesh.buckets(stk::topology::FACE_RANK);
-    for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
-        stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
-        for (size_t face_count=0, face_end=bucket.size(); face_count < face_end; ++face_count) {
-            stk::mesh::Entity face = bucket[face_count];
-            bool is_face_shared = false;
-            stk::mesh::Entity const * elements = mesh.begin_elements(face);
-            for (unsigned elem_count = 0; elem_count < mesh.num_elements(face); ++elem_count) {
-                for (unsigned other_elem_count = elem_count;
-                        other_elem_count < mesh.num_elements(face); ++other_elem_count) {
-                    if ((elem_count != other_elem_count) &&
-                            (elements[elem_count] == elements[other_elem_count])) {
-                        is_face_shared = true;
-                        break;
-                    }
-                }
-            }
-            if (is_face_shared) {
-                ++shared_face_count;
-            }
-        }
-    }
-    return shared_face_count;
-}
-
 bool check_face_elem_connectivity(stk::mesh::BulkData& mesh, int count1=-1, int count2=-1, int count3=-1, int count4=-1, int count5=-1, int count6=-1, bool debug=false) {
 
     stk::mesh::FieldBase const * coord = mesh.mesh_meta_data().coordinate_field();
@@ -181,21 +153,6 @@ void read_file_dump_mesh(std::string filename, bool create_faces) {
 }
 
 
-unsigned read_file_shared_faces_same_elements(std::string filename, bool create_faces) {
-    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
-    stkMeshIoBroker.add_mesh_database(filename, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
-
-    stk::mesh::BulkData &mesh = stkMeshIoBroker.bulk_data();
-    if (create_faces) {
-        stk::mesh::create_faces(mesh);
-    }
-    return count_shared_faces_between_same_element(mesh);
-
-}
-
 //The Magical Alphabet of Hexes, Shells & Sidesets
 //
 // A = hex in block A
@@ -215,71 +172,6 @@ unsigned read_file_shared_faces_same_elements(std::string filename, bool create_
 //
 // RR = pronounced like a pirate
 // RRR = roll the R
-
-TEST(StkIo, CreateFacesSharedFacesSameElements)
-{
-    const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
-    if (numprocs == 1) {
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADe.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("A.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Ae.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AefA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AefB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Aef.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALe.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReDA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReDB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARe.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReLA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReLB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("e.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeXfRA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADReA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ADReB.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALReA.e", true));
-        EXPECT_EQ(1u, read_file_shared_faces_same_elements("ALReB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReB.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Re.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ReL.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALefRA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARefLA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeDfA.e", true));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALJ.e", true));
-    }
-}
 
 TEST(StkIo, NoCreateFaces)
 {
@@ -480,64 +372,64 @@ TEST(StkIo, NoCreateFacesSharedFacesSameElements)
 {
     const int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (numprocs == 1) {
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADeRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("A.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Ae.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AefA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AefB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Aef.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeDfRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReDA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReDB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARe.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReLB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AReRB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("e.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("eL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALeXfRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ADReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARReB.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("Re.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ReL.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALefRA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ARefLA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("AeDfA.e", false));
-        EXPECT_EQ(0u, read_file_shared_faces_same_elements("ALJ.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADDA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADDB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeDA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeDB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADe.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeLA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeLB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADeRB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("A.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AeA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AeB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("Ae.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AefA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AefB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("Aef.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AL.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeDA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeDB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeDfRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeDfRB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALe.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeLA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeLB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeRB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALRB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReDA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReDB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARe.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReLA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReLB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AReRB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("e.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("eL.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALeXfRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADReA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ADReB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALReA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALReB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARReA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARReB.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("Re.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ReL.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALefRA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ARefLA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("AeDfA.e", false));
+        EXPECT_EQ(0u, read_file_shared_faces_same_elements_stk("ALJ.e", false));
     }
 }
 
