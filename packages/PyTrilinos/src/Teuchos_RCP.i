@@ -120,13 +120,13 @@
 				 SWIG_POINTER_OWN));
 }
 // Convert virtual method plain pointer input argument to a Python object
-%typemap(directorin) CONST TYPE *
+%typemap(directorin, noblock=1) CONST TYPE *
 {
   Teuchos::RCP< CONST TYPE > *temp$argnum = new Teuchos::RCP< CONST TYPE >($1_name, false);
   $input = SWIG_NewPointerObj(%as_voidptr(temp$argnum), $descriptor(Teuchos::RCP< TYPE > *), 0);
 }
 // Convert virtual method plain reference input argument to a Python object
-%typemap(directorin) CONST TYPE &
+%typemap(directorin, noblock=1) CONST TYPE &
 {
   Teuchos::RCP< CONST TYPE > *temp$argnum = new Teuchos::RCP< CONST TYPE >(&$1_name, false);
   $input = SWIG_NewPointerObj(%as_voidptr(temp$argnum), $descriptor(Teuchos::RCP< TYPE > *), 0);

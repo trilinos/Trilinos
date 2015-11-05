@@ -453,7 +453,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
     4/1.smb	
     4/2.smb
     4/3.smb
-    torus16k0.smb
     pumiTri14/plate.dmg
     pumiTri14/plate0.smb
     pumiTri14/2/0.smb
