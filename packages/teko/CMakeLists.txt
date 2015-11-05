@@ -10,32 +10,34 @@ TRIBITS_PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-# mfh 02 Nov 2015: Teko currently wants GlobalOrdinal (GO) = int by
-# default, and only wants to use GO = long long if
-# Teko_USE_LONGLONG_GO (see below) is set.  I want to preserve this
-# behavior, but allow Tpetra to disable GO = int.
+# FIXME (mfh 02 Nov 2015, 04 Nov 2015) The right thing for Teko to do
+# would be to have logic to use any enabled Tpetra GlobalOrdinal type.
+# For now, we just error out if neither long long nor int are enabled.
 
-IF (DEFINED Tpetra_INST_INT_INT)
-  IF (Tpetra_INST_INT_INT)
+IF (DEFINED Tpetra_INST_INT_LONG_LONG)
+  IF (Tpetra_INST_INT_LONG_LONG)
     SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT ON)
   ELSE ()
-    SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
-  ENDIF ()
-ELSE () # NOT DEFINED Tpetra_INST_INT_INT
-  IF (DEFINED Tpetra_INST_INT_LONG_LONG)
-    IF (Tpetra_INST_INT_LONG_LONG)
-      SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT ON)
-    ELSE ()
-      # FIXME (mfh 02 Nov 2015) If Tpetra enables neither
-      # GlobalOrdinal = long long nor GlobalOrdinal = int,
-      # I can't preserve Teko's current behavior.  The right
-      # thing for Teko to do would be to have logic to use
-      # any enabled Tpetra GlobalOrdinal type.
-      SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
+    IF (DEFINED Tpetra_INST_INT_INT)
+      IF (Tpetra_INST_INT_INT)
+	SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
+      ELSE ()
+	MESSAGE (FATAL_ERROR "Teko currently requires that Tpetra enable either GlobalOrdinal (GO) = long long or GO = int.  Please set Tpetra_INST_INT_LONG_LONG=ON to enable GO = long long, or Tpetra_INST_INT_INT=ON to enable GO = int.  If you would like to use other GO types, please contact the Teko developers.")
+      ENDIF () # Tpetra_INST_INT_INT
+    ELSE () # NOT DEFINED Tpetra_INST_INT_INT
+      MESSAGE (FATAL_ERROR "Teko currently requires that Tpetra enable either GlobalOrdinal (GO) = long long or GO = int.  Please set Tpetra_INST_INT_LONG_LONG=ON to enable GO = long long, or Tpetra_INST_INT_INT=ON to enable GO = int.  If you would like to use other GO types, please contact the Teko developers.")
     ENDIF ()
+  ENDIF () # Tpetra_INST_INT_LONG_LONG
+ELSE () # NOT DEFINED Tpetra_INST_INT_LONG_LONG
+  IF (NOT DEFINED Tpetra_INST_INT_INT)
+    MESSAGE (FATAL_ERROR "Teko currently requires that Tpetra enable either GlobalOrdinal (GO) = long long or GO = int.  Please set Tpetra_INST_INT_LONG_LONG=ON to enable GO = long long, or Tpetra_INST_INT_INT=ON to enable GO = int.  If you would like to use other GO types, please contact the Teko developers.")
+  ELSEIF (NOT Tpetra_INST_INT_INT)
+    MESSAGE (FATAL_ERROR "Teko currently requires that Tpetra enable either GlobalOrdinal (GO) = long long or GO = int.  Please set Tpetra_INST_INT_LONG_LONG=ON to enable GO = long long, or Tpetra_INST_INT_INT=ON to enable GO = int.  If you would like to use other GO types, please contact the Teko developers.")
   ENDIF ()
-ENDIF () # DEFINED Tpetra_INST_INT_INT
+  SET(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT OFF)
+ENDIF ()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_USE_LONGLONG_GO_DEFAULT)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_USE_LONGLONG_GO
   HAVE_${PACKAGE_NAME}_USE_LONGLONG_GO
