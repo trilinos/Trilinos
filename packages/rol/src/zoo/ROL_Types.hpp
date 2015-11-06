@@ -161,6 +161,7 @@ namespace ROL {
     STEP_MOREAUYOSIDAPENALTY,
     STEP_PRIMALDUALACTIVESET,
     STEP_TRUSTREGION,
+    STEP_INTERIORPOINT,
     STEP_LAST
   };
 
@@ -174,6 +175,7 @@ namespace ROL {
       case STEP_MOREAUYOSIDAPENALTY: retString = "Moreau-Yosida Penalty";  break;
       case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
       case STEP_TRUSTREGION:         retString = "Trust Region";           break;
+      case STEP_INTERIORPOINT:       retString = "Interior Point";         break;
       case STEP_LAST:                retString = "Last Type (Dummy)";      break;
       default:                       retString = "INVALID EStep";
     }
@@ -192,7 +194,8 @@ namespace ROL {
             (ls == STEP_LINESEARCH) ||
             (ls == STEP_MOREAUYOSIDAPENALTY) ||
             (ls == STEP_PRIMALDUALACTIVESET) ||
-            (ls == STEP_TRUSTREGION) );
+            (ls == STEP_TRUSTREGION) || 
+            (ls == STEP_INTERIORPOINT) ) ;
   }
 
   inline EStep & operator++(EStep &type) {

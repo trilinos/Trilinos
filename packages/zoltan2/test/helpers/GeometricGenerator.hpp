@@ -2434,7 +2434,7 @@ public:
 	  //TODO we need to fix the setting parts.
 	  //Although MJ sets the parts with
 	  //currently the part setting is not correct when migration is done.
-	  params->set("migration_check_option", 2);
+	  //params->set("migration_check_option", 2);
 
 
 	  Zoltan2::PartitioningProblem<inputAdapter_t> *problem;

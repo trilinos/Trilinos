@@ -157,21 +157,19 @@ int main(int argc, char *argv[]) {
     RCPV vl = CreatePartitionedVector(vil,vel);
 
     // Original obective
-    RCP<ROL::Objective<RealT> > obj_hs32 = rcp( new ROL::ZOO::Objective_HS32<RealT> );
+    ROL::ZOO::Objective_HS32<RealT> obj_hs32;
 
     // Barrier objective
-    RCP<ROL::Objective<RealT> > barrier = rcp( new ROL::LogBarrierObjective<RealT> );
+    ROL::LogBarrierObjective<RealT> barrier;
 
     using ROL::InteriorPoint::PenalizedObjective;
 
     // Interior Point objective
     RCP<ROL::Objective<RealT> > ipobj = rcp( new PenalizedObjective<RealT>(obj_hs32,barrier,*x,1.0) );
 
-    RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
-      rcp( new ROL::ZOO::EqualityConstraint_HS32<RealT> );
+    ROL::ZOO::EqualityConstraint_HS32<RealT> eqcon_hs32;
     
-    RCP<ROL::EqualityConstraint<RealT> > incon_hs32 = 
-      rcp( new ROL::ZOO::InequalityConstraint_HS32<RealT> );
+    ROL::ZOO::InequalityConstraint_HS32<RealT> incon_hs32;
 
     using ROL::InteriorPoint::CompositeConstraint;
 
@@ -181,18 +179,18 @@ int main(int argc, char *argv[]) {
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 
     *outStream << "\nObjective\n" << std::endl;
-    obj_hs32->checkGradient(*xopt,*dopt,true,*outStream);
-    obj_hs32->checkHessVec(*xopt,*vopt,true,*outStream);
+    obj_hs32.checkGradient(*xopt,*dopt,true,*outStream);
+    obj_hs32.checkHessVec(*xopt,*vopt,true,*outStream);
 
     
     *outStream << "\nEquality Constraint\n" << std::endl;
-    eqcon_hs32->checkApplyJacobian(*xopt,*vopt,*vec,true,*outStream); 
-    eqcon_hs32->checkApplyAdjointJacobian(*xopt,*vel,*vec,*xopt,true,*outStream); 
+    eqcon_hs32.checkApplyJacobian(*xopt,*vopt,*vec,true,*outStream); 
+    eqcon_hs32.checkApplyAdjointJacobian(*xopt,*vel,*vec,*xopt,true,*outStream); 
 
     *outStream << "\nInequality Constraint\n" << std::endl;
-    incon_hs32->checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
-    incon_hs32->checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
-    incon_hs32->checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);
+    incon_hs32.checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
+    incon_hs32.checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
+    incon_hs32.checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);
 
 
     *outStream << "\nCheck Interior Point objective\n" << std::endl;

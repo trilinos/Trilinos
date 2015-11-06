@@ -1624,19 +1624,52 @@ namespace Tpetra {
                            BinaryFunction f) const
     {
       typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+      typedef LocalOrdinal LO;
       const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
       const size_type numElts = inds.size ();
       size_t hint = 0; // guess at the index's relative offset in the row
 
-      LocalOrdinal numValid = 0; // number of valid local column indices
-      for (size_type j = 0; j < numElts; ++j) {
-        const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
-        if (k != STINV) {
-          rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
-          hint = k+1;
-          numValid++;
+      LO numValid = 0; // number of valid input column indices
+
+      if (isLocallyIndexed ()) {
+        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+        // pointer do NOT change its reference count.  Thus, this code
+        // is still thread safe.
+        if (colMap_.is_null ()) {
+          // NO input column indices are valid in this case, since if
+          // the column Map is null on the calling process, then the
+          // calling process owns no graph entries.
+          return numValid;
+        }
+        const map_type& colMap = *colMap_;
+        const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+
+        for (size_type j = 0; j < numElts; ++j) {
+          const LocalOrdinal lclColInd = colMap.getLocalElement (inds[j]);
+          if (lclColInd != LINV) {
+            const size_t k = findLocalIndex (rowInfo, lclColInd, hint);
+            if (k != STINV) {
+              rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+              hint = k+1;
+              numValid++;
+            }
+          }
         }
       }
+      else if (isGloballyIndexed ()) {
+        for (size_type j = 0; j < numElts; ++j) {
+          const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
+          if (k != STINV) {
+            rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+            hint = k+1;
+            numValid++;
+          }
+        }
+      }
+      // If the graph is neither locally nor globally indexed on the
+      // calling process, that means the calling process has no graph
+      // entries.  Thus, none of the input column indices are valid.
+
       return numValid;
     }
 

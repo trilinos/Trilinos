@@ -131,7 +131,7 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
-    bool parameter_on = true;
+    bool parameter_on = false;
     bool distr_param_on = true;
     AssemblyPieces ap;
     buildAssemblyPieces(parameter_on,distr_param_on,ap);
@@ -305,7 +305,7 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
-    bool parameter_on = true;
+    bool parameter_on = false;
     bool distr_param_on = true;
     AssemblyPieces ap;
     buildAssemblyPieces(parameter_on,distr_param_on,ap);
@@ -495,7 +495,7 @@ namespace panzer {
     typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
     typedef panzer::ModelEvaluator<double> PME;
 
-    bool parameter_on = true;
+    bool parameter_on = false;
     bool distr_param_on = true;
     AssemblyPieces ap;
     buildAssemblyPieces(parameter_on,distr_param_on,ap);
