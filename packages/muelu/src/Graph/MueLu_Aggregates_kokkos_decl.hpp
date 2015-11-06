@@ -47,18 +47,18 @@
 #ifndef MUELU_AGGREGATES_KOKKOS_DECL_HPP
 #define MUELU_AGGREGATES_KOKKOS_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include "MueLu_Aggregates_kokkos_fwd.hpp"
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
 
-#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
+#include "MueLu_LWGraph_kokkos_fwd.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -96,11 +96,27 @@ namespace MueLu {
     where rows (or vertices) correspond to aggregates and colunmns (or edges)
     correspond to nodes. While not strictly necessary, it might be convenient.
 */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  class Aggregates_kokkos;
 
-  template <class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class Aggregates_kokkos : public BaseClass {
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
+  public:
+    typedef LocalOrdinal                                        local_ordinal_type;
+    typedef GlobalOrdinal                                       global_ordinal_type;
+    typedef typename DeviceType::execution_space                execution_space;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef DeviceType                                          device_type;
+
+    typedef Kokkos::View<LocalOrdinal*, device_type>            aggregates_sizes_type;
+
+  private:
+    // For compatibility
+    typedef node_type                                           Node;
 #undef MUELU_AGGREGATES_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
+
+  public:
 
   public:
 
@@ -111,21 +127,24 @@ namespace MueLu {
      * the mapping of node to the owning processor id.
      *
      */
-    Aggregates_kokkos(const GraphBase & graph);
+    Aggregates_kokkos(LWGraph_kokkos graph);
 
     /*! @brief Constructor for Aggregates structure
      *
      * This constructor takes a RCP pointer to a map which is used for the internal mappings of nodes to the (local) aggregate ids and the owning processor.
      *
      */
-    Aggregates_kokkos(const RCP<const Map> & map);
+    Aggregates_kokkos(const RCP<const Map>& map);
 
     /*! @brief Destructor
      *
      */
     virtual ~Aggregates_kokkos() { }
 
-    LO GetNumAggregates() const           { return nAggregates_;        } ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
+    ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
+    KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
+      return nAggregates_;
+    }
 
     /*! @brief Set number of local aggregates on current processor.
 
@@ -134,13 +153,17 @@ namespace MueLu {
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
 
     //! @brief Record whether aggregates include DOFs from other processes.
-    void AggregatesCrossProcessors(const bool &flag) {aggregatesIncludeGhosts_ = flag;};
+    KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
+      aggregatesIncludeGhosts_ = flag;
+    }
 
     /*! @brief Return false if and only if no aggregates include DOFs from other processes.
 
         Used in construction of tentative prolongator to skip a communication phase.
     */
-    bool AggregatesCrossProcessors() const {return aggregatesIncludeGhosts_;};
+    KOKKOS_INLINE_FUNCTION bool AggregatesCrossProcessors() const {
+      return aggregatesIncludeGhosts_;
+    }
 
     /*! @brief Returns a nonconstant vector that maps local node IDs to local aggregates IDs.
 
@@ -189,7 +212,7 @@ namespace MueLu {
       If forceRecompute==false and sizes have been calculated previously, then this parameter has no effect.
       Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
-    Teuchos::ArrayRCP<LO> ComputeAggregateSizes(bool forceRecompute=true, bool cacheSizes=false) const;
+    KOKKOS_INLINE_FUNCTION typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{
@@ -222,7 +245,8 @@ namespace MueLu {
     bool aggregatesIncludeGhosts_;
 
     //! Array of sizes of each local aggregate.
-    mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
+    mutable
+    aggregates_sizes_type aggregateSizes_;
 
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
