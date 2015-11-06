@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,23 +62,38 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_Coverage)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_KOKKOS_REFACTOR_CUDA)
 SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
-SET(CTEST_DO_COVERAGE_TESTING TRUE) #The quickstart says this is redundant, but I'm setting it just in case.
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-#SET(Trilinos_PACKAGES Teuchos Kokkos Epetra Tpetra Xpetra Amesos Amesos2 Ifpack Ifpack2 Zoltan Zoltan2)
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
-  "-DTrilinos_ENABLE_COVERAGE_TESTING=ON"
-  "-DTPL_ENABLE_SuperLU=ON"
-  "-DMueLu_ENABLE_Experimental=ON"
-  "-DXpetra_ENABLE_Experimental=ON"
-  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=OFF"
+    "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF"
+    "-DTeuchos_ENABLE_COMPLES:BOOL=OFF"
+    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=OFF"
+    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
+
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
+
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
+      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
+      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+
+  ### PACKAGES CONFIGURATION ###
+  "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 )
 
 #

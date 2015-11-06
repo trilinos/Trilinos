@@ -57,7 +57,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for negima using gcc
+# Platform/compiler specific options for geminga using gcc
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)

@@ -54,30 +54,28 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 
 #
 # Set the options specific to this build case
 #
 
-SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_VALGRIND_DEV_MueLu)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_RELEASE_DEV_MueLu)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+SET(Trilinos_PACKAGES MueLu)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
   "-DTPL_ENABLE_SuperLU=ON"
+  "-DZoltan2_ENABLE_Experimental=ON"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
-
-SET(CTEST_DO_MEMORY_TESTING TRUE)
-SET(CTEST_MEMORYCHECK_COMMAND /home/aprokop/local/opt/valgrind-3.10.1/bin/valgrind)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

@@ -27,7 +27,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_MueLu_Tpetra
-    ctest_linux_nightly_serial_debug_muelu_tpetra_negima.cmake
+    ctest_linux_nightly_serial_debug_muelu_tpetra_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -35,7 +35,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_MueLu_Epetra
-    ctest_linux_nightly_serial_debug_muelu_epetra_negima.cmake
+    ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -43,7 +43,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_MueLu
-    ctest_linux_nightly_mpi_release_muelu_negima.cmake
+    ctest_linux_nightly_mpi_release_muelu_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -51,7 +51,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_negima.cmake
+    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 420
@@ -61,7 +61,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       SERIAL_DEBUG_MueLu_Valgrind
-      ctest_linux_nightly_serial_debug_valgrind_muelu_negima.cmake
+      ctest_linux_nightly_serial_debug_valgrind_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 330
@@ -69,7 +69,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       OPENMPI_1.10.0_DEBUG_MueLu
-      ctest_linux_nightly_mpi_debug_muelu_negima.cmake
+      ctest_linux_nightly_mpi_debug_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 330
@@ -79,7 +79,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       SERIAL_DEBUG_MueLu
-      ctest_linux_nightly_serial_debug_muelu_negima.cmake
+      ctest_linux_nightly_serial_debug_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 330
@@ -87,7 +87,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       OPENMPI_1.10.0_DEBUG_MueLu_Valgrind
-      ctest_linux_nightly_mpi_debug_valgrind_muelu_negima.cmake
+      ctest_linux_nightly_mpi_debug_valgrind_muelu_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 330
@@ -99,7 +99,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       OPENMPI_1.10.0_DEBUG_MueLu_Coverage
-      ctest_linux_nightly_mpi_debug_muelu_coverage_negima.cmake
+      ctest_linux_nightly_mpi_debug_muelu_coverage_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 330
@@ -113,7 +113,7 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
       OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
-      ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
+      ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 420

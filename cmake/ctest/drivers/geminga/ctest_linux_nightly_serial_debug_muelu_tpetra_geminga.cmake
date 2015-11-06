@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
 
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_Epetra)
+SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV_MueLu_Tpetra)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -70,10 +70,10 @@ SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_PACKAGES MueLu Xpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTrilinos_ENABLE_Kokkos=OFF"
-  "-DTrilinos_ENABLE_Tpetra=OFF"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_Epetra=OFF"
   "-DTrilinos_ENABLE_ML=OFF"
+  "-DTrilinos_ENABLE_Zoltan=OFF"
   "-DTPL_ENABLE_SuperLU=ON"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )

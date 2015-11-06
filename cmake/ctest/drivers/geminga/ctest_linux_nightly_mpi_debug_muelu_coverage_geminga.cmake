@@ -54,60 +54,35 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 
 #
-# Platform/compiler specific options for negima using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_Coverage)
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_DO_COVERAGE_TESTING TRUE) #The quickstart says this is redundant, but I'm setting it just in case.
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+#SET(Trilinos_PACKAGES Teuchos Kokkos Epetra Tpetra Xpetra Amesos Amesos2 Ifpack Ifpack2 Zoltan Zoltan2)
+SET(Trilinos_PACKAGES MueLu)
 
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTrilinos_ENABLE_COVERAGE_TESTING=ON"
+  "-DTPL_ENABLE_SuperLU=ON"
+  "-DMueLu_ENABLE_Experimental=ON"
+  "-DXpetra_ENABLE_Experimental=ON"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+)
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS=ON"
-    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
-
-    "-DTrilinos_ENABLE_Fortran=OFF"
-
-    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-5.2.0")
-
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI=ON"
-            "-DMPI_BASE_DIR=/home/aprokop/local/opt/openmpi-1.10.0"
-       )
-
-    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/g++"
-      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
