@@ -44,6 +44,7 @@ MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
 NullspaceFactory
+NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory

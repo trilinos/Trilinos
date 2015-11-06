@@ -140,6 +140,9 @@ typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory;
 #endif
+#ifdef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
+typedef MueLu::NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory_kokkos;
+#endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 typedef MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspacePresmoothFactory;
 #endif
