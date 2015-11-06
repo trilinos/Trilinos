@@ -108,7 +108,8 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region");
+  PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region",
+		    int nEntWgts=0);
 
   void print(int);
 
@@ -304,6 +305,20 @@ public:
   }
 #endif
 
+  bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
+  {
+    if ((MESH_REGION == etype && 3 == dimension_) ||
+	(MESH_FACE == etype && 2 == dimension_)) {
+      return nonvertexDegreeWeight_[idx];
+    }
+
+    if (MESH_VERTEX == etype) {
+      return vertexDegreeWeight_[idx];
+    }
+
+    return false;
+  }
+
 private:
   int dimension_, num_nodes_global_, num_elems_global_, num_nodes_, num_elem_;
   gno_t *element_num_map_, *node_num_map_;
@@ -311,6 +326,11 @@ private:
   lno_t tnoct_, *elemOffsets_;
   gno_t *nodeToElem_; 
   lno_t telct_, *nodeOffsets_;
+
+  int nWeightsPerEntity_;
+  bool *nonvertexDegreeWeight_;
+  bool *vertexDegreeWeight_;
+
   // TODO:  coords_ and Acoords_ should be scalar_t
   // TODO:  or should check that scalar_t == double
   double *coords_, *Acoords_;
@@ -328,8 +348,9 @@ private:
 
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
-					   std::string typestr):
-  dimension_(0)
+					   std::string typestr, int nEntWgts):
+  dimension_(0), nWeightsPerEntity_(nEntWgts), nonvertexDegreeWeight_(),
+  vertexDegreeWeight_()
 {
   using Teuchos::as;
 
@@ -856,6 +877,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   side_nodes = NULL;
   delete[] mirror_nodes;
   mirror_nodes = NULL;
+
+  if (nWeightsPerEntity_ > 0) {
+    nonvertexDegreeWeight_ = new bool [nWeightsPerEntity_];
+    vertexDegreeWeight_ = new bool [nWeightsPerEntity_];
+    for (int i=0; i < nWeightsPerEntity_; i++) {
+      nonvertexDegreeWeight_[i] = false;
+      vertexDegreeWeight_[i] = false;
+    }
+  }
 }
 
 template <typename User>
