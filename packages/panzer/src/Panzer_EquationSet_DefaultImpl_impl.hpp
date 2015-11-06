@@ -175,18 +175,68 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   // DOFs (unknowns)
   // ********************
 
+  // Whether this is the tangent evaluation type
+  //const bool is_tangent = Sacado::mpl::is_same<EvalT, panzer::Traits::Tangent>::value;
+
   // Gather, includes construction of orientation gathers
   for (BasisIterator basis_it = m_basis_to_dofs.begin(); basis_it != m_basis_to_dofs.end(); ++basis_it) {
-    ParameterList p("Gather");
-    p.set("Basis", basis_it->second.first);
-    p.set("DOF Names", basis_it->second.second);
-    p.set("Indexer Names", basis_it->second.second);
-    p.set("Sensitivities Name", "");
-    p.set("Disable Sensitivities", false);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    
-    this->template registerEvaluator<EvalT>(fm, op);
+
+    // Set tangent field names (first dimension is DOF, second is parameter)
+    Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
+    if (tangentParamNames.size() > 0) {
+      tangent_field_names = rcp(new std::vector< std::vector<std::string> >(basis_it->second.second->size()));
+      for (std::size_t i=0; i<basis_it->second.second->size(); ++i) {
+        for (std::size_t j=0; j<tangentParamNames.size(); ++j) {
+          const std::string tname =
+            (*(basis_it->second.second))[i] + " SENSITIVITY " + tangentParamNames[j];
+          (*tangent_field_names)[i].push_back(tname);
+        }
+      }
+    }
+
+    {
+      ParameterList p("Gather");
+      p.set("Basis", basis_it->second.first);
+      p.set("DOF Names", basis_it->second.second);
+      p.set("Indexer Names", basis_it->second.second);
+      p.set("Sensitivities Name", "");
+      p.set("Disable Sensitivities", false);
+
+      // Set tangent field names
+      if (tangent_field_names != Teuchos::null)
+        p.set("Tangent Names", tangent_field_names);
+
+      RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
+
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
+
+    // Create a second gather evaluator for each tangent field, only for tangent evaluation type
+    // we never compute derivatives with respect to this field
+    if (tangent_field_names != Teuchos::null) {
+      for (std::size_t i=0; i<tangentParamNames.size(); ++i) {
+
+        Teuchos::RCP< std::vector<std::string> > names = rcp(new std::vector<std::string>);
+        for (std::size_t j=0; j<basis_it->second.second->size(); ++j)
+          names->push_back((*tangent_field_names)[j][i]);
+
+        std::string firstDOFName = "<none>";
+        if(basis_it->second.second->size()>0)
+          firstDOFName = (*(basis_it->second.second))[0];
+
+        ParameterList p(std::string("Gather Tangent ") + this->tangentParamNames[i]);
+        p.set("Basis", basis_it->second.first);
+        p.set("DOF Names", names);
+        p.set("Indexer Names", basis_it->second.second);
+        p.set("Sensitivities Name", "");
+        p.set("Disable Sensitivities", true);
+        p.set("Global Data Key", firstDOFName + "_TANGENT: " + this->tangentParamNames[i]);
+
+        RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherTangent<EvalT>(p);
+
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+    }
   }
 
   // **************************

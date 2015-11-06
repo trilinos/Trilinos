@@ -1,6 +1,32 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2015-11-03 14:43:20 mhoemme"
+#+DATE: Time-stamp: "2015-11-03 17:01:14 mhoemme"
+
+* If this is just a text file, why does it have strange mark-up?
+
+This file /is/ indeed a plain text file.  It uses Emacs' org-mode for
+mark-up.  Do a web search for "Emacs org-mode", or look at the
+following website: http://orgmode.org
+
+This file is best viewed and edited using Emacs (version >= 23), but
+you may view and edit it using any text editor.  Editors, please defer
+to the mark-up conventions already existing in this document.
+
+* What is the "Node" template parameter?  How does it relate to Kokkos?
+
+Most Tpetra objects take a "Node" template parameter.  This
+corresponds exactly to a ~Kokkos::Device~ specialization.  It governs
+the Kokkos execution space that Tpetra objects use for thread-parallel
+operations, and the Kokkos memory space that Tpetra objects use for
+memory allocations.
+
+The only valid Node types as of Trilinos 12.4 are specializations of
+~Kokkos::Compat::KokkosDeviceWrapperNode~, which lives in
+~teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp~.
+You do /not/ need to include this header file or worry about the
+details of Node.  Node is a remnant of the 2008-9 version of Kokkos by
+Chris Baker.  It will go away at some point, to be replaced by direct
+use of ~Kokkos::Device~.
 
 * Tpetra's choices of default enabled template parameters
 
@@ -116,6 +142,311 @@ In a debug build, Tpetra enables both ~Scalar = double~ and ~Scalar =
 std::complex<double>~ by default.
 
 * Explicit template instantiation (ETI)
+
+** What is explicit template instantiation?
+
+ETI stands for "explicit template instantiation."  The compiler
+instantiates a templated class or function when it fills in all the
+template parameters with actual types, and compiles the code.  The
+compiler does parse templated code when encountered, but it cannot
+actually compile templated code until all the template parameters are
+filled in.  /Implicit/ instantiation is what happens normally in C++,
+when you declare a templated class or function, and then use it,
+filling in the template parameters with actual types.  For example:
+
+#+BEGIN_SRC C++
+// Foo.hpp:
+
+template <class T>
+class Foo {
+public:
+  T bar (const T& x) {
+    return x * x; // must have generic implementation
+  }
+};
+#+END_SRC
+
+#+BEGIN_SRC C++
+// main.cpp:
+
+#include "Foo.hpp"
+int main () {
+  int x = 42;
+  Foo<int> f;
+  int y = f.bar (x);
+  return y;
+}
+#+END_SRC
+
+Line 2 of ~main()~ implicitly instantiates the ~Foo~ class for ~T =
+int~.  ~Foo~ has no code until the compiler sees ~Foo<int>~; at that
+point, it compiles the methods of ~Foo~ that actually get used.
+
+/Explicit/ instantiation means to force the compiler to compile code,
+by filling in template parameters explicitly.  For example:
+
+#+BEGIN_SRC C++
+// main.cpp:
+
+#include "Foo.hpp"
+template class Foo<double>; // explicitly instantiate for T = double
+int main () {
+  int x = 42;
+  Foo<int> f; // implicitly instantiate for T = int
+  int y = f.bar (x);
+  return y;
+}
+#+END_SRC
+
+Even though the code doesn't actually use ~Foo<double>~, the explicit
+instantiation means that it compiles ~Foo<double>~.  The example also
+shows that implicit and explicit instantiation can coexist for
+different template parameter combinations.  Here, main.cpp implicitly
+instantiates (and uses) ~Foo~ for ~T = int~, but explicitly
+instantiates (and does /not/ use) ~Foo~ for ~T = double~.
+
+The above example does ad hoc explicit instantiation.  Trilinos' ETI
+system does explicit instantiation systematically.  The next section
+will describe how Trilinos does this.
+
+** How does Trilinos do ETI?
+
+Trilinos has the option to use ETI to speed up builds.  In order to
+enable ETI in Trilinos, set the CMake option
+~Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON~.
+
+Trilinos' ETI system works like this:
+
+  1. A package may opt into ETI.  Even if a package opts in, templated
+     classes in that package may still choose whether or not to
+     participate in ETI.  Not all templated classes must participate.
+     A class that participates, does two things:
+
+     - Divides its header file into two header files, one with
+       declarations (~$NAME_decl.hpp~) and one with definitions
+       (~$NAME_def.hpp~)
+     - Explicitly instantiates itself, for a fixed set of template
+       parameter combinations, in one or more .cpp files
+       (~$NAME*.cpp~)
+
+  2. Trilinos automatically generates ~$NAME.hpp~ header files from
+     ~$NAME_decl.hpp~ and ~$NAME_def.hpp~ header files.
+
+     - If ETI is OFF, ~$NAME.hpp~ includes both ~$NAME_decl.hpp~ and
+       ~$NAME_def.hpp~.
+     - If ETI is ON, ~$NAME.hpp~ includes ONLY ~$NAME_decl.hpp~, the
+       declaration of the templated class (that participates in ETI).
+
+  3. If ETI is ON, Trilinos builds the .cpp files that do explicit
+     instantiation.  This "pre-builds" classes for a finite enumerated
+     set of template parameter combinations.
+  4. Code that uses a templated class that participates in Trilinos'
+     ETI must use one of the enabled template parameter combinations.
+     If it uses some other combination, the code will fail to link.
+
+Trilinos' ETI system does /not/ depend on compiler-specific constructs
+(like compiler flags), nor does it depend on a compiler-specific model
+of template instantiation (see
+https://gcc.gnu.org/onlinedocs/gcc/Template-Instantiation.html).  It
+requires only standard C++.  The system uses CMake build logic that
+generates preprocessor macros and some C++ code.
+
+Trilinos uses CMake to do the following:
+
+  - Define a set of template parameter combinations over which to do
+    instantiations and tests (the latter is defined even if ETI is
+    OFF).  For example, Tpetra does instantiations and tests over
+    4-tuples of template parameters (Scalar, LocalOrdinal,
+    GlobalOrdinal, Node).  Each of these template parameters has a set
+    of values enabled by default, and users may set CMake variables to
+    change or add to this set.
+  - Generate macros that "iterate" over all template parameter
+    combinations, in order to instantiate classes, functions, or
+    tests.  Also, generate typedefs for template parameter values,
+    that avoid issues with macro arguments not being allowed to have
+    spaces.  The CMake generation code for (sub)package $PACKAGE lives
+    in $PACKAGE/cmake/ExplicitInstantiationSupport.cmake.  It
+    generates a header file with the "iteration" macros, typically
+    called ~$PACKAGE_ETIHelperMacros.h~, that it writes to the
+    package's build directory.
+  - Automatically generate .cpp files that split up the explicit
+    instantiations into a few or just one template parameter
+    combination per file
+
+** What are the advantages and disadvantages of ETI?
+
+*** Much faster builds of tests, examples, and applications
+
+When ETI is OFF, Trilinos must rebuild every templated class used in
+every compilation unit (.cpp file that is compiled).  This makes
+builds very slow, especially for deeply nested hierarchies of
+templated classes (MueLu is a good example).  ETI lets Trilinos
+"pre-build" those classes, so the compiler doesn't have to build them
+again.  This makes building Trilinos' tests and examples, and
+application code, a lot faster.  For example, a finite element code
+that fills into a Tpetra sparse matrix, and creates and uses a MueLu
+preconditioner with a Tpetra solver, may take 30 minutes to build with
+ETI OFF.  Many developers find ~make -jN~ with ~N > 1~ unusable when
+ETI is OFF.
+
+*** Must build code, whether or not it gets used
+
+The main disadvantage of ETI is that it actually requires building all
+the classes that participate in the ETI system, for all enabled
+template parameter combinations.  Those classes take up space in
+Trilinos' libraries.  Furthermore, when using static libraries,
+linking one method in a .o file (archived in the library) into an
+executable pulls the whole .o file's contents into the executable.
+Applications that use Trilinos only sparsely thus have to pull in more
+code than they might need.  However, in practice, applications that
+use MueLu use all of the Tpetra stack, because MueLu's factories can
+create just about any Tpetra stack solver.  ShyLU behaves similarly.
+The very "solver factories" demanded for the sake of usability require
+including and building all solvers in a package, whether or not ETI is
+ON.  Thus, sparse use of Trilinos' packages with Tpetra stack solvers
+is rare in practice.
+
+Trilinos packages like Tpetra and Ifpack2 make an effort to split up
+many of the .cpp files that do explicit instantiations, in order to
+minimize the amount of code to build per .cpp file.  (It generally
+helps compilers optimize if .cpp files are shorter, so this is a good
+idea anyway.)
+
+*** Must know set of enabled types at Trilinos' configure time
+
+One characteristic of ETI is that it forces Trilinos to enumerate the
+set of enabled template parameter combinations at configure time,
+before building Trilinos.  The advantage of this is that it makes
+run-time registration of solvers (Stratimikos, LinearSolverFactory)
+both correct and efficient.  (Run-time registration / dependency
+inversion and injection requires filling in all the template
+parameters; you can't register code that hasn't been built.)  The
+disadvantage is that it forbids use of type combinations not in the
+original set.
+
+It's important to clarify the latter point.  If someone installs
+Trilinos with ETI enabled, this means that the installer has defined
+the set of type combinations that users may use with that
+installation.  Users may not use any other type combinations.  This
+may frustrate users who are not able or willing to build Trilinos
+themselves, because they are stuck with the set of types that got
+installed.  Most users are satisfied with the default enabled set,
+though.  More importantly, the set of enabled types is exactly the set
+of tested types, whether or not ETI is enabled.  Trilinos does not
+promise correct behavior when using other types.
+
+Tpetra is not like ~std::vector<T>~; you can't shove just any type
+into it.  Adding new types requires implementing certain traits
+classes for those types, and Kokkos imposes its own restrictions and
+requirements.  The types might work with Tpetra, but not necessarily
+with downstream packages; for example, arbitrary Scalar types in
+Anasazi would require a fully templated LAPACK replacement, which we
+do not have.  (~Teuchos::LAPACK~ only works with the four Scalar types
+that the LAPACK library implements: S (float), D (double), C
+(~std::complex<float>~), and Z (~std::complex<double>~).  Have fun
+implementing a dense eigensolver for modular arithmetic or an
+arbitrary-precision floating-point type!)
+
+We have not yet documented a required interface or implemented tests
+to verify the interface required by Tpetra's template parameters.
+More importantly, funding for this work is very limited, for a use
+case that most Tpetra and downstream package users never want to
+exercise (besides perhaps the special cases of Sacado and Stokhos
+Scalar types, which Trilinos handles for them).
+
+** Is there an alternative to ETI that has similar benefits?
+
+Yes.  We call it /full specializations/.  The full specializations
+option is a compromise between the ETI OFF and ETI ON cases.  Code
+still includes both declarations and definitions of templated classes.
+However, the declaration header files also declare full
+specializations of the classes.  These have all the template
+parameters filled in.  Implementations of the full specializations
+live in separate .cpp files, and are "pre-built," just as in the ETI
+case.  As with ETI, the set of type combinations for which Trilinos
+does full specializations must be defined at configure time.
+
+The main advantage of this approach is that it does not constrain
+users to the set of types enabled at configure time.  The disadvantage
+is that declaring the full specializations adds code to the class
+declarations.  When applications include the declaration, the compiler
+must read all the declarations of full specializations.  We have not
+yet explored the cost of this approach in comparison with Trilinos'
+current ETI system.
+
+Here is an example of the full specializations approach, for the above
+~Foo~ class.
+
+#+BEGIN_SRC C++
+// Foo.hpp:
+
+template <class T>
+class Foo {
+public:
+  T bar (const T& x) {
+    return x * x; // must have generic implementation
+  }
+};
+
+// Declaration of full specialization for T = int.
+template <>
+class Foo<int> {
+public:
+  int bar (const int& x);
+};
+
+// Declaration of full specialization for T = double.
+template <>
+class Foo<double> {
+public:
+  double bar (const double& x);
+};
+#+END_SRC
+
+#+BEGIN_SRC C++
+// Foo.cpp:
+
+#include "Foo.hpp"
+
+// Definition of full specialization for T = int.
+int Foo<int>::bar (const int& x) {
+  // This happens to be the same implementation as the generic
+  // version of bar(), but this doesn't have to be the case.
+  return x * x;
+}
+
+// Definition of full specialization for T = double.
+double Foo<double>::bar (const int& x) {
+  // This happens to be the same implementation as the generic
+  // version of bar(), but this doesn't have to be the case.
+  return x * x;
+}
+#+END_SRC
+
+#+BEGIN_SRC C++
+// main.cpp:
+
+#include "Foo.hpp"
+#include <iostream>
+int main () {
+  int x_i = 3;
+  Foo<int> foo_t; // use pre-built full specialization for T = int
+  std::cout << foo_i.bar (x_i) << std::endl;
+
+  float x_f = 3.14;
+  Foo<float> foo_f; // implicitly instantiate Foo for T = float
+  std::cout << foo_f.bar (x_f) << std::endl;
+
+  return 0;
+}
+#+END_SRC
+
+** Why does Tpetra restrict the set of enabled template parameter combinations?
+
+Whether or not ETI is ON, restricting the set of template parameter
+combinations that packages use has value in reducing library and
+executable sizes.  With ETI ON, Trilinos pre-builds them; with ETI
+OFF, applications still have to build them.
 
 ** Can I use non-enabled types in Tpetra when ETI is OFF?
 

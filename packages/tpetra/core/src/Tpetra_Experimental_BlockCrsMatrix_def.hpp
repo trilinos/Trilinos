@@ -2888,7 +2888,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   isFillComplete() const
   {
-    return true;
+    return graph_.isFillComplete ();
   }
 
   template<class Scalar, class LO, class GO, class Node>

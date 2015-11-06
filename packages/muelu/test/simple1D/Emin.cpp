@@ -121,8 +121,13 @@ namespace MueLuTests {
 
     if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
+#if defined(HAVE_MUELU_SERIAL)
       ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+      typedef Kokkos::Compat::KokkosSerialWrapperNode mySerialNode;
+      smooProto = rcp( new MueLu::IfpackSmoother<mySerialNode>("point relaxation stand-alone",ifpackList) );
+#else
+      throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelProto: IfpackSmoother only available with SerialNode."));
+#endif
 #endif
     } else if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
@@ -141,11 +146,15 @@ namespace MueLuTests {
     RCP<SmootherPrototype> coarseProto;
     if (lib == Xpetra::UseEpetra) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+#if defined(HAVE_MUELU_SERIAL)
       if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
       Teuchos::ParameterList amesosList;
       amesosList.set("PrintTiming",true);
-      coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
-      //#elif
+      typedef Kokkos::Compat::KokkosSerialWrapperNode mySerialNode;
+      coarseProto = rcp( new MueLu::AmesosSmoother<mySerialNode>("Amesos_Klu",amesosList) );
+#else
+      throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelProto: AmesosSmoother only available with SerialNode."));
+#endif
 #endif
     } else if (lib == Xpetra::UseTpetra) {
       if (coarseSolver=="amesos2") {

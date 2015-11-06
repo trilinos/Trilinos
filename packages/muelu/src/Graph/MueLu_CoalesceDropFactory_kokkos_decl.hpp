@@ -49,6 +49,8 @@
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
 #include "MueLu_AmalgamationInfo_fwd.hpp"
@@ -120,12 +122,20 @@ namespace MueLu {
     on HyperGraph partitioning without coordinate information) where one has
     not access to a "Graph" or "Coordinates" variable.
   */
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class CoalesceDropFactory_kokkos;
 
-  template <class Scalar        = double,
-            class LocalOrdinal  = int,
-            class GlobalOrdinal = LocalOrdinal,
-            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
-  class CoalesceDropFactory_kokkos : public SingleLevelFactoryBase {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+  public:
+    typedef LocalOrdinal                                        local_ordinal_type;
+    typedef GlobalOrdinal                                       global_ordinal_type;
+    typedef typename DeviceType::execution_space                execution_space;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+
+  private:
+    // For compatibility
+    typedef node_type                                           Node;
 #undef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -152,8 +162,6 @@ namespace MueLu {
     //@}
 
     void Build(Level& currentLevel) const;
-
-  private:
   };
 
 } //namespace MueLu

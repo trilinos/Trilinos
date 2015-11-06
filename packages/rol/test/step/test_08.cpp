@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
     RCPV vl = CreatePartitionedVector(vil);
 
     // Original obective
-    RCP<ROL::Objective<RealT> > obj_hs29 = rcp( new ROL::ZOO::Objective_HS29<RealT> );
+    ROL::ZOO::Objective_HS29<RealT> obj_hs29;
 
     // Barrier objective
-    RCP<ROL::Objective<RealT> > barrier = rcp( new ROL::LogBarrierObjective<RealT> );
+    ROL::LogBarrierObjective<RealT> barrier;
 
     using ROL::InteriorPoint::PenalizedObjective;
 
@@ -132,24 +132,23 @@ int main(int argc, char *argv[]) {
     RCP<ROL::Objective<RealT> > ipobj = 
       rcp( new PenalizedObjective<RealT>(obj_hs29,barrier,*x,1.0) );
 
-    RCP<ROL::EqualityConstraint<RealT> > incon_hs29 = 
-      rcp( new ROL::ZOO::InequalityConstraint_HS29<RealT> );
+    ROL::ZOO::InequalityConstraint_HS29<RealT> incon_hs29;
 
     using ROL::InteriorPoint::CompositeConstraint;  
 
     // Interior point constraint
-    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29) );
+    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29, *vc) );
 
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 
     *outStream << "\nObjective\n" << std::endl;
-    obj_hs29->checkGradient(*xopt,*dopt,true,*outStream);
-    obj_hs29->checkHessVec(*xopt,*vopt,true,*outStream);
+    obj_hs29.checkGradient(*xopt,*dopt,true,*outStream);
+    obj_hs29.checkHessVec(*xopt,*vopt,true,*outStream);
 
     *outStream << "\nInequality Constraint\n" << std::endl;
-    incon_hs29->checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
-    incon_hs29->checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
-    incon_hs29->checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);     
+    incon_hs29.checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
+    incon_hs29.checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
+    incon_hs29.checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);     
 
     *outStream << "\nCheck Interior Point objective\n" << std::endl;
     ipobj->checkGradient(*x,*d,true,*outStream);

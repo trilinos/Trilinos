@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_ParameterList_GlobalEvaluationData.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -69,8 +70,9 @@ GatherSolution_Epetra(
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
   , globalDataKey_("Solution Gather Container")
-{ 
-  const std::vector<std::string>& names = 
+  , has_tangent_fields_(false)
+{
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
@@ -84,9 +86,29 @@ GatherSolution_Epetra(
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFields_[fd] = 
+    gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+  }
+
+  // Setup dependent tangent fields if requested
+  Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
+  if (p.isType< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names")) {
+    tangent_field_names = p.get< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names");
+    if (tangent_field_names != Teuchos::null) {
+      TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names->size());
+
+      has_tangent_fields_ = true;
+      tangentFields_.resize(gatherFields_.size());
+      for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+        tangentFields_[fd].resize((*tangent_field_names)[fd].size());
+        for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
+          tangentFields_[fd][i] =
+            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+          this->addDependentField(tangentFields_[fd][i]);
+        }
+      }
+    }
   }
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
@@ -105,10 +127,10 @@ GatherSolution_Epetra(
 }
 
 // **********************************************************************
-template<typename TRAITS,typename LO,typename GO> 
+template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
-		      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -128,6 +150,12 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
+  }
+
+  if (has_tangent_fields_) {
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
+      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
+        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
@@ -158,7 +186,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
       if (useTimeDerivativeSolutionVector_)
         x_ = epetraContainer->get_dxdt();
       else
-        x_ = epetraContainer->get_x(); 
+        x_ = epetraContainer->get_x();
 
       return; // epetraContainer was found
     }
@@ -176,9 +204,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
    std::vector<int> LIDs;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -188,27 +216,27 @@ evaluateFields(typename TRAITS::EvalData workset)
    if (useTimeDerivativeSolutionVector_)
      x = epetraContainer_->get_dxdt();
    else
-     x = epetraContainer_->get_x(); 
+     x = epetraContainer_->get_x();
 */
- 
+
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
    Epetra_Vector & x = *x_;
- 
+
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
- 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
- 
+
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
          const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
- 
+
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
@@ -231,8 +259,9 @@ GatherSolution_Epetra(
   : globalIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
   , globalDataKey_("Solution Gather Container")
-{ 
-  const std::vector<std::string>& names = 
+  , has_tangent_fields_(false)
+{
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
@@ -246,9 +275,29 @@ GatherSolution_Epetra(
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFields_[fd] = 
+    gatherFields_[fd] =
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addEvaluatedField(gatherFields_[fd]);
+  }
+
+  // Setup dependent tangent fields if requested
+  Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
+  if (p.isType< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names")) {
+    tangent_field_names = p.get< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names");
+    if (tangent_field_names != Teuchos::null) {
+      TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names->size());
+
+      has_tangent_fields_ = true;
+      tangentFields_.resize(gatherFields_.size());
+      for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+        tangentFields_[fd].resize((*tangent_field_names)[fd].size());
+        for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
+          tangentFields_[fd][i] =
+            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+          this->addDependentField(tangentFields_[fd][i]);
+        }
+      }
+    }
   }
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
@@ -267,10 +316,10 @@ GatherSolution_Epetra(
 }
 
 // **********************************************************************
-template<typename TRAITS,typename LO,typename GO> 
+template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
-		      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -290,6 +339,12 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
+  }
+
+  if (has_tangent_fields_) {
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
+      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
+        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
@@ -320,7 +375,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
       if (useTimeDerivativeSolutionVector_)
         x_ = epetraContainer->get_dxdt();
       else
-        x_ = epetraContainer->get_x(); 
+        x_ = epetraContainer->get_x();
 
       return; // epetraContainer was found
     }
@@ -338,9 +393,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
    std::vector<int> LIDs;
- 
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -351,23 +406,30 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
    Epetra_Vector & x = *x_;
- 
+
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
- 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
- 
+
+      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
          const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
- 
+
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
+            if (!has_tangent_fields_)
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = x[lid];
+            else {
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = x[lid];
+              for (std::size_t i=0; i<tangentFields_[fieldIndex].size(); ++i)
+                (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) =
+                  tangentFields_[fieldIndex][i](worksetCellIndex,basis).val();
+            }
          }
       }
    }
@@ -388,9 +450,9 @@ GatherSolution_Epetra(
   , sensitivitiesName_("")
   , globalDataKey_("Solution Gather Container")
   , gatherSeedIndex_(-1)
-{ 
+{
 
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
@@ -444,10 +506,10 @@ GatherSolution_Epetra(
 }
 
 // **********************************************************************
-template<typename TRAITS,typename LO,typename GO> 
+template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
-		      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
@@ -488,8 +550,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
       applySensitivities_ = true;
     else
       applySensitivities_ = false;
-  } 
-  else 
+  }
+  else
     applySensitivities_ = false;
 
   ////////////////////////////////////////////////////////////
@@ -511,7 +573,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
       if (useTimeDerivativeSolutionVector_)
         x_ = epetraContainer->get_dxdt();
       else
-        x_ = epetraContainer->get_x(); 
+        x_ = epetraContainer->get_x();
 
       return; // epetraContainer was found
     }
@@ -529,7 +591,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template<typename TRAITS,typename LO,typename GO>
 void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -583,7 +645,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<int> & LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+         const std::vector<int> & LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
          if(!applySensitivities_) {
            // loop over basis functions and fill the fields

@@ -350,63 +350,99 @@ public:
                           const Scalar omega,
                           const ESweepDirection direction) const;
 
-  /// \brief Replace values at the given column indices, in the given row.
+  /// \brief Replace values at the given (mesh, i.e., block) column
+  ///   indices, in the given (mesh, i.e., block) row.
   ///
-  /// \param localRowInd [in] Local index of the row in which to replace.
+  /// \param localRowInd [in] Local mesh (i.e., block) index of the
+  ///   row in which to replace.
   ///
-  /// \param colInds [in] Local column ind{ex,ices} at which to
-  ///   replace values.  colInds[k] is the local column index whose
-  ///   new values start at vals[getBlockSize() * getBlockSize() * k],
-  ///   and colInds has length at least numColInds.  This method will
-  ///   only access the first numColInds entries of colInds.
+  /// \param colInds [in] Local mesh (i.e., block) column ind{ex,ices}
+  ///   at which to replace values.  \c colInds[k] is the local column
+  ///   index whose new values start at
+  ///   <tt>vals[getBlockSize() * getBlockSize() * k]</tt>,
+  ///   and \c colInds has length at least \c numColInds.  This method
+  ///   will only access the first \c numColInds entries of \c colInds.
   ///
   /// \param vals [in] The new values to use at the given column
-  ///   indices.
+  ///   indices.  Values for each block are stored contiguously, in
+  ///   row major layout, with no padding between rows or between
+  ///   blocks.  Thus, if <tt>b = getBlockSize()</tt>, then
+  ///   <tt>vals[k*b*b] .. vals[(k+1)*b*b-1]</tt> are the values to
+  ///   use for block \c colInds[k].
   ///
-  /// \param numColInds [in] The number of entries of colInds.
+  /// \param numColInds [in] The number of entries of \c colInds.
   ///
-  /// \return The number of valid column indices in colInds.  This
-  ///   method succeeded if and only if the return value equals the
-  ///   input argument numColInds.
+  /// \return The number of valid entries of \c colInds.  \c colInds[k]
+  ///   is valid if and only if it is a valid local mesh (i.e., block)
+  ///   column index.  This method succeeded if and only if the return
+  ///   value equals the input argument \c numColInds.
   LO
   replaceLocalValues (const LO localRowInd,
                       const LO colInds[],
                       const Scalar vals[],
                       const LO numColInds) const;
 
-  /// \brief Sum into values at the given column indices, in the given row.
+  /// \brief Sum into values at the given (mesh, i.e., block) column
+  ///   indices, in the given (mesh, i.e., block) row.
   ///
-  /// \param localRowInd [in] Local index of the row into which to sum.
+  /// \param localRowInd [in] Local mesh (i.e., block) index of the
+  ///   row in which to sum.
   ///
-  /// \param colInds [in] Local column ind{ex,ices} at which to sum
-  ///   into values.  colInds[k] is the local column index whose new
-  ///   values start at vals[getBlockSize() * getBlockSize() * k], and
-  ///   colInds has length at least numColInds.  This method will only
-  ///   access the first numColInds entries of colInds.
+  /// \param colInds [in] Local mesh (i.e., block) column ind{ex,ices}
+  ///   at which to sum.  \c colInds[k] is the local column index whose
+  ///   new values start at
+  ///   <tt>vals[getBlockSize() * getBlockSize() * k]</tt>,
+  ///   and \c colInds has length at least \c numColInds.  This method
+  ///   will only access the first \c numColInds entries of \c colInds.
   ///
-  /// \param vals [in] The new values to sum into at the given column
-  ///   indices.
+  /// \param vals [in] The new values to sum in at the given column
+  ///   indices.  Values for each block are stored contiguously, in
+  ///   row major layout, with no padding between rows or between
+  ///   blocks.  Thus, if <tt>b = getBlockSize()</tt>, then
+  ///   <tt>vals[k*b*b] .. vals[(k+1)*b*b-1]</tt> are the values to
+  ///   use for block \c colInds[k].
   ///
-  /// \param numColInds [in] The number of entries of colInds.
+  /// \param numColInds [in] The number of entries of \c colInds.
   ///
-  /// \return The number of valid column indices in colInds.  This
-  ///   method succeeded if and only if the return value equals the
-  ///   input argument numColInds.
+  /// \return The number of valid entries of \c colInds.  \c colInds[k]
+  ///   is valid if and only if it is a valid local mesh (i.e., block)
+  ///   column index.  This method succeeded if and only if the return
+  ///   value equals the input argument \c numColInds.
   LO
   sumIntoLocalValues (const LO localRowInd,
                       const LO colInds[],
                       const Scalar vals[],
                       const LO numColInds) const;
 
-  /// \brief Get a view of the row, using local indices.
+  /// \brief Get a view of the (mesh, i.e., block) row, using local
+  ///   (mesh, i.e., block) indices.
   ///
-  /// Since this object has a graph (which we assume is fill complete
-  /// on input to the constructor), it has a column Map, and it stores
-  /// column indices as local indices.  This means you can view the
-  /// column indices as local indices directly.  However, you may
-  /// <i>not</i> view them as global indices directly, since the
-  /// column indices are not stored that way in the graph.
+  /// This matrix has a graph, and we assume that the graph is fill
+  /// complete on input to the matrix's constructor.  Thus, the matrix
+  /// has a column Map, and it stores column indices as local indices.
+  /// This means you can view the column indices as local indices
+  /// directly.  However, you may <i>not</i> view them as global
+  /// indices directly, since the column indices are not stored as
+  /// global indices in the graph.
   ///
+  /// \param localRowInd [in] Local (mesh, i.e., block) row index.
+  ///
+  /// \param colInds [out] If \c localRowInd is valid on the calling
+  ///   process, then on output, this is a pointer to the local (mesh,
+  ///   i.e., block) column indices in the given (mesh, i.e., block)
+  ///   row.  If localRowInd is <i>not</i> valid, then this is
+  ///   undefined.  (Please check the return value of this method.)
+  ///
+  /// \param vals [out] If \c localRowInd is valid on the calling
+  ///   process, then on output, this is a pointer to the row's
+  ///   values.  If localRowInd is <i>not</i> valid, then this is
+  ///   undefined.  (Please check the return value of this method.)
+  ///
+  /// \param numInds [in] The number of (mesh, i.e., block) indices in
+  ///   \c colInds on output.
+  ///
+  /// \return 0 if \c localRowInd is valid, else
+  ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
   LO
   getLocalRowView (const LO localRowInd,
                    const LO*& colInds,

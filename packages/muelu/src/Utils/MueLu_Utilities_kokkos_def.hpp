@@ -348,19 +348,17 @@ namespace MueLu {
   Kokkos::View<const bool*, typename NO::device_type> Utilities_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
     typedef Kokkos::ArithTraits<SC> ATS;
 
-    LO numRows = A.getNodeNumRows();
-
-    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
-    auto kokkosMatrix = A.getLocalMatrix();
+    auto localMatrix = A.getLocalMatrix();
+    LO   numRows     = A.getNodeNumRows();
 
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
     Kokkos::parallel_for("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row) {
-      // KokkosSparse::SparseRowView<local_matrix_type, typename local_matrix_type::size_type> rowView = kokkosMatrix.row(row);
-      auto rowView = kokkosMatrix.template row<LO>(row);
+      auto rowView = localMatrix.template row<LO>(row);
+      auto length  = rowView.length;
 
       boundaryNodes[row] = true;
-      for (size_t col = 0; col < rowView.length; col++)
-        if ((rowView.colidx(col) != row) && (ATS::magnitude(rowView.value(col)) > tol)) {
+      for (decltype(length) colID = 0; colID < length; colID++)
+        if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > tol)) {
           boundaryNodes[row] = false;
           break;
         }

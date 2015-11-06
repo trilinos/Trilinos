@@ -174,8 +174,6 @@ int main(int argc, char *argv[])
   keyvec_t keys(nKeys);
   gidvec_t gids(nKeys);
 
-  std::cout << me << name << " nKeys " << nKeys << std::endl;
-
   for (size_t i = 0; i < nKeys; i++) {
     zkey_t k;
     k[0] = i+1;
@@ -217,8 +215,6 @@ int main(int argc, char *argv[])
   const size_t nKeysHalf = 3;
   keyvec_t keys(nKeys);
   gidvec_t gids(nKeys);
-
-  std::cout << me << name << " nKeys " << nKeys << std::endl;
 
   for (size_t i = 0; i < nKeysHalf; i++) {
     zkey_t k;
@@ -269,8 +265,6 @@ int main(int argc, char *argv[])
   keyvec_t keys(nKeys);
   gidvec_t gids(nKeys);
 
-  std::cout << me << name << " nKeys " << nKeys << std::endl;
-
   for (size_t i = 0; i < nKeysHalf; i++) {
     zkey_t k;
     k[0] = gno_t(me);
@@ -319,8 +313,6 @@ int main(int argc, char *argv[])
   keyvec_t keys(nKeys);
   gidvec_t gids(nKeys);
 
-  std::cout << me << name << " nKeys " << nKeys << std::endl;
-
   for (size_t i = 0; i < nKeys; i++) {
     zkey_t k;
     k[0] = gno_t(0);
@@ -344,5 +336,72 @@ int main(int argc, char *argv[])
   
   checkNLocallyUnique(name, gids, (nKeys ? size_t(1): size_t(0)));
   }
+
+  {
+  // Test 5:  Same as Test 3 but using the Tpetra Multivector interface.
+  // Key has three int entries
+  // Each proc has 2*np keys
+  // np Keys are {x, x, x} for x in {0, 1, ..., np-1}
+  // np Keys are {rank, rank, x} for x in {0, 1, ..., np-1}
+  // Each proc has one locally duplicated key
+  // Each proc contributes np unique keys
+
+  std::string name = " test5: ";
+  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+
+#ifdef HAVE_TPETRA_INT_INT
+  typedef int lno_t;
+  typedef int gno_t;
+
+  const size_t nVecs = 3;
+  const size_t nKeys = 2*np;
+  const size_t nKeysHalf = np;
+
+  Tpetra::global_size_t gNEntries =
+          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+  typedef Tpetra::Map<lno_t, gno_t> map_t;
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
+
+  Tpetra::MultiVector<gno_t, lno_t, gno_t> keys(map, nVecs);
+  Tpetra::Vector<gno_t, lno_t, gno_t> gids(map);
+
+  for (size_t i = 0; i < nKeysHalf; i++) {
+    keys.replaceLocalValue(i+nKeysHalf, 0, gno_t(me));
+    keys.replaceLocalValue(i+nKeysHalf, 1, gno_t(me));
+    keys.replaceLocalValue(i+nKeysHalf, 2, gno_t(i));
+  }
+  for (size_t i = 0; i < nKeysHalf; i++) {
+    keys.replaceLocalValue(i, 0, gno_t(i));
+    keys.replaceLocalValue(i, 1, gno_t(i));
+    keys.replaceLocalValue(i, 2, gno_t(i));
+  }
+
+  size_t nUniqueGids = Zoltan2::findUniqueGids<lno_t,gno_t>(keys,gids);
+
+  // Test for correctness
+  if (me == 0) 
+    std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
+
+  checkNUnique(name, nUniqueGids, size_t(np*np));
+
+  Teuchos::ArrayRCP<const gno_t> gidsData = gids.getData();
+  std::vector<gno_t> gidsVec(nKeys);
+  for (size_t i = 0; i < nKeys; i++) gidsVec[i] = gidsData[i];
+
+  checkMaxGid(name, gidsVec, gno_t(np*np-1), *comm);
+
+  checkMinGid(name, gidsVec, gno_t(0), *comm);
+
+  checkNLocallyUnique(name, gidsVec, size_t(nKeys-1));
+
+#else
+  if (me == 0) 
+    std::cout << "Skipping " << name 
+              << " because Tpetra not built with GO==int"
+              << std::endl;
+#endif
+  } 
   return 0;
 }

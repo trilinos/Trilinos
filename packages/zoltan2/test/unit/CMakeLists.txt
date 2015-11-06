@@ -103,6 +103,16 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_scorec_unit_tests
+  SOURCE_FILES
+    pumiTri14/2/0.smb
+    pumiTri14/2/1.smb
+    pumiTri14/plate.dmg
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../partition
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 ENDIF()
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -273,9 +283,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_unit_tests
     Poisson.xml
     simple.mtx
     simple_coord.mtx
-    pumiTri14/2/0.smb
-    pumiTri14/2/1.smb
-    pumiTri14/plate.dmg
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

@@ -2107,13 +2107,11 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
     typedef Tpetra::project2nd<ST, ST> f_type;
-    typedef typename ArrayView<GO>::size_type size_type;
 
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
@@ -2140,57 +2138,13 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      if (isLocallyIndexed ()) {
-        using Kokkos::MemoryUnmanaged;
-        using Kokkos::View;
-        typedef device_type DD;
-        // Don't use Kokkos::HostSpace here, because we have to
-        // allocate, and we need to specify an execution space as well
-        // as a memory space in order to do that correctly.
-        typedef typename View<LO*, DD>::HostMirror::device_type HD;
-
-        auto curVals = this->getRowViewNonConst (rowInfo);
-
-        // Convert the given global indices to local indices.
-        //
-        // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
-        // that?  It could do the conversions in place, so that we
-        // wouldn't need temporary storage.
-        const map_type& colMap = * (this->getColMap ());
-        const size_type numInds = indices.size ();
-
-        View<LO*, HD> lclInds ("lclInds", numInds);
-        for (size_type k = 0; k < numInds; ++k) {
-          // There is no need to filter out indices not in the
-          // column Map.  Those that aren't will be mapped to
-          // invalid(), which the graph's transformGlobalValues()
-          // will filter out (but not count in its return value).
-          lclInds(k) = colMap.getLocalElement (indices[k]);
-        }
-
-        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
-        return graph.template replaceLocalValues<ST, HD, DD> (rowInfo,
-                                                              curVals,
-                                                              lclInds,
-                                                              valsIn);
-      }
-      else if (isGloballyIndexed ()) {
-        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-        return graph.template transformGlobalValues<ST, f_type> (rowInfo,
-                                                                 curVals,
-                                                                 indices,
-                                                                 valsIn,
-                                                                 f_type ());
-      }
-      else {
-        // If the graph is neither locally nor globally indexed on
-        // the calling process, that means that the calling process
-        // can't possibly have any entries in the owned row.  Thus,
-        // there are no entries to transform, so we return zero.
-        return static_cast<LO> (0);
-      }
+      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
+      return graph.template transformGlobalValues<ST, f_type> (rowInfo,
+                                                               curVals,
+                                                               indices,
+                                                               valsIn,
+                                                               f_type ());
     }
   }
 
@@ -2207,10 +2161,8 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
     typedef std::plus<Scalar> f_type;
-    typedef typename ArrayView<GO>::size_type size_type;
 
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
@@ -2246,54 +2198,13 @@ namespace Tpetra {
       return static_cast<LO> (0);
     }
     else {
-      if (isLocallyIndexed ()) {
-        using Kokkos::MemoryUnmanaged;
-        using Kokkos::View;
-        typedef device_type DD;
-        // Don't use Kokkos::HostSpace here, because we have to
-        // allocate, and we need to specify an execution space as well
-        // as a memory space in order to do that correctly.
-        typedef typename View<LO*, DD>::HostMirror::device_type HD;
-
-        // Convert the given global indices to local indices.
-        //
-        // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
-        // that?  It could do the conversions in place, so that we
-        // wouldn't need temporary storage.
-        const map_type& colMap = * (this->getColMap ());
-        const size_type numInds = indices.size ();
-
-        View<LO*, HD> lclInds ("tmp lclInds", numInds);
-        for (size_type k = 0; k < numInds; ++k) {
-          // There is no need to filter out indices not in the
-          // column Map.  Those that aren't will be mapped to
-          // invalid(), which the graph's transformGlobalValues()
-          // will filter out (but not count in its return value).
-          lclInds(k) = colMap.getLocalElement (indices[k]);
-        }
-        auto curVals = this->getRowViewNonConst (rowInfo);
-
-        const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-        View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
-        return graph.template sumIntoLocalValues<ST, HD, DD> (rowInfo, curVals,
-                                                              lclInds, valsIn);
-      }
-      else if (isGloballyIndexed ()) {
-        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-        ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-        return graph.template transformGlobalValues<ST, f_type> (rowInfo,
-                                                                 curVals,
-                                                                 indices,
-                                                                 valsIn,
-                                                                 f_type ());
-      }
-      else {
-        // If the graph is neither locally nor globally indexed on
-        // the calling process, that means that the calling process
-        // can't possibly have any entries in the owned row.  Thus,
-        // there are no entries to transform, so we return zero.
-        return static_cast<LO> (0);
-      }
+      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
+      return graph.template transformGlobalValues<ST, f_type> (rowInfo,
+                                                               curVals,
+                                                               indices,
+                                                               valsIn,
+                                                               f_type ());
     }
   }
 

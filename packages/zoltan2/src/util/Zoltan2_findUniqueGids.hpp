@@ -54,12 +54,126 @@
 #include <Zoltan2_Standards.hpp>
 #include <vector>
 
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Vector.hpp>
+
 #include <zoltan_dd_cpp.h>
 #include <DD.h>
 
 namespace Zoltan2
 {
 
+template <typename gno_t>
+size_t findUniqueGidsCommon(
+  size_t num_keys,
+  int num_gid,
+  ZOLTAN_ID_PTR ddkeys,
+  char *ddnewgids,
+  MPI_Comm mpicomm
+)
+{
+  int num_lid = 0;  // Local IDs not needed
+  int debug_level = 0;
+  int num_user = sizeof(gno_t);
+
+  Zoltan_DD_Struct *dd = NULL;
+  Zoltan_DD_Create(&dd, mpicomm, num_gid, num_lid, num_user, num_keys, 
+                   debug_level);
+
+  ZOLTAN_ID_PTR ddnotneeded = NULL;  // Local IDs not needed
+  Zoltan_DD_Update(dd, ddkeys, ddnotneeded, ddnewgids, NULL, int(num_keys));
+
+  //////////
+  // Insert unique GIDs for DD entries in User data here.
+
+  // Get value of first gid on this rank
+  ssize_t nDDEntries = (ssize_t)(dd->nodecnt);
+  ssize_t firstIdx;  
+  MPI_Scan(&nDDEntries, &firstIdx, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
+  firstIdx -= nDDEntries;  // do not include this rank's entries in prefix sum
+
+  // Loop over all directory entries, updating their userdata with updated gid
+  DD_NodeIdx cnt = 0;
+  for (DD_NodeIdx i = 0; i < dd->nodelistlen; i++) {
+    DD_Node *ptr = &(dd->nodelist[i]);
+    if (!(ptr->free)) {
+      char *userchar = (char*)(ptr->gid + (dd->gid_length + dd->lid_length));
+      gno_t *newgid = (gno_t*) userchar;
+      *newgid = gno_t(firstIdx + cnt);
+      cnt++;
+    }
+  }
+
+  ///////////
+  // Retrieve the global numbers and put in the result gids vector
+  Zoltan_DD_Find(dd, ddkeys, ddnotneeded, ddnewgids, NULL, int(num_keys), NULL);
+
+  Zoltan_DD_Destroy(&dd);
+
+  ssize_t nUnique = 0;  
+  MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
+
+  return size_t(nUnique);
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename lno_t, typename gno_t>
+size_t findUniqueGids(
+  Tpetra::MultiVector<gno_t, lno_t, gno_t> &keys,
+  Tpetra::Vector<gno_t, lno_t, gno_t> &gids
+)
+{
+  // Input:  Tpetra MultiVector of keys; key length = numVectors()
+  //         May contain duplicate keys within a processor.
+  //         May contain duplicate keys across processors.
+  // Input:  Empty Tpetra Vector with same map for holding the results
+  // Output: Filled gids vector, containing unique global numbers for
+  //         each unique key.  Global numbers are in range [0,#UniqueKeys).
+
+  size_t num_keys = keys.getLocalLength();
+  size_t num_entries = keys.getNumVectors();
+
+  MPI_Comm mpicomm = Teuchos::getRawMpiComm(*(keys.getMap()->getComm()));
+
+  int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
+  int num_user = sizeof(gno_t);
+
+  // TODO  Need a Zoltan traits class
+  if (sizeof(gno_t) > sizeof(ZOLTAN_ID_TYPE))
+    throw std::runtime_error("Not ready for sizeof(gno_t) > "
+                                           "sizeof(ZOLTAN_ID_TYPE) yet");
+
+  // Buffer the keys for Zoltan_DD
+  ZOLTAN_ID_PTR ddkeys = new ZOLTAN_ID_TYPE[num_gid * num_keys];
+  size_t idx = 0;
+  for (size_t i = 0; i < num_keys; i++) {
+    for (size_t v = 0; v < num_entries; v++) {
+      // TODO:  May prefer to switch the loops for Tpetra for fewer calls 
+      //        to getData
+      ddkeys[idx++] = keys.getData(v)[i];  // TODO Need Zoltan traits here
+    }
+  }
+
+  // Allocate memory for the result
+  char *ddnewgids = new char[num_user * num_keys];
+  
+  // Compute the new GIDs
+  size_t nUnique = findUniqueGidsCommon<gno_t>(num_keys, num_gid,
+                                               ddkeys, ddnewgids, mpicomm);
+
+  // Copy the result into the output vector
+  gno_t *result = (gno_t *)ddnewgids;
+  for (size_t i = 0; i < num_keys; i++)
+    gids.replaceLocalValue(i, result[i]);
+
+  // Clean up
+  delete [] ddkeys;
+  delete [] ddnewgids;
+
+  return nUnique;
+}
+
+////////////////////////////////////////////////////////////////////////////
 template <typename key_t, typename gno_t>
 size_t findUniqueGids(
   std::vector<key_t> &keys,
@@ -89,68 +203,39 @@ size_t findUniqueGids(
   MPI_Comm mpicomm = Teuchos::getRawMpiComm(comm);
 
   int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
-  int num_lid = 0;  // Local IDs not needed
   int num_user = sizeof(gno_t);
-  int num_table = num_keys;
-  int debug_level = 0;
-
-  Zoltan_DD_Struct *dd = NULL;
-  Zoltan_DD_Create(&dd, mpicomm, num_gid, num_lid, num_user, num_table, 
-                   debug_level);
-
-  ZOLTAN_ID_PTR ddkeys = new ZOLTAN_ID_TYPE[num_gid * num_keys];
-  ZOLTAN_ID_PTR ddnotneeded = NULL;  // Local IDs not needed
-  char *ddnewgids = new char[num_user * num_keys];
 
   // TODO  Need a Zoltan traits class
   if (sizeof(gno_t) > sizeof(ZOLTAN_ID_TYPE))
     throw std::runtime_error("Not ready for sizeof(gno_t) > "
                                            "sizeof(ZOLTAN_ID_TYPE) yet");
-  
+
   // Buffer the keys for Zoltan_DD
+  ZOLTAN_ID_PTR ddkeys = new ZOLTAN_ID_TYPE[num_gid * num_keys];
   size_t idx = 0;
   for (size_t i = 0; i < num_keys; i++)
     for (size_t v = 0; v < num_entries; v++)
       ddkeys[idx++] = keys[i][v];  // TODO Need Zoltan traits here
 
-  Zoltan_DD_Update(dd, ddkeys, ddnotneeded, ddnewgids, NULL, int(num_keys));
+  // Allocate memory for the result
+  char *ddnewgids = new char[num_user * num_keys];
 
-  //////////
-  // Insert unique GIDs for DD entries in User data here.
+  // Compute the new GIDs
+  size_t nUnique = findUniqueGidsCommon<gno_t>(num_keys, num_gid,
+                                               ddkeys, ddnewgids, mpicomm);
 
-  // Get value of first gid on this rank
-  ssize_t nDDEntries = (ssize_t)(dd->nodecnt);
-  ssize_t firstIdx;  
-  MPI_Scan(&nDDEntries, &firstIdx, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
-  firstIdx -= nDDEntries;  // do not include this rank's entries in prefix sum
-
-  // Loop over all directory entries, updating their userdata with updated gid
-  DD_NodeIdx cnt = 0;
-  for (DD_NodeIdx i = 0; i < dd->nodelistlen; i++) {
-    DD_Node *ptr = &(dd->nodelist[i]);
-    if (!(ptr->free)) {
-      char *userchar = (char*)(ptr->gid + (dd->gid_length + dd->lid_length));
-      gno_t *newgid = (gno_t*) userchar;
-      *newgid = gno_t(firstIdx + cnt);
-      cnt++;
-    }
-  }
-
-  ///////////
-  // Retrieve the global numbers and put in the result gids vector
-  Zoltan_DD_Find(dd, ddkeys, ddnotneeded, ddnewgids, NULL, int(num_keys), NULL);
+  // Copy the result into the output vector
   gno_t *result = (gno_t *)ddnewgids;
   for (size_t i = 0; i < num_keys; i++)
     gids[i] = result[i];
 
+  // Clean up
   delete [] ddkeys;
   delete [] ddnewgids;
-  Zoltan_DD_Destroy(&dd);
 
-  ssize_t nUnique = 0;  
-  MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
-  return size_t(nUnique);
+  return nUnique;
 }
+
 
 }                   // namespace Zoltan2
 #endif
