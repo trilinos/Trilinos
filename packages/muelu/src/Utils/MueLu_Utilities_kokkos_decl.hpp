@@ -785,6 +785,51 @@ namespace MueLu {
   }; // class Utilities (specialization SC=double LO=GO=int)
 
 
+
+  // Useful Kokkos conversions
+  template < class View, unsigned AppendValue >
+  struct AppendTrait {
+    // static_assert(false, "Error: NOT a Kokkos::View");
+  };
+
+  // Arg3 == MemoryTraits
+  template < class DataType, class Arg1, class Arg2, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U> >, T> {
+    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U|T> >;
+  };
+
+  // Arg2 == MemoryTraits
+  template < class DataType, class Arg1, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U>, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U|T>, void >;
+  };
+
+
+  // Arg1 == MemoryTraits
+  template < class DataType, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Kokkos::MemoryTraits<U>, void, void >, T> {
+    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<U|T>, void, void >;
+  };
+
+  // 2 arguments -- no traits
+  template < class DataType, class Arg1, class Arg2, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<T> >;
+  };
+
+  // 1 arguments -- no traits
+  template < class DataType, class Arg1, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, void, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<T>, void >;
+  };
+
+  // 0 arguments
+  template < class DataType, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, void, void, void >, T> {
+    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<T>, void, void >;
+  };
+
+
 } //namespace MueLu
 
 #define MUELU_UTILITIES_KOKKOS_SHORT
