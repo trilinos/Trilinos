@@ -147,8 +147,6 @@ namespace MueLu {
 
     const size_t numRows   = rowMap->getNodeNumElements();
 
-    RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
-
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
@@ -179,11 +177,6 @@ namespace MueLu {
       GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
                             << "using GO->LO conversion with performance penalty" << std::endl;
     }
-
-    // Find largest aggregate size
-    LO maxAggSize = 0;
-    for (GO i = 0; i < numAggs; i++)
-      maxAggSize = std::max(maxAggSize, aggStart[i+1] - aggStart[i]);
 
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
@@ -378,8 +371,6 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   BuildPcoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                 RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
-    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
