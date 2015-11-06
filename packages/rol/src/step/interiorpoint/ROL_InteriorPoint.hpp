@@ -82,11 +82,13 @@ private:
 
 public:
 
-  PenalizedObjective( const Teuchos::RCP<Objective<Real> > &obj, 
-                      const Teuchos::RCP<Objective<Real> > &barrier, 
+  PenalizedObjective( Objective<Real> &obj, 
+                      Objective<Real> &barrier, 
                       const Vector<Real> &x,
                       Real mu ) :
-    obj_(obj), barrier_(barrier), go_(Teuchos::null), gs_(Teuchos::null),
+    obj_(Teuchos::rcp(&obj,false)),
+    barrier_(Teuchos::rcp(&barrier,false)), 
+    go_(Teuchos::null), gs_(Teuchos::null),
     mu_(mu), fval_(0.0), pval_(0.0), nfval_(0), ngval_(0),
     isValueComputed_(false), isGradientComputed_(false) {
 
@@ -103,6 +105,33 @@ public:
  
   void updatePenalty( Real mu ) {
     mu_ = mu;
+  }
+
+  Real getObjectiveValue( const Vector<Real> &x ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+    if( !isValueComputed_ ) {
+      // Evaluate (unpenalized) objective function value
+      const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+      Teuchos::RCP<const Vector<Real> > xo = xpv.get(OPT);
+      fval_ = obj_->value(*xo,tol);
+      ++nfval_;
+      isValueComputed_ = true;
+    } 
+    return fval_;
+  }
+
+  void getObjectiveGradient( Vector<Real> &g, const Vector<Real> &x ) {
+    Real tol = std::sqrt(ROL_EPSILON);
+    if( !isGradientComputed_ ) {
+      // Evaluate (unpenalize) objective function gradient
+      const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+      PV &gpv = Teuchos::dyn_cast<PV>(g);
+      Teuchos::RCP<const Vector<Real> > xo = xpv.get(OPT);
+      Teuchos::RCP<Vector<Real> > go = gpv.get(OPT);
+      obj_->gradient(*go,*xo,tol);
+      ++ngval_;
+      isGradientComputed_ = true;
+    }
   }
 
   int getNumberFunctionEvaluations(void) {
@@ -149,12 +178,10 @@ public:
   */
   Real value( const Vector<Real> &x, Real &tol ) {
     
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x); 
 
-    const PV &xpv = dyn_cast<const PV>(x); 
-
-    RCP<const V> xo = xpv.get(OPT);    
-    RCP<const V> xs = xpv.get(SLACK);
+    Teuchos::RCP<const V> xo = xpv.get(OPT);    
+    Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
     if ( !isValueComputed_ ) {
       // Compute objective function value
@@ -203,7 +230,8 @@ public:
 
   /** \brief Apply Hessian approximation to vector.
 
-      This function applies the Hessian of the barrier penalized objective to the vector \f$v\f$.
+      This function applies the Hessian of the barrier penalized objective 
+      to the vector \f$v\f$.
       @param[out]         hv  is the the action of the Hessian on \f$v\f$.
       @param[in]          v   is the direction vector.
       @param[in]          x   is the current iterate.
@@ -272,11 +300,13 @@ private:
 public:
 
   // Constructor with inequality and equality constraints
-  CompositeConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon, 
-                       const Teuchos::RCP<EqualityConstraint<Real> > &eqcon,
+  CompositeConstraint( EqualityConstraint<Real> &incon, 
+                       EqualityConstraint<Real> &eqcon,
                        const Vector<Real> &c ) :
-                       incon_(incon), eqcon_(eqcon), ci_(Teuchos::null), 
-                       ce_(Teuchos::null), hasEquality_(true), ncval_(0), 
+                       incon_(Teuchos::rcp(&incon,false)), 
+                       eqcon_(Teuchos::rcp(&eqcon,false)), 
+                       ci_(Teuchos::null), ce_(Teuchos::null), 
+                       hasEquality_(true), ncval_(0), 
                        isConstraintComputed_(false) {
 
     const PV &cpv = Teuchos::dyn_cast<const PV>(c);
@@ -286,9 +316,11 @@ public:
   }
 
   // Constructor with inequality constraint only
-  CompositeConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon,
+  CompositeConstraint( EqualityConstraint<Real> &incon,
                        const Vector<Real> &c ) :
-                       incon_(incon), ci_(Teuchos::null), hasEquality_(false), 
+                       incon_(Teuchos::rcp(&incon,false)), 
+                       eqcon_(Teuchos::null),
+                       ci_(Teuchos::null), hasEquality_(false), 
                        ncval_(0), isConstraintComputed_(false) {
 
     const PV &cpv = Teuchos::dyn_cast<const PV>(c);

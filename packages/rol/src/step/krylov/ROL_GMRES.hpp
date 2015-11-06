@@ -41,48 +41,92 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STEPFACTORY_H
-#define ROL_STEPFACTORY_H
+#ifndef ROL_GMRES_H
+#define ROL_GMRES_H
 
+/** \class ROL::GMRES
+    \brief Preconditioned GMRES solver.
+*/
+
+#include "ROL_Krylov.hpp"
+#include "ROL_LinearOperator.hpp"
+#include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
-
-#include "ROL_Step.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_AugmentedLagrangianStep.hpp"
-#include "ROL_MoreauYosidaPenaltyStep.hpp"
-#include "ROL_BundleStep.hpp"
-#include "ROL_InteriorPointStep.hpp"
 
 namespace ROL {
 
-  template<class Real>
-  class StepFactory {
-    public:
-    ~StepFactory(void){}
+template<class Real>
+class GMRES : public Krylov<Real> {
 
-    Teuchos::RCP<Step<Real> > getStep(const std::string &type,
-                                      Teuchos::ParameterList &parlist) const {
-      EStep els = StringToEStep(type);
-      switch(els) {
-        case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new AugmentedLagrangianStep<Real>(parlist) );
-        case STEP_BUNDLE:              return Teuchos::rcp( new BundleStep<Real>(parlist) );
-        case STEP_COMPOSITESTEP:       return Teuchos::rcp( new CompositeStep<Real>(parlist) );
-        case STEP_LINESEARCH:          return Teuchos::rcp( new LineSearchStep<Real>(parlist) );
-        case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new MoreauYosidaPenaltyStep<Real>(parlist) );
-        case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new PrimalDualActiveSetStep<Real>(parlist) );
-        case STEP_TRUSTREGION:         return Teuchos::rcp( new TrustRegionStep<Real>(parlist) );
-        case STEP_INTERIORPOINT:       return Teuchos::rcp( new InteriorPointStep<Real>(parlist) ); 
-        default:                       return Teuchos::null;
-      }
+  typedef Teuchos::SerialDenseMatrix<int, Real> SDMatrix;
+  typedef Teuchos::SerialDenseVector<int, Real> SDVector;
+
+  typedef typename std::vector<Real>::size_type size_type;  
+
+private:
+
+ 
+  Teuchos::RCP<Vector<Real> > r_;
+  Teuchos::RCP<Vector<Real> > z_;
+  Teuchos::RCP<Vector<Real> > w_;
+
+  Teuchos::RCP<std::vector<Teuchos::RCP<Vector<Real> > > > V_;
+  Teuchos::RCP<std::vector<Teuchos::RCP<Vector<Real> > > > Z_;
+
+  Teuchos::RCP<SDMatrix> H_;      // quasi-Hessenberg matrix
+  Teuchos::RCP<SDVector> cs_;     // Givens Rotations cosine components
+  Teuchos::RCP<SDVector> sn_;     // Givens Rotations sine components
+  Teuchos::RCP<SDVector> s_;      
+  Teuchos::RCP<SDVector> y_;      
+  Teuchos::RCP<SDVector> cnorm_;   
+
+  
+  bool isInitialized_;
+  int maxit_; 
+  Real absTol_;
+  Real relTol_;
+ 
+  Teuchos::LAPACK<int,Real> lapack_;
+
+public:
+  
+  GMRES( Teuchos::ParameterList &parlist ) : isInitialized_(false) {
+
+    using Teuchos::rcp; 
+
+    Teuchos::ParameterList &klist = parlist.sublist("General").sublist("Krylov");
+    
+    maxit_  = klist.get("Iteration Limit",50);
+    absTol_ = klist.get("Absolute Tolerance", 1.e-4);
+    relTol_ = klist.get("Relative Tolerance", 1.e-2);
+
+    H_     = rcp( new SDMatrix( maxit_+1, maxit_ ) );
+    cs_    = rcp( new SDVector( maxit_ ) );
+    sn_    = rcp( new SDVector( maxit_ ) );
+    s_     = rcp( new SDVector( maxit_+1 ) ); 
+    y_     = rcp( new SDVector( maxit_+1 ) );
+    cnorm_ = rcp( new SDVector( maxit_ ) );   
+           
+  }
+ 
+  void run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b, LinearOperator<Real> &M, 
+            int &iter, int &flag ) {
+
+    if ( !isInitialized_ ) {
+      r_  = b.clone();
+      w_  = b.clone();
+      z_  = x.clone();
+      isInitialized_ = true;
     }
-  };
 
-}
+    
+    
+  }  
 
-#endif
+
+}; // class GMRES
+
+} // namespace ROL
+
+#endif // ROL_GMRES_H
+
