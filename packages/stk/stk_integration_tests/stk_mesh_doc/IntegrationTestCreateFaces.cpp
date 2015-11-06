@@ -84,10 +84,7 @@ void read_file_dump_mesh(std::string filename, bool create_faces) {
 // R = "        "           "   "  "     "   " right
 // D = sideset containing 2 sides, one associated to left and one to right
 // X = sideset associated with all sides on this surface
-// S = sideset associated with the surface itself (doesn't exist, unpronounceable)
-// H = a sideset composed of sides to the right, can be placed multiply in the word
 // J = two hexes in block A connected to the same 8 nodes
-// K = two hexes in block B connected to the same 8 nodes
 //
 // .e = the language of our Patron Saint Exodus
 //
