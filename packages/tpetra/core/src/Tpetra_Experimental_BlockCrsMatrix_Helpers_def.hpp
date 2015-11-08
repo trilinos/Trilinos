@@ -100,7 +100,19 @@ namespace Experimental {
 
     if (printMatrixMarketHeader && myRank==0) {
       std::time_t now = std::time(NULL);
-      os << "%%MatrixMarket matrix coordinate real general" << std::endl;
+
+      const std::string dataTypeStr =
+        Teuchos::ScalarTraits<Scalar>::isComplex ? "complex" : "real";
+
+      // Explanation of first line of file:
+      // - "%%MatrixMarket" is the tag for Matrix Market format.
+      // - "matrix" is what we're printing.
+      // - "coordinate" means sparse (triplet format), rather than dense.
+      // - "real" / "complex" is the type (in an output format sense,
+      //   not in a C++ sense) of each value of the matrix.  (The
+      //   other two possibilities are "integer" (not really necessary
+      //   here) and "pattern" (no values, just graph).)
+      os << "%%MatrixMarket matrix coordinate " << dataTypeStr << " general" << std::endl;
       os << "% time stamp: " << ctime(&now);
       os << "% written from " << numProcs << " processes" << std::endl;
       os << "% point representation of Tpetra::Experimental::BlockCrsMatrix" << std::endl;
@@ -247,7 +259,18 @@ namespace Experimental {
             for (LO i = 0; i < blockSize; ++i) {
               GO globalPointColID = globalMeshColID * blockSize + i + pointOffset;
               const Scalar curVal = curBlock[i + j * blockSize];
-              os << globalPointRowID << " " << globalPointColID << " " << curVal << std::endl;
+
+              os << globalPointRowID << " " << globalPointColID << " ";
+              if (Teuchos::ScalarTraits<Scalar>::isComplex) {
+                // Matrix Market format wants complex values to be
+                // written as space-delimited pairs.  See Bug 6469.
+                os << Teuchos::ScalarTraits<Scalar>::real (curVal) << " "
+                   << Teuchos::ScalarTraits<Scalar>::imag (curVal);
+              }
+              else {
+                os << curVal;
+              }
+              os << std::endl;
             }
           }
         }
@@ -410,7 +433,7 @@ namespace Experimental {
       }
     }
 
-    Teuchos::RCP<const map_type> meshMap = Teuchos::rcp( new map_type(TOT::invalid(), meshGids(), 0, pointMap.getComm()) ); 
+    Teuchos::RCP<const map_type> meshMap = Teuchos::rcp( new map_type(TOT::invalid(), meshGids(), 0, pointMap.getComm()) );
     return meshMap;
 
   }
