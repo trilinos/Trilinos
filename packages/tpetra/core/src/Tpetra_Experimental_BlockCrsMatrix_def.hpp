@@ -674,7 +674,7 @@ namespace Experimental {
   reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
                             const MultiVector<Scalar,LO,GO,Node>& B,
                             const MultiVector<Scalar,LO,GO,Node>& D,
-                            const ArrayView<LO>& rowIndices,
+                            const Teuchos::ArrayView<LO>& rowIndices,
                             const Scalar& dampingFactor,
                             const ESweepDirection direction,
                             const int numSweeps,
@@ -2074,8 +2074,7 @@ namespace Experimental {
     using Kokkos::subview;
     using Kokkos::View;
     typedef typename Tpetra::MultiVector<Scalar, LO, GO, Node>::impl_scalar_type ST;
-    typedef typename Node::execution_space execution_space;
-    typedef typename View<int*, execution_space>::HostMirror::execution_space HES;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
     const bool debug = false;
@@ -2304,8 +2303,7 @@ namespace Experimental {
     using Kokkos::View;
     typedef typename Tpetra::MultiVector<Scalar, LO, GO, Node>::impl_scalar_type ST;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-    typedef typename Node::execution_space execution_space;
-    typedef typename View<int*, execution_space>::HostMirror::execution_space HES;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
     typedef std::pair<typename View<int*, HES>::size_type,
       typename View<int*, HES>::size_type> pair_type;
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
@@ -2921,8 +2919,8 @@ namespace Experimental {
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalRowView (GO GlobalRow,
-                    ArrayView<const GO> &indices,
-                    ArrayView<const Scalar> &values) const
+                    Teuchos::ArrayView<const GO> &indices,
+                    Teuchos::ArrayView<const Scalar> &values) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
@@ -2934,8 +2932,8 @@ namespace Experimental {
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalRowView (LO LocalRow,
-                   ArrayView<const LO> &indices,
-                   ArrayView<const Scalar> &values) const
+                   Teuchos::ArrayView<const LO> &indices,
+                   Teuchos::ArrayView<const Scalar> &values) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "

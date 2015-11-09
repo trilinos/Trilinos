@@ -160,6 +160,13 @@ public:
   //! The Kokkos Node type.
   typedef Node node_type;
 
+  //! The Kokkos::Device specialization that this class uses.
+  typedef typename Node::device_type device_type;
+  //! The Kokkos execution space that this class uses.
+  typedef typename device_type::execution_space execution_space;
+  //! The Kokkos memory space that this class uses.
+  typedef typename device_type::memory_space memory_space;
+
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
   typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
