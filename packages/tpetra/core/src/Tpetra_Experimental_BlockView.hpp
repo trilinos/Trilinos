@@ -233,6 +233,56 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
   }
 };
 
+
+/// \brief Implementation of Tpetra::Experimental::COPY function.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class ViewType1,
+         class ViewType2,
+         class IndexType,
+         const int rank = ViewType1::rank>
+struct COPY {
+  static void run (const ViewType1& x, const ViewType2& y);
+};
+
+/// \brief Implementation of Tpetra::Experimental::COPY function, for
+///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct COPY<ViewType1, ViewType2, IndexType, 1> {
+  /// \brief y := x (rank-1 x and y, i.e., vectors)
+  static void run (const ViewType1& x, const ViewType2& y)
+  {
+    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    for (IndexType i = 0; i < numRows; ++i) {
+      y(i) = x(i);
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::COPY function, for
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct COPY<ViewType1, ViewType2, IndexType, 2> {
+  /// \brief Y := X (rank-2 X and Y, i.e., matrices)
+  static void run (const ViewType1& X, const ViewType2& Y)
+  {
+    const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+
+    // BLAS _SCAL doesn't check whether alpha is 0.
+    for (IndexType i = 0; i < numRows; ++i) {
+      for (IndexType j = 0; j < numCols; ++j) {
+        Y(i,j) = X(i,j);
+      }
+    }
+  }
+};
+
 } // namespace Impl
 
 /// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
@@ -260,7 +310,21 @@ AXPY (const CoefficientType& alpha,
       const ViewType1& x,
       const ViewType2& y)
 {
+  static_assert (ViewType1::rank == ViewType1::rank,
+                 "AXPY: x and y must have the same rank.");
   Impl::AXPY<CoefficientType, ViewType1, ViewType2, IndexType, rank>::run (alpha, x, y);
+}
+
+/// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
+///   (a matrix).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType = int,
+         const int rank = ViewType1::rank>
+void COPY (const ViewType1& x, const ViewType2& y) {
+  static_assert (ViewType1::rank == ViewType1::rank,
+                 "COPY: x and y must have the same rank.");
+  Impl::COPY<ViewType1, ViewType2, IndexType, rank>::run (x, y);
 }
 
 /// \brief y := y + alpha * A * x
@@ -451,6 +515,17 @@ public:
     return blockSize_;
   }
 
+  template<class IntegerType>
+  void stride (IntegerType* const s) const {
+    s[0] = strideX_;
+    s[1] = strideY_;
+  }
+
+  //! Pointer to the block's entries, as <tt>Scalar*</tt>.
+  Scalar* ptr_on_device () const {
+    return reinterpret_cast<Scalar*> (A_);
+  }
+
   //! Pointer to the block's entries, as <tt>Scalar*</tt>.
   Scalar* getRawPtr () const {
     return reinterpret_cast<Scalar*> (A_);
@@ -479,11 +554,7 @@ public:
   //! <tt>*this := X</tt>.
   template<class LittleBlockType>
   void assign (const LittleBlockType& X) const {
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) = X(i,j);
-      }
-    }
+    COPY (X, *this);
   }
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
@@ -625,8 +696,13 @@ public:
     strideX_ (stride)
   {}
 
-  //! Pointer to the block's entries.
+  //! Pointer to the vector's entries.
   Scalar* getRawPtr () const {
+    return reinterpret_cast<Scalar*> (A_);
+  }
+
+  //! Pointer to the vector's entries.
+  Scalar* ptr_on_device () const {
     return reinterpret_cast<Scalar*> (A_);
   }
 
@@ -643,6 +719,11 @@ public:
   //! Stride between consecutive entries.
   LO getStride () const {
     return strideX_;
+  }
+
+  template<class IntegerType>
+  void stride (IntegerType* const s) const {
+    s[0] = strideX_;
   }
 
   /// \brief Reference to entry (i) of the vector.
@@ -668,9 +749,7 @@ public:
   //! <tt>*this := X</tt>.
   template<class LittleVectorType>
   void assign (const LittleVectorType& X) const {
-    for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) = X(i);
-    }
+    COPY (X, *this);
   }
 
   //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
