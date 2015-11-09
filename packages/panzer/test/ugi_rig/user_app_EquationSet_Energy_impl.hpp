@@ -156,6 +156,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
+/*
   // Diffusion Operator
   {
     double thermal_conductivity = 1.0;
@@ -172,7 +173,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     this->template registerEvaluator<EvalT>(fm, op);
   }
-  
+  */
+  /*
   // Convection Operator
   if (m_do_convection == "ON") {
 
@@ -243,6 +245,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     
     this->template registerEvaluator<EvalT>(fm, op);
   }
+  */
 
   // Use a sum operator to form the overall residual for the equation
   // - this way we avoid loading each operator separately into the
@@ -250,12 +253,12 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   {
     std::vector<std::string> residual_operator_names;
 
-    residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
+    // residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_DIFFUSION_OP");
     residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_SOURCE_OP");
     if (m_do_convection == "ON")
       residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_CONVECTION_OP");
     if (this->buildTransientSupport())
-      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");
+      residual_operator_names.push_back("RESIDUAL_"+m_prefix+"TEMPERATURE_TRANSIENT_OP");*/
 
     this->buildAndRegisterResidualSummationEvalautor(fm,m_dof_name,residual_operator_names);
   }

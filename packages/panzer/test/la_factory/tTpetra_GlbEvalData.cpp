@@ -48,30 +48,20 @@
 #include <string>
 #include <iostream>
 
-#include "Panzer_config.hpp"
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_ConfigDefs.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 
-#include "Teuchos_DefaultMpiComm.hpp"
-
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_MpiComm.h"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Vector.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
-#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_TpetraVectorSpace.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -80,7 +70,7 @@ using Teuchos::rcpFromRef;
 
 namespace panzer {
 
-TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
+TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -89,15 +79,19 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
   typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
+  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+
+  Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // This is required
-  TEST_ASSERT(comm.NumProc()==2);
+  TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<int> ghosted(5);
-  std::vector<int> unique(3);
+  std::vector<panzer::Ordinal64> ghosted(5);
+  std::vector<panzer::Ordinal64> unique(3);
 
-  if(comm.MyPID()==0) {
+  if(comm->getRank()==0) {
     unique[0] = 0;
     unique[1] = 1;
     unique[2] = 2;
@@ -120,11 +114,11 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
     ghosted[4] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
-  RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Tpetra_Map> uniqueMap = rcp(new Tpetra_Map(-1,unique,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(uniqueMap,ghostedMap));
 
-  EpetraVector_ReadOnly_GlobalEvaluationData ged;
+  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
  
   TEST_ASSERT(!ged.isInitialized());
 
@@ -134,43 +128,49 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
 
   // test the ghosted vector sizing (we don't care what the entries are!)
   { 
-    RCP<Epetra_Vector> ghostedVecE = ged.getGhostedVector_Epetra();
+    RCP<Tpetra_Vector> ghostedVecTp = ged.getGhostedVector_Tpetra();
     RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
 
-    TEST_ASSERT(ghostedVecE!=Teuchos::null); 
+    TEST_ASSERT(ghostedVecTp!=Teuchos::null); 
     TEST_ASSERT(ghostedVecT!=Teuchos::null); 
 
     RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace 
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ghostedVecT->space());
     
-    TEST_EQUALITY(ghostedMap->NumMyElements(),ghostedVecE->MyLength());
-    TEST_EQUALITY(ghostedMap->NumGlobalElements(),ghostedVecE->GlobalLength());
+    TEST_EQUALITY(ghostedMap->getNodeNumElements(),ghostedVecTp->getLocalLength());
+    TEST_EQUALITY(ghostedMap->getGlobalNumElements(),ghostedVecTp->getGlobalLength());
 
     TEST_EQUALITY(ghostedSpace->isLocallyReplicated(),false);
-    TEST_EQUALITY(ghostedSpace->localSubDim(),ghostedVecE->MyLength());
+    TEST_EQUALITY(Teuchos::as<size_t>(ghostedSpace->localSubDim()),ghostedVecTp->getLocalLength());
   }
 
   // test setting a unique vector
   {
-    RCP<Epetra_Vector> uniqueVec = rcp(new Epetra_Vector(*uniqueMap));
+    RCP<Tpetra_Vector> uniqueVec_tp = rcp(new Tpetra_Vector(uniqueMap));
+    auto uv_2d = uniqueVec_tp->getLocalView<Kokkos::HostSpace> ();
+    auto uniqueVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
-    if(comm.MyPID()==0) {
-      (*uniqueVec)[0] = 3.14;
-      (*uniqueVec)[1] = 1.82;
-      (*uniqueVec)[2] = -.91;
+    if(comm->getRank()==0) {
+      uniqueVec(0) = 3.14;
+      uniqueVec(1) = 1.82;
+      uniqueVec(2) = -.91;
     }
     else {
-      (*uniqueVec)[0] = 2.72;
-      (*uniqueVec)[1] = 6.23;
-      (*uniqueVec)[2] = -.17;
+      uniqueVec(0) = 2.72;
+      uniqueVec(1) = 6.23;
+      uniqueVec(2) = -.17;
     }
 
     // set the unique vector, assure that const can be used
-    ged.setUniqueVector_Epetra(uniqueVec.getConst());
+    ged.setUniqueVector_Tpetra(uniqueVec_tp.getConst());
   }
 
   // test the unique vector sizing and thyra entries
   { 
+    const Tpetra_Vector & uniqueVecTp = *ged.getUniqueVector_Tpetra();
+    auto uv_2d = uniqueVecTp.getLocalView<Kokkos::HostSpace> ();
+    auto uniqueVecTpKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
+
     RCP<const Thyra_Vector>  uniqueVecT = ged.getUniqueVector();
 
     TEST_ASSERT(uniqueVecT!=Teuchos::null); 
@@ -178,25 +178,33 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
     RCP<const Thyra::SpmdVectorSpaceBase<double> > uniqueSpace 
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(uniqueVecT->space());
     
+    TEST_EQUALITY(uniqueMap->getNodeNumElements(),uniqueVecTp.getLocalLength());
+    TEST_EQUALITY(uniqueMap->getGlobalNumElements(),uniqueVecTp.getGlobalLength());
+
     TEST_EQUALITY(uniqueSpace->isLocallyReplicated(),false);
+    TEST_EQUALITY(Teuchos::as<size_t>(uniqueSpace->localSubDim()),uniqueVecTp.getLocalLength());
 
     RCP<const Thyra_SpmdVec> spmdVec = rcp_dynamic_cast<const Thyra_SpmdVec>(uniqueVecT);
 
     Teuchos::ArrayRCP<const double> thyraVec;
     spmdVec->getLocalData(Teuchos::ptrFromRef(thyraVec));
 
-    TEST_EQUALITY(thyraVec.size(),3);
+    TEST_EQUALITY(Teuchos::as<size_t>(thyraVec.size()),uniqueVecTp.getLocalLength());
 
-    if(comm.MyPID()==0) {
-      TEST_EQUALITY(thyraVec[0],3.14);
-      TEST_EQUALITY(thyraVec[1],1.82);
-      TEST_EQUALITY(thyraVec[2],-.91);
+    if(comm->getRank()==0) {
+      TEST_EQUALITY(uniqueVecTpKv(0),3.14);
+      TEST_EQUALITY(uniqueVecTpKv(1),1.82);
+      TEST_EQUALITY(uniqueVecTpKv(2),-.91);
     }
     else {
-      TEST_EQUALITY(thyraVec[0],2.72);
-      TEST_EQUALITY(thyraVec[1],6.23);
-      TEST_EQUALITY(thyraVec[2],-.17);
+      TEST_EQUALITY(uniqueVecTpKv(0),2.72);
+      TEST_EQUALITY(uniqueVecTpKv(1),6.23);
+      TEST_EQUALITY(uniqueVecTpKv(2),-.17);
     }
+
+    TEST_EQUALITY(uniqueVecTpKv(0),thyraVec[0]);
+    TEST_EQUALITY(uniqueVecTpKv(1),thyraVec[1]);
+    TEST_EQUALITY(uniqueVecTpKv(2),thyraVec[2]);
   }
 
   // actually do something...
@@ -204,40 +212,42 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
   ged.globalToGhost(0);
 
   {
-    const Epetra_Vector & ghostedVecE = *ged.getGhostedVector_Epetra();
-    RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
+    const Tpetra_Vector & ghostedVecTp = *ged.getGhostedVector_Tpetra();
+    auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
+    auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
+    RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
     RCP<const Thyra_SpmdVec> spmdVec = rcp_dynamic_cast<const Thyra_SpmdVec>(ghostedVecT);
 
     Teuchos::ArrayRCP<const double> thyraVec;
     spmdVec->getLocalData(Teuchos::ptrFromRef(thyraVec));
 
-    TEST_EQUALITY(thyraVec.size(),ghostedVecE.MyLength());
+    TEST_EQUALITY(Teuchos::as<size_t>(thyraVec.size()),ghostedVecTp.getLocalLength());
 
-    if(comm.MyPID()==0) {
-      TEST_EQUALITY(ghostedVecE[0],3.14);
-      TEST_EQUALITY(ghostedVecE[1],1.82);
-      TEST_EQUALITY(ghostedVecE[2],-.91);
-      TEST_EQUALITY(ghostedVecE[3],2.72);
-      TEST_EQUALITY(ghostedVecE[4],6.23);
+    if(comm->getRank()==0) {
+      TEST_EQUALITY(ghostedVecKv(0),3.14);
+      TEST_EQUALITY(ghostedVecKv(1),1.82);
+      TEST_EQUALITY(ghostedVecKv(2),-.91);
+      TEST_EQUALITY(ghostedVecKv(3),2.72);
+      TEST_EQUALITY(ghostedVecKv(4),6.23);
     }
     else {
-      TEST_EQUALITY(ghostedVecE[0],1.82);
-      TEST_EQUALITY(ghostedVecE[1],-.91);
-      TEST_EQUALITY(ghostedVecE[2],2.72);
-      TEST_EQUALITY(ghostedVecE[3],6.23);
-      TEST_EQUALITY(ghostedVecE[4],-.17);
+      TEST_EQUALITY(ghostedVecKv(0),1.82);
+      TEST_EQUALITY(ghostedVecKv(1),-.91);
+      TEST_EQUALITY(ghostedVecKv(2),2.72);
+      TEST_EQUALITY(ghostedVecKv(3),6.23);
+      TEST_EQUALITY(ghostedVecKv(4),-.17);
     }
 
-    TEST_EQUALITY(ghostedVecE[0],thyraVec[0]);
-    TEST_EQUALITY(ghostedVecE[1],thyraVec[1]);
-    TEST_EQUALITY(ghostedVecE[2],thyraVec[2]);
-    TEST_EQUALITY(ghostedVecE[3],thyraVec[3]);
-    TEST_EQUALITY(ghostedVecE[4],thyraVec[4]);
+    TEST_EQUALITY(ghostedVecKv(0),thyraVec[0]);
+    TEST_EQUALITY(ghostedVecKv(1),thyraVec[1]);
+    TEST_EQUALITY(ghostedVecKv(2),thyraVec[2]);
+    TEST_EQUALITY(ghostedVecKv(3),thyraVec[3]);
+    TEST_EQUALITY(ghostedVecKv(4),thyraVec[4]);
   }
 }
 
-TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
+TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -246,16 +256,19 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
   typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
-  Teuchos::RCP<Teuchos::MpiComm<Thyra::Ordinal> > tComm = Teuchos::rcp(new Teuchos::MpiComm<Thyra::Ordinal>(MPI_COMM_WORLD));
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
+  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+
+  Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // This is required
-  TEST_ASSERT(comm.NumProc()==2);
+  TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<int> ghosted(5);
-  std::vector<int> unique(3);
+  std::vector<Ordinal64> ghosted(5);
+  std::vector<Ordinal64> unique(3);
 
-  if(comm.MyPID()==0) {
+  if(comm->getRank()==0) {
     unique[0] = 0;
     unique[1] = 1;
     unique[2] = 2;
@@ -278,18 +291,18 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
     ghosted[4] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
-  RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Tpetra_Map> uniqueMap = rcp(new Tpetra_Map(-1,unique,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(uniqueMap,ghostedMap));
 
-  RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ged_a, ged_b;
-  ged_a = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
-  ged_b = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData(importer,ghostedMap,uniqueMap));
+  RCP<TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64> > ged_a, ged_b;
+  ged_a = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64>(importer,ghostedMap,uniqueMap));
+  ged_b = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<double,int,Ordinal64>(importer,ghostedMap,uniqueMap));
   std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
   gedBlocks.push_back(ged_a);
   gedBlocks.push_back(ged_b);
 
-  RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_ab = Thyra::defaultSpmdVectorSpace<double>(tComm,3,-1);
+  RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_ab = Thyra::tpetraVectorSpace<double,int,Ordinal64>(uniqueMap);
   RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_ab = ged_a->getGhostedVector()->space();
 
   RCP<Thyra::DefaultProductVectorSpace<double> > uniqueSpace = Thyra::productVectorSpace<double>(uniqueSpace_ab,2);
@@ -305,7 +318,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
 
     TEST_ASSERT(vec->productSpace()->numBlocks()==2);
 
-    if(comm.MyPID()==0) {
+    if(comm->getRank()==0) {
       Teuchos::ArrayRCP<double> thyraVec;
 
       rcp_dynamic_cast<Thyra_SpmdVec>(vec->getNonconstVectorBlock(0))->getNonconstLocalData(Teuchos::ptrFromRef(thyraVec));
@@ -341,7 +354,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   {
     RCP<Thyra::ProductVectorBase<double> > ghostedVec = Thyra::castOrCreateNonconstProductVectorBase(ged.getGhostedVector());
 
-    if(comm.MyPID()==0) {
+    if(comm->getRank()==0) {
       Teuchos::ArrayRCP<const double> thyraVec;
       rcp_dynamic_cast<const Thyra_SpmdVec>(ghostedVec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(thyraVec));
 
@@ -380,7 +393,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   }
 }
 
-TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
+TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -389,17 +402,21 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
   typedef Thyra::SpmdVectorBase<double> Thyra_SpmdVec;
   typedef Thyra::SpmdVectorSpaceBase<double> Thyra_SpmdVecSpace;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
+  typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
+  typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+
+  Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // This is required
-  TEST_ASSERT(comm.NumProc()==2);
+  TEST_ASSERT(comm->getSize()==2);
 
-  std::vector<int> ghosted(4);
-  std::vector<int> unique(2);
+  std::vector<panzer::Ordinal64> ghosted(4);
+  std::vector<panzer::Ordinal64> unique(2);
 
   // This is a line with 6 notes (numbered 0-5). The boundaries
   // are removed at 0 and 5.
-  if(comm.MyPID()==0) {
+  if(comm->getRank()==0) {
     unique[0] = 1;
     unique[1] = 2;
 
@@ -418,13 +435,13 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
     ghosted[3] = 5;
   }
 
-  RCP<const Epetra_Map> uniqueMap = rcp(new Epetra_Map(-1,unique.size(),&unique[0],0,comm));
-  RCP<const Epetra_Map> ghostedMap = rcp(new Epetra_Map(-1,ghosted.size(),&ghosted[0],0,comm));
-  RCP<const Epetra_Import> importer = rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
+  RCP<const Tpetra_Map> uniqueMap = rcp(new Tpetra_Map(-1,unique,0,comm));
+  RCP<const Tpetra_Map> ghostedMap = rcp(new Tpetra_Map(-1,ghosted,0,comm));
+  RCP<const Tpetra_Import> importer = rcp(new Tpetra_Import(uniqueMap,ghostedMap));
 
-  EpetraVector_ReadOnly_GlobalEvaluationData ged;
+  TpetraVector_ReadOnly_GlobalEvaluationData<double,int,panzer::Ordinal64> ged;
  
-  std::vector<int> constIndex(1);
+  std::vector<panzer::Ordinal64> constIndex(1);
  
   // setup filtered values
   constIndex[0] = 0;
@@ -438,19 +455,21 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
   TEST_THROW(ged.useConstantValues(constIndex,4.0),std::logic_error);
 
   {
-    RCP<Epetra_Vector> uniqueVec = rcp(new Epetra_Vector(*uniqueMap));
+    RCP<Tpetra_Vector> uniqueVecTp = rcp(new Tpetra_Vector(uniqueMap));
+    auto uv_2d = uniqueVecTp->getLocalView<Kokkos::HostSpace> ();
+    auto uniqueVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
-    if(comm.MyPID()==0) {
-      (*uniqueVec)[0] = 3.14;
-      (*uniqueVec)[1] = 1.82;
+    if(comm->getRank()==0) {
+      uniqueVec(0) = 3.14;
+      uniqueVec(1) = 1.82;
     }
     else {
-      (*uniqueVec)[0] = 2.72;
-      (*uniqueVec)[1] = 6.23;
+      uniqueVec(0) = 2.72;
+      uniqueVec(1) = 6.23;
     }
 
     // set the unique vector, assure that const can be used
-    ged.setUniqueVector_Epetra(uniqueVec.getConst());
+    ged.setUniqueVector_Tpetra(uniqueVecTp.getConst());
   }
 
   // actually do something...
@@ -459,19 +478,21 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
 
   // check values making sure that the constants are there
   {
-    const Epetra_Vector & ghostedVecE = *ged.getGhostedVector_Epetra();
+    const Tpetra_Vector & ghostedVecTp = *ged.getGhostedVector_Tpetra();
+    auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
+    auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
-    if(comm.MyPID()==0) {
-      TEST_EQUALITY(ghostedVecE[0],2.0);   // <= Replaced constant value
-      TEST_EQUALITY(ghostedVecE[1],3.14);
-      TEST_EQUALITY(ghostedVecE[2],1.82);
-      TEST_EQUALITY(ghostedVecE[3],2.72);
+    if(comm->getRank()==0) {
+      TEST_EQUALITY(ghostedVecKv(0),2.0);   // <= Replaced constant value
+      TEST_EQUALITY(ghostedVecKv(1),3.14);
+      TEST_EQUALITY(ghostedVecKv(2),1.82);
+      TEST_EQUALITY(ghostedVecKv(3),2.72);
     }
     else {
-      TEST_EQUALITY(ghostedVecE[0],1.82);
-      TEST_EQUALITY(ghostedVecE[1],2.72);
-      TEST_EQUALITY(ghostedVecE[2],6.23);
-      TEST_EQUALITY(ghostedVecE[3],3.0);   // <= Replaced constant value
+      TEST_EQUALITY(ghostedVecKv(0),1.82);
+      TEST_EQUALITY(ghostedVecKv(1),2.72);
+      TEST_EQUALITY(ghostedVecKv(2),6.23);
+      TEST_EQUALITY(ghostedVecKv(3),3.0);   // <= Replaced constant value
     }
   }
 }

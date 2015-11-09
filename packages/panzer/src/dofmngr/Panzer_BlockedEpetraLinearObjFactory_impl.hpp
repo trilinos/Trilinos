@@ -62,6 +62,9 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -437,6 +440,29 @@ applyDirichletBCs(const LinearObjContainer & counter,
 {
   TEUCHOS_ASSERT(false); // not yet implemented
 }
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
+BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+buildDomainContainer() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
+  for(int i=0;i<getBlockColCount();i++) {
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
+    vec_ged->initialize(getGhostedImport(i),getGhostedMap(i),getMap(i));
+
+    gedBlocks.push_back(vec_ged);
+  }
+
+  RCP<BlockedVector_ReadOnly_GlobalEvaluationData> ged = rcp(new BlockedVector_ReadOnly_GlobalEvaluationData);
+  ged->initialize(getGhostedThyraDomainSpace(),getThyraDomainSpace(),gedBlocks);
+
+  return ged;
+}
+
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::

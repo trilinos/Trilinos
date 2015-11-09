@@ -55,6 +55,9 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -339,6 +342,29 @@ applyDirichletBCs(const LinearObjContainer & counter,
                   LinearObjContainer & result) const
 {
   TEUCHOS_ASSERT(false); // not yet implemented
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildDomainContainer() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
+  for(int i=0;i<getBlockColCount();i++) {
+    RCP<TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > vec_ged
+      = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>);
+    vec_ged->initialize(getGhostedImport(i),getGhostedMap(i),getMap(i));
+
+    gedBlocks.push_back(vec_ged);
+  }
+
+  RCP<BlockedVector_ReadOnly_GlobalEvaluationData> ged = rcp(new BlockedVector_ReadOnly_GlobalEvaluationData);
+  ged->initialize(getGhostedThyraDomainSpace(),getThyraDomainSpace(),gedBlocks);
+
+  return ged;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

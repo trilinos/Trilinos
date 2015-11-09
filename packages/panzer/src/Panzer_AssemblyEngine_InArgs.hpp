@@ -121,9 +121,46 @@ namespace panzer {
           gedc.addDataObject(itr->first,itr->second);
     }
 
+    const std::map<std::string,Teuchos::RCP<GlobalEvaluationData> > &
+    getGlobalEvaluationDataMap() const
+    { return ged_map; }
+
   private:
     std::map<std::string,Teuchos::RCP<GlobalEvaluationData> > ged_map;
   };
+
+
+  /** Streaming output for the AssemblyEngineInArgs. This is helpful
+    * in debugging exactly what is in the input arguments data structure.
+    */
+  inline std::ostream & operator<<(std::ostream & os,const AssemblyEngineInArgs & in)
+  {
+    os << "AE Inargs:\n"
+       << "  alpha     = " << in.alpha << "\n"
+       << "  beta      = "  << in.beta << "\n"
+       << "  time      = "  << in.time << "\n"
+       << "  eval_tran = " << in.evaluate_transient_terms << "\n"
+       << "  sens_name = " << in.sensitivities_name << "\n"
+       << "  apply_db  = " << in.apply_dirichlet_beta << "\n"
+       << "  db        = " << in.dirichlet_beta << "\n"
+       << "  seeds     = ";
+    for(std::size_t i=0;i<in.gather_seeds.size();i++)
+      os << in.gather_seeds[i] << " ";
+    os << "\n";
+
+    const std::map<std::string,Teuchos::RCP<GlobalEvaluationData> > & ged_map
+        = in.getGlobalEvaluationDataMap();
+    os << "  ged_map   = ";
+    for(std::map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr=ged_map.begin();
+        itr!=ged_map.end();++itr) {
+      os << "              \"" << itr->first << "\": ";
+      itr->second->print(os);
+      os << "\n";
+    }
+    os << std::endl;
+
+    return os;
+  }
 
 }
 

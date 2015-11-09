@@ -47,6 +47,7 @@
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 
@@ -400,6 +401,18 @@ applyDirichletBCs(const LinearObjContainer & counter,
     if(count_array[i]!=0.0)
       f_out_array[i] = f_in_array[i];
   }
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+buildDomainContainer() const
+{
+  Teuchos::RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged
+    = Teuchos::rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
+  vec_ged->initialize(getGhostedImport(),getGhostedColMap(),getColMap());
+
+  return vec_ged;
 }
 
 template <typename Traits,typename LocalOrdinalT>

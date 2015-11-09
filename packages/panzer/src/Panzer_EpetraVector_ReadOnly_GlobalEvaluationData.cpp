@@ -72,8 +72,10 @@ globalToGhost(int mem)
    // initialize the ghosted data, zeroing out things, and filling in specified constants
    initializeData();
 
+   Teuchos::RCP<const Epetra_Vector> uniqueVector_ep = Thyra::get_Epetra_Vector(*uniqueMap_,uniqueVector_);
+  
    // do the global distribution
-   ghostedVector_->Import(*uniqueVector_,*importer_,Insert);
+   ghostedVector_->Import(*uniqueVector_ep,*importer_,Insert);
 }
 
 void 
@@ -100,16 +102,7 @@ setUniqueVector_Epetra(const Teuchos::RCP<const Epetra_Vector> & uniqueVector)
 {
   TEUCHOS_ASSERT(isInitialized_);
 
-  uniqueVector_ = uniqueVector;
-}
-
-Teuchos::RCP<const Epetra_Vector> 
-EpetraVector_ReadOnly_GlobalEvaluationData::
-getUniqueVector_Epetra() const
-{
-  TEUCHOS_ASSERT(isInitialized_);
-
-  return uniqueVector_;
+  uniqueVector_ = Thyra::create_Vector(uniqueVector,uniqueSpace_);
 }
 
 Teuchos::RCP<Epetra_Vector> 
@@ -128,7 +121,14 @@ setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVec
 {
   TEUCHOS_ASSERT(isInitialized_);
 
-  uniqueVector_ = Thyra::get_Epetra_Vector(*uniqueMap_,uniqueVector);
+  // uniqueVector_ep_ = Thyra::get_Epetra_Vector(*uniqueMap_,uniqueVector);
+  uniqueVector_ = uniqueVector;
+/*
+  std::cout << "SETTING UNIQUE" << std::endl;
+  std::cout << Teuchos::describe(*uniqueVector,Teuchos::VERB_EXTREME) << std::endl;
+  uniqueVector_->Print(std::cout);
+  std::cout << std::endl;
+  */
 }
 
 Teuchos::RCP<const Thyra::VectorBase<double> > 
@@ -137,7 +137,8 @@ getUniqueVector() const
 {
   TEUCHOS_ASSERT(isInitialized_);
 
-  return (uniqueVector_==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(uniqueVector_,uniqueSpace_);
+  // return (uniqueVector_==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(uniqueVector_,uniqueSpace_);
+  return uniqueVector_;
 }
 
 Teuchos::RCP<Thyra::VectorBase<double> > 
@@ -149,5 +150,36 @@ getGhostedVector() const
 
   return Thyra::create_Vector(ghostedVector_,ghostedSpace_);
 }
+
+void
+EpetraVector_ReadOnly_GlobalEvaluationData::
+print(std::ostream & os) const
+{
+  const std::string tab = "    ";
+  os << "\n";
+  os << tab << "EpetraVector_ReadOnly_GlobalEvaluationData\n"
+     << tab << "  init    = " << isInitialized_ << "\n"
+     << tab << "  unique  = " << uniqueVector_ << "\n"
+     << tab << "  ghosted = " << ghostedVector_ << "\n";
+
+  /*
+  os << "GHOSTED MAP\n";
+  ghostedMap_->Print(os);
+  os << "\n\n";
+
+  os << "GHOSTED Vector\n";
+  ghostedVector_->Print(os);
+  os << "\n\n";
+
+  os << "UNIQUE MAP\n";
+  uniqueMap_->Print(os);
+  os << "\n\n";
+
+  os << "UNIQUE Vector\n";
+  uniqueVector_->Print(os);
+  os << "\n\n";
+  */
+}
+
 
 }

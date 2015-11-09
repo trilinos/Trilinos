@@ -40,37 +40,42 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
-#define __Panzer_EpetraVector_ReadOnly_GlobalEvaluationData_hpp__
+#ifndef __Panzer_TpetraVector_ReadOnly_GlobalEvaluationData_hpp__
+#define __Panzer_TpetraVector_ReadOnly_GlobalEvaluationData_hpp__
 
-#include "Epetra_Import.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_Map.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 
+#include "Panzer_NodeType.hpp"
 #include "Panzer_ReadOnlyVector_GlobalEvaluationData.hpp"
-
 
 namespace panzer {
 
 /** This class provides a boundary exchange communication mechanism for vectors.
   * Not this provides a "read only" (RO) interface for parameters (so vectors are write protected).
   */
-class EpetraVector_ReadOnly_GlobalEvaluationData : public ReadOnlyVector_GlobalEvaluationData {
+template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,
+          typename NodeT=panzer::TpetraNodeType>
+class TpetraVector_ReadOnly_GlobalEvaluationData : public ReadOnlyVector_GlobalEvaluationData {
 public:
+   typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
+   typedef Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> MapType;
+   typedef Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> ImportType;
 
    //! Default constructor
-   EpetraVector_ReadOnly_GlobalEvaluationData()
+   TpetraVector_ReadOnly_GlobalEvaluationData()
       : isInitialized_(false) { }
 
-   EpetraVector_ReadOnly_GlobalEvaluationData(const EpetraVector_ReadOnly_GlobalEvaluationData & src)
+   TpetraVector_ReadOnly_GlobalEvaluationData(const TpetraVector_ReadOnly_GlobalEvaluationData & src)
       : isInitialized_(false) { initialize(src.importer_,src.ghostedMap_,src.uniqueMap_); }
 
-   /** Initialize this object with some Epetra communication objects. This method
+   /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
      * \param[in] importer Importer for doing communication from the unique 
@@ -78,9 +83,9 @@ public:
      * \param[in] ghostedMap Map describing the ghosted vector.
      * \param[in] uniqueMap Map describing the ghosted vector.
      */
-   EpetraVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const Epetra_Import> & importer,
-                                              const Teuchos::RCP<const Epetra_Map> & ghostedMap,
-                                              const Teuchos::RCP<const Epetra_Map> & uniqueMap)
+   TpetraVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const ImportType> & importer,
+                                              const Teuchos::RCP<const MapType> & ghostedMap,
+                                              const Teuchos::RCP<const MapType> & uniqueMap)
       : isInitialized_(false) { initialize(importer,ghostedMap,uniqueMap); }
 
    /** Choose a few GIDs and instead of zeroing them out in the ghosted vector set
@@ -90,9 +95,9 @@ public:
      * This must be called before initialize. Also note that no attempt to synchronize
      * these values a crossed processor is made. So its up to the user to be consistent.
      */
-   void useConstantValues(const std::vector<int> & indices,double value);
+   void useConstantValues(const std::vector<GlobalOrdinalT> & indices,double value);
 
-   /** Initialize this object with some Epetra communication objects. This method
+   /** Initialize this object with some Tpetra communication objects. This method
      * must be called before an object of this type can be used.
      *
      * \param[in] importer Importer for doing communication from the unique 
@@ -100,9 +105,9 @@ public:
      * \param[in] ghostedMap Map describing the ghosted vector.
      * \param[in] uniqueMap Map describing the ghosted vector.
      */
-   void initialize(const Teuchos::RCP<const Epetra_Import> & importer,
-                   const Teuchos::RCP<const Epetra_Map> & ghostedMap,
-                   const Teuchos::RCP<const Epetra_Map> & uniqueMap);
+   void initialize(const Teuchos::RCP<const ImportType> & importer,
+                   const Teuchos::RCP<const MapType> & ghostedMap,
+                   const Teuchos::RCP<const MapType> & uniqueMap);
 
    /** For this class, this method does the halo exchange for the 
      * vector.
@@ -118,11 +123,14 @@ public:
    //! Nothing to do (its read only)
    virtual bool requiresDirichletAdjustment() const { return false; }
 
-   //! Set the unique vector (Epetra version)
-   void setUniqueVector_Epetra(const Teuchos::RCP<const Epetra_Vector> & uniqueVector);
+   //! Set the unique vector (Tpetra version)
+   void setUniqueVector_Tpetra(const Teuchos::RCP<const VectorType> & uniqueVector);
 
-   //! Get the ghosted vector (Epetra version)
-   Teuchos::RCP<Epetra_Vector> getGhostedVector_Epetra() const;
+   //! Get the unique vector (Tpetra version)
+   Teuchos::RCP<const VectorType> getUniqueVector_Tpetra() const;
+
+   //! Get the ghosted vector (Tpetra version)
+   Teuchos::RCP<VectorType> getGhostedVector_Tpetra() const;
 
    //! Set the unique vector (Thyra version)
    void setUniqueVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & uniqueVector);
@@ -142,20 +150,20 @@ public:
 private:
    bool isInitialized_;
 
-   Teuchos::RCP<const Epetra_Map> ghostedMap_;
-   Teuchos::RCP<const Epetra_Map> uniqueMap_;
+   Teuchos::RCP<const MapType> ghostedMap_;
+   Teuchos::RCP<const MapType> uniqueMap_;
 
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace_;
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace_;
 
-   Teuchos::RCP<const Epetra_Import> importer_;
-   Teuchos::RCP<Epetra_Vector> ghostedVector_;
-   // Teuchos::RCP<const Epetra_Vector> uniqueVector_;
+   Teuchos::RCP<const ImportType> importer_;
+   Teuchos::RCP<VectorType> ghostedVector_;
+   Teuchos::RCP<const VectorType> uniqueVector_;
 
-   Teuchos::RCP<const Thyra::VectorBase<double> > uniqueVector_;
-
-   typedef std::pair<std::vector<int>,double> FilteredPair;
-   std::vector<FilteredPair> filteredPairs_; 
+   typedef std::pair<std::vector<GlobalOrdinalT>,double> FilteredGlobalPair;
+   typedef std::pair<std::vector<LocalOrdinalT>,double> FilteredLocalPair;
+   std::vector<FilteredGlobalPair> globalFilteredPairs_;
+   std::vector<FilteredLocalPair> filteredPairs_;
 };
 
 }

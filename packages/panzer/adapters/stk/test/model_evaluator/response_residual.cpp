@@ -148,10 +148,12 @@ namespace panzer {
     RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
     std::cout << Teuchos::describe(*param_density,Teuchos::VERB_MEDIUM) << std::endl;
     Thyra::assign(param_density.ptr(),3.7);
+
     {
       typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
       typedef Thyra::ModelEvaluatorBase::OutArgs<double> OutArgs;
       typedef panzer::ModelEvaluator<double> PME;
+
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
@@ -225,12 +227,13 @@ namespace panzer {
     {
       // set solution vectors
       RCP<LinearObjContainer> loc = ap.lof->buildLinearObjContainer();
-      rcp_dynamic_cast<ThyraObjContainer<RealType> >(loc)->set_x_th(x);
-      rcp_dynamic_cast<ThyraObjContainer<RealType> >(loc)->set_dxdt_th(x_dot);
-
-      // allocate fill vectors
       RCP<LinearObjContainer> gloc = ap.lof->buildGhostedLinearObjContainer();
-      ap.lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::DxDt,*gloc);
+
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+
+      xContainer->setUniqueVector(x);
+      xdotContainer->setUniqueVector(x_dot);
 
       // setup output arguments for the residual response 
       response_residual->setResidual(response_residual->allocateResidualVector());
@@ -238,15 +241,19 @@ namespace panzer {
       // setup in arguments
       AssemblyEngineInArgs ae_inargs(gloc,loc);
       ae_inargs.addGlobalEvaluationData("DENSITY",resp_param_ged);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer);
       ae_inargs.alpha = alpha;
       ae_inargs.beta = beta;
+      ae_inargs.time = 0.0;
       ae_inargs.evaluate_transient_terms = true;
+
       rLibrary->addResponsesToInArgs<Traits::Residual>(ae_inargs);
 
       // evaluate
       rLibrary->evaluate<Traits::Residual>(ae_inargs);
 
-      TEST_ASSERT(testEqualityOfVectorValues(*response_residual->getResidual(),*f_me,1e-16));
+      TEST_ASSERT(testEqualityOfVectorValues(*response_residual->getResidual(),*f_me,1e-16,true));
     }
 
     // evaluate jacobian responses
@@ -258,7 +265,12 @@ namespace panzer {
 
       // allocate fill vectors
       RCP<LinearObjContainer> gloc = ap.lof->buildGhostedLinearObjContainer();
-      ap.lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::DxDt,*gloc);
+
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+
+      xContainer->setUniqueVector(x);
+      xdotContainer->setUniqueVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -266,6 +278,9 @@ namespace panzer {
       // setup in arguments
       AssemblyEngineInArgs ae_inargs(gloc,loc);
       ae_inargs.addGlobalEvaluationData("DENSITY",resp_param_ged);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer);
+
       ae_inargs.alpha = alpha;
       ae_inargs.beta = beta;
       ae_inargs.evaluate_transient_terms = true;
@@ -369,12 +384,13 @@ namespace panzer {
     {
       // set solution vectors
       RCP<LinearObjContainer> loc = ap.lof->buildLinearObjContainer();
-      rcp_dynamic_cast<ThyraObjContainer<RealType> >(loc)->set_x_th(x);
-      rcp_dynamic_cast<ThyraObjContainer<RealType> >(loc)->set_dxdt_th(x_dot);
-
-      // allocate fill vectors
       RCP<LinearObjContainer> gloc = ap.param_lof->buildGhostedLinearObjContainer();
-      ap.lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::DxDt,*gloc);
+
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+
+      xContainer->setUniqueVector(x);
+      xdotContainer->setUniqueVector(x_dot);
 
       // setup output arguments for the residual response 
       response_jacobian->setJacobian(response_jacobian->allocateJacobian());
@@ -382,6 +398,8 @@ namespace panzer {
       // setup in arguments
       AssemblyEngineInArgs ae_inargs(gloc,loc);
       ae_inargs.addGlobalEvaluationData("DENSITY",resp_param_ged);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer);
+      ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer);
       ae_inargs.alpha = alpha;
       ae_inargs.beta = beta;
       ae_inargs.evaluate_transient_terms = true;
@@ -639,6 +657,9 @@ namespace panzer {
 
     TEUCHOS_ASSERT(a.space()->dim() == b.space()->dim());
 
+
+    std::cout << "Size = " << a.space()->dim() << ", " << b.space()->dim() << std::endl;
+
     Teuchos::ArrayRCP<const double> a_data,b_data;
     dynamic_cast<const Thyra::SpmdVectorBase<double> &>(a).getLocalData(Teuchos::ptrFromRef(a_data));
     dynamic_cast<const Thyra::SpmdVectorBase<double> &>(b).getLocalData(Teuchos::ptrFromRef(b_data));
@@ -648,12 +669,12 @@ namespace panzer {
       std::string output = "    equal!: ";
       
       if (std::fabs(a_data[i] - b_data[i]) > tolerance) {
-	is_equal = false;
-	output = "NOT equal!: ";
+	      is_equal = false;
+	      output = "NOT equal!: ";
       }
       
       if (write_to_cout)
-	std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
+	      std::cout << output << a_data[i] << " - " << b_data[i] << " = " << (a_data[i] - b_data[i]) << std::endl;
     }
 
     int globalSuccess = -1;
@@ -757,7 +778,7 @@ namespace panzer {
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
-    const std::size_t workset_size = 20;
+    const std::size_t workset_size = 16;
     ap.eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     ap.gd = panzer::createGlobalData();
@@ -859,10 +880,25 @@ namespace panzer {
     else
       closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
+
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
-    closure_models.sublist("ion solid").sublist("ION_DENSITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("ION_HEAT_CAPACITY").set<double>("Value",1.0);
+/*
+    closure_models.sublist("ion solid").sublist("SPY_A").set<std::string>("Value","Field Spy");
+    closure_models.sublist("ion solid").sublist("SPY_A").set<std::string>("Source Field","ION_TEMPERATURE");
+    closure_models.sublist("ion solid").sublist("SPY_B").set<std::string>("Value","Field Spy");
+    closure_models.sublist("ion solid").sublist("SPY_B").set<std::string>("Source Field","DXDT_ION_TEMPERATURE");
+    closure_models.sublist("ion solid").sublist("SPY_D").set<std::string>("Value","Field Spy Basis");
+    closure_models.sublist("ion solid").sublist("SPY_D").set<std::string>("Source Field","RESIDUAL_ION_TEMPERATURE");
+    closure_models.sublist("ion solid").sublist("SPY_E").set<std::string>("Value","Field Spy Basis");
+    closure_models.sublist("ion solid").sublist("SPY_E").set<std::string>("Source Field","RESIDUAL_ION_TEMPERATURE_SOURCE_OP");
+    closure_models.sublist("ion solid").sublist("SPY_F").set<std::string>("Value","Field Spy Basis");
+    closure_models.sublist("ion solid").sublist("SPY_F").set<std::string>("Source Field","RESIDUAL_ION_TEMPERATURE_TRANSIENT_OP");
+    closure_models.sublist("ion solid").sublist("SPY_G").set<std::string>("Value","Field Spy Basis");
+    closure_models.sublist("ion solid").sublist("SPY_G").set<std::string>("Source Field","RESIDUAL_ION_TEMPERATURE_DIFFUSION_OP");
+*/
+
     ap.closure_models = closure_models;
 
     ap.user_data = Teuchos::ParameterList("User Data");

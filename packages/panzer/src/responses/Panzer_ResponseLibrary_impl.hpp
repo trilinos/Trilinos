@@ -590,19 +590,10 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Residual>,panzer::Asse
   if(ghostedContainer_==Teuchos::null)
     ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
 
-  // copy everything from input
+  // replace ghosted container with local one
   const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
-  {
-    const RCP<ThyraObjContainer<ScalarT> > original_thGhostedContainer =
-      Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
-    thGhostedContainer->set_x_th(original_thGhostedContainer->get_x_th());
-    thGhostedContainer->set_dxdt_th(original_thGhostedContainer->get_dxdt_th());
-    thGhostedContainer->set_f_th(original_thGhostedContainer->get_f_th());
-    thGhostedContainer->set_A_th(original_thGhostedContainer->get_A_th());
-  }
 
-  // replace ghosted container with local one
   input_args.ghostedContainer_ = ghostedContainer_;
   
   // convert responses into thyra object
@@ -637,19 +628,9 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::Asse
   if(ghostedContainer_==Teuchos::null)
     ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
 
-  // copy everything from input
+  // replace ghosted container with local one
   const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
     Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
-  {
-    const RCP<ThyraObjContainer<ScalarT> > original_thGhostedContainer =
-      Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.ghostedContainer_);
-    thGhostedContainer->set_x_th(original_thGhostedContainer->get_x_th());
-    thGhostedContainer->set_dxdt_th(original_thGhostedContainer->get_dxdt_th());
-    thGhostedContainer->set_f_th(original_thGhostedContainer->get_f_th());
-    thGhostedContainer->set_A_th(original_thGhostedContainer->get_A_th());
-  }
-
-  // replace ghosted container with local one
   input_args.ghostedContainer_ = ghostedContainer_;
 
   // convert responses into thyra object

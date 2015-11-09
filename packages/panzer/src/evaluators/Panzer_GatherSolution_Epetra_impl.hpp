@@ -104,7 +104,7 @@ GatherSolution_Epetra(
         tangentFields_[fd].resize((*tangent_field_names)[fd].size());
         for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
           tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+            PHX::MDField<const ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
           this->addDependentField(tangentFields_[fd][i]);
         }
       }
@@ -169,7 +169,21 @@ preEvaluate(typename TRAITS::PreEvalData d)
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+  RCP<GlobalEvaluationData> ged;
+
+  // first try refactored ReadOnly container
+  std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+  if(d.gedc.containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc.getDataObject(globalDataKey_+post);
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+
+    return;
+  }
+
+  // now try old path
+  ged = d.gedc.getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {
@@ -210,14 +224,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-
-/*
-   Teuchos::RCP<Epetra_Vector> x;
-   if (useTimeDerivativeSolutionVector_)
-     x = epetraContainer_->get_dxdt();
-   else
-     x = epetraContainer_->get_x();
-*/
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -293,7 +299,7 @@ GatherSolution_Epetra(
         tangentFields_[fd].resize((*tangent_field_names)[fd].size());
         for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
           tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
+            PHX::MDField<const ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
           this->addDependentField(tangentFields_[fd][i]);
         }
       }
@@ -358,7 +364,20 @@ preEvaluate(typename TRAITS::PreEvalData d)
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+  RCP<GlobalEvaluationData> ged;
+
+  // first try refactored ReadOnly container
+  std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+  if(d.gedc.containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc.getDataObject(globalDataKey_+post);
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+
+    return;
+  }
+
+  ged = d.gedc.getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {
@@ -556,7 +575,21 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   ////////////////////////////////////////////////////////////
 
-  RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+  RCP<GlobalEvaluationData> ged;
+
+  // first try refactored ReadOnly container
+  std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+  if(d.gedc.containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc.getDataObject(globalDataKey_+post);
+
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    x_ = ro_ged->getGhostedVector_Epetra();
+
+    return;
+  }
+
+  ged = d.gedc.getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {

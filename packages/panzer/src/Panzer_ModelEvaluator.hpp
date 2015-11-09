@@ -68,6 +68,7 @@ namespace panzer {
 class FieldManagerBuilder;
 template<typename> class LinearObjFactory;
 struct GlobalData;
+class ReadOnlyVectorGlobalEvaluationData;
 
 template<typename Scalar>
 class ModelEvaluator
@@ -497,6 +498,9 @@ private: // data members
   // basic specific linear object objects
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > lof_;
   mutable Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
+  mutable Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> xContainer_;
+  mutable Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer_;
+
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
 

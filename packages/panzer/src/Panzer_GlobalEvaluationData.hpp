@@ -62,6 +62,10 @@ public:
    virtual bool requiresDirichletAdjustment() const = 0;
 
    virtual void initializeData() = 0;
+
+   //! Diagnostic function for determinning what's in this object
+   virtual void print(std::ostream & os) const
+   { os << "GlobalEvaluationData: print not implemented for derived type"; }
 };
 
 /** Class that overides the communication primitives

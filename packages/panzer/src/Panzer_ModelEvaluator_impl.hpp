@@ -394,6 +394,11 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   if (inArgs.supports(MEB::IN_ARG_x_dot ))
     is_transient = !Teuchos::is_null(inArgs.get_x_dot());
 
+  if(Teuchos::is_null(xContainer_))
+    xContainer_    = lof_->buildDomainContainer();
+  if(Teuchos::is_null(xdotContainer_) && is_transient)
+    xdotContainer_ = lof_->buildDomainContainer();
+
   const RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   RCP<const Thyra::VectorBase<Scalar> > x_dot; // possibly empty, but otherwise uses x_dot
 
@@ -442,7 +447,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
 
       // cast to a LOCPair throwing an exception if the cast doesn't work.
       RCP<LOCPair_GlobalEvaluationData> loc_pair_ged = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
-      RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged);
+      RCP<ReadOnlyVector_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<ReadOnlyVector_GlobalEvaluationData>(ged);
       if(loc_pair_ged!=Teuchos::null) {
         // cast to a ThyraObjContainer throwing an exception if the cast doesn't work.
         RCP<ThyraObjContainer<Scalar> > th_ged = rcp_dynamic_cast<ThyraObjContainer<Scalar> >(loc_pair_ged->getGlobalLOC(),true);
@@ -478,8 +483,14 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
   thGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
-  if (is_transient)
+  xContainer_->setUniqueVector(x);
+  ae_inargs.addGlobalEvaluationData("Solution Gather Container - X",xContainer_);
+
+  if (is_transient) {
     thGlobalContainer->set_dxdt_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
+    xdotContainer_->setUniqueVector(x_dot);
+    ae_inargs.addGlobalEvaluationData("Solution Gather Container - Xdot",xdotContainer_);
+  }
 }
 
 // Private functions overridden from ModelEvaulatorDefaultBase
@@ -884,10 +895,6 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   thGlobalContainer->set_dxdt_th(Teuchos::null);
   thGlobalContainer->set_f_th(Teuchos::null);
   thGlobalContainer->set_A_th(Teuchos::null);
-
-  // forget previous containers
-  ae_inargs.container_ = Teuchos::null;
-  ae_inargs.ghostedContainer_ = Teuchos::null;
 }
 
 template <typename Scalar>

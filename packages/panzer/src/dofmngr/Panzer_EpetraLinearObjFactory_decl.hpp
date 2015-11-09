@@ -130,6 +130,12 @@ public:
    virtual void applyDirichletBCs(const LinearObjContainer & counter,
                                   LinearObjContainer & result) const;
 
+   /** Build a GlobalEvaluationDataContainer that handles all domain communication.
+     * This is used primarily for gather operations and hides the allocation and usage
+     * of the ghosted vector from the user.
+     */
+   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildDomainContainer() const;
+
    /** Acess to the MPI Comm used in constructing this LOF.
      */
    virtual Teuchos::MpiComm<int> getComm() const;

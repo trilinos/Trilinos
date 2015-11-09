@@ -44,6 +44,7 @@
 #define PANZER_TPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -279,6 +280,21 @@ applyDirichletBCs(const LinearObjContainer & counter,
 {
   TEUCHOS_ASSERT(false); // not yet implemented
 }
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildDomainContainer() const
+{
+  // TEUCHOS_ASSERT(false);
+  //return Teuchos::null;
+  Teuchos::RCP<TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > vec_ged
+    = Teuchos::rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>);
+  vec_ged->initialize(getGhostedImport(),getGhostedMap(),getMap());
+
+  return vec_ged;
+}
+
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::

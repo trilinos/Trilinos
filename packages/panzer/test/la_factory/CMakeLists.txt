@@ -45,7 +45,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
           tTpetraLinearObjFactory.cpp 
           tBlockedLinearObjFactory.cpp 
           tBlockedTpetraLinearObjFactory.cpp 
-          tEpetra_GlbEvalData.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+          tTpetra_GlbEvalData.cpp 
+          tEpetra_GlbEvalData.cpp 
+          UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
   COMM mpi
   NUM_MPI_PROCS 2
   )

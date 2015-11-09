@@ -131,7 +131,7 @@ private:
   // even if they are supplied, but it is useful to declare them as dependencies anyway
   // when saving the tangent components to the output file
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_Epetra();
 };
@@ -185,7 +185,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_Epetra();
 };
