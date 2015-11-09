@@ -1,32 +1,15 @@
-Tpetra uses the Doxygen tool for providing three documentation
-sources:
-- man pages
-- Latex User Guide
-- HTML Online User Guide.
+Novice users should begin with Tpetra's Lessons, which live in the
+../example/ directory.
 
-Man Pages
+Tpetra uses the Doxygen tool to generate documentation automatically
+from its annotated source code.  The best source of Doxygen-generated
+documentation is the HTML online users' guide.  You may generate HTML
+documentation yourself by running Doxygen in this directory:
 
-Man pages are available for all files and functions in the directory
-TRILINOS_HOME/doc/tpetra/man, where TRILINOS_HOME is the location of your
-copy of Trilinos.  To use these pages with the Unix man utility, add
-the directory to your man path as follows:
+$ doxygen Doxyfile
 
-setenv MANPATH `echo $MANPATH`:TRILINOS_HOME/doc/tpetra/man
+and then pointing your web browser to ./html/index.html (again, in this
+directory).
 
-
-LaTeX User Guide
-
-A postscript version of this guide is in
-TRILINOS_HOME/doc/tpetra/latex/user_guide.ps.  The LaTeX source is in the
-directory TRILINOS_HOME/doc/tpetra/latex.
-
-HTML Online User Guide
-
-The online guide is initiated by pointing your browser to
-TRILINOS_HOME/doc/tpetra/html/index.html
-
-Any question, comments or suggestions are welcome.  Please send to
-Mike Heroux at 
-
-320-845-7695
-maherou@sandia.gov
+Any question, comments or suggestions are welcome.  Please direct them
+to Trilinos' e-mail lists.
