@@ -397,7 +397,7 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.assign (A_new);
+        COPY (A_new, A_old);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -592,8 +592,8 @@ namespace Experimental {
         const LO actlRow = lclRow - 1;
 
         little_vec_type B_cur = B.getLocalBlock (actlRow, 0);
-        X_lcl.assign (B_cur);
-        X_lcl.scale (omega);
+        COPY (B_cur, X_lcl);
+        SCAL (omega, X_lcl);
 
         const size_t meshBeg = ptr_[actlRow];
         const size_t meshEnd = ptr_[actlRow+1];
@@ -606,7 +606,8 @@ namespace Experimental {
 
           // X_lcl += alpha*A_cur*X_cur
           const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
-          X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          //X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          GEMV (alpha, A_cur, X_cur, X_lcl);
         } // for each entry in the current local row of the matrx
 
         factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
@@ -616,7 +617,7 @@ namespace Experimental {
 
         D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
         little_vec_type X_update = X.getLocalBlock (actlRow, 0);
-        X_update.assign(X_lcl);
+        COPY (X_lcl, X_update);
       } // for each local row of the matrix
     }
     else {
@@ -625,8 +626,8 @@ namespace Experimental {
           LO actlRow = lclRow-1;
 
           little_vec_type B_cur = B.getLocalBlock (actlRow, j);
-          X_lcl.assign (B_cur);
-          X_lcl.scale (omega);
+          COPY (B_cur, X_lcl);
+          SCAL (omega, X_lcl);
 
           const size_t meshBeg = ptr_[actlRow];
           const size_t meshEnd = ptr_[actlRow+1];
@@ -639,7 +640,8 @@ namespace Experimental {
 
             // X_lcl += alpha*A_cur*X_cur
             const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
-            X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+            //X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+            GEMV (alpha, A_cur, X_cur, X_lcl);
           } // for each entry in the current local row of the matrx
 
           factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
@@ -650,7 +652,7 @@ namespace Experimental {
           D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
 
           little_vec_type X_update = X.getLocalBlock (actlRow, j);
-          X_update.assign(X_lcl);
+          COPY (X_lcl, X_update);
         } // for each entry in the current local row of the matrix
       } // for each local row of the matrix
     }
@@ -781,6 +783,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
+    const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
@@ -799,7 +802,8 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.update (static_cast<impl_scalar_type> (STS::one ()), A_new);
+        //A_old.update (ONE, A_new);
+        AXPY (ONE, A_new, A_old);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -921,7 +925,7 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.assign (A_new);
+        COPY (A_new, A_old);
         ++validCount;
       }
     }
@@ -983,6 +987,7 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
+    const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
     const size_t absRowBlockOffset = ptr_[localRowInd];
@@ -999,7 +1004,8 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.update (static_cast<impl_scalar_type> (STS::one ()), A_new);
+        //A_old.update (ONE, A_new);
+        AXPY (ONE, A_new, A_old);
         ++validCount;
       }
     }
@@ -1169,10 +1175,10 @@ namespace Experimental {
         if (beta == zero) {
           Y_lcl.fill (zero);
         } else if (beta == one) {
-          Y_lcl.assign (Y_cur);
+          COPY (Y_cur, Y_lcl);
         } else {
-          Y_lcl.assign (Y_cur);
-          Y_lcl.scale (beta);
+          COPY (Y_cur, Y_lcl);
+          SCAL (beta, Y_lcl);
         }
 
         const size_t meshBeg = ptr_[lclRow];
@@ -1183,10 +1189,11 @@ namespace Experimental {
             getConstLocalBlockFromAbsOffset (absBlkOff);
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
           // Y_lcl += alpha*A_cur*X_cur
-          Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          //Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          GEMV (alpha, A_cur, X_cur, Y_lcl);
         } // for each entry in the current local row of the matrx
 
-        Y_cur.assign (Y_lcl);
+        COPY (Y_lcl, Y_cur);
       } // for each local row of the matrix
     }
     else {
@@ -1197,10 +1204,10 @@ namespace Experimental {
           if (beta == zero) {
             Y_lcl.fill (zero);
           } else if (beta == one) {
-            Y_lcl.assign (Y_cur);
+            COPY (Y_cur, Y_lcl);
           } else {
-            Y_lcl.assign (Y_cur);
-            Y_lcl.scale (beta);
+            COPY (Y_cur, Y_lcl);
+            SCAL (beta, Y_lcl);
           }
 
           const size_t meshBeg = ptr_[lclRow];
@@ -1211,10 +1218,11 @@ namespace Experimental {
               getConstLocalBlockFromAbsOffset (absBlkOff);
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
             // Y_lcl += alpha*A_cur*X_cur
-            Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+            //Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+            GEMV (alpha, A_cur, X_cur, Y_lcl);
           } // for each entry in the current local row of the matrix
 
-          Y_cur.assign (Y_lcl);
+          COPY (Y_lcl, Y_cur);
         } // for each entry in the current row of Y
       } // for each local row of the matrix
     }
