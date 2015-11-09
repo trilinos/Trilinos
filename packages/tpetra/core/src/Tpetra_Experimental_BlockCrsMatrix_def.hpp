@@ -133,8 +133,11 @@ namespace Experimental {
       ptr_ = ptr_h_nc;
     }
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
-    val_ = valView_.getRawPtr ();
+
+    Kokkos::resize (valView_,
+                    static_cast<size_t> (graph.getNodeNumEntries () *
+                                         offsetPerBlock ()));
+    val_ = valView_.ptr_on_device ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -187,8 +190,11 @@ namespace Experimental {
       ptr_ = ptr_h_nc;
     }
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
-    val_ = valView_.getRawPtr ();
+
+    Kokkos::resize (valView_,
+                    static_cast<size_t> (graph.getNodeNumEntries () *
+                                         offsetPerBlock ()));
+    val_ = valView_.ptr_on_device ();
   }
 
   template<class Scalar, class LO, class GO, class Node>

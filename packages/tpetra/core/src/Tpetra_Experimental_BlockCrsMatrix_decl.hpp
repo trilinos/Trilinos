@@ -713,14 +713,14 @@ private:
   const LO* ind_;
   /// \brief Array of values in the matrix.
   ///
-  /// This is stored as a Teuchos::ArrayRCP, so that BlockCrsMatrix
-  /// has view (shallow copy) semantics.  In the future, we will want
-  /// to replace this with Kokkos::View.
-  Teuchos::ArrayRCP<impl_scalar_type> valView_;
+  /// Each blockSize_ x blockSize_ block is stored contiguously, in
+  /// row major format, with no padding either inside a block or
+  /// between blocks.
+  Kokkos::View<impl_scalar_type*, device_type> valView_;
   /// \brief Raw pointer version of valView_.
   ///
   /// It must always be true, outside of the constructors, that
-  /// <tt>valView_.getRawPtr() == val_</tt>.
+  /// <tt>valView_.ptr_on_device() == val_</tt>.
   impl_scalar_type* val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
