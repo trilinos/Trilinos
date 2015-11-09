@@ -548,7 +548,7 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleBlockType>
   void update (const Scalar& alpha, const LittleBlockType& X) const {
-    AXPY (alpha, X, *this);
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
@@ -559,7 +559,7 @@ public:
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    SCAL (alpha, *this);
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -721,6 +721,9 @@ public:
     return strideX_;
   }
 
+  /// \brief Stride between consecutive entries.
+  ///
+  /// This exists for compatibility with Kokkos::View.
   template<class IntegerType>
   void stride (IntegerType* const s) const {
     s[0] = strideX_;
@@ -743,7 +746,7 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleVectorType>
   void update (const Scalar& alpha, const LittleVectorType& X) const {
-    AXPY (alpha, X, *this);
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
@@ -754,7 +757,7 @@ public:
 
   //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    SCAL (alpha, *this);
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -798,7 +801,7 @@ public:
                 const LittleBlockType& A,
                 const LittleVectorType& X) const
   {
-    GEMV (alpha, A, X, *this);
+    GEMV (static_cast<impl_scalar_type> (alpha), A, X, *this);
   }
 
 private:
