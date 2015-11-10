@@ -57,6 +57,8 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+#include <iostream>
+
 namespace ROL {
 
 template<class Real>
@@ -65,10 +67,7 @@ class GMRES : public Krylov<Real> {
   typedef Teuchos::SerialDenseMatrix<int, Real> SDMatrix;
   typedef Teuchos::SerialDenseVector<int, Real> SDVector;
 
-  typedef typename std::vector<Real>::size_type uint;  
-
 private:
-
  
   Teuchos::RCP<Vector<Real> > r_;
   Teuchos::RCP<Vector<Real> > z_;
@@ -85,7 +84,7 @@ private:
   
   bool isInitialized_;
   bool useInexact_;
-  bool useInitialGuess_;
+  bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
   int maxit_; 
   Real absTol_;
   Real relTol_;
@@ -158,7 +157,7 @@ public:
 
     (*res_)[0] = r_->norm();
      
-    Real rtol  = std::min(absTol_,relTol_,(*res_)[0]);
+    Real rtol  = std::min(absTol_,relTol_*(*res_)[0]);
 
     V.push_back(b.clone());
     (V[0])->set(*r_);
@@ -166,69 +165,65 @@ public:
 
     (*s_)(0) = (*res_)[0];
 
-    uint m = static_cast<uint>(maxit_);
+    for( iter=0; iter<maxit_; ++iter ) {
 
-    for( uint i=0; i<m; ++i ) {
+//      std::cout << (*res_)[iter] << std::endl;
 
       if( useInexact_ ) {
-        itol = rtol/(maxit_*(*res_)(i)); 
+        itol = rtol/(maxit_*(*res_)[iter]); 
       }
 
       Z.push_back(x.clone());
 
       // Apply right preconditioner
-      M.apply(*(Z[i]),*(V[i]),itol);
+      M.apply(*(Z[iter]),*(V[iter]),itol);
 
       // Apply operator
-      A.apply(*w_,*(Z[i]),itol);
+      A.apply(*w_,*(Z[iter]),itol);
 
       // Evaluate coefficients and orthogonalize using Gram-Schmidt
-      for( uint k=0; k<=i; ++k ) {
-        (*H_)(k,i) = w_->dot(*(V[k]));
-        w_->axpy( -(*H_)(k,i), *(V[k]) );
+      for( int k=0; k<=iter; ++k ) {
+        (*H_)(k,iter) = w_->dot(*(V[k]));
+        w_->axpy( -(*H_)(k,iter), *(V[k]) );
       } 
      
-      (*H_)(i+1,i) = w_->norm();
+      (*H_)(iter+1,iter) = w_->norm();
 
       V.push_back( b.clone() );
-      (V[i+1])->set(*w_);
-      (V[i+1])->scale(one/((*H_)(i+1,i)));
+      (V[iter+1])->set(*w_);
+      (V[iter+1])->scale(one/((*H_)(iter+1,iter)));
 
       // Apply Givens rotations
-      for( uint k=0; k<=i-1; ++k ) {
-        temp         =  (*cs_)(k)*(*H_)(k,i) + (*sn_)(k)*(*H_)(k+1,i);
-        (*H_)(k+1,i) = -(*sn_)(k)*(*H_)(k,i) + (*cs_)(k)*(*H_)(k+1,i); 
-        (*H_)(k,i)   = temp;
+      for( int k=0; k<=iter-1; ++k ) {
+        temp            =  (*cs_)(k)*(*H_)(k,iter) + (*sn_)(k)*(*H_)(k+1,iter);
+        (*H_)(k+1,iter) = -(*sn_)(k)*(*H_)(k,iter) + (*cs_)(k)*(*H_)(k+1,iter); 
+        (*H_)(k,iter)   = temp;
       } 
 
       // Form i-th rotation matrix
-      if( (*H_)(i+1,i) == zero ) {
-        (*cs_)(i) = one;
-        (*sn_)(i) = zero;
+      if( (*H_)(iter+1,iter) == zero ) {
+        (*cs_)(iter) = one;
+        (*sn_)(iter) = zero;
       }
-      else if ( std::abs((*H_)(i+1,i)) > std::abs((*H_)(i,i)) ) { 
-        temp = (*H_)(i,i) / (*H_)(i+1,i);
-        (*sn_)(i) = one / std::sqrt( one + temp*temp );
-        (*cs_)(i) = temp*(*sn_)(i); 
+      else if ( std::abs((*H_)(iter+1,iter)) > std::abs((*H_)(iter,iter)) ) { 
+        temp = (*H_)(iter,iter) / (*H_)(iter+1,iter);
+        (*sn_)(iter) = one / std::sqrt( one + temp*temp );
+        (*cs_)(iter) = temp*(*sn_)(iter); 
       }
       else {
-        temp = (*H_)(i+1,i) / (*H_)(i,i);
-        (*cs_)(i) = one / std::sqrt( one + temp*temp );
-        (*sn_)(i) = temp*(cs_)(i);  
+        temp = (*H_)(iter+1,iter) / (*H_)(iter,iter);
+        (*cs_)(iter) = one / std::sqrt( one + temp*temp );
+        (*sn_)(iter) = temp*(*cs_)(iter);  
       }
      
       // Approximate residual norm
-      temp         = (*cs_)(i)*(*sn_)(i);
-      (*s_)(i+1)   = -(*sn_)(i)*(*s_)(i);
-      (*s_)(i)     = temp;
-      (*H_)(i,i)   = (*cs_)(i)*(*H_)(i,i) + (*sn_)*(*H_)(i+1,i);
-      (*H_)(i+1,i) = zero;
-      (*res_)[i+1] = std::abs((*s_)(i+1));
+      temp               = (*cs_)(iter)*(*s_)(iter);
+      (*s_)(iter+1)      = -(*sn_)(iter)*(*s_)(iter);
+      (*s_)(iter)        = temp;
+      (*H_)(iter,iter)   = (*cs_)(iter)*(*H_)(iter,iter) + (*sn_)(iter)*(*H_)(iter+1,iter);
+      (*H_)(iter+1,iter) = zero;
+      (*res_)[iter+1]    = std::abs((*s_)(iter+1));
   
-      if( (*res_)[i+1] < rtol ) {
-        break;
-      }
-
       // Update solution approximation.
       const char uplo = 'U';
       const char trans = 'N';
@@ -237,26 +232,24 @@ public:
       Real scaling = zero;
       int info = 0;
       *y_ = *s_;
-      lapack_.LATRS(uplo, trans, diag, normin, i+1, H_->values(), m+1, y_->values(), &scaling, cnorm_->values(), &info);
+      lapack_.LATRS(uplo, trans, diag, normin, iter+1, H_->values(), maxit_+1, y_->values(), &scaling, cnorm_->values(), &info);
 
       z_->zero();
 
-      for( uint k=0; k<=i;++k ) {
+      for( int k=0; k<=iter;++k ) {
         z_->axpy((*y_)(k),*(Z[k]));
       }
 
-      if( (*res_)[i+1] <= rtol ) {
+      if( (*res_)[iter+1] <= rtol ) {
         // Update solution vector
         x.plus(*z_);  
         break;
       }
 
-      if(i == maxit_) {
+      if(iter == maxit_) {
         flag = 1;
       }
-      iter = static_cast<int>(i);
-
-    } // loop over i
+    } // loop over iter
 
   }  
 

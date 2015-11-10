@@ -548,7 +548,7 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleBlockType>
   void update (const Scalar& alpha, const LittleBlockType& X) const {
-    AXPY (alpha, X, *this);
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
@@ -559,7 +559,7 @@ public:
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    SCAL (alpha, *this);
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -659,11 +659,11 @@ public:
   /// \brief Constructor
   /// \param A [in] Pointer to the vector's entries
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
-  LittleVector (Scalar* const A, const LO blockSize, const LO stride) :
+  /// \param strideX [in] Stride between consecutive entries
+  LittleVector (Scalar* const A, const LO blockSize, const LO strideX) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
   /// \brief Constructor that takes an \c impl_scalar_type pointer.
@@ -671,7 +671,7 @@ public:
   /// \param A [in] Pointer to the vector's entries, as
   ///   <tt>impl_scalar_type*</tt> rather than <tt>Scalar*</tt>
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
+  /// \param strideX [in] Stride between consecutive entries
   ///
   /// While this constructor is templated on a type \c T, the intent
   /// is that <tt>T == impl_scalar_type</tt>.  (We must template on T
@@ -685,7 +685,7 @@ public:
   template<class T>
   LittleVector (T* const A,
                 const LO blockSize,
-                const LO stride,
+                const LO strideX,
                 typename std::enable_if<
                   ! std::is_same<Scalar, T>::value &&
                   std::is_convertible<Scalar, T>::value &&
@@ -693,7 +693,7 @@ public:
                 int*>::type ignoreMe = NULL) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
   //! Pointer to the vector's entries.
@@ -721,6 +721,9 @@ public:
     return strideX_;
   }
 
+  /// \brief Stride between consecutive entries.
+  ///
+  /// This exists for compatibility with Kokkos::View.
   template<class IntegerType>
   void stride (IntegerType* const s) const {
     s[0] = strideX_;
@@ -743,7 +746,7 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleVectorType>
   void update (const Scalar& alpha, const LittleVectorType& X) const {
-    AXPY (alpha, X, *this);
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
@@ -754,7 +757,7 @@ public:
 
   //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    SCAL (alpha, *this);
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -798,7 +801,7 @@ public:
                 const LittleBlockType& A,
                 const LittleVectorType& X) const
   {
-    GEMV (alpha, A, X, *this);
+    GEMV (static_cast<impl_scalar_type> (alpha), A, X, *this);
   }
 
 private:
