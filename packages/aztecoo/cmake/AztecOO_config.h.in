@@ -2,23 +2,22 @@
 
 /* Define the Fortran name mangling to be used for the BLAS */
 #ifndef F77_BLAS_MANGLE
-  #define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#  define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 #endif
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
 #ifndef F77_FUNC
-  #define F77_FUNC@F77_FUNC@
+#  define F77_FUNC@F77_FUNC@
 #endif
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #ifndef F77_FUNC_
-  #define F77_FUNC_@F77_FUNC_@
+#  define F77_FUNC_@F77_FUNC_@
 #endif
 
 /* Define to enable capture-matrix feature */
 #cmakedefine AZ_ENABLE_CAPTURE_MATRIX
-#endif
 
 /* Define to enable Teuchos TimeMonitors within Aztec solvers */
 #cmakedefine AZ_ENABLE_TIMEMONITOR
