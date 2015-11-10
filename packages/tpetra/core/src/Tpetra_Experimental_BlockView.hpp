@@ -659,11 +659,11 @@ public:
   /// \brief Constructor
   /// \param A [in] Pointer to the vector's entries
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
-  LittleVector (Scalar* const A, const LO blockSize, const LO stride) :
+  /// \param strideX [in] Stride between consecutive entries
+  LittleVector (Scalar* const A, const LO blockSize, const LO strideX) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
   /// \brief Constructor that takes an \c impl_scalar_type pointer.
@@ -671,7 +671,7 @@ public:
   /// \param A [in] Pointer to the vector's entries, as
   ///   <tt>impl_scalar_type*</tt> rather than <tt>Scalar*</tt>
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
+  /// \param strideX [in] Stride between consecutive entries
   ///
   /// While this constructor is templated on a type \c T, the intent
   /// is that <tt>T == impl_scalar_type</tt>.  (We must template on T
@@ -685,7 +685,7 @@ public:
   template<class T>
   LittleVector (T* const A,
                 const LO blockSize,
-                const LO stride,
+                const LO strideX,
                 typename std::enable_if<
                   ! std::is_same<Scalar, T>::value &&
                   std::is_convertible<Scalar, T>::value &&
@@ -693,7 +693,7 @@ public:
                 int*>::type ignoreMe = NULL) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
   //! Pointer to the vector's entries.
