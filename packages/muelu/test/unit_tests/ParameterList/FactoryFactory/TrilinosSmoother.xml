@@ -1,11 +1,5 @@
 <ParameterList name="Factories">
 
-  <Parameter name="S0" type="string" value="TrilinosSmoother"/>
-
-  <ParameterList name="S1">
-    <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-  </ParameterList>
-
   <ParameterList name="S2">
     <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type"  type="string" value="RELAXATION"/>
