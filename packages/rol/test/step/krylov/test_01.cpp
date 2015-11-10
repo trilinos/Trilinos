@@ -47,6 +47,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_GMRES.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_RandomVector.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -175,13 +176,14 @@ int main(int argc, char *argv[]) {
   try {
 
     Teuchos::ParameterList parlist;
-
-    Teuchos::ParameterList &klist = parlist.sublist("General").sublist("Krylov");
-
-    klist.set("Iteration Limit",20);
-    klist.set("Absolute Tolerance",1.e-8);
-    klist.set("Relative Tolerance",1.e-6);
-    klist.set("Use Initial Guess",false);
+    Teuchos::ParameterList &gList = parlist.sublist("General");
+    Teuchos::ParameterList &kList = gList.sublist("Krylov");
+    
+    kList.set("Type","GMRES");
+    kList.set("Iteration Limit",20);
+    kList.set("Absolute Tolerance",1.e-8);
+    kList.set("Relative Tolerance",1.e-6);
+    kList.set("Use Initial Guess",false);
 
     uint dim = 10;
 
@@ -214,13 +216,12 @@ int main(int argc, char *argv[]) {
 
     T.applyInverse(y,b,tol);
 
-    ROL::GMRES<RealT> gmres(parlist);
+    RCP<ROL::Krylov<RealT> > krylov = ROL::KrylovFactory<RealT>( parlist );
 
     int iter;
     int flag;
 
-    gmres.run(z,T,b,I,iter,flag);
-
+    krylov->run(z,T,b,I,iter,flag);
 
     *outStream << std::setw(10) << "Exact"  
                << std::setw(10) << "LAPACK"

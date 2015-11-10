@@ -457,6 +457,7 @@ namespace ROL {
   enum EKrylov{
     KRYLOV_CG = 0,
     KRYLOV_CR,
+    KRYLOV_GMRES,
     KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
@@ -466,6 +467,7 @@ namespace ROL {
     switch(tr) {
       case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
       case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
+      case KRYLOV_GMRES:       retString = "GMRES";               break;
       case KRYLOV_USERDEFINED: retString = "User Defined";        break;
       case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
       default:                 retString = "INVALID EKrylov";
@@ -481,6 +483,7 @@ namespace ROL {
   inline int isValidKrylov(EKrylov d){
     return( (d == KRYLOV_CG)      ||
             (d == KRYLOV_CR)      ||
+            (d == KRYLOV_GMRES)   ||
             (d == KRYLOV_USERDEFINED) );
   }
 

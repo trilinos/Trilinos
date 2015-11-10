@@ -57,8 +57,6 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-#include <iostream>
-
 namespace ROL {
 
 template<class Real>
@@ -99,13 +97,14 @@ public:
     using Teuchos::rcp;
     using std::vector; 
 
-    Teuchos::ParameterList &klist = parlist.sublist("General").sublist("Krylov");
+    Teuchos::ParameterList &gList = parlist.sublist("General");
+    Teuchos::ParameterList &kList = gList.sublist("Krylov");
     
-    maxit_           = klist.get("Iteration Limit",50);
-    absTol_          = klist.get("Absolute Tolerance", 1.e-4);
-    relTol_          = klist.get("Relative Tolerance", 1.e-2);
-    useInitialGuess_ = klist.get("Use Initial Guess",false);
-
+    useInexact_      = gList.get("Inexact Hessian-Times-A-Vector",false);
+    maxit_           = kList.get("Iteration Limit",50);
+    absTol_          = kList.get("Absolute Tolerance", 1.e-4);
+    relTol_          = kList.get("Relative Tolerance", 1.e-2);
+    useInitialGuess_ = kList.get("Use Initial Guess",false);
 
     H_     = rcp( new SDMatrix( maxit_+1, maxit_ ) );
     cs_    = rcp( new SDVector( maxit_ ) );

@@ -50,10 +50,15 @@
 #include "Teuchos_RCP.hpp"
 
 #include "ROL_Krylov.hpp"
+#include "ROL_GMRES.hpp"
 #include "ROL_ConjugateGradients.hpp"
 #include "ROL_ConjugateResiduals.hpp"
 
 namespace ROL {
+
+  template<class Real> // Why is this forward declaration required but not for CG/CR?
+  class GMRES;
+
   template<class Real>
   inline Teuchos::RCP<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
     EKrylov ekv = StringToEKrylov(
@@ -63,8 +68,12 @@ namespace ROL {
     int maxit    = parlist.sublist("General").sublist("Krylov").get("Iteration Limit", 20);
     bool inexact = parlist.sublist("General").get("Inexact Hessian-Times-A-Vector",false);
     switch(ekv) {
-      case KRYLOV_CR: return Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,inexact) );
-      case KRYLOV_CG: return Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,inexact) );
+      case KRYLOV_CR: 
+        return Teuchos::rcp( new ConjugateResiduals<Real>(absTol,relTol,maxit,inexact) );
+      case KRYLOV_CG: 
+        return Teuchos::rcp( new ConjugateGradients<Real>(absTol,relTol,maxit,inexact) );
+      case KRYLOV_GMRES:
+        return Teuchos::rcp( new GMRES<Real>(parlist) );
       default:        return Teuchos::null;
     }
   }
