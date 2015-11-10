@@ -96,6 +96,12 @@ void Graph::change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, i
     }
 }
 
+void Graph::clear()
+{
+    m_numEdges = 0;
+    m_graphEdges.clear();
+}
+
 impl::parallel_info& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {
     return const_cast<impl::parallel_info&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);
@@ -155,6 +161,11 @@ impl::LocalId ParallelInfoForGraphEdges::convert_remote_global_id_to_negative_lo
 stk::mesh::EntityId ParallelInfoForGraphEdges::convert_negative_local_id_to_remote_global_id(impl::LocalId negativeLocalId) const
 {
     return -negativeLocalId;
+}
+
+void ParallelInfoForGraphEdges::clear()
+{
+    m_parallel_graph_info.clear();
 }
 
 GraphEdge create_symmetric_edge(const GraphEdge& graphEdge)

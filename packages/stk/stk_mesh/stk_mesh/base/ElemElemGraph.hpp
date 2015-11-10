@@ -102,6 +102,7 @@ public:
 
     //this member method is not the public API for change-entity-owner. see the free-standing function above
     void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
+    void fill_from_mesh();
     void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
                                          impl::ParallelGraphInfo &new_parallel_graph_entries);
     stk::mesh::EntityId get_available_side_id();
@@ -140,6 +141,7 @@ protected:
 
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
+    void clear_data_members();
     void resize_entity_to_local_id_if_needed(size_t max_index);
     size_t find_max_local_offset_in_neighborhood(stk::mesh::Entity element);
     void pack_deleted_element_comm(stk::CommSparse &comm,

@@ -55,6 +55,12 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Sel
         m_parallelInfoForGraphEdges(bulkData.parallel_rank()),
         m_sideIdPool(bulkData)
 {
+    fill_from_mesh();
+}
+
+void ElemElemGraph::fill_from_mesh()
+{
+    clear_data_members();
     int numElems = size_data_members();
 
     impl::ElemSideToProcAndFaceId elem_side_comm;
@@ -73,10 +79,10 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Sel
 
     m_sideIdPool.generate_initial_ids(num_side_ids_needed);
 
+    m_parallelInfoForGraphEdges.clear();
     fill_parallel_graph(elem_side_comm);
 
     update_number_of_parallel_edges();
-
 }
 
 void ElemElemGraph::update_number_of_parallel_edges()
@@ -205,6 +211,16 @@ int ElemElemGraph::size_data_members()
     m_local_id_in_pool.resize(numElems, false);
 
     return numElems;
+}
+
+void ElemElemGraph::clear_data_members()
+{
+    m_graph.clear();
+    m_local_id_to_element_entity.clear();
+    m_entity_to_local_id.clear();
+    m_element_topologies.clear();
+    m_num_parallel_edges = 0;
+    m_local_id_in_pool.clear();
 }
 
 void ElemElemGraph::resize_entity_to_local_id_if_needed(size_t maxIndexOfNewlyAddedEntities)

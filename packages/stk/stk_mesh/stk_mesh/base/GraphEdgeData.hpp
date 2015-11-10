@@ -26,6 +26,7 @@ public:
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_connections(impl::LocalId elem);
     void change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, impl::LocalId newElem2Id);
+    void clear();
 private:
     std::vector<std::vector<GraphEdge> > m_graphEdges;
     size_t m_numEdges = 0;
@@ -44,6 +45,7 @@ public:
 
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     stk::mesh::EntityId convert_negative_local_id_to_remote_global_id(impl::LocalId remoteElementId) const;
+    void clear();
 private:
     impl::ParallelGraphInfo::const_iterator get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const;
     impl::ParallelGraphInfo m_parallel_graph_info;

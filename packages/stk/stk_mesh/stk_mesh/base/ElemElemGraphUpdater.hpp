@@ -62,13 +62,14 @@ public:
 
     virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
+//        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
     }
 
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
-        newParallelGraphEntries.clear();
+//        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
+//        newParallelGraphEntries.clear();
+        elemGraph.fill_from_mesh();
     }
 private:
     stk::mesh::BulkData &bulkData;
