@@ -8,15 +8,8 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include "ElementGraphTester.hpp"
 
-namespace {
-
-struct GraphEdgeMock
+namespace
 {
-    int element1;
-    int element2;
-    int sideOrdinalConnectingElement1ToElement2;
-};
-typedef std::vector<GraphEdgeMock> GraphEdges;
 
 class ElemGraphAddElementsToEmptyGraphTester : public stk::unit_test_util::MeshTestFixture
 {

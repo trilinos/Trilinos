@@ -207,9 +207,9 @@ private:
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
     void create_remote_sides1(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
-
+public:
     void write_graph() const;
-
+private:
     void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
                                     const int destination_proc,
                                     impl::ParallelGraphInfo &newParallelGraphEntries);

@@ -9,8 +9,6 @@
 namespace
 {
 
-typedef std::map<stk::mesh::EntityId, stk::mesh::impl::IdViaSidePair> MockGraphEdges;
-
 class ElemGraphDeleteElementsTester : public stk::unit_test_util::MeshFixture
 {
 protected:
@@ -23,17 +21,18 @@ protected:
     void create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::AutomaticAuraOption auraOption,
                                                                     stk::mesh::EntityIdVector elemIdsToDelete,
                                                                     size_t goldNumGlobalConnectionsAfterDeletes,
-                                                                    MockGraphEdges &goldConnections)
+                                                                    GraphEdges &goldConnections)
     {
         setup_mesh("generated:1x1x4", auraOption);
         elementGraph = new ElemElemGraphTester(get_bulk());
         test(elemIdsToDelete, goldNumGlobalConnectionsAfterDeletes, goldConnections);
     }
 
-    void test(const stk::mesh::EntityIdVector &elemIdsToDelete, size_t goldNumGlobalConnectionsAfterDeletes, MockGraphEdges &goldConnections)
+    void test(const stk::mesh::EntityIdVector &elemIdsToDelete, size_t goldNumGlobalConnectionsAfterDeletes, GraphEdges &goldConnections)
     {
         remove_elements(elemIdsToDelete);
-
+        ASSERT_EQ(goldConnections.size(), goldNumGlobalConnectionsAfterDeletes);
+        elementGraph->write_graph();
         check_graph_connections_updated_after_deletions(goldConnections, goldNumGlobalConnectionsAfterDeletes);
     }
 
@@ -44,38 +43,6 @@ protected:
         fill_elements_to_delete(elemIdsToDelete, elementsToDelete);
         destroy_elements(elementsToDelete);
         elementGraph->delete_elements(elementsToDelete);
-    }
-
-    void expect_local_elem_counts_are_equal_to_active_elements(stk::mesh::Selector locallyOwned, size_t numActiveElements)
-    {
-        std::vector<size_t> counts;
-        stk::mesh::comm_mesh_counts(get_bulk(), counts, &locallyOwned);
-        EXPECT_EQ(numActiveElements, counts[stk::topology::ELEM_RANK]);
-    }
-
-    void expect_correct_number_of_connections_in_graph_after_deletes(stk::mesh::Selector locallyOwned,
-                                                                     size_t goldNumGlobalConnectionsAfterDeletes,
-                                                                     stk::mesh::EntityVector &elems)
-    {
-        size_t localNumConnections = 0;
-        for(stk::mesh::Entity elem : elems)
-        {
-            localNumConnections += elementGraph->get_num_connected_elems(elem);
-        }
-        size_t globalNumConnections = 0;
-        stk::all_reduce_sum(get_comm(), &localNumConnections, &globalNumConnections, 1);
-        EXPECT_EQ(goldNumGlobalConnectionsAfterDeletes, globalNumConnections);
-    }
-
-    void expect_connection_is_in_gold_connections(const MockGraphEdges &goldConnections, stk::mesh::EntityId elemId, stk::mesh::impl::IdViaSidePair connection)
-    {
-        MockGraphEdges::const_iterator it = goldConnections.find(elemId);
-        if(it != goldConnections.end())
-        {
-            stk::mesh::impl::IdViaSidePair goldConnection = it->second;
-            EXPECT_EQ(goldConnection.id, connection.id);
-            EXPECT_EQ(goldConnection.side, connection.side);
-        }
     }
 
     void remove_inactive_elements(const stk::mesh::EntityIdVector &elemIdsToDelete)
@@ -110,17 +77,70 @@ protected:
         get_bulk().modification_end();
     }
 
-    void check_graph_connections_updated_after_deletions(const MockGraphEdges &goldConnections, size_t goldNumGlobalConnectionsAfterDeletes)
+    void check_graph_connections_updated_after_deletions(GraphEdges &goldConnections, size_t goldNumGlobalConnectionsAfterDeletes)
     {
         expect_local_elem_counts_are_equal_to_active_elements(get_meta().locally_owned_part(), activeElements.size());
 
         stk::mesh::EntityVector elems;
         stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
+
         expect_correct_number_of_connections_in_graph_after_deletes(get_meta().locally_owned_part(), goldNumGlobalConnectionsAfterDeletes, elems);
 
+        size_t matchingEdgesFound = get_matching_edges_found_by_checking_against_gold_connections(goldConnections, elems);
+
+        expect_all_edges_found_across_procs(goldConnections.size(), matchingEdgesFound);
+    }
+
+    void expect_local_elem_counts_are_equal_to_active_elements(stk::mesh::Selector locallyOwned, size_t numActiveElements)
+    {
+        std::vector<size_t> counts;
+        stk::mesh::comm_mesh_counts(get_bulk(), counts, &locallyOwned);
+        EXPECT_EQ(numActiveElements, counts[stk::topology::ELEM_RANK]);
+    }
+
+    void expect_correct_number_of_connections_in_graph_after_deletes(stk::mesh::Selector locallyOwned,
+                                                                     size_t goldNumGlobalConnectionsAfterDeletes,
+                                                                     stk::mesh::EntityVector &elems)
+    {
+        size_t localNumConnections = get_num_local_connections(elems);
+
+        size_t globalNumConnections = 0;
+        stk::all_reduce_sum(get_comm(), &localNumConnections, &globalNumConnections, 1);
+        EXPECT_EQ(goldNumGlobalConnectionsAfterDeletes, globalNumConnections);
+    }
+
+    size_t get_num_local_connections(const stk::mesh::EntityVector &elems)
+    {
+        size_t localNumConnections = 0;
+        for(stk::mesh::Entity elem : elems)
+            localNumConnections += elementGraph->get_num_connected_elems(elem);
+        return localNumConnections;
+    }
+
+    size_t get_matching_edges_found_by_checking_against_gold_connections(const GraphEdges &goldConnections, stk::mesh::EntityVector &elems)
+    {
+        size_t matchingEdgesFound = 0;
         for(stk::mesh::Entity elem : elems)
             for(size_t i = 0; i < elementGraph->get_num_connected_elems(elem); i++)
-                expect_connection_is_in_gold_connections(goldConnections, get_bulk().identifier(elem), get_connection(elem, i));
+                expect_connection_is_in_gold_connections(goldConnections, get_bulk().identifier(elem), get_connection(elem, i), matchingEdgesFound);
+        return matchingEdgesFound;
+    }
+
+    void expect_connection_is_in_gold_connections(const GraphEdges &goldConnections, stk::mesh::EntityId elemId, stk::mesh::impl::IdViaSidePair connection, size_t &edgesFound)
+    {
+        for(const GraphEdgeMock &goldEdge : goldConnections)
+            if(goldEdge.element1 == elemId && goldEdge.element2 == connection.id)
+            {
+                EXPECT_EQ(goldEdge.sideOrdinalConnectingElement1ToElement2, connection.side);
+                edgesFound++;
+            }
+    }
+
+    void expect_all_edges_found_across_procs(size_t totalNumberEdges, size_t matchingEdgesFound)
+    {
+        size_t globalMatchingEdgesFound = 0;
+        stk::all_reduce_sum(get_comm(), &matchingEdgesFound, &globalMatchingEdgesFound, 1);
+        EXPECT_EQ(totalNumberEdges, globalMatchingEdgesFound);
     }
 
     stk::mesh::impl::IdViaSidePair get_connection(stk::mesh::Entity elem, size_t sideOffset)
@@ -134,7 +154,7 @@ protected:
     stk::mesh::impl::IdViaSidePair get_local_connection_information(stk::mesh::Entity elem, size_t sideOffset)
     {
         stk::mesh::impl::ElementViaSidePair conn = elementGraph->get_connected_element_and_via_side(elem, sideOffset);
-        return {get_bulk().identifier(elem), conn.side};
+        return {get_bulk().identifier(conn.element), conn.side};
     }
 
 protected:
@@ -146,7 +166,7 @@ TEST_F(ElemGraphDeleteElementsTester, deleteElements1and4WithAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {{4, {3, 2}}, {5, {2, 3}}};
+        GraphEdges goldConnections = {{2, 3, 5}, {3, 2, 4}};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::AUTO_AURA, {1, 4}, 2, goldConnections);
     }
 }
@@ -154,7 +174,7 @@ TEST_F(ElemGraphDeleteElementsTester, deleteElements1and4WithoutAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {{4, {3, 2}}, {5, {2, 3}}};
+        GraphEdges goldConnections = {{2, 3, 5}, {3, 2, 4}};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::NO_AUTO_AURA, {1, 4}, 2, goldConnections);
     }
 }
@@ -162,7 +182,7 @@ TEST_F(ElemGraphDeleteElementsTester, deleteElements1and3WithAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {};
+        GraphEdges goldConnections = {};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::AUTO_AURA, {1, 3}, 0, goldConnections);
     }
 }
@@ -170,7 +190,7 @@ TEST_F(ElemGraphDeleteElementsTester, deleteElements1and3WithoutAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {};
+        GraphEdges goldConnections = {};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::NO_AUTO_AURA, {1, 3}, 0, goldConnections);
     }
 }
@@ -178,7 +198,7 @@ TEST_F(ElemGraphDeleteElementsTester, deleteEveryElementWithAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {};
+        GraphEdges goldConnections = {};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::AUTO_AURA, {1, 2, 3, 4}, 0, goldConnections);
     }
 }
@@ -186,14 +206,24 @@ TEST_F(ElemGraphDeleteElementsTester, deleteEveryElementWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm()) < 4)
     {
-        MockGraphEdges goldConnections = {};
+        GraphEdges goldConnections = {};
         create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::NO_AUTO_AURA, {1, 2, 3, 4}, 0, goldConnections);
     }
 }
-//        create_and_expect_graph_updated_after_elements_are_deleted({2, 3}, stk::mesh::BulkData::AUTO_AURA);
-//        create_and_expect_graph_updated_after_elements_are_deleted({1, 3}, stk::mesh::BulkData::AUTO_AURA);
-//        create_and_expect_graph_updated_after_elements_are_deleted({2, 4}, stk::mesh::BulkData::AUTO_AURA);
-//        create_and_expect_graph_updated_after_elements_are_deleted({}, stk::mesh::BulkData::AUTO_AURA);
-//        create_and_expect_graph_updated_after_elements_are_deleted({1, 2, 3, 4}, stk::mesh::BulkData::AUTO_AURA);
-
+TEST_F(ElemGraphDeleteElementsTester, deleteNothingWithAura)
+{
+    if(stk::parallel_machine_size(get_comm()) < 4)
+    {
+        GraphEdges goldConnections = {{1, 2, 5}, {2, 1, 4}, {2, 3, 5},  {3, 2, 4}, {3, 4, 5}, {4, 3, 4}};
+        create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::AUTO_AURA, {}, 6, goldConnections);
+    }
+}
+TEST_F(ElemGraphDeleteElementsTester, deleteNothingWithoutAura)
+{
+    if(stk::parallel_machine_size(get_comm()) < 4)
+    {
+        GraphEdges goldConnections = {{1, 2, 5}, {2, 1, 4}, {2, 3, 5},  {3, 2, 4}, {3, 4, 5}, {4, 3, 4}};
+        create_and_expect_graph_updated_after_elements_are_deleted(stk::mesh::BulkData::NO_AUTO_AURA, {}, 6, goldConnections);
+    }
+}
 }

@@ -16,11 +16,13 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector
 namespace stk { namespace mesh { class Part; } }
 
-
-
-
-
-
+struct GraphEdgeMock
+{
+    stk::mesh::EntityId element1;
+    stk::mesh::EntityId element2;
+    int sideOrdinalConnectingElement1ToElement2;
+};
+typedef std::vector<GraphEdgeMock> GraphEdges;
 
 
 class ElemElemGraphTester : public stk::mesh::ElemElemGraph
