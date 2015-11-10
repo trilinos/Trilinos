@@ -57,6 +57,7 @@
 
 #include "Xpetra_Import.hpp"
 #include "Xpetra_ImportFactory.hpp"
+#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_Vector.hpp"
@@ -101,6 +102,7 @@ namespace Xpetra {
         fullmap_ = fullmap;
         maps_ = maps;
       } else {
+        std::cout << "Create Map Extractor in Thyra Mode!!! " << std::endl;
         // use Thyra-style numbering for sub-block maps
         // That is, all sub-block maps start with zero as GID and are contiguous
 
@@ -116,7 +118,7 @@ namespace Xpetra {
         // get offsets
         std::vector<GlobalOrdinal> gidOffsets(maps.size(),0);
         for(size_t v = 1; v < maps.size(); ++v) {
-          gidOffsets[v] = maps[v-1]->getGlobalNumElements() + gidOffsets[v-1];
+          gidOffsets[v] = maps[v-1]->getMaxAllGlobalIndex() + gidOffsets[v-1] + 1;
         }
 
         // build submaps
@@ -130,10 +132,20 @@ namespace Xpetra {
             subMapGids[l] = myGid + gidOffsets[v];
             fullMapGids.push_back(myGid + gidOffsets[v]);
           }
+          //std::sort(subMapGids.begin(), subMapGids.end());
+          //subMapGids.erase(std::unique(subMapGids.begin(), subMapGids.end()), subMapGids.end());
+
           Teuchos::ArrayView<GlobalOrdinal> subMapGidsView(&subMapGids[0], subMapGids.size());
-          Teuchos::RCP<Map> mySubMap = MapFactory::Build(maps[v]->lib(), INVALID, subMapGidsView, maps[v]->getIndexBase(), maps[v]->getComm());
+          Teuchos::RCP<Map> mySubMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(maps[v]->lib(), INVALID, subMapGidsView, maps[v]->getIndexBase(), maps[v]->getComm());
           maps_[v] = mySubMap;
         }
+
+        //const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+        //std::sort(coarseMapGids.begin(), coarseMapGids.end());
+        //coarseMapGids.erase(std::unique(coarseMapGids.begin(), coarseMapGids.end()), coarseMapGids.end());
+        //Teuchos::ArrayView<GO> coarseMapGidsView(&coarseMapGids[0], coarseMapGids.size());
+        //std::sort(fullMapGids.begin(), fullMapGids.end());
+        //fullMapGids.erase(std::unique(fullMapGids.begin(), fullMapGids.end()), fullMapGids.end());
 
         Teuchos::ArrayView<GlobalOrdinal> fullMapGidsView(&fullMapGids[0], fullMapGids.size());
         fullmap_ = MapFactory::Build(fullmap->lib(), INVALID, fullMapGidsView, fullmap->getIndexBase(), fullmap->getComm());
@@ -145,15 +157,13 @@ namespace Xpetra {
         }
         TEUCHOS_TEST_FOR_EXCEPTION(fullmap_->getGlobalNumElements() != numAllElements, std::logic_error,
                                    "logic error. full map and sub maps have not same number of elements. This cannot be. Please report the bug to the Xpetra developers!");
-
-
       }
 
       // build importers for sub maps
       importers_.resize(maps_.size());
       for (unsigned i = 0; i < maps_.size(); ++i)
         if (maps[i] != null)
-          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps[i]);
+          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
                                  "logic error. full map and sub maps are inconsistently distributed over the processors.");
 
@@ -170,7 +180,6 @@ namespace Xpetra {
     void ExtractVector(const MultiVector& full, size_t block, MultiVector& partial) const {
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
-
       partial.doImport(full, *importers_[block], Xpetra::INSERT);
     }
     void ExtractVector(RCP<const      Vector>& full, size_t block, RCP<     Vector>& partial) const { ExtractVector(*full, block, *partial); }

@@ -78,6 +78,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 ENDIF()
 
 #
+# Xpetra
+#
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
+)
+
+#
 # Stratimikos
 #
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
@@ -93,6 +101,9 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory_def.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory.hpp
+    ${DIR}/Thyra_XpetraLinearOp_decl.hpp
+    ${DIR}/Thyra_XpetraLinearOp_def.hpp
+    ${DIR}/Thyra_XpetraLinearOp.hpp
     )
 
   # Tpetra specific extensions
@@ -158,7 +169,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       Thyra::MueLuPreconditionerFactory
     )
   ENDIF()
-
 
   # Set the list of classes in MueLu adapters that are templated on <LO, GO, Node> for
   # which we want to do ETI using this system.

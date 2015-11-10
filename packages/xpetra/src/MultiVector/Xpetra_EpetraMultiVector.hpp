@@ -561,7 +561,7 @@ namespace Xpetra {
 
       RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
       int err = this->getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
-      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra is " << err);
     }
 
     //! Export.

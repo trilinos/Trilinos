@@ -186,12 +186,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrs
 #ifdef HAVE_XPETRA_TPETRA
 #ifdef HAVE_XPETRA_TPETRA_INST_INT_INT // only if LO=GO=int enabled
   libs.push_back(Xpetra::UseTpetra);
+  std::cout << "Test Tpetra" << std::endl;
 #endif
 #endif
 
   // Epetra version
 #ifdef HAVE_XPETRA_EPETRA
   libs.push_back(Xpetra::UseEpetra);
+  std::cout << "Test Epetra" << std::endl;
 #endif
 
   typedef Xpetra::Map<LO, GO, Node> MapClass;

@@ -234,6 +234,8 @@ namespace Xpetra {
      * Helper function only used in constructor of Xpetra_BlockedCrsMatrix for transforming a Thyra::BlockedLinearOp object
      */
     Teuchos::RCP<const Map> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
+      // TODO merging for Thyra mode is missing (similar to what we do in constructor of MapExtractor
+
       // merge submaps to global map
       std::vector<GlobalOrdinal> gids;
       for(size_t tt = 0; tt<subMaps.size(); ++tt) {
@@ -244,6 +246,10 @@ namespace Xpetra {
         }
       }
 
+      // we have to sort the matrix entries and get rid of the double entries
+      // since we use this to detect Thyra-style numbering or Xpetra-style
+      // numbering. In Thyra-style numbering mode, the Xpetra::MapExtractor builds
+      // the correct row maps.
       const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
       std::sort(gids.begin(), gids.end());
       gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
@@ -702,7 +708,6 @@ namespace Xpetra {
               continue;
 
             Ablock->apply(*Xblock, *tmpYblock);
-
             Yblock->update(one, *tmpYblock, one);
           }
           rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
