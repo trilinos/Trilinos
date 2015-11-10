@@ -111,6 +111,14 @@ public:
   PamgenMeshAdapter(const Comm<int> &comm, std::string typestr="region",
 		    int nEntWgts=0);
 
+  /*! \brief Specify an index for which the weight should be
+             the degree of the entity
+   *    \paran idx Zoltan2 will use the entity's
+   *         degree as the entity weight for index \c idx.
+   */
+
+  void setWeightIsDegree(int idx);
+
   void print(int);
 
   ////////////////////////////////////////////////////////////////
@@ -308,14 +316,11 @@ public:
   bool useDegreeAsWeightOf(MeshEntityType etype, int idx) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
-	(MESH_FACE == etype && 2 == dimension_)) {
-      return nonvertexDegreeWeight_[idx];
+	(MESH_FACE == etype && 2 == dimension_) ||
+	(MESH_VERTEX == etype)) {
+      return entityDegreeWeight_[idx];
     }
-
-    if (MESH_VERTEX == etype) {
-      return vertexDegreeWeight_[idx];
-    }
-
+    
     return false;
   }
 
@@ -328,8 +333,7 @@ private:
   lno_t telct_, *nodeOffsets_;
 
   int nWeightsPerEntity_;
-  bool *nonvertexDegreeWeight_;
-  bool *vertexDegreeWeight_;
+  bool *entityDegreeWeight_;
 
   // TODO:  coords_ and Acoords_ should be scalar_t
   // TODO:  or should check that scalar_t == double
@@ -349,8 +353,7 @@ private:
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr, int nEntWgts):
-  dimension_(0), nWeightsPerEntity_(nEntWgts), nonvertexDegreeWeight_(),
-  vertexDegreeWeight_()
+  dimension_(0), nWeightsPerEntity_(nEntWgts), entityDegreeWeight_()
 {
   using Teuchos::as;
 
@@ -879,13 +882,22 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   mirror_nodes = NULL;
 
   if (nWeightsPerEntity_ > 0) {
-    nonvertexDegreeWeight_ = new bool [nWeightsPerEntity_];
-    vertexDegreeWeight_ = new bool [nWeightsPerEntity_];
+    entityDegreeWeight_ = new bool [nWeightsPerEntity_];
     for (int i=0; i < nWeightsPerEntity_; i++) {
-      nonvertexDegreeWeight_[i] = false;
-      vertexDegreeWeight_[i] = false;
+      entityDegreeWeight_[i] = false;
     }
   }
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+void PamgenMeshAdapter<User>::setWeightIsDegree(int idx)
+{
+  if (idx >= 0 && idx < nWeightsPerEntity_)
+    entityDegreeWeight_[idx] = true;
+  else
+    std::cout << "WARNING:  invalid entity weight index, " << idx << ", ignored"
+                << std::endl;
 }
 
 template <typename User>
