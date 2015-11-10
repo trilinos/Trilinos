@@ -13,28 +13,52 @@ class StkPerformance : public stk::unit_test_util::MeshFixture
 protected:
     StkPerformance() :
             skinPart(get_meta().declare_part("skinPart")),
+            enabledTimerSet(CHILDMASK1),
+            rootTimer(createRootTimer("totalTestRuntime", enabledTimerSet)),
+            childTimer1("skin_mesh", CHILDMASK1, rootTimer),
             duration(0.0)
-    {}
+    {
+    }
+
+    ~StkPerformance()
+    {
+        stk::diag::deleteRootTimer(rootTimer);
+    }
 
     void run_skin_mesh_performance_test()
     {
         stk::mesh::Selector thingToSkin = get_meta().universal_part();
         time_skin_mesh(thingToSkin);
-        print_stats();
+        print_stats(std::cerr);
     }
 
     void time_skin_mesh(stk::mesh::Selector thingToSkin)
     {
+        stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer1, communicator);
+        rootTimer.start();
         double startTime = stk::wall_time();
         stk::mesh::skin_mesh(get_bulk(), thingToSkin, {&skinPart});
         duration = stk::wall_time() - startTime;
     }
 
-    void print_stats()
+    void print_stats(std::ostream& out)
+    {
+        print_output_for_graph_generation(out);
+        print_output_for_pass_fail_test(out);
+    }
+
+    void print_output_for_graph_generation(std::ostream& out)
+    {
+        bool printTimingsOnlySinceLastPrint = false;
+        stk::diag::printTimersTable(out, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint, get_comm());
+        stk::parallel_print_time_without_output_and_hwm(get_comm(), duration, out);
+    }
+
+    void print_output_for_pass_fail_test(std::ostream& out)
     {
         double maxTime = stk::get_max_time_across_procs(duration, get_comm());
         double maxHwmInMB = stk::get_max_hwm_across_procs(get_comm()) / (1024.0 * 1024.0);
-        stk::print_stats_for_performance_compare(std::cerr, maxTime, maxHwmInMB, get_num_global_faces(), get_comm());
+        stk::print_stats_for_performance_compare(out, maxTime, maxHwmInMB, get_num_global_faces(), get_comm());
     }
 
     size_t get_num_global_faces()
@@ -50,6 +74,12 @@ protected:
     }
 
     stk::mesh::Part &skinPart;
+
+    const int CHILDMASK1 = 1;
+    stk::diag::TimerSet enabledTimerSet;
+    stk::diag::Timer rootTimer;
+    stk::diag::Timer childTimer1;
+
     double duration;
 };
 
