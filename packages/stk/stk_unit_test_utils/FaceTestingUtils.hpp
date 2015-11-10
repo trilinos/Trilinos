@@ -29,10 +29,10 @@ unsigned read_file_create_faces_shared_faces_same_elements_stk(std::string filen
 
 unsigned read_file_shared_faces_same_elements_stk(std::string filename);
 
-bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::vector<int>& countsIn, bool debug=false);
+bool check_face_elem_connectivity(const stk::mesh::BulkData& mesh, const std::set<unsigned>& counts);
 
-bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::vector<int>& counts);
+bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
 
-bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::vector<int>& counts);
+bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
 
 #endif // FACETESTINGUTILS_HPP_
