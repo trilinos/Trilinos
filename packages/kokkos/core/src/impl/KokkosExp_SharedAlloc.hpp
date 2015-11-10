@@ -107,6 +107,16 @@ public:
 
   static int tracking_enabled() { return s_tracking_enabled ; }
 
+  /**\brief A host process thread claims and disables the 
+   *        shared allocation tracking flag.
+   */
+  static void tracking_claim_and_disable();
+
+  /**\brief A host process thread releases and enables the 
+   *        shared allocation tracking flag.
+   */
+  static void tracking_release_and_enable();
+
   ~SharedAllocationRecord() = default ;
 
   constexpr SharedAllocationRecord()
@@ -228,48 +238,45 @@ private:
 
   typedef SharedAllocationRecord<void,void>  Record ;
 
-  enum : unsigned long {
-    DO_NOT_DEREF_FLAG = 0x01ul
-  };
+  enum : uintptr_t { DO_NOT_DEREF_FLAG = 0x01ul };
 
   // The allocation record resides in Host memory space
   Record      * m_record ;
-  unsigned long m_record_bits ;
+  uintptr_t m_record_bits ;
 
-  KOKKOS_INLINE_FUNCTION
-  static Record * disable( Record * rec )
-    { return reinterpret_cast<Record*>( reinterpret_cast<unsigned long>( rec ) & DO_NOT_DEREF_FLAG ); }
+  // Use macros instead of inline functions to reduce
+  // pressure on compiler optimization by reducing
+  // number of symbols and inline functons.
 
-  KOKKOS_INLINE_FUNCTION
-  void increment() const
-    {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      if ( Record::tracking_enabled() &&
-           ! ( m_record_bits & DO_NOT_DEREF_FLAG ) ) {
-        Record::increment( m_record );
-      }
-#endif
-    }
 
-  KOKKOS_INLINE_FUNCTION
-  void decrement() const
-    {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      if ( Record::tracking_enabled() &&
-           ! ( m_record_bits & DO_NOT_DEREF_FLAG ) ) {
-        Record::decrement( m_record );
-      }
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( R )	\
+  Record::tracking_enabled() ? R :	\
+  reinterpret_cast<Record*>(	\
+  reinterpret_cast<uintptr_t>( R ) | DO_NOT_DEREF_FLAG )
+
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_INCREMENT	\
+  if ( ! ( m_record_bits & DO_NOT_DEREF_FLAG ) ) Record::increment( m_record )
+
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_DECREMENT	\
+  if ( ! ( m_record_bits & DO_NOT_DEREF_FLAG ) ) Record::decrement( m_record )
+
+#else
+
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( R )  R
+
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_INCREMENT /* */
+
+#define KOKKOS_SHARED_ALLOCATION_TRACKER_DECREMENT /* */
+
 #endif
-    }
 
 public:
 
-  KOKKOS_INLINE_FUNCTION
-  constexpr SharedAllocationTracker() : m_record_bits( DO_NOT_DEREF_FLAG ) {}
-
   template< class MemorySpace >
   constexpr
-  SharedAllocationRecord< MemorySpace , void > & get_record() const
+  SharedAllocationRecord< MemorySpace , void > &
+  get_record() const
     { return * static_cast< SharedAllocationRecord< MemorySpace , void > * >( m_record ); }
 
   template< class MemorySpace >
@@ -281,37 +288,51 @@ public:
              ;
     }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
+  constexpr SharedAllocationTracker()
+    : m_record_bits( DO_NOT_DEREF_FLAG ) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
   SharedAllocationTracker( Record * arg_record )
-    : m_record( arg_record ) { increment(); }
+    : m_record( KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( arg_record ) )
+    { KOKKOS_SHARED_ALLOCATION_TRACKER_INCREMENT ; }
 
-  KOKKOS_INLINE_FUNCTION
-  ~SharedAllocationTracker() { decrement(); }
+  KOKKOS_FORCEINLINE_FUNCTION
+  ~SharedAllocationTracker()
+    { KOKKOS_SHARED_ALLOCATION_TRACKER_DECREMENT ; }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   SharedAllocationTracker( const SharedAllocationTracker & rhs )
-    : m_record( rhs.m_record ) { increment(); }
+    : m_record( KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( rhs.m_record ) )
+    { KOKKOS_SHARED_ALLOCATION_TRACKER_INCREMENT ; }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   SharedAllocationTracker( SharedAllocationTracker && rhs )
-    : m_record( rhs.m_record ) { rhs.m_record_bits = DO_NOT_DEREF_FLAG ; }
+    : m_record( KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( rhs.m_record ) )
+    { rhs.m_record_bits = DO_NOT_DEREF_FLAG ; }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   SharedAllocationTracker & operator = ( const SharedAllocationTracker & rhs )
     {
-      decrement();
-      m_record = rhs.m_record ;
-      increment();
+      KOKKOS_SHARED_ALLOCATION_TRACKER_DECREMENT ;
+      m_record = KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( rhs.m_record );
+      KOKKOS_SHARED_ALLOCATION_TRACKER_INCREMENT ;
       return *this ;
     }
 
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   SharedAllocationTracker & operator = ( SharedAllocationTracker && rhs )
     {
-      m_record = rhs.m_record ;
+      KOKKOS_SHARED_ALLOCATION_TRACKER_DECREMENT ;
+      m_record = KOKKOS_SHARED_ALLOCATION_TRACKER_ASSIGN( rhs.m_record );
       rhs.m_record_bits = DO_NOT_DEREF_FLAG ;
       return *this ;
     }
+
+#undef KOKKOS_SHARED_ALLOCATION_RECORD_ASSIGN
+#undef KOKKOS_SHARED_ALLOCATION_RECORD_INCREMENT
+#undef KOKKOS_SHARED_ALLOCATION_RECORD_DECREMENT
+
 };
 
 
