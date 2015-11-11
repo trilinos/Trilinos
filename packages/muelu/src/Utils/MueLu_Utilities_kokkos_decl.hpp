@@ -553,27 +553,7 @@ namespace MueLu {
     static void                                                              SetRandomSeed(const Teuchos::Comm<int> &comm) { MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetRandomSeed(comm); }
 
     // todo: move this to UtilitiesBase::kokkos
-    static Kokkos::View<const bool*, typename Node::device_type>             DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero()) {
-      typedef Kokkos::ArithTraits<Scalar> ATS;
-
-      LocalOrdinal numRows = A.getNodeNumRows();
-
-      typedef typename Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type local_matrix_type;
-      auto kokkosMatrix = A.getLocalMatrix();
-
-      Kokkos::View<bool*, typename Node::device_type> boundaryNodes("boundaryNodes", numRows);
-      Kokkos::parallel_for("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LocalOrdinal row) {
-        auto rowView = kokkosMatrix.template row<LocalOrdinal>(row);
-
-        boundaryNodes[row] = true;
-        for (size_t col = 0; col < rowView.length; col++)
-          if ((rowView.colidx(col) != row) && (ATS::magnitude(rowView.value(col)) > tol)) {
-            boundaryNodes[row] = false;
-            break;
-          }
-      });
-      return boundaryNodes;
-    }
+    static Kokkos::View<const bool*, typename Node::device_type>             DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero());
 
     static Scalar PowerMethod(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool scaleByDiag = true,
         LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
