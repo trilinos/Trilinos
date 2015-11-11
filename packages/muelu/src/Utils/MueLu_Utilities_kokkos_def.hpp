@@ -345,7 +345,7 @@ namespace MueLu {
   } //MyOldScaleMatrix_Tpetra()
 
   template <class SC, class LO, class GO, class NO>
-  Kokkos::View<const bool*, typename NO::device_type> Utilities_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+  Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
     typedef Kokkos::ArithTraits<SC> ATS;
 
     auto localMatrix = A.getLocalMatrix();
@@ -356,15 +356,25 @@ namespace MueLu {
       auto rowView = localMatrix.template row<LO>(row);
       auto length  = rowView.length;
 
-      boundaryNodes[row] = true;
+      boundaryNodes(row) = true;
       for (decltype(length) colID = 0; colID < length; colID++)
         if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > tol)) {
-          boundaryNodes[row] = false;
+          boundaryNodes(row) = false;
           break;
         }
     });
 
     return boundaryNodes;
+  }
+
+  template <class SC, class LO, class GO, class NO>
+  Kokkos::View<const bool*, typename NO::device_type> Utilities_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+    return MueLu::DetectDirichletRows<SC,LO,GO,NO>(A, tol);
+  }
+
+  template <class Node>
+  Kokkos::View<const bool*, typename Node::device_type> Utilities_kokkos<double,int,int,Node>::DetectDirichletRows(const Xpetra::Matrix<double,int,int,Node>& A, const typename Teuchos::ScalarTraits<double>::magnitudeType& tol) {
+    return MueLu::DetectDirichletRows<double,int,int,Node>(A, tol);
   }
 
 } //namespace MueLu

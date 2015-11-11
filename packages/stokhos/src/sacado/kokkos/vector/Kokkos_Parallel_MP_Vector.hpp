@@ -82,14 +82,14 @@ namespace Impl {
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< Threads > > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< Threads > > :
+  public ParallelFor< FunctorType , Kokkos::RangePolicy< Threads > > {
+  typedef Kokkos::RangePolicy< Threads > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< Threads > & work_config )
-  {
-    typedef Kokkos::RangePolicy< Threads > Policy ;
-    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
-  }
+               const MPVectorWorkConfig< Threads > & work_config ) :
+    ParallelFor< FunctorType , Policy >( functor ,
+                                         Policy( 0, work_config.range ) ) {}
 };
 #endif
 
@@ -103,14 +103,14 @@ public:
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< OpenMP > > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< OpenMP > > :
+  public ParallelFor< FunctorType , Kokkos::RangePolicy< OpenMP > > {
+  typedef Kokkos::RangePolicy< OpenMP > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< OpenMP > & work_config )
-  {
-    typedef Kokkos::RangePolicy< OpenMP > Policy ;
-    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
-  }
+               const MPVectorWorkConfig< OpenMP > & work_config ) :
+    ParallelFor< FunctorType , Policy >( functor ,
+                                         Policy( 0, work_config.range ) ) {}
 };
 #endif
 
@@ -124,14 +124,14 @@ public:
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
 template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< Serial > > {
+class ParallelFor< FunctorType , MPVectorWorkConfig< Serial > > :
+  public ParallelFor< FunctorType , Kokkos::RangePolicy< Serial > > {
+  typedef Kokkos::RangePolicy< Serial > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< Serial > & work_config )
-  {
-    typedef Kokkos::RangePolicy< Serial > Policy ;
-    ParallelFor< FunctorType , Policy >( functor , Policy( 0, work_config.range ) );
-  }
+               const MPVectorWorkConfig< Serial > & work_config ) :
+    ParallelFor< FunctorType , Policy >( functor ,
+                                         Policy( 0, work_config.range ) ) {}
 };
 #endif // defined(KOKKOS_HAVE_SERIAL)
 
@@ -144,6 +144,7 @@ class ParallelFor< FunctorType , MPVectorWorkConfig< Cuda > > {
 public:
 
   const FunctorType m_functor ;
+  const MPVectorWorkConfig< Cuda > m_config;
   const Cuda::size_type m_work ;
 
   inline
@@ -161,30 +162,37 @@ public:
 
   ParallelFor( const FunctorType        & functor ,
                const MPVectorWorkConfig< Cuda > & work_config )
-    : m_functor( functor ) , m_work( work_config.range )
+    : m_functor( functor ) ,
+      m_config( work_config ) ,
+      m_work( work_config.range )
+  {
+  }
+
+  inline
+  void execute() const
   {
     // To do:  query number of registers used by functor and adjust
     // nwarp accordingly to get maximum occupancy
 
     Cuda::size_type nwarp = 0;
-    if (work_config.team > CudaTraits::WarpSize) {
+    if (m_config.team > CudaTraits::WarpSize) {
       const Cuda::size_type warps_per_team =
-        ( work_config.team + CudaTraits::WarpSize-1 ) / CudaTraits::WarpSize;
+        ( m_config.team + CudaTraits::WarpSize-1 ) / CudaTraits::WarpSize;
       nwarp = cuda_internal_maximum_warp_count() / warps_per_team;
     }
     else {
       const Cuda::size_type teams_per_warp =
-        CudaTraits::WarpSize / work_config.team ;
+        CudaTraits::WarpSize / m_config.team ;
       nwarp = cuda_internal_maximum_warp_count() * teams_per_warp;
     }
-    const dim3 block( work_config.team , nwarp , 1 );
+    const dim3 block( m_config.team , nwarp , 1 );
 
     Cuda::size_type nblock =
       std::min( (m_work + block.y - 1 ) / block.y ,
                 cuda_internal_maximum_grid_count() );
     const dim3 grid( nblock , 1 , 1 );
 
-    const Cuda::size_type shared = work_config.shared;
+    const Cuda::size_type shared = m_config.shared;
     CudaParallelLaunch< ParallelFor >( *this , grid , block , shared );
   }
 };

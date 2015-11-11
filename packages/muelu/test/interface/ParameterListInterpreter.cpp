@@ -253,7 +253,8 @@ int main(int argc, char *argv[]) {
           }
 
           if (msg == "Zoltan interface is not available" ||
-              msg == "Zoltan2 interface is not available") {
+              msg == "Zoltan2 interface is not available" ||
+              msg == "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.") {
 
             if (myRank == 0)
               std::cout << xmlFile << ": skipped (missing library)" << std::endl;
