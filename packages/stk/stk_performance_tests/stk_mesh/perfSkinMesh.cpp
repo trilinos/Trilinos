@@ -43,8 +43,8 @@ protected:
 
     void print_stats(std::ostream& out)
     {
-        print_output_for_graph_generation(out);
         print_output_for_pass_fail_test(out);
+        print_output_for_graph_generation(out);
     }
 
     void print_output_for_graph_generation(std::ostream& out)
