@@ -29,7 +29,7 @@ protected:
     {
         stk::mesh::Selector thingToSkin = get_meta().universal_part();
         time_skin_mesh(thingToSkin);
-        print_stats(std::cerr);
+        print_stats();
     }
 
     void time_skin_mesh(stk::mesh::Selector thingToSkin)
@@ -41,21 +41,23 @@ protected:
         duration = stk::wall_time() - startTime;
     }
 
-    void print_stats(std::ostream& out)
+    void print_stats()
     {
-        print_output_for_pass_fail_test(out);
-        print_output_for_graph_generation(out);
+        print_output_for_pass_fail_test();
+        print_output_for_graph_generation();
     }
 
-    void print_output_for_graph_generation(std::ostream& out)
+    void print_output_for_graph_generation()
     {
+        std::ofstream out("forGraphs.log");
         bool printTimingsOnlySinceLastPrint = false;
         stk::diag::printTimersTable(out, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint, get_comm());
         stk::parallel_print_time_without_output_and_hwm(get_comm(), duration, out);
     }
 
-    void print_output_for_pass_fail_test(std::ostream& out)
+    void print_output_for_pass_fail_test()
     {
+        std::ofstream out("forPassFailScript.log");
         double maxTime = stk::get_max_time_across_procs(duration, get_comm());
         double maxHwmInMB = stk::get_max_hwm_across_procs(get_comm()) / (1024.0 * 1024.0);
         stk::print_stats_for_performance_compare(out, maxTime, maxHwmInMB, get_num_global_faces(), get_comm());
