@@ -1943,7 +1943,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSDiagonalMatrix, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSTriangularMatrices, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSTriangularMatrices, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, point2block, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
@@ -1951,27 +1952,6 @@ namespace {
   // types which have a Teuchos::LAPACK implementation.
 
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
-
-  // FIXME (mfh 09 Nov 2015) Unfortunately, the point2block test
-  // relies on a matrix file (blockA.mm) which has real values.  The
-  // Matrix Market reader requires that when reading a matrix with
-  // complex Scalar type from a Matrix Market file, the values in the
-  // file must be complex as well.  Thus, for now, we can only run the
-  // test for real Scalar type, even though it builds correctly for
-  // complex Scalar type.
-#ifdef HAVE_TPETRA_INST_DOUBLE
-#define UNIT_TEST_GROUP_DOUBLE( LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, point2block, double, LO, GO, NODE )
-
-  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DOUBLE )
-#endif // HAVE_TPETRA_INST_DOUBLE
-
-#ifdef HAVE_TPETRA_INST_FLOAT
-#define UNIT_TEST_GROUP_FLOAT( LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, point2block, float, LO, GO, NODE )
-
-  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_FLOAT )
-#endif // HAVE_TPETRA_INST_FLOAT
 
 } // namespace (anonymous)
 
