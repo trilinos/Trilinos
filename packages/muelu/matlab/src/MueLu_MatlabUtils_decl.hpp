@@ -47,6 +47,12 @@
 #ifndef MUELU_MATLABUTILS_DECL_HPP
 #define MUELU_MATLABUTILS_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex requires MATLAB, Epetra and Tpetra."
+#else
+
 #include "mex.h"
 #include <string>
 #include <complex>
@@ -54,7 +60,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Factory.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Aggregates_decl.hpp"
@@ -68,10 +73,6 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include <Tpetra_DefaultPlatform.hpp>
-
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA) || !defined(HAVE_MUELU_TPETRA)
-#error "Muemex requires MATLAB, Epetra and Tpetra."
-#else
 
 namespace MueLu
 {
