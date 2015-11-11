@@ -1,6 +1,7 @@
-#include <Zoltan2_Standards.hpp>
-
-#ifdef HAVE_ZOLTAN2_EPETRA
+// Program to debug segfaults being reported in CDASH when
+// -D KokkosClassic_DefaultNode:STRING=Kokkos::Compat::KokkosOpenMPWrapperNode 
+// -D Trilinos_ENABLE_OpenMP:BOOL=ON  
+// Problem appears to be in creation of Xpetra::EpetraMapT
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -9,10 +10,7 @@
 
 #include <Tpetra_Map.hpp>
 #include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
-
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_EpetraVector.hpp>
+#include <Xpetra_EpetraMap.hpp>
 #include <Xpetra_EpetraUtils.hpp>
 
 int main(int narg, char **arg)
@@ -23,32 +21,10 @@ int main(int narg, char **arg)
   Teuchos::RCP<const Epetra_Comm> ecomm = Xpetra::toEpetra(tcomm);
 
   const int nGlobRows = 50;
-  Epetra_Map emap(nGlobRows, 0, *ecomm);
+  const Epetra_Map emap(nGlobRows, 0, *ecomm);
+  Teuchos::RCP<const Epetra_BlockMap> ebmap = Teuchos::rcpFromRef(emap);
 
-  const int nRows = emap.NumMyElements();
-  int *myGlobRows = emap.MyGlobalElements();
-
-  Epetra_CrsMatrix A(Copy, emap, 3);
-  double tmpVal[3] = {-1., 2., -1.};
-  int tmpCol[3];
-  for (int i = 0; i < nRows; ++i) {
-    tmpCol[0] = myGlobRows[i] - 1;
-    tmpCol[1] = myGlobRows[i];
-    tmpCol[2] = myGlobRows[i] + 1;
-
-    if (myGlobRows[i] == 0)
-      A.InsertGlobalValues(myGlobRows[i], 2, &tmpVal[1], &tmpCol[1]);
-    else if (myGlobRows[i] == nGlobRows - 1)
-      A.InsertGlobalValues (myGlobRows[i], 2, tmpVal, tmpCol);
-    else 
-      A.InsertGlobalValues (myGlobRows[i], 3, tmpVal, tmpCol);
-  }
-  A.FillComplete();
-
-  typedef Tpetra::Map<>::node_type znode_t;
-  typedef Xpetra::EpetraMapT<int, znode_t> xemap_t;
-
-  Teuchos::RCP<const Epetra_BlockMap> ebmap = Teuchos::rcpFromRef(A.RowMap());
+  typedef Xpetra::EpetraMapT<int, Tpetra::Map<>::node_type> xemap_t;
   Teuchos::RCP<const xemap_t> xmap(new xemap_t(ebmap));
   
   const Teuchos::RCP<const Teuchos::Comm<int> > &xcomm = xmap->getComm();
@@ -63,4 +39,3 @@ int main(int narg, char **arg)
             << xcomm->getRank() << " of " 
             << xcomm->getSize() << std::endl;
 }
-#endif
