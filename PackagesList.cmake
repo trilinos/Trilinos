@@ -115,7 +115,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               SS
   WebTrilinos           packages/WebTrilinos              EX # Should be SS
-  Didasko               packages/didasko                  SS
   NewPackage            packages/new_package              EX # Should be SS
   Optika		packages/optika		          EX
   Mesquite              packages/mesquite                 PS
