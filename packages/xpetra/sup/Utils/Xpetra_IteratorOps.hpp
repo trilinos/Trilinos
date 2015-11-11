@@ -135,11 +135,6 @@ inline void JacobiT(
     bool doOptimizeStorage,
     const std::string & label) {
 
-  typedef double        SC;
-  typedef int           LO;
-  typedef GlobalOrdinal GO;
-  typedef Node          NO;
-
   if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
     std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
     throw(Xpetra::Exceptions::RuntimeError(msg));
@@ -160,11 +155,10 @@ inline void JacobiT(
 #       ifndef HAVE_XPETRA_EPETRAEXT
     throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
 #else
-    Epetra_CrsMatrix & epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
-    Epetra_CrsMatrix & epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
-    Epetra_CrsMatrix & epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
-    //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    Epetra_CrsMatrix & epA = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(A);
+    Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(B);
+    Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(C);
+    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal COMMA Node>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
     if (i != 0) {
@@ -176,10 +170,10 @@ inline void JacobiT(
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<SC, LO, GO, NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<SC, LO, GO, NO> & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<SC, LO, GO, NO>       & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<SC, LO, GO, NO>  >          & tpD = toTpetra(Dinv);
+    const Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node> & tpA = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node> & tpB = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node>       & tpC = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
+    const RCP<Tpetra::Vector<double, int, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
     throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
@@ -193,8 +187,8 @@ inline void JacobiT(
   }
 
   // transfer striding information
-  RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
-  RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
+  RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<double,int,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(A));
+  RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<double,int,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
 } // end Jacobi
 
