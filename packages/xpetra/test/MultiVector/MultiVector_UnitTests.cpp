@@ -2610,15 +2610,15 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_COMPLEX_DOUBLE(MV, V, ORDINAL) \
     UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble)
 
-#ifdef HAVE_XPETRA_TPETRA
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT)
   typedef Xpetra::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove 'M' prefix
   typedef Xpetra::TpetraVector<double,int,int> MVector;
 #endif
 
-#if defined(HAVE_TPETRA_INST_DOUBLE)
+//#if defined(HAVE_TPETRA_INST_DOUBLE)
   //UNIT_TEST_DOUBLE(MMultiVector, MVector, int)
-  UNIT_TEST_SERIALNODE(MMultiVector, MVector, int, double)
-#endif
+//  UNIT_TEST_SERIALNODE(MMultiVector, MVector, int, double)
+//#endif
 
 // #if !defined(FAST_DEVELOPMENT_BUILD)
 // # if defined(HAVE_TPETRA_INST_FLOAT)
