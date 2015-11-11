@@ -96,12 +96,6 @@ public:
 
     void skin_mesh(const stk::mesh::PartVector& skin_parts);
 
-    friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
-                                    std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
-                                    stk::mesh::Part *active_part);
-
-    //this member method is not the public API for change-entity-owner. see the free-standing function above
-    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
     void fill_from_mesh();
     void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
                                          impl::ParallelGraphInfo &new_parallel_graph_entries);
@@ -147,23 +141,10 @@ protected:
     void pack_deleted_element_comm(stk::CommSparse &comm,
                                    const std::vector<impl::DeletedElementData> &local_elem_and_remote_connected_elem);
 
-    void pack_remote_connected_element(const GraphEdge& graphEdge,
-                                                      stk::CommBuffer &buff, std::vector<moved_parallel_graph_info> &moved_graph_info_vector,
-                                                      int destination_proc, int phase);
-
-    void pack_local_connected_element(impl::LocalId local_id, int side_id, stk::CommBuffer &buff,
-                                                     stk::mesh::EntityId suggested_face_id,
-                                                     stk::mesh::Part *active_part);
-
     void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList,
                                  const std::vector<impl::ElementSidePair> &deletedShells);
 
     void pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase);
-
-    void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
-                                                           stk::mesh::EntityId recvd_elem_global_id);
-
-    void communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector);
 
     void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
 
