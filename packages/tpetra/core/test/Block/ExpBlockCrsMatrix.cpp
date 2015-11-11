@@ -1876,7 +1876,11 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm();
     RCP<Node> node = getNode<Node>();
-    std::string matrixFile = "blockA.mm";
+    std::string matrixFile;
+    if (STS::isComplex)
+      matrixFile = "blockA-complex.mm";
+    else
+      matrixFile = "blockA.mm";
     out << "reading " << matrixFile << std::endl;
     RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm, node);
 
@@ -1898,8 +1902,6 @@ namespace {
     //normalized pseudo-random vector
     RCP<mv_type> randVec = rcp(new mv_type(pointMatrix->getDomainMap(),1));
     randVec->randomize();
-    //Teuchos::Array<STS::magnitudeType> normVec1(1);
-    //Teuchos::Array<Teuchos::STTraits<ST>::magnitudeType> normVec1(1);
     Teuchos::Array<magnitude_type> normVec1(1);
     randVec->norm2(normVec1);
     randVec->scale(1.0/normVec1[0]);
@@ -1907,20 +1909,15 @@ namespace {
     RCP<mv_type> resultVec1 = rcp(new mv_type(pointMatrix->getRangeMap(),1));
     pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
     resultVec1->norm2(normVec1);
-    //std::cout << "||A*xrand|| = " << normVec1[0] << std::endl;
 
     RCP<mv_type> resultVec2 = rcp(new mv_type(blockMatrix->getRangeMap(),1));
     blockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
-    //Teuchos::Array<STS::magnitudeType> normVec2(1);
     Teuchos::Array<magnitude_type> normVec2(1);
     resultVec2->norm2(normVec2);
-    //std::cout << "||blockA*xrand|| = " << normVec2[0] << std::endl;
 
     resultVec2->update(-1.0,*resultVec1,1.0);
-    //Teuchos::Array<STS::magnitudeType> normDelta(1);
     Teuchos::Array<magnitude_type> normDelta(1);
     resultVec2->norm2(normDelta);
-    //Teuchos::Array<STS::magnitudeType> relativeError(1);
     Teuchos::Array<magnitude_type> relativeError(1);
     relativeError[0] = std::abs(normDelta[0] / normVec1[0]);
 
