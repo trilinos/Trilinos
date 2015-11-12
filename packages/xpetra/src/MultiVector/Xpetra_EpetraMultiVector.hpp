@@ -729,6 +729,247 @@ namespace Xpetra {
     RCP< Epetra_MultiVector > vec_;
 
   }; // EpetraMultiVectorT class
+
+
+  template<>
+  class EpetraMultiVectorT<long, Kokkos::Compat::KokkosSerialWrapperNode>
+    : public virtual MultiVector<double, int, long, Kokkos::Compat::KokkosSerialWrapperNode>
+  {
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef long GlobalOrdinal;
+    typedef long EpetraGlobalOrdinal;
+    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
+  public:
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Basic MultiVector constuctor.
+    EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+
+    //! MultiVector copy constructor.
+    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+
+    //! MultiVector destructor.
+    virtual ~EpetraMultiVectorT() {}
+
+    //@}
+
+    //! @name Post-construction modification routines
+    //@{
+
+    //! Replace value, using global (row) index.
+    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {  }
+
+    //! Add value to existing value, using global (row) index.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {  }
+
+    //! Replace value, using local (row) index.
+    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {  }
+
+    //! Add value to existing value, using local (row) index.
+    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {  }
+
+    //! Set all values in the multivector with the given value.
+    void putScalar(const Scalar &value) {  }
+
+    //@}
+
+    //! @name Data copy and view methods
+    //@{
+
+    //! Return a Vector which is a const view of column j.
+    Teuchos::RCP< const Vector< double, int, GlobalOrdinal, Node > > getVector(size_t j) const {
+      return Teuchos::null;
+    }
+
+    //! Return a Vector which is a nonconst view of column j.
+    Teuchos::RCP< Vector< double, int, GlobalOrdinal, Node > > getVectorNonConst(size_t j) {
+      return Teuchos::null;
+    }
+
+    //! Const view of the local values in a particular vector of this multivector.
+    Teuchos::ArrayRCP< const Scalar > getData(size_t j) const {
+      return ArrayRCP<const Scalar>();
+    }
+
+    //! View of the local values in a particular vector of this multivector.
+    Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j) {
+      return ArrayRCP<Scalar>();
+    }
+
+    //@}
+
+    //! @name Mathematical methods
+    //@{
+
+    //! Compute the dot product of each corresponding pair of vectors (columns) in A and B.
+    void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const {  }
+
+    //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
+    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) {  }
+
+    //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) {  }
+
+    //! Scale in place: this = alpha*this.
+    void scale(const Scalar &alpha) {  }
+
+    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    void scale (Teuchos::ArrayView< const Scalar > alpha) {  }
+
+    //! Update: this = beta*this + alpha*A.
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) {  }
+
+    //! Update: this = gamma*this + alpha*A + beta*B.
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma) {  }
+
+    //! Compute 1-norm of each vector in multi-vector.
+    void norm1(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {  }
+
+    //!
+    void norm2(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {  }
+
+    //! Compute Inf-norm of each vector in multi-vector.
+    void normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {  }
+
+    //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
+    void meanValue(const Teuchos::ArrayView< Scalar > &means) const {  }
+
+    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) {  }
+
+    //! Multiply a Vector A elementwise by a MultiVector B.
+    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis) {  }
+
+    //@}
+
+    //! @name Attribute access functions
+    //@{
+
+    //! Number of columns in the multivector.
+    size_t getNumVectors() const { return 0; }
+
+    //! Local number of rows on the calling process.
+    size_t getLocalLength() const { return 0; }
+
+    //! Global number of rows in the multivector.
+    global_size_t getGlobalLength() const { return 0; }
+
+    //@}
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    //! A simple one-line description of this object.
+    std::string description() const { return std::string(""); }
+
+    //! Print the object with the given verbosity level to a FancyOStream.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
+
+    //@}
+
+    //! Set multi-vector values to random numbers.
+    void randomize(bool bUseXpetraImplementation = false) { }
+
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return Teuchos::null; }
+
+    //! Import.
+    void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) {  }
+
+    //! Export.
+    void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {  }
+
+    //! Import (using an Exporter).
+    void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {  }
+
+    //! Export (using an Importer).
+    void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {  }
+
+    //! Replace the underlying Map in place.
+    void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {  }
+
+    //@}
+
+    //! @name Xpetra specific
+    //@{
+
+    //! EpetraMultiVectorT constructor to wrap a Epetra_MultiVector object
+    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) { } //TODO removed const
+
+    //! Get the underlying Epetra multivector
+    RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return Teuchos::null; }
+
+    //! Set seed for Random function.
+    void setSeed(unsigned int seed) {  }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+    /// \brief Return an unmanaged non-const view of the local data on a specific device.
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
+    ///
+    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
+    ///          with the Xpetra::EpetraMultiVector object. To write a code which is independent
+    ///          from the underlying linear algebra package you should always use the abstract class,
+    ///          i.e. Xpetra::MultiVector!
+    ///
+    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
+    ///          only valid as long as the multivector does not run of scope!
+    template<class TargetDeviceType>
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<
+        typename dual_view_type::t_dev_um::execution_space::memory_space,
+        typename TargetDeviceType::memory_space>::value,
+        typename dual_view_type::t_dev_um,
+        typename dual_view_type::t_host_um>::type
+    getLocalView () const {
+      typename Kokkos::Impl::if_c<
+            Kokkos::Impl::is_same<
+              typename dual_view_type::t_dev_um::execution_space::memory_space,
+              typename TargetDeviceType::memory_space>::value,
+              typename dual_view_type::t_dev_um,
+              typename dual_view_type::t_host_um>::type dummy;
+      return dummy;
+    }
+
+    typename dual_view_type::t_host_um getHostLocalView () const {
+      return typename dual_view_type::t_host_um();
+    }
+
+    typename dual_view_type::t_dev_um getDeviceLocalView() const {
+      throw std::runtime_error("Epetra does not support device views!");
+      typename dual_view_type::t_dev_um ret;
+      return ret; // make compiler happy
+    }
+
+#endif
+
+    //@}
+
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    virtual void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs) {  }
+
+  }; // EpetraMultiVectorT class (specialization for GO=long)
 #endif // HAVE_XPETRA_SERIAL
 
 } // Xpetra namespace

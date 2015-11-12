@@ -419,6 +419,135 @@ namespace Xpetra {
 
   }; // EpetraCrsMatrixT class
 
+
+  // specialization for GO=long (empty stub implementation)
+  template<class Node>
+  class EpetraCrsMatrixT<long,Node>
+    : public CrsMatrix<double, int, long, Node>
+  {
+    typedef long                                                                      EpetraGlobalOrdinal;
+    typedef EpetraGlobalOrdinal                                                       GlobalOrdinal;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type         Scalar;
+    typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type  LocalOrdinal;
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type    local_matrix_type;
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type            node_type;
+#endif
+
+  public:
+    EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) { TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode."); }
+    EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) { TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode."); }
+    EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) { TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode."); }
+    EpetraCrsMatrixT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) { TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode."); }
+    EpetraCrsMatrixT(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) { TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode."); }
+    EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> &importer,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+    EpetraCrsMatrixT(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    EpetraCrsMatrixT (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+#endif
+    virtual ~EpetraCrsMatrixT() { }
+
+    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) {}
+    void insertLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals) { }
+    void replaceGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { }
+    void replaceLocalValues(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &cols, const ArrayView< const Scalar > &vals) { }
+    void setAllToScalar(const Scalar &alpha) { }
+    void scale(const Scalar &alpha) { }
+    void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) { }
+    void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) { }
+    void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const { }
+    void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
+                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                                  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                                  const RCP<ParameterList> &params=Teuchos::null) { }
+
+    void resumeFill(const RCP< ParameterList > &params=null) { }
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null) { }
+    void fillComplete(const RCP< ParameterList > &params=null) { }
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const  Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) { }
+    const RCP< const Comm< int > >  getComm() const { return Teuchos::null; }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const { return Teuchos::null; }
+    const RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const { return Teuchos::null; }
+    RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const { return Teuchos::null; }
+    global_size_t getGlobalNumRows() const { return 0; }
+    global_size_t getGlobalNumCols() const { return 0; }
+    size_t getNodeNumRows() const { return 0; }
+    size_t getNodeNumCols() const { return 0; }
+    global_size_t getGlobalNumEntries() const { return 0; }
+    size_t getNodeNumEntries() const { return 0; }
+    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
+    global_size_t getGlobalNumDiags() const { return 0; }
+    size_t getNodeNumDiags() const { return 0; }
+    size_t getGlobalMaxNumRowEntries() const { return 0; }
+    size_t getNodeMaxNumRowEntries() const { return 0; }
+    bool isLocallyIndexed() const { return false; }
+    bool isGloballyIndexed() const { return false; }
+    bool isFillComplete() const { return false; }
+    bool isFillActive() const { return false; }
+    typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { return ScalarTraits< Scalar >::magnitude(ScalarTraits< Scalar >::zero()); }
+    bool supportsRowViews() const { return false; }
+    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { }
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { }
+    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { }
+    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { }
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {  }
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const { }
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const { }
+
+    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const { }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return Teuchos::null; }
+
+    std::string description() const { return std::string(""); }
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { }
+
+    EpetraCrsMatrixT(const EpetraCrsMatrixT& matrix) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+    }
+
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return Teuchos::null; }
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { }
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) { }
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) { }
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) { }
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
+
+    bool hasMatrix() const { return false; }
+    EpetraCrsMatrixT(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) {  }
+    RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return Teuchos::null; }
+    RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    local_matrix_type getLocalMatrix () const {
+      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
+                                 "Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+      return localMatrix_;
+    }
+  private:
+    mutable
+      local_matrix_type localMatrix_;
+#endif
+
+  }; // EpetraCrsMatrixT class (specialization on GO=long, empty stub implementation)
+
 } // Xpetra namespace
 
 #define XPETRA_EPETRACRSMATRIX_SHORT

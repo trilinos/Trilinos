@@ -225,7 +225,7 @@ namespace MueLu {
         // Stage 2: fill in the column indices
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
         typename entries_type::non_const_type        cols    ("entries",       realnnz);
-        Kokkos::parallel_reduce("CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, KOKKOS_LAMBDA(const LO row, LO& dropped) {
+        Kokkos::parallel_reduce("CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, KOKKOS_LAMBDA(const LO row, GO& dropped) {
           auto rowView = kokkosMatrix.template row<LO>(row);
           auto length = rowView.length;
 

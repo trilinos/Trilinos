@@ -105,14 +105,14 @@ namespace MueLu {
     // Check if we were able to construct at least one smoother. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Ifpack, and always runs Tpetra objects.
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_, Exceptions::RuntimeError, "Unable to construct any smoother."
-                               "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
+                               "Please enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
 
     TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null(), Exceptions::RuntimeError,
-        "Could not enable any smoother:\n"
-        << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
-        << (triedEpetra_ ? errorEpetra_ : "")
-        << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
-        << (triedTpetra_ ? errorTpetra_ : ""));
+        "Could not construct any smoother:\n"
+        << (triedEpetra_ ? "=> Failed to build an Epetra smoother due to the following exception:\n" : "=> Epetra is not enabled.\n")
+        << (triedEpetra_ ? errorEpetra_ + "\n" : "")
+        << (triedTpetra_ ? "=> Failed to build a Tpetra smoother due to the following exception:\n" : "=> Tpetra is not enabled.\n")
+        << (triedTpetra_ ? errorTpetra_ + "\n" : ""));
 
     this->SetParameterList(paramList);
   }
@@ -226,7 +226,7 @@ namespace MueLu {
     if (type == "LINESMOOTHING_BANDED RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
     if (type == "LINESMOOTHING_BANDED_RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: \"" + type + "\"");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

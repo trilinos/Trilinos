@@ -49,6 +49,10 @@
 #include "ROL_HS32.hpp" 
 #include "ROL_InteriorPointPrimalDualResidual.hpp"
 #include "ROL_RandomVector.hpp"
+#include "ROL_GMRES.hpp"
+
+//template<class Real>
+
 
 
 typedef double RealT;

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on negima: `date`"
+echo "Starting nightly Trilinos development testing on geminga: `date`"
 echo
 
 #
@@ -16,7 +16,9 @@ export TDD_PARALLEL_LEVEL=2
 # Submission mode for the *TrilinosDriver* dashboard
 export TDD_CTEST_TEST_TYPE=Nightly
 
-export TDD_FORCE_CMAKE_INSTALL=1
+export TDD_DEBUG_VERBOSE=1
+export TDD_FORCE_CMAKE_INSTALL=0
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
@@ -24,7 +26,9 @@ export TDD_FORCE_CMAKE_INSTALL=1
 # Machine specific environment
 #
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
+export TDD_HTTPS_PROXY="https://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
+export https_proxy="https://sonproxy.sandia.gov:80"
 
 . ~/.bashrc
 
@@ -40,6 +44,8 @@ module load valgrind/3.10.1
 
 echo "Configuration = $CONFIGURATION"
 env
+
+export OMP_NUM_THREADS=2
 
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
@@ -58,6 +64,8 @@ module load nvcc-wrapper/gcc
 echo "Configuration = $CONFIGURATION"
 env
 
+export CUDA_LAUNCH_BLOCKING=1
+
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
@@ -69,5 +77,5 @@ module unload openmpi
 # ===========================================================================
 
 echo
-echo "Ending nightly Trilinos development testing on negima: `date`"
+echo "Ending nightly Trilinos development testing on geminga: `date`"
 echo

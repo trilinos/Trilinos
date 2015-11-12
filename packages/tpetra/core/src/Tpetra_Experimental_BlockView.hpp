@@ -113,6 +113,318 @@ namespace Tpetra {
 ///   things out.
 namespace Experimental {
 
+namespace Impl {
+
+/// \brief Implementation of Tpetra::Experimental::SCAL function.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class ViewType,
+         class CoefficientType,
+         class IndexType = int,
+         const int rank = ViewType::rank>
+struct SCAL {
+  static void run (const CoefficientType& alpha, const ViewType& x);
+};
+
+/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+///   ViewType rank 1 (i.e., a vector).
+template<class ViewType,
+         class CoefficientType,
+         class IndexType>
+struct SCAL<ViewType, CoefficientType, IndexType, 1> {
+  /// \brief x := alpha*x (rank-1 x, i.e., a vector)
+  static void run (const CoefficientType& alpha, const ViewType& x)
+  {
+    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    // BLAS _SCAL doesn't check whether alpha is 0.
+    for (IndexType i = 0; i < numRows; ++i) {
+      x(i) = alpha * x(i);
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+///   ViewType rank 2 (i.e., a matrix).
+template<class ViewType,
+         class CoefficientType,
+         class IndexType>
+struct SCAL<ViewType, CoefficientType, IndexType, 2> {
+  /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
+  static void run (const CoefficientType& alpha, const ViewType& A)
+  {
+    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+
+    // BLAS _SCAL doesn't check whether alpha is 0.
+    for (IndexType i = 0; i < numRows; ++i) {
+      for (IndexType j = 0; j < numCols; ++j) {
+        A(i,j) = alpha * A(i,j);
+      }
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::AXPY function.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class CoefficientType,
+         class ViewType1,
+         class ViewType2,
+         class IndexType = int,
+         const int rank = ViewType1::rank>
+struct AXPY {
+  static void
+  run (const CoefficientType& alpha,
+       const ViewType1& x,
+       const ViewType2& y);
+};
+
+/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
+template<class CoefficientType,
+         class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 1> {
+  /// \brief y := y + alpha*x (rank-1 x and y, i.e., vectors)
+  static void
+  run (const CoefficientType& alpha,
+       const ViewType1& x,
+       const ViewType2& y)
+  {
+    static_assert (ViewType1::rank == ViewType2::rank,
+                   "AXPY: x and y must have the same rank.");
+    const IndexType numRows = static_cast<IndexType> (y.dimension_0 ());
+    if (alpha != 0.0) {
+      for (IndexType i = 0; i < numRows; ++i) {
+        y(i) += alpha * x(i);
+      }
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
+template<class CoefficientType,
+         class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
+  /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
+  static void
+  run (const CoefficientType& alpha,
+       const ViewType1& X,
+       const ViewType2& Y)
+  {
+    static_assert (ViewType1::rank == ViewType2::rank,
+                   "AXPY: X and Y must have the same rank.");
+    const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+
+    if (alpha != 0.0) {
+      for (IndexType i = 0; i < numRows; ++i) {
+        for (IndexType j = 0; j < numCols; ++j) {
+          Y(i,j) += alpha * X(i,j);
+        }
+      }
+    }
+  }
+};
+
+
+/// \brief Implementation of Tpetra::Experimental::COPY function.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class ViewType1,
+         class ViewType2,
+         class IndexType,
+         const int rank = ViewType1::rank>
+struct COPY {
+  static void run (const ViewType1& x, const ViewType2& y);
+};
+
+/// \brief Implementation of Tpetra::Experimental::COPY function, for
+///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct COPY<ViewType1, ViewType2, IndexType, 1> {
+  /// \brief y := x (rank-1 x and y, i.e., vectors)
+  static void run (const ViewType1& x, const ViewType2& y)
+  {
+    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    for (IndexType i = 0; i < numRows; ++i) {
+      y(i) = x(i);
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::COPY function, for
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct COPY<ViewType1, ViewType2, IndexType, 2> {
+  /// \brief Y := X (rank-2 X and Y, i.e., matrices)
+  static void run (const ViewType1& X, const ViewType2& Y)
+  {
+    const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+
+    // BLAS _SCAL doesn't check whether alpha is 0.
+    for (IndexType i = 0; i < numRows; ++i) {
+      for (IndexType j = 0; j < numCols; ++j) {
+        Y(i,j) = X(i,j);
+      }
+    }
+  }
+};
+
+} // namespace Impl
+
+/// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
+///   (a matrix).
+template<class ViewType,
+         class CoefficientType,
+         class IndexType = int,
+         const int rank = ViewType::rank>
+void SCAL (const CoefficientType& alpha, const ViewType& x) {
+  Impl::SCAL<ViewType, CoefficientType, IndexType, rank>::run (alpha, x);
+}
+
+/// \brief y := y + alpha * x
+///
+/// This function follows the BLAS convention that if alpha == 0, then
+/// it does nothing.  (This matters only if x contains Inf or NaN
+/// values.)
+template<class CoefficientType,
+         class ViewType1,
+         class ViewType2,
+         class IndexType = int,
+         const int rank = ViewType1::rank>
+void
+AXPY (const CoefficientType& alpha,
+      const ViewType1& x,
+      const ViewType2& y)
+{
+  static_assert (ViewType1::rank == ViewType1::rank,
+                 "AXPY: x and y must have the same rank.");
+  Impl::AXPY<CoefficientType, ViewType1, ViewType2, IndexType, rank>::run (alpha, x, y);
+}
+
+/// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
+///   (a matrix).
+template<class ViewType1,
+         class ViewType2,
+         class IndexType = int,
+         const int rank = ViewType1::rank>
+void COPY (const ViewType1& x, const ViewType2& y) {
+  static_assert (ViewType1::rank == ViewType1::rank,
+                 "COPY: x and y must have the same rank.");
+  Impl::COPY<ViewType1, ViewType2, IndexType, rank>::run (x, y);
+}
+
+/// \brief y := y + alpha * A * x
+///
+/// This function follows the BLAS convention that if alpha == 0, then
+/// it does nothing.  (This matters only if x contains Inf or NaN
+/// values.)
+template<class LittleVectorType1,
+         class LittleBlockType,
+         class LittleVectorType2,
+         class CoefficientType,
+         class IndexType = int>
+void
+GEMV (const CoefficientType& alpha,
+      const LittleBlockType& A,
+      const LittleVectorType1& x,
+      const LittleVectorType2& y)
+{
+  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+
+  if (alpha != 0.0) {
+    for (IndexType i = 0; i < numRows; ++i) {
+      typename std::remove_reference<decltype (y(i)) >::type y_i = y(i);
+      for (IndexType j = 0; j < numCols; ++j) {
+        y_i += alpha * A(i,j) * x(j);
+      }
+      y(i) = y_i;
+    }
+  }
+}
+
+
+// mfh 08 Nov 2015: I haven't tested this overload yet.  It also needs
+// an implementation for trans != 'N' (the transpose and conjugate
+// transpose cases).
+#if 0
+template<class LittleBlockType,
+         class LittleVectorTypeX,
+         class LittleVectorTypeY,
+         class CoefficientType,
+         class IndexType = int>
+void
+GEMV (const char trans,
+      const CoefficientType& alpha,
+      const LittleBlockType& A,
+      const LittleVectorTypeX& x,
+      const CoefficientType& beta,
+      const LittleVectorTypeY& y)
+{
+  // y(0) returns a reference to the 0-th entry of y.  Remove that
+  // reference to get the type of each entry of y.  It's OK if y has
+  // zero entries -- this doesn't actually do y(i), it just returns
+  // the type of that expression.
+  typedef typename std::remove_reference<decltype (y(0)) >::type y_value_type;
+  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+
+  if (beta == 0.0) {
+    if (alpha == 0.0) {
+      for (IndexType i = 0; i < numRows; ++i) {
+        y(i) = 0.0;
+      }
+    }
+    else {
+      for (IndexType i = 0; i < numRows; ++i) {
+        y_value_type y_i = 0.0;
+        for (IndexType j = 0; j < numCols; ++j) {
+          y_i += A(i,j) * x(j);
+        }
+        y(i) = y_i;
+      }
+    }
+  }
+  else { // beta != 0
+    if (alpha == 0.0) {
+      if (beta == 0.0) {
+        for (IndexType i = 0; i < numRows; ++i) {
+          y(i) = 0.0;
+        }
+      }
+      else {
+        for (IndexType i = 0; i < numRows; ++i) {
+          y(i) *= beta;
+        }
+      }
+    }
+    else {
+      for (IndexType i = 0; i < numRows; ++i) {
+        y_value_type y_i = beta * y(i);
+        for (IndexType j = 0; j < numCols; ++j) {
+          y_i += alpha * A(i,j) * x(j);
+        }
+        y(i) = y_i;
+      }
+    }
+  }
+}
+#endif // 0
+
 /// \class LittleBlock
 /// \brief Nonowning view of a square dense block in a block matrix.
 /// \tparam Scalar The type of entries in the block.
@@ -137,6 +449,9 @@ private:
   typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
 
 public:
+  //! Number of dimensions
+  static const int rank = 2;
+
   /// \brief Constructor
   /// \param A [in] Pointer to the block's entries
   /// \param blockSize [in] Dimension of the block (all blocks are square)
@@ -190,6 +505,27 @@ public:
     return blockSize_;
   }
 
+  //! Number of rows in the block.
+  LO dimension_0 () const {
+    return blockSize_;
+  }
+
+  //! Number of columns in the block.
+  LO dimension_1 () const {
+    return blockSize_;
+  }
+
+  template<class IntegerType>
+  void stride (IntegerType* const s) const {
+    s[0] = strideX_;
+    s[1] = strideY_;
+  }
+
+  //! Pointer to the block's entries, as <tt>Scalar*</tt>.
+  Scalar* ptr_on_device () const {
+    return reinterpret_cast<Scalar*> (A_);
+  }
+
   //! Pointer to the block's entries, as <tt>Scalar*</tt>.
   Scalar* getRawPtr () const {
     return reinterpret_cast<Scalar*> (A_);
@@ -212,32 +548,18 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleBlockType>
   void update (const Scalar& alpha, const LittleBlockType& X) const {
-    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) += theAlpha * X(i,j);
-      }
-    }
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
   template<class LittleBlockType>
   void assign (const LittleBlockType& X) const {
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) = X(i,j);
-      }
-    }
+    COPY (X, *this);
   }
 
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) *= theAlpha;
-      }
-    }
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -331,14 +653,17 @@ private:
   typedef Kokkos::Details::ArithTraits<impl_scalar_type> STS;
 
 public:
+  //! Number of dimensions
+  static const int rank = 1;
+
   /// \brief Constructor
   /// \param A [in] Pointer to the vector's entries
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
-  LittleVector (Scalar* const A, const LO blockSize, const LO stride) :
+  /// \param strideX [in] Stride between consecutive entries
+  LittleVector (Scalar* const A, const LO blockSize, const LO strideX) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
   /// \brief Constructor that takes an \c impl_scalar_type pointer.
@@ -346,7 +671,7 @@ public:
   /// \param A [in] Pointer to the vector's entries, as
   ///   <tt>impl_scalar_type*</tt> rather than <tt>Scalar*</tt>
   /// \param blockSize [in] Dimension of the vector
-  /// \param stride [in] Stride between consecutive entries
+  /// \param strideX [in] Stride between consecutive entries
   ///
   /// While this constructor is templated on a type \c T, the intent
   /// is that <tt>T == impl_scalar_type</tt>.  (We must template on T
@@ -360,7 +685,7 @@ public:
   template<class T>
   LittleVector (T* const A,
                 const LO blockSize,
-                const LO stride,
+                const LO strideX,
                 typename std::enable_if<
                   ! std::is_same<Scalar, T>::value &&
                   std::is_convertible<Scalar, T>::value &&
@@ -368,11 +693,16 @@ public:
                 int*>::type ignoreMe = NULL) :
     A_ (reinterpret_cast<impl_scalar_type*> (A)),
     blockSize_ (blockSize),
-    strideX_ (stride)
+    strideX_ (strideX)
   {}
 
-  //! Pointer to the block's entries.
+  //! Pointer to the vector's entries.
   Scalar* getRawPtr () const {
+    return reinterpret_cast<Scalar*> (A_);
+  }
+
+  //! Pointer to the vector's entries.
+  Scalar* ptr_on_device () const {
     return reinterpret_cast<Scalar*> (A_);
   }
 
@@ -381,9 +711,22 @@ public:
     return blockSize_;
   }
 
+  //! Number of entries in the vector.
+  LO dimension_0 () const {
+    return blockSize_;
+  }
+
   //! Stride between consecutive entries.
   LO getStride () const {
     return strideX_;
+  }
+
+  /// \brief Stride between consecutive entries.
+  ///
+  /// This exists for compatibility with Kokkos::View.
+  template<class IntegerType>
+  void stride (IntegerType* const s) const {
+    s[0] = strideX_;
   }
 
   /// \brief Reference to entry (i) of the vector.
@@ -403,26 +746,18 @@ public:
   //! <tt>*this := *this + alpha * X</tt>.
   template<class LittleVectorType>
   void update (const Scalar& alpha, const LittleVectorType& X) const {
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) += theAlpha * X(i);
-    }
+    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
   //! <tt>*this := X</tt>.
   template<class LittleVectorType>
   void assign (const LittleVectorType& X) const {
-    for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) = X(i);
-    }
+    COPY (X, *this);
   }
 
-  //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
+  //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) *= theAlpha;
-    }
+    SCAL (static_cast<impl_scalar_type> (alpha), *this);
   }
 
   //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
@@ -466,15 +801,7 @@ public:
                 const LittleBlockType& A,
                 const LittleVectorType& X) const
   {
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    // FIXME (mfh 07 May 2014) This is suitable for column major, not
-    // for row major.  Of course, we'll have to change other loops
-    // above as well to make row major faster.
-    for (LO i = 0; i < blockSize_; ++i) {
-      for (LO j = 0; j < blockSize_; ++j) {
-        (*this)(i) += theAlpha * A(i,j) * X(j);
-      }
-    }
+    GEMV (static_cast<impl_scalar_type> (alpha), A, X, *this);
   }
 
 private:
@@ -482,6 +809,9 @@ private:
   const LO blockSize_;
   const LO strideX_;
 };
+
+
+
 
 } // namespace Experimental
 } // namespace Tpetra

@@ -52,14 +52,11 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
 
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::Array;
-
-typedef Teuchos::SerialDenseVector<zlno_t, zscalar_t> tvec_t;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
 

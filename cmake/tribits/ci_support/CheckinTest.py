@@ -2611,6 +2611,12 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
+      grepCheckinTestOutForFailed_msg = \
+        "\n\nTo find out more about this failure, grep the 'checkin-test.out' log" \
+        " file for 'failed'.  In some cases, the failure will be obvious.  In other" \
+        " cases, a system command failed and the details about the failure will be in" \
+        " the output file for the command that failed.\n\n"
+
       # Determine if all configures were aborted because no package enables
       allConfiguresAbortedDueToNoEnablesGracefullAbort = True
       for buildTestCase in buildTestCaseList:
@@ -2620,7 +2626,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       if not pullPassed:
         subjectLine = "INITIAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
-          " See '"+getInitialPullOutputFileName("*")+"'\n\n"
+          +grepCheckinTestOutForFailed_msg
         success = False
       elif abortGracefullyDueToNoUpdates:
         subjectLine = "ABORTED DUE TO NO UPDATES"
@@ -2637,12 +2643,12 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       elif not pullFinalPassed:
         subjectLine = "FINAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final pull failed!" \
-          " See '"+getFinalPullOutputFileName("*")+"'\n\n"
+          +grepCheckinTestOutForFailed_msg
         success = False
       elif not amendFinalCommitPassed:
         subjectLine = "AMEND COMMIT FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final test commit amend failed!" \
-          " See '"+getFinalCommitOutputFileName("*")+"'\n\n"
+          +grepCheckinTestOutForFailed_msg
         success = False
       elif inOptions.doPush and pushPassed and forcedCommitPush:
         subjectLine = "DID FORCED PUSH"
@@ -2664,7 +2670,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         else:
           subjectLine = "PUSH FAILED"
           commitEmailBodyExtra += "\n\nFailed because push failed!" \
-            " See '"+getPushOutputFileName("*")+"'\n\n"
+            +grepCheckinTestOutForFailed_msg
           success = False
       else:
         if okayToPush:

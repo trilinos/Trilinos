@@ -43,7 +43,9 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp>
 #include <Tpetra_Experimental_BlockVector.hpp>
 
 namespace {
@@ -1856,6 +1858,75 @@ namespace {
     TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
+  //
+  // Test conversion from CrsMatrix to BlockCrsMatrix.  This test is valid only on
+  // 1, 2, or 4 processes.  (See note below.)
+  //
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, point2block, ST, LO, GO, Node )
+  {
+    typedef Tpetra::Experimental::BlockCrsMatrix<ST, LO, GO, Node> block_matrix_type;
+    typedef Tpetra::CrsMatrix<ST, LO, GO, Node>                    crs_matrix_type;
+    typedef Tpetra::Import<LO, GO, Node>                           import_type;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node>                  mv_type;
+    typedef Tpetra::Map<LO, GO, Node>                              map_type;
+    typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>          reader_type;
+    typedef Teuchos::ScalarTraits<ST>                              STS;
+    typedef typename STS::magnitudeType                            magnitude_type;
+    ST zero = STS::zero(), one = STS::one();
+
+    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
+    std::string matrixFile;
+    if (STS::isComplex)
+      matrixFile = "blockA-complex.mm";
+    else
+      matrixFile = "blockA.mm";
+    out << "reading " << matrixFile << std::endl;
+    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm, node);
+
+    // Migrate pointMatrix to final parallel distribution.
+    // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
+    // must stay together.  This means the serial matrix can only be migrated to 1,2 or 4 processes.  3 processes
+    // would split up dofs associate with a mesh node.
+    Tpetra::global_size_t numGlobElts = pointMatrix->getRowMap()->getGlobalNumElements();
+    RCP<const map_type> parPointMap     = Tpetra::createUniformContigMapWithNode<LO,GO,Node>(numGlobElts, comm, node);
+    RCP<crs_matrix_type> parPointMatrix = rcp(new crs_matrix_type(parPointMap,pointMatrix->getGlobalMaxNumRowEntries()));
+    RCP<const import_type> importer     = Tpetra::createImport<LO,GO,Node>(pointMatrix->getRowMap(), parPointMap);
+    parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+    parPointMatrix->fillComplete();
+    pointMatrix.swap(parPointMatrix);
+
+    int blockSize = 3;
+    RCP<block_matrix_type> blockMatrix = Tpetra::Experimental::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+
+    //normalized pseudo-random vector
+    RCP<mv_type> randVec = rcp(new mv_type(pointMatrix->getDomainMap(),1));
+    randVec->randomize();
+    Teuchos::Array<magnitude_type> normVec1(1);
+    randVec->norm2(normVec1);
+    randVec->scale(1.0/normVec1[0]);
+
+    RCP<mv_type> resultVec1 = rcp(new mv_type(pointMatrix->getRangeMap(),1));
+    pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    resultVec1->norm2(normVec1);
+
+    RCP<mv_type> resultVec2 = rcp(new mv_type(blockMatrix->getRangeMap(),1));
+    blockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+    Teuchos::Array<magnitude_type> normVec2(1);
+    resultVec2->norm2(normVec2);
+
+    resultVec2->update(-1.0,*resultVec1,1.0);
+    Teuchos::Array<magnitude_type> normDelta(1);
+    resultVec2->norm2(normDelta);
+    Teuchos::Array<magnitude_type> relativeError(1);
+    relativeError[0] = std::abs(normDelta[0] / normVec1[0]);
+
+    std::ostringstream normStr;
+    normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
+    out << normStr.str() << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(relativeError[0]>1e-8, std::runtime_error, "BlockCrsMatrix matvec does not produce same result as CrsMatrix matvec.");
+  }
+
 
 //
 // INSTANTIATIONS
@@ -1869,7 +1940,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSDiagonalMatrix, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSTriangularMatrices, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, localGSTriangularMatrices, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, point2block, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

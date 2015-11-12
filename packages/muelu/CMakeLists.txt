@@ -271,12 +271,19 @@ ENDIF ()
 # This order required splitting of the src/ library into two: muelu and muelu-interface, as steps 1. and 3. are separated.
 # A simple diagram explains this:
 #                                               /  muelu
-# matlab/bin - muleu-adapters - muelu-interface      |
+# matlab/bin - muelu-adapters - muelu-interface      |
 #                                               \  matlab
 ADD_SUBDIRECTORY(src)
-if(TPL_ENABLE_MATLAB AND NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
+
+if(TPL_ENABLE_MATLAB)
+  if (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
+  ENDIF()
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+      MESSAGE(FATAL_ERROR "Muemex interfaces require \"-DTrilinos_ENABLE_Epetra:BOOL=ON\" and \"-DTrilinos_ENABLE_Tpetra:BOOL=ON\".")
+  ENDIF()
 ENDIF()
+
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab)
 ENDIF()

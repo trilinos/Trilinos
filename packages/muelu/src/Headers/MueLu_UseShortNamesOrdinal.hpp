@@ -11,14 +11,26 @@ typedef MueLu::Aggregates_kokkos<LocalOrdinal,GlobalOrdinal,Node> Aggregates_kok
 #ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_SHORT
 typedef MueLu::AggregationPhase1Algorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase1Algorithm;
 #endif
+#ifdef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_SHORT
+typedef MueLu::AggregationPhase1Algorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase1Algorithm_kokkos;
+#endif
 #ifdef MUELU_AGGREGATIONPHASE2AALGORITHM_SHORT
 typedef MueLu::AggregationPhase2aAlgorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase2aAlgorithm;
+#endif
+#ifdef MUELU_AGGREGATIONPHASE2AALGORITHM_KOKKOS_SHORT
+typedef MueLu::AggregationPhase2aAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase2aAlgorithm_kokkos;
 #endif
 #ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_SHORT
 typedef MueLu::AggregationPhase2bAlgorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase2bAlgorithm;
 #endif
+#ifdef MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_SHORT
+typedef MueLu::AggregationPhase2bAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase2bAlgorithm_kokkos;
+#endif
 #ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_SHORT
 typedef MueLu::AggregationPhase3Algorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase3Algorithm;
+#endif
+#ifdef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_SHORT
+typedef MueLu::AggregationPhase3Algorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationPhase3Algorithm_kokkos;
 #endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo;
@@ -41,6 +53,9 @@ typedef MueLu::GraphBase<LocalOrdinal,GlobalOrdinal,Node> GraphBase;
 #ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::IsolatedNodeAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm;
 #endif
+#ifdef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
+typedef MueLu::IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> IsolatedNodeAggregationAlgorithm_kokkos;
+#endif
 #ifdef MUELU_ISORROPIAINTERFACE_SHORT
 typedef MueLu::IsorropiaInterface<LocalOrdinal,GlobalOrdinal,Node> IsorropiaInterface;
 #endif
@@ -59,8 +74,14 @@ typedef MueLu::LocalAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> LocalA
 #ifdef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> OnePtAggregationAlgorithm;
 #endif
+#ifdef MUELU_ONEPTAGGREGATIONALGORITHM_KOKKOS_SHORT
+typedef MueLu::OnePtAggregationAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> OnePtAggregationAlgorithm_kokkos;
+#endif
 #ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_SHORT
 typedef MueLu::PreserveDirichletAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> PreserveDirichletAggregationAlgorithm;
+#endif
+#ifdef MUELU_PRESERVEDIRICHLETAGGREGATIONALGORITHM_KOKKOS_SHORT
+typedef MueLu::PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> PreserveDirichletAggregationAlgorithm_kokkos;
 #endif
 #ifdef MUELU_PRFACTORY_SHORT
 typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node> PRFactory;
@@ -73,6 +94,9 @@ typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node> Repartition
 #endif
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UncoupledAggregationFactory;
+#endif
+#ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
+typedef MueLu::UncoupledAggregationFactory_kokkos<LocalOrdinal,GlobalOrdinal,Node> UncoupledAggregationFactory_kokkos;
 #endif
 #ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
 typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggregationFactory;

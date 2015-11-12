@@ -53,6 +53,9 @@ typedef MueLu::CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_COARSEMAPFACTORY_SHORT
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory;
 #endif
+#ifdef MUELU_COARSEMAPFACTORY_KOKKOS_SHORT
+typedef MueLu::CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory_kokkos;
+#endif
 #ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
 typedef MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseningVisualizationFactory;
 #endif
@@ -64,6 +67,9 @@ typedef MueLu::ConstraintFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Constra
 #endif
 #ifdef MUELU_COORDINATESTRANSFERFACTORY_SHORT
 typedef MueLu::CoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory;
+#endif
+#ifdef MUELU_COORDINATESTRANSFERFACTORY_KOKKOS_SHORT
+typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoordinatesTransferFactory_kokkos;
 #endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
@@ -133,6 +139,9 @@ typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 #endif
 #ifdef MUELU_NULLSPACEFACTORY_SHORT
 typedef MueLu::NullspaceFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory;
+#endif
+#ifdef MUELU_NULLSPACEFACTORY_KOKKOS_SHORT
+typedef MueLu::NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspaceFactory_kokkos;
 #endif
 #ifdef MUELU_NULLSPACEPRESMOOTHFACTORY_SHORT
 typedef MueLu::NullspacePresmoothFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> NullspacePresmoothFactory;
@@ -235,6 +244,9 @@ typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SubBlock
 #endif
 #ifdef MUELU_TENTATIVEPFACTORY_SHORT
 typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory;
+#endif
+#ifdef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
+typedef MueLu::TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory_kokkos;
 #endif
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;

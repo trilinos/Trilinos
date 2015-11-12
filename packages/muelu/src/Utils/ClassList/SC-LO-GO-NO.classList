@@ -15,10 +15,12 @@ CGSolver
 CoalesceDropFactory
 CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseMapFactory
+CoarseMapFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
+CoordinatesTransferFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 CoupledRBMFactory
 DemoFactory
 DirectSolver
@@ -42,6 +44,7 @@ MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
 NullspaceFactory
+NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
 ParameterListInterpreter
 PatternFactory
@@ -76,6 +79,7 @@ SolverBase
 SteepestDescentSolver
 SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
+TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory

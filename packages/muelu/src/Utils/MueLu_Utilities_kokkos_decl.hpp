@@ -553,27 +553,7 @@ namespace MueLu {
     static void                                                              SetRandomSeed(const Teuchos::Comm<int> &comm) { MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetRandomSeed(comm); }
 
     // todo: move this to UtilitiesBase::kokkos
-    static Kokkos::View<const bool*, typename Node::device_type>             DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero()) {
-      typedef Kokkos::ArithTraits<Scalar> ATS;
-
-      LocalOrdinal numRows = A.getNodeNumRows();
-
-      typedef typename Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type local_matrix_type;
-      auto kokkosMatrix = A.getLocalMatrix();
-
-      Kokkos::View<bool*, typename Node::device_type> boundaryNodes("boundaryNodes", numRows);
-      Kokkos::parallel_for("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LocalOrdinal row) {
-        auto rowView = kokkosMatrix.template row<LocalOrdinal>(row);
-
-        boundaryNodes[row] = true;
-        for (size_t col = 0; col < rowView.length; col++)
-          if ((rowView.colidx(col) != row) && (ATS::magnitude(rowView.value(col)) > tol)) {
-            boundaryNodes[row] = false;
-            break;
-          }
-      });
-      return boundaryNodes;
-    }
+    static Kokkos::View<const bool*, typename Node::device_type>             DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero());
 
     static Scalar PowerMethod(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, bool scaleByDiag = true,
         LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
@@ -783,6 +763,51 @@ namespace MueLu {
 
 
   }; // class Utilities (specialization SC=double LO=GO=int)
+
+
+
+  // Useful Kokkos conversions
+  template < class View, unsigned AppendValue >
+  struct AppendTrait {
+    // static_assert(false, "Error: NOT a Kokkos::View");
+  };
+
+  // Arg3 == MemoryTraits
+  template < class DataType, class Arg1, class Arg2, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U> >, T> {
+    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U|T> >;
+  };
+
+  // Arg2 == MemoryTraits
+  template < class DataType, class Arg1, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U>, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U|T>, void >;
+  };
+
+
+  // Arg1 == MemoryTraits
+  template < class DataType, unsigned U, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Kokkos::MemoryTraits<U>, void, void >, T> {
+    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<U|T>, void, void >;
+  };
+
+  // 2 arguments -- no traits
+  template < class DataType, class Arg1, class Arg2, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<T> >;
+  };
+
+  // 1 arguments -- no traits
+  template < class DataType, class Arg1, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, Arg1, void, void >, T> {
+    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<T>, void >;
+  };
+
+  // 0 arguments
+  template < class DataType, unsigned T >
+  struct AppendTrait< Kokkos::View< DataType, void, void, void >, T> {
+    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<T>, void, void >;
+  };
 
 
 } //namespace MueLu

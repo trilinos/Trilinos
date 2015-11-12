@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-
+#include <algorithm>
 #include <Kokkos_Macros.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -56,10 +56,7 @@
 
 /*--------------------------------------------------------------------------*/
 
-#if ( defined( _POSIX_C_SOURCE ) && _POSIX_C_SOURCE >= 200112L ) || \
-    ( defined( _XOPEN_SOURCE )   && _XOPEN_SOURCE   >= 600 )
-
-#define KOKKOS_POSIX_MEMALIGN_AVAILABLE
+#if defined(KOKKOS_POSIX_MEMALIGN_AVAILABLE)
 
 #include <unistd.h>
 #include <sys/mman.h>
@@ -468,6 +465,54 @@ void SharedAllocationRecord< Kokkos::HostSpace , void >::
 print_records( std::ostream & s , const Kokkos::HostSpace & space , bool detail )
 {
   SharedAllocationRecord< void , void >::print_host_accessible_records( s , "HostSpace" , & s_root_record , detail );
+}
+
+} // namespace Impl
+} // namespace Experimental
+} // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Experimental {
+namespace Impl {
+
+template< class >
+struct ViewOperatorBoundsErrorAbort ;
+
+template<>
+struct ViewOperatorBoundsErrorAbort< Kokkos::HostSpace > {
+ static void apply( const size_t rank
+                  , const size_t n0 , const size_t n1
+                  , const size_t n2 , const size_t n3
+                  , const size_t n4 , const size_t n5
+                  , const size_t n6 , const size_t n7
+                  , const size_t i0 , const size_t i1
+                  , const size_t i2 , const size_t i3
+                  , const size_t i4 , const size_t i5
+                  , const size_t i6 , const size_t i7 );
+};
+
+void ViewOperatorBoundsErrorAbort< Kokkos::HostSpace >::
+apply( const size_t rank
+     , const size_t n0 , const size_t n1
+     , const size_t n2 , const size_t n3
+     , const size_t n4 , const size_t n5
+     , const size_t n6 , const size_t n7
+     , const size_t i0 , const size_t i1
+     , const size_t i2 , const size_t i3
+     , const size_t i4 , const size_t i5
+     , const size_t i6 , const size_t i7 )
+{
+  char buffer[512];
+
+  snprintf( buffer , sizeof(buffer)
+          , "View operator bounds error : rank(%lu) dim(%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu) index(%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu)"
+          , rank , n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7
+                 , i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 );
+
+  Kokkos::Impl::throw_runtime_exception( buffer );
 }
 
 } // namespace Impl

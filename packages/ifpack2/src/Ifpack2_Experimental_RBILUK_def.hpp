@@ -442,6 +442,9 @@ void RBILUK<MatrixType>::compute ()
 
     const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
+    // FIXME (mfh 08 Nov 2015) We need to move away from expressing
+    // these strides explicitly, in order to Kokkos-ize
+    // BlockCrsMatrix.
     const local_ordinal_type rowStride = blockSize_;
     const local_ordinal_type colStride = 1;
 
@@ -485,13 +488,15 @@ void RBILUK<MatrixType>::compute ()
         const local_ordinal_type matOffset = blockMatSize*j;
         little_block_type lmat(&valsL[matOffset],blockSize_,rowStride, colStride);
         little_block_type lmatV(&InV[matOffset],blockSize_,rowStride, colStride);
-        lmatV.assign(lmat);
+        //lmatV.assign(lmat);
+        Tpetra::Experimental::COPY (lmat, lmatV);
         InI[j] = colValsL[j];
       }
 
       little_block_type dmat = D_block_->getLocalBlock(local_row, local_row);
       little_block_type dmatV(&InV[NumL*blockMatSize], blockSize_, rowStride, colStride);
-      dmatV.assign(dmat);
+      //dmatV.assign(dmat);
+      Tpetra::Experimental::COPY (dmat, dmatV);
       InI[NumL] = local_row;
 
       const local_ordinal_type * colValsU;
@@ -505,7 +510,8 @@ void RBILUK<MatrixType>::compute ()
         const local_ordinal_type matOffset = blockMatSize*(NumL+1+j);
         little_block_type umat(&valsU[blockMatSize*j], blockSize_, rowStride, colStride);
         little_block_type umatV(&InV[matOffset], blockSize_, rowStride, colStride);
-        umatV.assign(umat);
+        //umatV.assign(umat);
+        Tpetra::Experimental::COPY (umat, umatV);
         NumU += 1;
       }
       NumIn = NumL+NumU+1;
@@ -522,11 +528,13 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
         little_block_type currentVal(&InV[jj*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
-        multiplier.assign(currentVal);
+        //multiplier.assign(currentVal);
+        Tpetra::Experimental::COPY (currentVal, multiplier);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(currentVal.getRawPtr()), reinterpret_cast<impl_scalar_type*>(dmatInverse.getRawPtr()), reinterpret_cast<impl_scalar_type*>(matTmp.getRawPtr()), blockSize_);
-        currentVal.assign(matTmp);
+        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+        //currentVal.assign(matTmp);
+        Tpetra::Experimental::COPY (matTmp, currentVal);
 
         const local_ordinal_type * UUI;
         scalar_type * UUV;
@@ -539,7 +547,7 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
               little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(kkval.getRawPtr()), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -550,23 +558,25 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(kkval.getRawPtr()), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(diagModBlock.getRawPtr()), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
       }
       if (NumL) {
         // Replace current row of L
-        L_block_->replaceLocalValues(local_row, InI.getRawPtr(), InV.getRawPtr(), NumL);
+        L_block_->replaceLocalValues (local_row, InI.getRawPtr (), InV.getRawPtr (), NumL);
       }
 
-      dmat.assign(dmatV);
+      // dmat.assign(dmatV);
+      Tpetra::Experimental::COPY (dmatV, dmat);
 
       if (this->RelaxValue_ != STM::zero ()) {
-        dmat.update(this->RelaxValue_, diagModBlock);
+        //dmat.update(this->RelaxValue_, diagModBlock);
+        Tpetra::Experimental::AXPY (this->RelaxValue_, diagModBlock, dmat);
       }
 
 //      if (STS::magnitude (DV[i]) > STS::magnitude (MaxDiagonalValue)) {
@@ -580,7 +590,7 @@ void RBILUK<MatrixType>::compute ()
 //      else
       {
 
-        LST* const d_raw = reinterpret_cast<LST*> (dmat.getRawPtr());
+        LST* const d_raw = reinterpret_cast<LST*> (dmat.ptr_on_device ());
         int lapackInfo;
         for (int k = 0; k < blockSize_; ++k) {
           ipiv[k] = 0;
@@ -610,8 +620,9 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         // scale U by the diagonal inverse
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(currentVal.getRawPtr()), reinterpret_cast<impl_scalar_type*>(matTmp.getRawPtr()), blockSize_);
-        currentVal.assign(matTmp);
+        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+        //currentVal.assign(matTmp);
+        Tpetra::Experimental::COPY (matTmp, currentVal);
       }
 
       if (NumU) {
@@ -701,7 +712,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             local_ordinal_type local_row = i;
             little_vec_type xval = xBlock.getLocalBlock(local_row,imv);
             little_vec_type cval = cBlock.getLocalBlock(local_row,imv);
-            cval.assign(xval);
+            //cval.assign(xval);
+            Tpetra::Experimental::COPY (xval, cval);
 
             local_ordinal_type NumL;
             const local_ordinal_type * colValsL;
@@ -717,7 +729,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               const local_ordinal_type matOffset = blockMatSize*j;
               little_block_type lij(&valsL[matOffset],blockSize_,rowStride, colStride);
 
-              cval.matvecUpdate(-one, lij, prevVal);
+              //cval.matvecUpdate(-one, lij, prevVal);
+              Tpetra::Experimental::GEMV (-one, lij, prevVal, cval);
             }
           }
         }
@@ -734,7 +747,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             local_ordinal_type local_row = (numRows-1)-i;
             little_vec_type rval = rBlock.getLocalBlock(local_row,imv);
             little_vec_type yval = yBlock.getLocalBlock(local_row,imv);
-            yval.assign(rval);
+            //yval.assign(rval);
+            Tpetra::Experimental::COPY (rval, yval);
 
             local_ordinal_type NumU;
             const local_ordinal_type * colValsU;
@@ -750,7 +764,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
               little_block_type uij(&valsU[matOffset], blockSize_, rowStride, colStride);
 
-              yval.matvecUpdate(-one, uij, prevVal);
+              //yval.matvecUpdate(-one, uij, prevVal);
+              Tpetra::Experimental::GEMV (-one, uij, prevVal, yval);
             }
           }
         }

@@ -5,6 +5,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Tacho                 tacho             EX       OPTIONAL
   Core                  core              SS       OPTIONAL
   GTS                   gts               EX       OPTIONAL
+  Basker                basker            EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)
