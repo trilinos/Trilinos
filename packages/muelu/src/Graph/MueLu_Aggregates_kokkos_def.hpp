@@ -125,6 +125,12 @@ namespace MueLu {
   } //ComputeAggSizesNodes
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
+    throw "Not implemented";
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
     return BaseClass::description() + "{nGlobalAggregates = " + toString(GetNumGlobalAggregates()) + "}";
   }
