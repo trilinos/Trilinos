@@ -186,7 +186,7 @@
 
 /* PyTrilinos ordinal types */
 
-#define PYTRILINOS_GLOBAL_ORD long
+#define PYTRILINOS_GLOBAL_ORD long long
 #define PYTRILINOS_LOCAL_ORD  int
 
 /**********************************************************************/
