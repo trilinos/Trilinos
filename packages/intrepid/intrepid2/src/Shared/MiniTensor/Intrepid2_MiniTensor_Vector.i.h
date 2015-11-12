@@ -397,7 +397,7 @@ Vector<T, N, ES>::~Vector()
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Index
+Index
 Vector<T, N, ES>::get_dimension() const
 {
   return TensorBase<T, Store>::get_dimension();
@@ -425,7 +425,7 @@ Vector<T, N, ES>::set_dimension(Index const dimension)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T const &
+T const &
 Vector<T, N, ES>::operator()(Index const i) const
     {
   return (*this)[i];
@@ -436,7 +436,7 @@ Vector<T, N, ES>::operator()(Index const i) const
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T &
+T &
 Vector<T, N, ES>::operator()(Index const i)
 {
   return (*this)[i];
@@ -447,7 +447,7 @@ Vector<T, N, ES>::operator()(Index const i)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<typename Promote<S, T>::type, N, ES>
+Vector<typename Promote<S, T>::type, N, ES>
 operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   Vector<typename Promote<S, T>::type, N, ES>
@@ -463,7 +463,7 @@ operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<typename Promote<S, T>::type, N, ES>
+Vector<typename Promote<S, T>::type, N, ES>
 operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   Vector<typename Promote<S, T>::type, N, ES>
@@ -479,7 +479,7 @@ operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<T, N, ES>
+Vector<T, N, ES>
 operator-(Vector<T, N, ES> const & u)
 {
   Vector<T, N, ES>
@@ -495,7 +495,7 @@ operator-(Vector<T, N, ES> const & u)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- typename Promote<S, T>::type
+typename Promote<S, T>::type
 operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   return dot(u, v);
@@ -530,7 +530,7 @@ operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- typename
+typename
 lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES> >::type
 operator*(S const & s, Vector<T, N, ES> const & u)
 {
@@ -547,7 +547,7 @@ operator*(S const & s, Vector<T, N, ES> const & u)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- typename
+typename
 lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N, ES> >::type
 operator*(Vector<T, N, ES> const & u, S const & s)
 {
@@ -564,7 +564,7 @@ operator*(Vector<T, N, ES> const & u, S const & s)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<typename Promote<S, T>::type, N, ES>
+Vector<typename Promote<S, T>::type, N, ES>
 operator/(Vector<T, N, ES> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N, ES>
@@ -580,7 +580,7 @@ operator/(Vector<T, N, ES> const & u, S const & s)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<typename Promote<S, T>::type, N, ES>
+Vector<typename Promote<S, T>::type, N, ES>
 operator/(S const & s, Vector<T, N, ES> const & u)
 {
   Vector<typename Promote<S, T>::type, N, ES>
@@ -596,7 +596,7 @@ operator/(S const & s, Vector<T, N, ES> const & u)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- typename Promote<S, T>::type
+typename Promote<S, T>::type
 dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   Index const
@@ -633,7 +633,7 @@ dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 template<typename S, typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<typename Promote<S, T>::type, N, ES>
+Vector<typename Promote<S, T>::type, N, ES>
 cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 {
   Index const
@@ -675,32 +675,15 @@ cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T
+T
 norm(Vector<T, N, ES> const & u)
 {
-  Index const
-  dimension = u.get_dimension();
+  T const
+  s = norm_square(u);
 
-  T
-  s = 0.0;
+  if (s > 0.0) return std::sqrt(s);
 
-  switch (dimension) {
-
-  default:
-    s = std::sqrt(dot(u, u));
-    break;
-
-  case 3:
-    s = std::sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
-    break;
-
-  case 2:
-    s = std::sqrt(u(0) * u(0) + u(1) * u(1));
-    break;
-
-  }
-
-  return s;
+  return 0.0;
 }
 
 //
@@ -709,7 +692,7 @@ norm(Vector<T, N, ES> const & u)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T
+T
 norm_square(Vector<T, N, ES> const & u)
 {
   Index const
@@ -743,7 +726,7 @@ norm_square(Vector<T, N, ES> const & u)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T
+T
 norm_1(Vector<T, N, ES> const & u)
 {
   Index const
@@ -778,7 +761,7 @@ norm_1(Vector<T, N, ES> const & u)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- T
+T
 norm_infinity(Vector<T, N, ES> const & u)
 {
   Index const
@@ -812,7 +795,7 @@ norm_infinity(Vector<T, N, ES> const & u)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
- Vector<T, N, ES>
+Vector<T, N, ES>
 unit(Vector<T, N, ES> const & u)
 {
   return u / norm(u);
