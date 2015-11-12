@@ -689,10 +689,10 @@ from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   return PyTrilinos::convertToMDVector< Scalar >(teuchosComm, dap);
 }
 }
-%template(from_DistArray_int   ) from_DistArray< int    >;
-%template(from_DistArray_long  ) from_DistArray< long   >;
-%template(from_DistArray_float ) from_DistArray< float  >;
-%template(from_DistArray_double) from_DistArray< double >;
+%template(from_DistArray_int   ) from_DistArray< int       >;
+%template(from_DistArray_long  ) from_DistArray< long long >;
+%template(from_DistArray_double) from_DistArray< double    >;
+//%template(from_DistArray_float ) from_DistArray< float     >;
 %pythoncode
 %{
 def from_DistArray(comm, distarray):
@@ -702,8 +702,8 @@ def from_DistArray(comm, distarray):
         return from_DistArray_int(comm, protocol)
     elif dtype.type is numpy.int64:
         return from_DistArray_long(comm, protocol)
-    elif dtype.type is numpy.float32:
-        return from_DistArray_float(comm, protocol)
+    #elif dtype.type is numpy.float32:
+    #    return from_DistArray_float(comm, protocol)
     elif dtype.type is numpy.float64:
         return from_DistArray_double(comm, protocol)
     else:
@@ -773,7 +773,7 @@ def MDVector(*args, **kwargs):
     dtype = None
     if len(args) > 0:
         try:
-            dtype = args[0].dtype()
+            dtype = str(args[0].dtype())
             if dtype == "int": dtype = "i"
         except AttributeError:
             pass
@@ -785,8 +785,8 @@ def MDVector(*args, **kwargs):
         result = MDVector_int(*args)
     elif dtype.type is numpy.int64:
         result = MDVector_long(*args)
-    elif dtype.type is numpy.float32:
-        result = MDVector_float(*args)
+    #elif dtype.type is numpy.float32:
+    #    result = MDVector_float(*args)
     elif dtype.type is numpy.float64:
         result = MDVector_double(*args)
     else:

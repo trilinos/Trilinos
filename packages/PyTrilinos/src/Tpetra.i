@@ -1441,7 +1441,7 @@ public:
 //
 // Macro names:
 //     CLASS        Class name (DistObject, Vector, ...)
-//     SCALAR       C/C++ scalar name ("in, long long, ...)
+//     SCALAR       C/C++ scalar name (int, long long, ...)
 //     SCALAR_NAME  Suffix name (int, longlong, ...)
 //
 %define %tpetra_class(CLASS, SCALAR, SCALAR_NAME)
@@ -1488,21 +1488,21 @@ public:
 //////////////////////////////////////////////
 // Concrete scalar types for Tpetra classes //
 //////////////////////////////////////////////
-%tpetra_scalars(int   , int   )
-%tpetra_scalars(long  , long  )
-%tpetra_scalars(float , float )
-%tpetra_scalars(double, double)
+%tpetra_scalars(int       , int   )
+%tpetra_scalars(long long , long  )
+%tpetra_scalars(double    , double)
+//%tpetra_scalars(float     , float )
 
 /////////////////////////////////////////////////////
 // Python code that consolidates templated classes //
 /////////////////////////////////////////////////////
 %pythoncode
-{
+%{
   def MultiVector(*args, **kwargs):
     dtype = None
     if len(args) > 0:
       try:
-        dtype = args[0].dtype
+        dtype = str(args[0].dtype)
       except AttributeError:
         pass
     dtype = kwargs.get("dtype", dtype)
@@ -1513,8 +1513,8 @@ public:
       result = MultiVector_int(*args)
     elif dtype.type is numpy.int64:
       result = MultiVector_long(*args)
-    elif dtype.type is numpy.float32:
-      result = MultiVector_float(*args)
+    #elif dtype.type is numpy.float32:
+    #  result = MultiVector_float(*args)
     elif dtype.type is numpy.float64:
       result = MultiVector_double(*args)
     else:
@@ -1526,7 +1526,7 @@ public:
     dtype = None
     if len(args) > 0:
       try:
-        dtype = args[0].dtype
+        dtype = str(args[0].dtype)
       except AttributeError:
         pass
     dtype = kwargs.get("dtype", dtype)
@@ -1537,15 +1537,15 @@ public:
       result = Vector_int(*args)
     elif dtype.type is numpy.int64:
       result = Vector_long(*args)
-    elif dtype.type is numpy.float32:
-      result = Vector_float(*args)
+    #elif dtype.type is numpy.float32:
+    #  result = Vector_float(*args)
     elif dtype.type is numpy.float64:
       result = Vector_double(*args)
     else:
       raise TypeError("Unsupported or unrecognized dtype = %s" %
                       str(dtype))
     return result
-}
+%}
 
 // Turn off exception handling
 %exception;
