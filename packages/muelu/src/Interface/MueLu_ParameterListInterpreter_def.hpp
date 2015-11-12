@@ -93,8 +93,13 @@
 #include "MueLu_Zoltan2Interface.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
+#include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
+#include "MueLu_NullspaceFactory_kokkos.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_TentativePFactory_kokkos.hpp"
+#include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
@@ -638,7 +643,7 @@ namespace MueLu {
     #endif
     RCP<Factory> aggFactory;
     if (aggType == "uncoupled") {
-      aggFactory = rcp(new UncoupledAggregationFactory());
+      MUELU_KOKKOS_FACTORY_NO_DECL(aggFactory, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
       ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: mode",               std::string, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: ordering",           std::string, aggParams);
@@ -681,12 +686,12 @@ namespace MueLu {
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
-    RCP<CoarseMapFactory> coarseMap = rcp(new CoarseMapFactory());
+    MUELU_KOKKOS_FACTORY(coarseMap, CoarseMapFactory, CoarseMapFactory_kokkos);
     coarseMap->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     manager.SetFactory("CoarseMap", coarseMap);
 
     // Tentative P
-    RCP<Factory> Ptent = rcp(new TentativePFactory());
+    MUELU_KOKKOS_FACTORY(Ptent, TentativePFactory, TentativePFactory_kokkos);
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
 
@@ -698,7 +703,7 @@ namespace MueLu {
     }
 
     // Nullspace
-    RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
+    MUELU_KOKKOS_FACTORY(nullSpace, NullspaceFactory, NullspaceFactory_kokkos);
     if (!have_userNS) {
       nullSpace->SetFactory("Nullspace", manager.GetFactory("Ptent"));
       manager.SetFactory("Nullspace", nullSpace);
@@ -910,7 +915,7 @@ namespace MueLu {
         manager.SetFactory("Coordinates", NoFactory::getRCP());
 
       } else {
-        RCP<CoordinatesTransferFactory> coords = rcp(new CoordinatesTransferFactory());
+        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
@@ -1115,33 +1120,30 @@ namespace MueLu {
     paramLists.push_back(paramList);
     // paramLists.back().setName("main");
     //If Muemex is supported, hide custom level variables from validator by removing them from paramList's sublists
-    #ifdef HAVE_MUELU_MATLAB
-    for(size_t i = 0; i < paramLists.size(); i++)
-    {
-      std::vector<std::string> customVars; //list of names (keys) to be removed from list
-      for(Teuchos::ParameterList::ConstIterator it = paramLists[i].begin(); it != paramLists[i].end(); it++)
-      {
+#ifdef HAVE_MUELU_MATLAB
+    for (size_t i = 0; i < paramLists.size(); i++) {
+      std::vector<std::string> customVars; // list of names (keys) to be removed from list
+
+      for(Teuchos::ParameterList::ConstIterator it = paramLists[i].begin(); it != paramLists[i].end(); it++) {
         std::string paramName = paramLists[i].name(it);
-        if(IsParamMuemexVariable(paramName))
+
+        if (IsParamMuemexVariable(paramName))
           customVars.push_back(paramName);
       }
-      //Remove the keys
-      for(size_t j = 0; j < customVars.size(); j++)
-      {
+
+      // Remove the keys
+      for (size_t j = 0; j < customVars.size(); j++)
         paramLists[i].remove(customVars[j], false);
-      }
     }
-    #endif
+#endif
+
     const int maxDepth = 0;
-    for (size_t i = 0; i < paramLists.size(); i++)
-    {
+    for (size_t i = 0; i < paramLists.size(); i++) {
       // validate every sublist
-      try
-      {
+      try {
         paramLists[i].validateParameters(validList, maxDepth);
-      }
-      catch (const Teuchos::Exceptions::InvalidParameterName& e)
-      {
+
+      } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
         std::string eString = e.what();
 
         // Parse name from: <Error, the parameter {name="smoothe: type",...>
@@ -1151,302 +1153,300 @@ namespace MueLu {
 
         int bestScore = 100;
         std::string bestName  = "";
-        for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++)
-        {
+        for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++) {
           const std::string& pName = validList.name(it);
           this->GetOStream(Runtime1) << "| " << pName;
           int score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
           this->GetOStream(Runtime1) << " -> " << score << std::endl;
-          if (score < bestScore)
-          {
+          if (score < bestScore) {
             bestScore = score;
             bestName  = pName;
           }
         }
-        if (bestScore < 10 && bestName != "")
-        {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid. Did you mean \"" + bestName << "\"?\n");
-        }
-        else
-        {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid.\n");
+        if (bestScore < 10 && bestName != "") {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName,
+            eString << "The parameter name \"" + name + "\" is not valid. Did you mean \"" + bestName << "\"?\n");
+
+        } else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName,
+            eString << "The parameter name \"" + name + "\" is not valid.\n");
         }
       }
     }
   }
 
-    // =====================================================================================================
-    // ==================================== FACTORY interpreter ============================================
-    // =====================================================================================================
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactoryParameterList(const ParameterList& constParamList) {
-      // Create a non const copy of the parameter list
-      // Working with a modifiable list is much much easier than with original one
-      ParameterList paramList = constParamList;
-
-      // Parameter List Parsing:
-      // ---------
-      //   <ParameterList name="MueLu">
-      //     <ParameterList name="Matrix">
-      //   </ParameterList>
-      if (paramList.isSublist("Matrix")) {
-        blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
-        dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
-      }
-
-      // create new FactoryFactory object if necessary
-      if (factFact_ == Teuchos::null)
-        factFact_ = Teuchos::rcp(new FactoryFactory());
-
-      // Parameter List Parsing:
-      // ---------
-      //   <ParameterList name="MueLu">
-      //     <ParameterList name="Factories"> <== call BuildFactoryMap() on this parameter list
-      //     ...
-      //     </ParameterList>
-      //   </ParameterList>
-      FactoryMap factoryMap;
-      FactoryManagerMap factoryManagers;
-      if (paramList.isSublist("Factories"))
-        this->BuildFactoryMap(paramList.sublist("Factories"), factoryMap, factoryMap, factoryManagers);
-
-      // Parameter List Parsing:
-      // ---------
-      //   <ParameterList name="MueLu">
-      //     <ParameterList name="Hierarchy">
-      //       <Parameter name="verbose"  type="string" value="Warnings"/> <== get
-      //       <Parameter name="numDesiredLevel" type="int" value="10"/>   <== get
-      //
-      //       <ParameterList name="firstLevel">                           <== parse first args and call BuildFactoryMap() on the rest of this parameter list
-      //         ...
-      //       </ParameterList>
-      //     </ParameterList>
-      //   </ParameterList>
-      if (paramList.isSublist("Hierarchy")) {
-        ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
-
-        // Get hierarchy options
-        if (hieraList.isParameter("max levels")) {
-          this->numDesiredLevel_ = hieraList.get<int>("max levels");
-          hieraList.remove("max levels");
-        }
-
-        if (hieraList.isParameter("coarse: max size")) {
-          this->maxCoarseSize_ = hieraList.get<int>("coarse: max size");
-          hieraList.remove("coarse: max size");
-        }
-
-        if (hieraList.isParameter("repartition: rebalance P and R")) {
-          this->doPRrebalance_ = hieraList.get<bool>("repartition: rebalance P and R");
-          hieraList.remove("repartition: rebalance P and R");
-        }
-
-        if (hieraList.isParameter("transpose: use implicit")) {
-          this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
-          hieraList.remove("transpose: use implicit");
-        }
-
-        //TODO Move this its own class or MueLu::Utils?
-        std::map<std::string,MsgType> verbMap;
-        //for developers
-        verbMap["Errors"]         = Errors;
-        verbMap["Warnings0"]      = Warnings0;
-        verbMap["Warnings00"]     = Warnings00;
-        verbMap["Warnings1"]      = Warnings1;
-        verbMap["PerfWarnings"]   = PerfWarnings;
-        verbMap["Runtime0"]       = Runtime0;
-        verbMap["Runtime1"]       = Runtime1;
-        verbMap["RuntimeTimings"] = RuntimeTimings;
-        verbMap["NoTimeReport"]   = NoTimeReport;
-        verbMap["Parameters0"]    = Parameters0;
-        verbMap["Parameters1"]    = Parameters1;
-        verbMap["Statistics0"]    = Statistics0;
-        verbMap["Statistics1"]    = Statistics1;
-        verbMap["Timings0"]       = Timings0;
-        verbMap["Timings1"]       = Timings1;
-        verbMap["TimingsByLevel"] = TimingsByLevel;
-        verbMap["External"]       = External;
-        verbMap["Debug"]          = Debug;
-        verbMap["Test"]           = Test;
-        //for users and developers
-        verbMap["None"]           = None;
-        verbMap["Low"]            = Low;
-        verbMap["Medium"]         = Medium;
-        verbMap["High"]           = High;
-        verbMap["Extreme"]        = Extreme;
-        if (hieraList.isParameter("verbosity")) {
-          std::string vl = hieraList.get<std::string>("verbosity");
-          hieraList.remove("verbosity");
-          //TODO Move this to its own class or MueLu::Utils?
-          if (verbMap.find(vl) != verbMap.end())
-            this->verbosity_ = verbMap[vl];
-          else
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
-        }
-
-        if (hieraList.isParameter("dependencyOutputLevel"))
-          this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
-
-        // Check for the reuse case
-        if (hieraList.isParameter("reuse"))
-          Factory::DisableMultipleCheckGlobally();
-
-        if (hieraList.isSublist("DataToWrite")) {
-          //TODO We should be able to specify any data.  If it exists, write it.
-          //TODO This would requires something like std::set<dataName,Array<int> >
-          ParameterList foo = hieraList.sublist("DataToWrite");
-          std::string dataName = "Matrices";
-          if (foo.isParameter(dataName))
-            this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
-          dataName = "Prolongators";
-          if (foo.isParameter(dataName))
-            this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
-          dataName = "Restrictors";
-          if (foo.isParameter(dataName))
-            this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
-        }
-
-        // Get level configuration
-        for (ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
-          const std::string & paramName  = hieraList.name(param);
-
-          if (paramName != "DataToWrite" && hieraList.isSublist(paramName)) {
-            ParameterList levelList = hieraList.sublist(paramName); // copy because list temporally modified (remove 'id')
-
-            int startLevel = 0;       if(levelList.isParameter("startLevel"))      { startLevel      = levelList.get<int>("startLevel");      levelList.remove("startLevel"); }
-            int numDesiredLevel = 1;  if(levelList.isParameter("numDesiredLevel")) { numDesiredLevel = levelList.get<int>("numDesiredLevel"); levelList.remove("numDesiredLevel"); }
-
-            // Parameter List Parsing:
-            // ---------
-            //   <ParameterList name="firstLevel">
-            //      <Parameter name="startLevel"       type="int" value="0"/>
-            //      <Parameter name="numDesiredLevel"  type="int" value="1"/>
-            //      <Parameter name="verbose"          type="string" value="Warnings"/>
-            //
-            //      [] <== call BuildFactoryMap() on the rest of the parameter list
-            //
-            //  </ParameterList>
-            FactoryMap levelFactoryMap;
-            BuildFactoryMap(levelList, factoryMap, levelFactoryMap, factoryManagers);
-
-            RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
-
-            if (startLevel >= 0)
-              this->AddFactoryManager(startLevel, numDesiredLevel, m);
-            else
-              TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
-          } /* TODO: else { } */
-        }
-      }
-    }
+  // =====================================================================================================
+  // ==================================== FACTORY interpreter ============================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactoryParameterList(const ParameterList& constParamList) {
+    // Create a non const copy of the parameter list
+    // Working with a modifiable list is much much easier than with original one
+    ParameterList paramList = constParamList;
 
     // Parameter List Parsing:
-    // Create an entry in factoryMap for each parameter of the list paramList
     // ---------
-    //   <ParameterList name="...">
-    //     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
-    //
-    //     <ParameterList name="smootherFact1">
-    //       <Parameter name="type" type="string" value="TrilinosSmoother"/>
-    //       ...
+    //   <ParameterList name="MueLu">
+    //     <ParameterList name="Matrix">
+    //   </ParameterList>
+    if (paramList.isSublist("Matrix")) {
+      blockSize_ = paramList.sublist("Matrix").get<int>("number of equations", MasterList::getDefault<int>("number of equations"));
+      dofOffset_ = paramList.sublist("Matrix").get<GlobalOrdinal>("DOF offset", 0); // undocumented parameter allowing to define a DOF offset of the global dofs of an operator (defaul = 0)
+    }
+
+    // create new FactoryFactory object if necessary
+    if (factFact_ == Teuchos::null)
+      factFact_ = Teuchos::rcp(new FactoryFactory());
+
+    // Parameter List Parsing:
+    // ---------
+    //   <ParameterList name="MueLu">
+    //     <ParameterList name="Factories"> <== call BuildFactoryMap() on this parameter list
+    //     ...
     //     </ParameterList>
-    //    </ParameterList>
+    //   </ParameterList>
+    FactoryMap factoryMap;
+    FactoryManagerMap factoryManagers;
+    if (paramList.isSublist("Factories"))
+      this->BuildFactoryMap(paramList.sublist("Factories"), factoryMap, factoryMap, factoryManagers);
+
+    // Parameter List Parsing:
+    // ---------
+    //   <ParameterList name="MueLu">
+    //     <ParameterList name="Hierarchy">
+    //       <Parameter name="verbose"  type="string" value="Warnings"/> <== get
+    //       <Parameter name="numDesiredLevel" type="int" value="10"/>   <== get
     //
-    //TODO: static?
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildFactoryMap(const ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const {
-      for (ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {
-        const std::string             & paramName  = paramList.name(param);
-        const Teuchos::ParameterEntry & paramValue = paramList.entry(param);
+    //       <ParameterList name="firstLevel">                           <== parse first args and call BuildFactoryMap() on the rest of this parameter list
+    //         ...
+    //       </ParameterList>
+    //     </ParameterList>
+    //   </ParameterList>
+    if (paramList.isSublist("Hierarchy")) {
+      ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
-        //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
+      // Get hierarchy options
+      if (hieraList.isParameter("max levels")) {
+        this->numDesiredLevel_ = hieraList.get<int>("max levels");
+        hieraList.remove("max levels");
+      }
 
-        // TODO: add support for "factory groups" which are stored in a map.
-        // A factory group has a name and a list of factories
+      if (hieraList.isParameter("coarse: max size")) {
+        this->maxCoarseSize_ = hieraList.get<int>("coarse: max size");
+        hieraList.remove("coarse: max size");
+      }
 
-        if (paramValue.isList()) {
-          ParameterList paramList1 = Teuchos::getValue<ParameterList>(paramValue);
-          if (paramList1.isParameter("factory")) { // default: just a factory definition
-            factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
+      if (hieraList.isParameter("repartition: rebalance P and R")) {
+        this->doPRrebalance_ = hieraList.get<bool>("repartition: rebalance P and R");
+        hieraList.remove("repartition: rebalance P and R");
+      }
 
-          } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
-            std::string groupType = paramList1.get<std::string>("group");
-            TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
+      if (hieraList.isParameter("transpose: use implicit")) {
+        this->implicitTranspose_ = hieraList.get<bool>("transpose: use implicit");
+        hieraList.remove("transpose: use implicit");
+      }
 
-            ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
-            groupList.remove("group");
+      //TODO Move this its own class or MueLu::Utils?
+      std::map<std::string,MsgType> verbMap;
+      //for developers
+      verbMap["Errors"]         = Errors;
+      verbMap["Warnings0"]      = Warnings0;
+      verbMap["Warnings00"]     = Warnings00;
+      verbMap["Warnings1"]      = Warnings1;
+      verbMap["PerfWarnings"]   = PerfWarnings;
+      verbMap["Runtime0"]       = Runtime0;
+      verbMap["Runtime1"]       = Runtime1;
+      verbMap["RuntimeTimings"] = RuntimeTimings;
+      verbMap["NoTimeReport"]   = NoTimeReport;
+      verbMap["Parameters0"]    = Parameters0;
+      verbMap["Parameters1"]    = Parameters1;
+      verbMap["Statistics0"]    = Statistics0;
+      verbMap["Statistics1"]    = Statistics1;
+      verbMap["Timings0"]       = Timings0;
+      verbMap["Timings1"]       = Timings1;
+      verbMap["TimingsByLevel"] = TimingsByLevel;
+      verbMap["External"]       = External;
+      verbMap["Debug"]          = Debug;
+      verbMap["Test"]           = Test;
+      //for users and developers
+      verbMap["None"]           = None;
+      verbMap["Low"]            = Low;
+      verbMap["Medium"]         = Medium;
+      verbMap["High"]           = High;
+      verbMap["Extreme"]        = Extreme;
+      if (hieraList.isParameter("verbosity")) {
+        std::string vl = hieraList.get<std::string>("verbosity");
+        hieraList.remove("verbosity");
+        //TODO Move this to its own class or MueLu::Utils?
+        if (verbMap.find(vl) != verbMap.end())
+          this->verbosity_ = verbMap[vl];
+        else
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level");
+      }
 
-            FactoryMap groupFactoryMap;
-            BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
+      if (hieraList.isParameter("dependencyOutputLevel"))
+        this->graphOutputLevel_ = hieraList.get<int>("dependencyOutputLevel");
 
-            // do not store groupFactoryMap in factoryMapOut
-            // Create a factory manager object from groupFactoryMap
-            RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
+      // Check for the reuse case
+      if (hieraList.isParameter("reuse"))
+        Factory::DisableMultipleCheckGlobally();
 
-            factoryManagers[paramName] = m;
+      if (hieraList.isSublist("DataToWrite")) {
+        //TODO We should be able to specify any data.  If it exists, write it.
+        //TODO This would requires something like std::set<dataName,Array<int> >
+        ParameterList foo = hieraList.sublist("DataToWrite");
+        std::string dataName = "Matrices";
+        if (foo.isParameter(dataName))
+          this->matricesToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+        dataName = "Prolongators";
+        if (foo.isParameter(dataName))
+          this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+        dataName = "Restrictors";
+        if (foo.isParameter(dataName))
+          this->restrictorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(foo,dataName);
+      }
 
-          } else {
-            this->GetOStream(Warnings0) << "Could not interpret parameter list " << paramList1 << std::endl;
-            TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
-          }
-        } else {
-          // default: just a factory (no parameter list)
+      // Get level configuration
+      for (ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {
+        const std::string & paramName  = hieraList.name(param);
+
+        if (paramName != "DataToWrite" && hieraList.isSublist(paramName)) {
+          ParameterList levelList = hieraList.sublist(paramName); // copy because list temporally modified (remove 'id')
+
+          int startLevel = 0;       if(levelList.isParameter("startLevel"))      { startLevel      = levelList.get<int>("startLevel");      levelList.remove("startLevel"); }
+          int numDesiredLevel = 1;  if(levelList.isParameter("numDesiredLevel")) { numDesiredLevel = levelList.get<int>("numDesiredLevel"); levelList.remove("numDesiredLevel"); }
+
+          // Parameter List Parsing:
+          // ---------
+          //   <ParameterList name="firstLevel">
+          //      <Parameter name="startLevel"       type="int" value="0"/>
+          //      <Parameter name="numDesiredLevel"  type="int" value="1"/>
+          //      <Parameter name="verbose"          type="string" value="Warnings"/>
+          //
+          //      [] <== call BuildFactoryMap() on the rest of the parameter list
+          //
+          //  </ParameterList>
+          FactoryMap levelFactoryMap;
+          BuildFactoryMap(levelList, factoryMap, levelFactoryMap, factoryManagers);
+
+          RCP<FactoryManagerBase> m = rcp(new FactoryManager(levelFactoryMap));
+
+          if (startLevel >= 0)
+            this->AddFactoryManager(startLevel, numDesiredLevel, m);
+          else
+            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid level id");
+        } /* TODO: else { } */
+      }
+    }
+  }
+
+  // Parameter List Parsing:
+  // Create an entry in factoryMap for each parameter of the list paramList
+  // ---------
+  //   <ParameterList name="...">
+  //     <Parameter name="smootherFact0" type="string" value="TrilinosSmoother"/>
+  //
+  //     <ParameterList name="smootherFact1">
+  //       <Parameter name="type" type="string" value="TrilinosSmoother"/>
+  //       ...
+  //     </ParameterList>
+  //    </ParameterList>
+  //
+  //TODO: static?
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  BuildFactoryMap(const ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const {
+    for (ParameterList::ConstIterator param = paramList.begin(); param != paramList.end(); ++param) {
+      const std::string             & paramName  = paramList.name(param);
+      const Teuchos::ParameterEntry & paramValue = paramList.entry(param);
+
+      //TODO: do not allow name of existing MueLu classes (can be tested using FactoryFactory)
+
+      // TODO: add support for "factory groups" which are stored in a map.
+      // A factory group has a name and a list of factories
+
+      if (paramValue.isList()) {
+        ParameterList paramList1 = Teuchos::getValue<ParameterList>(paramValue);
+        if (paramList1.isParameter("factory")) { // default: just a factory definition
           factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
+
+        } else if (paramList1.isParameter("group")) { // definitiion of a factory group (for a factory manager)
+          std::string groupType = paramList1.get<std::string>("group");
+          TEUCHOS_TEST_FOR_EXCEPTION(groupType!="FactoryManager", Exceptions::RuntimeError, "group must be of type \"FactoryManager\".");
+
+          ParameterList groupList = paramList1; // copy because list temporally modified (remove 'id')
+          groupList.remove("group");
+
+          FactoryMap groupFactoryMap;
+          BuildFactoryMap(groupList, factoryMapIn, groupFactoryMap, factoryManagers);
+
+          // do not store groupFactoryMap in factoryMapOut
+          // Create a factory manager object from groupFactoryMap
+          RCP<FactoryManagerBase> m = rcp(new FactoryManager(groupFactoryMap));
+
+          factoryManagers[paramName] = m;
+
+        } else {
+          this->GetOStream(Warnings0) << "Could not interpret parameter list " << paramList1 << std::endl;
+          TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
         }
+      } else {
+        // default: just a factory (no parameter list)
+        factoryMapOut[paramName] = factFact_->BuildFactory(paramValue, factoryMapIn, factoryManagers);
       }
     }
+  }
 
-    // =====================================================================================================
-    // ======================================= MISC functions ==============================================
-    // =====================================================================================================
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator& Op) const {
-      try {
-        Matrix& A = dynamic_cast<Matrix&>(Op);
-        if (A.GetFixedBlockSize() != blockSize_)
-          this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
-              << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+  // =====================================================================================================
+  // ======================================= MISC functions ==============================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator& Op) const {
+    try {
+      Matrix& A = dynamic_cast<Matrix&>(Op);
+      if (A.GetFixedBlockSize() != blockSize_)
+        this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
+            << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
-        A.SetFixedBlockSize(blockSize_, dofOffset_);
+      A.SetFixedBlockSize(blockSize_, dofOffset_);
 
-      } catch (std::bad_cast& e) {
-        this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    } catch (std::bad_cast& e) {
+      this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
+    HierarchyManager::SetupHierarchy(H);
+    H.SetCycle(Cycle_);
+  }
+
+  static bool compare(const ParameterList& list1, const ParameterList& list2) {
+    // First loop through and validate the parameters at this level.
+    // In addition, we generate a list of sublists that we will search next
+    for (ParameterList::ConstIterator it = list1.begin(); it != list1.end(); it++) {
+      const std::string&             name   = it->first;
+      const Teuchos::ParameterEntry& entry1 = it->second;
+
+      const Teuchos::ParameterEntry *entry2 = list2.getEntryPtr(name);
+      if (!entry2)                                           // entry is not present in the second list
+        return false;
+      if (entry1.isList() && entry2->isList()) {             // sublist check
+        compare(Teuchos::getValue<ParameterList>(entry1), Teuchos::getValue<ParameterList>(*entry2));
+        continue;
       }
+      if (entry1.getAny(false) != entry2->getAny(false))     // entries have different types or different values
+        return false;
     }
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
-      HierarchyManager::SetupHierarchy(H);
-      H.SetCycle(Cycle_);
-    }
+    return true;
+  }
 
+  static inline bool areSame(const ParameterList& list1, const ParameterList& list2) {
+    return compare(list1, list2) && compare(list2, list1);
+  }
 
-    static bool compare(const ParameterList& list1, const ParameterList& list2) {
-      // First loop through and validate the parameters at this level.
-      // In addition, we generate a list of sublists that we will search next
-      for (ParameterList::ConstIterator it = list1.begin(); it != list1.end(); it++) {
-        const std::string&             name   = it->first;
-        const Teuchos::ParameterEntry& entry1 = it->second;
-
-        const Teuchos::ParameterEntry *entry2 = list2.getEntryPtr(name);
-        if (!entry2)                                           // entry is not present in the second list
-          return false;
-        if (entry1.isList() && entry2->isList()) {             // sublist check
-          compare(Teuchos::getValue<ParameterList>(entry1), Teuchos::getValue<ParameterList>(*entry2));
-          continue;
-        }
-        if (entry1.getAny(false) != entry2->getAny(false))     // entries have different types or different values
-          return false;
-      }
-
-      return true;
-    }
-    static inline bool areSame(const ParameterList& list1, const ParameterList& list2) {
-      return compare(list1, list2) && compare(list2, list1);
-    }
-
-  } // namespace MueLu
+} // namespace MueLu
 
 #define MUELU_PARAMETERLISTINTERPRETER_SHORT
 #endif /* MUELU_PARAMETERLISTINTERPRETER_DEF_HPP */
