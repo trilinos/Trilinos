@@ -43,14 +43,17 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_
-#define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_
+#ifndef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
+#define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
@@ -82,12 +85,6 @@ namespace MueLu {
 
 
 
-  class Aggregate {
-  public:
-    int index;                  // local aggregate id
-    std::vector<int> list;      // list of node ids in aggregate
-  };
-
   /*!
        @class AggregationAlgorithmBase
        @brief Pure virtual base class for all MueLu aggregation algorithms
@@ -114,12 +111,13 @@ namespace MueLu {
     //@{
 
     //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
+                                 std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
     //@}
+  };
 
-    };
-
-  } // namespace MueLu
+} // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
-#endif /* MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP

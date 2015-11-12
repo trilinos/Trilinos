@@ -82,12 +82,6 @@ namespace MueLu {
 
 
 
-  class Aggregate {
-  public:
-    int index;                  // local aggregate id
-    std::vector<int> list;      // list of node ids in aggregate
-  };
-
   /*!
        @class AggregationAlgorithmBase
        @brief Pure virtual base class for all MueLu aggregation algorithms
@@ -117,9 +111,9 @@ namespace MueLu {
     virtual void BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
     //@}
 
-    };
+  };
 
-  } // namespace MueLu
+} // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_SHORT
 #endif /* MUELU_AGGREGATIONALGORITHMBASE_HPP_ */

@@ -87,23 +87,26 @@ void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildA
   LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();    // number of local aggregates on current proc
   LocalOrdinal iNode1  = 0;        // current node
 
-  // main loop over all local rows of grpah(A)
+  // main loop over all local rows of graph(A)
+  int              aggIndex = -1;
+  size_t           aggSize  =  0;
+  std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
+
   while (iNode1 < nRows) {
 
     if (aggStat[iNode1] == ONEPT) {
 
       aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
-      Aggregate ag;
-      ag.list.push_back(iNode1);
-      ag.index = nLocalAggregates++;
+      aggList.push_back(iNode1);
+      aggIndex = nLocalAggregates++;
 
       // finalize aggregate
-      for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = IGNORED;
-        vertex2AggId[ag.list[k]] = ag.index;
-        procWinner[ag.list[k]] = myRank;
+      for (size_t k = 0; k < aggList.size(); k++) {
+        aggStat[aggList[k]] = IGNORED;
+        vertex2AggId[aggList[k]] = aggIndex;
+        procWinner[aggList[k]] = myRank;
       }
-      numNonAggregatedNodes -= ag.list.size();
+      numNonAggregatedNodes -= aggList.size();
     }
 
     iNode1++;
