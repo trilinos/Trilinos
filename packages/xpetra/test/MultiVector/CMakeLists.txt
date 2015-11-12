@@ -43,4 +43,16 @@ IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
     )
 ENDIF()
 
+IF (HAVE_XPETRA_THYRA)
+	IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
+	  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	    MultiVector_UnitTestsThyraSpecific
+	    SOURCES
+	      MultiVector_UnitTestsThyraSpecific
+	      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+	    COMM serial mpi
+	    STANDARD_PASS_OUTPUT
+	    )
+	ENDIF()
+ENDIF()
 
