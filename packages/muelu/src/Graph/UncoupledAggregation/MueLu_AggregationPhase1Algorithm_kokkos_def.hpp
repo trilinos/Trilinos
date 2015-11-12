@@ -43,8 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP_
-#define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP_
+#ifndef MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
+#define MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <queue>
 
@@ -55,9 +57,9 @@
 
 #include "MueLu_AggregationPhase1Algorithm_kokkos_decl.hpp"
 
-#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -238,5 +240,5 @@ namespace MueLu {
 
 } // end namespace
 
-
-#endif /* MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_AGGREGATIONPHASE1ALGORITHM_KOKKOS_DEF_HPP

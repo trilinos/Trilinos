@@ -43,17 +43,20 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP_
-#define MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP_
+#ifndef MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP
+#define MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
+#include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
-
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
 
 namespace MueLu {
   /*!
@@ -110,6 +113,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_SHORT
-
-
-#endif /* MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_AGGREGATIONPHASE2BALGORITHM_KOKKOS_DECL_HPP

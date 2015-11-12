@@ -43,16 +43,19 @@
 // ***********************************************************************
 //
 // @HEADER
-
-#ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DECL_HPP_
-#define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DECL_HPP_
+#ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DECL_HPP
+#define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 #include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_fwd.hpp"
 
-#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
+#include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
+#include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
 namespace MueLu {
@@ -111,6 +114,5 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_SHORT
-
-
-#endif /* MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DECL_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_DECL_HPP

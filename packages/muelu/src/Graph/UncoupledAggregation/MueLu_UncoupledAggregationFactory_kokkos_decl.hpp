@@ -43,34 +43,34 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP_
-#define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP_
+#ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
+#define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 
+#include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
-#include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_fwd.hpp"
-
 #include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
 #include "MueLu_AggregationPhase3Algorithm_kokkos_fwd.hpp"
-
-#include "MueLu_Level_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-//#include "MueLu_Graph_fwd.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
+#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_fwd.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
 
@@ -138,107 +138,108 @@ namespace MueLu {
     | Aggregates   | UncoupledAggregationFactory   | Container class with aggregation information. See also Aggregates.
 */
 
-template <class LocalOrdinal = int,
-          class GlobalOrdinal = LocalOrdinal,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-class UncoupledAggregationFactory_kokkos : public SingleLevelFactoryBase {
+  template <class LocalOrdinal = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  class UncoupledAggregationFactory_kokkos : public SingleLevelFactoryBase {
 #undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-public:
-  //! @name Constructors/Destructors.
-  //@{
+  public:
+    //! @name Constructors/Destructors.
+    //@{
 
-  //! Constructor.
-  UncoupledAggregationFactory_kokkos();
+    //! Constructor.
+    UncoupledAggregationFactory_kokkos();
 
-  //! Destructor.
-  virtual ~UncoupledAggregationFactory_kokkos() { }
+    //! Destructor.
+    virtual ~UncoupledAggregationFactory_kokkos() { }
 
-  RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const;
 
-  //@}
+    //@}
 
-  //! @name Set/get methods.
-  //@{
+    //! @name Set/get methods.
+    //@{
 
-  // Options shared by all aggregation algorithms
+    // Options shared by all aggregation algorithms
 
-  // deprecated
-  void SetOrdering(const std::string& ordering) {
-    SetParameter("aggregation: ordering", ParameterEntry(ordering));
-  }
-  // deprecated
-  void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
-    SetParameter("aggregation: max selected neighbors", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
-  }
-  // deprecated
-  void SetMinNodesPerAggregate(int minNodesPerAggregate) {
-    SetParameter("aggregation: min agg size", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
-  }
-  // set information about 1-node aggregates (map name and generating factory)
-  void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
-    SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
-    SetFactory("OnePt aggregate map factory",mapFact);
-  }
+    // deprecated
+    void SetOrdering(const std::string& ordering) {
+      SetParameter("aggregation: ordering", ParameterEntry(ordering));
+    }
+    // deprecated
+    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
+      SetParameter("aggregation: max selected neighbors", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
+    }
+    // deprecated
+    void SetMinNodesPerAggregate(int minNodesPerAggregate) {
+      SetParameter("aggregation: min agg size", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
+    }
+    // set information about 1-node aggregates (map name and generating factory)
+    void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
+      SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
+      SetFactory("OnePt aggregate map factory",mapFact);
+    }
 
-  // deprecated
-  const std::string& GetOrdering() const {
-    const ParameterList& pL = GetParameterList();
-    return pL.get<std::string>("aggregation: ordering");
-  }
-  // deprecated
-  int GetMaxNeighAlreadySelected() const {
-    const ParameterList& pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: max selected neighbors"));
-  }
-  // deprecated
-  int GetMinNodesPerAggregate() const {
-    const ParameterList& pL = GetParameterList();
-    return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: min agg size"));
-  }
+    // deprecated
+    const std::string& GetOrdering() const {
+      const ParameterList& pL = GetParameterList();
+      return pL.get<std::string>("aggregation: ordering");
+    }
+    // deprecated
+    int GetMaxNeighAlreadySelected() const {
+      const ParameterList& pL = GetParameterList();
+      return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: max selected neighbors"));
+    }
+    // deprecated
+    int GetMinNodesPerAggregate() const {
+      const ParameterList& pL = GetParameterList();
+      return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: min agg size"));
+    }
 
-  //@}
+    //@}
 
-  //! Input
-  //@{
+    //! Input
+    //@{
 
-  void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &currentLevel) const;
 
-  //@}
+    //@}
 
-  //! @name Build methods.
-  //@{
+    //! @name Build methods.
+    //@{
 
-  /*! @brief Build aggregates. */
-  void Build(Level &currentLevel) const;
+    /*! @brief Build aggregates. */
+    void Build(Level &currentLevel) const;
 
-  //@}
+    //@}
 
-  //! @name Definition methods
-  //@{
+    //! @name Definition methods
+    //@{
 
-  /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
-  //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > & alg);
+    /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
+    //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > & alg);
 
-  /*! @brief Remove all aggregation algorithms from list */
-  //void ClearAggregationAlgorithms() { algos_.clear(); }
-  //@}
+    /*! @brief Remove all aggregation algorithms from list */
+    //void ClearAggregationAlgorithms() { algos_.clear(); }
+    //@}
 
-private:
+  private:
 
-  //! aggregation algorithms
-  // will be filled in Build routine
-  mutable std::vector<RCP<MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
+    //! aggregation algorithms
+    // will be filled in Build routine
+    mutable std::vector<RCP<MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
 
-  //! boolean flag: definition phase
-  //! if true, the aggregation algorithms still can be set and changed.
-  //! if false, no change in aggregation algorithms is possible any more
-  mutable bool bDefinitionPhase_;
+    //! boolean flag: definition phase
+    //! if true, the aggregation algorithms still can be set and changed.
+    //! if false, no change in aggregation algorithms is possible any more
+    mutable bool bDefinitionPhase_;
 
-}; // class UncoupledAggregationFactory_kokkos
+  }; // class UncoupledAggregationFactory_kokkos
 
 }
 
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
-#endif /* MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
