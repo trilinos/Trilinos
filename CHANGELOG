@@ -1,0 +1,15 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 12.2 Changelog                                            #
+#                                                                             #
+###############################################################################
+
+Release update 12.2.2 Nov 13, 2015
+
+1. EpetraExt - Fix build errors in Hypre interface.
+
+2. Ifpack - Fix build errors in Hypre interface.
+
+3. ML - Fix communicator mismatch in Hiptmair smoother
+
+4. Teuchos - Add max_size method to Details::Allocator
