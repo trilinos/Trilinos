@@ -87,18 +87,18 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   AztecOO               packages/aztecoo                  PS
   Galeri                packages/galeri                   PS
   Amesos                packages/amesos                   PS
-  Amesos2               packages/amesos2                  SS
   Pamgen                packages/pamgen                   PS
-  SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
-  Trios                 packages/trios                    EX #temporary
+  Zoltan2               packages/zoltan2                  SS
   Ifpack                packages/ifpack                   PS
-  Komplex               packages/komplex                  PS
   ML                    packages/ml                       PS
   Belos                 packages/belos                    PS
-  Anasazi               packages/anasazi                  PS
-  Zoltan2               packages/zoltan2                  SS
-  Ifpack2               packages/ifpack2                  PS
   ShyLU                 packages/shylu                    SS
+  Amesos2               packages/amesos2                  SS
+  SEACAS                packages/seacas                   SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  Trios                 packages/trios                    EX #temporary
+  Komplex               packages/komplex                  PS
+  Anasazi               packages/anasazi                  PS
+  Ifpack2               packages/ifpack2                  PS
   Stratimikos           packages/stratimikos              PS
   FEI                   packages/fei                      PS
   Teko                  packages/teko                     SS
