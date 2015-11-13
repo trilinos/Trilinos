@@ -90,12 +90,12 @@ public:
   //! Get the underlying panzer::ModelEvaluator
   Teuchos::RCP<panzer::ModelEvaluator<Scalar> > getPanzerUnderlyingModel();
 
-  void applyInverseMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
+  virtual void applyInverseMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
   {
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*input,output.ptr());
   }
 
-  void applyMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
+  virtual void applyMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
   {
     Thyra::apply(*mass_,Thyra::NOTRANS,*input,output.ptr());
   }

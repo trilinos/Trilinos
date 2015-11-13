@@ -50,6 +50,9 @@
 #include "MueLu_ConfigDefs.hpp"
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
+#include <Kokkos_StaticCrsGraph.hpp>
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 
 #include <Xpetra_Map_fwd.hpp>
@@ -108,7 +111,8 @@ namespace MueLu {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
     typedef DeviceType                                          device_type;
 
-    typedef Kokkos::View<LocalOrdinal*, device_type>            aggregates_sizes_type;
+    typedef Kokkos::View<LocalOrdinal*, DeviceType>             aggregates_sizes_type;
+    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
 
   private:
     // For compatibility
@@ -169,33 +173,33 @@ namespace MueLu {
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    RCP<LOVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
+    RCP<LOVector>& GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
 
     /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
 
         For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
     */
-    RCP<LOVector> & GetProcWinnerNonConst()       { return procWinner_;         }
+    RCP<LOVector>& GetProcWinnerNonConst()       { return procWinner_;         }
     /*! @brief Returns constant vector that maps local node IDs to local aggregates IDs.
 
         For local node ID i, the corresponding vector entry v[i] is the local aggregate id to which i belongs on the current processor.
     */
-    const RCP<LOVector> & GetVertex2AggId() const { return vertex2AggId_;       }
+    const RCP<LOVector>& GetVertex2AggId() const { return vertex2AggId_;       }
 
     /*! @brief Returns constant vector that maps local node IDs to owning processor IDs.
 
         For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
     */
-    const RCP<LOVector> & GetProcWinner() const   { return procWinner_;         }
+    const RCP<LOVector>& GetProcWinner() const   { return procWinner_;         }
 
     //! Returns true if node with given local node id is marked to be a root node
-    bool IsRoot(LO i) const               { return isRoot_[i];          }
+    KOKKOS_INLINE_FUNCTION bool IsRoot(LO i) const               { return isRoot_[i];          }
 
     /*! @brief Set root node information.
 
     Used by aggregation methods only.
     */
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
+    KOKKOS_INLINE_FUNCTION void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -213,6 +217,8 @@ namespace MueLu {
       Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
     KOKKOS_INLINE_FUNCTION typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
+
+    local_graph_type GetGraph() const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

@@ -181,7 +181,7 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
   MEB::InArgs<Scalar>  inArgs_new  = me->createInArgs();
   inArgs_new.setArgs(inArgs);
-  inArgs_new.set_x_dot(zero_);
+  inArgs_new.set_x_dot(inArgs.get_x_dot());
   inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
 
@@ -233,8 +233,8 @@ buildArgsPrototypes()
   
   MEB::InArgsSetup<Scalar> inArgs(this->getUnderlyingModel()->createInArgs());
   inArgs.setModelEvalDescription(this->description());
-  inArgs.setSupports(MEB::IN_ARG_alpha,false);
-  inArgs.setSupports(MEB::IN_ARG_beta,false);
+  inArgs.setSupports(MEB::IN_ARG_alpha,true);
+  inArgs.setSupports(MEB::IN_ARG_beta,true);
   inArgs.setSupports(MEB::IN_ARG_x_dot,true);
   prototypeInArgs_ = inArgs;
 

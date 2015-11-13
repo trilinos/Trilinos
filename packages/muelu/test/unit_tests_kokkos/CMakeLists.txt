@@ -17,9 +17,11 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
   MueLu_UnitTests_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
+  Aggregates_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   SaPFactory_kokkos.cpp
+  TentativePFactory_kokkos.cpp
 )
 
 ### Tests that require other Trilinos packages

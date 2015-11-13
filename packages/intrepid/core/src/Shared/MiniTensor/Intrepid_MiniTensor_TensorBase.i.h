@@ -1012,7 +1012,12 @@ template<typename T, typename ST>
 T
 norm_f(TensorBase<T, ST> const & X)
 {
-  return std::sqrt(norm_f_square(X));
+  T const
+  s = norm_f_square(X);
+
+  if (s > 0.0) return std::sqrt(s);
+
+  return 0.0;
 }
 
 //

@@ -1559,6 +1559,17 @@ which is:
 packages with names ``WithSubpackagesA``, ``WithSubpackagesB``, and
 ``WithSubpackagesC``.
 
+if a TriBITS Package or Subpackage has no dependencies, it still has to call
+``TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`` but it is called with no arguments
+such as with:
+
+  `TribitsHelloWorld`_/``hello_world/cmake/Dependencies.cmake:``
+
+which contains:
+
+.. include:: ../../examples/TribitsHelloWorld/hello_world/cmake/Dependencies.cmake
+   :literal:
+
 .. _<packageDir>/cmake/<packageName>_config.h.in:
 
 **<packageDir>/cmake/<packageName>_config.h.in**: [Optional] The package's
@@ -2645,7 +2656,7 @@ shown by the file ``TribitsHelloWorld/hello_world/CMakeLists.txt`` which is:
 The build and test of this simple project is tested in the `The TriBITS Test
 Package`_ file::
 
-  tribits/doc/examples/UnitTests/CMakeLists.txt
+  TriBITS/test/core/ExamplesUnitTests/CMakeLists.txt
 
 Note that this little example is a fully functional `TriBITS Repository`_ and
 can be embedded in to a larger TriBITS meta-project and be seamlessly built
@@ -2878,14 +2889,14 @@ document come from ``MockTrilinos``.
 
 Most of the dependency tests involving ``MockTrilinos`` are specified in::
 
-  tribits/package_arch/UnitTests/DependencyUnitTests/CMakeLists.txt
+  TriBITS/test/core/DependencyUnitTests/CMakeLists.txt
 
 A great deal about the current behavior of TriBITS `Package Dependencies and
 Enable/Disable Logic`_ can be learned from inspecting these tests.  There are
 also some faster-running unit tests involving ``MockTrilinos`` defined in the
 file::
 
-  tribits/package_arch/UnitTests/TribitsAdjustPackageEnables_UnitTests.cmake
+  TriBITS/test/core/TribitsAdjustPackageEnables_UnitTests.cmake
 
 
 ReducedMockTrilinos
@@ -5951,7 +5962,7 @@ are specified in the file
 The `TribitsExampleProject`_ is set up for creating source distributions and
 this is demonstrated in one of the tests defined in::
 
-  tribits/doc/examples/UnitTests/CMakeLists.txt
+  TriBITS/test/core/ExamplesUnitTests/CMakeLists.txt
 
 There are a few points of caution to note about creating source distributions.
 

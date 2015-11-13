@@ -79,6 +79,7 @@ SolverBase
 SteepestDescentSolver
 SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
+TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ThresholdAFilterFactory
 ToggleCoordinatesTransferFactory
 TogglePFactory
