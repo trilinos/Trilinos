@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 
   {
   // Test 3:
-  // Key has three int entries
+  // Key has three long long entries
   // Each proc has 2*np keys
   // np Keys are {x, x, x} for x in {0, 1, ..., np-1}
   // np Keys are {rank, rank, x} for x in {0, 1, ..., np-1}
@@ -255,7 +255,9 @@ int main(int argc, char *argv[])
   std::string name = " test3: ";
   if (me == 0) std::cout << "--------  Starting " << name << std::endl;
 
-  typedef int gno_t;
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+
+  typedef long long gno_t;
   typedef std::array<gno_t, 3> zkey_t;
   typedef std::vector<zkey_t> keyvec_t;
   typedef std::vector<gno_t> gidvec_t;
@@ -282,6 +284,12 @@ int main(int argc, char *argv[])
 
   size_t nUniqueGids = Zoltan2::findUniqueGids<zkey_t,gno_t>(keys,gids,*comm);
 
+  // for (size_t i = 0; i < nKeys; i++)
+  //   std::cout << me << " Key " << i << ": " 
+  //             << keys[i][0] << " " << keys[i][1] << " " << keys[i][2] 
+  //             << " GID " << gids[i]
+  //             << std::endl;
+
   // Test for correctness
   if (me == 0) 
     std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
@@ -293,6 +301,13 @@ int main(int argc, char *argv[])
   checkMinGid(name, gids, gno_t(0), *comm);
   
   checkNLocallyUnique(name, gids, size_t(nKeys-1));
+#else
+  if (me == 0) 
+    std::cout << "Skipping " << name 
+              << " because Teuchos::Comm (and, thus, Tpetra)"
+              << " not built with GO==long long"
+              << std::endl;
+#endif
   }
 
   {
@@ -400,6 +415,64 @@ int main(int argc, char *argv[])
   if (me == 0) 
     std::cout << "Skipping " << name 
               << " because Tpetra not built with GO==int"
+              << std::endl;
+#endif
+  } 
+
+  {
+  // Test 6:  Same as Test 4 but using the Tpetra Multivector interface.
+  // Key has four long long entries
+  // Each proc has (rank+1)%2 keys; odd-numbered ranks are empty
+  // Keys are all identical {0, 1, 2, 3}
+
+  std::string name = " test6: ";
+  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+  typedef int lno_t;
+  typedef long long gno_t;
+
+  const size_t nVecs = 4;
+  const size_t nKeys = (me+1)%2;
+
+  Tpetra::global_size_t gNEntries =
+          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+  typedef Tpetra::Map<lno_t, gno_t> map_t;
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNEntries, nKeys, 0, comm),
+                                      true);
+
+  Tpetra::MultiVector<gno_t, lno_t, gno_t> keys(map, nVecs);
+  Tpetra::Vector<gno_t, lno_t, gno_t> gids(map);
+
+  for (size_t i = 0; i < nKeys; i++) {
+    keys.replaceLocalValue(i, 0, gno_t(0));
+    keys.replaceLocalValue(i, 1, gno_t(1));
+    keys.replaceLocalValue(i, 2, gno_t(2));
+    keys.replaceLocalValue(i, 3, gno_t(3));
+  }
+
+  size_t nUniqueGids = Zoltan2::findUniqueGids<lno_t,gno_t>(keys,gids);
+
+  // Test for correctness
+  if (me == 0) 
+    std::cout << " " << name << " nUniqueGids " << nUniqueGids << std::endl;
+
+  checkNUnique(name, nUniqueGids, size_t(1));
+
+  Teuchos::ArrayRCP<const gno_t> gidsData = gids.getData();
+  std::vector<gno_t> gidsVec(nKeys);
+  for (size_t i = 0; i < nKeys; i++) gidsVec[i] = gidsData[i];
+
+  checkMaxGid(name, gidsVec, gno_t(0), *comm);
+
+  checkMinGid(name, gidsVec, gno_t(0), *comm);
+  
+  checkNLocallyUnique(name, gidsVec, (nKeys ? size_t(1): size_t(0)));
+#else
+  if (me == 0) 
+    std::cout << "Skipping " << name 
+              << " because Tpetra not built with GO==long long"
               << std::endl;
 #endif
   } 

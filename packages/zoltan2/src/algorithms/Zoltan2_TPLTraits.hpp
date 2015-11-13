@@ -77,29 +77,26 @@ struct TPL_Traits {
              std::numeric_limits<zno_t>::is_signed));
   }
 
-  static inline void ASSIGN_TPL_T(tpl_t &a, zno_t b,
-                                  const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T(tpl_t &a, zno_t b)
   {
     // Assign a = b; make sure tpl_t is large enough to accept zno_t.
     try {
       a = Teuchos::asSafe<tpl_t, zno_t>(b);
     }
     catch (std::exception &e) {
-      env->localInputAssertion(__FILE__, __LINE__, 
-       "Value too large for TPL index type. "
-       "Rebuild TPL with larger index type or rebuild without the TPL.",
-       false, BASIC_ASSERTION);
+      throw std::runtime_error(
+       "TPL_Traits:  Value too large for TPL index type. "
+       "Rebuild TPL with larger index type or rebuild without the TPL.");
     }
   }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<zno_t> &b,
-                                        const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<zno_t> &b)
   {
     // Allocate array a; copy b values into a.
     size_t size = b.size();
     if (size > 0) {
       *a = new tpl_t[size];
-      for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i], env);
+      for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i]);
     }
     else {
       *a = NULL;
@@ -130,12 +127,10 @@ struct TPL_Traits<tpl_t, tpl_t> {
 
   static inline bool OK_TO_CAST_TPL_T() {return true;}
 
-  static inline void ASSIGN_TPL_T(tpl_t &a, tpl_t b,
-                                  const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T(tpl_t &a, tpl_t b)
   { a = b; }
 
-  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<tpl_t> &b,
-                                        const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T_ARRAY(tpl_t **a, ArrayView<tpl_t> &b)
   {
     if (b.size() > 0)
       *a = const_cast<tpl_t *> (b.getRawPtr());
@@ -162,7 +157,9 @@ struct TPL_Traits<tpl_t, tpl_t> {
 template <typename zno_t>
 struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
 
-  static const int num_id = sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE);
+  static const int NUM_ID = ((sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE) > 0)
+                           ? (sizeof(zno_t) / sizeof(ZOLTAN_ID_TYPE))
+                           : 1);
 
   static inline bool OK_TO_CAST_TPL_T() 
   {
@@ -173,11 +170,9 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
     return false;
   }
 
-  static inline void ASSIGN_TPL_T(ZOLTAN_ID_PTR &a, zno_t b,
-                                  const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T(ZOLTAN_ID_PTR &a, zno_t b)
   {
-    switch (num_id) {
-    case 0:
+    switch (NUM_ID) {
     case 1:
       a[0] = static_cast<ZOLTAN_ID_TYPE>(b);
       break;
@@ -189,23 +184,22 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
     }
     default: {
       ZOLTAN_ID_TYPE *ptr = (ZOLTAN_ID_TYPE *)(&b);
-      for (int i = 0; i < num_id; i++) a[i] = ptr[i];
+      for (int i = 0; i < NUM_ID; i++) a[i] = ptr[i];
     }
     }
   }
 
-  static inline void ASSIGN_TPL_T_ARRAY(ZOLTAN_ID_PTR *a, ArrayView<zno_t> &b,
-                                        const RCP<const Environment> &env)
+  static inline void ASSIGN_TPL_T_ARRAY(ZOLTAN_ID_PTR *a, ArrayView<zno_t> &b)
   {
     // Allocate array a; copy b values into a.
     size_t size = b.size();
     if (size > 0) {
-      if (num_id == 1) {
+      if (NUM_ID == 1) {
         *a = b.getRawPtr();  // Don't have to make a new copy
       }
       else {
-        *a = new ZOLTAN_ID_TYPE[size*num_id];
-        for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i], env);
+        *a = new ZOLTAN_ID_TYPE[size*NUM_ID];
+        for (size_t i = 0; i < size; i++) ASSIGN_TPL_T((*a)[i], b[i]);
       }
     }
     else {
@@ -216,7 +210,7 @@ struct TPL_Traits<ZOLTAN_ID_PTR, zno_t> {
   static inline void DELETE_TPL_T_ARRAY(ZOLTAN_ID_PTR *a)
   {
     // Delete the copy made in ASSIGN_TPL_T_ARRAY.
-    if (num_id != 1)
+    if (NUM_ID != 1)
       delete [] *a;
   }
 };
