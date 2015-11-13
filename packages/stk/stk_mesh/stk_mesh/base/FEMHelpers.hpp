@@ -53,11 +53,11 @@ Entity declare_element( BulkData & mesh ,
 
 inline
 Entity declare_element( BulkData & mesh ,
-                        Part & part ,
+                        Part & partWithTopology ,
                         const EntityId elem_id ,
                         const EntityIdVector & node_ids )
 {
-  PartVector vec(1, &part);
+  PartVector vec(1, &partWithTopology);
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 

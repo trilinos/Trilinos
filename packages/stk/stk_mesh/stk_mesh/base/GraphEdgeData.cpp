@@ -14,7 +14,7 @@ void Graph::set_num_local_elements(size_t n)
 
 void Graph::add_new_element()
 {
-    m_graphEdges.push_back(std::vector<GraphEdge>());
+    m_graphEdges.push_back(GraphEdgesForElement());
 }
 
 size_t Graph::get_num_elements_in_graph() const
@@ -34,16 +34,16 @@ size_t Graph::get_num_edges_for_element(impl::LocalId elem) const
 
 const GraphEdge & Graph::get_edge_for_element(impl::LocalId elem1, size_t index) const
 {
-    return m_graphEdges[elem1][index];
+    return m_graphEdges[elem1].get_edge_at_index(index);
 }
 
-void fill_graph_edges_for_elem_side(const std::vector <GraphEdge> &graphEdges, int side, std::vector<GraphEdge>& edges)
+void fill_graph_edges_for_elem_side(const GraphEdgesForElement &graphEdgesForElement, int side, std::vector<GraphEdge>& edges)
 {
-    for(size_t i = 0; i < graphEdges.size(); ++i)
+    for(size_t i = 0; i < graphEdgesForElement.size(); ++i)
     {
-        if(graphEdges[i].side1 == side)
+        if(graphEdgesForElement.get_edge_at_index(i).side1 == side)
         {
-            edges.push_back(graphEdges[i]);
+            edges.push_back(graphEdgesForElement.get_edge_at_index(i));
         }
     }
 }
@@ -52,8 +52,12 @@ std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int
 {
     std::vector<GraphEdge> edges;
     fill_graph_edges_for_elem_side(m_graphEdges[elem], side, edges);
-
     return edges;
+}
+
+const GraphEdgesForElement& Graph::get_edges_for_element(size_t index) const
+{
+    return m_graphEdges[index];
 }
 
 void Graph::add_edge(const GraphEdge &graphEdge)
@@ -64,7 +68,7 @@ void Graph::add_edge(const GraphEdge &graphEdge)
 
 void Graph::delete_edge_from_graph(impl::LocalId elem, int offset)
 {
-    m_graphEdges[elem].erase(m_graphEdges[elem].begin() + offset);
+    m_graphEdges[elem].erase_at_index(offset);
     --m_numEdges;
 }
 
@@ -72,12 +76,8 @@ void Graph::delete_edge(const GraphEdge &graphEdge)
 {
     const size_t numConnected = m_graphEdges[graphEdge.elem1].size();
     for(size_t i=0; i<numConnected; ++i)
-    {
-        if(m_graphEdges[graphEdge.elem1][i] == graphEdge)
-        {
+        if(m_graphEdges[graphEdge.elem1].get_edge_at_index(i) == graphEdge)
             delete_edge_from_graph(graphEdge.elem1, i);
-        }
-    }
 }
 
 void Graph::delete_all_connections(impl::LocalId elem)
@@ -86,20 +86,20 @@ void Graph::delete_all_connections(impl::LocalId elem)
     m_graphEdges[elem].clear();
 }
 
-void Graph::change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, impl::LocalId newElem2Id)
-{
-    std::vector <GraphEdge> &elem1_edges = m_graphEdges[edgeToChange.elem1];
-    auto iter = std::find(elem1_edges.begin(), elem1_edges.end(), edgeToChange);
-    if(iter != elem1_edges.end())
-    {
-        iter->elem2 = newElem2Id;
-    }
-}
-
 void Graph::clear()
 {
     m_numEdges = 0;
     m_graphEdges.clear();
+}
+
+bool Graph::is_valid(impl::LocalId elem) const
+{
+    return m_graphEdges[elem].is_valid();
+}
+
+void Graph::invalidate(impl::LocalId elem)
+{
+    m_graphEdges[elem].invalidate();
 }
 
 impl::parallel_info& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)

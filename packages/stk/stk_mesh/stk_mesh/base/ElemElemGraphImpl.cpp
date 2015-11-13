@@ -15,6 +15,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk { namespace mesh {
 
@@ -474,6 +475,21 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     return side;
 }
 
+void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
+{
+    const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
+    stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
+            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
+    // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
+    // means the normals oppose
+    bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first == sideOrdinal);
+
+    if (does_local_shell_side_normal_oppose_other_element_side_normal)
+    {
+        filteredConnectedElements.push_back(connectedElem);
+    }
+}
+
 void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
 {
     const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
@@ -542,10 +558,13 @@ void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh
         ConnectedElementDataVector filteredConnectedElements;
         for (const ConnectedElementData & connectedElem: connectedElementData)
         {
-            if(mesh.identifier(localElement) == connectedElem.m_elementIdentifier) continue;
-            ThrowRequireMsg(!connectedElem.m_elementTopology.is_shell(), "Coinicident shells not supported in graph(" << mesh.identifier(localElement) << ", "
-                    << connectedElem.m_elementIdentifier << "). Contact sierra-help@sandia.gov for support.");
-            add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+            if(mesh.identifier(localElement) != connectedElem.m_elementIdentifier)
+            {
+                if(connectedElem.m_elementTopology.is_shell())
+                    add_shell_element_if_coincident(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+                else
+                    add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+            }
         }
         connectedElementData.swap(filteredConnectedElements);
     }
@@ -593,29 +612,276 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
     }
 }
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const stk::mesh::Graph& graph,
-        std::vector<ElementSidePair>& element_side_pairs)
+int count_shared_sides(const stk::mesh::Graph &graph, stk::mesh::impl::LocalId elem1,  stk::mesh::impl::LocalId elem2)
 {
-    size_t num_sides = topology.num_sides();
-    std::vector<int> elem_sides;
-
-    if (graph.get_num_edges_for_element(elementId) < num_sides)
+    int numSharedSides = 0;
+    for(size_t i=0; i < graph.get_num_edges_for_element(elem1); i++)
     {
-        elem_sides.assign(num_sides, -1);
+        const stk::mesh::GraphEdge &graphEdge = graph.get_edge_for_element(elem1, i);
+        if(graphEdge.elem2 == elem2)
+            numSharedSides++;
+    }
+    return numSharedSides;
+}
+
+bool are_elements_coincident(const stk::mesh::Graph &graph,
+                             const CoincidentElementDescription &elemDesc)
+{
+    int numSharedSides = count_shared_sides(graph, elemDesc.elem1, elemDesc.elem2);
+    return (numSharedSides == elemDesc.numSides);
+}
+
+bool is_there_a_graph_edge_for_this_side(int graphEdgeSide1, int elemSide)
+{
+    return (graphEdgeSide1 == elemSide);
+}
+
+bool is_connected_to_elem_via_side(const stk::mesh::Graph &graph,
+                     const stk::mesh::GraphEdge &graphEdge,
+                     int numSides,
+                     int elemSide)
+{
+    if(is_there_a_graph_edge_for_this_side(graphEdge.side1, elemSide))
+    {
+        if(are_elements_coincident(graph, {numSides, graphEdge.elem1, graphEdge.elem2}))
+            return false;
+        else
+            return true;
+    }
+    else
+        return false;
+}
+
+bool is_side_exposed(const stk::mesh::Graph &graph,
+                     int numSides,
+                     const stk::mesh::impl::ElementSidePair &elemSidePair)
+{
+    bool foundExposedSide = true;
+    for(size_t i=0; i < graph.get_num_edges_for_element(elemSidePair.first); i++)
+    {
+        if(is_connected_to_elem_via_side(graph, graph.get_edge_for_element(elemSidePair.first, i), numSides, elemSidePair.second))
+        {
+            foundExposedSide = false;
+            break;
+        }
+    }
+    return foundExposedSide;
+}
+
+void add_exposed_coincident_sides(const stk::mesh::Graph &graph,
+                                  int numSides,
+                                  const stk::mesh::impl::ElementSidePair &elemSidePair,
+                                  std::vector<stk::mesh::CoincidentElementConnection> &exposedCoincidentSides)
+{
+    for(size_t i=0; i < graph.get_num_edges_for_element(elemSidePair.first); i++)
+    {
+        const GraphEdge &graphEdge = graph.get_edge_for_element(elemSidePair.first, i);
+        if(is_there_a_graph_edge_for_this_side(graphEdge.side1, elemSidePair.second) && are_elements_coincident(graph, {numSides, graphEdge.elem1, graphEdge.elem2}))
+            exposedCoincidentSides.push_back(graphEdge);
+    }
+}
+
+void add_side_if_exposed(const stk::mesh::Graph &graph,
+                         int numSides,
+                         const stk::mesh::impl::ElementSidePair &elemSidePair,
+                         std::vector<stk::mesh::CoincidentElementConnection> &exposedCoincidentSides)
+{
+    if(is_side_exposed(graph, numSides, elemSidePair))
+        add_exposed_coincident_sides(graph, numSides, elemSidePair, exposedCoincidentSides);
+}
+
+std::vector<stk::mesh::CoincidentElementConnection> get_exposed_coincident_sides(const stk::mesh::Graph &graph, int numSides, stk::mesh::impl::LocalId elemId)
+{
+    std::vector<stk::mesh::CoincidentElementConnection> exposedCoincidentSides;
+    for(int elemSide = 0; elemSide < numSides; elemSide++)
+        add_side_if_exposed(graph, numSides, {elemId, elemSide}, exposedCoincidentSides);
+    return exposedCoincidentSides;
+}
+
+void add_element_side_pairs_for_unused_sides(LocalId elementId,
+                                             size_t numElemSides,
+                                             const stk::mesh::Graph& graph,
+                                             std::vector<ElementSidePair>& element_side_pairs)
+{
+    if (graph.get_num_edges_for_element(elementId) < numElemSides)
+    {
+        std::vector<int> elemSides(numElemSides, -1);
         for(size_t j=0; j<graph.get_num_edges_for_element(elementId); ++j)
         {
             const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
             int sideId = graphEdge.side1;
-            elem_sides[sideId] = sideId;
+            elemSides[sideId] = sideId;
         }
 
-        for(size_t j=0; j<num_sides; ++j)
+        for(size_t j=0; j<numElemSides; ++j)
         {
-            if (elem_sides[j] == -1)
+            if (elemSides[j] == -1)
             {
                 int sideId = j;
                 element_side_pairs.push_back(std::make_pair(elementId, sideId));
             }
+        }
+    }
+}
+
+void fill_coincident_edges(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies, size_t elemId, std::vector<stk::mesh::GraphEdge> &edgesToDelete)
+{
+    for(size_t edgeIndex = 0; edgeIndex < graph.get_num_edges_for_element(elemId); edgeIndex++)
+    {
+        const stk::mesh::GraphEdge &graphEdge = graph.get_edge_for_element(elemId, edgeIndex);
+        if(stk::mesh::impl::are_elements_coincident(graph, {static_cast<int>(topologies[elemId].num_sides()), graphEdge.elem1, graphEdge.elem2}))
+            edgesToDelete.push_back(graphEdge);
+    }
+}
+
+void delete_symmetric_connections(stk::mesh::Graph& graph, const stk::mesh::impl::LocalId elemId)
+{
+    for(size_t i = 0; i < graph.get_num_edges_for_element(elemId); i++)
+    {
+        const stk::mesh::GraphEdge& otherEdge = graph.get_edge_for_element(elemId, i);
+        if(is_local_element(otherEdge.elem2))
+            graph.delete_edge(create_symmetric_edge(otherEdge));
+    }
+}
+
+void delete_all_edges_involving_element(stk::mesh::Graph& graph, const stk::mesh::impl::LocalId elemId)
+{
+    delete_symmetric_connections(graph, elemId);
+    graph.delete_all_connections(elemId);
+    graph.invalidate(elemId);
+}
+
+void delete_edges(stk::mesh::Graph& graph, const std::vector<stk::mesh::GraphEdge>& edgesToDelete)
+{
+    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+        graph.delete_edge(edgeToDelete);
+
+    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+        if(is_local_element(edgeToDelete.elem2))
+            delete_all_edges_involving_element(graph, edgeToDelete.elem2);
+}
+
+void add_edges(const std::vector<stk::mesh::GraphEdge>& edgesToDelete, SparseGraph& extractedCoincidentSides)
+{
+    for(const stk::mesh::GraphEdge& edgeToDelete : edgesToDelete)
+        extractedCoincidentSides[edgeToDelete.elem1].push_back(edgeToDelete);
+}
+
+void extract_coincident_sides_for_element(stk::mesh::Graph& graph,
+                                          const std::vector<stk::topology>& topologies,
+                                          size_t elemId,
+                                          SparseGraph& extractedCoincidentSides)
+{
+    std::vector<stk::mesh::GraphEdge> coincidentEdges;
+    fill_coincident_edges(graph, topologies, elemId, coincidentEdges);
+    add_edges(coincidentEdges, extractedCoincidentSides);
+    delete_edges(graph, coincidentEdges);
+}
+
+SparseGraph extract_coincident_sides(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies)
+{
+    SparseGraph extractedCoincidentSides;
+    for(size_t elemId = 0; elemId < graph.get_num_elements_in_graph(); elemId++)
+        extract_coincident_sides_for_element(graph, topologies, elemId, extractedCoincidentSides);
+    return extractedCoincidentSides;
+}
+
+bool is_local_element(stk::mesh::impl::LocalId elemId)
+{
+    return (elemId >= 0);
+}
+
+std::map<int, std::vector<LocalId>> get_extracted_coincident_local_ids(const stk::mesh::Graph &graph,
+                                                                       const stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,
+                                                                       const stk::mesh::impl::SparseGraph &extractedCoincidentElements)
+{
+    std::map<int, std::vector<LocalId>> extractedIdsAndConnectedProcs;
+    for(const stk::mesh::impl::SparseGraph::value_type &extractedElementGraphEdges : extractedCoincidentElements)
+    {
+        std::vector<LocalId> extractedIds;
+        for(const stk::mesh::GraphEdge &graphEdge : extractedElementGraphEdges.second)
+        {
+            if(!graph.is_valid(graphEdge.elem2))
+            {
+                extractedIds.push_back(graphEdge.elem2);
+            }
+        }
+        stk::util::sort_and_unique(extractedIds);
+        if(!extractedIds.empty())
+        {
+            for(const stk::mesh::GraphEdge &graphEdge : graph.get_edges_for_element(extractedElementGraphEdges.first))
+            {
+                if(!is_local_element(graphEdge.elem2))
+                {
+                    int otherProc = parallelInfoForGraphEdges.get_parallel_info_for_graph_edge(graphEdge).m_other_proc;
+                    std::vector<LocalId> &ids = extractedIdsAndConnectedProcs[otherProc];
+                    ids.insert(ids.end(), extractedIds.begin(), extractedIds.end());
+                }
+            }
+        }
+    }
+    return extractedIdsAndConnectedProcs;
+}
+
+void remove_edges_to_extracted_coincident_elements_on_other_procs(const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc,
+                                                                  stk::mesh::Graph &graph,
+                                                                  MPI_Comm comm)
+{
+    stk::CommSparse commSparse(comm);
+    stk::pack_and_communicate(commSparse,
+        [&commSparse, &extractedEntityIdsByProc]()
+        {
+            stk::mesh::impl::pack_extracted_coincident_element_ids(commSparse, extractedEntityIdsByProc);
+        });
+    stk::unpack_communications(commSparse,
+        [&commSparse,&graph](int procId)
+        {
+            stk::mesh::impl::unpack_extracted_coincident_element_ids(commSparse, procId, graph);
+        });
+}
+
+void pack_extracted_coincident_element_ids(stk::CommSparse &commSparse, const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc)
+{
+    for(const auto &procAndEntityIdVec : extractedEntityIdsByProc)
+    {
+        int proc = procAndEntityIdVec.first;
+        const stk::mesh::EntityIdVector &idVec = procAndEntityIdVec.second;
+        commSparse.send_buffer(proc).pack<size_t>(idVec.size());
+        for(const stk::mesh::EntityId extractedId : idVec)
+        {
+            commSparse.send_buffer(proc).pack<stk::mesh::EntityId>(extractedId);
+        }
+    }
+}
+
+void unpack_extracted_coincident_element_ids(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph)
+{
+    size_t numCoincidentElems;
+    commSparse.recv_buffer(procId).unpack<size_t>(numCoincidentElems);
+    for(size_t i=0; i<numCoincidentElems; i++)
+    {
+        stk::mesh::EntityId coincidentElem;
+        commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(coincidentElem);
+
+        std::vector<stk::mesh::GraphEdge> graphEdgesToDelete;
+        size_t numElems = graph.get_num_elements_in_graph();
+        for(size_t i=0; i<numElems; i++)
+        {
+            for(const stk::mesh::GraphEdge &graphEdge : graph.get_edges_for_element(i))
+            {
+                if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
+                {
+                    if(static_cast<stk::mesh::EntityId>(-graphEdge.elem2) == coincidentElem)
+                    {
+                        graphEdgesToDelete.push_back(graphEdge);
+                    }
+                }
+            }
+        }
+
+        for(const stk::mesh::GraphEdge &graphEdge : graphEdgesToDelete)
+        {
+            graph.delete_edge(graphEdge);
         }
     }
 }

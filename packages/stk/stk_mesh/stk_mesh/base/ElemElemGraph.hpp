@@ -106,7 +106,8 @@ protected:
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm,
+                             const stk::mesh::EntityVector & elements_to_ignore);
 
 
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
@@ -191,7 +192,7 @@ protected:
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_parallel_edges;
     stk::mesh::SideIdPool m_sideIdPool;
-
+    impl::SparseGraph m_coincidentGraph;
 private:
     void resize_entity_to_local_id_vector_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
@@ -201,12 +202,36 @@ private:
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
-    stk::mesh::Entity add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
+    stk::mesh::Entity add_side_to_mesh(const stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
 
     void create_remote_sides(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
     void create_remote_sides1(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
+    bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
+    void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity, const stk::mesh::GraphEdge &graphEdge, stk::mesh::EntityVector skinned_elements);
+    void create_side_entities(const std::vector<stk::mesh::impl::ElementSidePair> &element_side_pairs,
+                              impl::LocalId local_id,
+                              const stk::mesh::PartVector& skin_parts,
+                              std::vector<stk::mesh::sharing_info> &shared_modified,
+                              stk::mesh::EntityVector &skinned_elements);
+    stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
+                                                 int elemSide,
+                                                 stk::mesh::Entity element,
+                                                 const stk::mesh::PartVector& skin_parts,
+                                                 std::vector<stk::mesh::sharing_info> &shared_modified);
+    void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
+                                      impl::ElementSidePair skinnedElemSidePair,
+                                      stk::mesh::EntityVector &skinned_elements);
+    void connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
+                                             impl::ElementSidePair skinnedElemSidePair,
+                                             stk::mesh::EntityVector &skinned_elements);
+    void add_element_side_pais_due_to_air_selector(impl::LocalId local_id,
+                                                   std::vector<stk::mesh::impl::ElementSidePair> &elemSidePairs);
+    std::map<int, stk::mesh::EntityIdVector> convert_local_ids_to_entity_ids(
+            const std::map<int, std::vector<stk::mesh::impl::LocalId>> &extractedIdsByProc);
+    std::map<int, stk::mesh::EntityIdVector> get_extracted_coincident_entity_ids();
+
 public:
     void write_graph() const;
 private:

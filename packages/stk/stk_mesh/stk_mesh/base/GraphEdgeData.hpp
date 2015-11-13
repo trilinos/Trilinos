@@ -10,6 +10,54 @@ namespace mesh
 
 class GraphEdge;
 
+class GraphEdgesForElement
+{
+public:
+    typedef std::vector<GraphEdge>::const_iterator const_iterator;
+    GraphEdgesForElement() : isValid(true) { }
+
+    const_iterator begin() const
+    {
+        return graphEdges.begin();
+    }
+    const_iterator end() const
+    {
+        return graphEdges.end();
+    }
+
+    size_t size() const
+    {
+        return graphEdges.size();
+    }
+    const GraphEdge & get_edge_at_index(size_t index) const
+    {
+        return graphEdges[index];
+    }
+    void push_back(const GraphEdge &graphEdge)
+    {
+        graphEdges.push_back(graphEdge);
+    }
+    void erase_at_index(size_t index)
+    {
+        graphEdges.erase(graphEdges.begin() + index);
+    }
+    void clear()
+    {
+        graphEdges.clear();
+    }
+    bool is_valid() const
+    {
+       return isValid;
+    }
+    void invalidate()
+    {
+        isValid = false;
+    }
+private:
+    std::vector<GraphEdge> graphEdges;
+    bool isValid;
+};
+
 class Graph
 {
 public:
@@ -19,16 +67,19 @@ public:
     size_t get_num_edges() const;
     size_t get_num_edges_for_element(impl::LocalId elem) const;
     const GraphEdge & get_edge_for_element(impl::LocalId elem1, size_t index) const;
+    const GraphEdgesForElement& get_edges_for_element(size_t index) const;
     std::vector<GraphEdge> get_edges_for_element_side(impl::LocalId elem, int side) const;
 
     void add_edge(const GraphEdge &graphEdge);
     void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_connections(impl::LocalId elem);
-    void change_elem2_id_for_edge(const stk::mesh::GraphEdge& edgeToChange, impl::LocalId newElem2Id);
     void clear();
+
+    bool is_valid(impl::LocalId elem) const;
+    void invalidate(impl::LocalId elem);
 private:
-    std::vector<std::vector<GraphEdge> > m_graphEdges;
+    std::vector<GraphEdgesForElement> m_graphEdges;
     size_t m_numEdges = 0;
 };
 

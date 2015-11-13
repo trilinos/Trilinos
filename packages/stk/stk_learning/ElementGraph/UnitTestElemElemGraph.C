@@ -1130,7 +1130,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         }
 
         std::vector<ElementSidePair> element_side_pairs;
-        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], elemElemGraph.get_graph(), element_side_pairs);
+        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i].num_sides(), elemElemGraph.get_graph(), element_side_pairs);
 
         for(size_t j = 0; j < element_side_pairs.size(); j++)
         {

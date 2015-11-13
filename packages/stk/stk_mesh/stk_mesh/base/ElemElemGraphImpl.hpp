@@ -11,6 +11,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class Graph; } }
+namespace stk { namespace mesh { class ParallelInfoForGraphEdges; } }
 namespace stk { class CommSparse; }
 
 namespace stk { namespace mesh {
@@ -128,6 +129,8 @@ struct GraphEdge
     int side2;
 };
 
+typedef GraphEdge CoincidentElementConnection;
+
 struct GraphEdgeLessByElem2 {
     bool operator()(const GraphEdge& a, const GraphEdge& b) const
     {
@@ -157,6 +160,13 @@ bool operator==(const GraphEdge& a, const GraphEdge& b)
             a.side1 == b.side1 &&
             a.elem2 == b.elem2 &&
             a.side2 == b.side2;
+}
+
+inline
+std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
+{
+    out << "(" << graphEdge.elem1 << "," << graphEdge.side1 << " -> " << graphEdge.elem2 << "," << graphEdge.side2 << ")";
+    return out;
 }
 
 namespace impl {
@@ -225,7 +235,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const stk::mesh::Graph& graph,
+void add_element_side_pairs_for_unused_sides(LocalId elementId, size_t numElemSides, const stk::mesh::Graph& graph,
         std::vector<ElementSidePair>& element_side_pairs);
 
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData);
@@ -234,6 +244,27 @@ void add_parts_from_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity ele
 stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData, const stk::mesh::PartVector& parts_for_creating_side, stk::mesh::Entity element, int side_ord);
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
+struct CoincidentElementDescription
+{
+    int numSides;
+    stk::mesh::impl::LocalId elem1;
+    stk::mesh::impl::LocalId elem2;
+};
+typedef std::map<stk::mesh::impl::LocalId, std::vector<stk::mesh::GraphEdge>> SparseGraph;
+
+std::vector<stk::mesh::CoincidentElementConnection> get_exposed_coincident_sides(const stk::mesh::Graph &graph, int numSides, stk::mesh::impl::LocalId elemId);
+bool are_elements_coincident(const stk::mesh::Graph &graph, const CoincidentElementDescription &elemDesc);
+SparseGraph extract_coincident_sides(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies);
+bool is_local_element(stk::mesh::impl::LocalId elemId);
+std::map<int, std::vector<LocalId>> get_extracted_coincident_local_ids(const stk::mesh::Graph &graph,
+                                                                       const stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,
+                                                                       const stk::mesh::impl::SparseGraph &extractedCoincidentElements);
+void pack_extracted_coincident_element_ids(stk::CommSparse &commSparse,
+                                           const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc);
+void unpack_extracted_coincident_element_ids(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph);
+void remove_edges_to_extracted_coincident_elements_on_other_procs(const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc,
+                                                                  stk::mesh::Graph &graph,
+                                                                  MPI_Comm comm);
 }
 }} // end namespaces stk mesh
 
