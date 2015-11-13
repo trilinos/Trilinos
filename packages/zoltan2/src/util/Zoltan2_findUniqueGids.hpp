@@ -57,6 +57,8 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 
+#include <Zoltan2_TPLTraits.hpp>
+
 #include <zoltan_dd_cpp.h>
 #include <DD.h>
 
@@ -138,21 +140,21 @@ size_t findUniqueGids(
   int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
   int num_user = sizeof(gno_t);
 
-  // TODO  Need a Zoltan traits class
-  if (sizeof(gno_t) > sizeof(ZOLTAN_ID_TYPE))
-    throw std::runtime_error("Not ready for sizeof(gno_t) > "
-                                           "sizeof(ZOLTAN_ID_TYPE) yet");
-
   // Buffer the keys for Zoltan_DD
+  Teuchos::ArrayRCP<const gno_t> *tmpKeyVecs =
+           new Teuchos::ArrayRCP<const gno_t>[num_entries];
+  for (size_t v = 0; v < num_entries; v++) tmpKeyVecs[v] = keys.getData(v);
+
   ZOLTAN_ID_PTR ddkeys = new ZOLTAN_ID_TYPE[num_gid * num_keys];
   size_t idx = 0;
   for (size_t i = 0; i < num_keys; i++) {
     for (size_t v = 0; v < num_entries; v++) {
-      // TODO:  May prefer to switch the loops for Tpetra for fewer calls 
-      //        to getData
-      ddkeys[idx++] = keys.getData(v)[i];  // TODO Need Zoltan traits here
+      ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, tmpKeyVecs[v][i]);
+      idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
     }
   }
+  delete [] tmpKeyVecs;
 
   // Allocate memory for the result
   char *ddnewgids = new char[num_user * num_keys];
@@ -205,17 +207,16 @@ size_t findUniqueGids(
   int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
   int num_user = sizeof(gno_t);
 
-  // TODO  Need a Zoltan traits class
-  if (sizeof(gno_t) > sizeof(ZOLTAN_ID_TYPE))
-    throw std::runtime_error("Not ready for sizeof(gno_t) > "
-                                           "sizeof(ZOLTAN_ID_TYPE) yet");
-
   // Buffer the keys for Zoltan_DD
   ZOLTAN_ID_PTR ddkeys = new ZOLTAN_ID_TYPE[num_gid * num_keys];
   size_t idx = 0;
-  for (size_t i = 0; i < num_keys; i++)
-    for (size_t v = 0; v < num_entries; v++)
-      ddkeys[idx++] = keys[i][v];  // TODO Need Zoltan traits here
+  for (size_t i = 0; i < num_keys; i++) {
+    for (size_t v = 0; v < num_entries; v++) {
+      ZOLTAN_ID_PTR ddkey = &(ddkeys[idx]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(ddkey, keys[i][v]);
+      idx += TPL_Traits<ZOLTAN_ID_PTR,gno_t>::NUM_ID;
+    }
+  }
 
   // Allocate memory for the result
   char *ddnewgids = new char[num_user * num_keys];

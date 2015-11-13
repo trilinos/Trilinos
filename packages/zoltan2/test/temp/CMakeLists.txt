@@ -45,6 +45,14 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
 )
 
+#IF (${PROJECT_NAME}_ENABLE_Epetra)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    XpetraEpetraMap
+#    SOURCES XpetraEpetraMap.cpp
+#    COMM serial mpi
+#  )
+#ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   teuchosCommTest
   SOURCES teuchosCommTest.cpp

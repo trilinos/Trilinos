@@ -46,6 +46,8 @@
 #ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DEF_HPP_
 #define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DEF_HPP_
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 #include <climits>
 
 #include <Xpetra_Map.hpp>
@@ -250,5 +252,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_ */

@@ -659,29 +659,12 @@ template<typename T, Index N>
 inline T
 norm(Vector<T, N> const & u)
 {
-  Index const
-  dimension = u.get_dimension();
+  T const
+  s = norm_square(u);
 
-  T
-  s = 0.0;
+  if (s > 0.0) return std::sqrt(s);
 
-  switch (dimension) {
-
-  default:
-    s = std::sqrt(dot(u, u));
-    break;
-
-  case 3:
-    s = std::sqrt(u(0) * u(0) + u(1) * u(1) + u(2) * u(2));
-    break;
-
-  case 2:
-    s = std::sqrt(u(0) * u(0) + u(1) * u(1));
-    break;
-
-  }
-
-  return s;
+  return 0.0;
 }
 
 //

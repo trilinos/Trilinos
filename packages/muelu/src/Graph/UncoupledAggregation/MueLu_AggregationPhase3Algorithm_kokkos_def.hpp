@@ -43,8 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP_
-#define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP_
+#ifndef MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
+#define MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP
+
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -144,4 +146,5 @@ namespace MueLu {
 
 } // end namespace
 
-#endif /* MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_AGGREGATIONPHASE3ALGORITHM_KOKKOS_DEF_HPP

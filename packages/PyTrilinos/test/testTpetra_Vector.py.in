@@ -172,8 +172,8 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(TpetraVectorTestCase_int   ))
     suite.addTest(unittest.makeSuite(TpetraVectorTestCase_long  ))
-    suite.addTest(unittest.makeSuite(TpetraVectorTestCase_float ))
     suite.addTest(unittest.makeSuite(TpetraVectorTestCase_double))
+    # suite.addTest(unittest.makeSuite(TpetraVectorTestCase_float ))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()

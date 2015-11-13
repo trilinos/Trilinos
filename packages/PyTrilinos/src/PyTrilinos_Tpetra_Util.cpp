@@ -60,7 +60,7 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
   PyObject * indices     = NULL;
   npy_intp   dims        = 1;
   int        currentDim  = 0;
-  Teuchos::ArrayView< const long > nodeBlockIDs;
+  Teuchos::ArrayView< const PYTRILINOS_GLOBAL_ORD > nodeBlockIDs;
 
   // Get the Teuchos::Comm
   Teuchos::RCP< const Tpetra::Comm< int > > comm = tm->getComm();

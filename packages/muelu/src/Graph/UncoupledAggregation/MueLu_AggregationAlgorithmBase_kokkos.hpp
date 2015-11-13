@@ -43,50 +43,22 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_
-#define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_
+#ifndef MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
+#define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
 
+#include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_Types.hpp"
 
 namespace MueLu {
-
-  // In the algorithm, aggStat[] = READY/NOTSEL/SELECTED indicates whether a node has been aggregated
-  enum NodeState {
-    READY      = 1, // indicates that a node is available to be
-                    // selected as a root node of an aggregate
-
-    NOTSEL     = 2, // indicates that a node has been rejected as a root node.
-                    // This could perhaps be because if this node had been
-                    // selected a small aggregate would have resulted
-                    // This is Phase 1 specific
-
-    AGGREGATED = 3, // indicates that a node has been assigned
-                    // to an aggregate
-
-    ONEPT      = 4, // indicates that a node shall be preserved over
-                    // all multigrid levels as 1 point aggregate
-
-    IGNORED    = 5, // indicates that the node is removed from consideration,
-                    // and is not aggregated
-
-    BOUNDARY   = 6  // node is a Dirichlet node
-                    // During aggregation, it is transformed either to AGGREGATED
-                    // or to IGNORED
-  };
-
-
-
-  class Aggregate {
-  public:
-    int index;                  // local aggregate id
-    std::vector<int> list;      // list of node ids in aggregate
-  };
 
   /*!
        @class AggregationAlgorithmBase
@@ -114,12 +86,13 @@ namespace MueLu {
     //@{
 
     //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
+                                 std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
     //@}
+  };
 
-    };
-
-  } // namespace MueLu
+} // namespace MueLu
 
 #define MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_SHORT
-#endif /* MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_AGGREGATIONALGORITHMBASE_KOKKOS_HPP

@@ -192,7 +192,8 @@ namespace MueLuTests {
     aggParams.set("aggregation: min agg size",           3);
     aggParams.set("aggregation: max selected neighbors", 0);
     aggFact->SetParameterList(aggParams);
-    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetFactory("DofsPerNode",  dropFact);
+    aggFact->SetFactory("Graph",        dropFact);
 
     RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
     coarseMapFact->SetFactory("Aggregates", aggFact);

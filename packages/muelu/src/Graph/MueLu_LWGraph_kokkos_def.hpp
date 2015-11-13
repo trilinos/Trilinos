@@ -100,7 +100,7 @@ namespace MueLu {
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const Kokkos::View<const LocalOrdinal*, DeviceType>
+  typename LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::row_type
   LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
   getNeighborVertices(LocalOrdinal i) const {
     auto rowPointers = graph_.row_map;

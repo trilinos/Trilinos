@@ -170,7 +170,7 @@ void AlgParMETIS<Adapter>::partition(
   int nVwgt = model->getNumWeightsPerVertex();
   size_t nVtx = model->getVertexList(vtxgnos, vwgts);
   pm_idx_t pm_nVtx;
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx, env);
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx);
 
   pm_idx_t *pm_vwgts = NULL;
   if (nVwgt) {
@@ -193,13 +193,11 @@ void AlgParMETIS<Adapter>::partition(
 
   // Convert index types for edges, if needed
   pm_idx_t *pm_offsets;  
-  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets,
-                                                       env);
+  TPL_Traits<pm_idx_t,const lno_t>::ASSIGN_TPL_T_ARRAY(&pm_offsets, offsets);
   pm_idx_t *pm_adjs;  
   pm_idx_t pm_dummy_adj;
   if (nEdge)
-    TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos, 
-                                                         env);
+    TPL_Traits<pm_idx_t,const gno_t>::ASSIGN_TPL_T_ARRAY(&pm_adjs, adjgnos);
   else
     pm_adjs = &pm_dummy_adj;  // ParMETIS does not like NULL pm_adjs;
     
@@ -208,7 +206,7 @@ void AlgParMETIS<Adapter>::partition(
   pm_idx_t *pm_vtxdist;
   ArrayView<size_t> vtxdist; 
   model->getVertexDist(vtxdist);
-  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T_ARRAY(&pm_vtxdist, vtxdist, env);
+  TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T_ARRAY(&pm_vtxdist, vtxdist);
 
   // ParMETIS does not like processors having no vertices.
   // Inspect vtxdist and remove from communicator procs that have no vertices
@@ -277,7 +275,7 @@ void AlgParMETIS<Adapter>::partition(
     pm_idx_t pm_numflag = 0;
   
     pm_idx_t pm_nPart;
-    TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts, env);
+    TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nPart, numGlobalParts);
 
     if (parmetis_method == "PARTKWAY") {
 

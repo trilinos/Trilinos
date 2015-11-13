@@ -125,7 +125,7 @@ namespace MueLu {
     }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    KOKKOS_INLINE_FUNCTION const row_type getNeighborVertices(LO i) const;
+    KOKKOS_INLINE_FUNCTION row_type getNeighborVertices(LO i) const;
 
     //! Return true if vertex with local id 'v' is on current process.
     KOKKOS_INLINE_FUNCTION bool isLocalNeighborVertex(LO i) const {

@@ -43,16 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_IsolatedNodeAggregationAlgorithm_def.hpp
- *
- *  Created on: Mar 4, 2013
- *      Author: wiesner
- */
+#ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
+#define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP
 
-#ifndef MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP_
-#define MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP_
-
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -84,4 +78,5 @@ namespace MueLu {
 
 } // end namespace
 
-#endif /* MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP_ */
+#endif // HAVE_MUELU_KOKKOS_REFACTOR
+#endif // MUELU_ISOLATEDNODEAGGREGATIONALGORITHM_KOKKOS_DEF_HPP

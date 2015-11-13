@@ -176,7 +176,7 @@ void AlgPTScotch<Adapter>::partition(
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts, env);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(partnbr, numGlobalParts);
 
 #ifdef HAVE_ZOLTAN2_MPI
   int ierr = 0;
@@ -201,7 +201,7 @@ void AlgPTScotch<Adapter>::partition(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, vwgts);
   SCOTCH_Num vertlocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx, env);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(vertlocnbr, nVtx);
   SCOTCH_Num vertlocmax = vertlocnbr; // Assumes no holes in global nums.
 
   // Get edge info
@@ -212,16 +212,14 @@ void AlgPTScotch<Adapter>::partition(
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
-  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);
+  TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge);
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets,
-                                                          env);
+  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_TPL_T_ARRAY(&vertloctab, offsets);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
-  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds,
-                                                          env);
+  TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_TPL_T_ARRAY(&edgeloctab, edgeIds);
 
   // We don't use these arrays, but we need them as arguments to Scotch.
   SCOTCH_Num *vendloctab = NULL;  // Assume consecutive storage for adj
