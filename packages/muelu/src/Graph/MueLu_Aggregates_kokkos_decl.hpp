@@ -193,13 +193,13 @@ namespace MueLu {
     const RCP<LOVector>& GetProcWinner() const   { return procWinner_;         }
 
     //! Returns true if node with given local node id is marked to be a root node
-    KOKKOS_INLINE_FUNCTION bool IsRoot(LO i) const               { return isRoot_[i];          }
+    bool IsRoot(LO i) const               { return isRoot_[i];          }
 
     /*! @brief Set root node information.
 
     Used by aggregation methods only.
     */
-    KOKKOS_INLINE_FUNCTION void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -216,7 +216,7 @@ namespace MueLu {
       If forceRecompute==false and sizes have been calculated previously, then this parameter has no effect.
       Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
-    KOKKOS_INLINE_FUNCTION typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
+    typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
 
     local_graph_type GetGraph() const;
 
