@@ -47,8 +47,8 @@
 
 namespace panzer_stk_classic {
 
-  template 
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+  template
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory<int>(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer_stk_classic::STKConnManager<int> > & stkConn_manager,
@@ -62,8 +62,9 @@ namespace panzer_stk_classic {
                    bool writeTopo
                    );
 
-  template 
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+#ifndef PANZER_ORDINAL64_IS_INT
+  template
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory<panzer::Ordinal64>(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer_stk_classic::STKConnManager<panzer::Ordinal64> > & stkConn_manager,
@@ -76,8 +77,9 @@ namespace panzer_stk_classic {
                    bool writeCoordinates,
                    bool writeTopo
                    );
+#endif
 
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
@@ -97,6 +99,7 @@ namespace panzer_stk_classic {
       reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
     #endif
 
+#ifndef PANZER_ORDINAL64_IS_INT
     RCP<panzer_stk_classic::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<panzer::Ordinal64> >(conn_manager);
     if(long_conn!=Teuchos::null)
       return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,spatialDim,mpi_comm,strat_params,
@@ -106,6 +109,7 @@ namespace panzer_stk_classic {
                               writeCoordinates,
                               writeTopo
                               );
+#endif
 
     RCP<panzer_stk_classic::STKConnManager<int> > int_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_manager);
     if(int_conn!=Teuchos::null)
