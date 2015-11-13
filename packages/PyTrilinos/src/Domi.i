@@ -591,10 +591,10 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getDataNonConst;
 %ignore Domi::MDVector::getData;
 %include "Domi_MDVector.hpp"
-%teuchos_rcp(Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >)
-%teuchos_rcp(Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >)
-%teuchos_rcp(Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >)
-%teuchos_rcp(Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< double   , Domi::DefaultNode::DefaultNodeType >)
+//%teuchos_rcp(Domi::MDVector< float    , Domi::DefaultNode::DefaultNodeType >)
 %pythoncode
 %{
   def MDVector_getattr(self, name):
@@ -643,29 +643,29 @@ MDMap = MDMap_default
                                               DefaultNodeType >;
 #endif
 %template(MDVector_int   )
-  Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >;
+  Domi::MDVector< int      , Domi::DefaultNode::DefaultNodeType >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_int)
 %}
 %template(MDVector_long  )
-  Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >;
+  Domi::MDVector< long long, Domi::DefaultNode::DefaultNodeType >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_long)
 %}
-%template(MDVector_float )
-  Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >;
-%pythoncode
-%{
-  upgradeMDVectorClass(MDVector_float)
-%}
 %template(MDVector_double)
-  Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >;
+  Domi::MDVector< double   , Domi::DefaultNode::DefaultNodeType >;
 %pythoncode
 %{
   upgradeMDVectorClass(MDVector_double)
 %}
+// %template(MDVector_float )
+//   Domi::MDVector< float    , Domi::DefaultNode::DefaultNodeType >;
+// %pythoncode
+// %{
+//   upgradeMDVectorClass(MDVector_float)
+// %}
 
 ////////////////////////////
 // from_DistArray support //
