@@ -42,6 +42,39 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_MueLu_Epetra
+    ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_INT_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_serial_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_INT
+    ctest_linux_nightly_mpi_release_muelu_no_int_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_MueLu
     ctest_linux_nightly_mpi_release_muelu_geminga.cmake
     CTEST_INSTALLER_TYPE release
