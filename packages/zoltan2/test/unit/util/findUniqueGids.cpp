@@ -54,11 +54,26 @@
 #include <array>
 #include <unordered_set>
 #include <string>
+#include <typeinfo>
 
 #include <Teuchos_Comm.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
 #include <Zoltan2_findUniqueGids.hpp>
 
+template<typename T> 
+struct type_name
+{
+  static const char* name() { 
+    std::cout << "You are missing a DECL_TYPE_NAME" << std::endl;
+    return(NULL);
+  }
+};
+
+#define DECL_TYPE_NAME(x) \
+  template<> struct type_name<x> { static const char* name() {return #x;} }
+
+DECL_TYPE_NAME(int);
+DECL_TYPE_NAME(long long);
 
 ///////////////////////////////////////////////////////////////////////////
 // Tests for correctness
@@ -144,28 +159,22 @@ void checkNLocallyUnique(
               << std::endl;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+template <typename gno_t>
+void test1(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
-
+  // Test 1:
+  // Key has only one entry
+  // Each proc has me+1 keys
+  // Keys are in range [1,np]
   int me = comm->getRank();
   int np = comm->getSize();
 
-  {
-  // Test 1:
-  // Key has only one int entry
-  // Each proc has me+1 keys
-  // Keys are in range [1,np]
+  std::string name = std::string(" test1: ") 
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-  std::string name = " test1: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
-
-  typedef int gno_t;
   typedef std::array<gno_t, 1> zkey_t;
   typedef std::vector<zkey_t> keyvec_t;
   typedef std::vector<gno_t> gidvec_t;
@@ -193,20 +202,26 @@ int main(int argc, char *argv[])
   checkMinGid(name, gids, gno_t(0), *comm);
 
   checkNLocallyUnique(name, gids, nKeys);
-  }
+}
 
-  {
+///////////////////////////////////////////////////////////////////////////
+
+template <typename gno_t>
+void test2(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
   // Test 2:
-  // Key has two int entries
+  // Key has two entries
   // Each proc has six keys
   // Three Keys are {rank, x} for x in {1, 2, 3}
   // Three Keys are {(rank+x)%np, x} for x in {1, 2, 3}
   // Each rank has three unique and three non-unique keys
+  int me = comm->getRank();
+  int np = comm->getSize();
 
-  std::string name = " test2: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+  std::string name = std::string(" test2: ")
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-  typedef int gno_t;
   typedef std::array<gno_t, 2> zkey_t;
   typedef std::vector<zkey_t> keyvec_t;
   typedef std::vector<gno_t> gidvec_t;
@@ -241,23 +256,26 @@ int main(int argc, char *argv[])
 
   checkMinGid(name, gids, gno_t(0), *comm);
   
-  }
+}
 
-  {
+///////////////////////////////////////////////////////////////////////////
+template <typename gno_t>
+void test3(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
   // Test 3:
-  // Key has three long long entries
+  // Key has three entries
   // Each proc has 2*np keys
   // np Keys are {x, x, x} for x in {0, 1, ..., np-1}
   // np Keys are {rank, rank, x} for x in {0, 1, ..., np-1}
   // Each proc has one locally duplicated key
   // Each proc contributes np unique keys
+  int me = comm->getRank();
+  int np = comm->getSize();
 
-  std::string name = " test3: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+  std::string name = std::string(" test3: ")
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-
-  typedef long long gno_t;
   typedef std::array<gno_t, 3> zkey_t;
   typedef std::vector<zkey_t> keyvec_t;
   typedef std::vector<gno_t> gidvec_t;
@@ -301,25 +319,23 @@ int main(int argc, char *argv[])
   checkMinGid(name, gids, gno_t(0), *comm);
   
   checkNLocallyUnique(name, gids, size_t(nKeys-1));
-#else
-  if (me == 0) 
-    std::cout << "Skipping " << name 
-              << " because Teuchos::Comm (and, thus, Tpetra)"
-              << " not built with GO==long long"
-              << std::endl;
-#endif
-  }
+}
 
-  {
+///////////////////////////////////////////////////////////////////////////
+
+template <typename gno_t>
+void test4(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
   // Test 4:
-  // Key has four int entries
+  // Key has four entries
   // Each proc has (rank+1)%2 keys; odd-numbered ranks are empty
   // Keys are all identical {0, 1, 2, 3}
+  int me = comm->getRank();
 
-  std::string name = " test4: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+  std::string name = std::string(" test4: ")
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-  typedef int gno_t;
   typedef std::array<gno_t, 4> zkey_t;
   typedef std::vector<zkey_t> keyvec_t;
   typedef std::vector<gno_t> gidvec_t;
@@ -350,23 +366,28 @@ int main(int argc, char *argv[])
   checkMinGid(name, gids, gno_t(0), *comm);
   
   checkNLocallyUnique(name, gids, (nKeys ? size_t(1): size_t(0)));
-  }
+}
 
-  {
+///////////////////////////////////////////////////////////////////////////
+
+template <typename gno_t>
+void test5(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
   // Test 5:  Same as Test 3 but using the Tpetra Multivector interface.
-  // Key has three int entries
+  // Key has three entries
   // Each proc has 2*np keys
   // np Keys are {x, x, x} for x in {0, 1, ..., np-1}
   // np Keys are {rank, rank, x} for x in {0, 1, ..., np-1}
   // Each proc has one locally duplicated key
   // Each proc contributes np unique keys
+  int me = comm->getRank();
+  int np = comm->getSize();
 
-  std::string name = " test5: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+  std::string name = std::string(" test5: ")
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-#ifdef HAVE_TPETRA_INT_INT
   typedef int lno_t;
-  typedef int gno_t;
 
   const size_t nVecs = 3;
   const size_t nKeys = 2*np;
@@ -410,27 +431,24 @@ int main(int argc, char *argv[])
   checkMinGid(name, gidsVec, gno_t(0), *comm);
 
   checkNLocallyUnique(name, gidsVec, size_t(nKeys-1));
+} 
 
-#else
-  if (me == 0) 
-    std::cout << "Skipping " << name 
-              << " because Tpetra not built with GO==int"
-              << std::endl;
-#endif
-  } 
+///////////////////////////////////////////////////////////////////////////
 
-  {
+template <typename gno_t>
+void test6(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
   // Test 6:  Same as Test 4 but using the Tpetra Multivector interface.
-  // Key has four long long entries
+  // Key has four entries
   // Each proc has (rank+1)%2 keys; odd-numbered ranks are empty
   // Keys are all identical {0, 1, 2, 3}
+  int me = comm->getRank();
 
-  std::string name = " test6: ";
-  if (me == 0) std::cout << "--------  Starting " << name << std::endl;
+  std::string name = std::string(" test6: ")
+                   + std::string(type_name<gno_t>::name());
+  if (me == 0) std::cout << "--------\n  Starting " << name << std::endl;
 
-#ifdef HAVE_TPETRA_INT_LONG_LONG
   typedef int lno_t;
-  typedef long long gno_t;
 
   const size_t nVecs = 4;
   const size_t nKeys = (me+1)%2;
@@ -469,12 +487,42 @@ int main(int argc, char *argv[])
   checkMinGid(name, gidsVec, gno_t(0), *comm);
   
   checkNLocallyUnique(name, gidsVec, (nKeys ? size_t(1): size_t(0)));
+} 
+
+///////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession session(&argc, &argv);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+    Teuchos::DefaultComm<int>::getComm();
+
+#ifdef HAVE_TPETRA_INT_INT
+  test1<int>(comm);
+  test2<int>(comm);
+  test3<int>(comm);
+  test4<int>(comm);
+  test5<int>(comm);
+  test6<int>(comm);
 #else
-  if (me == 0) 
-    std::cout << "Skipping " << name 
-              << " because Tpetra not built with GO==long long"
+  if (comm->getRank() == 0) 
+    std::cout << "Skipping int tests because Tpetra is not build with "
+              << "GO == int" << std::endl;
               << std::endl;
 #endif
-  } 
+
+#ifdef HAVE_TPETRA_INT_LONG_LONG
+  test1<long long>(comm);
+  test2<long long>(comm);
+  test3<long long>(comm);
+  test4<long long>(comm);
+  test5<long long>(comm);
+  test6<long long>(comm);
+#else
+  if (comm->getRank() == 0) 
+    std::cout << "Skipping long long tests because Tpetra is not build with "
+              << "GO == long long" << std::endl;
+#endif
+
   return 0;
 }
