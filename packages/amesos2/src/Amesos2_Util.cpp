@@ -55,7 +55,6 @@
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
-#pragma message "included 1"
 #  include <Epetra_Map.h>
 #  ifdef HAVE_MPI
 #    include <Epetra_MpiComm.h>
