@@ -90,6 +90,8 @@
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #endif
 
+#include <MueLu_TestHelpers_Common.hpp>
+
 namespace MueLuTests {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -156,7 +158,7 @@ namespace MueLuTests {
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers::Parameters::getLib();
 
-        int nx,ny,nz; //global_size_t
+        GO nx,ny,nz;
         nx = ny = nz = 5;
         nx = matrixList.get("nx",nx);
         ny = matrixList.get("ny",ny);
@@ -301,7 +303,7 @@ namespace MueLuTests {
 
       // Create a 1D Poisson matrix with the specified number of rows
       // nx: global number of rows
-      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+      static RCP<Matrix> Build1DPoisson(GO nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         matrixList.set("nx", nx);
         matrixList.set("matrixType","Laplace1D");
@@ -312,7 +314,7 @@ namespace MueLuTests {
       // Create a 2D Poisson matrix with the specified number of rows
       // nx: global number of rows
       // ny: global number of rows
-      static RCP<Matrix> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+      static RCP<Matrix> Build2DPoisson(GO nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         if (ny==-1) ny=nx;
         matrixList.set("nx", nx);
