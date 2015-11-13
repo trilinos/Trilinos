@@ -74,6 +74,7 @@ using Teuchos::rcp;
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"

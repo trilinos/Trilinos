@@ -57,7 +57,6 @@
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_ScatterResidual_Epetra.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
-#include "Panzer_ScatterInitialCondition_Epetra.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_GatherTangent_Epetra.hpp"
 #include "Panzer_GatherOrientation.hpp"
@@ -175,11 +174,6 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
    { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_,colGidProvider_)); }
-
-   //! Use preconstructed initial condition scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   { return Teuchos::rcp(new ScatterInitialCondition_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
 
 /*************** Generic helper functions for container setup *******************/
    

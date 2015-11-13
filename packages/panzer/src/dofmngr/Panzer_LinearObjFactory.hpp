@@ -70,7 +70,6 @@ class UniqueGlobalIndexerBase; // forward declaration
      <code>buildGather(const Teuchos::ParameterList & pl) const</code>,
      <code>buildScatter(const Teuchos::ParameterList & pl) const</code>, or
      <code>buildScatterDirichlet(const Teuchos::ParameterList & pl) const</code>. 
-     <code>buildScatterInitialCondition(const Teuchos::ParameterList & pl) const</code>, or
   *
   * To implement a version of this class an author must overide all 
   * the linear algebra construction functions. The new version should also
@@ -83,7 +82,6 @@ class UniqueGlobalIndexerBase; // forward declaration
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherDomain() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherOrientation() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const;
-         template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const;
       \endcode
   * This builds the correct scatter/gather/scatter-dirichlet evaluator objects and returns
   * them as a <code>CloneableEvaluator</code> (These evaluators must overide the <code>CloneableEvaluator::clone</code>
@@ -94,7 +92,6 @@ class UniqueGlobalIndexerBase; // forward declaration
      <code>buildGatherOrientation(const Teuchos::ParameterList & pl) const</code>,
      <code>buildScatter(const Teuchos::ParameterList & pl) const</code>, or
      <code>buildScatterDirichlet(const Teuchos::ParameterList & pl) const</code>
-     <code>buildScatterInitialCondition(const Teuchos::ParameterList & pl) const</code>
   * functions.
   */
 template <typename Traits>
@@ -103,7 +100,7 @@ public:
     virtual ~LinearObjFactory() {}
 
     /** This builds all the required evaluators. It is required to be called
-      * before the <code>build[Gather,Scatter,ScatterDirichlet,ScatterInitialCondition]</code> functions
+      * before the <code>build[Gather,Scatter,ScatterDirichlet]</code> functions
       * are called. This would typically be called by the inheriting class.
       *
       * \param[in] builder Template class to build all required
@@ -115,7 +112,6 @@ public:
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherDomain() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherOrientation() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const;
-         template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const;
       \endcode
       */
     template <typename BuilderT>
@@ -260,11 +256,6 @@ public:
    Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterDirichlet(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterDirichletManager_->template getAsBase<EvalT>()->clone(pl)); }
 
-   //! Use preconstructed initial condition scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<PHX::Evaluator<Traits> > buildScatterInitialCondition(const Teuchos::ParameterList & pl) const
-   { return Teuchos::rcp_dynamic_cast<PHX::Evaluator<Traits> >(scatterInitialConditionManager_->template getAsBase<EvalT>()->clone(pl)); }
-
    //! Get the global indexer object associated with this factory
    virtual Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const = 0;
 
@@ -280,7 +271,6 @@ private:
    // managers to build the scatter/gather evaluators
    Teuchos::RCP<Evaluator_TemplateManager> scatterManager_;
    Teuchos::RCP<Evaluator_TemplateManager> scatterDirichletManager_;
-   Teuchos::RCP<Evaluator_TemplateManager> scatterInitialConditionManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherTangentManager_;
    Teuchos::RCP<Evaluator_TemplateManager> gatherDomainManager_;
@@ -306,17 +296,6 @@ private:
      
       template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> build() const 
       { return builder_->template buildScatterDirichlet<EvalT>(); }
-   };
-
-   template <typename BuilderT>
-   struct ScatterInitialCondition_Builder {
-      Teuchos::RCP<const BuilderT> builder_;
-
-      ScatterInitialCondition_Builder(const Teuchos::RCP<const BuilderT> & builder) 
-         : builder_(builder) {}
-     
-      template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> build() const 
-      { return builder_->template buildScatterInitialCondition<EvalT>(); }
    };
 
    template <typename BuilderT>
@@ -377,9 +356,6 @@ buildGatherScatterEvaluators(const BuilderT & builder)
 
    scatterDirichletManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
    scatterDirichletManager_->buildObjects(ScatterDirichlet_Builder<BuilderT>(rcpFromRef(builder)));
-
-   scatterInitialConditionManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
-   scatterInitialConditionManager_->buildObjects(ScatterInitialCondition_Builder<BuilderT>(rcpFromRef(builder)));
 
    gatherManager_ = Teuchos::rcp(new Evaluator_TemplateManager);
    gatherManager_->buildObjects(Gather_Builder<BuilderT>(rcpFromRef(builder)));

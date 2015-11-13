@@ -149,11 +149,6 @@ public:
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
    { return epetraFact_->template buildScatterDirichlet<EvalT>(); }
 
-   //! Use preconstructed initial condition scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   { return epetraFact_->template buildScatterInitialCondition<EvalT>(); }
-
 /*************** Generic helper functions for container setup *******************/
    
    /** Initialize container with a specific set of member values.

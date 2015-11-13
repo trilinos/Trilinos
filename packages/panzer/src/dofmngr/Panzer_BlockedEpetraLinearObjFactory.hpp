@@ -64,7 +64,6 @@
 #include "Panzer_GatherTangent_BlockedEpetra.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_ScatterDirichletResidual_BlockedEpetra.hpp"
-#include "Panzer_ScatterInitialCondition_BlockedEpetra.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
 
 #include "Thyra_BlockedLinearOpBase.hpp"
@@ -160,11 +159,6 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
    { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
-
-   //! Use preconstructed initial condition scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   { return Teuchos::rcp(new ScatterInitialCondition_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
 
 /*************** Generic helper functions for container setup *******************/
    

@@ -58,7 +58,6 @@
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_ScatterResidual_Tpetra.hpp"
 #include "Panzer_ScatterDirichletResidual_Tpetra.hpp"
-#include "Panzer_ScatterInitialCondition_Tpetra.hpp"
 #include "Panzer_GatherSolution_Tpetra.hpp"
 #include "Panzer_GatherTangent_Tpetra.hpp"
 #include "Panzer_GatherOrientation.hpp"
@@ -162,11 +161,6 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
    { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
-
-   //! Use preconstructed initial condition scatter evaluators
-   template <typename EvalT>
-   Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
-   { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
 
 /*************** From ThyraObjFactory *******************/
 

@@ -28,13 +28,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tScatterInitialCondition
-  SOURCES scatter_initial_condition.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tScatterDirichletResidual
   SOURCES scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
