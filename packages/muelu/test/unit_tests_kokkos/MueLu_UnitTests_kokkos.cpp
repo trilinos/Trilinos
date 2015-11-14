@@ -115,7 +115,5 @@ int main(int argc, char* argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  Kokkos::finalize();
-
   return (success ? ierr : EXIT_FAILURE);
 }
