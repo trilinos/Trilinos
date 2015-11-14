@@ -131,10 +131,10 @@ namespace {
 
     // create Thyra vector space out of Xpetra Map
     Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMap = th_utils_type::toThyra(map);
-    TEUCHOS_TEST_FOR_EXCEPTION(map->getGlobalNumElements()!=thMap->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(map->getGlobalNumElements())!=thMap->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
     Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > thSpmdMap = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(thMap);
     TEUCHOS_TEST_FOR_EXCEPTION(thSpmdMap == Teuchos::null, std::logic_error, "Cannot cast VectorSpaceBase to SpmdVectorSpaceBase.");
-    TEUCHOS_TEST_FOR_EXCEPTION(map->getNodeNumElements()!=thSpmdMap->localSubDim(), std::logic_error, "Local dimension of Xpetra map and Thyra VectorSpaceBase on one (or more) processor(s) are different.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(map->getNodeNumElements())!=thSpmdMap->localSubDim(), std::logic_error, "Local dimension of Xpetra map and Thyra VectorSpaceBase on one (or more) processor(s) are different.");
 
     // create Thyra MultiVector
     Teuchos::RCP< Thyra::MultiVectorBase<scalar_type> > thMVec = Thyra::createMembers(thMap, 2);
@@ -174,9 +174,9 @@ namespace {
     // create Xpetra multivector from Thyra multi vector
     Teuchos::RCP<mv_type> xpMVec = th_utils_type::toXpetra(thMVec,comm);
     TEUCHOS_TEST_FOR_EXCEPTION(xpMVec == Teuchos::null, std::logic_error, "Failed to convert Thyra::MultiVector to Xpetra::MultiVector.");
-    TEST_EQUALITY( xpMVec->getNumVectors(), numVec );
-    TEST_EQUALITY( xpMVec->getLocalLength(), localSubDim );
-    TEST_EQUALITY( xpMVec->getGlobalLength(), numInd );
+    TEST_EQUALITY( Teuchos::as<Teuchos::Ordinal>(xpMVec->getNumVectors()), numVec );
+    TEST_EQUALITY( Teuchos::as<Teuchos::Ordinal>(xpMVec->getLocalLength()), localSubDim );
+    TEST_EQUALITY( Teuchos::as<LO>(xpMVec->getGlobalLength()), numInd );
 
     std::vector<scalar_type> norms (numVec, STS::zero() );
     Teuchos::ArrayView<scalar_type> normsView(norms);
@@ -219,8 +219,8 @@ namespace {
     Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMapA = th_utils_type::toThyra(mapA);
     Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMapB = th_utils_type::toThyra(mapB);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(mapA->getGlobalNumElements()!=thMapA->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
-    TEUCHOS_TEST_FOR_EXCEPTION(mapB->getGlobalNumElements()!=thMapB->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(mapA->getGlobalNumElements())!=thMapA->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(mapB->getGlobalNumElements())!=thMapB->dim(), std::logic_error, "Global dimension of Xpetra map and Thyra VectorSpaceBase are different.");
 
     Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > thSpmdMapA = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(thMapA);
     Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<scalar_type> > thSpmdMapB = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<scalar_type> >(thMapB);
@@ -323,8 +323,7 @@ namespace {
 #endif // HAVE_XPETRA_TPETRA
 
 
-//#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT) && defined(HAVE_XPETRA_SERIAL)
-#if defined(HAVE_XPETRA_INT_INT) && defined(HAVE_XPETRA_SERIAL)
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT) && defined(HAVE_XPETRA_SERIAL)
   typedef Xpetra::TpetraMultiVector<double,int,int> MMultiVector;
   typedef Xpetra::TpetraVector<double,int,int> MVector;
   typedef Kokkos::Compat::KokkosSerialWrapperNode MNode;
