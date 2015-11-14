@@ -90,7 +90,7 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregat
 
   // main loop over all local rows of graph(A)
   int              aggIndex = -1;
-  size_t           aggSize  =  0;
+  //size_t           aggSize  =  0;
   std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
 
   while (iNode1 < nRows) {
