@@ -61,14 +61,14 @@
 #ifdef HAVE_XPETRA_TPETRA
 #  include "Tpetra_ConfigDefs.hpp"
 #  include "Tpetra_DefaultPlatform.hpp"
+#  include "Tpetra_Map.hpp"
 #  include "Xpetra_TpetraMultiVector.hpp"
 #  include "Xpetra_TpetraVector.hpp"
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-#    include "Xpetra_EpetraMultiVector.hpp"
-#    include "Xpetra_EpetraVector.hpp"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+#  include "Xpetra_EpetraMultiVector.hpp"
+#  include "Xpetra_EpetraVector.hpp"
+#endif // HAVE_XPETRA_EPETRA
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_VectorFactory.hpp"
@@ -176,28 +176,26 @@ namespace {
   // \warning This function is NOT reentrant, and therefore NOT thread safe.
   template <class Node>
   RCP<Node> getNode () {
-    static RCP<Node> node_; // Defaults to null
-    if (node_.is_null ()) {
-      Teuchos::ParameterList pl;
-      pl.set<int> ("Num Threads", 0);
-      pl.set<int> ("Verbose", 1);
-      node_ = Teuchos::rcp (new Node (pl));
-    }
-    return node_;
+    //static RCP<Node> node_; // Defaults to null
+    //if (node_.is_null ()) {
+    Teuchos::ParameterList pl;
+    //  pl.set<int> ("Num Threads", 0);
+    //  pl.set<int> ("Verbose", 1);
+    //  node_ = Teuchos::rcp (new Node (pl));
+    //}
+    //return node_;
+    return Teuchos::rcp (new Node (pl));
   }
 
   //
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, GetVector, MV, V, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, GetVector, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
-    RCP<Node> node = getNode<Node>();
-#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
-    // using std::cerr;
-    // using std::endl;
-    typedef Ordinal LO;
-    typedef Ordinal GO;
+
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
@@ -208,23 +206,15 @@ namespace {
     typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm ();
-
-#ifdef HAVE_XPETRA_TPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#  else
-#    error "Should never get here!"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+    EXTRACT_LIB(comm,M) // returns mylib
 
     const size_t numVecs = 11;
 
     // Create a Map for the MultiVector X, and create X.
     const LO numInd = 63;
-    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    RCP<const map_type> map = map_factory_type::Build (mylib, numInd, 0, comm);
     RCP<mv_type> X = mv_factory_type::Build (map, numVecs);
     X->putScalar (STS::zero ());
 
@@ -302,22 +292,15 @@ namespace {
       oneAtATimeNorms[j] = X_j->normInf ();
     }
     TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), oneAtATimeNorms (), normTol );
-
-#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
   }
 
   //
   // Bug 6115 test: Ensure that Xpetra::Vector::operator= does a deep copy.
-  // This test prefers Tpetra, but uses Epetra if not building with Tpetra.
   //
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, AssignmentDeepCopies, MV, V, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( Vector, AssignmentDeepCopies, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
-    RCP<Node> node = getNode<Node>();
-#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
-    // using std::cerr;
-    // using std::endl;
-    typedef Ordinal LO;
-    typedef Ordinal GO;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
@@ -327,21 +310,13 @@ namespace {
     typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm ();
-
-#ifdef HAVE_XPETRA_TPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#  else
-#    error "Should never get here!"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+    EXTRACT_LIB(comm,M) // returns mylib
 
     // Create a Map, which will be the row, domain, and range Map of the matrix A.
     const LO numInd = 63;
-    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    RCP<const map_type> map = map_factory_type::Build (mylib, numInd, 0, comm);
 
     RCP<vec_type> v = vec_factory_type::Build (map);
     v->putScalar (STS::one ());
@@ -424,16 +399,13 @@ namespace {
       // Make sure the original copy got restored.
       TEST_FLOATING_EQUALITY(vcopy_norm, vcopy->norm2 (), norm_tol);
     }
-#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
   }
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, AssignmentDeepCopies, MV, V, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, AssignmentDeepCopies, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
-    RCP<Node> node = getNode<Node>();
-#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
-    typedef Ordinal LO;
-    typedef Ordinal GO;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
@@ -443,21 +415,13 @@ namespace {
     typedef typename STS::magnitudeType magnitude_type;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    RCP<Node> node = getNode<Node>();
     RCP<const Comm<int> > comm = getDefaultComm ();
-
-#ifdef HAVE_XPETRA_TPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#  else
-#    error "Should never get here!"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+    EXTRACT_LIB(comm,M) // returns mylib
 
     // Create a Map, which will be the row, domain, and range Map of the matrix A.
     const LO numInd = 63;
-    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    RCP<const map_type> map = map_factory_type::Build (mylib, numInd, 0, comm);
     const size_t numVecs = 11;
 
     RCP<mv_type> X = mv_factory_type::Build (map, numVecs);
@@ -519,36 +483,59 @@ namespace {
       // Restore X_copy to be a deep copy of X.
       *X_copy = *X;
     }
-#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonMemberConstructors, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructors, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
     RCP<Node> node = getNode<Node>();
-#ifdef HAVE_XPETRA_TPETRA
+
 
     // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
+
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
-    RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
-    RCP<V>   vec = Tpetra::createVector<Scalar>(map);
-    TEST_EQUALITY(mvec->getNumVectors(), numVecs);
-    TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(mylib==Xpetra::UseTpetra) {
+      RCP<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tmap = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map);
+      RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mvec = Tpetra::createMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tmap->getTpetra_Map(),numVecs);
+      RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   vec = Tpetra::createVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tmap->getTpetra_Map());
+      TEST_EQUALITY(mvec->getNumVectors(), numVecs);
+      TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
+      RCP<const MV> xmv = Teuchos::rcp_dynamic_cast<const MV>(Xpetra::toXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mvec));
+      RCP<const V>  xv  = Teuchos::rcp_dynamic_cast<const V >(Xpetra::toXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(vec));
+      TEST_EQUALITY(xmv->getNumVectors(), numVecs);
+      TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
+    }
 #endif
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(mylib==Xpetra::UseEpetra) {
+      RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
+      RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
+      RCP<Epetra_Vector>      vec  = Teuchos::rcp(new Epetra_Vector(emap->getEpetra_Map()));
+      RCP<MV> xmv = Teuchos::rcp_dynamic_cast<MV>(Xpetra::toXpetra<GlobalOrdinal,Node>(mvec));
+      //RCP<V>  xv  = Teuchos::rcp_dynamic_cast<V >(Xpetra::toXpetra<GlobalOrdinal,Node>(vec)); // there is no toXpetra for Vectors!
+      TEST_EQUALITY(xmv->getNumVectors(), numVecs);
+      //TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
+    }
+#endif
+
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, basic, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, basic, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
 
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -556,10 +543,12 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    EXTRACT_LIB(comm,M) // returns mylib
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
@@ -573,34 +562,30 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
     mvec.normInf(norms);
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
-    // print it
-    //TODO    out << mvec << endl;
-#endif
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstNumVecs, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, BadConstNumVecs, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
     // create a Map
     const size_t numLocal = 13;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
     TEST_THROW(MV mvec(map,0),  std::invalid_argument);
     if (std::numeric_limits<size_t>::is_signed) {
       TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
     }
-#endif
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstLDA, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, BadConstLDA, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -611,10 +596,12 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
     const size_t numLocal = 2;
     const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -632,12 +619,11 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonContigView, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonContigView, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
-
 
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Mag tol = errorTolSlack * errorTolSlack * ScalarTraits<Mag>::eps();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
@@ -645,10 +631,13 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
     // create a Map
     const size_t numLocal = 53; // making this larger reduces the change that A below will have no non-zero entries, i.e., that C = abs(A) is still equal to A (we assume it is not)
     const size_t numVecs = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
+
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
     Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
@@ -830,17 +819,20 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Describable, MV, V, Ordinal , Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Describable, M, MV, V, Scalar, LocalOrdinal , GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
 
-    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    const LocalOrdinal INVALID = OrdinalTraits<LocalOrdinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
+    EXTRACT_LIB(comm,M) // returns mylib
     // create Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,3,comm,node);
+
     // test labeling
     const string lbl("mvecA");
     MV mvecA(map,2);
@@ -886,7 +878,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadMultiply, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, BadMultiply, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -901,8 +893,8 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
-        map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(3,comm,node),
+        map2l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(2,comm,node);
       MV mvecA(map3l,2),
          mvecB(map2l,3),
          mvecD(map2l,2);
@@ -922,10 +914,10 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
-                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
-                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,3,comm,node),
+                                            map2n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node);
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map2l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2lx2(map2l,2),
@@ -944,10 +936,10 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
-                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
-      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
-                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,3,comm,node),
+                                            map2n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node);
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map2l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
@@ -966,7 +958,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Multiply, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, Multiply, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -980,10 +972,10 @@ namespace {
     const int numImages = comm->getSize();
 #endif
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
-                                          map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
-                                          lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,3,comm,node),
+                                          map2n = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > lmap3 = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(3,comm,node),
+                                          lmap2 = createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(2,comm,node);
 #ifdef XPETRA_NOT_IMPLEMENTED
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
@@ -1018,6 +1010,7 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // random input/output
     {
+#ifdef XPETRA_NOT_IMPLEMENTED
       Array<Scalar>     tmvCopy1(6), tmvCopy2(6);
       ArrayView<Scalar> sdmView(Teuchos::null);
       MV tmv3x2(lmap3,2),
@@ -1034,7 +1027,7 @@ namespace {
       SerialDenseMatrix<int,Scalar> sdm2x2(2,2), sdm3x3(3,3);
       // test: perform local Tpetra::MultiVector multiply and Teuchos::SerialDenseMatrix multiply, then check that answers are equivalent
       ArrayRCP<const Scalar> tmpView;
-#ifdef XPETRA_NOT_IMPLEMENTED
+
       {
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
@@ -1111,24 +1104,25 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ElementWiseMultiply, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, ElementWiseMultiply, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     using Teuchos::View;
-    // typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
     RCP<Node> node = getNode<Node>();
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
-#ifdef XPETRA_NOT_IMPLEMENTED
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3n =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,3,comm,node);
+
     const Mag    M0 = ScalarTraits<Mag>::zero();
     const Scalar S1 = ScalarTraits<Scalar>::one();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
-#endif
     {
       // case 1: C = S1*A@B ('@' denotes element-wise multiplication)
       // C has 2 vectors, A has 1 vector, B has 2 vectors.
@@ -1143,20 +1137,17 @@ namespace {
       Teuchos::Array<Scalar> check2(6,1); // each entry (of six) is 1
       // test
       ArrayRCP<const Scalar> tmpView;
-#ifdef XPETRA_NOT_IMPLEMENTED
       C.elementWiseMultiply(S1, A, B, S0);
       tmpView = C.get1dView();
       TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
-#endif
     }
 #endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstAA, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, BadConstAA, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
@@ -1165,10 +1156,16 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+
+    EXTRACT_LIB(comm,M) // returns mylib
+
     // create a Map
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
-      map3 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map2 =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map3 =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,3,comm,node);
+
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
     Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
@@ -1181,55 +1178,63 @@ namespace {
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
-#endif //HAVE_XPETRA_TPETRA
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadDot, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, BadDot, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
 
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
     // create a Map
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,1,comm,node),
-                                          map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map1 =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,1,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map2 =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,2,comm,node);
     {
       MV mv12(map1,1),
          mv21(map2,1),
          mv22(map2,2);
       Array<Scalar> dots(2);
-      // incompatible maps
-      TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
-      // incompatible numvecs
-      TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
-      // too small output array
+#ifdef HAVE_XPETRA_TPETRA
+      if(mylib==Xpetra::UseTpetra) {
+        // incompatible maps
+        TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
+        // incompatible numvecs
+        TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
+        // too small output array
 #ifdef TEUCHOS_DEBUG
-      TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
+        TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
+#endif
+      }
 #endif
     }
     {
       V v1(map1),
         v2(map2);
-      // incompatible maps
-      TEST_THROW(v1.dot(v2),std::runtime_error);
-      TEST_THROW(v2.dot(v1),std::runtime_error);
-      // wrong size output array through MultiVector interface
-      Array<Scalar> dots(2);
+#ifdef HAVE_XPETRA_TPETRA
+      if (mylib == Xpetra::UseTpetra) {
+        // incompatible maps
+        TEST_THROW(v1.dot(v2),std::runtime_error);
+        TEST_THROW(v2.dot(v1),std::runtime_error);
+        // wrong size output array through MultiVector interface
+        Array<Scalar> dots(2);
 #ifdef TEUCHOS_DEBUG
-      TEST_THROW(v1.dot(v2,dots()),std::runtime_error);
-      TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
+        TEST_THROW(v1.dot(v2,dots()),std::runtime_error);
+        TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
 #endif
+#endif
+      }
     }
-#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OrthoDot, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, OrthoDot, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -1244,7 +1249,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     const bool zeroOut = true;
     MV mvec1(map,numVectors,zeroOut),
        mvec2(map,numVectors,zeroOut);
@@ -1303,7 +1308,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyView, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CopyView, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -1318,7 +1323,7 @@ namespace {
     // create a Map
     const size_t numLocal = 7;
     const size_t numVectors = 13;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     MV A(map,numVectors,false);
     {
       A.randomize();
@@ -1525,7 +1530,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OffsetView, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, OffsetView, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -1545,9 +1550,9 @@ namespace {
     Array<size_t> even(tuple<size_t>(1,3,5));
     Array<size_t>  odd(tuple<size_t>(0,2,4));
     TEUCHOS_TEST_FOR_EXCEPTION( even.size() != odd.size(), std::logic_error, "Test setup assumption violated.");
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > fullMap = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal1,comm,node);
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map1 = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal1,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map2 = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal2,comm,node);
     RCP<MV> A = rcp(new MV(fullMap,numVectors,false));
 #ifdef XPETRA_NOT_IMPLEMENTED
     {
@@ -1679,9 +1684,8 @@ namespace {
 #endif
   }
 
-
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, ZeroScaleUpdate, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -1695,7 +1699,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1755,27 +1759,29 @@ namespace {
     //   set C random
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
-    {
+    // TODO this is only available with Tpetra???
+    /*{
       MV C(map,numVectors);
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       C.norm2(norms);
       //TODO:FAILED  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
-    }
+    }*/
 #endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ScaleAndAssign, MV, V, Ordinal, Scalar , Node )
+#if 0 // TAW fix me
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, ScaleAndAssign, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     using std::endl;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType Mag;
     typedef Teuchos::ScalarTraits<Mag> STM;
-    typedef Xpetra::Map<Ordinal, Ordinal, Node> map_type;
-    typedef Xpetra::Vector<Scalar, Ordinal, Ordinal, Node> vec_type;
+    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
 
     if (STS::isOrdinal) {
       return;
@@ -1794,7 +1800,7 @@ namespace {
     const size_t numLocal = 23;
     const size_t numVectors = 11;
     RCP<const map_type> map =
-      createContigMapWithNode<Ordinal,Ordinal> (INVALID, numLocal, comm, node);
+      createContigMapWithNode<LocalOrdinal,GlobalOrdinal> (INVALID, numLocal, comm, node);
 
     // Use random multivector A
     // Set B = A * 2 manually.
@@ -1954,10 +1960,11 @@ namespace {
     }
 #endif // HAVE_XPETRA_TPETRA
   }
+#endif // fix me!
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Vector, ZeroScaleUpdate, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -1967,7 +1974,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -2028,7 +2035,7 @@ namespace {
     //   set C random
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
-    {
+    {  // TODO only available with Tpetra??
       V C(map);
       C.randomize();
       C.scale(as<Scalar>(2),A);
@@ -2042,7 +2049,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyConst, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CopyConst, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2055,7 +2062,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     {
       // create random MV
       MV mvorig(map,numVectors);
@@ -2118,7 +2125,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, CopyConst, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Vector, CopyConst, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2127,7 +2134,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node);
     // create random MV
     V morig(map);
     morig.randomize();
@@ -2158,7 +2165,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, Indexing, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Vector, Indexing, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2168,7 +2175,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,100,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,100,comm,node);
     // create two random Vector objects
     V v1(map), v2(map);
     v1.randomize();
@@ -2195,7 +2202,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, SingleVecNormalize, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, SingleVecNormalize, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2213,7 +2220,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVectors = 6;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     // create random MV
     MV mv(map,numVectors);
     mv.randomize();
@@ -2254,7 +2261,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDot, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CountDot, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2268,7 +2275,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2297,7 +2304,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDotNonTrivLDA, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CountDotNonTrivLDA, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2313,7 +2320,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -2349,7 +2356,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNorm1, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CountNorm1, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2363,7 +2370,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2403,7 +2410,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNormInf, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, CountNormInf, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2416,7 +2423,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2442,7 +2449,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Norm2, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, Norm2, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2455,7 +2462,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,numLocal,comm,node);
     MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
@@ -2478,7 +2485,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadCombinations, MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, BadCombinations, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
@@ -2491,8 +2498,8 @@ namespace {
     // create a Map
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
-                                          map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,myImageID == 0 ? 1 : 2,comm,node);
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map1 = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,2,comm,node),
+                                          map2 = createContigMapWithNode<LocalOrdinal,GlobalOrdinal>(INVALID,myImageID == 0 ? 1 : 2,comm,node);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
@@ -2506,8 +2513,8 @@ namespace {
     TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
     TEST_THROW(m1n2.abs(m1n1), std::runtime_error);       // abs
     TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
-    TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs
-    TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
+    //TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs  // TODO only available with Tpetra??
+    //TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
     TEST_THROW(m1n2.update(rnd,m1n1,rnd), std::runtime_error); // update(alpha,A,beta)
     TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
     TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
@@ -2528,109 +2535,100 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Typedefs,        MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Typedefs,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
-    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar  >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , Ordinal >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , Ordinal >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar        >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LocalOrdinal  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GlobalOrdinal >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< node_type           , Node          >::value) == true, true );
 #endif
   }
 
 //
 // INSTANTIATIONS
 //
-
-
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-typedef std::complex<float>  ComplexFloat;
-typedef std::complex<double> ComplexDouble;
-
 #ifdef HAVE_XPETRA_TPETRA
-  //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonMemberConstructors, MV, V, ORDINAL, SCALAR, NODE )
-  //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonContigView     , MV, V, ORDINAL, SCALAR, NODE )
-  //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Typedefs          , MV, V, ORDINAL, SCALAR, NODE )
-  //      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadCombinations   , MV, V, ORDINAL, SCALAR, NODE )
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, AssignmentDeepCopies, MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, AssignmentDeepCopies, MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, GetVector         , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, basic             , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstNumVecs   , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstLDA       , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstAA        , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CopyConst         , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, CopyConst         , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, Indexing          , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, OrthoDot          , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountDot          , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountDotNonTrivLDA, MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadDot            , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountNorm1        , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CountNormInf      , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Norm2             , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CopyView          , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, OffsetView        , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, ZeroScaleUpdate   , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, ZeroScaleUpdate   , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, ScaleAndAssign    , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadMultiply       , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, SingleVecNormalize, MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Multiply          , MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, ElementWiseMultiply,MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Describable       , MV, V, ORDINAL, SCALAR, NODE ) \
 
-#else
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
-#endif // HAVE_XPETRA_TPETRA
+  #define TTT( S, LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::TpetraMultiVector<S,LO,GO,N> MV##S##LO##GO##N; \
+    typedef typename Xpetra::TpetraVector<S,LO,GO,N> V##S##LO##GO##N;       \
 
-
-#define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)
-
-#define UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, SCALAR) \
-    UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)
-
-#define UNIT_TEST_FLOAT(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, float)
-
-#define UNIT_TEST_DOUBLE(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, double)
-
-#define UNIT_TEST_COMPLEX_FLOAT(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexFloat)
-
-#define UNIT_TEST_COMPLEX_DOUBLE(MV, V, ORDINAL) \
-    UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble)
-
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT)
-  typedef Xpetra::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove 'M' prefix
-  typedef Xpetra::TpetraVector<double,int,int> MVector;
 #endif
 
-//#if defined(HAVE_TPETRA_INST_DOUBLE)
-  //UNIT_TEST_DOUBLE(MMultiVector, MVector, int)
-//  UNIT_TEST_SERIALNODE(MMultiVector, MVector, int, double)
-//#endif
+#ifdef HAVE_XPETRA_EPETRA
 
-// #if !defined(FAST_DEVELOPMENT_BUILD)
-// # if defined(HAVE_TPETRA_INST_FLOAT)
-//     UNIT_TEST_FLOAT((MMultiVector, MVector, int)
-// # endif
-// # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-//     UNIT_TEST_COMPLEX_FLOAT((MMultiVector, MVector, int)
-// # endif
-// # if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-//     UNIT_TEST_COMPLEX_DOUBLE((MMultiVector, MVector, int)
-// # endif
-// #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define EEE( S, LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::EpetraMultiVectorT<GO,N> MV##S##LO##GO##N; \
+    typedef typename Xpetra::EpetraVectorT<GO,N> V##S##LO##GO##N;       \
 
-  // JG TODO: test with different Node type. It will require some work here ...
+#endif
+
+// List of tests which run only with Tpetra
+#define XP_TPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstLDA         , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Describable         , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, ElementWiseMultiply , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyConst           , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, CopyConst           , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, Indexing            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OrthoDot            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDot            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDotNonTrivLDA  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNorm1          , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNormInf        , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Norm2               , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyView            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OffsetView          , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, ZeroScaleUpdate     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, ZeroScaleUpdate     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadMultiply         , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, SingleVecNormalize  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Multiply            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadCombinations     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
+// list of all tests which run both with Epetra and Tpetra
+// TODO: move more lists from the upper list to this list
+#define XP_MULTIVECTOR_INSTANT(S,LO,GO,N) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, AssignmentDeepCopies , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, GetVector            , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstNumVecs      , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstAA           , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Typedefs             , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructors, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadDot               , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
+  //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, NonContigView       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
+  //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, ScaleAndAssign      , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
+
+// can we relax the INT INT?
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( TTT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MULTIVECTOR_INSTANT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
+
+#endif
+
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+EEE(double,int,int,EpetraNode)
+XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
+
+#endif
+
 }
