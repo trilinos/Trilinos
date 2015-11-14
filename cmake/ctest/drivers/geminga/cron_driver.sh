@@ -47,7 +47,7 @@ module load valgrind/3.10.1
 export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
 export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 
-echo "Configuration = $CONFIGURATION"
+echo "Configuration = $CTEST_CONFIGURATION"
 env
 
 export OMP_NUM_THREADS=2
@@ -69,9 +69,12 @@ module load nvcc-wrapper/gcc
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
 export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
-export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 
-echo "Configuration = $CONFIGURATION"
+echo "OMPI_CXXFLAGS before $OMPI_CXXFLAGS"
+export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
+echo "OMPI_CXXFLAGS after $OMPI_CXXFLAGS"
+
+echo "Configuration = $CTEST_CONFIGURATION"
 env
 
 export CUDA_LAUNCH_BLOCKING=1
