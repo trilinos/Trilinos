@@ -268,7 +268,7 @@ public:
         RCP<Thyra::ConstDetachedMultiVectorView<double> > thyData =
             Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<double>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
         for(size_t vv = 0; vv < xpMultVec->getNumVectors(); ++vv) {
-          for(size_t i = 0; i < localSubDim; ++i) {
+          for(LocalOrdinal i = 0; i < localSubDim; ++i) {
             xpMultVec->replaceLocalValue(i + lidOffsets[b] , vv, (*thyData)(i,vv));
           }
         }
@@ -807,7 +807,7 @@ public:
         RCP<Thyra::ConstDetachedMultiVectorView<double> > thyData =
             Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<double>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
         for(size_t vv = 0; vv < xpMultVec->getNumVectors(); ++vv) {
-          for(size_t i = 0; i < localSubDim; ++i) {
+          for(LocalOrdinal i = 0; i < localSubDim; ++i) {
             xpMultVec->replaceLocalValue(i + lidOffsets[b] , vv, (*thyData)(i,vv));
           }
         }

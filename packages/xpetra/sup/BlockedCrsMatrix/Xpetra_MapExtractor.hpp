@@ -127,7 +127,7 @@ namespace Xpetra {
         const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
         for(size_t v = 0; v < maps.size(); ++v) {
           std::vector<GlobalOrdinal> subMapGids(maps[v]->getNodeNumElements(),0);
-          for (LocalOrdinal l = 0; l < maps[v]->getNodeNumElements(); ++l) {
+          for (LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(maps[v]->getNodeNumElements()); ++l) {
             GlobalOrdinal myGid = maps[v]->getGlobalElement(l);
             subMapGids[l] = myGid + gidOffsets[v];
             fullMapGids.push_back(myGid + gidOffsets[v]);
@@ -198,8 +198,8 @@ namespace Xpetra {
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       const RCP<Vector> thyraVec = VectorFactory::Build(getMap(block,true), true);
       // TODO introduce Kokkos version of this.
-      Teuchos::ArrayRCP<double> thyraVecData  = thyraVec->getDataNonConst(0);
-      Teuchos::ArrayRCP<const double> xpetraVecData = xpetraVec->getData(0);
+      Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(0);
+      Teuchos::ArrayRCP<const Scalar> xpetraVecData = xpetraVec->getData(0);
 
       for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
         thyraVecData[i] = xpetraVecData[i];
@@ -216,8 +216,8 @@ namespace Xpetra {
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       const RCP<Vector> thyraVec = VectorFactory::Build(getMap(block,true), true);
       // TODO introduce Kokkos version of this.
-      Teuchos::ArrayRCP<double> thyraVecData  = thyraVec->getDataNonConst(0);
-      Teuchos::ArrayRCP<const double> xpetraVecData = xpetraVec->getData(0);
+      Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(0);
+      Teuchos::ArrayRCP<const Scalar> xpetraVecData = xpetraVec->getData(0);
 
       for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
         thyraVecData[i] = xpetraVecData[i];
@@ -235,8 +235,8 @@ namespace Xpetra {
       const RCP<MultiVector> thyraVec = MultiVectorFactory::Build(getMap(block,true), xpetraVec->getNumVectors(), true);
       // TODO introduce Kokkos version of this.
       for(size_t k=0; k < xpetraVec->getNumVectors(); k++) {
-        Teuchos::ArrayRCP<double> thyraVecData  = thyraVec->getDataNonConst(k);
-        Teuchos::ArrayRCP<const double> xpetraVecData = xpetraVec->getData(k);
+        Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(k);
+        Teuchos::ArrayRCP<const Scalar> xpetraVecData = xpetraVec->getData(k);
         for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
           thyraVecData[i] = xpetraVecData[i];
         }
@@ -254,8 +254,8 @@ namespace Xpetra {
       const RCP<MultiVector> thyraVec = MultiVectorFactory::Build(getMap(block,true), xpetraVec->getNumVectors(), true);
       // TODO introduce Kokkos version of this.
       for(size_t k=0; k < xpetraVec->getNumVectors(); k++) {
-        Teuchos::ArrayRCP<double> thyraVecData  = thyraVec->getDataNonConst(k);
-        Teuchos::ArrayRCP<const double> xpetraVecData = xpetraVec->getData(k);
+        Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(k);
+        Teuchos::ArrayRCP<const Scalar> xpetraVecData = xpetraVec->getData(k);
         for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
           thyraVecData[i] = xpetraVecData[i];
         }
@@ -274,8 +274,8 @@ namespace Xpetra {
       if(bThyraMode) {
         const RCP<Vector> xpetraVec = VectorFactory::Build(getMap(block,false), true); // get sub vector in xpetra-style numbering
         // TODO introduce Kokkos version of this.
-        Teuchos::ArrayRCP<const double> thyraVecData  = partial.getData(0);
-        Teuchos::ArrayRCP<double> xpetraVecData = xpetraVec->getDataNonConst(0);
+        Teuchos::ArrayRCP<const Scalar> thyraVecData  = partial.getData(0);
+        Teuchos::ArrayRCP<Scalar> xpetraVecData = xpetraVec->getDataNonConst(0);
         for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
           xpetraVecData[i] = thyraVecData[i];
         }
@@ -294,8 +294,8 @@ namespace Xpetra {
         const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), partial.getNumVectors(), true); // get sub vector in xpetra-style numbering
         // TODO introduce Kokkos version of this.
         for(size_t k=0; k < partial.getNumVectors(); k++) {
-          Teuchos::ArrayRCP<const double> thyraVecData  = partial.getData(k);
-          Teuchos::ArrayRCP<double> xpetraVecData = xpetraVec->getDataNonConst(k);
+          Teuchos::ArrayRCP<const Scalar> thyraVecData  = partial.getData(k);
+          Teuchos::ArrayRCP<Scalar> xpetraVecData = xpetraVec->getDataNonConst(k);
           for(size_t i=0; i < xpetraVec->getLocalLength(); i++) {
             xpetraVecData[i] = thyraVecData[i];
           }
