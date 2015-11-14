@@ -215,6 +215,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/KLU/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/BTF/Include)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CAMD/Include)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/CCOLAMD/Include)
 
   SET(HEADERS ${HEADERS}
     ${PARAKLETE_KLU_COMMON_H}
@@ -223,6 +224,7 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/KLU/Include/amesos_klu_version.h
     SuiteSparse/BTF/Include/amesos_btf_decl.h
     SuiteSparse/BTF/Include/amesos_btf_internal.h
+    SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
     Amesos_Klu.h
     )
 
@@ -250,6 +252,9 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/BTF/Source/amesos_btf_l_order.c
     SuiteSparse/BTF/Source/amesos_btf_l_maxtrans.c
     SuiteSparse/BTF/Source/amesos_btf_l_strongcomp.c
+    SuiteSparse/CCOLAMD/Source/amesos_ccolamd.c
+    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_l.c
+    SuiteSparse/CCOLAMD/Source/amesos_ccolamd_global.c
     )
     
 

@@ -43,6 +43,11 @@
 
 #include "Amesos2_Basker_decl.hpp"
 
+
+#ifdef SHYLUBASKER
+#pragma message("SHYLUBASKER FLAG EXISTS")
+#endif
+
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #include "Amesos2_Basker_def.hpp"

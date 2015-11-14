@@ -65,6 +65,15 @@
 //#include "Amesos2_Basker_decl.hpp"
 //#include "Amesos2_Basker_def.hpp"
 
+
+
+#ifdef SHYLUBASKER
+
+#pragma message("FLAG EXISTS")
+
+#endif
+
+
 namespace {
 
   using std::cout;

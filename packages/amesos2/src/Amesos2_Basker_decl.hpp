@@ -57,6 +57,10 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Basker_FunctionMap.hpp"
 
+#ifdef SHYLUBASKER
+#include "basker_decl.hpp"
+#include "basker_def.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -79,7 +83,10 @@ public:
   /// Name of this solver interface.
   static const char* name;      // declaration. Initialization outside.
 
+
   typedef Basker<Matrix,Vector>                                       type;
+
+
   typedef SolverCore<Amesos2::Basker,Matrix,Vector>             super_type;
 
   // Since typedef's are not inheritted, go grab them
@@ -170,8 +177,21 @@ private:
 
 
   /*Handle for Basker object*/
-  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+#ifdef SHYLUBASKER
 
+#ifdef HAVE_AMESOS2_KOKKOS
+#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+  typedef Kokkos::OpenMP Exe_Space;
+  mutable ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space> basker;
+#else
+#pragma message("HAVE SHYLUBASKER AND NOT KOKKOS")
+#endif
+
+#else
+  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+#endif
+
+  int num_threads;
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for Basker

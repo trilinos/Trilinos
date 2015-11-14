@@ -78,6 +78,18 @@ Basker<Matrix,Vector>::Basker(
 
   // Override some default options
   // TODO: use data_ here to init
+
+#ifdef SHYLUBASKER
+  
+  basker.Options.no_pivot  = true;
+  basker.Options.symmetric = false;
+  basker.Options.realloc   = false;
+  basker.Options.verbose   = false;
+  basker.Options.btf       = true;
+  
+  num_threads = 1;
+#endif
+
 }
 
 
@@ -106,6 +118,31 @@ int
 Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
 
+#ifdef SHYLUBASKER
+  std::cout << "shylubasker sfactor" << std::endl;
+  if(this->root_)
+    {
+
+      basker.SetThreads(num_threads);
+
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+      std::cout << "Basker:: Before symbolic factorization" << std::endl;
+      std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+      std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+#endif
+
+      int info;
+      info =basker.Symbolic(this->globalNumRows_, 
+                            this->globalNumCols_, 
+                            this->globalNumNonZeros_, 
+                            colptr_.getRawPtr(), 
+                            rowind_.getRawPtr(), 
+                            nzvals_.getRawPtr());
+      
+    }
+
+#endif
   /*No symbolic factoriztion*/
   return(0);
 }
@@ -131,7 +168,19 @@ Basker<Matrix,Vector>::numericFactorization_impl()
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
+#ifdef SHYLUBASKER
+      std::cout << "SHYLUBASKER FACTOR " << std::endl;
+      
+      info =basker.Factor(this->globalNumRows_,
+                          this->globalNumCols_, 
+                          this->globalNumNonZeros_, 
+                          colptr_.getRawPtr(), 
+                          rowind_.getRawPtr(), 
+                          nzvals_.getRawPtr());
+      
+#else
       info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
+#endif
 
     }
 
@@ -193,7 +242,12 @@ Basker<Matrix,Vector>::solve_impl(
       Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
+#ifdef SHYLUBASKER
+      std::cout << "SHYLUBASKER solve" << std::endl;
+      //ierr = basker.Solve(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+#else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+#endif
     }
 
   }
@@ -240,10 +294,12 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
   using Teuchos::getIntegralValue;
   using Teuchos::ParameterEntryValidator;
 
-  //RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
+  RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
   /*To Do --- add support for parameters */
-  if(parameterList->isParameter("Trans"))
-    {}
+  if(parameterList->isParameter("num_threads"))
+    {
+      num_threads = parameterList->get<int>("num_threads");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -254,6 +310,16 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
 
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
+
+#ifdef SHYLUBASKER
+  if( is_null(valid_params) )
+    {
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+      pl->set("num_threads", 1, "Number of threads");
+      //This is all I am supporting right this second in experimental
+    }
+  return valid_params;
+#else
   if( is_null(valid_params) ){
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
@@ -261,7 +327,7 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
     pl->set("aunnx",  2, "Approx number of nonzeros in I, default is 2*nnz(U)");
     valid_params = pl;
   }
-
+#endif
   return valid_params;
 }
 

@@ -117,3 +117,6 @@
 
 /* Defined if you want to enable amesos2-MUMPS */
 #cmakedefine HAVE_AMESOS2_MUMPS
+
+/* For experimental Basker in ShyLU*/
+#cmakedefine HAVE_AMESOS2_KOKKOS
