@@ -35,7 +35,6 @@ APPEND_SET(SOURCES
   RAPFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
-  Smoothers/MueLu_TestHelpersSmoothers.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp

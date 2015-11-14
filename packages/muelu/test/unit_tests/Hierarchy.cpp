@@ -183,7 +183,7 @@ namespace MueLuTests {
 
       //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
       Teuchos::ParameterList amesosList;
-      RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
+      RCP<SmootherPrototype> coarseProto = MueLu::GetAmesosSmoother<SC, LO, GO, NO>("Amesos_Klu", amesosList);
       RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
 
       int maxLevels = 5;
@@ -277,7 +277,7 @@ namespace MueLuTests {
 
       //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
       Teuchos::ParameterList amesosList;
-      RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
+      RCP<SmootherPrototype> coarseProto = MueLu::GetAmesosSmoother<SC, LO, GO, NO>("Amesos_Klu", amesosList);
       RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
 
       int maxLevels = 5;

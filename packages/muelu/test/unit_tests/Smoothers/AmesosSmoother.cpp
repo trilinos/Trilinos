@@ -50,7 +50,11 @@
 
 #include "MueLu_AmesosSmoother.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
+#ifdef HAVE_MUELU_SERIAL
+typedef double                                      Scalar;
+typedef int                                         LocalOrdinal;
+typedef int                                         GlobalOrdinal;
+typedef Kokkos::Compat::KokkosSerialWrapperNode     Node;
 
 namespace MueLuTests {
 
@@ -88,3 +92,5 @@ namespace MueLuTests {
 // Test with invalid parameterList? (== a characterization test for Amesos)
 // Test if paramList takes into account
 // Check if all the defaults that are used by MueLu are tested
+
+#endif // HAVE_MUELU_SERIAL

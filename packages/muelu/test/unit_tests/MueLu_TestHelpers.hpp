@@ -412,7 +412,7 @@ namespace MueLuTests {
         ifpackList.set("relaxation: type", type);
         ifpackList.set("relaxation: sweeps", (LO) sweeps);
         ifpackList.set("relaxation: damping factor", (SC) 1.0);
-        return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+        return MueLu::GetIfpackSmoother<SC,LO,GO,NO>("point relaxation stand-alone",ifpackList);
       }
 #endif
 

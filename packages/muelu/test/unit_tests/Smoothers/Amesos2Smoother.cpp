@@ -53,6 +53,8 @@
 
 namespace MueLuTests {
 
+#include "MueLu_UseShortNames.hpp"
+
   // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 

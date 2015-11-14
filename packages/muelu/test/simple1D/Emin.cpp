@@ -123,8 +123,7 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
 #if defined(HAVE_MUELU_SERIAL)
       ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-      typedef Kokkos::Compat::KokkosSerialWrapperNode mySerialNode;
-      smooProto = rcp( new MueLu::IfpackSmoother<mySerialNode>("point relaxation stand-alone",ifpackList) );
+      smooProto = MueLu::GetIfpackSmoother<SC,LO,GO,NO>("point relaxation stand-alone", ifpackList);
 #else
       throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelProto: IfpackSmoother only available with SerialNode."));
 #endif
@@ -150,8 +149,7 @@ namespace MueLuTests {
       if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
       Teuchos::ParameterList amesosList;
       amesosList.set("PrintTiming",true);
-      typedef Kokkos::Compat::KokkosSerialWrapperNode mySerialNode;
-      coarseProto = rcp( new MueLu::AmesosSmoother<mySerialNode>("Amesos_Klu",amesosList) );
+      coarseProto = MueLu::GetAmesosSmoother<SC,LO,GO,NO>("Amesos_Klu", amesosList);
 #else
       throw(MueLu::Exceptions::RuntimeError("gimmeGaussSeidelProto: AmesosSmoother only available with SerialNode."));
 #endif
@@ -238,7 +236,7 @@ int main(int argc, char *argv[]) {
     std::string coarseSolver="ifpack2";
     // std::string coarseSolver="amesos2";
     int pauseForDebugger=0;
-    clp.setOption("nSmoothers",&nSmoothers,"number of Gauss-Seidel smoothers in the MergedSmootehrs");
+    clp.setOption("nSmoothers",&nSmoothers,"number of Gauss-Seidel smoothers in the MergedSmoothers");
     clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed. If 1, then a MergedSmoother is used on the coarse grid");
     clp.setOption("its",&its,"number of multigrid cycles");
     clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
