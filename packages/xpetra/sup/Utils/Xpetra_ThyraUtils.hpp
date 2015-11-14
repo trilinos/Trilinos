@@ -136,7 +136,11 @@ public:
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
     typedef Thyra::VectorBase<Scalar> ThyVecBase;
+#endif
+#endif
     typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
@@ -233,7 +237,11 @@ public:
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
     typedef Thyra::SpmdVectorSpaceBase<Scalar> ThySpmdVecSpaceBase;
     //typedef Thyra::VectorBase<Scalar> ThyVecBase;
+#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
     typedef Thyra::SpmdMultiVectorBase<Scalar> ThySpmdMultVecBase;
+#endif
+#endif
     //typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
@@ -266,7 +274,7 @@ public:
         const LocalOrdinal localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : thySubMap->dim() );
         lidOffsets[b+1] = localSubDim + lidOffsets[b]; // calculate lid offset for next block
         RCP<Thyra::ConstDetachedMultiVectorView<double> > thyData =
-            Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<double>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
+            Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<Scalar>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
         for(size_t vv = 0; vv < xpMultVec->getNumVectors(); ++vv) {
           for(LocalOrdinal i = 0; i < localSubDim; ++i) {
             xpMultVec->replaceLocalValue(i + lidOffsets[b] , vv, (*thyData)(i,vv));
@@ -331,7 +339,9 @@ public:
 
     // for debugging purposes: find out why dynamic cast failed
     if(!bIsTpetra &&
+#ifdef HAVE_XPETRA_EPETRA
         Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op) == Teuchos::null &&
+#endif
         Teuchos::rcp_dynamic_cast<const Thyra::DefaultBlockedLinearOp<Scalar> >(op) == Teuchos::null) {
       // If op is not blocked and not an Epetra object, it should be in fact an Tpetra object
       typedef Thyra::TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraLinearOp_t;
@@ -538,8 +548,9 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
+    Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::null;
 #ifdef HAVE_XPETRA_TPETRA
-    Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
       Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
@@ -567,8 +578,9 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
+    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::null;
 #ifdef HAVE_XPETRA_TPETRA
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
       Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
@@ -804,8 +816,8 @@ public:
         const LocalOrdinal localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
         const LocalOrdinal localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : thySubMap->dim() );
         lidOffsets[b+1] = localSubDim + lidOffsets[b]; // calculate lid offset for next block
-        RCP<Thyra::ConstDetachedMultiVectorView<double> > thyData =
-            Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<double>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
+        RCP<Thyra::ConstDetachedMultiVectorView<Scalar> > thyData =
+            Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<Scalar>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
         for(size_t vv = 0; vv < xpMultVec->getNumVectors(); ++vv) {
           for(LocalOrdinal i = 0; i < localSubDim; ++i) {
             xpMultVec->replaceLocalValue(i + lidOffsets[b] , vv, (*thyData)(i,vv));
@@ -885,7 +897,9 @@ public:
 
     // for debugging purposes: find out why dynamic cast failed
     if(!bIsTpetra &&
+#ifdef HAVE_XPETRA_EPETRA
         Teuchos::rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op) == Teuchos::null &&
+#endif
         Teuchos::rcp_dynamic_cast<const Thyra::DefaultBlockedLinearOp<Scalar> >(op) == Teuchos::null) {
       // If op is not blocked and not an Epetra object, it should be in fact an Tpetra object
       typedef Thyra::TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraLinearOp_t;
