@@ -273,7 +273,7 @@ public:
         const LocalOrdinal localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
         const LocalOrdinal localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : thySubMap->dim() );
         lidOffsets[b+1] = localSubDim + lidOffsets[b]; // calculate lid offset for next block
-        RCP<Thyra::ConstDetachedMultiVectorView<double> > thyData =
+        RCP<Thyra::ConstDetachedMultiVectorView<Scalar> > thyData =
             Teuchos::rcp(new Thyra::ConstDetachedMultiVectorView<Scalar>(thyProdVec->getMultiVectorBlock(b),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
         for(size_t vv = 0; vv < xpMultVec->getNumVectors(); ++vv) {
           for(LocalOrdinal i = 0; i < localSubDim; ++i) {
@@ -1092,7 +1092,7 @@ public:
       Teuchos::RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       if (epetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::EpetraMap failed");
-      RCP<const Thyra::VectorSpaceBase<double> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
       thyraMap = thyraEpetraMap;
     }
 #endif
