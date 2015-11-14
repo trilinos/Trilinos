@@ -42,6 +42,11 @@ module load openmpi/1.10.0
 module load gcc/5.2.0
 module load valgrind/3.10.1
 
+# Remove colors (-fdiagnostics-color) from OMPI flags
+# It may result in non-XML characters on the Dashboard
+export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
+export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
+
 echo "Configuration = $CONFIGURATION"
 env
 
@@ -60,6 +65,11 @@ module load openmpi/1.10.0
 module load gcc/4.9.2
 module load cuda/7.5-gcc
 module load nvcc-wrapper/gcc
+
+# Remove colors (-fdiagnostics-color) from OMPI flags
+# It may result in non-XML characters on the Dashboard
+export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
+export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 
 echo "Configuration = $CONFIGURATION"
 env
