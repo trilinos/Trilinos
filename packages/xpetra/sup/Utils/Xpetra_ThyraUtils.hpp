@@ -548,10 +548,12 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
-    Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::null;
+    bool bIsTpetra = false;
+
 #ifdef HAVE_XPETRA_TPETRA
-    tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
+      bIsTpetra = true;
       Teuchos::RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrix();
@@ -568,7 +570,7 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(tpetraMat==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
+    TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra == false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
 #endif
     return thyraOp;
   }
@@ -578,10 +580,12 @@ public:
     // create a Thyra operator from Xpetra::CrsMatrix
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thyraOp = Teuchos::null;
 
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::null;
+    bool bIsTpetra = false;
+
 #ifdef HAVE_XPETRA_TPETRA
-    tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(tpetraMat!=Teuchos::null) {
+      bIsTpetra = true;
       Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xTpCrsMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpCrsMat));
       Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpCrsMat = xTpCrsMat->getTpetra_CrsMatrixNonConst();
@@ -598,7 +602,7 @@ public:
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(tpetraMat==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
+    TEUCHOS_TEST_FOR_EXCEPTION(bIsTpetra == false, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double and LO=GO=int");
 #endif
     return thyraOp;
   }
