@@ -409,8 +409,8 @@ namespace Experimental {
   }
 
   template<class LO, class GO, class Node>
-  RCP<const Tpetra::Map<LO,GO,Node>>
-  createMeshMap(LO const &blockSize, const Tpetra::Map<LO,GO,Node> &pointMap)
+  Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+  createMeshMap (const LO& blockSize, const Tpetra::Map<LO,GO,Node>& pointMap)
   {
     typedef Teuchos::OrdinalTraits<Tpetra::global_size_t> TOT;
     typedef Tpetra::Map<LO,GO,Node> map_type;
@@ -442,7 +442,8 @@ namespace Experimental {
 } // namespace Tpetra
 
 //
-// Explicit instantiation macro
+// Explicit instantiation macro for blockCrsMatrixWriter (various
+// overloads), writeMatrixStrip, and convertToBlockCrsMatrix.
 //
 // Must be expanded from within the Tpetra namespace!
 //
@@ -452,7 +453,14 @@ namespace Experimental {
   template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os); \
   template void Experimental::blockCrsMatrixWriter(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
   template void Experimental::writeMatrixStrip(Experimental::BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
-  template RCP<Experimental::BlockCrsMatrix<S, LO, GO, NODE>> Experimental::convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
-  template RCP<const Map<LO,GO,NODE>> Experimental::createMeshMap(LO const &blockSize, const Map<LO,GO,NODE> &pointMap);
+  template Teuchos::RCP<Experimental::BlockCrsMatrix<S, LO, GO, NODE> > Experimental::convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize);
+
+//
+// Explicit instantiation macro for createMeshMap.
+//
+// Must be expanded from within the Tpetra::Experimental namespace!
+//
+#define TPETRA_EXPERIMENTAL_CREATEMESHMAP_INSTANT(LO,GO,NODE) \
+  template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap (const LO& blockSize, const Map<LO,GO,NODE>& pointMap);
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS_DEF_HPP
