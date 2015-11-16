@@ -319,5 +319,5 @@ void performance_test_driver( const int nGrid,
   // Loop over [entry_min, entry_max] vector entries per thread
   typedef Sacado::mpl::range_c< int, entry_min, entry_max+1, entry_step > Range;
   PerformanceDriverOp<Storage> op(nGrid, nIter, dev_config);
-  Sacado::mpl::for_each<Range> f(op);
+  Sacado::mpl::for_each_no_kokkos<Range> f(op);
 }
