@@ -1224,11 +1224,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
 
   // Create preconditioner
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> Prec;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  RCP<OP> matrix_op = matrix;
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
-  RCP<Prec> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+  RCP<OP> M =
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix_op, *muelu_params);
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
@@ -1702,8 +1703,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
+  RCP<OP> matrix_op = matrix;
   RCP<OP> M =
-    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix, *muelu_params);
+    MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrix_op, *muelu_params);
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;

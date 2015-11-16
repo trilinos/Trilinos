@@ -71,10 +71,12 @@ namespace Example {
       const Teuchos::RCP<Teuchos::ParameterList>& mueluParams,
       const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
     {
+      typedef Tpetra::Operator<S,LO,GO,N> OperatorType;
       typedef MueLu::TpetraOperator<S,LO,GO,N> PreconditionerType;
+      Teuchos::RCP<OperatorType> A_op = A;
       Teuchos::RCP<PreconditionerType> mueluPreconditioner;
       mueluPreconditioner =
-        MueLu::CreateTpetraPreconditioner(A,*mueluParams,coords);
+        MueLu::CreateTpetraPreconditioner(A_op,*mueluParams,coords);
       return mueluPreconditioner;
     }
 
