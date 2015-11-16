@@ -136,7 +136,7 @@ namespace Sacado {
 #ifdef HAVE_SACADO_TEUCHOS
 #include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_ETV_ScalarTraitsImp.hpp"
+#include "Sacado_MP_ScalarTraitsImp.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_as.hpp"
 
@@ -308,21 +308,21 @@ namespace Teuchos {
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename S>
   struct SerializationTraits<Ordinal, Sacado::MP::Vector<S> > :
-    public Sacado::ETV::SerializationTraitsImp< Ordinal,
+    public Sacado::MP::SerializationTraitsImp< Ordinal,
                                                 Sacado::MP::Vector<S>,
                                                 S::is_static > {};
 
   //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename S>
   struct ValueTypeSerializer<Ordinal, Sacado::MP::Vector<S> > :
-    public Sacado::ETV::SerializerImp< Ordinal,
+    public Sacado::MP::SerializerImp< Ordinal,
                                        Sacado::MP::Vector<S>,
                                        ValueTypeSerializer<Ordinal,typename Sacado::MP::Vector<S>::value_type> >
   {
     typedef Sacado::MP::Vector<S> VecType;
     typedef typename VecType::value_type value_type;
     typedef ValueTypeSerializer<Ordinal,value_type> ValueSerializer;
-    typedef Sacado::ETV::SerializerImp< Ordinal,VecType,ValueSerializer> Base;
+    typedef Sacado::MP::SerializerImp< Ordinal,VecType,ValueSerializer> Base;
     ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
                         Ordinal sz = 0) :
       Base(vs, sz) {}

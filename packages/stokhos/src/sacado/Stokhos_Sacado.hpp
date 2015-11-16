@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -52,9 +52,6 @@
 // Traits classes
 #include "Sacado_ETPCE_ExpressionTraits.hpp"
 #include "Sacado_ETPCE_OrthogPolyTraits.hpp"
-#include "Sacado_ETV_ExpressionTraits.hpp"
-#include "Sacado_ETV_VectorTraits.hpp"
-#include "Sacado_ETV_Vector2Traits.hpp"
 
 // Sacado overloaded operators for Stokhos
 #include "Stokhos_StandardStorage.hpp"
@@ -62,7 +59,5 @@
 #include "Stokhos_StaticFixedStandardStorage.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Sacado_ETPCE_OrthogPoly.hpp"
-#include "Sacado_ETV_Vector.hpp"
-#include "Sacado_ETV_Vector2.hpp"
 
 #endif // STOKHOS_SACADO_HPP
