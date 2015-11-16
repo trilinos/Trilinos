@@ -85,65 +85,65 @@ namespace Sacado {
         Teuchos::ScalarTraits<value_type>::isComparable;
       static const bool hasMachineParameters =
         Teuchos::ScalarTraits<value_type>::hasMachineParameters;
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType eps() {
         return Teuchos::ScalarTraits<value_type>::eps();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType sfmin() {
         return Teuchos::ScalarTraits<value_type>::sfmin();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType base()  {
         return Teuchos::ScalarTraits<value_type>::base();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType prec()  {
         return Teuchos::ScalarTraits<value_type>::prec();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType t()     {
         return Teuchos::ScalarTraits<value_type>::t();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType rnd()   {
         return Teuchos::ScalarTraits<value_type>::rnd();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType emin()  {
         return Teuchos::ScalarTraits<value_type>::emin();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmin()  {
         return Teuchos::ScalarTraits<value_type>::rmin();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType emax()  {
         return Teuchos::ScalarTraits<value_type>::emax();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmax()  {
         return Teuchos::ScalarTraits<value_type>::rmax();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static magnitudeType magnitude(const PCEType& a) {
         return a.two_norm();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static innerProductType innerProduct(const PCEType& a, const PCEType& b) {
         return a.inner_product(b);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType zero()  {
         return PCEType(0.0);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType one()   {
         return PCEType(1.0);
       }
 
       // Conjugate is only defined for real derivative components
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType conjugate(const PCEType& x) {
         PCEType y = x;
         y.copyForWrite();
@@ -152,7 +152,7 @@ namespace Sacado {
       }
 
       // Real part is only defined for real derivative components
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType real(const PCEType& x) {
         PCEType y = x;
         y.copyForWrite();
@@ -161,60 +161,60 @@ namespace Sacado {
       }
 
       // Imaginary part is only defined for real derivative components
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType imag(const PCEType& x) {
         return PCEType(Teuchos::ScalarTraits<value_type>::imag(x.val()));
       }
 
-      KOKKOS_INLINE_FUNCTION
+
       static value_type nan() {
         return Teuchos::ScalarTraits<value_type>::nan();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static bool isnaninf(const PCEType& x) {
         for (int i=0; i<x.size(); i++)
           if (Teuchos::ScalarTraits<value_type>::isnaninf(x.fastAccessCoeff(i)))
             return true;
         return false;
       }
-      KOKKOS_INLINE_FUNCTION
+
       static void seedrandom(unsigned int s) {
         Teuchos::ScalarTraits<value_type>::seedrandom(s);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static value_type random() {
         return Teuchos::ScalarTraits<value_type>::random();
       }
-      KOKKOS_INLINE_FUNCTION
+
       static const char * name() {
         return "Sacado::UQ::PCE<>";
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType squareroot(const PCEType& x) {
         return std::sqrt(x);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType pow(const PCEType& x, const PCEType& y) {
         return std::pow(x,y);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType log(const PCEType& x) {
         return std::log(x);
       }
-      KOKKOS_INLINE_FUNCTION
+
       static PCEType log10(const PCEType& x) {
         return std::log10(x);
       }
 
       // Helper function to determine whether a complex value is real
-      KOKKOS_INLINE_FUNCTION
+
       static bool is_complex_real(const value_type& x) {
         return
           Teuchos::ScalarTraits<value_type>::magnitude(x-Teuchos::ScalarTraits<value_type>::real(x)) == 0;
       }
 
       // Helper function to determine whether a Fad type is real
-      KOKKOS_INLINE_FUNCTION
+
       static bool is_pce_real(const PCEType& x) {
         if (x.size() == 0)
           return true;
