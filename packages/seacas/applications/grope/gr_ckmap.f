@@ -55,6 +55,8 @@ C     simple check.  Instead, we do an indexed sort and check for no
 C     duplicate adjacent values. 
 
       nerr = 0
+      if (icnt .le. 1) return
+
       CALL INDEXX (MAP, INDX, ICNT, .TRUE.)
 
       ILAST = MAP(INDX(1))

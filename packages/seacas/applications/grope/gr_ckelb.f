@@ -67,6 +67,8 @@ C   --   ATRIB - IN - the attribute array
       CHARACTER*99 STRA
       CHARACTER*99 STRB
 
+      if (numel .eq. 0 .and. nelblk .eq. 0) return
+      
 C   --Check for unique identifier
 
       DO 100 IELB = 1, NELBLK
