@@ -66,17 +66,12 @@
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 
-//#include "MueLu_UseDefaultTypes.hpp"
-
 namespace MueLuTests {
 
-//#include "MueLu_UseShortNames.hpp"
-
-  //TEUCHOS_UNIT_TEST(TentativePFactory, Constructor)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(GlobalOrdinal,Node);
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -88,11 +83,10 @@ namespace MueLuTests {
 
   //TODO test BuildP
 
-  //TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative_LapackQR)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, MakeTentative_LapackQR, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(GlobalOrdinal,Node);
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out)); //FIXME JJH uncommenting this causes dangling RCP errors
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -170,11 +164,10 @@ namespace MueLuTests {
 
   } //MakeTentative  Lapack QR
 
-  //TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, MakeTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(GlobalOrdinal,Node);
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -256,11 +249,10 @@ namespace MueLuTests {
 
   } //MakeTentative
 
-  //TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeUsingDefaultNullSpace)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, MakeTentativeUsingDefaultNullSpace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(GlobalOrdinal,Node);
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -314,13 +306,12 @@ namespace MueLuTests {
 
   } //MakeTentative
 
-  //TEUCHOS_UNIT_TEST(TentativePFactory, NonStandardMaps)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, NonStandardMaps, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     //#warning Unit test PgPFactory NonStandardMaps disabled
     //  return;
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(GlobalOrdinal,Node);
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -498,7 +489,6 @@ namespace MueLuTests {
   }
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
-  //TEUCHOS_UNIT_TEST(TentativePFactory, EpetraVsTpetra)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"

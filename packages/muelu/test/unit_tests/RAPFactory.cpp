@@ -44,6 +44,7 @@
 //
 // @HEADER
 #include "Teuchos_UnitTestHarness.hpp"
+#include <Teuchos_ScalarTraits.hpp>
 
 #include "MueLu_config.hpp"
 
@@ -62,14 +63,13 @@
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
 
-  TEUCHOS_UNIT_TEST(RAPFactory, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<RAPFactory> rapFactory = rcp(new RAPFactory);
@@ -78,15 +78,19 @@ namespace MueLuTests {
     out << *rapFactory << std::endl;
   } // Constructor test
 
-  TEUCHOS_UNIT_TEST(RAPFactory, Correctness)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPFactory, Correctness, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-    Level fineLevel, coarseLevel; TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    Level fineLevel, coarseLevel; TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(27*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
@@ -123,17 +127,17 @@ namespace MueLuTests {
     X->randomize();
 
     //Calculate result1 = R*(A*(P*X))
-    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
 
     RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
-    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
       << "matrix product by comparing (RAP)*X to R(A(P*X))." << std::endl;
@@ -144,9 +148,13 @@ namespace MueLuTests {
 
   } // Correctness test
 
-  TEUCHOS_UNIT_TEST(RAPFactory, ImplicitTranspose)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPFactory, ImplicitTranspose, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -163,13 +171,13 @@ namespace MueLuTests {
     defManager->SetFactory("Aggregates", rcp(new CoupledAggregationFactory()));   // real aggregation factory for Ptent
 
     Level fineLevel, coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // overwrite default factory manager
     fineLevel.SetFactoryManager(defManager);
     coarseLevel.SetFactoryManager(defManager);
 
-    RCP<Matrix> Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);
 
     TentativePFactory tentpFactory;
@@ -214,17 +222,17 @@ namespace MueLuTests {
     //X->describe(out,Teuchos::VERB_EXTREME);
 
     //Calculate result1 = P^T*(A*(P*X))
-    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    P->apply(*workVec2,*result1,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
 
     RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
-    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
       << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
@@ -233,7 +241,14 @@ namespace MueLuTests {
     result2->norm2(normResult2);
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
 
-  } // Correctness test
+  } // ImplicitTranspose test
+
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPFactory,Constructor,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPFactory,Correctness,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPFactory,ImplicitTranspose,Scalar,LO,GO,Node)
+
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
 
