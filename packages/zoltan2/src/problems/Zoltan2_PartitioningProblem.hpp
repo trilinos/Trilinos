@@ -645,7 +645,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     metrics_ = rcp(quality);
 
-    if (modelAvail_[GraphModelType] == true){
+    if (inputType_ == GraphAdapterType ||
+	inputType_ == MatrixAdapterType ||
+	inputType_ == MeshAdapterType){
       typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
 
       gpsq_t *graphQuality = NULL;
