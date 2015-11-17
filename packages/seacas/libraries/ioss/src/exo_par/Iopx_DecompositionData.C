@@ -483,7 +483,10 @@ namespace Iopx {
                     node_dist,    &nodeOffset,    &nodeCount);
 
 #if DEBUG_OUTPUT
-    std::cerr << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
+    std::cerr << "Processor " << myProcessor << " has "
+	      << elementCount << " elements; offset = " << elementOffset << "\n";
+    std::cerr << "Processor " << myProcessor << " has "
+	      << nodeCount << " nodes; offset = " << nodeOffset << ".\n";
 #endif
     std::vector<INT> pointer; // Index into adjacency, processor list for each element...
     std::vector<INT> adjacency; // Size is sum of element connectivity sizes 
@@ -560,7 +563,10 @@ namespace Iopx {
     }
 #endif
     if (method == "LINEAR") {
-      simple_decompose(method, element_dist);
+      if (globalElementCount > 0)
+	simple_decompose(method, element_dist);
+      else
+	simple_node_decompose(method, node_dist);
     }
 
     std::sort(importElementMap.begin(), importElementMap.end());
@@ -582,9 +588,10 @@ namespace Iopx {
 
     // Now need to determine the nodes that are on this processor,
     // both owned and shared...
-    get_local_node_list(pointer, adjacency, node_dist);
-
-    get_shared_node_list();
+    if (globalElementCount > 0) {
+      get_local_node_list(pointer, adjacency, node_dist);
+      get_shared_node_list();
+    }
 
     get_nodeset_data(exodusId, info.num_node_sets);
 
@@ -609,6 +616,7 @@ namespace Iopx {
       // Nothing is imported or exported, everything stays "local"
 
       size_t local = element_dist[myProcessor+1] - element_dist[myProcessor];
+      assert(local == elementCount);
       localElementMap.reserve(local);
       for (size_t i=0; i < local; i++) {
         localElementMap.push_back(i);
@@ -619,6 +627,42 @@ namespace Iopx {
       exportElementIndex.resize(processorCount+1);
       importElementCount.resize(processorCount+1);
       importElementIndex.resize(processorCount+1);
+    }
+  }
+
+  template <typename INT>
+  void DecompositionData<INT>::simple_node_decompose(const std::string &method,
+						     const std::vector<INT> &node_dist)
+  {
+    // Used if there are no elements on the model...
+    if (method == "LINEAR") {
+      // The "ioss_decomposition" is the same as the "file_decomposition"
+      // Nothing is imported or exported, everything stays "local"
+
+      size_t local_elem = 0;
+
+      // All values are 0
+      localElementMap.reserve(local_elem);
+      exportElementCount.resize(processorCount+1);
+      exportElementIndex.resize(processorCount+1);
+      importElementCount.resize(processorCount+1);
+      importElementIndex.resize(processorCount+1);
+
+      size_t local = node_dist[myProcessor+1] - node_dist[myProcessor];
+      assert(local == nodeCount);
+      
+      localNodeMap.reserve(local);
+      nodeGTL.reserve(local);
+      for (size_t i=0; i < local; i++) {
+        localNodeMap.push_back(i+nodeOffset);
+	nodeGTL.push_back(i+nodeOffset+1);
+      }
+
+      // All values are 0
+      exportNodeCount.resize(processorCount+1);
+      exportNodeIndex.resize(processorCount+1);
+      importNodeCount.resize(processorCount+1);
+      importNodeIndex.resize(processorCount+1);
     }
   }
 
