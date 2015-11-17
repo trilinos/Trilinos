@@ -494,23 +494,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
-    //Calling MUELU_LIMIT_EPETRA_TESTING_SCOPE will not work here, as the underlying library may very well be
-    //Tpetra, but Epetra is used "manually".
-    Node node;
-    std::string nodeName = typeid(node).name();
-    if (nodeName.find("Serial") == std::string::npos) {
-      std::cout << "Skipping Epetra for non-Serial nodes" << std::endl;
-      return;
-    }
-
-    GO index;
-    int epetraIntegerCheck;
-    long long epetraLongLongCheck;
-    std::string goName = typeid(index).name();
-    if (goName != typeid(epetraIntegerCheck).name() && goName != typeid(epetraLongLongCheck).name()) {
-       std::cout << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl;
-       return;
-    }
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
 

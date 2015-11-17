@@ -88,25 +88,7 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
-    //Calling MUELU_LIMIT_EPETRA_TESTING_SCOPE will not work here, as the underlying library may very well be
-    //Tpetra, but Epetra is used "manually".
-    Node node;
-    std::string nodeName = typeid(node).name();
-    if (nodeName.find("Serial") == std::string::npos) {
-      std::cout << "Skipping Epetra for non-Serial nodes" << std::endl;
-      return;
-    }
-
-    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int") &&
-        Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("long long int") ) {
-       std::cout << "Skipping Epetra for GlobalOrdinal other than \"int\" and \"long long\"" << std::endl;
-       return;
-    }
-
-    if (Teuchos::ScalarTraits<Scalar>::name() != std::string("double")) {
-       std::cout << "Skipping Epetra for Scalar other than \"double\"" << std::endl;
-       return;
-    }
+    MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 

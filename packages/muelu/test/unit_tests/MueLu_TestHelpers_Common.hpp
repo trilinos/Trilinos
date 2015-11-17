@@ -57,8 +57,8 @@
 #define MUELU_LIMIT_EPETRA_TESTING_SCOPE(SC, GO, NO) \
   MUELU_DEBUGGER_MACRO \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
-    NO node; \
-    std::string nodeName = typeid(node).name(); \
+    NO nodeCheck; \
+    std::string nodeName = typeid(nodeCheck).name(); \
     if (nodeName.find("Serial") == std::string::npos) { \
       out << "Skipping Epetra for non-Serial nodes" << std::endl; \
       return; \
@@ -78,5 +78,23 @@
        return; \
     } \
   }
+
+//Macro to be use in cases where linAlgebra==Tpetra but Epetra will be tested as well.
+#define MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
+    Node nodeCheck; \
+    std::string nodeName = typeid(nodeCheck).name();  \
+    if (nodeName.find("Serial") == std::string::npos) { \
+      std::cout << "Skipping Epetra for non-Serial nodes" << std::endl; \
+      return; \
+    } \
+    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int") && \
+        Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("long long int") ) { \
+       std::cout << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
+       return; \
+    } \
+    if (Teuchos::ScalarTraits<Scalar>::name() != std::string("double")) { \
+       std::cout << "Skipping Epetra for SC other than \"double\"" << std::endl; \
+       return; \
+    }
 
 #endif // ifndef MUELU_TEST_HELPERS_COMMON_HPP
