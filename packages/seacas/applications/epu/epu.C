@@ -1741,7 +1741,8 @@ namespace {
     // the elements back to their original location. Since the elements are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_element_map.size() == global_element_map.size();
-    bool is_contiguous = (size_t)global_element_map[global_element_map.size()-1] == global_element_map.size();
+    bool is_contiguous = global_element_map.empty() ||
+      ((size_t)global_element_map[global_element_map.size()-1] == global_element_map.size());
     std::cout  << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map that maps from a local processor element to the
