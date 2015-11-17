@@ -11,7 +11,7 @@ SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
 #MESSAGE("TRIBITS_PROJECT_ROOT = '${TRIBITS_PROJECT_ROOT}'")
 
 SET(Trilinos_REPOSITORY_LOCATION_DEFAULT
-  "software.sandia.gov:/space/git/Trilinos")
+  "https://github.com/trilinos/Trilinos.git")
 SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT
   "software.sandia.gov:/space/git/nightly/Trilinos")
 SET(CTEST_DROP_SITE_COVERAGE_DEFAULT
