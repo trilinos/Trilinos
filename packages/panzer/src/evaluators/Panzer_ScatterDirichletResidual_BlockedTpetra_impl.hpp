@@ -66,7 +66,7 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
@@ -438,7 +438,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       blockOffsets[blk] = blockOffset;
    }
 
-   boost::unordered_map<std::pair<int,int>,Teuchos::RCP<CrsMatrixType> > jacTpetraBlocks;
+   std::unordered_map<std::pair<int,int>,Teuchos::RCP<CrsMatrixType> > jacTpetraBlocks;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

@@ -48,7 +48,7 @@
 #include <vector>
 #include <map>
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -321,18 +321,18 @@ private:
    Teuchos::RCP<FieldManagerBuilder> fmb2_;
    AssemblyEngine_TemplateManager<panzer::Traits> ae_tm2_;
 
-   typedef boost::unordered_map<panzer::BC,
+   typedef std::unordered_map<panzer::BC,
                                 Teuchos::RCP<std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > >,
                                 BC::BCHash,BC::BCEquality > BCHashMap;
 
    // Store up response factories by element block
-   boost::unordered_map<WorksetDescriptor,
+   std::unordered_map<WorksetDescriptor,
                         std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > respFactories_;
    BCHashMap respBCFactories_;
    std::size_t nextBC_id;
 
    //! Store all the response objects 
-   boost::unordered_map<std::string, Response_TemplateManager> responseObjects_;
+   std::unordered_map<std::string, Response_TemplateManager> responseObjects_;
    bool closureModelByEBlock_;
    bool disableGather_;
    bool disableScatter_;

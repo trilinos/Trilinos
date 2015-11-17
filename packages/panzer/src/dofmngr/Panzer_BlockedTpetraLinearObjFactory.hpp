@@ -295,7 +295,7 @@ protected:
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > gidProviders_;
 
    // which block entries are ignored
-   boost::unordered_set<std::pair<int,int> > excludedPairs_;
+   std::unordered_set<std::pair<int,int> > excludedPairs_;
   
 /*************** Thyra based methods/members *******************/
 
@@ -335,8 +335,8 @@ protected:
    Teuchos::RCP<const Teuchos::MpiComm<int> > comm_;
    mutable std::vector<Teuchos::RCP<const MapType> > maps_;
    mutable std::vector<Teuchos::RCP<const MapType> > ghostedMaps_;
-   mutable boost::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > graphs_ ;
-   mutable boost::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > ghostedGraphs_;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > graphs_ ;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > ghostedGraphs_;
 
    mutable std::vector<Teuchos::RCP<const ImportType> > importers_;
    mutable std::vector<Teuchos::RCP<const ExportType> > exporters_;

@@ -61,7 +61,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 namespace panzer {
 
@@ -521,7 +521,7 @@ protected:
    //@}
 
    // storage for fast lookups of GID ownership
-   boost::unordered_set<GlobalOrdinal> ownedGIDHashTable_;
+   std::unordered_set<GlobalOrdinal> ownedGIDHashTable_;
 
    std::vector<std::vector<std::string> > fieldOrder_;
 

@@ -59,7 +59,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 namespace panzer {
 

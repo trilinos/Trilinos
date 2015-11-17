@@ -48,10 +48,10 @@
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_IosAllSaver.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
-#include <boost/io/ios_state.hpp>
 #include <iomanip>
 
 namespace panzer {
@@ -196,8 +196,8 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
     global_averages[i] /= global_total_volume;
 
   if (comm->getRank() == 0) {
-    
-    boost::io::ios_all_saver saver(os);
+
+    panzer::ios_all_saver saver(os);
     
     std::size_t precision = 8;
     os << std::scientific << std::showpoint << std::setprecision(precision) << std::left;

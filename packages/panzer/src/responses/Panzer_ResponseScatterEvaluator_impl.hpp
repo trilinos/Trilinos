@@ -48,7 +48,6 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
-#include <boost/io/ios_state.hpp>
 #include <iomanip>
 
 namespace panzer {

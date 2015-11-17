@@ -211,7 +211,7 @@ private:
    void applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) const;
 
    // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef boost::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
+   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
    typedef std::map<SideId,Teuchos::RCP<std::map<unsigned,Workset> >,LessSide> SideMap;
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets

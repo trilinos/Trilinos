@@ -889,7 +889,7 @@ template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_CrsGraph> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGraph(int i,int j) const
 {
-   typedef boost::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > GraphMap;
+   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > GraphMap;
    
    GraphMap::const_iterator itr = graphs_.find(std::make_pair(i,j));
    Teuchos::RCP<Epetra_CrsGraph> graph;
@@ -908,7 +908,7 @@ template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_CrsGraph> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedGraph(int i,int j) const
 {
-   typedef boost::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > GraphMap;
+   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > GraphMap;
    
    GraphMap::const_iterator itr = ghostedGraphs_.find(std::make_pair(i,j));
    Teuchos::RCP<Epetra_CrsGraph> ghostedGraph;
