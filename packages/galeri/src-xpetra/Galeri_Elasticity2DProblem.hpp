@@ -65,8 +65,8 @@ namespace Galeri {
         E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
         nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
 
-        nx_ = list.get("nx", -1);
-        ny_ = list.get("ny", -1);
+        nx_ = list.get<GlobalOrdinal>("nx", -1);
+        ny_ = list.get<GlobalOrdinal>("ny", -1);
 
         nDim_ = 2;
         double one = 1.0;
@@ -405,7 +405,8 @@ namespace Galeri {
                                         hy = TST::magnitude(stretch[1]);
 
       GO myPID = this->Map_->getComm()->getRank();
-      GO mx = this->list_.get("mx", 1), my = this->list_.get("my", 1);
+      GO const & one=1;
+      GO mx = (this->list_).get("mx", one), my = (this->list_).get("my", one);
 
       GO startx, starty, endx, endy;
       Utils::getSubdomainData(dims[0], mx, myPID % mx, startx, endx);
