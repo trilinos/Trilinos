@@ -42,7 +42,7 @@ APPEND_SET(SOURCES
   VariableContainer.cpp
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND TPETRA_INST_INT_INT)
+IF (${PACKAGE_NAME}_ENABLE_Experimental AND Tpetra_INST_INT_INT)
   APPEND_SET(SOURCES
     BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
