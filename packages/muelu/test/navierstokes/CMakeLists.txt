@@ -18,13 +18,18 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
 
   IF(Trilinos_ENABLE_AztecOO)
     # build only if AztecOO available, too
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      Navier2D_Epetra
-      SOURCES Navier2D_Epetra.cpp
-      COMM mpi
-      )
+    #github move note:
+    #removed copy of A5932_re1000.txt since it was filtered out.
+    #Also Disabled test that depended on it.
+    #
+    #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    #  Navier2D_Epetra
+    #  SOURCES Navier2D_Epetra.cpp
+    #  COMM mpi
+    #  )
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cpdata
-      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
+      SOURCE_FILES b5932_re1000.txt
       )
 
     # experimental tests (block operators)

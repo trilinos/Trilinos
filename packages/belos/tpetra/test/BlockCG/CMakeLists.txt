@@ -39,16 +39,22 @@ ENDIF()
 #  EXEDEPS Tpetra_BlockCG_complex_hb_test
 #  )
 
+#github move note:
+#removed copy of bcsstk18.rsa since it was filtered out.
+#
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles1
   SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/test/BlockCG
-  SOURCE_FILES bcsstk17.rsa bcsstk18.rsa
+  SOURCE_FILES bcsstk17.rsa
   EXEDEPS Tpetra_BlockCG_hb_test
   # EXEDEPS Tpetra_BlockCG_hb_test Tpetra_BlockCG_hb_multiprec_test
   )
 
+#github move note:
+#removed copy of bcsstk15.hb since it was filtered out.
+#
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles2
   SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockCG
-  SOURCE_FILES bcsstk14.hb bcsstk15.hb
+  SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_BlockCG_hb_test
   # EXEDEPS Tpetra_BlockCG_hb_test Tpetra_BlockCG_hb_multiprec_test
   )

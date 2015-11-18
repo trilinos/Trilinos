@@ -42,12 +42,14 @@ TRIBITS_ADD_TEST(
 #  FAIL_REGULAR_EXPRESSION "FAIL"
 #  )
 
+#github move note:
+#removed copy of bcsstk30.mtx since it was filtered out.
+#
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_color_tests
   SOURCE_FILES
     simple.mtx
     commanche_dual.mtx
-    bcsstk30.mtx
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

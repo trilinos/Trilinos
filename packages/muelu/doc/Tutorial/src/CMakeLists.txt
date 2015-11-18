@@ -68,24 +68,29 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     COMM mpi
     )
     
-  TRIBITS_ADD_TEST(
-    Challenge_XML
-    NAME "Challenge_convectiondiffusion"
-    ARGS "--globalNumDofs=16641 --nDofsPerNode=1 --solver=gmres --tol=1e-12 --xml=challenges/condif2d_reference.xml --problem=challenges/condif2d"
-    NUM_MPI_PROCS 2
-    COMM mpi
-    ) 
-    
-  TRIBITS_ADD_TEST(
-    Challenge_XML
-    NAME "Challenge_structure"
-    ARGS "--globalNumDofs=7020 --nDofsPerNode=2 --solver=cg --tol=1e-12 --xml=challenges/stru2d_reference.xml --problem=challenges/stru2d"
-    NUM_MPI_PROCS 2
-    COMM mpi
-    )    
+#github move note:
+#removed copy of challenges/condif2d_A.txt and challenges/stru2d_A.txt
+#since they were filtered out. Disabled tests that depended on those
+#files. 
+#
+#  TRIBITS_ADD_TEST(
+#    Challenge_XML
+#    NAME "Challenge_convectiondiffusion"
+#    ARGS "--globalNumDofs=16641 --nDofsPerNode=1 --solver=gmres --tol=1e-12 --xml=challenges/condif2d_reference.xml --problem=challenges/condif2d"
+#    NUM_MPI_PROCS 2
+#    COMM mpi
+#    ) 
+#    
+#  TRIBITS_ADD_TEST(
+#    Challenge_XML
+#    NAME "Challenge_structure"
+#    ARGS "--globalNumDofs=7020 --nDofsPerNode=2 --solver=cg --tol=1e-12 --xml=challenges/stru2d_reference.xml --problem=challenges/stru2d"
+#    NUM_MPI_PROCS 2
+#    COMM mpi
+#    )    
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_challenge_cp
-    SOURCE_FILES challenges/condif2d_A.txt challenges/condif2d_b.txt challenges/condif2d_ns.txt challenges/condif2d_reference.xml 
-    challenges/stru2d_A.txt challenges/stru2d_b.txt challenges/stru2d_ns.txt challenges/stru2d_reference.xml
+TRIBITS_COPY_FILES_TO_BINARY_DIR(userguide_challenge_cp
+    SOURCE_FILES challenges/condif2d_b.txt challenges/condif2d_ns.txt challenges/condif2d_reference.xml 
+     challenges/stru2d_b.txt challenges/stru2d_ns.txt challenges/stru2d_reference.xml
     )    
 ENDIF()
