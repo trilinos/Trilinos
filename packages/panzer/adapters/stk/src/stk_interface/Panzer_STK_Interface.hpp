@@ -59,7 +59,7 @@
 
 #include <Panzer_STK_config.hpp>
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #ifdef HAVE_IOSS
 #include <stk_io/MeshReadWriteUtils.hpp>
@@ -818,7 +818,7 @@ protected:
    // for element block weights
    std::map<std::string,double> blockWeights_;
 
-   boost::unordered_map<stk_classic::mesh::EntityId,std::size_t> localIDHash_;
+   std::unordered_map<stk_classic::mesh::EntityId,std::size_t> localIDHash_;
 
    // Store mesh displacement fields by element block. This map
    // goes like this meshCoordFields_[eBlock][axis_index] => coordinate FieldName

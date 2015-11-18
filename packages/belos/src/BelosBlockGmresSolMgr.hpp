@@ -156,6 +156,12 @@ public:
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8
+   *		\param pl [in] ParameterList with construction information
+   *			\htmlonly
+   *			<iframe src="belos_BlockGmres.xml" width=100% scrolling="no" frameborder="0">
+   *			</iframe>
+   *			<hr />
+   *			\endhtmlonly
    */
   BlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
     const Teuchos::RCP<Teuchos::ParameterList> &pl );

@@ -68,7 +68,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_MultiVector.hpp"
 
-#include <boost/unordered_set.hpp> // a hash table
+#include <unordered_set> // a hash table
 
 /*
 #define HAVE_ZOLTAN2
@@ -555,7 +555,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   // build owned vector
   {
-    typedef boost::unordered_set<GO> HashTable;
+    typedef std::unordered_set<GO> HashTable;
     HashTable isOwned, remainingOwned;
     //owned_ is made up of owned_ids.
     Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
@@ -613,7 +613,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     // loop over all elements. do greedy ordering of local values over elements for
     // building owned_and_ghosted, hopefully this gives a better layout
     // for element ordered assembly
-    typedef boost::unordered_set<GO> HashTable;
+    typedef std::unordered_set<GO> HashTable;
     HashTable hashTable; // use to detect if global ID has been added to owned_and_ghosted_
 
     for(std::size_t i=0;i<owned_.size();i++) {
@@ -1048,7 +1048,7 @@ void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndSharedElements()
   this->getOwnedAndSharedIndices(ownedAndShared);
 
   // build global to local hash map (temporary and used only once)
-  boost::unordered_map<GO,LO> hashMap;
+  std::unordered_map<GO,LO> hashMap;
   for(std::size_t i = 0; i < ownedAndShared.size(); ++i)
     hashMap[ownedAndShared[i]] = i;
 

@@ -46,7 +46,7 @@
 
 #include <vector>
 #include <string>
-#include "boost/tuple/tuple.hpp"
+#include <tuple>
 
 #include "Teuchos_RCP.hpp"
 
@@ -134,7 +134,7 @@ namespace panzer {
 					 const panzer::PhysicsBlock& side_pb);
 
     //! Returns information for the residual contribution integrations associated with this Neumann BC.
-    const std::vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > getResidualContributionData() const;
+    const std::vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > getResidualContributionData() const;
 
     //@}
 
@@ -179,7 +179,7 @@ namespace panzer {
 	\param index 4 - RCP to the basis for the dof that the Neumann residual contribution is added to.
 	\param index 5 - RCP to the Integration Rule for the side integration for the Neumann residual contribution.
     */
-    std::vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > m_residual_contributions;
+    std::vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > m_residual_contributions;
 
     //! All DOF field names needed by this BC: this vector is used to build gather evaluators for each DOF.
     std::vector<std::string> m_required_dof_names;

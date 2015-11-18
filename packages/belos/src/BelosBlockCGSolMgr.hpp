@@ -207,6 +207,12 @@ namespace Belos {
      *                                         relative residual norm is printed if convergence
      *                                         information is printed. Default: false
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
+     *		\param pl [in] ParameterList with construction information
+     *			\htmlonly
+     *			<iframe src="belos_BlockCG.xml" width=100% scrolling="no" frameborder="0">
+     *			</iframe>
+     *			<hr />
+     *			\endhtmlonly
      */
     BlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<Teuchos::ParameterList> &pl );

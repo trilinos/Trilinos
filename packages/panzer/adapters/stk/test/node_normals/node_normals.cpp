@@ -163,11 +163,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    boost::unordered_map<unsigned,std::vector<double> > normals;
+    std::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk_classic::computeSidesetNodeNormals(normals,mesh,sideName,blockName,&std::cout,pout.get());
 
-    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (std::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -202,11 +202,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    boost::unordered_map<unsigned,std::vector<double> > normals;
+    std::unordered_map<unsigned,std::vector<double> > normals;
     
     panzer_stk_classic::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
+    for (std::unordered_map<unsigned,std::vector<double> >::const_iterator node = normals.begin();
 	 node != normals.end(); ++node) {
       double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
       TEST_FLOATING_EQUALITY(normals[node->first][0], 0.0, tol);
@@ -241,11 +241,11 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> > normals;
+    std::unordered_map<std::size_t,Intrepid::FieldContainer<double> > normals;
     
     panzer_stk_classic::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
+    for (std::unordered_map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
 	 element != normals.end(); ++element) {
 
       const Intrepid::FieldContainer<double>& values = element->second;

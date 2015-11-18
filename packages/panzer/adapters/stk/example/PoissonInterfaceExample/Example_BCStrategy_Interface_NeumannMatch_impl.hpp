@@ -113,14 +113,14 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::rcp;
   using std::string; 
 
-  const std::vector<boost::tuples::tuple<string,string,string,int,Teuchos::RCP<panzer::PureBasis>,
+  const std::vector<std::tuple<string,string,string,int,Teuchos::RCP<panzer::PureBasis>,
     Teuchos::RCP<panzer::IntegrationRule> > > data = this->getResidualContributionData();
 
-  string residual_name = data[0].get<0>();
-  string dof_name = data[0].get<1>();
-  string flux_name = data[0].get<2>();
+  string residual_name = std::get<0>(data[0]);
+  string dof_name = std::get<1>(data[0]);
+  string flux_name = std::get<2>(data[0]);
 
-  RCP<panzer::IntegrationRule> ir = data[0].get<5>();
+  RCP<panzer::IntegrationRule> ir = std::get<5>(data[0]);
   RCP<const panzer::FieldLayoutLibrary> fll = pb.getFieldLibrary()->buildFieldLayoutLibrary(*ir);
   RCP<panzer::BasisIRLayout> basis = fll->lookupLayout(dof_name);
 

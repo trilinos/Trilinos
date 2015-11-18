@@ -50,7 +50,7 @@
 #include <cstddef>
 #include <vector>
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include "Teuchos_RCP.hpp"
 
@@ -81,7 +81,7 @@ namespace panzer {
   public:
     // types supporting hashing
     struct BCHash {
-      boost::hash<std::string> hash;
+      std::hash<std::string> hash;
       std::size_t operator()(const BC & bc) const
       { return this->hash(bc.elementBlockID() + "_" + bc.sidesetID());}
     };

@@ -115,15 +115,15 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data);
 
   // Iterate over each residual contribution
-  for (vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
+  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
 
-    const string& residual_name = eq->get<0>();
-    const string& dof_name = eq->get<1>();
-    const string& flux_name = eq->get<2>();
-    //const int& integration_order = eq->get<3>();
-    const RCP<const panzer::PureBasis> basis = eq->get<4>();
-    const RCP<const panzer::IntegrationRule> ir = eq->get<5>();
+    const string& residual_name = std::get<0>(*eq);
+    const string& dof_name = std::get<1>(*eq);
+    const string& flux_name = std::get<2>(*eq);
+    //const int& integration_order = std::get<3>(*eq);
+    const RCP<const panzer::PureBasis> basis = std::get<4>(*eq);
+    const RCP<const panzer::IntegrationRule> ir = std::get<5>(*eq);
 
     // Normals evaluator
     {
@@ -176,13 +176,13 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using std::pair;
 
   // Iterate over each residual contribution
-  for (vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
+  for (vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {
 
-    const string& residual_name = eq->get<0>();
-    const string& dof_name = eq->get<1>();
-    const RCP<const panzer::PureBasis> basis = eq->get<4>();
-    const RCP<const panzer::IntegrationRule> ir = eq->get<5>();
+    const string& residual_name = std::get<0>(*eq);
+    const string& dof_name = std::get<1>(*eq);
+    const RCP<const panzer::PureBasis> basis = std::get<4>(*eq);
+    const RCP<const panzer::IntegrationRule> ir = std::get<5>(*eq);
 
     // Scatter evaluator
     {
@@ -239,17 +239,17 @@ addResidualContribution(const std::string residual_name,
 
   Teuchos::RCP<panzer::IntegrationRule> ir = buildIntegrationRule(integration_order,side_pb);
   
-  m_residual_contributions.push_back(boost::tuples::make_tuple(residual_name,
-							       dof_name,
-							       flux_name,
-							       integration_order,
-							       basis,
-							       ir));
+  m_residual_contributions.push_back(std::make_tuple(residual_name,
+						     dof_name,
+						     flux_name,
+						     integration_order,
+						     basis,
+						     ir));
 }
 
 // ***********************************************************************
 template <typename EvalT>
-const std::vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >
+const std::vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >
 panzer::BCStrategy_Interface_DefaultImpl<EvalT>::getResidualContributionData() const
 {
   return m_residual_contributions;

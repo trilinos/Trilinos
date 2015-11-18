@@ -501,7 +501,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       blockOffsets[blk] = blockOffset;
    }
 
-   boost::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix> > jacEpetraBlocks;
+   std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix> > jacEpetraBlocks;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the

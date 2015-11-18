@@ -63,7 +63,7 @@
 
 namespace panzer_stk_classic {
 
-  void computeSidesetNodeNormals(boost::unordered_map<unsigned,std::vector<double> >& normals,
+  void computeSidesetNodeNormals(std::unordered_map<unsigned,std::vector<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -101,7 +101,7 @@ namespace panzer_stk_classic {
     // into faces
 
     // maps a panzer local element id to a list of normals
-    boost::unordered_map<unsigned,std::vector<double> > nodeNormals;
+    std::unordered_map<unsigned,std::vector<double> > nodeNormals;
     
     TEUCHOS_ASSERT(sides.size() == localSideTopoIDs.size());
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
@@ -147,8 +147,8 @@ namespace panzer_stk_classic {
     }
 
     // Now do the averaging of contributions
-    //boost::unordered_map<unsigned,std::vector<double> > normals;
-    for (boost::unordered_map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
+    //std::unordered_map<unsigned,std::vector<double> > normals;
+    for (std::unordered_map<unsigned,std::vector<double> >::const_iterator node = nodeNormals.begin(); node != nodeNormals.end(); ++node) {
 
       TEUCHOS_ASSERT( (node->second.size() % parentTopology->getDimension()) == 0);
 
@@ -208,7 +208,7 @@ namespace panzer_stk_classic {
     
   }
 
-  void computeSidesetNodeNormals(boost::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
+  void computeSidesetNodeNormals(std::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
@@ -217,7 +217,7 @@ namespace panzer_stk_classic {
   {    
     using Teuchos::RCP;
     
-    boost::unordered_map<unsigned,std::vector<double> > nodeEntityIdToNormals;
+    std::unordered_map<unsigned,std::vector<double> > nodeEntityIdToNormals;
     
     computeSidesetNodeNormals(nodeEntityIdToNormals,mesh,sidesetName,elementBlockName,out,pout);
 

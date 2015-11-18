@@ -53,7 +53,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 namespace panzer {
 
@@ -346,7 +346,7 @@ template <typename EvalT>
 Teuchos::RCP<ResponseBase> ResponseLibrary<TraitsT>::
 getResponse(const std::string & responseName) const
 {
-   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+   typedef std::unordered_map<std::string, Response_TemplateManager> HashMap;
    HashMap::const_iterator itr = responseObjects_.find(responseName);
 
    // response was not in list of responses
@@ -362,7 +362,7 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const
 {
-   typedef boost::unordered_map<std::string, Response_TemplateManager> HashMap;
+   typedef std::unordered_map<std::string, Response_TemplateManager> HashMap;
 
    responses.clear();
 
@@ -374,7 +374,7 @@ getResponses(std::vector<Teuchos::RCP<ResponseBase> > & responses) const
 template <typename TraitsT>
 class RVEF2 : public GenericEvaluatorFactory {
 public:
-   typedef boost::unordered_map<WorksetDescriptor,
+   typedef std::unordered_map<WorksetDescriptor,
                                 std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
 
    RVEF2(const Teuchos::ParameterList & userData,RespFactoryTable & rft)
@@ -439,7 +439,7 @@ buildResponseEvaluators(
                               "panzer::ResponseLibrary::buildResponseEvaluators: Method can't be called when the "
                               "response library is a \"residualType\"!");
 
-   typedef boost::unordered_map<WorksetDescriptor,
+   typedef std::unordered_map<WorksetDescriptor,
                                 std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > RespFactoryTable;
 
    // first compute subset of physics blocks required to build responses
@@ -679,7 +679,7 @@ template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 print(std::ostream & os) const
 {
-   typedef boost::unordered_map<std::string, Response_TemplateManager> RespObjType;
+   typedef std::unordered_map<std::string, Response_TemplateManager> RespObjType;
 
    for(RespObjType::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr) { 
      std::string respName = itr->first;

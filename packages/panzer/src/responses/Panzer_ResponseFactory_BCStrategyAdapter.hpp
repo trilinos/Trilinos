@@ -46,7 +46,7 @@
 
 #include <vector>
 #include <string>
-#include "boost/tuple/tuple.hpp"
+#include <tuple>
 
 #include "Teuchos_RCP.hpp"
 
@@ -167,7 +167,7 @@ namespace response_bc_adapters {
   class BCFactoryResponse : public panzer::BCStrategyFactory {
   public:
     typedef std::vector<std::pair<std::string,Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<panzer::Traits> > > > RespFact_TM_Vector;
-    typedef boost::unordered_map<BC,Teuchos::RCP<RespFact_TM_Vector>,BC::BCHash,BC::BCEquality> BCHashMap;
+    typedef std::unordered_map<BC,Teuchos::RCP<RespFact_TM_Vector>,BC::BCHash,BC::BCEquality> BCHashMap;
 
     BCFactoryResponse(const BCHashMap & hashMap)
       : hashMap_(hashMap) {}

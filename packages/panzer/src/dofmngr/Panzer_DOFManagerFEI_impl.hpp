@@ -709,7 +709,7 @@ void DOFManagerFEI<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector
       isOwned.resize(indices.size(),false);
 
    // use unordered set to check for ownership of the ID
-   typename boost::unordered_set<GlobalOrdinal>::const_iterator endItr = ownedGIDHashTable_.end();
+   typename std::unordered_set<GlobalOrdinal>::const_iterator endItr = ownedGIDHashTable_.end();
    for(std::size_t i=0;i<indices.size();i++) 
       isOwned[i] = (ownedGIDHashTable_.find(indices[i])!=endItr);
 }
