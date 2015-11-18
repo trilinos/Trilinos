@@ -1959,7 +1959,7 @@ public:
         metaData = new stk::mesh::MetaData(spatialDim);
         stk::io::put_io_part_attribute(metaData->universal_part());
         deathStatusField = &metaData->declare_field<ActiveFieldType>(stk::topology::ELEM_RANK,deathStatusFieldName);
-        int zeroInitialValue = 0;
+        double zeroInitialValue = 0.0;
         stk::mesh::put_field(*deathStatusField,metaData->universal_part(),&zeroInitialValue);
 
         activePart = &metaData->declare_part("active");
