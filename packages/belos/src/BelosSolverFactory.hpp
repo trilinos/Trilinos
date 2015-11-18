@@ -143,6 +143,22 @@ enum EBelosSolverType {
 /// is an alias for "Block GMRES", and also sets the "Flexible Gmres"
 /// parameter to true in the input parameter list.
 ///
+///	 Solver name | Aliases | Solver Manager Class
+///  ----------- | ------- | ----------
+///  Pseudoblock GMRES |  GMRES, Pseudo Block GMRES, PseudoBlockGMRES, PseudoBlockGmres | \c PseudoBlockGmresSolMgr
+///  Block GMRES | Flexible GMRES | \c BlockGmresSolMgr
+///  Block CG |  |  \c BlockCGSolMgr
+///  Pseudoblock CG | PseudoBlockCG, Pseudo Block CG | \c PseudoBlockCGSolMgr
+///  Pseudoblock Stochastic CG | Stochastic CG | \c PseudoBlockStochasticCGSolMgr
+///  GCRODR | Recycling GMRES | \c GCRODRSolMgr
+///  RCG | Recycling CG | \c RCGSolMgr
+///  MINRES | | \c MinresSolMgr
+///  LSQR | | \c LSQRSolMgr
+///  TFQMR | Transpose-Free QMR | \c TFQMRSolMgr
+///  Pseudoblock TFQMR | Pseudo Block Transpose-Free QMR | \c PseudoBlockTFQMRSolMgr
+///  Hybrid Block GMRES | GmresPoly, Seed GMRES | \c GmresPolySolMgr
+///  PCPG | CGPoly, Seed CG | \c PCPGSolMgr 
+///
 /// This class' template parameters are the same as those of
 /// Belos::SolverManager.  Scalar is the scalar type (of entries in
 /// the multivector), MV is the multivector type, and OP is the

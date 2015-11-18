@@ -251,6 +251,12 @@ namespace Belos {
      *   right-hand sides, this controls whether output shows residual
      *   norms for all the right-hand sides, or just the current
      *   maximum residual norm over all right-hand sides.
+     *		\param pl [in] ParameterList with construction information
+     *			\htmlonly
+     *			<iframe src="belos_PseudoBlockGmres.xml" width=100% scrolling="no" frameborder="0">
+     *			</iframe>
+     *			<hr />
+     *			\endhtmlonly
      */
     PseudoBlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                             const Teuchos::RCP<Teuchos::ParameterList> &pl );

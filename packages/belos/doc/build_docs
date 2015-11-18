@@ -11,6 +11,9 @@ echo
 echo "Generating main belos doxygen documentation ..."
 echo
 
+mkdir -p html/common
+cp -r ../../../doc/DocumentingParameterLists/webFiles html/common/parameterList
+
 doxygen DoxyfileWeb
 
 echo
