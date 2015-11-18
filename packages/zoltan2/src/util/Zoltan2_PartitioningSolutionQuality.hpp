@@ -93,7 +93,7 @@ public:
    */
   PartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const Adapter> &ia, 
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
 
   /*! \brief Return the metric values.
@@ -218,7 +218,7 @@ template <typename Adapter>
   PartitioningSolutionQuality<Adapter>::PartitioningSolutionQuality(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const Adapter> &ia, 
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
