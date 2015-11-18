@@ -11,4 +11,3 @@ User's Guide
 The user's guide is in muelu/doc/UsersGuide.
 To build the guide, simply run "make", which should produce "mueluguide.pdf".
 
-Test
