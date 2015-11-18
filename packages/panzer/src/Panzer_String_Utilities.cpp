@@ -41,14 +41,13 @@
 // @HEADER
 
 #include "Panzer_String_Utilities.hpp"
-#include <boost/algorithm/string.hpp>
 #include <sstream>
 
 namespace panzer {
 
   void trim(std::string& str)
   {
-    const std::string whitespace(" \t");
+    const std::string whitespace(" \t\n");
     
     const auto strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos) {
@@ -75,10 +74,11 @@ namespace panzer {
     string::size_type pos     = str.find_first_of(delimiters, lastPos);
     
     while (string::npos != pos || string::npos != lastPos) {
+
       // grab token, trim if desired
       std::string token = str.substr(lastPos,pos-lastPos);
       if(trim)
-	boost::trim(token);
+	panzer::trim(token);
 
       // Found a token, add it to the vector.
       tokens.push_back(token);

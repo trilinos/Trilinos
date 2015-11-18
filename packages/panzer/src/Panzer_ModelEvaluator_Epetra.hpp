@@ -341,7 +341,7 @@ namespace panzer {
     */
     std::vector<bool> is_distributed_parameter_;
 
-    /** Vector of Boost tuples that contains objects needed for the global to ghost method for distributed parameters.
+    /** Vector of tuples that contains objects needed for the global to ghost method for distributed parameters.
 
        Tuple index 0: the string name for the parameter in the model evaluator.
        Tuple index 1: the integer index for the parameter in the model evaluator.

@@ -54,9 +54,6 @@
 #include "Teuchos_ParameterEntryValidator.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/tokenizer.hpp>
-
 namespace panzer {
 
 /** This class validates a response type. Essentially
