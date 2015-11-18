@@ -72,7 +72,7 @@ namespace MueLuTests {
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+    //MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -241,10 +241,11 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Ptent,true,*Ptent,false,out);
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
-    //std::cout << diagVec->norm1() << " " << diagVec->normInf() << " " << diagVec->meanValue() << std::endl;
-    TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
+    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+      TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
-    TEST_EQUALITY(diagVec->meanValue(), 1.0);
+    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+      TEST_EQUALITY(diagVec->meanValue(), 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } //MakeTentative
