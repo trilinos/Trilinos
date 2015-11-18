@@ -54,7 +54,9 @@
 
 //#define MUELU_DEBUGGER_MACRO
 
-#define MUELU_LIMIT_EPETRA_TESTING_SCOPE(SC, GO, NO) \
+// If linAlgebra==Epetra, this macro will return early from the test
+// if SC!=double, GO!={double,long long}, or NO!=Serial.
+#define MUELU_TESTING_LIMIT_EPETRA_SCOPE(SC, GO, NO) \
   MUELU_DEBUGGER_MACRO \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
     NO nodeCheck; \
@@ -79,22 +81,29 @@
     } \
   }
 
-//Macro to be use in cases where linAlgebra==Tpetra but Epetra will be tested as well.
-#define MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
+// If linAlgebra==Tpetra, but the test also requires Epetra, this macro will cause the test
+// to return early if SC!=double, GO!={double,long long}, or NO!=Serial.
+#define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
     Node nodeCheck; \
     std::string nodeName = typeid(nodeCheck).name();  \
     if (nodeName.find("Serial") == std::string::npos) { \
-      std::cout << "Skipping Epetra for non-Serial nodes" << std::endl; \
+      out << "Skipping Epetra for non-Serial nodes" << std::endl; \
       return; \
     } \
     if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int") && \
         Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("long long int") ) { \
-       std::cout << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
+       out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
        return; \
     } \
     if (Teuchos::ScalarTraits<Scalar>::name() != std::string("double")) { \
-       std::cout << "Skipping Epetra for SC other than \"double\"" << std::endl; \
+       out << "Skipping Epetra for SC other than \"double\"" << std::endl; \
        return; \
     }
+
+//Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
+//This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.
+#define MUELU_TESTING_SET_OSTREAM \
+   MueLu::VerboseObject::SetDefaultOStream(Teuchos::fancyOStream(out.getOStream()));
+
 
 #endif // ifndef MUELU_TEST_HELPERS_COMMON_HPP

@@ -67,7 +67,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, Test0, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,NO);
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
@@ -81,6 +82,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
     out << "Compare results of Epetra and Tpetra" << std::endl;
     out << "for 3 level AMG solver using smoothed aggregation with" << std::endl;
@@ -88,7 +90,7 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 

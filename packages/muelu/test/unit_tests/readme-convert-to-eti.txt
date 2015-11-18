@@ -11,11 +11,12 @@ Instructions for converting a unit test to use ETI.
 
 2)
    Move
-     #include <MueLu_UseShortNames.hpp>
 
-   into unit test bodies.  Add line
+   For each unit test body, add lines
 
-     MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
 
 3) Replace
      TEUCHOS_UNIT_TEST
@@ -25,9 +26,9 @@ Instructions for converting a unit test to use ETI.
 
 4) At bottom of file, add
 
-   #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(group,test 1,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(group,test 2,Scalar,LO,GO,Node) \
+   #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(group,test 1,Scalar,LocalOrdinal,GlobalOrdinal,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(group,test 2,Scalar,LocalOrdinal,GlobalOrdinal,Node) \
       etc.
 
-   #include <MueLu_ETI_4arg.hpp>
+#    include <MueLu_ETI_4arg.hpp>

@@ -65,10 +65,11 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
 #   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
     out << "This test compares the matrix matrix multiply between Tpetra and Epetra" << std::endl;
 
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
@@ -127,7 +128,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,DetectDirichletRows,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
 #   include <MueLu_UseShortNames.hpp>
-    MUELU_LIMIT_EPETRA_TESTING_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
