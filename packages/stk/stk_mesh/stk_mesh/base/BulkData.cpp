@@ -4144,6 +4144,7 @@ bool BulkData::internal_modification_end_for_change_entity_owner( impl::MeshModi
       {
           internal_regenerate_aura();
       }
+      internal_resolve_send_ghost_membership();
       m_modSummary.write_summary(m_meshModification.synchronized_count());
       check_mesh_consistency();
   }
