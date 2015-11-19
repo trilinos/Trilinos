@@ -1,8 +1,10 @@
 Instructions for converting a unit test to use ETI.
 
-1) At top of file delete
+1) At top of file delete lines
 
    #include "MueLu_UseDefaultTypes.hpp"
+   and
+   #include <MueLu_UseShortNames.hpp>
 
    and add 
 
