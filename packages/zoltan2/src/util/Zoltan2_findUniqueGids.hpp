@@ -135,7 +135,21 @@ size_t findUniqueGids(
   size_t num_keys = keys.getLocalLength();
   size_t num_entries = keys.getNumVectors();
 
+#ifdef HAVE_ZOLTAN2_MPI
   MPI_Comm mpicomm = Teuchos::getRawMpiComm(*(keys.getMap()->getComm()));
+#else
+  // Zoltan's siMPI will be used here
+  {
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      int narg = 0;
+      char **argv = NULL;
+      MPI_Init(&narg, &argv);
+    }
+  }
+  MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
+#endif
 
   int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
   int num_user = sizeof(gno_t);
@@ -202,7 +216,21 @@ size_t findUniqueGids(
   key_t dummy;
   size_t num_entries = dummy.size();
 
+#ifdef HAVE_ZOLTAN2_MPI
   MPI_Comm mpicomm = Teuchos::getRawMpiComm(comm);
+#else
+  // Zoltan's siMPI will be used here
+  {
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      int narg = 0;
+      char **argv = NULL;
+      MPI_Init(&narg, &argv);
+    }
+  }
+  MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
+#endif
 
   int num_gid = sizeof(gno_t)/sizeof(ZOLTAN_ID_TYPE) * num_entries;
   int num_user = sizeof(gno_t);
