@@ -102,10 +102,10 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Create,        MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Create,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-    typedef Ordinal LO;
-    typedef Ordinal GO;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
@@ -114,20 +114,11 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm ();
-
-#ifdef HAVE_XPETRA_TPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#  else
-#    error "Should never get here!"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+    EXTRACT_LIB(comm,M) // returns mylib
 
     // create an Xpetra map
     const LO numInd = 63;
-    Teuchos::RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    Teuchos::RCP<const map_type> map = map_factory_type::Build (mylib, numInd, 0, comm);
 
     // create Thyra vector space out of Xpetra Map
     Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMap = th_utils_type::toThyra(map);
@@ -142,15 +133,15 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION(thSpmdMVec == Teuchos::null, std::logic_error, "Cannot cast MultiVectorBase to SpmdMultiVectorBase.");
 
     // fill multivector with some data
-    const Ordinal localOffset = ( thSpmdMap != Teuchos::null ? thSpmdMap->localOffset() : 0 );
-    const Ordinal localSubDim = ( thSpmdMap != Teuchos::null ? thSpmdMap->localSubDim() : thMap->dim() );
+    const LocalOrdinal localOffset = ( thSpmdMap != Teuchos::null ? thSpmdMap->localOffset() : 0 );
+    const LocalOrdinal localSubDim = ( thSpmdMap != Teuchos::null ? thSpmdMap->localSubDim() : thMap->dim() );
     Teuchos::RCP<Thyra::DetachedMultiVectorView<scalar_type> > thyData =
         Teuchos::rcp(new Thyra::DetachedMultiVectorView<scalar_type>(*thSpmdMVec,Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
 
     // loop over all vectors in multivector
-    for(Ordinal j = 0; j < thSpmdMVec->domain()->dim(); ++j) {
+    for(LocalOrdinal j = 0; j < thSpmdMVec->domain()->dim(); ++j) {
       // loop over all local rows
-      for(Ordinal i = 0; i < localSubDim; ++i) {
+      for(LocalOrdinal i = 0; i < localSubDim; ++i) {
         (*thyData)(i,0) = 1;
         (*thyData)(i,1) = 2;
       }
@@ -158,10 +149,10 @@ namespace {
 
     // calculate and check 1-norm of Thyra MultiVector
     RTOpPack::ROpNorm1<scalar_type> op;
-    const Ordinal numVec = thSpmdMVec->domain()->dim();
+    const LocalOrdinal numVec = thSpmdMVec->domain()->dim();
     Teuchos::Array<Teuchos::RCP<RTOpPack::ReductTarget> > rcp_op_targs(numVec);
     Teuchos::Array<Teuchos::Ptr<RTOpPack::ReductTarget> > op_targs(numVec);
-    for( Ordinal kc = 0; kc < numVec; ++kc ) {
+    for( LocalOrdinal kc = 0; kc < numVec; ++kc ) {
       rcp_op_targs[kc] = op.reduct_obj_create();
       op_targs[kc] = rcp_op_targs[kc].ptr();
     }
@@ -186,10 +177,10 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CreateProductMV,        MV, V, Ordinal, Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, CreateProductMV,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal , Node )
   {
-    typedef Ordinal LO;
-    typedef Ordinal GO;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
@@ -198,22 +189,13 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm ();
-
-#ifdef HAVE_XPETRA_TPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-#else
-#  ifdef HAVE_XPETRA_EPETRA
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-#  else
-#    error "Should never get here!"
-#  endif // HAVE_XPETRA_EPETRA
-#endif // HAVE_XPETRA_TPETRA
+    EXTRACT_LIB(comm,M) // returns mylib
 
     // create an Xpetra map
     const LO numA = 63;
     const LO numB = 24;
-    Teuchos::RCP<const map_type> mapA  = map_factory_type::Build (lib, numA, 0, comm);
-    Teuchos::RCP<const map_type> mapB  = map_factory_type::Build (lib, numB, 0, comm);
+    Teuchos::RCP<const map_type> mapA  = map_factory_type::Build (mylib, numA, 0, comm);
+    Teuchos::RCP<const map_type> mapB  = map_factory_type::Build (mylib, numB, 0, comm);
 
     // create Thyra vector space out of Xpetra Map
     Teuchos::RCP<const Thyra::VectorSpaceBase<scalar_type> > thMapA = th_utils_type::toThyra(mapA);
@@ -236,29 +218,29 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION(thSpmdMVecB == Teuchos::null, std::logic_error, "Cannot cast MultiVectorBase to SpmdMultiVectorBase.");
 
     // fill multivector A with some data
-    const Ordinal localOffsetA = ( thSpmdMapA != Teuchos::null ? thSpmdMapA->localOffset() : 0 );
-    const Ordinal localSubDimA = ( thSpmdMapA != Teuchos::null ? thSpmdMapA->localSubDim() : thMapA->dim() );
+    const LocalOrdinal localOffsetA = ( thSpmdMapA != Teuchos::null ? thSpmdMapA->localOffset() : 0 );
+    const LocalOrdinal localSubDimA = ( thSpmdMapA != Teuchos::null ? thSpmdMapA->localSubDim() : thMapA->dim() );
     Teuchos::RCP<Thyra::DetachedMultiVectorView<scalar_type> > thyDataA =
         Teuchos::rcp(new Thyra::DetachedMultiVectorView<scalar_type>(*thSpmdMVecA,Teuchos::Range1D(localOffsetA,localOffsetA+localSubDimA-1)));
 
     // loop over all vectors in multivector
-    for(Ordinal j = 0; j < thSpmdMVecA->domain()->dim(); ++j) {
+    for(LocalOrdinal j = 0; j < thSpmdMVecA->domain()->dim(); ++j) {
       // loop over all local rows
-      for(Ordinal i = 0; i < localSubDimA; ++i) {
+      for(LocalOrdinal i = 0; i < localSubDimA; ++i) {
         (*thyDataA)(i,j) = 1;
       }
     }
 
     // fill multivector B with some data
-    const Ordinal localOffsetB = ( thSpmdMapB != Teuchos::null ? thSpmdMapB->localOffset() : 0 );
-    const Ordinal localSubDimB = ( thSpmdMapB != Teuchos::null ? thSpmdMapB->localSubDim() : thMapB->dim() );
+    const LocalOrdinal localOffsetB = ( thSpmdMapB != Teuchos::null ? thSpmdMapB->localOffset() : 0 );
+    const LocalOrdinal localSubDimB = ( thSpmdMapB != Teuchos::null ? thSpmdMapB->localSubDim() : thMapB->dim() );
     Teuchos::RCP<Thyra::DetachedMultiVectorView<scalar_type> > thyDataB =
         Teuchos::rcp(new Thyra::DetachedMultiVectorView<scalar_type>(*thSpmdMVecB,Teuchos::Range1D(localOffsetB,localOffsetB+localSubDimB-1)));
 
     // loop over all vectors in multivector
-    for(Ordinal j = 0; j < thSpmdMVecB->domain()->dim(); ++j) {
+    for(LocalOrdinal j = 0; j < thSpmdMVecB->domain()->dim(); ++j) {
       // loop over all local rows
-      for(Ordinal i = 0; i < localSubDimB; ++i) {
+      for(LocalOrdinal i = 0; i < localSubDimB; ++i) {
         (*thyDataB)(i,j) = 2;
       }
     }
@@ -274,10 +256,10 @@ namespace {
 
     // calculate and check 1-norm of Thyra MultiVector
     RTOpPack::ROpNorm1<scalar_type> op;
-    const Ordinal numVec = thSpmdMVecA->domain()->dim();
+    const LocalOrdinal numVec = thSpmdMVecA->domain()->dim();
     Teuchos::Array<Teuchos::RCP<RTOpPack::ReductTarget> > rcp_op_targs(numVec);
     Teuchos::Array<Teuchos::Ptr<RTOpPack::ReductTarget> > op_targs(numVec);
-    for( Ordinal kc = 0; kc < numVec; ++kc ) {
+    for( LocalOrdinal kc = 0; kc < numVec; ++kc ) {
       rcp_op_targs[kc] = op.reduct_obj_create();
       op_targs[kc] = rcp_op_targs[kc].ptr();
     }
@@ -313,7 +295,7 @@ namespace {
 
 
 
-#ifdef HAVE_XPETRA_TPETRA
+/*#ifdef HAVE_XPETRA_TPETRA
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Create, MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CreateProductMV, MV, V, ORDINAL, SCALAR, NODE) \
@@ -328,6 +310,52 @@ namespace {
   typedef Xpetra::TpetraVector<double,int,int> MVector;
   typedef Kokkos::Compat::KokkosSerialWrapperNode MNode;
   UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MMultiVector, MVector, int, double, MNode )
+#endif*/
+
+//
+// INSTANTIATIONS
+//
+#ifdef HAVE_XPETRA_TPETRA
+
+  #define TTT( S, LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::TpetraMultiVector<S,LO,GO,N> MV##S##LO##GO##N; \
+    typedef typename Xpetra::TpetraVector<S,LO,GO,N> V##S##LO##GO##N;       \
+
 #endif
+
+#ifdef HAVE_XPETRA_EPETRA
+
+  #define EEE( S, LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::EpetraMultiVectorT<GO,N> MV##S##LO##GO##N; \
+    typedef typename Xpetra::EpetraVectorT<GO,N> V##S##LO##GO##N;       \
+
+#endif
+
+// list of all tests which run both with Epetra and Tpetra
+#define XP_THYRAMULTIVECTOR_INSTANT(S,LO,GO,N) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Create,          M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, CreateProductMV, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
+/*#if defined(HAVE_XPETRA_TPETRA)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( TTT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_THYRAMULTIVECTOR_INSTANT )
+
+#endif
+
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+EEE(double,int,int,EpetraNode)
+XP_THYRAMULTIVECTOR_INSTANT(double,int,int,EpetraNode)
+
+#endif*/
 
 }
