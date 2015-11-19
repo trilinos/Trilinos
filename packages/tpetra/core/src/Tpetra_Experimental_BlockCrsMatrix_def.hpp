@@ -3037,7 +3037,7 @@ namespace Experimental {
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra namespace!
+// Must be expanded from within the Tpetra::Experimental namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
   template class Experimental::BlockCrsMatrix< S, LO, GO, NODE >;
