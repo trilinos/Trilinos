@@ -59,8 +59,8 @@
 
 #include <Zoltan2_TPLTraits.hpp>
 
-#include <zoltan_dd_cpp.h>
-#include <DD.h>
+#include <zoltan_dd.h>
+#include <zoltan_dd_const.h>
 
 namespace Zoltan2
 {
