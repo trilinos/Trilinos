@@ -263,7 +263,7 @@ namespace {
     // Test that getLocalRowView returns the right column indices.
     Array<LO> lclColInds (maxNumEntPerRow);
     Array<LO> myLclColIndsCopy (maxNumEntPerRow);
-    Array<Scalar> myValsCopy (maxNumEntPerRow);
+    Array<Scalar> myValsCopy (maxNumEntPerRow*entriesPerBlock);
     Array<LO> myLclColIndsSorted (maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {

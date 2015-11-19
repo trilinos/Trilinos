@@ -47,7 +47,7 @@
     #include "BelosTpetraAdapter.hpp"
   #endif
   #ifdef HAVE_ANASAZI_EPETRA
-//    #include "BelosEpetraAdapter.hpp"
+    #include "BelosEpetraAdapter.hpp"
   #endif
 #endif
 

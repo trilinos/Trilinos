@@ -83,17 +83,14 @@ namespace MueLu {
     LocalOrdinal iNode1  = 0;        // current node
 
     // main loop over all local rows of graph(A)
-    int              aggIndex = -1;
-    size_t           aggSize  =  0;
-    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
-
     while (iNode1 < nRows) {
 
       if (aggStat[iNode1] == ONEPT) {
 
         aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
+        std::vector<int> aggList;
         aggList.push_back(iNode1);
-        aggIndex = nLocalAggregates++;
+        int aggIndex = nLocalAggregates++;
 
         // finalize aggregate
         for (size_t k = 0; k < aggList.size(); k++) {

@@ -53,6 +53,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 
 namespace Ifpack2 {
 
@@ -152,6 +153,9 @@ public:
   /// specialization of Tpetra::RowMatrix.
   typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_crs_matrix_type;
+
   //@}
   //! \name Constructor and destructor
   //@{
@@ -212,6 +216,14 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
+  applyBlockCrs (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode=Teuchos::NO_TRANS,
+         scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
+  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
+  virtual void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode=Teuchos::NO_TRANS,
@@ -251,8 +263,12 @@ public:
 
   //@}
 private:
+
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   DenseContainer (const DenseContainer<MatrixType, LocalScalarType>& rhs);
+
+  //! Extract the submatrix identified by the local indices set by the constructor.
+  void extractBlockCrs (const Teuchos::RCP<const block_crs_matrix_type>& globalMatrix);
 
   //! Extract the submatrix identified by the local indices set by the constructor.
   void extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix);
@@ -264,6 +280,9 @@ private:
 
   typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type,
                               global_ordinal_type, node_type> local_mv_type;
+
+  typedef Tpetra::Experimental::BlockMultiVector<local_scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> local_block_mv_type;
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -280,8 +299,19 @@ private:
              const local_scalar_type alpha,
              const local_scalar_type beta) const;
 
+  void
+  applyImplBlockCrs (const local_mv_type& X,
+             local_mv_type& Y,
+             Teuchos::ETransp mode,
+             const local_scalar_type alpha,
+             const local_scalar_type beta) const;
+
+  bool hasBlockCrsMatrix_;
+
   //! Number of rows in the local matrix.
   size_t numRows_;
+
+  int blockSize_;
 
   //! The local diagonal block, which compute() extracts.
   Teuchos::SerialDenseMatrix<int, local_scalar_type> diagBlock_;
@@ -297,6 +327,9 @@ private:
 
   //! Input vector for local problems
   mutable Teuchos::RCP<local_mv_type> X_;
+
+  mutable Teuchos::RCP<local_block_mv_type> blockY_;
+  mutable Teuchos::RCP<local_block_mv_type> blockX_;
 
   //! If \c true, the container has been successfully initialized.
   bool IsInitialized_;
@@ -350,6 +383,9 @@ public:
   /// specialization of Tpetra::RowMatrix.
   typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
+  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> block_crs_matrix_type;
+
   //@}
   //! \name Constructor and destructor
   //@{
@@ -410,6 +446,14 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
+  applyBlockCrs (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode=Teuchos::NO_TRANS,
+         scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
+  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
+  virtual void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
          Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
          Teuchos::ETransp mode=Teuchos::NO_TRANS,
@@ -453,6 +497,9 @@ private:
   DenseContainer (const DenseContainer<MatrixType, LocalScalarType>& rhs);
 
   //! Extract the submatrix identified by the local indices set by the constructor.
+  void extractBlockCrs (const Teuchos::RCP<const block_crs_matrix_type>& globalMatrix);
+
+  //! Extract the submatrix identified by the local indices set by the constructor.
   void extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix);
 
   /// \brief Factor the extracted submatrix.
@@ -462,6 +509,9 @@ private:
 
   typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type,
                               global_ordinal_type, node_type> local_mv_type;
+
+  typedef Tpetra::Experimental::BlockMultiVector<local_scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> local_block_mv_type;
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -478,8 +528,17 @@ private:
              const local_scalar_type alpha,
              const local_scalar_type beta) const;
 
+  void
+  applyImplBlockCrs (const local_mv_type& X,
+             local_mv_type& Y,
+             Teuchos::ETransp mode,
+             const local_scalar_type alpha,
+             const local_scalar_type beta) const;
+
   //! Number of rows in the local matrix.
   size_t numRows_;
+
+  int blockSize_;
 
   //! The local diagonal block, which compute() extracts.
   Teuchos::SerialDenseMatrix<int, local_scalar_type> diagBlock_;
@@ -495,6 +554,9 @@ private:
 
   //! Input vector for local problems
   mutable Teuchos::RCP<local_mv_type> X_;
+
+  mutable Teuchos::RCP<local_block_mv_type> blockY_;
+  mutable Teuchos::RCP<local_block_mv_type> blockX_;
 
   //! If \c true, the container has been successfully initialized.
   bool IsInitialized_;

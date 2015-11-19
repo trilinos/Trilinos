@@ -119,30 +119,30 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_EPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const Epetra_MultiVector> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
-    RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>  > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
+  RCP<const Epetra_MultiVector> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec) {
+    RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>  > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
     return tmpVec->getEpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Epetra_MultiVector> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
-    RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
+  RCP<Epetra_MultiVector> Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec) {
+    RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
     return tmpVec->getEpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Epetra_MultiVector& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Vec) {
-    const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
+  Epetra_MultiVector& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstEpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &vec) {
+    const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(vec);
     return *(tmpVec.getEpetra_MultiVector());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_MultiVector& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Vec) {
-    const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
+  const Epetra_MultiVector& Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2EpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) {
+    const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(vec);
     return *(tmpVec.getEpetra_MultiVector());
   }
 
@@ -210,37 +210,37 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const Vec) {
-    RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Vec);
+  Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec) {
+    RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
     return tmpVec->getTpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
-    RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Vec);
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec) {
+    RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
     if (tmpVec == Teuchos::null)
       throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
     return tmpVec->getTpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Vec) {
-    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+  Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) {
+    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
     return *(tmpVec.getTpetra_MultiVector());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV2(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Vec) {
-    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2NonConstTpetraMV2(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &vec) {
+    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
     return tmpVec.getTpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-  Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Vec) {
-    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+  Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MV2TpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) {
+    const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
     return *(tmpVec.getTpetra_MultiVector());
   }
 

@@ -62,6 +62,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     Partitioner_ = Teuchos::null;
     Importer_ = Teuchos::null;
     W_ = Teuchos::null;
+    hasBlockCrsMatrix_ = false;
 
     if (! A.is_null ()) {
       IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
@@ -101,7 +102,8 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   ApplyFlops_ (0.0),
   NumMyRows_ (0),
   NumGlobalRows_ (0),
-  NumGlobalNonzeros_ (0)
+  NumGlobalNonzeros_ (0),
+  hasBlockCrsMatrix_ (false)
 {}
 
 template<class MatrixType,class ContainerType>
@@ -406,6 +408,17 @@ initialize ()
     (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::initialize: "
      "The matrix is null.  You must call setMatrix() with a nonnull matrix "
      "before you may call this method.");
+
+  // Check whether we have a BlockCrsMatrix
+  Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+    Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+  if (A_bcrs.is_null ()) {
+    hasBlockCrsMatrix_ = false;
+  }
+  else {
+    hasBlockCrsMatrix_ = true;
+  }
+
   IsInitialized_ = false;
   Time_->start (true);
 
@@ -457,6 +470,78 @@ initialize ()
   IsInitialized_ = true;
 }
 
+
+template<class MatrixType,class ContainerType>
+void
+BlockRelaxation<MatrixType,ContainerType>::
+computeBlockCrs ()
+{
+  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>     map_type;
+  typedef Tpetra::Import<local_ordinal_type,global_ordinal_type, node_type> import_type;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+
+  Time_->start (true);
+
+  // reset values
+  IsComputed_ = false;
+
+  // Extract the submatrices
+  ExtractSubmatrices ();
+
+  // Compute the weight vector if we're doing overlapped Jacobi (and
+  // only if we're doing overlapped Jacobi).
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0, std::runtime_error,
+     "Ifpack2::BlockRelaxation::computeBlockCrs: "
+     "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
+
+  // We need to import data from external processors. Here I create a
+  // Tpetra::Import object if needed (stealing from A_ if possible)
+  // Marzio's comment:
+  // Note that I am doing some strange stuff to set the components of Y
+  // from Y2 (to save some time).
+  //
+  if (IsParallel_ && (PrecType_ == Ifpack2::Details::GS ||
+                      PrecType_ == Ifpack2::Details::SGS)) {
+    // Get the block size
+    RCP<const block_crs_matrix_type> A_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+    int bs = A_bcrs->getBlockSize();
+
+    // Get the maps describing the block data
+    // Each "element" is actually a block of numbers
+    RCP<const map_type> oldDomainMap = A_->getDomainMap();
+    RCP<const map_type> oldColMap = A_->getColMap();
+
+    // Because A is a block CRS matrix, import will not do what you think it does
+    // We have to construct the correct maps for it
+    global_size_t numGlobalElements = oldColMap->getGlobalNumElements()*bs;
+    global_ordinal_type indexBase = oldColMap->getIndexBase();
+    RCP<const Teuchos::Comm<int> >comm = oldColMap->getComm();
+    ArrayView<const global_ordinal_type> oldColElements = oldColMap->getNodeElementList();
+    Array<global_ordinal_type> newColElements(bs*oldColElements.size());
+
+    for(int i=0; i<oldColElements.size(); i++) {
+      for(int j=0; j<bs; j++) {
+        newColElements[i*bs+j] = oldColElements[i]*bs+j;
+      }
+    }
+    RCP<map_type> colMap = rcp(new map_type(numGlobalElements,newColElements,indexBase,comm));
+
+    // Create the importer
+    Importer_ = rcp (new import_type (oldDomainMap, colMap));
+  }
+
+  ++NumCompute_;
+  Time_->stop ();
+  ComputeTime_ += Time_->totalElapsedTime();
+  IsComputed_ = true;
+}
+
+
 template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
@@ -482,6 +567,12 @@ compute ()
   if (! isInitialized ()) {
     initialize ();
   }
+
+  if (hasBlockCrsMatrix_) {
+    computeBlockCrs ();
+    return;
+  }
+
   Time_->start (true);
 
   // reset values
@@ -534,17 +625,12 @@ void
 BlockRelaxation<MatrixType,ContainerType>::
 ExtractSubmatrices ()
 {
-  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vec_type;
   TEUCHOS_TEST_FOR_EXCEPTION
     (Partitioner_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
      "ExtractSubmatrices: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   Containers_.resize (NumLocalBlocks_);
-  vec_type D (A_->getRowMap ());
-  A_->getLocalDiagCopy (D);
-  DiagRCP = D.getData ();
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
     const size_t numRows = Partitioner_->numRowsInPart (i);
@@ -554,7 +640,7 @@ ExtractSubmatrices ()
     for (size_t j = 0; j < numRows; ++j) {
       localRows[j] = (*Partitioner_) (i,j);
     }
-    if(numRows>1) { // only do for non-singletons
+    if(numRows>1 || hasBlockCrsMatrix_) { // only do for non-singletons
       Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
       Containers_[i]->setParameters (List_);
       Containers_[i]->initialize ();
@@ -603,14 +689,15 @@ DoJacobi (const MV& X, MV& Y) const
     // Non-overlapping Jacobi
     for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
       // may happen that a partition is empty
-      if( Partitioner_->numRowsInPart (i) != 1 ) {
+      if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
         if(Containers_[i]->getNumRows () == 0 ) continue;
         Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
         ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
       }
       else { // singleton, can't access Containers_[i] as it was never filled and may be null.
         local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
-        Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+        getMatDiag();
+        Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
         scalar_type d = Diag[LRID];
         for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
           Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
@@ -678,8 +765,17 @@ DoGaussSeidel (MV& X, MV& Y) const
   const size_t NumVectors = X.getNumVectors();
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices;
-  Values.resize (Length);
   Indices.resize (Length);
+
+  if(hasBlockCrsMatrix_)
+  {
+    Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+    int bs = A_bcrs->getBlockSize();
+    Values.resize (bs*bs*Length);
+  }
+  else
+    Values.resize (Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
@@ -706,7 +802,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 ) {
+    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) continue;
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
@@ -722,13 +818,37 @@ DoGaussSeidel (MV& X, MV& Y) const
           ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
           ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-          r_local[LID] = x_local[LID];
-          for (size_t k = 0; k < NumEntries; ++k) {
-            const local_ordinal_type col = Indices[k];
-            r_local[LID] -= Values[k] * y2_local[col];
+          if(hasBlockCrsMatrix_) {
+            Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+                  Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+            int bs = A_bcrs->getBlockSize();
+            for (int localR = 0; localR < bs; localR++)
+              r_local[LID*bs+localR] = x_local[LID*bs+localR];
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              for (int localR = 0; localR < bs; localR++) {
+                for(int localC = 0; localC < bs; localC++) {
+//                  std::cerr << "r[" << LID*bs+localR << "] -= Values["
+//                            << k*bs*bs+localR+localC*bs << "] * y2["
+//                            << col*bs+localC << "]\n";
+                  r_local[LID*bs+localR] -= Values[k*bs*bs+localR+localC*bs] * y2_local[col*bs+localC];
+                }
+              }
+            }
+          }
+          else {
+            r_local[LID] = x_local[LID];
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              r_local[LID] -= Values[k] * y2_local[col];
+            }
           }
         }
       }
+
+//      Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+//      Residual.describe (*wrappedStream, Teuchos::VERB_EXTREME);
+
       // solve with this block
       //
       // Note: I'm abusing the ordering information, knowing that X/Y
@@ -738,13 +858,16 @@ DoGaussSeidel (MV& X, MV& Y) const
       Containers_[i]->apply (Residual, *Y2, Teuchos::NO_TRANS,
                              DampingFactor_,one);
 
+//      Y2->describe (*wrappedStream, Teuchos::VERB_EXTREME);
+
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
     }
     else {       // singleton, can't access Containers_[i] as it was never filled and may be null.
       // a singleton calculation is exact, all residuals should be zero.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
-      Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+      getMatDiag();
+      Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
       scalar_type d = Diag[LRID];
       ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr2 = Y2->get2dViewNonConst();
       for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
@@ -759,11 +882,25 @@ DoGaussSeidel (MV& X, MV& Y) const
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_) {
-    for (size_t m = 0; m < NumVectors; ++m) {
-      ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
-      ArrayView<scalar_type> y_local = (y_ptr())[m]();
-      for (size_t i = 0; i < NumMyRows_; ++i) {
-        y_local[i] = y2_local[i];
+    if(hasBlockCrsMatrix_) {
+      Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+            Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+      int bs = A_bcrs->getBlockSize();
+      for (size_t m = 0; m < NumVectors; ++m) {
+        ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type> y_local = (y_ptr())[m]();
+        for (size_t i = 0; i < NumMyRows_*bs; ++i) {
+          y_local[i] = y2_local[i];
+        }
+      }
+    }
+    else {
+      for (size_t m = 0; m < NumVectors; ++m) {
+        ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type> y_local = (y_ptr())[m]();
+        for (size_t i = 0; i < NumMyRows_; ++i) {
+          y_local[i] = y2_local[i];
+        }
       }
     }
   }
@@ -800,8 +937,17 @@ DoSGS (MV& X, MV& Y) const
   const size_t NumVectors = X.getNumVectors();
   Array<scalar_type> Values;
   Array<local_ordinal_type> Indices;
-  Values.resize(Length);
   Indices.resize(Length);
+
+  if(hasBlockCrsMatrix_)
+  {
+    Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+    int bs = A_bcrs->getBlockSize();
+    Values.resize (bs*bs*Length);
+  }
+  else
+    Values.resize (Length);
 
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack2_AdditiveSchwarz
@@ -831,7 +977,7 @@ DoSGS (MV& X, MV& Y) const
 
   // Forward Sweep
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 ) {
+    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) {
         continue; // Skip empty partitions
       }
@@ -849,10 +995,27 @@ DoSGS (MV& X, MV& Y) const
           ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
           ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-          r_local[LID] = x_local[LID];
-          for (size_t k = 0 ; k < NumEntries ; k++) {
-            local_ordinal_type col = Indices[k];
-            r_local[LID] -= Values[k] * y2_local[col];
+          if(hasBlockCrsMatrix_) {
+            Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+                  Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+            int bs = A_bcrs->getBlockSize();
+            for (int localR = 0; localR < bs; localR++)
+              r_local[LID*bs+localR] = x_local[LID*bs+localR];
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              for (int localR = 0; localR < bs; localR++) {
+                for(int localC = 0; localC < bs; localC++) {
+                  r_local[LID*bs+localR] -= Values[k*bs*bs+localR+localC*bs] * y2_local[col*bs+localC];
+                }
+              }
+            }
+          }
+          else {
+            r_local[LID] = x_local[LID];
+            for (size_t k = 0 ; k < NumEntries ; k++) {
+              local_ordinal_type col = Indices[k];
+              r_local[LID] -= Values[k] * y2_local[col];
+            }
           }
         }
       }
@@ -871,7 +1034,8 @@ DoSGS (MV& X, MV& Y) const
     }
     else { // singleton, can't access Containers_[i] as it was never filled and may be null.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
-      Teuchos::ArrayView< const scalar_type > Diag   = DiagRCP();
+      getMatDiag();
+      Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
       scalar_type d = Diag[LRID];
       for(unsigned int nv = 0;nv < NumVectors ; ++nv ) {
         Teuchos::ArrayRCP< const scalar_type > xRCP = X.getData(nv);
@@ -892,7 +1056,7 @@ DoSGS (MV& X, MV& Y) const
   // i--" will loop forever if local_ordinal_type is unsigned, because
   // unsigned integers are (trivially) always nonnegative.
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
-    if( Partitioner_->numRowsInPart (i) != 1 ) {
+    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i) != 1 ) {
       if (Containers_[i-1]->getNumRows () == 0) continue;
 
       // update from previous block
@@ -909,10 +1073,27 @@ DoSGS (MV& X, MV& Y) const
           ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
           ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-          r_local [LID] = x_local[LID];
-          for (size_t k = 0; k < NumEntries; ++k)  {
-            local_ordinal_type col = Indices[k];
-            r_local[LID] -= Values[k] * y2_local[col];
+          if(hasBlockCrsMatrix_) {
+            Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+                  Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+            int bs = A_bcrs->getBlockSize();
+            for (int localR = 0; localR < bs; localR++)
+              r_local[LID*bs+localR] = x_local[LID*bs+localR];
+            for (size_t k = 0; k < NumEntries; ++k) {
+              const local_ordinal_type col = Indices[k];
+              for (int localR = 0; localR < bs; localR++) {
+                for(int localC = 0; localC < bs; localC++) {
+                  r_local[LID*bs+localR] -= Values[k*bs*bs+localR+localC*bs] * y2_local[col*bs+localC];
+                }
+              }
+            }
+          }
+          else {
+            r_local [LID] = x_local[LID];
+            for (size_t k = 0; k < NumEntries; ++k)  {
+              local_ordinal_type col = Indices[k];
+              r_local[LID] -= Values[k] * y2_local[col];
+            }
           }
         }
       }
@@ -935,11 +1116,25 @@ DoSGS (MV& X, MV& Y) const
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (though for ML it should be ok)
   if (IsParallel_) {
-    for (size_t m = 0; m < NumVectors; ++m) {
-      ArrayView<scalar_type>       y_local = (y_ptr())[m]();
-      ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-        y_local[i] = y2_local[i];
+    if(hasBlockCrsMatrix_) {
+      Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+            Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+      int bs = A_bcrs->getBlockSize();
+      for (size_t m = 0; m < NumVectors; ++m) {
+        ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type> y_local = (y_ptr())[m]();
+        for (size_t i = 0; i < NumMyRows_*bs; ++i) {
+          y_local[i] = y2_local[i];
+        }
+      }
+    }
+    else {
+      for (size_t m = 0; m < NumVectors; ++m) {
+        ArrayView<scalar_type> y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type> y_local = (y_ptr())[m]();
+        for (size_t i = 0; i < NumMyRows_; ++i) {
+          y_local[i] = y2_local[i];
+        }
       }
     }
   }
@@ -1062,6 +1257,18 @@ describe (Teuchos::FancyOStream& out,
         << setw(15) << (getApplyTime() != 0.0 ? getApplyFlops() / getApplyTime() * 1.0e-6 : 0.0) << endl;
     out << "===============================================================================" << endl;
     out << endl;
+  }
+}
+
+
+template<class MatrixType,class ContainerType>
+void
+BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
+{
+  // TODO amk: Is this map correct for BlockCRSMatrix?
+  if(DiagRCP_ == Teuchos::null) {
+    DiagRCP_ = Teuchos::rcp(new vector_type(A_->getDomainMap ()));
+    A_->getLocalDiagCopy (*DiagRCP_);
   }
 }
 

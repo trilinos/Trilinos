@@ -415,26 +415,48 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits<typename SCT::magnitudeType> MT;
     typedef MultiVecTraits<ScalarType,MV>     MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
-
+    
+    int nvecs = MVT::GetNumberVecs(X);
+    
+    // Make sure that normvec has enough entries to hold the norms
+    // of all the columns of X.  std::vector<T>::size_type is
+    // unsigned, so do the appropriate cast to avoid signed/unsigned
+    // comparisons that trigger compiler warnings.
+    if (normvec.size() < static_cast<size_t>(nvecs))
+      normvec.resize (nvecs);
+    
     if (!_hasOp) {
-      MX = Teuchos::rcpFromRef(X);
+      // X == MX, since the operator M is the identity.
+      MX = Teuchos::rcp(&X, false);
+      MVT::MvNorm(X, normvec);
     }
-    else if (MX == Teuchos::null) {
-      Teuchos::RCP<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
-      OPT::Apply(*_Op,X,*R);
-      _OpCounter += MVT::GetNumberVecs(X);
-      MX = R;
-    }
-
-    Teuchos::SerialDenseMatrix<int,ScalarType> z(1,1);
-    Teuchos::RCP<const MV> Xi, MXi;
-    std::vector<int> ind(1);
-    for (int i=0; i<MVT::GetNumberVecs(X); i++) {
-      ind[0] = i;
-      Xi = MVT::CloneView(X,ind);
-      MXi = MVT::CloneView(*MX,ind);
-      MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
-      normvec[i] = MT::squareroot( SCT::magnitude(z(0,0)) );
+    else {
+      // The caller didn't give us a previously computed MX, so
+      // apply the operator.  We assign to MX only after applying
+      // the operator, so that if the application fails, MX won't be
+      // modified.
+      if(MX == Teuchos::null) {
+        Teuchos::RCP<MV> tempVec = MVT::Clone(X,nvecs);
+        OPT::Apply(*_Op,X,*tempVec);
+        _OpCounter += nvecs;
+        MX = tempVec;
+      }
+      else {
+        // The caller gave us a previously computed MX.  Make sure
+        // that it has at least as many columns as X.
+        const int numColsMX = MVT::GetNumberVecs(*MX);
+        TEUCHOS_TEST_FOR_EXCEPTION(numColsMX < nvecs, std::invalid_argument,
+                           "MatOrthoManager::norm(X, MX, normvec): "
+                           "MX has fewer columns than X: "
+                           "MX has " << numColsMX << " columns, "
+                           "and X has " << nvecs << " columns.");
+      }
+      
+      std::vector<ScalarType> dotvec(nvecs);
+      MVT::MvDot(X,*MX,dotvec);
+      for (int i=0; i<nvecs; i++) {
+        normvec[i] = MT::squareroot( SCT::magnitude(dotvec[i]) );
+      }
     }
   }
 

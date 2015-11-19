@@ -849,13 +849,15 @@ namespace Experimental {
     Scalar *vals;
     LO numInds;
     getLocalRowView(LocalRow,colInds,vals,numInds);
-    if (numInds > Indices.size() || numInds > Values.size()) {
+    if (numInds > Indices.size() || numInds*blockSize_*blockSize_ > Values.size()) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                   "Tpetra::BlockCrsMatrix::getLocalRowCopy : Column and/or values array is not large enough to hold "
                   << numInds << " row entries");
     }
     for (LO i=0; i<numInds; ++i) {
       Indices[i] = colInds[i];
+    }
+    for (LO i=0; i<numInds*blockSize_*blockSize_; ++i) {
       Values[i] = vals[i];
     }
     NumEntries = numInds;
@@ -2961,10 +2963,32 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (Tpetra::Vector<Scalar,LO,GO,Node> &diag) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy: "
-      "not implemented.");
+    // TODO amk: This is a temporary measure to make the code run with Ifpack2
+    int rowOffset = 0;
+    int offset = 0;
+    LO bs = getBlockSize();
+    Teuchos::ArrayRCP<size_t> colOffsets;
+    getLocalDiagOffsets (colOffsets);
+    for(size_t r=0; r<getNodeNumRows(); r++)
+    {
+      // move pointer to start of diagonal block
+      offset = rowOffset + colOffsets[r]*bs*bs;
+      for(int b=0; b<bs; b++)
+      {
+        std::cout << "offset: " << offset+b*(bs+1) << std::endl;
+        diag.replaceLocalValue(r*bs+b, val_[offset+b*(bs+1)]);
+      }
+      // move pointer to start of next block row
+      rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
+    }
 
+    Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+    diag.describe (*wrappedStream, Teuchos::VERB_EXTREME);
+
+    std::cout << "Raw data:\n";
+    int nnz = getNodeNumEntries()*bs*bs;
+    for(int i=0; i<nnz; i++)
+      std::cout << "val[" << i << "] = " << val_[i] << std::endl;
   }
 
   template<class Scalar, class LO, class GO, class Node>

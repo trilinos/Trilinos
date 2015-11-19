@@ -137,11 +137,11 @@ public:
 #ifdef HAVE_XPETRA_EPETRA
   //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
   // @{
-  /*static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const Vec);
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> Vec);
+  /*static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec);
+    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec);
 
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& Vec);
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& Vec);
+    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec);
+    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec);
 
     static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op);
     static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op);
@@ -161,12 +161,12 @@ public:
 #ifdef HAVE_XPETRA_TPETRA
   //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
   // @{
-  /*static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const Vec);
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> Vec);
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& Vec);
+  /*static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec);
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> vec);
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& vec);
 
-    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
-    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
+    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& vec);
+    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& vec);
 
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op);
     static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op);
@@ -221,11 +221,11 @@ public:
   } //Write
 
   /*! @brief Save vector to file in Matrix Market format.  */
-  static void Write(const std::string& fileName, const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Vec) {
+  static void Write(const std::string& fileName, const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & vec) {
     std::string mapfile = "map_" + fileName;
-    Write(mapfile, *(Vec.getMap()));
+    Write(mapfile, *(vec.getMap()));
 
-    RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(Vec);
+    RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(vec);
 #ifdef HAVE_XPETRA_EPETRA
     const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
     if (tmp_EVec != Teuchos::null) {
@@ -644,11 +644,11 @@ public:
   } //Write
 
   /*! @brief Save vector to file in Matrix Market format.  */
-  static void Write(const std::string& fileName, const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Vec) {
+  static void Write(const std::string& fileName, const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & vec) {
     std::string mapfile = "map_" + fileName;
-    Write(mapfile, *(Vec.getMap()));
+    Write(mapfile, *(vec.getMap()));
 
-    RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(Vec);
+    RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(vec);
 #ifdef HAVE_XPETRA_EPETRA
     const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
     if (tmp_EVec != Teuchos::null) {
