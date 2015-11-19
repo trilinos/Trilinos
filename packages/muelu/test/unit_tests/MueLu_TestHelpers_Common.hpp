@@ -46,16 +46,17 @@
 #ifndef MUELU_TEST_HELPERS_COMMON_HPP
 #define MUELU_TEST_HELPERS_COMMON_HPP
 
+/*
 #define MUELU_DEBUGGER_MACRO \
   GO tmpIndex; out << "debug: scalar = " << typeid(tmpIndex).name() << std::endl; \
   NO tmpNode;  out << "debug: node   = " << typeid(tmpNode).name() << std::endl; \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) out << "debug: linAlgebra = Epetra" << std::endl; \
   else                                                        out << "debug: linAlgebra = Tpetra" << std::endl;
-
-//#define MUELU_DEBUGGER_MACRO
+*/
+#define MUELU_DEBUGGER_MACRO
 
 // If linAlgebra==Epetra, this macro will return early from the test
-// if SC!=double, GO!={double,long long}, or NO!=Serial.
+// if SC!=double, GO!=int, or NO!=Serial.
 #define MUELU_TESTING_LIMIT_EPETRA_SCOPE(SC, GO, NO) \
   MUELU_DEBUGGER_MACRO \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
@@ -67,10 +68,9 @@
     } \
     GO index; \
     int epetraIntegerCheck; \
-    long long epetraLongLongCheck; \
     std::string goName = typeid(index).name(); \
-    if (goName != typeid(epetraIntegerCheck).name() && goName != typeid(epetraLongLongCheck).name()) { \
-       out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
+    if (goName != typeid(epetraIntegerCheck).name()) { \
+       out << "Skipping Epetra for GO other than \"int\"" << std::endl; \
        return; \
     } \
     SC epetraScalarCheck; \
@@ -82,7 +82,7 @@
   }
 
 // If linAlgebra==Tpetra, but the test also requires Epetra, this macro will cause the test
-// to return early if SC!=double, GO!={double,long long}, or NO!=Serial.
+// to return early if SC!=double, GO!=int, or NO!=Serial.
 #define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
     Node nodeCheck; \
     std::string nodeName = typeid(nodeCheck).name();  \
@@ -90,9 +90,8 @@
       out << "Skipping Epetra for non-Serial nodes" << std::endl; \
       return; \
     } \
-    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int") && \
-        Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("long long int") ) { \
-       out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
+    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int")) { \
+       out << "Skipping Epetra for GO other than \"int\"" << std::endl; \
        return; \
     } \
     if (Teuchos::ScalarTraits<Scalar>::name() != std::string("double")) { \
