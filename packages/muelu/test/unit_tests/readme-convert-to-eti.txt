@@ -10,7 +10,6 @@ Instructions for converting a unit test to use ETI.
 
    #include <Teuchos_ScalarTraits.hpp>
 
-
 2)
    Move
 
