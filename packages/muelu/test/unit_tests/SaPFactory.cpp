@@ -46,29 +46,29 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_Utilities.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_TrilinosSmoother.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <MueLu_Utilities.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
 
-  TEUCHOS_UNIT_TEST(SaPFactory, Test0)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, Test0, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
@@ -79,16 +79,22 @@ namespace MueLuTests {
   }
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
-  TEUCHOS_UNIT_TEST(SaPFactory, EpetraVsTpetra)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
     out << "Compare results of Epetra and Tpetra" << std::endl;
     out << "for 3 level AMG solver using smoothed aggregation with" << std::endl;
     out << "one SGS sweep on each multigrid level as pre- and postsmoother" << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
+
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> results(2);
+    Teuchos::Array<magnitude_type> results(2);
 
     // run test only on 1 proc
     if(comm->getSize() == 1)
@@ -102,21 +108,21 @@ namespace MueLuTests {
         else lib = Xpetra::UseTpetra;
 
         // generate problem
-        LO maxLevels = 3;
-        LO its=10;
-        LO nEle = 63;
+        LocalOrdinal maxLevels = 3;
+        LocalOrdinal its=10;
+        LocalOrdinal nEle = 63;
         const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
         Teuchos::ParameterList matrixParameters;
         matrixParameters.set("nx",nEle);
 
         RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
+          Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
         RCP<Matrix> Op = Pr->BuildMatrix();
 
         // build nullspace
         RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-        nullSpace->putScalar( (SC) 1.0);
-        Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+        nullSpace->putScalar( (Scalar) 1.0);
+        Teuchos::Array<magnitude_type> norms(1);
         nullSpace->norm1(norms);
         if (comm->getRank() == 0)
           out << "||NS|| = " << norms[0] << std::endl;
@@ -146,8 +152,8 @@ namespace MueLuTests {
         // setup smoothers
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-        smootherParamList.set("relaxation: sweeps", (LO) 1);
-        smootherParamList.set("relaxation: damping factor", (SC) 1.0);
+        smootherParamList.set("relaxation: sweeps", (LocalOrdinal) 1);
+        smootherParamList.set("relaxation: damping factor", (Scalar) 1.0);
         RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
         RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
         Acfact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -242,7 +248,7 @@ namespace MueLuTests {
         TEST_EQUALITY(R2->getGlobalNumRows(), 7);
         TEST_EQUALITY(R2->getGlobalNumCols(), 21);
 
-        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::Multiply(*P1,true,*P1,false,out);
+        Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P1,true,*P1,false,out);
         TEST_EQUALITY(PtentTPtent->getGlobalMaxNumRowEntries()-3<1e-12, true);
         TEST_EQUALITY(P1->getGlobalMaxNumRowEntries()-2<1e-12, true);
         TEST_EQUALITY(P2->getGlobalMaxNumRowEntries()-2<1e-12, true);
@@ -256,11 +262,11 @@ namespace MueLuTests {
         if (comm->getRank() == 0)
           out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-        Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        Op->apply(*X,*RHS,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
 
         // Use AMG directly as an iterative method
         {
-          X->putScalar( (SC) 0.0);
+          X->putScalar( (Scalar) 0.0);
 
           H->Iterate(*RHS,*X,its);
 
@@ -276,6 +282,12 @@ namespace MueLuTests {
 
   } //SaPFactory_EpetraVsTpetra
 #endif
+
+#define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node)
+
+#include <MueLu_ETI_4arg.hpp>
 
 }//namespace MueLuTests
 
