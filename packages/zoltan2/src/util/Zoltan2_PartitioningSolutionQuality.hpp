@@ -70,6 +70,7 @@ private:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   const RCP<const Environment> env_;
 
