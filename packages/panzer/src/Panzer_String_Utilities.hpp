@@ -59,6 +59,9 @@
 
 namespace panzer {
 
+  //! Removes whitespace at beginning and end of string
+  void trim(std::string& str);
+  
   //! Tokenize a string, put tokens in a vector
   void StringTokenizer(std::vector<std::string>& tokens,
 		       const std::string& str,

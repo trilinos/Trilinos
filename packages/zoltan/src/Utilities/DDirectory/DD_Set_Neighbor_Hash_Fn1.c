@@ -48,7 +48,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DD.h"
+#include "zoltan_dd_const.h"
 
 
 

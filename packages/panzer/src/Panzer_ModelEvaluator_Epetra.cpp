@@ -286,7 +286,7 @@ addDistributedParameter(const std::string name,
   // We will need to do something different if we need sensitivities
   // wrt distributed parameters.
 
-  distributed_parameter_container_.push_back(boost::make_tuple(name,index,importer,ghosted_vector));
+  distributed_parameter_container_.push_back(std::make_tuple(name,index,importer,ghosted_vector));
 
   return index;
 }
@@ -444,7 +444,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::Array;
-  using Teuchos::tuple;
+  //using Teuchos::tuple;
   using Teuchos::rcp_dynamic_cast;
 
   // if neccessary build a ghosted container
@@ -610,22 +610,22 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   }
 
   // Perform global to ghost and set distributed parameters
-  for (std::vector<boost::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i = 
+  for (std::vector<std::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i = 
          distributed_parameter_container_.begin(); i != distributed_parameter_container_.end(); ++i) {
     // do export if parameter exists in inArgs
-    Teuchos::RCP<const Epetra_Vector> global_vec = inArgs.get_p(i->get<1>());
+    Teuchos::RCP<const Epetra_Vector> global_vec = inArgs.get_p(std::get<1>(*i));
     if (nonnull(global_vec)) {
       // Only import if the importer is nonnull
-      Teuchos::RCP<Epetra_Import> importer = i->get<2>();
+      Teuchos::RCP<Epetra_Import> importer = std::get<2>(*i);
       if (nonnull(importer))
-        i->get<3>()->Import(*global_vec,*importer,Insert);
+	std::get<3>(*i)->Import(*global_vec,*importer,Insert);
     }
 
     // set in ae_inargs_ string lookup container
     Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
-      Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[i->get<1>()],p_map_[i->get<1>()]));
-    container->set_x(i->get<3>());
-    ae_inargs.addGlobalEvaluationData(i->get<0>(),container);
+      Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[std::get<1>(*i)],p_map_[std::get<1>(*i)]));
+    container->set_x(std::get<3>(*i));
+    ae_inargs.addGlobalEvaluationData(std::get<0>(*i),container);
   }
 
   // here we are building a container, this operation is fast, simply allocating a struct

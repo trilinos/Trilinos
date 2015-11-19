@@ -45,8 +45,8 @@
 
 #include <string>
 #include <ostream>
-
-#include <boost/functional/hash.hpp>
+#include <functional>
+#include "Panzer_HashUtils.hpp"
 
 namespace panzer {
 
@@ -151,16 +151,16 @@ inline bool operator==(const WorksetDescriptor & a,const WorksetDescriptor & b)
            && a.useSideset()==b.useSideset();
 }
 
-//! Hash function that satisifies the boost hash interface
+//! Hash function that satisifies the stl hash interface
 inline std::size_t hash_value(const WorksetDescriptor & wd)
 {
   std::size_t seed = 0;
 
-  boost::hash_combine(seed,wd.getElementBlock());
+  panzer::hash_combine(seed,wd.getElementBlock());
   if(wd.useSideset()) {
     // optionally hash on side set and side assembly
-    boost::hash_combine(seed,wd.getSideset());
-    boost::hash_combine(seed,wd.sideAssembly());
+    panzer::hash_combine(seed,wd.getSideset());
+    panzer::hash_combine(seed,wd.sideAssembly());
   }
  
   return seed;
@@ -196,6 +196,28 @@ inline WorksetDescriptor sidesetDescriptor(const std::string & eBlock,const std:
   */
 inline WorksetDescriptor sidesetVolumeDescriptor(const std::string & eBlock,const std::string & sideset)
 { return WorksetDescriptor(eBlock,sideset,true); }
+
+}
+
+namespace std {
+
+  template <>
+  struct hash<panzer::WorksetDescriptor>
+  {
+    std::size_t operator()(const panzer::WorksetDescriptor& wd) const
+    {
+      std::size_t seed = 0;
+      
+      panzer::hash_combine(seed,wd.getElementBlock());
+      if(wd.useSideset()) {
+	// optionally hash on side set and side assembly
+	panzer::hash_combine(seed,wd.getSideset());
+	panzer::hash_combine(seed,wd.sideAssembly());
+      }
+      
+      return seed;
+    }
+  };
 
 }
 

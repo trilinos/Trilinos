@@ -114,11 +114,11 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
     // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const Vec)     { return Utilities::MV2EpetraMV(Vec); }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> Vec)   { return Utilities::MV2NonConstEpetraMV(Vec); }
+    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2EpetraMV(vec); }
+    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstEpetraMV(vec); }
 
-    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& Vec)         { return Utilities::MV2EpetraMV(Vec); }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& Vec)       { return Utilities::MV2NonConstEpetraMV(Vec); }
+    static const Epetra_MultiVector&                        MV2EpetraMV(const MultiVector& vec)         { return Utilities::MV2EpetraMV(vec); }
+    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstEpetraMV(vec); }
 
     static RCP<const Epetra_CrsMatrix>                      Op2EpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2EpetraCrs(Op); }
     static RCP<      Epetra_CrsMatrix>                      Op2NonConstEpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstEpetraCrs(Op); }
@@ -133,12 +133,12 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     // @{
-    static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const Vec)     { return Utilities::MV2TpetraMV(Vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> Vec)   { return Utilities::MV2NonConstTpetraMV(Vec); }
-    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& Vec)      { return Utilities::MV2NonConstTpetraMV2(Vec); }
+    static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> >     MV2TpetraMV(RCP<MultiVector> const vec)     { return Utilities::MV2TpetraMV(vec); }
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV(RCP<MultiVector> vec)   { return Utilities::MV2NonConstTpetraMV(vec); }
+    static RCP<      Tpetra::MultiVector<SC,LO,GO,NO> >     MV2NonConstTpetraMV2(MultiVector& vec)      { return Utilities::MV2NonConstTpetraMV2(vec); }
 
-    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec)         { return Utilities::MV2TpetraMV(Vec); }
-    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec)       { return Utilities::MV2NonConstTpetraMV(Vec); }
+    static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& vec)         { return Utilities::MV2TpetraMV(vec); }
+    static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& vec)       { return Utilities::MV2NonConstTpetraMV(vec); }
 
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op)          { return Utilities::Op2TpetraCrs(Op); }
     static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op)        { return Utilities::Op2NonConstTpetraCrs(Op); }
@@ -292,25 +292,25 @@ namespace MueLu {
   #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
     // @{
-    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const Vec) {
-      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>  > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
+    static RCP<const Epetra_MultiVector>                    MV2EpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec) {
+      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>  > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
       return tmpVec->getEpetra_MultiVector();
     }
-    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
-      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(Vec);
+    static RCP<      Epetra_MultiVector>                    MV2NonConstEpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec) {
+      RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed");
       return tmpVec->getEpetra_MultiVector();
     }
 
-    static const Epetra_MultiVector&                        MV2EpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec) {
-      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
+    static const Epetra_MultiVector&                        MV2EpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) {
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(vec);
       return *(tmpVec.getEpetra_MultiVector());
     }
-    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec) {
-      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(Vec);
+    static       Epetra_MultiVector&                        MV2NonConstEpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) {
+      const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> & tmpVec = dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> &>(vec);
       return *(tmpVec.getEpetra_MultiVector());
     }
 
@@ -372,9 +372,9 @@ namespace MueLu {
   #ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     // @{
-    static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const Vec)   {
+    static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2TpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const vec)   {
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-      RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Vec);
+      RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
       return tmpVec->getTpetra_MultiVector();
@@ -382,9 +382,9 @@ namespace MueLu {
       throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
   #endif
     }
-    static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Vec) {
+    static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV(RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vec) {
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-      RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Vec);
+      RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
       return tmpVec->getTpetra_MultiVector();
@@ -393,26 +393,26 @@ namespace MueLu {
   #endif
 
     }
-    static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV2(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec)    {
+    static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV2(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec)    {
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return tmpVec.getTpetra_MultiVector();
   #else
       throw Exceptions::RuntimeError("MV2NonConstTpetraMV2: Tpetra has not been compiled with support for LO=GO=int.");
   #endif
     }
 
-    static const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2TpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec)   {
+    static const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2TpetraMV(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec)   {
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return *(tmpVec.getTpetra_MultiVector());
   #else
       throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
   #endif
     }
-    static       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2NonConstTpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Vec) {
+    static       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2NonConstTpetraMV(Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) {
   #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(Vec);
+      const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return *(tmpVec.getTpetra_MultiVector());
   #else
       throw Exceptions::RuntimeError("MV2NonConstTpetraMV: Tpetra has not been compiled with support for LO=GO=int.");

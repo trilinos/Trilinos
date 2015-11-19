@@ -166,3 +166,4 @@ GENERATE_LATEX         = NO
 GENERATE_RTF           = NO
 GENERATE_MAN           = NO
 GENERATE_XML           = NO
+HTML_FOOTER			   = ../../common/footer.html

@@ -95,10 +95,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  const std::vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > data = this->getResidualContributionData();
+  const std::vector<std::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > > data = this->getResidualContributionData();
 
-  std::string flux_name = data[0].get<2>();
-  Teuchos::RCP<panzer::IntegrationRule> ir = data[0].get<5>();
+  std::string flux_name = std::get<2>(data[0]);
+  Teuchos::RCP<panzer::IntegrationRule> ir = std::get<5>(data[0]);
 
   // provide a constant flux target value to map into residual
   {

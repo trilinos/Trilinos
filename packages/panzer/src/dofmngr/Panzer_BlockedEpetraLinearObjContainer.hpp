@@ -54,7 +54,7 @@
 
 #include "Epetra_Map.h"
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 namespace panzer {
 

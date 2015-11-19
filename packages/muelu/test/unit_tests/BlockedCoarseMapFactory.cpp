@@ -46,28 +46,26 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 
-#include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_BlockedCoarseMapFactory.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_UncoupledAggregationFactory.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_AmalgamationFactory.hpp>
+#include <MueLu_CoarseMapFactory.hpp>
+#include <MueLu_BlockedCoarseMapFactory.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  TEUCHOS_UNIT_TEST(BlockedCoarseMapFactory, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<BlockedCoarseMapFactory> mapFact = rcp(new BlockedCoarseMapFactory);
@@ -77,9 +75,11 @@ namespace MueLuTests {
 
   //TODO test BuildP
 
-  TEUCHOS_UNIT_TEST(BlockedCoarseMapFactory, Build)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel, coarseLevel;
@@ -142,7 +142,10 @@ namespace MueLuTests {
     TEST_EQUALITY(as<GO>(map2->getNodeNumElements()),   numAggs       * as<GO>(NSdim));
   } //BlockedCoarseMapFactory, Build
 
+#define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
-
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

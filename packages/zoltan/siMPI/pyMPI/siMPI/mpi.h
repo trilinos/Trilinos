@@ -41,45 +41,53 @@ typedef int MPI_Datatype;
 #define MPI_UNSIGNED		( (MPI_Datatype) 1010)
 #define MPI_UNSIGNED_LONG	( (MPI_Datatype) 1011)
 #define MPI_LONG_DOUBLE		( (MPI_Datatype) 1012)
+#define MPI_LONG_LONG           ( (MPI_Datatype) 1013)  /* KDD Added 11/19/15.*/
+                                                        /* KDD Incremented all*/
+                                                        /* KDD following types*/
+                                                        /* KDD as code assumes*/
+                                                        /* KDD MPI_PACKED is  */
+                                                        /* KDD the last type  */
+                                                        /* KDD specified.     */
 
 /* Dataypes for the MPI functions MPI_MAXLOC and MPI_MINLOC */
 
-#define MPI_FLOAT_INT		( (MPI_Datatype) 1013)
-#define MPI_LONG_INT		( (MPI_Datatype) 1014)
-#define MPI_DOUBLE_INT		( (MPI_Datatype) 1015)
-#define MPI_SHORT_INT		( (MPI_Datatype) 1016)
-#define MPI_2INT		( (MPI_Datatype) 1017)
-#define MPI_LONG_DOUBLE_INT	( (MPI_Datatype) 1018)
-#define MPI_LONG_LONG_INT	( (MPI_Datatype) 1019)
+#define MPI_FLOAT_INT		( (MPI_Datatype) 1014)
+#define MPI_LONG_INT		( (MPI_Datatype) 1015)
+#define MPI_DOUBLE_INT		( (MPI_Datatype) 1016)
+#define MPI_SHORT_INT		( (MPI_Datatype) 1017)
+#define MPI_2INT		( (MPI_Datatype) 1018)
+#define MPI_LONG_DOUBLE_INT	( (MPI_Datatype) 1019)
+#define MPI_LONG_LONG_INT	( (MPI_Datatype) 1020)
 
 /* Special Dataypes */
 
-#define MPI_REAL		( (MPI_Datatype) 1020)
-#define MPI_INTEGER		( (MPI_Datatype) 1021)
-#define MPI_LOGICAL		( (MPI_Datatype) 1022)
-#define MPI_DOUBLE_PRECISION	( (MPI_Datatype) 1023)
-#define MPI_COMPLEX		( (MPI_Datatype) 1024)
-#define MPI_DOUBLE_COMPLEX	( (MPI_Datatype) 1025)
+#define MPI_REAL		( (MPI_Datatype) 1021)
+#define MPI_INTEGER		( (MPI_Datatype) 1022)
+#define MPI_LOGICAL		( (MPI_Datatype) 1023)
+#define MPI_DOUBLE_PRECISION	( (MPI_Datatype) 1024)
+#define MPI_COMPLEX		( (MPI_Datatype) 1025)
+#define MPI_DOUBLE_COMPLEX	( (MPI_Datatype) 1026)
 
 /* Optional Datatypes */
 
-#define MPI_INTEGER1		( (MPI_Datatype) 1026)
-#define MPI_INTEGER2		( (MPI_Datatype) 1027)
-#define MPI_INTEGER4		( (MPI_Datatype) 1028)
-#define MPI_REAL4		( (MPI_Datatype) 1029)
-#define MPI_REAL8		( (MPI_Datatype) 1030)
+#define MPI_INTEGER1		( (MPI_Datatype) 1027)
+#define MPI_INTEGER2		( (MPI_Datatype) 1028)
+#define MPI_INTEGER4		( (MPI_Datatype) 1029)
+#define MPI_REAL4		( (MPI_Datatype) 1030)
+#define MPI_REAL8		( (MPI_Datatype) 1031)
 
 /* Datatypes for the MPI functions MPI_MAXLOC and MPI_MINLOC */
 
-#define MPI_2INTEGER		( (MPI_Datatype) 1031)
-#define MPI_2REAL		( (MPI_Datatype) 1032)
-#define MPI_2DOUBLE_PRECISION	( (MPI_Datatype) 1033)
-#define MPI_2COMPLEX		( (MPI_Datatype) 1034)
-#define MPI_2DOUBLE_COMPLEX	( (MPI_Datatype) 1035)
+#define MPI_2INTEGER		( (MPI_Datatype) 1032)
+#define MPI_2REAL		( (MPI_Datatype) 1033)
+#define MPI_2DOUBLE_PRECISION	( (MPI_Datatype) 1034)
+#define MPI_2COMPLEX		( (MPI_Datatype) 1035)
+#define MPI_2DOUBLE_COMPLEX	( (MPI_Datatype) 1036)
 
-#define MPI_UB			( (MPI_Datatype) 1036)
-#define MPI_LB			( (MPI_Datatype) 1037)
-#define MPI_PACKED		( (MPI_Datatype) 1038)
+#define MPI_UB			( (MPI_Datatype) 1037)
+#define MPI_LB			( (MPI_Datatype) 1038)
+#define MPI_PACKED		( (MPI_Datatype) 1039)
+
 
 typedef int MPI_Group;
 

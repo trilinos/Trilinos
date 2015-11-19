@@ -120,6 +120,8 @@ int _MPI_getSize(MPI_Datatype type)
       return sizeof(int);
     case MPI_LONG:
       return sizeof(long);
+    case MPI_LONG_LONG:           /* KDD Added 11/19/15 */
+      return sizeof(long long);
     case MPI_FLOAT:
       return sizeof(float);
     case MPI_DOUBLE:

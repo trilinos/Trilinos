@@ -335,9 +335,7 @@ private:
   int nWeightsPerEntity_;
   bool *entityDegreeWeight_;
 
-  // TODO:  coords_ and Acoords_ should be scalar_t
-  // TODO:  or should check that scalar_t == double
-  double *coords_, *Acoords_;
+  scalar_t *coords_, *Acoords_;
   lno_t *eStart_, *nStart_;
   gno_t *eAdj_, *nAdj_;
   size_t nEadj_, nNadj_;
@@ -382,7 +380,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
-  coords_ = new double [num_nodes_ * dimension_];
+  coords_ = new scalar_t [num_nodes_ * dimension_];
 
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
@@ -442,7 +440,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   elem_type = NULL;
   delete[] num_attr;
   num_attr = NULL;
-  Acoords_ = new double [num_elem_ * dimension_];
+  Acoords_ = new scalar_t [num_elem_ * dimension_];
   int a = 0;
   std::vector<std::vector<gno_t> > sur_elem;
   sur_elem.resize(num_nodes_);

@@ -5,6 +5,13 @@
 // to the equivalent stl objects.
 // *******************************************************************
 
+// what:  variant type boost::any
+// who:   contributed by Kevlin Henney,
+//        with features contributed and bugs found by
+//        Antony Polukhin, Ed Brey, Mark Rodgers, 
+//        Peter Dimov, and James Curran
+// when:  July 2001, April 2013 - May 2013
+
 // Boost Software License - Version 1.0 - August 17th, 2003
 
 // Permission is hereby granted, free of charge, to any person or organization

@@ -45,16 +45,16 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include <boost/unordered_map.hpp>
-
+#include <unordered_map>
+#include "Panzer_HashUtils.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
 
 namespace panzer {
 
 class GlobalEvaluationDataContainer {
 public:
-   typedef boost::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator const_iterator;
-   typedef boost::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::iterator iterator;
+   typedef std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator const_iterator;
+   typedef std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> >::iterator iterator;
 
    /** Add a data object to be used in evaluation loop.
      */
@@ -85,7 +85,7 @@ public:
    iterator end() { return lookupTable_.end(); }
 
 private:
-   boost::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> > lookupTable_;
+   std::unordered_map<std::string,Teuchos::RCP<GlobalEvaluationData> > lookupTable_;
 };
 
 }

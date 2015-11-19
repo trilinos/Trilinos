@@ -43,7 +43,7 @@
 #ifndef __Panzer_Filtered_UniqueGlobalIndexer_impl_hpp__
 #define __Panzer_Filtered_UniqueGlobalIndexer_impl_hpp__
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 #include "Panzer_config.hpp"
 #include "Panzer_NodeType.hpp"
@@ -65,7 +65,7 @@ Filtered_UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
 initialize(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi,
            const std::vector<GlobalOrdinalT> & filtered)
 { 
-  typedef boost::unordered_set<GlobalOrdinalT> HashTable;
+  typedef std::unordered_set<GlobalOrdinalT> HashTable;
 
   base_ = ugi;
 

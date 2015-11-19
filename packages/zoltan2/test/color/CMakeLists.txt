@@ -8,7 +8,6 @@ IF (${PROJECT_NAME}_ENABLE_Galeri)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
-ENDIF()
 
 TRIBITS_ADD_TEST(
   Coloring1
@@ -31,6 +30,7 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+ENDIF()
 
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_color_tests

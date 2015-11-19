@@ -61,7 +61,7 @@
 
 #include "Thyra_VectorBase.hpp"
 
-#include <boost/tuple/tuple.hpp>
+#include <tuple>
 #include <vector>
 #include <string>
 
@@ -341,14 +341,14 @@ namespace panzer {
     */
     std::vector<bool> is_distributed_parameter_;
 
-    /** Vector of Boost tuples that contains objects needed for the global to ghost method for distributed parameters.
+    /** Vector of tuples that contains objects needed for the global to ghost method for distributed parameters.
 
        Tuple index 0: the string name for the parameter in the model evaluator.
        Tuple index 1: the integer index for the parameter in the model evaluator.
        Tuple index 2: an RCP to the linear object factory that performs the global to ghost operation.
        Tuple index 3: an RCP to the GHOSTED vector that is the target of the global to ghost operation. 
     */ 
-    std::vector<boost::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > > distributed_parameter_container_;
+    std::vector<std::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > > distributed_parameter_container_;
 
     // basic specific linear object objects
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;

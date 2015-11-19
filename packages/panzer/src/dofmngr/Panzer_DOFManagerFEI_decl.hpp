@@ -61,11 +61,12 @@
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_HashUtils.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 namespace panzer {
 
@@ -464,7 +465,7 @@ protected:
    std::map<int,std::vector<int> > field2ElmtIDs_;
 
    // storage for fast lookups of GID ownership
-   boost::unordered_set<GlobalOrdinal> ownedGIDHashTable_;
+   std::unordered_set<GlobalOrdinal> ownedGIDHashTable_;
 
    // maps blockIds to indices
    mutable Teuchos::RCP<std::map<std::string,std::size_t> > blockIdToIndex_;

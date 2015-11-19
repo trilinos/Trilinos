@@ -41,34 +41,40 @@
 // @HEADER
 
 #include "Panzer_CommaSeparatedEntryValidator.hpp"
-
+#include "Panzer_String_Utilities.hpp"
 #include "Teuchos_StrUtils.hpp"
 
 namespace panzer {
 
-void CommaSeparatedEntryValidator::split(const std::string & str,const std::string & delim,
-                                   std::vector<std::string> & output)
+void CommaSeparatedEntryValidator::
+split(const std::string & str,
+      const std::string & delim,
+      std::vector<std::string> & output)
 {
    output.clear();
 
-   typedef boost::tokenizer<boost::char_separator<char> > 
-           tokenizer;
+   // typedef boost::tokenizer<boost::char_separator<char> > 
+   //         tokenizer;
 
-   boost::char_separator<char> sep(delim.c_str());
-   tokenizer tokens(str, sep);
-   for(tokenizer::iterator tok_iter = tokens.begin();
-       tok_iter != tokens.end(); ++tok_iter) {
-      // extract token, remove spaces
-      std::string s = *tok_iter;
-      boost::trim(s);
-      if(s.length()!=0)
-         output.push_back(s);
-   }
+   // boost::char_separator<char> sep(delim.c_str());
+   // tokenizer tokens(str, sep);
+   // for(tokenizer::iterator tok_iter = tokens.begin();
+   //     tok_iter != tokens.end(); ++tok_iter) {
+   //    // extract token, remove spaces
+   //    std::string s = *tok_iter;
+   //    boost::trim(s);
+   //    if(s.length()!=0)
+   //       output.push_back(s);
+   // }
+
+   panzer::StringTokenizer(output, str, delim, true);
 }
 
-void CommaSeparatedEntryValidator::validate(const Teuchos::ParameterEntry & entry,  
-                                      const std::string & paramName,
-                                      const std::string & sublistName) const
+void 
+CommaSeparatedEntryValidator::
+validate(const Teuchos::ParameterEntry & entry,  
+	 const std::string & paramName,
+	 const std::string & sublistName) const
 {
   const std::string &entryName = entry.getAny(false).typeName();
   Teuchos::any anyValue = entry.getAny(true);

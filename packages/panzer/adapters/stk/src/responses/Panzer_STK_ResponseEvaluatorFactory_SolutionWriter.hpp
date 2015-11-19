@@ -14,8 +14,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace panzer_stk_classic {
 
@@ -125,8 +125,8 @@ private:
 
    Teuchos::RCP<STK_Interface> mesh_;
 
-   boost::unordered_map<std::string,double> fieldToScalar_;
-   boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
+   std::unordered_map<std::string,double> fieldToScalar_;
+   std::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
 
    std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > additionalFields_;
    std::vector<std::string> removedFields_;
@@ -175,7 +175,7 @@ struct RespFactorySolnWriter_Builder {
       ref->removeField(removedFields_[i]);
 
     // set all scaled field values
-    for(boost::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
+    for(std::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
         itr!=fieldToScalar_.end();++itr) 
       ref->scaleField(itr->first,itr->second);
 
@@ -193,7 +193,7 @@ struct RespFactorySolnWriter_Builder {
    { addCoordinateFields_ = acf; }
 
 private:
-  boost::unordered_map<std::string,double> fieldToScalar_;
+  std::unordered_map<std::string,double> fieldToScalar_;
   std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > additionalFields_;
   std::vector<std::string> removedFields_;
   bool addSolutionFields_;

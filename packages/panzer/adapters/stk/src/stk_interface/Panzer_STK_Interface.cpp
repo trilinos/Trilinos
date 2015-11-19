@@ -877,7 +877,7 @@ std::size_t STK_Interface::elementLocalId(stk_classic::mesh::EntityId gid) const
    // stk_classic::mesh::Entity * elmt = bulkData_->get_entity(elementRank,gid);
    // TEUCHOS_ASSERT(elmt->owner_rank()==procRank_);
    // return elementLocalId(elmt);
-   boost::unordered_map<stk_classic::mesh::EntityId,std::size_t>::const_iterator itr = localIDHash_.find(gid);
+   std::unordered_map<stk_classic::mesh::EntityId,std::size_t>::const_iterator itr = localIDHash_.find(gid);
    TEUCHOS_ASSERT(itr!=localIDHash_.end());
    return itr->second;
 }

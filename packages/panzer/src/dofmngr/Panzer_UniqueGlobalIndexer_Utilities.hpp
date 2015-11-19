@@ -46,7 +46,7 @@
 #include <map>
 #include <string>
 
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 #include <Panzer_NodeType.hpp>
 #include <Tpetra_Vector.hpp>

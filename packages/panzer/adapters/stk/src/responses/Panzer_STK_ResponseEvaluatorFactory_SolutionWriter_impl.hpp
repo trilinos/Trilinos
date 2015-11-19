@@ -9,7 +9,7 @@
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_PointValues.hpp"
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 namespace panzer_stk_classic {
 
@@ -47,7 +47,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
   typedef std::pair<std::string,RCP<const panzer::PureBasis> > StrConstPureBasisPair;
 
   // this will help so we can print out any unused scaled fields as a warning
-  boost::unordered_set<std::string> scaledFieldsHash = scaledFieldsHash_;
+  std::unordered_set<std::string> scaledFieldsHash = scaledFieldsHash_;
 
   std::map<std::string,RCP<const panzer::PureBasis> > bases;
   std::map<std::string,std::vector<std::string> > basisBucket;
@@ -147,7 +147,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       std::string fields_concat = "";
       std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 
       for(std::size_t f=0;f<fields.size();f++) { 
-        boost::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
+        std::unordered_map<std::string,double>::const_iterator f2s_itr = fieldToScalar_.find(fields[f]);
 
         // if scalar is found, include it in the vector and remove the field from the
         // hash table so it won't be included in the warning message.
@@ -249,7 +249,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
 
-  for(boost::unordered_set<std::string>::const_iterator itr=scaledFieldsHash.begin();
+  for(std::unordered_set<std::string>::const_iterator itr=scaledFieldsHash.begin();
       itr!=scaledFieldsHash.end();itr++) { 
     out << "WARNING: STK Solution Writer did not scale the field \"" << *itr << "\" "
         << "because it was not written." << std::endl;

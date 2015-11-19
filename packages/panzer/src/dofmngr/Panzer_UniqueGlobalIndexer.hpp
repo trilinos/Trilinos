@@ -46,7 +46,7 @@
 #include <vector>
 #include <string>
 
-#include <boost/unordered_map.hpp> // a hash table for buildLocalIds()
+#include <unordered_map> // a hash table for buildLocalIds()
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
@@ -383,7 +383,7 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
   this->getOwnedAndSharedIndices(ownedAndShared);
    
   // build global to local hash map (temporary and used only once)
-  boost::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
+  std::unordered_map<GlobalOrdinalT,LocalOrdinalT> hashMap;
   for(std::size_t i=0;i<ownedAndShared.size();i++)
     hashMap[ownedAndShared[i]] = i;
 

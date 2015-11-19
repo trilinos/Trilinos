@@ -106,15 +106,7 @@ namespace MueLuTests {
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_implicit_cast;
 
-#define RUN_EPETRA_ONLY_WITH_SERIAL_NODE(NO) \
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) { \
-    NO node; \
-    std::string nodeName = typeid(node).name(); \
-    if (nodeName.find("Serial") == std::string::npos) { \
-      out << "Skipping Epetra for non-Serial nodes" << std::endl; \
-      return; \
-    } \
-  }
+# include <MueLu_TestHelpers_Common.hpp>
 
   namespace TestHelpers_kokkos {
 
