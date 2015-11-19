@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Distribution<double> > dist;
     std::vector<Teuchos::RCP<ROL::Distribution<double> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
-    Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
+    Dlist.sublist("Distribution").set("Name","Beta");
     double alpha = 1., beta = 4.;
     std::vector<std::vector<std::pair<size_t,double> > > moments(dimension);
     std::vector<std::pair<size_t,double> > data(numMoments);
@@ -100,8 +100,8 @@ int main(int argc, char* argv[]) {
     for (size_t d = 0; d < dimension; d++) {
       // Build distribution for dimension d
       alpha++; beta++;
-      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
-      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 2",beta);
+      Dlist.sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
+      Dlist.sublist("Distribution").sublist("Beta").set("Shape 2",beta);
       dist = ROL::DistributionFactory<double>(Dlist);
       distVec[d] = ROL::DistributionFactory<double>(Dlist);
       // Compute moments
@@ -145,14 +145,14 @@ int main(int argc, char* argv[]) {
         (*ywt)[k] = 2.*(double)rand()/(double)RAND_MAX - 1.;
       }
       *outStream << "\n  CHECK MOMENT OBJECTIVE DERIVATIVES" << std::endl;
-      obj_moment->checkGradient(x,y,true);
-      obj_moment->checkHessVec(x,y,true);
+      obj_moment->checkGradient(x,y,true,*outStream);
+      obj_moment->checkHessVec(x,y,true,*outStream);
       *outStream << "\n  CHECK CDF OBJECTIVE DERIVATIVES" << std::endl;
-      obj_CDF->checkGradient(x,y,true);
-      obj_CDF->checkHessVec(x,y,true);
+      obj_CDF->checkGradient(x,y,true,*outStream);
+      obj_CDF->checkHessVec(x,y,true,*outStream);
       *outStream << "\n  CHECK COMBINED OBJECTIVE DERIVATIVES" << std::endl;
-      obj->checkGradient(x,y,true);
-      obj->checkHessVec(x,y,true);
+      obj->checkGradient(x,y,true,*outStream);
+      obj->checkHessVec(x,y,true,*outStream);
     }
 
     // Get ROL parameterlist

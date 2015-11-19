@@ -45,7 +45,7 @@
 #define ROL_HMCROBJECTIVE_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "ROL_CVaRVector.hpp"
+#include "ROL_RiskVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
@@ -99,10 +99,10 @@ private:
   void unwrap_const_CVaR_vector(Teuchos::RCP<Vector<Real> > &xvec, Real &xvar,
                           const Vector<Real> &x) {
     xvec = Teuchos::rcp_const_cast<Vector<Real> >(
-      Teuchos::dyn_cast<const CVaRVector<Real> >(
+      Teuchos::dyn_cast<const RiskVector<Real> >(
         Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
-    xvar = Teuchos::dyn_cast<const CVaRVector<Real> >(
-        Teuchos::dyn_cast<const Vector<Real> >(x)).getVaR();
+    xvar = Teuchos::dyn_cast<const RiskVector<Real> >(
+        Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic();
     if ( !initialized_ ) {
       initialize(*xvec);
     }
@@ -239,7 +239,7 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
-    CVaRVector<Real> &gc = Teuchos::dyn_cast<CVaRVector<Real> >(
+    RiskVector<Real> &gc = Teuchos::dyn_cast<RiskVector<Real> >(
       Teuchos::dyn_cast<Vector<Real> >(g));
     // Initialize storage
     g.zero(); sumGrad0_->zero();
@@ -280,7 +280,7 @@ public:
       gradient0_->scale(1.0/((1.0-prob_)*norm));
     }
     // Set gradient components of CVaR vector
-    gc.setVaR(gvar);
+    gc.setStatistic(gvar);
     gc.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(gradient0_)));
   }
 
@@ -290,7 +290,7 @@ public:
     unwrap_const_CVaR_vector(xvec,xvar,x);
     Teuchos::RCP<Vector<Real> > vvec; Real vvar = 0.0;
     unwrap_const_CVaR_vector(vvec,vvar,v);
-    CVaRVector<Real> &hvc = Teuchos::dyn_cast<CVaRVector<Real> >(
+    RiskVector<Real> &hvc = Teuchos::dyn_cast<RiskVector<Real> >(
       Teuchos::dyn_cast<Vector<Real> >(hv));
     // Initialize storage
     hv.zero();
@@ -359,7 +359,7 @@ public:
       hessvec_->axpy((order_-1.0)/norm0,*gradient2_);
     }
     // Set gradient components of CVaR vector
-    hvc.setVaR(hvar);
+    hvc.setStatistic(hvar);
     hvc.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(hessvec_)));
   }
 

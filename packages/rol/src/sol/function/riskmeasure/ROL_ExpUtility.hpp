@@ -61,8 +61,8 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     if ( firstReset_ ) {
-      scaledGradient_ = (x.dual()).clone();
-      dualVector_ = (x.dual()).clone();
+      scaledGradient_ = (x0->dual()).clone();
+      dualVector_ = (x0->dual()).clone();
       firstReset_ = false;
     }
     scaledGradient_->zero();
@@ -71,14 +71,9 @@ public:
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::reset(x0,x,v0,v);
-    if ( firstReset_ ) {
-      scaledGradient_ = (x.dual()).clone();
-      dualVector_ = (x.dual()).clone();
-      firstReset_ = false;
-    }
-    scaledGradient_->zero();
-    dualVector_->zero();
+    reset(x0,x);
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
+           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
   }
 
   void update(const Real val, const Real weight) {

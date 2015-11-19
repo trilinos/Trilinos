@@ -47,6 +47,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_PositiveFunction.hpp"
 #include "ROL_Distribution.hpp"
+#include "ROL_DistributionFactory.hpp"
 
 namespace ROL {
 
@@ -57,8 +58,14 @@ private:
   Real param_;
 
 public: 
-  PlusFunction(Teuchos::RCP<Distribution<Real> > &dist, Real param = 1.e-2) : dist_(dist) {
+  PlusFunction(Teuchos::RCP<Distribution<Real> > &dist, Real param = 1.) : dist_(dist) {
     param_ = ((param <= 0) ? 1.e-2 : param);
+  }
+
+  PlusFunction(Teuchos::ParameterList &parlist) {
+    Real param = parlist.get("Smoothing Parameter",1.);
+    param_ = ((param <= 0) ? 1. : param);
+    dist_  = DistributionFactory<Real>(parlist);
   }
 
   Real evaluate(Real input, int deriv) {

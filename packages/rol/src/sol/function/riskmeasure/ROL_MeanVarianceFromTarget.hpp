@@ -46,6 +46,11 @@
 
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_PositiveFunction.hpp"
+#include "ROL_PlusFunction.hpp"
+#include "ROL_AbsoluteValue.hpp"
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace ROL {
 
@@ -84,6 +89,38 @@ public:
       target_.push_back(target[i]);
       order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
       coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+    }
+  }
+  
+  MeanVarianceFromTarget( Teuchos::ParameterList &parlist ) : RiskMeasure<Real>() {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target");
+    // Get data from parameter list
+    Teuchos::Array<Real> target
+      = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
+    Teuchos::Array<Real> order
+      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    Teuchos::Array<Real> coeff
+      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
+    // Check inputs
+    target_.clear(); order_.clear(); coeff_.clear();
+    if ( order.size() != target.size() ) {
+      target.resize(order.size(),0.0);
+    }
+    if ( order.size() != coeff.size() ) {
+      coeff.resize(order.size(),1.0);
+    }
+    for ( unsigned i = 0; i < order.size(); i++ ) {
+      target_.push_back(target[i]);
+      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
+      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+    }
+    // Build (approximate) positive function
+    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+      positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    }
+    else {
+      positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
   }
   

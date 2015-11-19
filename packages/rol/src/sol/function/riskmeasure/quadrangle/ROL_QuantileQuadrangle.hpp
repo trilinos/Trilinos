@@ -50,7 +50,7 @@
 namespace ROL {
 
 template<class Real>
-class CVaRQuadrangle : public ExpectationQuad<Real> {
+class QuantileQuadrangle : public ExpectationQuad<Real> {
 private:
 
   Teuchos::RCP<PlusFunction<Real> > pf_;
@@ -60,10 +60,22 @@ private:
 
 public:
 
-  CVaRQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
+  QuantileQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), pf_(pf) {
     prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
     eps_  = ((eps > 0.0) ? eps : 1.0);
+  }
+
+  QuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+    Teuchos::ParameterList& list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle");
+    // Check CVaR inputs
+    Real prob = list.get("Confidence Level",0.5);
+    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    // Build plus function
+    pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
+    Real eps = list.get("Smoothing Parameter",1.);
+    eps_ = ((eps > 0.) ? eps : 1.);
   }
 
   Real error(Real x, int deriv = 0) {
@@ -77,54 +89,6 @@ public:
     Real reg = error(x,deriv) + X;
     return reg;
   }
-
-/*
-  // This is derived from a smoothed Koenker-Bassett error function
-  Real regret(Real x, int deriv = 0) {
-    int dom = ((x >= eps_) ? 0 : ((x < eps_ && x >= 0.0) ? 1 : ((x < 0.0 && x > -eps_) ? 2 : 3)));
-
-    Real val = 0.0;
-    Real c1  = prob_/(1.0-prob_);
-    Real c2  = 1.0/(1.0-prob_);
-    Real x2  = x*x;
-    Real x3  = x*x2;
-    Real x4  = x*x3;
-    Real e1  = eps_*0.5;
-    Real e2  = eps_*eps_;
-    Real e3  = e2*eps_*2.0;
-    switch (dom) {
-      case 0: // x is greater than or equal to eps 
-        switch (deriv) {
-          case 0: val = c2*x - c1*e1; break;
-          case 1: val = c2;           break;
-          case 2: val = 0.0;          break;
-        }
-        break;
-      case 1: // x is between 0 and eps
-        switch (deriv) {
-          case 0: val = c1*(x3/e2 - x4/e3) + x;           break;
-          case 1: val = c1*(3.0*x2/e2 - 4.0*x3/e3) + 1.0; break;
-          case 2: val = c1*(6.0*x/e2 - 12.0*x2/e3);       break;
-        }
-        break;
-      case 2: // x is between -eps and 0
-        switch (deriv) {
-          case 0: val = (-x3/e2 - x4/e3) + x;           break;
-          case 1: val = (-3.0*x2/e2 - 4.0*x3/e3) + 1.0; break;
-          case 2: val = (-6.0*x/e2 - 12.0*x2/e3);       break;
-        }
-        break;
-      case 3: // x is less than or equal to eps
-        switch (deriv) {
-          case 0: val = -e1; break;
-          case 1: val = 0.0; break;
-          case 2: val = 0.0; break;
-        }
-        break;
-    }
-    return val;
-  }
-*/
 
   void checkRegret(void) {
     ExpectationQuad<Real>::checkRegret();

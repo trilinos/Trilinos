@@ -64,6 +64,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/bundle/*.hpp
                     ${DIR}/augmentedlagrangian/*.hpp
                     ${DIR}/moreauyosidapenalty/*.hpp
+                    ${DIR}/interiorpoint/*.hpp
                    )
 
 #
@@ -88,12 +89,18 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
 INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
+                    ${DIR}/function/riskmeasure
+                    ${DIR}/function/riskmeasure/quadrangle
+                    ${DIR}/algorithm
                     ${DIR}/vector
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
                     ${DIR}/function/distribution/*.hpp
+                    ${DIR}/function/riskmeasure/*.hpp
+                    ${DIR}/function/riskmeasure/quadrangle/*.hpp
+                    ${DIR}/algorithm/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
                     ${DIR}/sampler/SROM/*.hpp

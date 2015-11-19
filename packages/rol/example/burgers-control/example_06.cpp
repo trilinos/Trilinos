@@ -50,7 +50,7 @@
 
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_HMCRObjective.hpp"
-#include "ROL_CVaRVector.hpp"
+#include "ROL_RiskVector.hpp"
 
 #include "ROL_MonteCarloGenerator.hpp"
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     RealT zvar = 0.0*random<RealT>(comm);
     RealT gvar = random<RealT>(comm);
     RealT yvar = random<RealT>(comm);
-    ROL::CVaRVector<RealT> z(zvar,zp), g(gvar,gzp), y(yvar,yzp);
+    ROL::RiskVector<RealT> z(zp,true,zvar), g(gzp,true,gvar), y(yzp,true,yvar);
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
       *outStream << "\n";
     }
     *outStream << "\n";
-    *outStream << "Scalar Parameter: " << z.getVaR() << "\n";
+    *outStream << "Scalar Parameter: " << z.getStatistic() << "\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
