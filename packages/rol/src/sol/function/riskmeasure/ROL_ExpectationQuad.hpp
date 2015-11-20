@@ -44,7 +44,7 @@
 #ifndef ROL_EXPECTATIONQUAD_HPP
 #define ROL_EXPECTATIONQUAD_HPP
 
-#include "ROL_CVaRVector.hpp"
+#include "ROL_RiskVector.hpp"
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_Types.hpp"
 
@@ -175,29 +175,23 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    x0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const CVaRVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
-    xstat_ = Teuchos::dyn_cast<const CVaRVector<Real> >(
-               Teuchos::dyn_cast<const Vector<Real> >(x)).getVaR();
+    RiskMeasure<Real>::reset(x0,x);
+    xstat_ = Teuchos::dyn_cast<const RiskVector<Real> >(
+               Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic();
     if (firstReset_) {
-      RiskMeasure<Real>::g_  = (x0->dual()).clone();
-      RiskMeasure<Real>::hv_ = (x0->dual()).clone();
       dualVector_            = (x0->dual()).clone();
       firstReset_ = false;
     }
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_->zero();
     dualVector_->zero();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x, 
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    this->reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const CVaRVector<Real> >(
+    reset(x0,x);
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
            Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
-    vstat_ = Teuchos::dyn_cast<const CVaRVector<Real> >(
-               Teuchos::dyn_cast<const Vector<Real> >(v)).getVaR();
+    vstat_ = Teuchos::dyn_cast<const RiskVector<Real> >(
+               Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic();
   }
 
   void update(const Real val, const Real weight) {
@@ -229,23 +223,23 @@ public:
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    CVaRVector<Real> &gs = Teuchos::dyn_cast<CVaRVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
+    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
     Real stat  = RiskMeasure<Real>::val_;
     Real gstat = 0.0;
     sampler.sumAll(&stat,&gstat,1);
     gstat += 1.0;
-    gs.setVaR(gstat);
+    gs.setStatistic(gstat);
 
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
     gs.setVector(*dualVector_);
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    CVaRVector<Real> &hs = Teuchos::dyn_cast<CVaRVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
+    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
     Real stat  = RiskMeasure<Real>::val_;
     Real gstat = 0.0;
     sampler.sumAll(&stat,&gstat,1);
-    hs.setVaR(gstat);
+    hs.setStatistic(gstat);
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
     hs.setVector(*dualVector_);

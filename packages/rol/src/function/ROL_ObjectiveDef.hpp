@@ -177,14 +177,14 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
     gCheck[i][2] = weights[order-1][0] * val;
 
     for(int j=0; j<order; ++j) {
-        // Evaluate at x <- x+eta*c_i*d.
-        xnew->axpy(eta*shifts[order-1][j], d);
+      // Evaluate at x <- x+eta*c_i*d.
+      xnew->axpy(eta*shifts[order-1][j], d);
 
-        // Only evaluate at shifts where the weight is nonzero  
-        if( weights[order-1][j+1] != 0 ) {        
-            this->update(*xnew);
-            gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
-        }
+      // Only evaluate at shifts where the weight is nonzero  
+      if( weights[order-1][j+1] != 0 ) {
+        this->update(*xnew);
+        gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
+      }
     }
 
     gCheck[i][2] /= eta;
@@ -193,12 +193,12 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
     if (printToStream) {
       if (i==0) {
-      outStream << std::right
-                << std::setw(20) << "Step size"
-                << std::setw(20) << "grad'*dir"
-                << std::setw(20) << "FD approx"
-                << std::setw(20) << "abs error"
-                << "\n";
+        outStream << std::right
+                  << std::setw(20) << "Step size"
+                  << std::setw(20) << "grad'*dir"
+                  << std::setw(20) << "FD approx"
+                  << std::setw(20) << "abs error"
+                  << "\n";
       }
       outStream << std::scientific << std::setprecision(11) << std::right
                 << std::setw(20) << gCheck[i][0]

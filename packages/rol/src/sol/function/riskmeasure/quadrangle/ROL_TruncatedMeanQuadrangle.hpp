@@ -57,16 +57,27 @@ private:
 public:
 
   TruncatedMeanQuadrangle(Real beta)
-    : ExpectationQuad<Real>(), beta_(beta) {}
+    : ExpectationQuad<Real>() {
+    beta_ = ((beta > 0.) ? beta : 1.);
+  }
+
+  TruncatedMeanQuadrangle(Teuchos::ParameterList &parlist)
+    : ExpectationQuad<Real>() {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Truncated Mean Quadrangle");
+    // Check inputs
+    Real beta = list.get("Threshold",1.);
+    beta_ = ((beta > 0.) ? beta : 1.);
+  }
 
   Real error(Real x, int deriv = 0) {
-    bool inside = ((abs_->evaluate(x,0) <= beta_) ? true : false );
+    bool inside = ( std::abs(x) ? true : false );
     Real err    = 0.0;
     if (deriv==0) {
       err = (inside ? 0.5*std::pow(x,2.0)/beta_ : std::abs(x)-0.5*beta_);
     }
-    else (deriv==1) {
-      err = (inside ? x/beta_ : ((0.0 < x) - (x < 0.0)))
+    else if (deriv==1) {
+      err = (inside ? x/beta_ : ((0.0 < x) - (x < 0.0)));
     }
     else {
       err = (inside ? 1.0/beta_ : 0.0);

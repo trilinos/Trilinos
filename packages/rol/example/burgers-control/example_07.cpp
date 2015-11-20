@@ -50,8 +50,8 @@
 
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_BPOEObjective.hpp"
-#include "ROL_BPOEBoundConstraint.hpp"
-#include "ROL_CVaRVector.hpp"
+#include "ROL_RiskBoundConstraint.hpp"
+#include "ROL_RiskVector.hpp"
 
 #include "ROL_MonteCarloGenerator.hpp"
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     RealT zvar = random<RealT>(comm);
     RealT gvar = random<RealT>(comm);
     RealT yvar = random<RealT>(comm);
-    ROL::CVaRVector<RealT> z(zvar,zp), g(gvar,gzp), y(yvar,yzp);
+    ROL::RiskVector<RealT> z(zp,true,zvar), g(gzp,true,gvar), y(yzp,true,yvar);
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
       = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::BPOEBoundConstraint<RealT>(Zbnd));
+      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>("BPOE",Zbnd));
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream << "Scalar Parameter: " << z.getVaR() << "\n\n";
+    *outStream << "Scalar Parameter: " << z.getStatistic() << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

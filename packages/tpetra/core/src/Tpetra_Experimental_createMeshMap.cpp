@@ -1,11 +1,11 @@
 // @HEADER
-// ************************************************************************
+// ***********************************************************************
 //
-//               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,47 +34,28 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_LOGEXPONENTIALQUAD_HPP
-#define ROL_LOGEXPONENTIALQUAD_HPP
+#include "TpetraCore_config.h"
 
-#include "ROL_ExpectationQuad.hpp"
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-namespace ROL {
+#include "Tpetra_Experimental_BlockCrsMatrix_Helpers_decl.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix_Helpers_def.hpp"
 
-template<class Real>
-class LogExponentialQuadrangle : public ExpectationQuad<Real> {
-public:
+#include "TpetraCore_ETIHelperMacros.h"
 
-  LogExponentialQuadrangle(void) : ExpectationQuad<Real>() {}
+namespace Tpetra {
+  namespace Experimental {
 
-  Real error(Real x, int deriv = 0) {
-    Real err = 0.0;
-    if (deriv==0) {
-      err = std::exp(x) - x - 1.0;
-    }
-    else (deriv==1) {
-      err = std::exp(x) - 1.0;
-    }
-    else {
-      err = std::exp(x);
-    }
-    return err;
-  }
+    TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  Real regret(Real x, int deriv = 0) {
-    Real X = ((deriv==0) ? x : ((deriv==1) ? 1.0 : 0.0));
-    Real reg = error(x,deriv) + X;
-    return reg;
-  }
+    TPETRA_INSTANTIATE_LGN( TPETRA_EXPERIMENTAL_CREATEMESHMAP_INSTANT )
 
-};
+  } // namespace Experimental
+} // namespace Tpetra
 
-}
-#endif
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -46,6 +46,11 @@
 
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_PositiveFunction.hpp"
+#include "ROL_PlusFunction.hpp"
+#include "ROL_AbsoluteValue.hpp"
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace ROL {
 
@@ -110,13 +115,53 @@ public:
     pgv_.resize(order_.size(),0.0);
   }
 
+  MeanDeviationFromTarget( Teuchos::ParameterList &parlist )
+    : RiskMeasure<Real>(), firstReset_(true) {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target");
+    // Get data from parameter list
+    Teuchos::Array<Real> target
+      = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
+    Teuchos::Array<Real> order
+      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    Teuchos::Array<Real> coeff
+      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
+    // Check inputs
+    target_.clear(); order_.clear(); coeff_.clear();
+    if ( order.size() != target.size() ) {
+      target.resize(order.size(),0.0);
+    }
+    if ( order.size() != coeff.size() ) {
+      coeff.resize(order.size(),1.0);
+    }
+    for ( unsigned i = 0; i < order.size(); i++ ) {
+      target_.push_back(target[i]);
+      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
+      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+    }
+    // Initialize additional storage
+    pg_.clear(); pg0_.clear(); phv_.clear(); pval_.clear(); pgv_.clear();
+    pg_.resize(order_.size());
+    pg0_.resize(order_.size());
+    phv_.resize(order_.size());
+    pval_.resize(order_.size(),0.0);
+    pgv_.resize(order_.size(),0.0);
+    // Build (approximate) positive function
+    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+      positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    }
+    else {
+      positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
+    }
+  }
+
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     if (firstReset_) {
       for ( unsigned p = 0; p < order_.size(); p++ ) {
-        pg0_[p] = (x.dual()).clone();
-        pg_[p]  = (x.dual()).clone();
-        phv_[p] = (x.dual()).clone();
+        pg0_[p] = (x0->dual()).clone();
+        pg_[p]  = (x0->dual()).clone();
+        phv_[p] = (x0->dual()).clone();
       }
       firstReset_ = false;
     }
@@ -128,19 +173,9 @@ public:
     
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::reset(x0,x,v0,v);
-    if (firstReset_) {
-      for ( unsigned p = 0; p < order_.size(); p++ ) {
-        pg0_[p] = (x.dual()).clone();
-        pg_[p]  = (x.dual()).clone();
-        phv_[p] = (x.dual()).clone();
-      }
-      firstReset_ = false;
-    }
-    for ( unsigned p = 0; p < order_.size(); p++ ) {
-      pg0_[p]->zero(); pg_[p]->zero(); phv_[p]->zero();
-      pval_[p] = 0.0; pgv_[p] = 0.0;
-    }
+    reset(x0,x);
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
+           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
   }
   
   void update(const Real val, const Real weight) {

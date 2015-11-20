@@ -53,6 +53,8 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_EqualityConstraint.hpp"
 
+#include "ROL_OptimizationProblem.hpp"
+
 /** \class ROL::Algorithm
     \brief Provides an interface to run optimization algorithms.
 */
@@ -354,6 +356,36 @@ public:
       }
     }
     return output;
+  }
+
+  /** \brief Run algorithm using a ROL::OptimizationProblem.
+  */
+  virtual std::vector<std::string> run( OptimizationProblem<Real> &opt,
+                                        bool                     print = false,
+                                        std::ostream             &outStream = std::cout ) {
+    // Get components of optimization problem
+    Teuchos::RCP<Objective<Real> >          obj = opt.getObjective();
+    Teuchos::RCP<Vector<Real> >             x   = opt.getSolutionVector();
+    Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    Teuchos::RCP<EqualityConstraint<Real> > con = opt.getEqualityConstraint();
+    Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    // Call appropriate run function
+    if ( con == Teuchos::null ) {
+      if ( bnd == Teuchos::null ) {
+        return run(*x,*obj,print,outStream);
+      }
+      else {
+        return run(*x,*obj,*bnd,print,outStream);
+      }
+    }
+    else {
+      if ( bnd == Teuchos::null ) {
+        return run(*x,*l,*obj,*con,print,outStream);
+      }
+      else {
+        return run(*x,*l,*obj,*con,*bnd,print,outStream);
+      }
+    }
   }
 
   std::string getIterHeader(void) {

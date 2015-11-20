@@ -77,7 +77,7 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
-      <Parameter name="Safeguard Size"                       type="double" value="1.e8"         />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -110,7 +110,7 @@
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
+      <Parameter name="Initial Penalty Parameter"               type="double" value="1.e3"         />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="100.0"        />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
       <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
@@ -124,7 +124,7 @@
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="200"         />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="200"          />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
@@ -168,4 +168,133 @@
     <Parameter name="Step Tolerance"       type="double" value="1.e-12" />
     <Parameter name="Iteration Limit"      type="int"    value="100"    />
   </ParameterList>
+
+  <!-- ===========  STOCHASTIC OPTIMIZATION LIBRARY SUBLIST  =========== -->
+  <ParameterList name="SOL">
+    <Parameter name = "Stochastic Optimization Type"     type="string" value="Risk Neutral" />
+    <Parameter name = "Store Sampled Value and Gradient" type="bool"   value="true"         />
+
+    <ParameterList name="BPOE">
+      <Parameter name="Moment Order" type="double" value="2.0" />
+      <Parameter name="Threshold"    type="double" value="1.0" />
+    </ParameterList>
+
+    <ParameterList name="Risk Measure">
+      <Parameter name="Name" type="string" value="CVaR" />
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="CVaR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  HMCR SUBLIST  =========== -->
+      <ParameterList name="HMCR">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        <Parameter name="Order"                        type="int"    value="2"     />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Dirac" />
+          <ParameterList name="Dirac">
+            <Parameter name="Location" type="double" value="0.0" />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  MEAN PLUS DEVIATION FROM TARGET SUBLIST  =========== -->
+      <ParameterList name="Mean Plus Deviation From Target">
+        <Parameter name="Targets"                      type="string" value="{ -0.1, -0.1 }" />
+        <Parameter name="Orders"                       type="string" value="{ 2.0, 4.0 }"   />
+        <Parameter name="Coefficients"                 type="string" value="{ 0.1, 0.1 }"   />
+        <Parameter name="Deviation Type"               type="string" value="Absolute"       />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2"          />
+        <Parameter name="Absolute Value Approximation" type="string" value="C2"             />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  MEAN PLUS DEVIATION SUBLIST  =========== -->
+      <ParameterList name="Mean Plus Deviation">
+        <Parameter name="Orders"                       type="string" value="{ 2.0, 4.0 }"   />
+        <Parameter name="Coefficients"                 type="string" value="{ 0.1, 0.1 }"   />
+        <Parameter name="Deviation Type"               type="string" value="Absolute"       />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2"          />
+        <Parameter name="Absolute Value Approximation" type="string" value="C2"             />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  MEAN PLUS VARIANCE FROM TARGET SUBLIST  =========== -->
+      <ParameterList name="Mean Plus Variance From Target">
+        <Parameter name="Targets"                      type="string" value="{ -0.1, -0.1 }" />
+        <Parameter name="Orders"                       type="string" value="{ 2.0, 4.0 }"   />
+        <Parameter name="Coefficients"                 type="string" value="{ 0.1, 0.1 }"   />
+        <Parameter name="Deviation Type"               type="string" value="Absolute"       />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2"          />
+        <Parameter name="Absolute Value Approximation" type="string" value="C2"             />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  MEAN PLUS VARIANCE SUBLIST  =========== -->
+      <ParameterList name="Mean Plus Variance">
+        <Parameter name="Orders"                       type="string" value="{ 2.0, 4.0 }"   />
+        <Parameter name="Coefficients"                 type="string" value="{ 0.1, 0.1 }"   />
+        <Parameter name="Deviation Type"               type="string" value="Absolute"       />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2"          />
+        <Parameter name="Absolute Value Approximation" type="string" value="C2"             />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  QUANTILE-BASED QUADRANGLE SUBLIST  =========== -->
+      <ParameterList name="Quantile-Based Quadrangle">
+        <Parameter name="Confidence Level"             type="double" value="0.8"   />
+        <Parameter name="Smoothing Parameter"          type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="0.0" />
+            <Parameter name="Upper Bound" type="double" value="1.0" />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  TRUNCATED MEAN QUADRANGLE SUBLIST  =========== -->
+      <ParameterList name="Truncated Mean Quadrangle">
+        <Parameter name="Threshold" type="double" value="1.e-2" />
+      </ParameterList>
+
+    </ParameterList>
+
+  </ParameterList>
+
 </ParameterList>

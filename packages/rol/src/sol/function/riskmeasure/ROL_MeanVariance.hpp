@@ -46,6 +46,11 @@
 
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_PositiveFunction.hpp"
+#include "ROL_PlusFunction.hpp"
+#include "ROL_AbsoluteValue.hpp"
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace ROL {
 
@@ -85,6 +90,31 @@ public:
       coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
     }
   }
+  MeanVariance( Teuchos::ParameterList &parlist ) : RiskMeasure<Real>() {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance");
+    // Get data from parameter list
+    Teuchos::Array<Real> order
+      = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    Teuchos::Array<Real> coeff
+      = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
+    // Check inputs
+    order_.clear(); coeff_.clear();
+    if ( order.size() != coeff.size() ) {
+      coeff.resize(order.size(),1.0);
+    }
+    for ( unsigned i = 0; i < order.size(); i++ ) {
+      order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
+      coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
+    }
+    // Build (approximate) positive function
+    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+      positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+    }
+    else {
+      positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
+    }
+  }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
@@ -97,12 +127,9 @@ public:
     
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::reset(x0,x,v0,v);
-    value_storage_.clear();
-    gradient_storage_.clear();
-    gradvec_storage_.clear();
-    hessvec_storage_.clear();
-    weights_.clear();
+    reset(x0,x);
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
+           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
   } 
   
   void update(const Real val, const Real weight) {

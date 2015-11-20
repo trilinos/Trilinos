@@ -125,6 +125,9 @@ namespace ROL {
    */ 
   static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
 
+  static const double ROL_INF  = 0.1*ROL_OVERFLOW;
+  static const double ROL_NINF = -ROL_INF;
+
   /** \brief  Platform-dependent minimum double.
    */ 
   static const double ROL_UNDERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmin());
