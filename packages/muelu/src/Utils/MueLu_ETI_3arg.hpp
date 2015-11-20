@@ -1,28 +1,38 @@
 #ifndef MUELU_ETI_3ARGUMENT_HPP
 #define MUELU_ETI_3ARGUMENT_HPP
 
-#if defined(HAVE_MUELU_EPETRA)  && !defined(HAVE_MUELU_TPETRA)
-  MUELU_ETI_GROUP(int,int,Kokkos::Serial);
-#endif
+// The macro "MUELU_ETI_GROUP" must be defined prior to including this file.
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
+// We need to define these typedefs as it is not possible to properly expand
+// macros with colons in them
+#ifndef HAVE_MUELU_TPETRA
+# define TPETRA_ETI_MANGLING_TYPEDEFS()  \
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Kokkos_Compat_KokkosSerialWrapperNode; \
+  typedef long long longlong;
+#else
 # include <TpetraCore_config.h>
 # include <TpetraCore_ETIHelperMacros.h>
+#endif
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-  TPETRA_INSTANTIATE_LGN(MUELU_ETI_GROUP) 
+// Define some typedefs
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+// Epetra = on, Tpetra = off
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_TPETRA)
+  MUELU_ETI_GROUP(int,int,Kokkos_Compat_KokkosSerialWrapperNode)
+#endif
+
+// Epetra = on, Tpetra = on
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
+  TPETRA_INSTANTIATE_LGN(MUELU_ETI_GROUP)
 #if !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)
-    MUELU_ETI_GROUP(int,int,Kokkos::Serial);
+  MUELU_ETI_GROUP(int,int,Kokkos_Compat_KokkosSerialWrapperNode)
 # endif
 
 #endif
 
+// Epetra = off, Tpetra = on
 #if !defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
-# include <TpetraCore_config.h>
-# include <TpetraCore_ETIHelperMacros.h>
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
   TPETRA_INSTANTIATE_LGN(MUELU_ETI_GROUP)
 #endif
 
