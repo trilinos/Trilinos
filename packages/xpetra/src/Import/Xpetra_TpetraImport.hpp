@@ -162,7 +162,7 @@ namespace Xpetra {
 
 #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
   template <class Node>
-  class TpetraImport<Node> : public Import<int, int, Node>
+  class TpetraImport<int, int, Node> : public Import<int, int, Node>
   {
 
   public:

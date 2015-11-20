@@ -163,7 +163,7 @@ namespace Xpetra {
 
 #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
   template <class Node>
-  class TpetraExport<Node> : public Export<int, int, Node>
+  class TpetraExport<int, int, Node> : public Export<int, int, Node>
   {
 
   public:
