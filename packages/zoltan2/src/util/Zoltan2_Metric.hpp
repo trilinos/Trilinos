@@ -1236,6 +1236,8 @@ template <typename Adapter>
     multiCriteriaNorm mcNorm,
     const RCP<const Adapter> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
+    const ArrayRCP<const StridedData<typename Adapter::lno_t,
+                                     typename Adapter::scalar_t> > vWeights,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
