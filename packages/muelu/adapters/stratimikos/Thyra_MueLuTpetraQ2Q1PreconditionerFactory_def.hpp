@@ -274,37 +274,36 @@ namespace Thyra {
   {
     using Teuchos::null;
 
-    typedef Tpetra::CrsMatrix           <SC,int,int>  TP_Crs;
-    typedef Tpetra::Operator            <SC,int,int>  TP_Op;
+    typedef Tpetra::CrsMatrix           <SC,LO,GO,NO> TP_Crs;
+    typedef Tpetra::Operator            <SC,LO,GO,NO> TP_Op;
 
     typedef Xpetra::BlockedCrsMatrix    <SC,LO,GO,NO> BlockedCrsMatrix;
     typedef Xpetra::CrsMatrix           <SC,LO,GO,NO> CrsMatrix;
     typedef Xpetra::CrsMatrixWrap       <SC,LO,GO,NO> CrsMatrixWrap;
     typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
     typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
-    typedef Xpetra::Map                 <LO,GO,NO>    Map;
+    typedef Xpetra::Map                    <LO,GO,NO> Map;
     typedef Xpetra::MapExtractor        <SC,LO,GO,NO> MapExtractor;
     typedef Xpetra::MapExtractorFactory <SC,LO,GO,NO> MapExtractorFactory;
-    typedef Xpetra::MapFactory          <LO,GO,NO>    MapFactory;
+    typedef Xpetra::MapFactory             <LO,GO,NO> MapFactory;
     typedef Xpetra::Matrix              <SC,LO,GO,NO> Matrix;
     typedef Xpetra::MatrixFactory       <SC,LO,GO,NO> MatrixFactory;
-    typedef Xpetra::StridedMapFactory   <LO,GO,NO>    StridedMapFactory;
+    typedef Xpetra::StridedMapFactory      <LO,GO,NO> StridedMapFactory;
 
     typedef MueLu::Hierarchy            <SC,LO,GO,NO> Hierarchy;
-    typedef MueLu::Utilities            <SC,LO,GO,NO> Utils;
 
     const RCP<const Teuchos::Comm<int> > comm = velCoords->getMap()->getComm();
 
     // Pull out Tpetra matrices
-    RCP<Thyra::LinearOpBase<double> > ThNonConstA11     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11);
-    RCP<Thyra::LinearOpBase<double> > ThNonConstA21     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA21);
-    RCP<Thyra::LinearOpBase<double> > ThNonConstA12     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA12);
-    RCP<Thyra::LinearOpBase<double> > ThNonConstA11_9Pt = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11_9Pt);
+    RCP<Thyra::LinearOpBase<SC> > ThNonConstA11     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11);
+    RCP<Thyra::LinearOpBase<SC> > ThNonConstA21     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA21);
+    RCP<Thyra::LinearOpBase<SC> > ThNonConstA12     = rcp_const_cast<Thyra::LinearOpBase<double> >(thA12);
+    RCP<Thyra::LinearOpBase<SC> > ThNonConstA11_9Pt = rcp_const_cast<Thyra::LinearOpBase<double> >(thA11_9Pt);
 
-    RCP<TP_Op>  TpetA11     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA11);
-    RCP<TP_Op>  TpetA21     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA21);
-    RCP<TP_Op>  TpetA12     = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA12);
-    RCP<TP_Op>  TpetA11_9Pt = Thyra::TpetraOperatorVectorExtraction<SC,int>::getTpetraOperator(ThNonConstA11_9Pt);
+    RCP<TP_Op>  TpetA11     = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraOperator(ThNonConstA11);
+    RCP<TP_Op>  TpetA21     = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraOperator(ThNonConstA21);
+    RCP<TP_Op>  TpetA12     = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraOperator(ThNonConstA12);
+    RCP<TP_Op>  TpetA11_9Pt = Thyra::TpetraOperatorVectorExtraction<SC,LO,GO,NO>::getTpetraOperator(ThNonConstA11_9Pt);
 
     RCP<TP_Crs> TpetCrsA11      = rcp_dynamic_cast<TP_Crs>(TpetA11);
     RCP<TP_Crs> TpetCrsA21      = rcp_dynamic_cast<TP_Crs>(TpetA21);
