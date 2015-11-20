@@ -43,13 +43,23 @@ repos cloned under it:
       .git/
 
 The gitdist command is run in the base git repo 'BaseRepo' which runs the git
-command in the base repo as the git repos 'ExtraRepo1' and 'ExtraRepo2'.
+command in the base repo as the git repos 'ExtraRepo1' and 'ExtraRepo2'.  For
+example, running:
+
+  $ gitdist status
+
+in 'BaseRepo/' produces the equivalent commands:
+
+  $ git status
+  $ cd ExtraRepo1/ ; git status ; ../
+  $ cd ExtraRepo2/ ; git status ; ../
 
 The gitdist tool allows managing a set of git repos like one big continuously
-integrated git repo.  For example, after cloning a set of git repos like shown
-above, one can perform basic operations like for single git repos like for
-example, creating a new release branch and pushing it:
+integrated git repo.  For example, after cloning a set of git repos like the
+structure shown above, one can perform basic operations like for single git
+repos like, for example, creating a new release branch and pushing it:
 
+  $ gitdist checkout master
   $ gitdist pull
   $ gitdist checkout -b release-2.3
   $ gitdist push origin -u release 2.3
@@ -65,19 +75,18 @@ The set of repos processed by gitdist is determined by the argument
 exist, then the list of extra repos will be read from the file
 '.gitdist.default' in the current working directory.  The format of this files
 '.gitdist' and '.gitdist.default' is to have one repo directory/name per line
-as in:
+as in the 'BaseRepo' example:
 
   ExtraRepo1
   ExtraRepo2
-  ...
 
 where each repo is the relative path to the repo under the base git repo
 (e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
 to the base git repo so that gitdist is ready to use right away after the
 extra repos are cloned (see the tool clone_extra_repos.py for example).
 
-If an extra repository directory listed in the .gitdist file (or specified
-using --dist-extra-repos) does not exist, then it will be ignored by the
+If a specified extra repository directory (i.e. listed --dist-extra-repos,
+.gitdist, or .gitdist.default) does not exist, then it will be ignored by the
 script.  Therefore, be careful to manually verify that the script recognizes
 the repositories that you list.  The best way to do that is to run 'gitdist
 dist-repo-status' and see which repos are listed.
@@ -88,18 +97,21 @@ python 2.4 packages so it can be copied to anywhere and used.
 TIPS:
 
  - To see the status of all repos in a compact way, use the special
-   'dist-repo-status' command (see below).
+   'dist-repo-status' command (see below and the 'gitdist-status' alias
+   below).
 
  - To process only repos that are changed w.r.t. their tracking branch, run
    'gitdist --dist-mod-only [git arguments]'.  For example, to see the status
-   of only changed repos use 'gitdist --dist-mod-only status'.
+   of only changed repos use 'gitdist --dist-mod-only status' (see the
+   'gitdist-mod' alias below).
 
  - 'gitdist --help' will run gitdist help, not git help.  If you want raw git
    help, run 'git --help'.
 
  - By default, gitdist will use 'git' in the environment.  If it can't find
    'git' in the environment, it will require that the user specify the git
-   command to run with --dist-use-git=<git command>.
+   command to run with --dist-use-git=<git command> (which is typically only
+   used in automated testing).
 
  - Pass in --dist-not-base-repo and/or
    --dist-not-extra-repos=RepoX,RepoZ,... to exclude the processing of either
@@ -108,7 +120,8 @@ TIPS:
 SUMMARY OF REPO STATUS:
 
 This script supports the special command 'dist-repo-status' which prints a
-table showing the current status of all the repos.  For the repos shown above:
+table showing the current status of all the repos (see alias 'gitdist-status'
+below).  For the example set of repos shown above, running:
 
   $ gitdist dist-repo-status
 
@@ -126,7 +139,7 @@ If the option --dist-legend is passed in, it will print the legend:
 
 """+distRepoStatusLegend+\
 r"""
-One can also show the status of only changed repos with:
+One can also show the status of only changed repos with the command:
 
   $ gitdist dist-repo-status --dist-mod-only
 
@@ -139,10 +152,14 @@ which prints a table like:
   |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
   ----------------------------------------------------------------
 
+(se the alias 'gitdist-mod-status' below).
+
 Note the base repo was left out but the repo indexes are the same.  This
 allows one to effectively show the status of changes in multiple repos even
 when there are many git repos by filtering out rows for repos that have no
-changes w.r.t. their tracking branches.
+changes w.r.t. their tracking branches.  This allows one to get the status on
+a few repos with changes out of a large number of repos (i.e. 10s to 100s of
+repos).
 
 REPO VERSION FILES:
 
@@ -190,9 +207,9 @@ use:
   $ gitdist fetch origin
   $ gitdist --dist-version-file=RepoVersion.<date>.txt checkout _VERSION_
 
-The '_VERSION_' string will be replaced with the SHA1 for each of the repos.
-(NOTE: this puts one on a detached head state for all the repos you one has to
-know what that means.)
+The '_VERSION_' string will be replaced with the SHA1 for each of the repos
+listed in the file RepoVersion.<date>.txt.  (NOTE: this puts the repos into a
+detached head state so one has to know what that means.)
 
 To tag a set of repos using a consistent set of versions, use, for example:
 
@@ -213,7 +230,7 @@ To diff two sets of versions of the repos, for example, use:
 Here, _VERSION_ is replaced by the SHA1s listed in RepoVersion.<new-date>.txt
 and _VERSION2_ is replaced by the SHA1s listed in RepoVersion.<old-date>.txt.
 
-One can construct any git commit taking one or two different repo version
+One can construct any git command taking one or two different repo version
 arguments (SHA1s) using this approach.
 
 Note that the set of repos listed in the RepoVersion.txt file must be a
@@ -223,7 +240,7 @@ in the RepVersion.txt file one can exclude them with:
 
   $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
     --dist-version-file=RepoVersion.txt \
-   [other arguments]
+    [other arguments]
 
 USEFUL ALIASES:
 
@@ -233,7 +250,7 @@ A few very useful Linux/Unix aliases are:
   $ alias gitdist-mod="gitdist --dist-mod-only"
   $ alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
 
-This avoids lot of typing as these arguments are used a lot when working with
+This avoids lots of extra typing as these arguments are used a lot when working with
 many git repos.  For example, to see the status table of all your repos, do:
 
   $ gitdist-status

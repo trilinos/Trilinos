@@ -45,20 +45,21 @@ int main (int argc, char ** argv){
 
   KernelHandle kkh;
 
-  kkh.set_row_map(kok_xadj);
-  kkh.set_entries(kok_adj);
+  //kkh.set_row_map(kok_xadj);
+  //kkh.set_entries(kok_adj);
+
   //kkh.set_values();
 
   kkh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_EB);
 
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
   std::cout << "EB    " <<
       "Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
       "Num colors:" << kkh.get_graph_coloring_handle()->get_num_colors() << " "
       "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
 
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
   std::cout << "EBS   " <<
       "Time:" << kkh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
@@ -69,7 +70,7 @@ int main (int argc, char ** argv){
 
   kkh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_SERIAL);
 
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
 
   std::cout << "SEQ   " <<
@@ -81,7 +82,7 @@ int main (int argc, char ** argv){
 
   kkh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_VB);
 
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
 
   std::cout << "VB    " <<
@@ -93,7 +94,7 @@ int main (int argc, char ** argv){
 
   kkh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_VBBIT);
   //kkh.get_graph_coloring_handle()->set_tictoc(true);
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
 
   std::cout << "VBBIT " <<
@@ -104,7 +105,7 @@ int main (int argc, char ** argv){
 
   kkh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_VBCS);
   //kkh.get_graph_coloring_handle()->set_tictoc(true);
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
 
   std::cout << "VBCS  " <<
@@ -113,7 +114,7 @@ int main (int argc, char ** argv){
       "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
 
 
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kkh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kkh, kok_xadj, kok_adj);
 
 
   std::cout << "VBCSS " <<

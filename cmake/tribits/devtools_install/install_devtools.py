@@ -59,7 +59,7 @@ sourceGitUrlBase_default = "https://github.com/tribitsdevtools/"
 
 # tool default versions
 autoconf_version_default = "2.69"
-cmake_version_default = "2.8.11"
+cmake_version_default = "3.4.0"
 git_version_default = "1.7.0.4"
 gcc_version_default = "4.8.3"
 mpich_version_default = "3.1.3"

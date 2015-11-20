@@ -257,10 +257,10 @@ void pcgsolve( //const ImportType & import,
             )
 {
   typedef typename KernelHandle::HandleExecSpace Space;
-  typedef typename KernelHandle::value_type MScalar;
+  //typedef typename KernelHandle::value_type MScalar;
   typedef typename KernelHandle::value_type VScalar;
-  typedef typename KernelHandle::idx Idx_Type;
-  typedef typename KernelHandle::idx_array_type idx_array_type;
+  //typedef typename KernelHandle::idx Idx_Type;
+  //typedef typename KernelHandle::idx_array_type idx_array_type;
   typedef typename Kokkos::View< VScalar * , Space >  VectorType ;
 
   //const size_t count_owned = import.count_owned ;
@@ -318,14 +318,14 @@ void pcgsolve( //const ImportType & import,
     }
     //gsHandler = kh.get_gs_handle();
     timer.reset();
-    Experimental::KokkosKernels::Graph::init_gauss_seidel_solve<KernelHandle>(&kh);
+    Experimental::KokkosKernels::Graph::gauss_seidel_numeric<KernelHandle>(&kh, A.graph.row_map, A.graph.entries, A.coeff);
     Space::fence();
     precond_init_time += timer.seconds();
 
     z = VectorType( "pcg::z" , count_owned );
     Space::fence();
     timer.reset();
-    Experimental::KokkosKernels::Graph::apply_gauss_seidel_solve<KernelHandle> (&kh, z, r, true, apply_count);
+    Experimental::KokkosKernels::Graph::gauss_seidel_apply<KernelHandle> (&kh, z, r, true, apply_count);
     Space::fence();
     precond_time += timer.seconds();
     //double precond_old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , z ) , import.comm );
@@ -381,7 +381,7 @@ void pcgsolve( //const ImportType & import,
     if (use_sgs){
       Space::fence();
       timer.reset();
-      Experimental::KokkosKernels::Graph::apply_gauss_seidel_solve<KernelHandle> (&kh, z, r, true, apply_count);
+      Experimental::KokkosKernels::Graph::gauss_seidel_apply<KernelHandle> (&kh, z, r, true, apply_count);
 
       Space::fence();
       precond_time += timer.seconds();

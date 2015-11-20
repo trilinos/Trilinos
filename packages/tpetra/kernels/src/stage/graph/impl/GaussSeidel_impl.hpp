@@ -70,6 +70,9 @@ public:
 
 private:
   HandleType *handle;
+  idx_array_type row_map;
+  idx_edge_array_type entries;
+  value_array_type values;
 
 public:
 
@@ -185,7 +188,25 @@ public:
    */
 
   GaussSeidel(HandleType *handle_):
-              handle(handle_){}
+              handle(handle_), row_map(), entries(), values(){}
+
+  GaussSeidel(HandleType *handle_,
+      idx_array_type row_map,
+      idx_edge_array_type entries,
+      value_array_type values):
+        handle(handle_), row_map(row_map), entries(entries), values(values){}
+
+
+  GaussSeidel(HandleType *handle_,
+      idx_array_type row_map,
+      idx_edge_array_type entries):
+        handle(handle_),
+        row_map(row_map),
+        entries(entries),
+        values(){}
+
+
+
 
 
 
@@ -199,22 +220,24 @@ public:
       gchandle = this->handle->get_graph_coloring_handle();
     }
 
+    idx_array_type xadj = this->row_map;
+    idx_edge_array_type adj = this->entries;
+    idx nr = xadj.dimension_0() - 1;
+    idx nnz = adj.dimension_0();
+
+
     Experimental::KokkosKernels::Graph::graph_color_symbolic
-        <HandleType> (this->handle);
+        <HandleType> (this->handle, xadj , adj);
 
 
     idx numColors = gchandle->get_num_colors();
     typename HandleType::GraphColoringHandleType::color_array_type colors =  gchandle->get_vertex_colors();
 
     idx_array_type color_xadj;
-    idx nr = this->handle->get_num_rows();
-    idx nnz = this->handle->get_num_nonzeroes();
 
     idx_persistent_work_array_type color_adj;
 
-    idx_array_type xadj = this->handle->get_row_map();
-    idx_edge_array_type adj = this->handle->get_entries();
-    value_array_type adj_vals = this->handle->get_values();
+
 
     Experimental::KokkosKernels::Util::create_reverse_map
       <typename HandleType::GraphColoringHandleType::color_array_type, idx_array_type, MyExecSpace>
@@ -247,17 +270,17 @@ public:
     Experimental::KokkosKernels::Util::inclusive_parallel_prefix_sum
         <idx_array_type, MyExecSpace>(nr + 1, permuted_xadj);
 
-    value_persistent_work_array_type newvals_ ("newvals_", nnz );
+    //value_persistent_work_array_type newvals_ ("newvals_", nnz );
 
     Kokkos::parallel_for( my_exec_space(0,nr),
         fill_matrix_symbolic(
             color_adj,
             xadj,
             adj,
-            adj_vals,
+            //adj_vals,
             permuted_xadj,
             permuted_adj,
-            newvals_,
+            //newvals_,
             old_to_new_map));
 
 
@@ -267,7 +290,7 @@ public:
     gsHandler->set_num_colors(numColors);
     gsHandler->set_new_xadj(permuted_xadj);
     gsHandler->set_new_adj(permuted_adj);
-    gsHandler->set_new_adj_val(newvals_);
+    //gsHandler->set_new_adj_val(newvals_);
     gsHandler->set_old_to_new_map(old_to_new_map);
     if (this->handle->get_gs_handle()->is_owner_of_coloring()){
       this->handle->destroy_graph_coloring_handle();
@@ -302,22 +325,23 @@ public:
     idx_persistent_work_array_type color_adj;
     idx_array_type oldxadj;
     idx_edge_array_type oldadj;
-    value_array_type oldadjvals;
+    //value_array_type oldadjvals;
     idx_persistent_work_array_type newxadj;
     idx_persistent_work_array_type newadj;
-    value_persistent_work_array_type newadjvals;
+    //value_persistent_work_array_type newadjvals;
     idx_persistent_work_array_type old_to_new_index;
     fill_matrix_symbolic(
         idx_persistent_work_array_type color_adj_,
         idx_array_type oldxadj_,
         idx_edge_array_type oldadj_,
-        value_array_type oldadjvals_,
+        //value_array_type oldadjvals_,
         idx_persistent_work_array_type newxadj_,
         idx_persistent_work_array_type newadj_,
-        value_persistent_work_array_type newadjvals_,
+        //value_persistent_work_array_type newadjvals_,
         idx_persistent_work_array_type old_to_new_index_):
-          color_adj(color_adj_), oldxadj(oldxadj_), oldadj(oldadj_), oldadjvals(oldadjvals_),
-          newxadj(newxadj_), newadj(newadj_), newadjvals(newadjvals_), old_to_new_index(old_to_new_index_){}
+          color_adj(color_adj_), oldxadj(oldxadj_), oldadj(oldadj_), //oldadjvals(oldadjvals_),
+          newxadj(newxadj_), newadj(newadj_), //newadjvals(newadjvals_),
+          old_to_new_index(old_to_new_index_){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const idx &i) const{
@@ -327,8 +351,8 @@ public:
       idx old_xadj_end = oldxadj[index + 1];
       for (idx j = oldxadj[index]; j < old_xadj_end; ++j){
         idx neighbor = oldadj[j];
-        newadj[xadj_begin] = old_to_new_index[neighbor];
-        newadjvals[xadj_begin++] = oldadjvals[j];
+        newadj[xadj_begin++] = old_to_new_index[neighbor];
+        //newadjvals[xadj_begin++] = oldadjvals[j];
       }
     }
   };
@@ -366,16 +390,19 @@ public:
     if (this->handle->get_gs_handle()->is_symbolic_called() == false){
       this->initialize_symbolic();
     }
-    else {
+    //else
+    {
 
-      idx_array_type xadj = this->handle->get_row_map();
-      idx_edge_array_type adj = this->handle->get_entries();
-      value_array_type adj_vals = this->handle->get_values();
+
+      idx_array_type xadj = this->row_map;
+      idx_edge_array_type adj = this->entries;
+      idx nr = xadj.dimension_0() - 1;
+      idx nnz = adj.dimension_0();
+      value_array_type adj_vals = this->values;
+
       typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
 
 
-      idx nr = this->handle->get_num_rows();
-      idx nnz = this->handle->get_num_nonzeroes();
 
       idx_persistent_work_array_type newxadj_ = gsHandler->get_new_xadj();
       idx_persistent_work_array_type old_to_new_map = gsHandler->get_old_to_new_map();
@@ -388,20 +415,16 @@ public:
           fill_matrix_numeric(
               color_adj,
               xadj,
-              adj,
+              //adj,
               adj_vals,
               newxadj_,
-              newadj_,
-              permuted_adj_vals,
-              old_to_new_map));
+              //newadj_,
+              permuted_adj_vals
+              //,old_to_new_map
+              ));
       gsHandler->set_new_adj_val(permuted_adj_vals);
-      this->handle->get_gs_handle()->set_call_symbolic(true);
-    }
-  }
+      this->handle->get_gs_handle()->set_call_numeric(true);
 
-  void initialize_solve(){
-    if (this->handle->get_gs_handle()->is_symbolic_called() == false){
-      this->initialize_symbolic();
     }
   }
 
@@ -410,6 +433,9 @@ public:
       value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false,
       int numIter = 1){
+    if (this->handle->get_gs_handle()->is_numeric_called() == false){
+      this->initialize_numeric();
+    }
 
     typename HandleType::GaussSeidelHandleType *gsHandler = this->handle->get_gs_handle();
     value_persistent_work_array_type Permuted_Yvector = gsHandler->get_permuted_y_vector();
@@ -421,9 +447,9 @@ public:
     idx_persistent_work_array_type newadj_ = gsHandler->get_new_adj();
     idx_persistent_work_array_type color_adj = gsHandler->get_color_adj();
 
-    idx nr = this->handle->get_num_rows();
-    idx nnz = this->handle->get_num_nonzeroes();
     idx numColors = gsHandler->get_num_colors();
+    idx nr = x_lhs_output_vec.dimension_0();
+
 
     //Kokkos::parallel_for( my_exec_space(0,nr), PermuteVector(y_rhs_input_vec, Permuted_Yvector, old_to_new_map));
     Experimental::KokkosKernels::Util::permute_vector

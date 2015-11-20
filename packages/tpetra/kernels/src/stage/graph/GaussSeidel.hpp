@@ -7,27 +7,29 @@ namespace Experimental{
 
 namespace KokkosKernels{
 namespace Graph{
+
   template <class KernelHandle>
-  void init_gauss_seidel_symbolic(KernelHandle *handle){
+  void gauss_seidel_symbolic(KernelHandle *handle,
+      typename KernelHandle::idx_array_type row_map,
+      typename KernelHandle::idx_edge_array_type entries){
     typedef typename Experimental::KokkosKernels::Graph::Impl::GaussSeidel<KernelHandle> SGS;
-    SGS sgs(handle);
+    SGS sgs(handle, row_map, entries);
     sgs.initialize_symbolic();
-  }
-  template <class KernelHandle>
-  void init_gauss_seidel_numeric(KernelHandle *handle){
-    typedef typename Experimental::KokkosKernels::Graph::Impl::GaussSeidel<KernelHandle> SGS;
-    SGS sgs(handle);
-    sgs.initialize_numeric();
-  }
-  template <class KernelHandle>
-  void init_gauss_seidel_solve(KernelHandle *handle){
-    typedef typename Experimental::KokkosKernels::Graph::Impl::GaussSeidel<KernelHandle> SGS;
-    SGS sgs(handle);
-    sgs.initialize_solve();
   }
 
   template <class KernelHandle>
-  void apply_gauss_seidel_solve(KernelHandle *handle,
+  void gauss_seidel_numeric(KernelHandle *handle,
+      typename KernelHandle::idx_array_type row_map,
+      typename KernelHandle::idx_edge_array_type entries,
+      typename KernelHandle::value_array_type values
+      ){
+    typedef typename Experimental::KokkosKernels::Graph::Impl::GaussSeidel<KernelHandle> SGS;
+    SGS sgs(handle, row_map, entries, values);
+    sgs.initialize_numeric();
+  }
+
+  template <class KernelHandle>
+  void gauss_seidel_apply(KernelHandle *handle,
       typename KernelHandle::value_array_type &x_lhs_output_vec,
       typename KernelHandle::value_array_type y_rhs_input_vec,
       bool init_zero_x_vector = false,
@@ -39,26 +41,6 @@ namespace Graph{
         y_rhs_input_vec,
         init_zero_x_vector,
         numIter);
-
-  }
-
-  template <class KernelHandle>
-  void apply_gauss_seidel_numeric(KernelHandle *handle,
-      typename KernelHandle::value_array_type &x_lhs_output_vec,
-      typename KernelHandle::value_array_type y_rhs_input_vec,
-      bool init_zero_x_vector = false,
-      int numIter = 1){
-    apply_gauss_seidel_solve(handle, x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, numIter);
-
-  }
-
-  template <class KernelHandle>
-  void apply_gauss_seidel_symbolic(KernelHandle *handle,
-      typename KernelHandle::value_array_type &x_lhs_output_vec,
-      typename KernelHandle::value_array_type y_rhs_input_vec,
-      bool init_zero_x_vector = false,
-      int numIter = 1){
-    apply_gauss_seidel_solve(handle, x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, numIter);
 
   }
 

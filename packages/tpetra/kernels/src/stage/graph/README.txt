@@ -1,4 +1,4 @@
-To enable compilation see Trilinos/packages/tpetra/kernels/CMakeLists.txt, 
+To enable compilation see Trilinos/packages/tpetra/kernels/src/CMakeLists.txt, 
 and remove the commented out portion at the bottom.
 
 The package includes couple graph coloring algorithms, and 
