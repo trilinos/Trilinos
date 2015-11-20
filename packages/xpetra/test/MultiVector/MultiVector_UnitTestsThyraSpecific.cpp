@@ -169,8 +169,8 @@ namespace {
     TEST_EQUALITY( Teuchos::as<Teuchos::Ordinal>(xpMVec->getLocalLength()), localSubDim );
     TEST_EQUALITY( Teuchos::as<LO>(xpMVec->getGlobalLength()), numInd );
 
-    std::vector<scalar_type> norms (numVec, STS::zero() );
-    Teuchos::ArrayView<scalar_type> normsView(norms);
+    std::vector<typename Teuchos::ScalarTraits< scalar_type >::magnitudeType> norms (numVec,STS::magnitude(STS::zero()));
+    Teuchos::ArrayView<typename Teuchos::ScalarTraits< scalar_type >::magnitudeType> normsView(norms);
     xpMVec->norm1(normsView);
     TEST_EQUALITY( normsView[0], numInd );
     TEST_EQUALITY( normsView[1], 2*numInd );
@@ -272,52 +272,34 @@ namespace {
     Teuchos::RCP<mv_type> xpMVec = th_utils_type::toXpetra(thyProdMVec,comm);
     TEUCHOS_TEST_FOR_EXCEPTION(xpMVec == Teuchos::null, std::logic_error, "Downcast of product multivector to multivector failed.");
 
-    std::vector<scalar_type> norms (1, STS::zero() );
-    Teuchos::ArrayView<scalar_type> normsView(norms);
+    std::vector<typename Teuchos::ScalarTraits< scalar_type >::magnitudeType> norms (1, STS::magnitude(STS::zero()));
+    Teuchos::ArrayView<typename Teuchos::ScalarTraits< scalar_type >::magnitudeType> normsView(norms);
     xpMVec->norm1(normsView);
 
-    std::cout << normsView[0] << std::endl;
-    /*TEST_EQUALITY( op(*op_targs[1]), 2*numInd );
+    TEST_EQUALITY( normsView[0], numA + 2*numB );
 
-    // create Xpetra multivector from Thyra multi vector
-    Teuchos::RCP<mv_type> xpMVec = th_utils_type::toXpetra(thMVec,comm);
-    TEUCHOS_TEST_FOR_EXCEPTION(xpMVec == Teuchos::null, std::logic_error, "Failed to convert Thyra::MultiVector to Xpetra::MultiVector.");
-    TEST_EQUALITY( xpMVec->getNumVectors(), numVec );
-    TEST_EQUALITY( xpMVec->getLocalLength(), localSubDim );
-    TEST_EQUALITY( xpMVec->getGlobalLength(), numInd );
-
-    std::vector<scalar_type> norms (numVec, STS::zero() );
-    Teuchos::ArrayView<scalar_type> normsView(norms);
-    xpMVec->norm1(normsView);
-    TEST_EQUALITY( normsView[0], numInd );
-    TEST_EQUALITY( normsView[1], 2*numInd );*/
+    // extract sub-blocks from Thyra multivector
+    Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> > thybA = thyProdAB->getMultiVectorBlock(0);
+    Teuchos::RCP<const Thyra::MultiVectorBase<scalar_type> > thybB = thyProdAB->getMultiVectorBlock(1);
+    Teuchos::RCP<const mv_type> xpbA = th_utils_type::toXpetra(thybA,comm);
+    Teuchos::RCP<const mv_type> xpbB = th_utils_type::toXpetra(thybB,comm);
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbA == Teuchos::null, std::logic_error, "Transformation from Thyra::MultiVector to Xpetra::MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbB == Teuchos::null, std::logic_error, "Transformation from Thyra::MultiVector to Xpetra::MultiVector failed.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbA->getMap()->isSameAs(*mapA)==false,std::logic_error,"Map mismatch.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbB->getMap()->isSameAs(*mapB)==false,std::logic_error,"Map mismatch.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbA->getMap()->getMinAllGlobalIndex()!=0,std::logic_error,"Map inconsistency.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbB->getMap()->getMinAllGlobalIndex()!=0,std::logic_error,"Map inconsistency.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbA->getVector(0)->norm1()!=numA,std::logic_error,"SubVector contains wrong entries.");
+    TEUCHOS_TEST_FOR_EXCEPTION(xpbB->getVector(0)->norm1()!=2*numB,std::logic_error,"SubVector contains wrong entries.");
   }
 
-
-
-/*#ifdef HAVE_XPETRA_TPETRA
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Create, MV, V, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, CreateProductMV, MV, V, ORDINAL, SCALAR, NODE) \
-
-#else
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
-#endif // HAVE_XPETRA_TPETRA
-
-
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT) && defined(HAVE_XPETRA_SERIAL)
-  typedef Xpetra::TpetraMultiVector<double,int,int> MMultiVector;
-  typedef Xpetra::TpetraVector<double,int,int> MVector;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode MNode;
-  UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MMultiVector, MVector, int, double, MNode )
-#endif*/
 
 //
 // INSTANTIATIONS
 //
 #ifdef HAVE_XPETRA_TPETRA
 
-  #define TTT( S, LO, GO, N) \
+  #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
     typedef typename Xpetra::TpetraMultiVector<S,LO,GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::TpetraVector<S,LO,GO,N> V##S##LO##GO##N;       \
@@ -326,7 +308,7 @@ namespace {
 
 #ifdef HAVE_XPETRA_EPETRA
 
-  #define EEE( S, LO, GO, N) \
+  #define XPETRA_EPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
     typedef typename Xpetra::EpetraMultiVectorT<GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::EpetraVectorT<GO,N> V##S##LO##GO##N;       \
@@ -338,24 +320,27 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Create,          M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, CreateProductMV, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
-/*#if defined(HAVE_XPETRA_TPETRA)
-
-#include <TpetraCore_config.h>
-#include <TpetraCore_ETIHelperMacros.h>
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( TTT )
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_THYRAMULTIVECTOR_INSTANT )
-
+#if defined(HAVE_XPETRA_TPETRA)
+  #include <TpetraCore_config.h>
+  #include <TpetraCore_ETIHelperMacros.h>
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_THYRAMULTIVECTOR_INSTANT )
 #endif
 
 
 #if defined(HAVE_XPETRA_EPETRA)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+  #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+  XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
+  XP_THYRAMULTIVECTOR_INSTANT(double,int,int,EpetraNode)
+  #endif
 
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-EEE(double,int,int,EpetraNode)
-XP_THYRAMULTIVECTOR_INSTANT(double,int,int,EpetraNode)
-
-#endif*/
+  // Thyra has support for Epetra only but not for Epetra64
+  //#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+  //EEE(double,int,LongLong,EpetraNode)
+  //XP_THYRAMULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+  //#endif
+#endif
 
 }
