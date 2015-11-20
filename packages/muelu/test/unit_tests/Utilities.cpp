@@ -76,8 +76,8 @@ namespace MueLuTests {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
     //Calculate result = (Op*Op)*X for Epetra
-    int nx = 37*comm->getSize();
-    int ny=nx;
+    GO nx = 37*comm->getSize();
+    GO ny = nx;
     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx,ny,Xpetra::UseEpetra);
     RCP<Matrix> OpOp = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Op,false,*Op,false,out);
     RCP<MultiVector> result = MultiVectorFactory::Build(OpOp->getRangeMap(),1);
