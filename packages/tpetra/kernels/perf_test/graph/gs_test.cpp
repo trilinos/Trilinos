@@ -104,9 +104,9 @@ void run_experiment(
         MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
 
   KernelHandle kh;
-  kh.set_row_map(A.graph.row_map);
-  kh.set_entries(A.graph.entries);
-  kh.set_values(A.coeff);
+  //kh.set_row_map(A.graph.row_map);
+  //kh.set_entries(A.graph.entries);
+  //kh.set_values(A.coeff);
 
   Kokkos::Impl::Timer timer1;
   Experimental::KokkosKernels::Example::pcgsolve(
@@ -136,7 +136,7 @@ void run_experiment(
 
 
   kh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_VB);
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
@@ -166,7 +166,7 @@ void run_experiment(
 
   kh.destroy_graph_coloring_handle();
   kh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_EB);
-  Experimental::KokkosKernels::Graph::graph_color_solve<KernelHandle> (&kh);
+  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();

@@ -135,7 +135,7 @@ bool XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::opSupportedImpl(
 
   if (M_trans == CONJ) {
     // For non-complex scalars, CONJ is always supported since it is equivalent to NO_TRANS.
-    // For complex scalars, Tpetra does not support conjugation without transposition.
+    // For complex scalars, Xpetra does not support conjugation without transposition.
     return !Teuchos::ScalarTraits<Scalar>::isComplex;
   }
 
@@ -221,7 +221,6 @@ void XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
   TEUCHOS_ASSERT(nonnull(rangeSpace));
   TEUCHOS_ASSERT(nonnull(domainSpace));
   TEUCHOS_ASSERT(nonnull(xpetraOperator));
-  // ToDo: Assert that spaces are comparible with tpetraOperator
 #endif
   rangeSpace_ = rangeSpace;
   domainSpace_ = domainSpace;

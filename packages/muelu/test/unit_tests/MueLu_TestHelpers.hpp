@@ -314,7 +314,7 @@ namespace MueLuTests {
       // Create a 2D Poisson matrix with the specified number of rows
       // nx: global number of rows
       // ny: global number of rows
-      static RCP<Matrix> Build2DPoisson(GO nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
+      static RCP<Matrix> Build2DPoisson(GO nx, GO ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
         Teuchos::ParameterList matrixList;
         if (ny==-1) ny=nx;
         matrixList.set("nx", nx);

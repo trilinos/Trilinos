@@ -66,6 +66,7 @@ private:
   idx_persistent_work_array_type old_to_new_map;
 
   bool called_symbolic;
+  bool called_numeric;
 
 
   value_persistent_work_array_type permuted_y_vector;
@@ -83,7 +84,7 @@ private:
     algorithm_type(gs),
     color_set_xadj(), color_sets(), numColors(0),
     permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
-    called_symbolic(false), permuted_y_vector(), permuted_x_vector(),
+    called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
     suggested_vector_size(0), suggested_team_size(0)
     {
     if (gs == GS_DEFAULT){
@@ -172,12 +173,14 @@ private:
   }
 
   bool is_symbolic_called(){return this->called_symbolic;}
+  bool is_numeric_called(){return this->called_numeric;}
 
   //setters
   void set_algorithm_type(const GSAlgorithm &sgs_algo){this->algorithm_type = sgs_algo;}
   void set_owner_of_coloring(bool owner = true){this->owner_of_coloring = owner;}
 
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
+  void set_call_numeric(bool call = true){this->called_numeric = call;}
 
   void set_color_set_xadj(const host_idx_persistent_view_type &color_set_xadj_) {
     this->color_set_xadj = color_set_xadj_;

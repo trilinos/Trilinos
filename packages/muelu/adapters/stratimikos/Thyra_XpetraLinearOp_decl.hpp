@@ -48,9 +48,6 @@
 #define THYRA_XPETRA_LINEAR_OP_DECL_HPP
 
 #include "Thyra_LinearOpDefaultBase.hpp"
-#include "Thyra_TpetraVectorSpace_decl.hpp"
-//#include "Thyra_ScaledLinearOpBase.hpp"
-//#include "Thyra_RowStatLinearOpBase.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
@@ -62,7 +59,7 @@ namespace Thyra {
  *
  * \todo Move this to Thyra??
  *
- * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
+ * \ingroup Xpetra_Thyra_Op_Vec_adapters_grp
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
   class Node=KokkosClassic::DefaultNode::DefaultNodeType>

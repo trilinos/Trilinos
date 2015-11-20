@@ -3,35 +3,35 @@
 
 // The macro "MUELU_ETI_GROUP" must be defined prior to including this file.
 
-//
-// case 1: Epetra on, Tpetra off
-//
-#if defined(HAVE_MUELU_EPETRA)  && !defined(HAVE_MUELU_TPETRA)
-  MUELU_ETI_GROUP(double,int,int,Kokkos::Serial);
-#endif
-//
-// case 2: Epetra on, Tpetra on
-//
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
+// We need to define these typedefs as it is not possible to properly expand
+// macros with colons in them
+#if !defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)
+# define TPETRA_ETI_MANGLING_TYPEDEFS()  \
+  typedef Kokkos::Compat::KokkosSerialWrapperNode Kokkos_Compat_KokkosSerialWrapperNode;
+#else
 # include <TpetraCore_config.h>
 # include <TpetraCore_ETIHelperMacros.h>
+#endif
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP) 
+// Define some typedefs
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+// Epetra = on, Tpetra = off
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_TPETRA)
+  MUELU_ETI_GROUP(double,int,int,Kokkos_Compat_KokkosSerialWrapperNode)
+#endif
+
+// Epetra = on, Tpetra = on
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP)
 # if !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)
-    MUELU_ETI_GROUP(double,int,int,Kokkos::Serial);
+  MUELU_ETI_GROUP(double,int,int,Kokkos_Compat_KokkosSerialWrapperNode)
 # endif
 
 #endif
-//
-// case 3: Epetra off, Tpetra on
-//
+
+// Epetra = off, Tpetra = on
 #if !defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
-# include <TpetraCore_config.h>
-# include <TpetraCore_ETIHelperMacros.h>
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP)
 #endif
 

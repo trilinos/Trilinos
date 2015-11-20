@@ -111,14 +111,15 @@ INCLUDE(ParseVariableArguments)
 #
 # This function uses the Linux/Unix command::
 #
-#     $ find . -type f -printf '%T@ %p\n'
+#     $ find . -type f -printf '%T@ %p\n' \
 #         | grep -v "<re0>" | grep -v "<re1>" | ... \
 #         | sort -n | tail -1
 #
-# to return the most recent file in each listed directory <dir0>, <dir1>, etc.
-# It then determines the most recently modified file over all of the
-# directories and prints and returns in the variables `<mostRecentTimestamp>`,
-# `<mostRecentFilepathBaseDir>`, and `<mostRecentRelativeFilePath>`.
+# to return the most recent file in each listed directory ``<dir0>``,
+# ``<dir1>``, etc.  It then determines the most recently modified file over
+# all of the directories and prints and returns in the variables
+# ``<mostRecentTimestamp>``, ``<mostRecentFilepathBaseDir>``, and
+# ``<mostRecentRelativeFilePath>``.
 #
 FUNCTION(TRIBITS_FIND_MOST_RECENT_FILE_TIMESTAMP)
 

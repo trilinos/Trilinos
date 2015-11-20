@@ -51,9 +51,9 @@ public:
 private:
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
-  idx_array_type row_map;
-  idx_edge_array_type entries;
-  value_array_type values;
+  //idx_array_type row_map;
+  //idx_edge_array_type entries;
+  //value_array_type values;
 
 public:
 
@@ -99,16 +99,15 @@ public:
   }
 
 
-  idx_array_type get_row_map(){return this->row_map;}
+  //idx_array_type get_row_map(){return this->row_map;}
+  //idx get_num_rows(){return this->row_map.dimension_0() - 1;}
+  //idx get_num_nonzeroes(){return this->entries.dimension_0();}
 
-  idx get_num_rows(){return this->row_map.dimension_0() - 1;}
-  idx get_num_nonzeroes(){return this->entries.dimension_0();}
-
-  idx_edge_array_type get_entries(){return this->entries;}
-  value_array_type get_values(){return this->values;}
-  void set_row_map(const idx_array_type &rm){this->row_map = rm;}
-  void set_entries(const idx_edge_array_type &e){this->entries = e;}
-  void set_values(const value_array_type &v){this->values = v;}
+  //idx_edge_array_type get_entries(){return this->entries;}
+  //value_array_type get_values(){return this->values;}
+  //void set_row_map(const idx_array_type &rm){this->row_map = rm;}
+  //void set_entries(const idx_edge_array_type &e){this->entries = e;}
+  //void set_values(const value_array_type &v){this->values = v;}
 
 
 
