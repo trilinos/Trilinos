@@ -2554,7 +2554,7 @@ namespace {
 //
 #ifdef HAVE_XPETRA_TPETRA
 
-  #define TTT( S, LO, GO, N) \
+  #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
     typedef typename Xpetra::TpetraMultiVector<S,LO,GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::TpetraVector<S,LO,GO,N> V##S##LO##GO##N;       \
@@ -2563,7 +2563,7 @@ namespace {
 
 #ifdef HAVE_XPETRA_EPETRA
 
-  #define EEE( S, LO, GO, N) \
+  #define XPETRA_EPETRA_TYPES( S, LO, GO, N) \
     typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
     typedef typename Xpetra::EpetraMultiVectorT<GO,N> MV##S##LO##GO##N; \
     typedef typename Xpetra::EpetraVectorT<GO,N> V##S##LO##GO##N;       \
@@ -2617,7 +2617,7 @@ namespace {
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 // no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( TTT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MULTIVECTOR_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 
@@ -2627,7 +2627,7 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 #if defined(HAVE_XPETRA_EPETRA)
 
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-EEE(double,int,int,EpetraNode)
+XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 
 #endif
