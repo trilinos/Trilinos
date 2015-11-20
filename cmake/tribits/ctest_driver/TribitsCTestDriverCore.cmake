@@ -120,6 +120,7 @@ SET( CMAKE_MODULE_PATH
   "${TRIBITS_PROJECT_ROOT}/cmake"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support"
   )
 
 INCLUDE(PrintVar)
@@ -129,6 +130,7 @@ INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConstants)
+INCLUDE(TribitsStripCommentsFromCMakeCacheFile)
 
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsUpdateExtraRepo.cmake)
 
@@ -1612,17 +1614,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
         RETURN_VALUE CONFIGURE_RETURN_VAL
         )
 
-      MESSAGE("Generating the file CMakeCache.clean.txt ...")
-      FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-      MESSAGE("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
-      SET(CMAKE_CACHE_CLEAN_FILE_STR "")
-      FOREACH(line ${CACHE_CONTENTS})
-        # write lines that do not start with # or //
-        IF(NOT "${line}" MATCHES "^(#|//)")
-          APPEND_STRING_VAR(CMAKE_CACHE_CLEAN_FILE_STR "${line}\n")
-        ENDIF()
-      ENDFOREACH()
-      FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}" ${CMAKE_CACHE_CLEAN_FILE_STR})
+      MESSAGE("Generating the file '${CMAKE_CACHE_CLEAN_FILE}' ...")
+      TRIBITS_STRIP_COMMENTS_FROM_CMAKE_CACHE_FILE(
+        "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt"
+        "${CMAKE_CACHE_CLEAN_FILE}"
+        )
 
       # If the configure failed, add the package to the list
       # of failed packages
@@ -1733,7 +1729,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
             FILE(REMOVE "${logfile}")
           ENDFOREACH()
           # Run the tests that match the ${TRIBITS_PACKAGE} name
-          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}' ...\n")
+          MESSAGE("\nRunning test for package '${TRIBITS_PACKAGE}'"
+            " (parallel level ${CTEST_PARALLEL_LEVEL}) ...\n")
           CTEST_TEST(
             BUILD "${CTEST_BINARY_DIRECTORY}"
             PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
