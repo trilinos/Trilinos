@@ -219,62 +219,66 @@ public:
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    RiskVector<Real> &gs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(g));
-
     std::vector<Real> val_in(3,0.0), val_out(3,0.0);
     val_in[0] = RiskMeasure<Real>::val_;
     val_in[1] = pnorm_; val_in[2] = dpnorm_;
 
     sampler.sumAll(&val_in[0],&val_out[0],3);
-    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
-    sampler.sumAll(*pHMdualVec0_,*HMdualVec0_);
-
-    Real denom = (1.0-prob_)*std::pow(val_out[1],((Real)order_-1.0)/(Real)order_);
-
-    Real var   = coeff_*(1.0 - val_out[2]/denom);
-
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_); 
     dualVector_->scale(1.0-coeff_);
-    dualVector_->axpy(coeff_/denom,*HMdualVec0_);
+    Real var = coeff_;
 
-    gs.setStatistic(var);
-    gs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_))); 
+    if ( val_in[1] > 0. ) {
+      sampler.sumAll(*pHMdualVec0_,*HMdualVec0_);
+
+      Real denom = (1.0-prob_)*std::pow(val_out[1],((Real)order_-1.0)/(Real)order_);
+
+      var -= coeff_*((denom > 0.) ? val_out[2]/denom : 0.);
+
+      dualVector_->axpy(coeff_/denom,*HMdualVec0_);
+    }
+
+    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setStatistic(var);
+    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector_); 
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    RiskVector<Real> &hs = Teuchos::dyn_cast<RiskVector<Real> >(Teuchos::dyn_cast<Vector<Real> >(hv));
-
     std::vector<Real> val_in(6,0.0), val_out(6,0.0);
-    val_in[0] = RiskMeasure<Real>::val_;
-    val_in[1] = pnorm_;
-    val_in[2] = dpnorm_; val_in[3] = dpnorm1_;
-    val_in[4] = pgv_;    val_in[5] = pgv1_;
+    val_in[0] = RiskMeasure<Real>::val_; val_in[1] = pnorm_;
+    val_in[2] = dpnorm_;                 val_in[3] = dpnorm1_;
+    val_in[4] = pgv_;                    val_in[5] = pgv1_;
 
     sampler.sumAll(&val_in[0],&val_out[0],6);
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
-    sampler.sumAll(*pHMdualVec0_,*HMdualVec0_); // E[pf^{p-1} pf' g]
-    sampler.sumAll(*pHMdualVec1_,*HMdualVec1_); // E[{(p-1) pf^{p-2} pf' pf' + pf^{p-1} pf''} g]
-    sampler.sumAll(*pHMdualVec2_,*HMdualVec2_); // E[pf^{p-1} pf' hv]
-    sampler.sumAll(*pHMdualVec3_,*HMdualVec3_); // E[{(p-1) pf^{p-2} pf' pf' + pf^{p-1} pf''} g gv]
 
-    Real rorder0 = (Real)order_;
-    Real rorder1 = (Real)order_-1.0;
-    Real rorder2 = (Real)(2*order_)-1.0;
-
-    Real denom1 = (1.0-prob_)*std::pow(val_out[1],rorder1/rorder0);
-    Real denom2 = (1.0-prob_)*std::pow(val_out[1],rorder2/rorder0);
-
-    Real var = coeff_*((val_out[3]/denom1 - rorder1*val_out[2]*val_out[2]/denom2)*vvar_
-                      -(val_out[5]/denom1 - rorder1*val_out[4]*val_out[2]/denom2));
-
+    Real var = 0.;
     dualVector_->scale(1.0-coeff_);
-    dualVector_->axpy(coeff_*(-vvar_/denom1),*HMdualVec1_);
-    dualVector_->axpy(coeff_*(vvar_*rorder1*val_out[2]/denom2),*HMdualVec0_);
-    dualVector_->axpy(coeff_/denom1,*HMdualVec3_);
-    dualVector_->axpy(coeff_/denom1,*HMdualVec2_);
-    dualVector_->axpy(coeff_*(-rorder1*val_out[4]/denom2),*HMdualVec0_);
 
-    hs.setStatistic(var);
-    hs.setVector(*(Teuchos::rcp_dynamic_cast<Vector<Real> >(dualVector_))); 
+    if ( val_out[1] > 0. ) {
+      sampler.sumAll(*pHMdualVec0_,*HMdualVec0_); // E[pf^{p-1} pf' g]
+      sampler.sumAll(*pHMdualVec1_,*HMdualVec1_); // E[{(p-1) pf^{p-2} pf' pf' + pf^{p-1} pf''} g]
+      sampler.sumAll(*pHMdualVec2_,*HMdualVec2_); // E[pf^{p-1} pf' hv]
+      sampler.sumAll(*pHMdualVec3_,*HMdualVec3_); // E[{(p-1) pf^{p-2} pf' pf' + pf^{p-1} pf''} g gv]
+
+      Real rorder0 = (Real)order_;
+      Real rorder1 = (Real)order_-1.0;
+      Real rorder2 = (Real)(2*order_)-1.0;
+
+      Real denom1 = (1.0-prob_)*std::pow(val_out[1],rorder1/rorder0);
+      Real denom2 = (1.0-prob_)*std::pow(val_out[1],rorder2/rorder0);
+
+      var = coeff_*((val_out[3]/denom1 - rorder1*val_out[2]*val_out[2]/denom2)*vvar_
+                   -(val_out[5]/denom1 - rorder1*val_out[4]*val_out[2]/denom2));
+
+      dualVector_->axpy(coeff_*(-vvar_/denom1),*HMdualVec1_);
+      dualVector_->axpy(coeff_*(vvar_*rorder1*val_out[2]/denom2),*HMdualVec0_);
+      dualVector_->axpy(coeff_/denom1,*HMdualVec3_);
+      dualVector_->axpy(coeff_/denom1,*HMdualVec2_);
+      dualVector_->axpy(coeff_*(-rorder1*val_out[4]/denom2),*HMdualVec0_);
+    }
+
+    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setStatistic(var);
+    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector_); 
   }
 };
 

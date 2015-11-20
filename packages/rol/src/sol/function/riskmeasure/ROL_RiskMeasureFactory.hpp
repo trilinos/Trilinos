@@ -46,6 +46,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "ROL_Types.hpp"
+
 // Standard Risk Measure Implementations
 #include "ROL_CVaR.hpp"
 #include "ROL_ExpUtility.hpp"
@@ -139,7 +141,7 @@ namespace ROL {
 
   template<class Real>
   inline Teuchos::RCP<RiskMeasure<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
-    std::string dist = parlist.sublist("SOL").sublist("RiskMeasure").get("Name","CVaR");
+    std::string dist = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     ERiskMeasure ed = StringToERiskMeasure(dist);
     switch(ed) {
       case RISKMEASURE_CVAR:                     return Teuchos::rcp(new CVaR<Real>(parlist));

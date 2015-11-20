@@ -52,7 +52,8 @@ template<class Real>
 class ExpUtility : public RiskMeasure<Real> {
 private:
   Teuchos::RCP<Vector<Real> > scaledGradient_;
-  Teuchos::RCP<Vector<Real> > dualVector_;
+  Teuchos::RCP<Vector<Real> > dualVector1_;
+  Teuchos::RCP<Vector<Real> > dualVector2_;
   bool firstReset_;
 
 public:
@@ -62,11 +63,11 @@ public:
     RiskMeasure<Real>::reset(x0,x);
     if ( firstReset_ ) {
       scaledGradient_ = (x0->dual()).clone();
-      dualVector_ = (x0->dual()).clone();
+      dualVector1_ = (x0->dual()).clone();
+      dualVector2_ = (x0->dual()).clone();
       firstReset_ = false;
     }
-    scaledGradient_->zero();
-    dualVector_->zero();
+    scaledGradient_->zero(); dualVector1_->zero(); dualVector2_->zero();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
@@ -103,15 +104,18 @@ public:
     return std::log(ev);
   }
 
-  virtual void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
+  void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     Real val = RiskMeasure<Real>::val_;
     Real ev  = 0.0;
     sampler.sumAll(&val,&ev,1);
-    sampler.sumAll(*(RiskMeasure<Real>::g_),g);
-    g.scale(1.0/ev);
+
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
+    dualVector1_->scale(1.0/ev);
+
+    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector1_);
   }
 
-  virtual void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
+  void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     Real val = RiskMeasure<Real>::val_;
     Real ev  = 0.0;
     sampler.sumAll(&val,&ev,1);
@@ -120,16 +124,17 @@ public:
     Real egv = 0.0;
     sampler.sumAll(&gv,&egv,1);
 
-    sampler.sumAll(*(RiskMeasure<Real>::hv_),hv);
+    sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector1_);
 
-    sampler.sumAll(*scaledGradient_,*dualVector_);
-    hv.plus(*dualVector_);
-    hv.scale(1.0/ev);
+    sampler.sumAll(*scaledGradient_,*dualVector2_);
+    dualVector1_->plus(*dualVector2_);
+    dualVector1_->scale(1.0/ev);
 
-    dualVector_->zero();
-    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
-    dualVector_->scale(egv/(ev*ev));
-    hv.plus(*dualVector_);
+    dualVector2_->zero();
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector2_);
+    dualVector1_->axpy(egv/(ev*ev),*dualVector2_);
+
+    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector1_);
   }
 };
 

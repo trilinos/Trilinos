@@ -64,13 +64,14 @@ private:
   EAbsoluteValue eav_;
 
 public: 
-  AbsoluteValue(Real param = 1.e2, EAbsoluteValue eav = ABSOLUTEVALUE_TRUE) : param_(param), eav_(eav) {
+  AbsoluteValue(Real param = 1., EAbsoluteValue eav = ABSOLUTEVALUE_TRUE)
+    : param_(1./param), eav_(eav) {
     if ( eav != ABSOLUTEVALUE_TRUE && std::abs(param) < ROL_EPSILON ) { param_ = 1.e2; }
   }
 
   AbsoluteValue(Teuchos::ParameterList &parlist) {
     Real param = parlist.get("Smoothing Parameter",1.);
-    param_ = ((param > 0.) ? param : 1.);
+    param_ = 1./((param > 0.) ? param : 1.);
     std::string type = parlist.get("Absolute Value Approximation","true");
     eav_ = ABSOLUTEVALUE_TRUE;
     if      ( type == "Square Root" )             { eav_ = ABSOLUTEVALUE_SQUAREROOT; }

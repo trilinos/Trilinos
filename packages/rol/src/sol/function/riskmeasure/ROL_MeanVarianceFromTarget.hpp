@@ -56,6 +56,7 @@ namespace ROL {
 
 template<class Real>
 class MeanVarianceFromTarget : public RiskMeasure<Real> {
+  typedef typename std::vector<Real>::size_type uint;
 private:
 
   Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
@@ -63,6 +64,7 @@ private:
   std::vector<Real> target_;
   std::vector<Real> order_;
   std::vector<Real> coeff_;
+  uint NumMoments_;
 
 public:
 
@@ -73,26 +75,29 @@ public:
     target_.push_back(target);
     order_.push_back((order < 2.0) ? 2.0 : order);
     coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    NumMoments_ = order_.size();
   }
 
   MeanVarianceFromTarget( std::vector<Real> &target, std::vector<Real> &order, std::vector<Real> &coeff, 
                           Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
+    NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
-    if ( order.size() != target.size() ) {
-      target.resize(order.size(),0.0);
+    if ( NumMoments_ != target.size() ) {
+      target.resize(NumMoments_,0.0);
     }
-    if ( order.size() != coeff.size() ) {
-      coeff.resize(order.size(),1.0);
+    if ( NumMoments_ != coeff.size() ) {
+      coeff.resize(NumMoments_,1.0);
     }
-    for ( unsigned i = 0; i < order.size(); i++ ) {
+    for ( uint i = 0; i < NumMoments_; i++ ) {
       target_.push_back(target[i]);
       order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
       coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
     }
   }
   
-  MeanVarianceFromTarget( Teuchos::ParameterList &parlist ) : RiskMeasure<Real>() {
+  MeanVarianceFromTarget( Teuchos::ParameterList &parlist )
+    : RiskMeasure<Real>() {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target");
     // Get data from parameter list
@@ -103,14 +108,15 @@ public:
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
     // Check inputs
+    NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
-    if ( order.size() != target.size() ) {
-      target.resize(order.size(),0.0);
+    if ( NumMoments_ != target.size() ) {
+      target.resize(NumMoments_,0.0);
     }
-    if ( order.size() != coeff.size() ) {
-      coeff.resize(order.size(),1.0);
+    if ( NumMoments_ != coeff.size() ) {
+      coeff.resize(NumMoments_,1.0);
     }
-    for ( unsigned i = 0; i < order.size(); i++ ) {
+    for ( uint i = 0; i < NumMoments_; i++ ) {
       target_.push_back(target[i]);
       order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
       coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
@@ -127,7 +133,7 @@ public:
   void update(const Real val, const Real weight) {
     Real diff = 0.0, pf0 = 0.0;
     RiskMeasure<Real>::val_ += weight * val;
-    for ( unsigned p = 0; p < order_.size(); p++ ) {
+    for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
       pf0  = positiveFunction_->evaluate(diff,0);
       RiskMeasure<Real>::val_ += weight * coeff_[p] * std::pow(pf0,order_[p]);
@@ -136,7 +142,7 @@ public:
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
     Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 1.0;
-    for ( unsigned p = 0; p < order_.size(); p++ ) {
+    for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val-target_[p];
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
@@ -148,7 +154,7 @@ public:
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
     Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p1 = 0.0, p2 = 0.0, ch = 1.0, cg = 0.0;
-    for ( unsigned p = 0; p < order_.size(); p++ ) {
+    for ( uint p = 0; p < NumMoments_; p++ ) {
       diff = val - target_[p];
       pf0  = positiveFunction_->evaluate(diff,0);
       pf1  = positiveFunction_->evaluate(diff,1);
