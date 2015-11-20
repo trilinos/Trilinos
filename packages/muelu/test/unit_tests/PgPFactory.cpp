@@ -1004,7 +1004,7 @@ namespace MueLuTests {
         // generate problem
         LocalOrdinal maxLevels = 3;
         LocalOrdinal its=10;
-        LocalOrdinal nEle = 63;
+        GlobalOrdinal nEle = 63;
         const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
         Teuchos::ParameterList matrixParameters;
         matrixParameters.set("nx",nEle);
