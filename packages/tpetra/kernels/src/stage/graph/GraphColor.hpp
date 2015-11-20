@@ -9,12 +9,15 @@ namespace KokkosKernels{
 namespace Graph{
 
 template <class KernelHandle>
-void graph_color_symbolic(KernelHandle *handle){
+void graph_color_symbolic(
+    KernelHandle *handle,
+    typename KernelHandle::idx_array_type row_map,
+    typename KernelHandle::idx_edge_array_type entries){
 
   Kokkos::Impl::Timer timer;
 
-  typename KernelHandle::idx_array_type row_map = handle->get_row_map();
-  typename KernelHandle::idx_edge_array_type entries = handle->get_entries();
+  //typename KernelHandle::idx_array_type row_map = handle->get_row_map();
+  //typename KernelHandle::idx_edge_array_type entries = handle->get_entries();
 
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
@@ -68,6 +71,7 @@ void graph_color_symbolic(KernelHandle *handle){
   gch->set_vertex_colors(colors_out);
 }
 
+/*
 template <class KernelHandle>
 void graph_color_numeric(
     KernelHandle *handle){
@@ -95,6 +99,7 @@ void graph_color_solve(
     handle->get_graph_coloring_handle()->set_coloring_time(0);
   }
 }
+*/
 
 }
 }
