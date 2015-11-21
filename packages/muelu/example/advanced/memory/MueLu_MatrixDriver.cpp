@@ -81,9 +81,9 @@ int main(int argc, char** argv)
 {
   using Teuchos::RCP;
 
-  typedef int    LO; // LocalOrdinal
-  typedef int    GO; // GlobalOrdinal
-  typedef double SC; // Scalar
+  typedef typename Tpetra::Map<>::local_ordinal_type    LO; // LocalOrdinal
+  typedef typename Tpetra::Map<>::global_ordinal_type   GO; // GlobalOrdinal
+  typedef double                                        SC;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
