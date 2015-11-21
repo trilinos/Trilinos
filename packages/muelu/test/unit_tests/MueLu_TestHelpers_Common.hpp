@@ -55,7 +55,7 @@
 //#define MUELU_DEBUGGER_MACRO
 
 // If linAlgebra==Epetra, this macro will return early from the test
-// if SC!=double, GO!={double,long long}, or NO!=Serial.
+// if SC!=double, GO!={int}, or NO!=Serial.
 #define MUELU_TESTING_LIMIT_EPETRA_SCOPE(SC, GO, NO) \
   MUELU_DEBUGGER_MACRO \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
@@ -67,9 +67,8 @@
     } \
     GO index; \
     int epetraIntegerCheck; \
-    long long epetraLongLongCheck; \
     std::string goName = typeid(index).name(); \
-    if (goName != typeid(epetraIntegerCheck).name() && goName != typeid(epetraLongLongCheck).name()) { \
+    if (goName != typeid(epetraIntegerCheck).name()) { \
        out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
        return; \
     } \
@@ -82,7 +81,7 @@
   }
 
 // If linAlgebra==Tpetra, but the test also requires Epetra, this macro will cause the test
-// to return early if SC!=double, GO!={double,long long}, or NO!=Serial.
+// to return early if SC!=double, GO!={int}, or NO!=Serial.
 #define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
     Node nodeCheck; \
     std::string nodeName = typeid(nodeCheck).name();  \
@@ -90,8 +89,7 @@
       out << "Skipping Epetra for non-Serial nodes" << std::endl; \
       return; \
     } \
-    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int") && \
-        Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("long long int") ) { \
+    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int")) { \
        out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
        return; \
     } \
