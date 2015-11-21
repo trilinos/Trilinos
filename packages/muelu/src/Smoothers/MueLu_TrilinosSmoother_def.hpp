@@ -109,9 +109,9 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null(), Exceptions::RuntimeError,
         "Could not construct any smoother:\n"
-        << (triedEpetra_ ? "=> Failed to build an Epetra smoother due to the following exception:\n" : "=> Epetra is not enabled.\n")
+        << (triedEpetra_ ? "=> Failed to build an Epetra smoother due to the following exception:\n" : "=> Epetra and/or Ifpack are not enabled.\n")
         << (triedEpetra_ ? errorEpetra_ + "\n" : "")
-        << (triedTpetra_ ? "=> Failed to build a Tpetra smoother due to the following exception:\n" : "=> Tpetra is not enabled.\n")
+        << (triedTpetra_ ? "=> Failed to build a Tpetra smoother due to the following exception:\n" : "=> Tpetra and/or Ifpack2 are not enabled.\n")
         << (triedTpetra_ ? errorTpetra_ + "\n" : ""));
 
     this->SetParameterList(paramList);
