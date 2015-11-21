@@ -80,6 +80,7 @@ namespace Stratimikos {
   }
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
+#if 0
   void enableMueLuTpetraQ2Q1(DefaultLinearSolverBuilder &builder, const std::string &stratName) {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
@@ -91,6 +92,7 @@ namespace Stratimikos {
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
   }
+#endif
 #endif
 
 } // namespace Stratimikos
