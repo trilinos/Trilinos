@@ -155,8 +155,9 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET (HAVE_XPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
   GLOBAL_SET (HAVE_XPETRA_OPENMP  ${Tpetra_INST_OPENMP})
   GLOBAL_SET (HAVE_XPETRA_CUDA    ${Tpetra_INST_CUDA})
-ELSE ()
-# If Epetra only is active, only activate SerialNode by default
+ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  # If Epetra is active, enable Serial node
   GLOBAL_SET (HAVE_XPETRA_SERIAL  ON)
 ENDIF ()
 
