@@ -113,7 +113,7 @@ public:
     // Check inputs
     order_.clear(); coeff_.clear();
     NumMoments_ = order.size();
-    if ( NumMoments_ != coeff.size() ) {
+    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
       coeff.resize(NumMoments_,1.0);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {

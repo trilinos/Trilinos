@@ -110,10 +110,10 @@ public:
     // Check inputs
     NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
-    if ( NumMoments_ != target.size() ) {
+    if ( NumMoments_ != static_cast<uint>(target.size()) ) {
       target.resize(NumMoments_,0.0);
     }
-    if ( NumMoments_ != coeff.size() ) {
+    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
       coeff.resize(NumMoments_,1.0);
     }
     for ( uint i = 0; i < NumMoments_; i++ ) {
