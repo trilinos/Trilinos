@@ -77,7 +77,11 @@ public:
   //! Destructor.
   virtual ~UserPartitioner();
 
-  //! Sets all the parameters for the partitioner.
+  //! @brief Sets all the parameters for the partitioner.
+  /// The only valid parameter is:
+  ///   <ul>
+  ///     <li> "partitioner: map" (Teuchos::ArrayRCP<local ordinal>)
+  ///   </ul>
   void setPartitionParameters (Teuchos::ParameterList& List);
 
   //! Compute the partitions.

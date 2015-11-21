@@ -157,7 +157,7 @@ public:
 
   //! Sets all the parameters for the preconditioner
   /**
-     Valid parameters include the following:
+     Valid parameters are:
      <ul>
       <li> "relaxation: type"<br>
         Valid values (string):<br>
@@ -167,10 +167,18 @@ public:
          <li> "Symmetric Gauss-Seidel"
         </ul>
       <li> "relaxation: sweeps" (int)
-      <li> "relaxation: damping factor" (floating-point)
-      <li> "relaxation: min diagonal value" (floating-point)
+      <li> "relaxation: damping factor" (scalar)
       <li> "relaxation: zero starting solution" (bool)
       <li> "relaxation: backward mode" (bool)
+      <li> "partitioner: type" <br>
+        Valid values (string):<br>
+        <ul>
+         <li> "linear"
+         <li> "line"
+         <li> "user"
+        </ul>
+      <li> "partitioner: local parts" (local ordinal)
+      <li> "partitioner: overlap" (int)
      </ul>
   */
   void setParameters(const Teuchos::ParameterList& params);
