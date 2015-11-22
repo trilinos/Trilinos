@@ -227,9 +227,9 @@ int main(int argc, char *argv[]) {
 
 #if 0
       out << "========================================================\n" << xpetraParameters << galeriParameters;
-      out << "Processor subdomains in x direction: " << galeriParameters.get<int>("mx") << std::endl
-          << "Processor subdomains in y direction: " << galeriParameters.get<int>("my") << std::endl
-          << "Processor subdomains in z direction: " << galeriParameters.get<int>("mz") << std::endl
+      out << "Processor subdomains in x direction: " << galeriParameters.get<GO>("mx") << std::endl
+          << "Processor subdomains in y direction: " << galeriParameters.get<GO>("my") << std::endl
+          << "Processor subdomains in z direction: " << galeriParameters.get<GO>("mz") << std::endl
           << "========================================================" << std::endl;
 #endif
 

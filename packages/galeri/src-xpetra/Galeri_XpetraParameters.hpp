@@ -69,7 +69,7 @@ namespace Galeri {
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx = 16, GO ny = -1, GO nz = -1, const std::string& matrixType = "Laplace1D",
                  int keepBCs = 0, double stretchx = 1.0, double stretchy = 1.0, double stretchz = 1.0, double h = 1.0, double delta = 0.0,
                  int PMLXL = 0, int PMLXR = 0, int PMLYL = 0, int PMLYR = 0, int PMLZL = 0, int PMLZR = 0,
-                 double omega = 2.0*M_PI, double shift = 0.5, int mx = -1, int my = -1, int mz = -1, int model = 0)
+                 double omega = 2.0*M_PI, double shift = 0.5, GO mx = -1, GO my = -1, GO mz = -1, int model = 0)
 	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs),
       h_(h), delta_(delta), PMLx_left(PMLXL), PMLx_right(PMLXR), PMLy_left(PMLYL), PMLy_right(PMLYR), PMLz_left(PMLZL), PMLz_right(PMLZR),
       omega_(omega), shift_(shift), model_(model) {
@@ -220,7 +220,7 @@ namespace Galeri {
     private:
       // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
       mutable GO     nx_, ny_, nz_;
-      mutable int    mx_, my_, mz_;
+      mutable GO     mx_, my_, mz_;
       mutable double stretchx_, stretchy_, stretchz_;
 
       std::string    matrixType_;
