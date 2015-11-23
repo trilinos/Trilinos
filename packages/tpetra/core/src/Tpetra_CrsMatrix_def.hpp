@@ -2340,8 +2340,13 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
       typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
-      subview_type sv = Kokkos::subview (k_values1D_, range);
-
+      // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
+      // directly, because that first creates a _managed_ subview,
+      // then returns an unmanaged version of that.  That touches the
+      // reference count, which costs performance in a measurable way.
+      // Instead, we create a temporary unmanaged view, then create
+      // the subview from that.
+      subview_type sv = Kokkos::subview (subview_type (k_values1D_), range);
       const ST* const sv_raw = (rowinfo.allocSize == 0) ? NULL : sv.ptr_on_device ();
       return ArrayView<const ST> (sv_raw, rowinfo.allocSize);
     }
@@ -2376,7 +2381,13 @@ namespace Tpetra {
         ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
-      return Kokkos::subview (k_values1D_, range);
+      // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
+      // directly, because that first creates a _managed_ subview,
+      // then returns an unmanaged version of that.  That touches the
+      // reference count, which costs performance in a measurable way.
+      // Instead, we create a temporary unmanaged view, then create
+      // the subview from that.
+      return Kokkos::subview (subview_type (k_values1D_), range);
     }
     else if (values2D_ != null) {
       Teuchos::ArrayView<const ST> rowView = values2D_[rowInfo.localRow] ();
@@ -2410,7 +2421,13 @@ namespace Tpetra {
         ") > k_values1D_.dimension_0() (" << k_values1D_.dimension_0 () << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowInfo.offset1D, rowInfo.offset1D + rowInfo.allocSize);
-      return Kokkos::subview (k_values1D_, range);
+      // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
+      // directly, because that first creates a _managed_ subview,
+      // then returns an unmanaged version of that.  That touches the
+      // reference count, which costs performance in a measurable way.
+      // Instead, we create a temporary unmanaged view, then create
+      // the subview from that.
+      return Kokkos::subview (subview_type (k_values1D_), range);
     }
     else if (values2D_ != null) {
       Teuchos::ArrayView<ST> rowView = values2D_[rowInfo.localRow] ();
