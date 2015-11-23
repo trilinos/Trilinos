@@ -73,6 +73,23 @@ static void set_count(int exoid, void_int *cnt, size_t ndx, size_t val)
   }
 }
 
+static int check_valid_side(size_t side_num, size_t max_sides, char *topology, int exoid)
+{
+  char errmsg[MAX_ERR_LENGTH];
+  int err_stat = EX_NOERR;
+
+  exerrval = 0;
+  if (side_num+1 < 1 || side_num+1 > max_sides) {
+    exerrval = EX_BADPARAM;
+    sprintf(errmsg,
+	    "Error: Invalid %s edge number %"ST_ZU" in file id %d",
+	    topology, side_num+1, exoid);
+    ex_err("ex_get_side_set_node_list",errmsg,exerrval);
+    err_stat = EX_FATAL;
+  }
+  return err_stat;
+}
+  
 static void get_nodes(int exoid, void_int *to, size_t ito, void_int *from, size_t ifrom)
 {
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -559,15 +576,8 @@ int ex_get_side_set_node_list(int exoid,
       case EX_EL_TRIANGLE:
 	{
 	  if (ndim == 2) {   /* 2d TRIs */
-	    if (side_num+1 < 1 || side_num+1 > 3) {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
+	    if (check_valid_side(side_num, 3, "triangle", exoid) != EX_NOERR)
 	      goto cleanup;
-	    }
 
 	    get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri_table[side_num][0]-1);
 	    get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri_table[side_num][1]-1);
@@ -579,15 +589,8 @@ int ex_get_side_set_node_list(int exoid,
 	      }
 	  }
 	  else if (ndim == 3) {  /* 3d TRIs */
-	    if (side_num+1 < 1 || side_num+1 > 5) {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
+	    if (check_valid_side(side_num, 5, "triangle", exoid) != EX_NOERR)
 	      goto cleanup;
-	    }
 
 	    get_nodes(exoid, side_set_node_list, node_pos,   connect, connect_offset+tri3_table[side_num][0]-1);
 	    get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tri3_table[side_num][1]-1);
@@ -621,16 +624,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_QUAD:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 4) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid quad edge number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (check_valid_side(side_num, 4, "quad", exoid) != EX_NOERR)
+	    goto cleanup;
         
 	  get_nodes(exoid, side_set_node_list, node_pos+0, connect, connect_offset+quad_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+quad_table[side_num][1]-1);
@@ -644,15 +639,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_SHELL:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 6) {/* side number range check */
-	    exerrval = EX_BADPARAM;
-	    sprintf(errmsg,
-		    "Error: Invalid shell face number %"ST_ZU" in file id %d",
-		    side_num+1, exoid);
-	    ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	    err_stat = EX_FATAL;
+	  if (check_valid_side(side_num, 6, "shell", exoid) != EX_NOERR)
 	    goto cleanup;
-	  }
 
 	  get_nodes(exoid, side_set_node_list, node_pos+0, connect, connect_offset+shell_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+shell_table[side_num][1]-1);
@@ -695,16 +683,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_TETRA:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 4) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid tetra face number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (check_valid_side(side_num, 4, "tetra", exoid) != EX_NOERR)
+	    goto cleanup;
 
 	  get_nodes(exoid, side_set_node_list, node_pos+0, connect, connect_offset+tetra_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+tetra_table[side_num][1]-1);
@@ -726,16 +706,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_WEDGE:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 5) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid wedge face number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (check_valid_side(side_num, 5, "wedge", exoid) != EX_NOERR)
+	    goto cleanup;
 
 	  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][1]-1);
@@ -751,34 +723,29 @@ int ex_get_side_set_node_list(int exoid,
 	    }
 
 
-	  if (num_nodes_per_elem > 6)
-	    {
+	  if (num_nodes_per_elem > 6) {
+	    /* Wedge 12 - 4-node quad faces (0,1,2) and 6-node tri faces (3,4) */
+	    /* Wedge 15 - 8-node quad faces (0,1,2) and 6-node tri faces (3,4) */
+
+	    if (num_nodes_per_elem > 12 || side_num == 3 || side_num == 4) {
 	      get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][4]-1);
 	      get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][5]-1);
 	      get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][6]-1);
 
 	      if (wedge_table[side_num][7] == 0) /* degenerate side? */
 		set_count(exoid, side_set_node_cnt_list, elem_ndx, 6);   /* 6 node side */
-	      else
-		{
-		  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][7]-1);
-		  set_count(exoid, side_set_node_cnt_list, elem_ndx, 8);   /* 8 node side */
-		}
+	      else {
+		get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+wedge_table[side_num][7]-1);
+		set_count(exoid, side_set_node_cnt_list, elem_ndx, 8);   /* 8 node side */
+	      }
 	    }
+	  }
 	  break;
 	}
       case EX_EL_PYRAMID:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 5) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid pyramid face number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (check_valid_side(side_num, 5, "pyramid", exoid) != EX_NOERR)
+	    goto cleanup;
 
 	  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+pyramid_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos++, connect, connect_offset+pyramid_table[side_num][1]-1);
@@ -812,16 +779,8 @@ int ex_get_side_set_node_list(int exoid,
 	}
       case EX_EL_HEX:
 	{
-	  if (side_num+1 < 1 || side_num+1 > 6) /* side number range check */
-	    {
-	      exerrval = EX_BADPARAM;
-	      sprintf(errmsg,
-		      "Error: Invalid hex face number %"ST_ZU" in file id %d",
-		      side_num+1, exoid);
-	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	      err_stat = EX_FATAL;
-	      goto cleanup;
-	    }
+	  if (check_valid_side(side_num, 6, "hex", exoid) != EX_NOERR)
+	    goto cleanup;
 
 	  get_nodes(exoid, side_set_node_list, node_pos+0, connect, connect_offset+hex_table[side_num][0]-1);
 	  get_nodes(exoid, side_set_node_list, node_pos+1, connect, connect_offset+hex_table[side_num][1]-1);
