@@ -2631,29 +2631,88 @@ namespace {
     Zoltan_Data.z = (ignore_z ? NULL : z);
 
     /* Initialize Zoltan */
-    Zoltan_Initialize(argc, argv, &ver);
+    ierr = Zoltan_Initialize(argc, argv, &ver);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Initialize (%s:%d)\n",
+	      __FILE__, __LINE__);
+      exit(-1);
+    }
     zz = Zoltan_Create(MPI_COMM_WORLD);
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */
-    Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
-		  (ZOLTAN_VOID_FN *) zoltan_num_dim, NULL);
-    Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
-		  (ZOLTAN_VOID_FN *) zoltan_num_obj, NULL);
-    Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
-		  (ZOLTAN_VOID_FN *) zoltan_obj_list, NULL);
-    Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
-		  (ZOLTAN_VOID_FN *) zoltan_geom, NULL);
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
+			     (ZOLTAN_VOID_FN *) zoltan_num_dim, NULL);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
+			 (ZOLTAN_VOID_FN *) zoltan_num_obj, NULL);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
+			 (ZOLTAN_VOID_FN *) zoltan_obj_list, NULL);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
+			 (ZOLTAN_VOID_FN *) zoltan_geom, NULL);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
 
     /* Set parameters for Zoltan */
     sprintf(str, "%d", totalproc);
-    Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str);
-    Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
-    Zoltan_Set_Param(zz, "LB_METHOD", method);
-    Zoltan_Set_Param(zz, "REMAP", "0");
-    Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
-    if (vwgt) Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
-    if (ignore_z) Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
+    ierr = Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Param(zz, "LB_METHOD", method);
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Param(zz, "REMAP", "0");
+    if (ierr == ZOLTAN_FATAL) {
+      fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+	      __FILE__, __LINE__);
+      goto End;
+    }
+    ierr = Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
+    if (vwgt) {
+      ierr = Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+      if (ierr == ZOLTAN_FATAL) {
+	fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+		__FILE__, __LINE__);
+	goto End;
+      }
+    }
+    if (ignore_z) {
+      ierr = Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
+      if (ierr == ZOLTAN_FATAL) {
+	fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n",
+		__FILE__, __LINE__);
+	goto End;
+      }
+    }
 
     /* Call partitioner */
     printf("Using Zoltan version %f, method %s\n", ver, method);
@@ -2679,8 +2738,8 @@ namespace {
 
   End:
     /* Clean up */
-    Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
-    Zoltan_Destroy(&zz);
+    (void)Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
+    (void)Zoltan_Destroy(&zz);
     if (ierr) {
       MPI_Finalize();
       exit(-1);

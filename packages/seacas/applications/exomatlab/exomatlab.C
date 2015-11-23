@@ -41,6 +41,8 @@
 #include <math.h>
 #include <string>
 #include <cstring>
+#include <exception>
+#include <stdexcept>
 #include <time.h>
 
 #include "EML_CodeTypes.h"
@@ -93,29 +95,34 @@ int main(int argc, char *argv[])
   time_t begin_time = time(NULL);
   std::string in_type = "exodusII";
 
+  bool ok = false;
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
   if (ind != std::string::npos)
     codename = codename.substr(ind+1, codename.size());
 
-  SystemInterface::show_version();
-  Ioss::Init::Initializer io;
+  try {
+    SystemInterface::show_version();
+    Ioss::Init::Initializer io;
 
-  SystemInterface interface;
-  bool ok = interface.parse_options(argc, argv);
+    SystemInterface interface;
+    ok = interface.parse_options(argc, argv);
 
-  if (ok) {
-    std::string in_file = interface.input_file();
-    std::string output_file = interface.output_file();
+    if (ok) {
+      std::string in_file = interface.input_file();
+      std::string output_file = interface.output_file();
 
-    OUTPUT << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
-    OUTPUT << "Output:   '" << output_file << "', Type: matlab script\n\n";
+      OUTPUT << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
+      OUTPUT << "Output:   '" << output_file << "', Type: matlab script\n\n";
 
-    ok = file_info(in_file, in_type, interface);
+      ok = file_info(in_file, in_type, interface);
+    }
+    std::string success = ok ? "successful" : "unsuccessful";
+    OUTPUT << "\n" << codename << " execution " << success << ".\n";
   }
-
-  std::string success = ok ? "successful" : "unsuccessful";
-  OUTPUT << "\n" << codename << " execution " << success << ".\n";
+  catch (std::exception &e) {
+    std::cerr << "ERROR: (EXOMATLAB) Standard exception: " << e.what() << std::endl;
+  }
   time_t end_time = time(NULL);
   add_to_log(codename.c_str(), (int)(end_time - begin_time));
 #ifdef HAVE_MPI

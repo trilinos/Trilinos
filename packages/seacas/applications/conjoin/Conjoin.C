@@ -963,6 +963,7 @@ namespace {
     for (int i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qaRecord[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	qaRecord[i].qa_record[0][j][0] = '\0';
       }
     }
     if (num_qa_records) error += ex_get_qa(id, qaRecord[0].qa_record);
@@ -1731,6 +1732,7 @@ namespace {
 	int i = 0;
 	int ifld = 1;
 	std::cerr << "\t";
+	std::ios::fmtflags f(std::cerr.flags());
 	while (i < vars.count(OUT)) {
 	  std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
 	  if (++ifld > nfield && i < vars.count(OUT)) {
@@ -1739,7 +1741,7 @@ namespace {
 	  }
 	}
 	std::cerr << "\n\n";
-	std::cerr << std::right; // Reset back to what it was.
+	std::cerr.flags(f); // Reset back to what it was.
       }
 
       ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);

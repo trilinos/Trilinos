@@ -1236,6 +1236,7 @@ namespace {
     for (int i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qaRecord[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	qaRecord[i].qa_record[0][j][0] = '\0';
       }
     }
     if (num_qa_records) {
