@@ -24,8 +24,6 @@
 #ifndef PANZER_HASH_UTILS_HPP
 #define PANZER_HASH_UTILS_HPP
 
-#include "Panzer_ConfigDefs.hpp"
-
 namespace panzer {
 
   template <class T>
@@ -35,26 +33,10 @@ namespace panzer {
     seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
   }
 
-}
-
-namespace std {
-
-  template <>
-  struct hash<std::pair<int,int>>
+  struct pair_hash
   {
-    std::size_t operator()(const std::pair<int,int>& v) const
-    {
-      std::size_t seed = 0;
-      panzer::hash_combine(seed, v.first);
-      panzer::hash_combine(seed, v.second);
-      return seed;
-    }
-  };
-
-  template <>
-  struct hash<std::pair<int,panzer::Ordinal64>>
-  {
-    std::size_t operator()(const std::pair<int,panzer::Ordinal64>& v) const
+    template<typename T1, typename T2>
+    std::size_t operator()(const std::pair<T1,T2>& v) const
     {
       std::size_t seed = 0;
       panzer::hash_combine(seed, v.first);

@@ -57,6 +57,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_HashUtils.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -501,7 +502,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       blockOffsets[blk] = blockOffset;
    }
 
-   std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix> > jacEpetraBlocks;
+   std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix>,panzer::pair_hash> jacEpetraBlocks;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the

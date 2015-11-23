@@ -438,7 +438,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       blockOffsets[blk] = blockOffset;
    }
 
-   std::unordered_map<std::pair<int,int>,Teuchos::RCP<CrsMatrixType> > jacTpetraBlocks;
+   std::unordered_map<std::pair<int,int>,Teuchos::RCP<CrsMatrixType>,panzer::pair_hash> jacTpetraBlocks;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

@@ -58,6 +58,7 @@
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_HashUtils.hpp" // for pair_hash
 
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_GatherSolution_BlockedTpetra.hpp"
@@ -295,7 +296,7 @@ protected:
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > gidProviders_;
 
    // which block entries are ignored
-   std::unordered_set<std::pair<int,int> > excludedPairs_;
+  std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
   
 /*************** Thyra based methods/members *******************/
 
@@ -335,8 +336,8 @@ protected:
    Teuchos::RCP<const Teuchos::MpiComm<int> > comm_;
    mutable std::vector<Teuchos::RCP<const MapType> > maps_;
    mutable std::vector<Teuchos::RCP<const MapType> > ghostedMaps_;
-   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > graphs_ ;
-   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > ghostedGraphs_;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> graphs_ ;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> ghostedGraphs_;
 
    mutable std::vector<Teuchos::RCP<const ImportType> > importers_;
    mutable std::vector<Teuchos::RCP<const ExportType> > exporters_;
