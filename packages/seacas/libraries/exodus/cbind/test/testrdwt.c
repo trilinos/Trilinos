@@ -108,8 +108,6 @@ int main (int argc, char **argv)
                        &IO_word_size);  /* I/O float word size in bytes */
    printf ("after ex_create for test2.exo, exoid = %d\n", exoid2);
 
-   /* ncopts = NC_VERBOSE; */
-
 /* read initialization parameters */
 
    error = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem,

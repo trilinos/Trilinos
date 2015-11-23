@@ -117,8 +117,6 @@ int main (int argc, char **argv)
                        &IO_word_size);  /* I/O float word size in bytes */
    printf ("after ex_create for test2.exo, exoid = %d\n", exoid2);
 
-   /* ncopts = NC_VERBOSE; */
-
 /* initialize file with parameters */
 
    num_dim = 3;

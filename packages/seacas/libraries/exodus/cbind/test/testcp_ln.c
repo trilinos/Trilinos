@@ -105,8 +105,6 @@ int main (int argc, char **argv)
    printf ("         CPU word size %1d\n",CPU_word_size);
    printf ("         I/O word size %1d\n",IO_word_size);
 
-   /* ncopts = NC_VERBOSE; */
-
    error = ex_copy (exoid, exoid1);
    printf ("\nafter ex_copy, error = %3d\n", error);
 

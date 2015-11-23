@@ -130,8 +130,6 @@ int main (int argc, char **argv)
 
    }
 
-   /* ncopts = NC_VERBOSE; */
-
 /* initialize file with parameters */
 
    num_dim = 3;
