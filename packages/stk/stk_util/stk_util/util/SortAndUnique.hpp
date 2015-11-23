@@ -32,6 +32,16 @@ bool is_sorted_and_unique(const VECTOR& vec, COMPARE compare)
     return sorted_and_unique;
 }
 
+template<class VECTOR>
+bool insert_keep_sorted_and_unique(typename VECTOR::value_type p, VECTOR& procs)
+{
+  typename VECTOR::iterator iter = std::lower_bound(procs.begin(), procs.end(), p);
+  if (iter == procs.end() || *iter != p) {
+    procs.insert(iter, p);
+    return true;
+  }
+  return false;
+}
 
 } //namespace util
 } //namespace stk

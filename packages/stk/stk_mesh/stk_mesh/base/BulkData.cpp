@@ -4714,7 +4714,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts, const Entit
         {
             unsigned part_ord = 0;
             buf.unpack<unsigned>(part_ord);
-            insert_ordinal(induced_parts, part_ord);
+            stk::util::insert_keep_sorted_and_unique(part_ord, induced_parts);
         }
     }
 }
@@ -5361,7 +5361,7 @@ void BulkData::internal_fill_parts_to_actually_remove(const PartVector & parts_t
                              partsThatShouldStillBeInduced.end(),
                              impl::get_ordinal(parts_to_remove_assuming_not_induced_from_other_entities[k])))
         {
-            insert_ordinal(scratchOrdinalVector, parts_to_remove_assuming_not_induced_from_other_entities[k]->mesh_meta_data_ordinal());
+            stk::util::insert_keep_sorted_and_unique(parts_to_remove_assuming_not_induced_from_other_entities[k]->mesh_meta_data_ordinal(), scratchOrdinalVector);
         }
     }
     fill_part_list_from_part_ordinal_list(m_mesh_meta_data, scratchOrdinalVector, parts_to_actually_remove);
