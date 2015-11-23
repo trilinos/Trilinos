@@ -103,5 +103,10 @@
 #define MUELU_TESTING_SET_OSTREAM \
    MueLu::VerboseObject::SetDefaultOStream(Teuchos::fancyOStream(out.getOStream()));
 
+#define MUELU_TESTING_DO_NOT_TEST(lib,packagesNotEnabled) \
+  if (TestHelpers::Parameters::getLib() == lib) { \
+    out << "Skipping test for " << (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra ? "Epetra" : "Tpetra") << " because some required packages are not enabled (" << packagesNotEnabled << ")." << std::endl; \
+    return; \
+  }
 
 #endif // ifndef MUELU_TEST_HELPERS_COMMON_HPP
