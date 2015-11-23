@@ -95,6 +95,12 @@ namespace MueLuTests {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(MUELU_HAVE_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
+#   endif
+#   if !defined(MUELU_HAVE_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -225,6 +231,12 @@ namespace MueLuTests {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(MUELU_HAVE_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
+#   endif
+#   if !defined(MUELU_HAVE_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;

@@ -317,6 +317,12 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(MUELU_HAVE_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
+#   endif
+#   if !defined(MUELU_HAVE_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
+#   endif
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -492,12 +498,12 @@ namespace MueLuTests {
 
   }
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar,GlobalOrdinal,Node);
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
 
@@ -632,16 +638,19 @@ namespace MueLuTests {
       TEST_FLOATING_EQUALITY(results[0], results[1], 1e-14); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
-  } // TentativePFactory_EpetraVsTpetra
-#endif
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
+#   endif
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,Constructor,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative_LapackQR,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NonStandardMaps,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,EpetraVsTpetra,Scalar,LO,GO,Node)
+  } // TentativePFactory_EpetraVsTpetra
+
+#  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,Constructor,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative_LapackQR,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,EpetraVsTpetra,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

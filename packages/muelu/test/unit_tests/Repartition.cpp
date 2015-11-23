@@ -818,6 +818,13 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(MUELU_HAVE_AMESOS) || !defined(MUELU_HAVE_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(MUELU_HAVE_AMESOS2) || !defined(MUELU_HAVE_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
     out << "version: " << MueLu::Version() << std::endl;
     out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
     out << std::endl;
