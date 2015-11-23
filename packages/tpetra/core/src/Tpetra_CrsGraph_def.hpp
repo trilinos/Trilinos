@@ -1191,9 +1191,9 @@ namespace Tpetra {
   getLocalView (const RowInfo rowinfo) const
   {
     using Kokkos::subview;
-    using Kokkos::View;
     typedef LocalOrdinal LO;
-    typedef View<const LO*, execution_space, Kokkos::MemoryUnmanaged> row_view_type;
+    typedef Kokkos::View<const LO*, execution_space,
+      Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
@@ -1203,8 +1203,12 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        row_view_type rowView = subview (k_lclInds1D_, rng);
-
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_lclInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        row_view_type rowView = subview (row_view_type (k_lclInds1D_), rng);
         const LO* const rowViewRaw = (len == 0) ? NULL : rowView.ptr_on_device ();
         return Teuchos::ArrayView<const LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
@@ -1224,9 +1228,9 @@ namespace Tpetra {
   getLocalViewNonConst (const RowInfo rowinfo)
   {
     using Kokkos::subview;
-    using Kokkos::View;
     typedef LocalOrdinal LO;
-    typedef View<LO*, execution_space, Kokkos::MemoryUnmanaged> row_view_type;
+    typedef Kokkos::View<LO*, execution_space,
+      Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) { // nothing in the row to view
       return Teuchos::ArrayView<LO> ();
@@ -1236,8 +1240,12 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        row_view_type rowView = subview (k_lclInds1D_, rng);
-
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_lclInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        row_view_type rowView = subview (row_view_type (k_lclInds1D_), rng);
         LO* const rowViewRaw = (len == 0) ? NULL : rowView.ptr_on_device ();
         return Teuchos::ArrayView<LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
@@ -1270,7 +1278,12 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        return Kokkos::subview (k_lclInds1D_, rng);
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_lclInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
       else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
         Teuchos::ArrayView<const LO> rowAv = lclInds2D_[rowinfo.localRow] ();
@@ -1302,7 +1315,12 @@ namespace Tpetra {
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
-        return Kokkos::subview (k_lclInds1D_, rng);
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_lclInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        return Kokkos::subview (row_view_type (k_lclInds1D_), rng);
       }
       else if (! lclInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
         Teuchos::ArrayView<LO> rowAv = lclInds2D_[rowinfo.localRow] ();
@@ -1323,8 +1341,16 @@ namespace Tpetra {
     Teuchos::ArrayView<const GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (k_gblInds1D_.dimension_0 () != 0) {
-        auto rng = std::make_pair (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-        view = Kokkos::Compat::getConstArrayView (Kokkos::subview (k_gblInds1D_, rng));
+        auto rng = std::make_pair (rowinfo.offset1D,
+                                   rowinfo.offset1D + rowinfo.allocSize);
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_gblInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        Kokkos::View<const GlobalOrdinal*, execution_space,
+          Kokkos::MemoryUnmanaged> k_gblInds1D_unmanaged = k_gblInds1D_;
+        view = Kokkos::Compat::getConstArrayView (Kokkos::subview (k_gblInds1D_unmanaged, rng));
       }
       else if (! gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
@@ -1342,8 +1368,16 @@ namespace Tpetra {
     Teuchos::ArrayView<GlobalOrdinal> view;
     if (rowinfo.allocSize > 0) {
       if (k_gblInds1D_.dimension_0 () != 0) {
-        auto rng = std::make_pair (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-        view = Kokkos::Compat::getArrayView (Kokkos::subview (k_gblInds1D_, rng));
+        auto rng = std::make_pair (rowinfo.offset1D,
+                                   rowinfo.offset1D + rowinfo.allocSize);
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_gblInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        Kokkos::View<GlobalOrdinal*, execution_space,
+          Kokkos::MemoryUnmanaged> k_gblInds1D_unmanaged = k_gblInds1D_;
+        view = Kokkos::Compat::getArrayView (Kokkos::subview (k_gblInds1D_unmanaged, rng));
       }
       else if (! gblInds2D_[rowinfo.localRow].empty()) {
         view = gblInds2D_[rowinfo.localRow] ();
@@ -1633,12 +1667,16 @@ namespace Tpetra {
     // Store the new indices at the end of row myRow.
     if (k_lclInds1D_.dimension_0 () != 0) {
       typedef View<const LO*, execution_space, MemoryUnmanaged> input_view_type;
-      typedef View<LO*, execution_space> row_view_type;
+      typedef View<LO*, execution_space, MemoryUnmanaged> row_view_type;
 
       input_view_type inputInds (indices.getRawPtr (), indices.size ());
       const size_t start = rowInfo.offset1D + rowInfo.numEntries; // end of row
       const std::pair<size_t, size_t> rng (start, start + newNumEntries);
-      row_view_type myInds = subview (k_lclInds1D_, rng);
+      // mfh 23 Nov 2015: Don't just create a subview of k_lclInds1D_
+      // directly, because that first creates a _managed_ subview,
+      // then returns an unmanaged version of that.  That touches the
+      // reference count, which costs performance in a measurable way.
+      row_view_type myInds = subview (row_view_type (k_lclInds1D_), rng);
       Kokkos::deep_copy (myInds, inputInds);
     }
     else {
