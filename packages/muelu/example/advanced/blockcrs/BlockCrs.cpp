@@ -68,6 +68,7 @@
 #include <Tpetra_CrsMatrixMultiplyOp.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp>
 #include <MueLu_TpetraOperator.hpp>
+#include <MueLu_Utilities.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
@@ -107,59 +108,36 @@ const std::string prefSeparator = "=====================================";
 namespace MueLuExamples {
 #include <MueLu_UseShortNames.hpp>
 
-  void solve_system_hierarchy( RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-    RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO>::Op2NonConstTpetraCrs(A);
-    RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));
-    RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
-    RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
-    typedef Tpetra_MultiVector MV;
-    typedef Tpetra_Operator OP;
-    RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-    belosProblem->setRightPrec(Mt);
-    belosProblem->setProblem(Xt,Bt);
-    
-    Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
-    BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
-  }
-
-
   // --------------------------------------------------------------------------------------
-  void solve_system_list(RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
+  void solve_system_list(RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, const std::string & belos_solver, RCP<Teuchos::ParameterList> & SList) {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
     typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+    typedef Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Tpetra_BlockCrsMatrix;
+    typedef Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Xpetra_TpetraBlockCrsMatrix;
     typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
     typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-    RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO>::Op2NonConstTpetraCrs(A);
+
+    RCP<Tpetra_Operator>    At = MueLu::Utilities<SC,LO,GO,Tpetra_CrsMatrix::node_type>::Op2NonConstTpetraRow(A);
     RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
     RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
     RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
     typedef Tpetra_MultiVector MV;
     typedef Tpetra_Operator OP;
     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
-    belosProblem->setRightPrec(Mt);
+    belosProblem->setLeftPrec(Mt);
     belosProblem->setProblem(Xt,Bt);
     
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
-    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
+    Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(belos_solver, SList);
     BelosSolver->setProblem(belosProblem);
     Belos::ReturnType result = BelosSolver->solve();
     if(result==Belos::Unconverged)
       throw std::runtime_error("Belos failed to converge");
   }
 
-
+ 
 
   // --------------------------------------------------------------------------------------
   // This routine generate's the user's original A matrix and nullspace
@@ -305,13 +283,27 @@ int main(int argc, char *argv[]) {
     SList->set("Output Frequency",10);
     SList->set("Output Style",Belos::Brief);
     SList->set("Maximum Iterations",200);
-    SList->set("Convergence Tolerance",1e-10);
+    SList->set("Convergence Tolerance",5e-2);
 
 
+    // =========================================================================
+    // Solve #1 (fixed point + Jacobi)
+    // =========================================================================
+    out << thickSeparator << std::endl;
+    out << prefSeparator << " Solve 1: Fixed Point "<< prefSeparator <<std::endl;
+
+    {
+      Teuchos::ParameterList MueList;
+      MueList.set("max levels",1);
+      MueList.set("coarse: type", "RELAXATION");
+
+      std::string belos_solver("Fixed Point");   
+      MueLuExamples::solve_system_list(A,X,B,MueList,belos_solver,SList);
+    }
+
+  
 #ifdef OLD
-    // =========================================================================
-    // Solve #1 (standard MueLu)
-    // =========================================================================
+
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
     {
