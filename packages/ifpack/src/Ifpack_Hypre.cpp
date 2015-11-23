@@ -162,7 +162,7 @@ int Ifpack_Hypre::Initialize(){
     }
     int GlobalRow[1];
     GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
+    IFPACK_CHK_ERR(HYPRE_IJMatrixAddToValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
   }
   IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
