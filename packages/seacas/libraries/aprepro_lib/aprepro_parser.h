@@ -124,7 +124,7 @@ namespace SEAMS {
     /// Symbol semantic values.
     union semantic_type
     {
-    #line 77 "aprepro.yy" // lalr1.cc:377
+    #line 77 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:377
 
   double  val;		/* For returning numbers.		*/
   struct symrec *tptr;	/* For returning symbol-table pointers	*/

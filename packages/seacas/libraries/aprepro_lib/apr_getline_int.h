@@ -7,6 +7,10 @@
 
 #define GL_BUF_SIZE 1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef size_t (*gl_strwidth_proc)(char *);
 typedef int (*gl_in_hook_proc)(char *);
 typedef int (*gl_out_hook_proc)(char *);
@@ -39,5 +43,9 @@ extern int gl_completion_exact_match_extra_char;
 extern char gl_buf[GL_BUF_SIZE];
 
 #endif /* ! _getline_c_ */
+
+#ifdef __cplusplus
+}                               /* close brackets on extern "C" declaration */
+#endif
 
 #endif /* GETLINE_H */

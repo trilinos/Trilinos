@@ -47,7 +47,6 @@ namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;
 
 void init_table(const char *comment);
-char comm_string[32];
 char vers_string[32];
   
 struct init_d arith_fncts[] =
@@ -456,10 +455,8 @@ struct svar_init svariables[] =
       ptr->value.svar = svariables[i].value;
     }
 
-    comm_string[0] = '#';
-    
     symrec *ptr = putsym("_C_", STRING_VARIABLE, 1);
-    ptr->value.svar = comm_string;
+    ptr->value.svar = comment;
 
     {
       std::strncpy(vers_string, aprepro->version().c_str(), 32);

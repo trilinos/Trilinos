@@ -17,16 +17,33 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+option(GENERATE_FLEX_FILES "Generate source files using flex" OFF)
+option(GENERATE_BISON_FILES "Generate source files using bison" OFF)
+
+if(GENERATE_BISON_FILES)
+  set(BISON_LIB_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/apr_parser.cc)
+else()
+  set(BISON_LIB_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/apr_parser.cc)
+endif()
+
 SET(HEADERS
   aprepro.h
 )
 
 SET(SOURCES
- apr_aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
- apr_scanner.cc  apr_parser.cc apr_array.cc
+ apr_aprepro.cc 
+ apr_util.cc 
+ apr_stats.cc 
+ apr_init.cc 
+ apr_builtin.cc 
+ apr_units.cc 
+ apr_tokenize.cc
+ apr_scanner.cc  
+ apr_getline_int.c
+ ${BISON_LIB_SOURCE}
+ apr_array.cc
 )
 
-option(GENERATE_FLEX_FILES "Generate source files using flex" OFF)
 if(GENERATE_FLEX_FILES)
   find_program(FLEX_EXE NAMES flex
                DOC "Flex Executable")
@@ -34,16 +51,15 @@ if(GENERATE_FLEX_FILES)
     message(SEND_ERROR "The CMake variable FLEX_EXE does not point to a valid flex executable.")
   endif()
 
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/apr_scanner.cc
+  add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/apr_scanner.cc
                      COMMAND ${FLEX_EXE}
                      ARGS -o apr_scanner.cc
-                          aprepro.ll
+		        ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.ll
                      MAIN_DEPENDENCY aprepro.ll
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      )
 endif()
 
-option(GENERATE_BISON_FILES "Generate source files using bison" OFF)
 if(GENERATE_BISON_FILES)
   find_program(BISON_EXE NAMES bison
                DOC "Bison Executable")
@@ -56,14 +72,12 @@ if(GENERATE_BISON_FILES)
     set(ENV{PATH} "${BISON_PATH};$ENV{PATH}")
   endif(WIN32)
 
-  add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/aprepo_parser.h
-                            ${CMAKE_CURRENT_SOURCE_DIR}/apr_parser.cc
+  add_custom_command(OUTPUT  apr_parser.cc
                      COMMAND ${BISON_EXE}
-                     ARGS -y --defines=aprepro_parser.h
-                          -o apr_parser.cc
-                          aprepro.yy
+                     ARGS --yacc --defines=aprepro_parser.h --output apr_parser.cc
+                        ${CMAKE_CURRENT_SOURCE_DIR}/aprepro.yy
                      MAIN_DEPENDENCY aprepro.yy
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      )
 endif()
 
@@ -80,15 +94,19 @@ if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
 
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
- TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
-  OUTPUT_FILE test.output
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app 
+        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app 
+  OUTPUT_FILE test.stderr
   PASS_ANY
  TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++ 
-		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
+		       ${CMAKE_CURRENT_BINARY_DIR}/test.stderr
   OUTPUT_FILE filtered.output
   PASS_ANY
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
+		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
+ TEST_2 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
  COMM serial		      
  FINAL_PASS_REGULAR_EXPRESSION 
@@ -97,12 +115,16 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_array_test
  TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app
-	ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
-  OUTPUT_FILE test-array.out
+	ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} -o test-array.out
+	     ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
+  OUTPUT_FILE test-array.stderr
   PASS_ANY
  TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.out
+ TEST_2 CMND diff ARGS -w
+		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
  COMM serial		      
  FINAL_PASS_REGULAR_EXPRESSION 
 )

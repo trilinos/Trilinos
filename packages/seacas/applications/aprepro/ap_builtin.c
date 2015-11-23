@@ -75,6 +75,15 @@
 #define LOG1P(x)        log(1.0 + (x))
 #endif
 
+static void clean_up(char *line)
+{
+  /* strip trailing newline, space, tab, "," */
+  while (isspace(line[strlen(line)-1]) ||
+	 line[strlen(line)-1] == ',') {
+    line[strlen(line)-1] = '\0';
+  }
+}
+
 extern aprepro_options ap_options;
 extern FILE *open_file(char *file, char *mode);
 
@@ -772,6 +781,7 @@ double do_csvcols(char * filename)
   FILE *fp = open_file(filename, "r");
 
   while (getline(&line, &len, fp) != -1) {
+    clean_up(line);
     double tempCols = do_word_count(line,   delim);
     if (tempCols > cols) {
       cols = tempCols;
@@ -909,15 +919,16 @@ double do_word_count(char *string, char *delm)
 {
    char *temp ;
    double i = 0;
-
+   
   NEWSTR(string, temp);
   
   if( strtok(temp,delm)) {
+    i++;
+    while( strtok(NULL,delm)) {
       i++;
-      while( strtok(NULL,delm) ) {
-      i++;
-        }
-      }
+    }
+  }
+  
   free(temp);
   return (i) ;
 }
@@ -1173,6 +1184,8 @@ char *do_get_csv(char *filename, double row, double col)
   FILE *fp = open_file(filename, "r");
 
   while (getline(&line, &len, fp) != -1) {
+    clean_up(line);
+    
     rows++;
     if (rows == row) {
       /* Found the correct row, now get the value at the specified
@@ -1284,6 +1297,7 @@ array *do_csv_array(char *filename)
 
   fp = open_file(filename, "r");
   while (getline(&line, &len, fp) != -1) {
+    clean_up(line);
     double tempCols = do_word_count(line,   delim);
     if (tempCols > cols) {
       cols = tempCols;
@@ -1299,6 +1313,7 @@ array *do_csv_array(char *filename)
   idx = 0;
   rows = 0;
   while (getline(&line, &len, fp) != -1) {
+    clean_up(line);
     for (i=0; i < array_data->cols; i++) {
       char *tmp = i==0 ? line : NULL;
       char *token = strtok(tmp, delim);

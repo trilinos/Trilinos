@@ -118,7 +118,7 @@ static char copyright[] = "getline:  Copyright (C) 1991, 1992, 1993, Chris Thewa
 #include <signal.h>
 
 #define _getline_c_ 1
-#include "ap_getline_int.h"
+#include "apr_getline_int.h"
 
 static int gl_tab(char *buf, int offset, int *loc, size_t bufsize);
 

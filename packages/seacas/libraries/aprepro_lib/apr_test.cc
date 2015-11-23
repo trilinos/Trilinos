@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
 {
   bool readfile = false;
 
+  std::string output_file;
+  
   SEAMS::Aprepro aprepro;
   
   // EXAMPLE: Add a function to aprepro...
@@ -60,6 +62,9 @@ int main(int argc, char *argv[])
   
   for(int ai = 1; ai < argc; ++ai) {
     std::string arg = argv[ai];
+    if (arg == "-o") {
+      output_file = argv[++ai];
+    }
     if (arg == "-i") {
       // Read from cin and echo each line to cout All results will
       // also be stored in Aprepro::parsing_results() stream if needed
@@ -67,7 +72,13 @@ int main(int argc, char *argv[])
       aprepro.ap_options.interactive = true;
       bool result = aprepro.parse_stream(std::cin, "standard input");
       if (result) {
-	std::cout << aprepro.parsing_results().str();
+	if (!output_file.empty()) {
+	  std::ofstream ofile(output_file.c_str());
+	  ofile << aprepro.parsing_results().str();
+	}
+	else {
+	  std::cout << aprepro.parsing_results().str();
+	}
       }
     }
     else if (arg[0] == '-') {
@@ -85,7 +96,13 @@ int main(int argc, char *argv[])
 
       bool result = aprepro.parse_stream(infile, argv[ai]);
       if (result) {
-	std::cout << aprepro.parsing_results().str();
+	if (!output_file.empty()) {
+	  std::ofstream ofile(output_file.c_str());
+	  ofile << aprepro.parsing_results().str();
+	}
+	else {
+	  std::cout << aprepro.parsing_results().str();
+	}
       }
 
       readfile = true;
