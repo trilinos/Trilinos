@@ -64,7 +64,7 @@
 namespace {
   MPI_Datatype mpi_type(double /*dummy*/)  {return MPI_DOUBLE;}
   MPI_Datatype mpi_type(int /*dummy*/)     {return MPI_INT;}
-  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG;}
+  MPI_Datatype mpi_type(int64_t /*dummy*/) {return MPI_LONG_LONG_INT;}
 
   template <typename T>
   bool is_sorted(const std::vector<T> &vec)
@@ -3196,8 +3196,8 @@ namespace Iopx {
 
     // Now, tell the other processors how many nodes I will be sending
     // them (Nodes they own that I share with them)
-    MPI_Alltoall(TOPTR(snd_count), 1, MPI_LONG_LONG,
-                 TOPTR(rcv_count), 1, MPI_LONG_LONG, comm_);
+    MPI_Alltoall(TOPTR(snd_count), 1, MPI_LONG_LONG_INT,
+                 TOPTR(rcv_count), 1, MPI_LONG_LONG_INT, comm_);
 
     std::vector<int64_t> snd_offset(snd_count);
     generate_index(snd_offset);
