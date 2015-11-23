@@ -612,7 +612,7 @@ static int font_height, font_width;    /* char size in device coord. */
 
 /* flush polyline buffer */
 /* implemented as macro to save the overhead of subroutine call */
-void x11_vflush() {                                                  
+void x11_vflush(void) {                                                  
    if (x11_nvert > 1) {                                                 
       XDrawLines(display, draw_id, gc, vlist, x11_nvert, CoordModeOrigin); 
    }                                                                
@@ -920,8 +920,7 @@ int *justif;
      init = initialization flag (1 means called from initialization phase,
             otherwise 0)
 */
-void x_dynamics(init)
-int init; 
+void x_dynamics(int init)
 {
    XWindowAttributes win_info;
    float asp1;
@@ -1638,7 +1637,7 @@ float attr_array[];
    vdstcs(attr_array+5);
 }
 
-void x_check_window()
+void x_check_window(void)
 {
    int change;
    XEvent x_event;
@@ -1658,7 +1657,7 @@ void x_check_window()
    }
 }
 
-void x_clear_pixmap()
+void x_clear_pixmap(void)
 {
    /* temporarily set foreground color to the background color and draw a
       big fill rectangle to clear the pixmap,

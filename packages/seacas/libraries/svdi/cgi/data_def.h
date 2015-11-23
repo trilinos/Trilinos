@@ -171,7 +171,7 @@ typedef struct {
 /* ----------control, negotiation and errors---------- */
 /* device identity description table  */
    cenum    dev_class;         /* device class: IN,OUT,INOUT */
-   char     dev_id[3];         /* device identification */
+   char     dev_id[4];         /* device identification */
 
 /* output device description table  */
    cenum    copy_class;        /* hard, soft */

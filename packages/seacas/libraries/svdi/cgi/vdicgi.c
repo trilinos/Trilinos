@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /*
  SVDI  CGI driver
@@ -47,15 +47,14 @@
 #include "cgidef.h"
 #include "devid.h"
 
-static float get_devid_num(string)
-char *string;
+static float get_devid_num(char *string)
 {
 int i;
 
    for (i=0; i<MAX_DEVID; i++)
-       if (*(device_values[i].devid_char)==string[0] && 
+       if (*(device_values[i].devid_char)==string[0] &&
            *(device_values[i].devid_char+1)==string[1] &&
-           *(device_values[i].devid_char+2)==string[2]) 
+           *(device_values[i].devid_char+2)==string[2])
                 return(device_values[i].devid_num);
 
 /*  return a zero if there is no character string match */
@@ -173,7 +172,7 @@ int i;
 #define cdroab_ CDROAB
 #define bgpbuf_ BGPBUF
 #endif
-#ifdef Build64 
+#ifdef Build64
 #if !defined(ADDC_)
 #define vdinit vdinit4
 #define vdiqdc vdiqdc4
@@ -373,7 +372,7 @@ int i;
 #define crqlc_ CRQLC
 #define cpxa_ CPXA
 #endif
-#ifdef Build64 
+#ifdef Build64
 #if !defined(ADDC_)
 #define cesc cesc4
 #define ctx ctx4
@@ -395,6 +394,7 @@ int i;
 #endif
 #endif
 
+
 /* f2cchar macro definition */
 #if !defined(CRA) && !defined(ardent)
 #define f2cchar(fptr)  (fptr)
@@ -403,20 +403,11 @@ int i;
 #include <fortran.h>
 #define f2cchar(fptr)  (_fcdtocp((_fcd) fptr))
 #endif
-#if defined(ardent)
-struct FortranStr {
-        char *str;
-        int len;
-        char id;
-};
 
-typedef struct FortranStr Fortran_Str; /* Make the declarations in the */
-				       /* source more tractable. */
-#define f2cchar(fptr)  (fptr->str)
-#endif /* ardent */
+#include "sdcgi.h"
 
 /* current position */
-static float xcp = 0.; 
+static float xcp = 0.;
 static float ycp = 0.;
 
 /* internal buffer for polylines, polygons */
@@ -450,7 +441,9 @@ static float color_scale;
 static int init_colors[24] = { 0, 0, 0, 255, 0, 0,
                                0, 255, 0, 255, 255, 0,
                                0, 0, 255, 255, 0, 255,
-                               0, 255, 255, 255, 255, 255 }; 
+                               0, 255, 255, 255, 255, 255 };
+
+
 
 #ifndef TRUE
 #define TRUE 1
@@ -459,7 +452,7 @@ static int init_colors[24] = { 0, 0, 0, 255, 0, 0,
 
 /* macro to convert ascii(integer) to char (note: machine dependent) */
 #define a_to_c(ain) ((char)ain)     /* for ascii machine */
- 
+
 /* macros which map ndc into CGI coords. */
 #define map_x(xin) ((float)( scale * (xin)))
 #define map_y(yin) ((float)( scale * (yin)))
@@ -484,41 +477,41 @@ void vdicgi_errh(char errmsg[])
   fprintf(stderr," %s\n", errmsg);
 }
 
-void vbinq()
+void vbinq(void)
 /* --  THIS IS WHERE CHANGES TO DEV_CAP OCCUR -- */
 {
   int vstat, hscopy, disp, bcolor, dynbc, dynvdm, dx1, dy1, dx2, dy2, pixloc;
-  int maxpl, maxdpl, maxpg, maxpgs, maxpm, maxcf, maxchr, maxcel; 
-  int celfil, celaln, comptx, clofig, dclass; 
+  int maxpl, maxdpl, maxpg, maxpgs, maxpm, maxcf, maxchr, maxcel;
+  int celfil, celaln, comptx, clofig, dclass;
   int npdefb, nsetb, maxbi, dynmod, nomwid, minwid, maxwid;
   int nreq, first, ntotal, lntyp[6], nlist;
   int nsimul, navail, nint, cmode, overit, monoc, txp, chhit, i;
   float width, height;
-  char *devid;
+  char devid[4];
 
   /*  INQUIRE DEVICE IDENTIFICATION */
   maxchr = 3;
   cqid_(&maxchr, &vstat, &dclass, &devid);
   if (vstat == CVAL)
     {
-      dev_cap[22] = get_devid_num(&devid);
+      dev_cap[22] = get_devid_num(devid);
     }
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqid ");
 
   /*  INQUIRE DEVICE DESCRIPTION */
-  cqd_(&vstat, &hscopy, &disp, &bcolor, &dynbc, &dynvdm, &dx1, &dy1, 
+  cqd_(&vstat, &hscopy, &disp, &bcolor, &dynbc, &dynvdm, &dx1, &dy1,
        &dx2, &dy2, &width, &height, &pixloc);
   if (vstat == CVAL)
     {
       dev_cap[0]  = (float)hscopy;        /* Erasibility */
       dev_cap[1]  = (float)disp;          /* Scan type (vector, raster) */
-      /*     the next two may be wrong, want view surface instead of device surface 
-	     : also note, the next 2 items may change if surface is window--later */
+      /*     the next two may be wrong, want view surface instead of device surface
+             : also note, the next 2 items may change if surface is window--later */
       if (!((dx1 == 0) && (dx2 == 0)))    /* X dimension view surface */
-	dev_cap[14] = (float)(dx2 - dx1); 
+        dev_cap[14] = (float)(dx2 - dx1);
       if (!((dy1 == 0) && (dy2 == 0)))    /* Y dimension view surface */
-	dev_cap[15] = (float)(dy2 - dy1); 
+        dev_cap[15] = (float)(dy2 - dy1);
       dev_cap[16] =  width;               /* X dimension physical units */
       dev_cap[17] = height;               /* Y dimension physical units */
     }
@@ -533,32 +526,32 @@ void vbinq()
     }
 
   /*  INQUIRE PRIMITIVE SUPPORT LEVELS */
-  cqprl_(&vstat, &maxpl, &maxdpl, &maxpg, &maxpgs, &maxpm, &maxcf, 
-	 &maxchr, &maxcel, &celfil, &celaln, &comptx, &clofig);
+  cqprl_(&vstat, &maxpl, &maxdpl, &maxpg, &maxpgs, &maxpm, &maxcf,
+         &maxchr, &maxcel, &celfil, &celaln, &comptx, &clofig);
   if (vstat == CVAL)
     {
       if (maxpg == -1) maxpg = VBUF_SIZE;
-      dev_cap[24] = min(maxpg,VBUF_SIZE);  /* Maximum polygon points */ 
+      dev_cap[24] = min(maxpg,VBUF_SIZE);  /* Maximum polygon points */
     }
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqprl ");
 
   /*  INQUIRE LINE CAPABILITY */
   cqln_(&vstat, &npdefb, &nsetb, &maxbi, &dynmod, &nomwid, &minwid, &maxwid);
-  if (vstat == CVAL) 
+  if (vstat == CVAL)
     {
       dev_cap[18] = (float)minwid;         /* Minimum line width */
 
       /*  Due to the fact that cgi device coordinates have to be integer, the
-	  linewidth numbers may come back zero, enforce a minimum for nominal
-	  since we use it later in vdstlw for calculations */
+          linewidth numbers may come back zero, enforce a minimum for nominal
+          since we use it later in vdstlw for calculations */
       linewidth_nominal = (nomwid == 0)    /* Nominal line width */
-	? .001 : (float)nomwid/dev_cap[14]; 
+        ? .001 : (float)nomwid/dev_cap[14];
       dev_cap[30] = (float)maxwid;         /* Maximum line width */
 
       /* Could inquire marker capability, but this will be close enough*/
       dev_cap[19] = dev_cap[18];           /* Minimum pointsize  */
-    } 
+    }
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqln ");
 
@@ -576,17 +569,17 @@ void vbinq()
        */
       dev_cap[5] = 0.;
       for( i=0; i< nlist; i++ )
-	{
-	  switch ( lntyp[i] ) 
-	    {
-	    case 1: break;
-	    case 2: dev_cap[5] += 16.; break;
-	    case 3: dev_cap[5] += 1.; break;
-	    case 4: dev_cap[5] += 2.; break;
-	    case 5: dev_cap[5] += 4.; break;
-	    default: break;
-	    }  /* end switch */
-	}
+        {
+          switch ( lntyp[i] )
+            {
+            case 1: break;
+            case 2: dev_cap[5] += 16.; break;
+            case 3: dev_cap[5] += 1.; break;
+            case 4: dev_cap[5] += 2.; break;
+            case 5: dev_cap[5] += 4.; break;
+            default: break;
+            }  /* end switch */
+        }
     }
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqlnt ");
@@ -599,7 +592,7 @@ void vbinq()
       dev_cap[26] = (float)navail-2;    /* Available colors       */
       dev_cap[2]  = (float)nint;        /* Availabe intensities   */
       dev_cap[31] = 1.;                 /* Color or monochrome    */
-      if (monoc == CYES) dev_cap[31] = 0.; 
+      if (monoc == CYES) dev_cap[31] = 0.;
     }
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqc ");
@@ -614,14 +607,15 @@ void vbinq()
   else
     vdicgi_errh(" SVDI Shell (VBINQ) invalid inquire for cqchh ");
 }
-       
+
 void vdinit_ (float *aspect, int *justif)
 {
   float asp;
   int just, temp, temp2, vstat, vconc;
   float xconc, yconc, x1, y1, x2, y2, x3, y3, x4, y4, temp_xcp, temp_ycp;
   float scaled_ndc_xmax, scaled_ndc_ymax;
-
+  float rtemp = 0.0;
+  float itemp = 0;
   xconc = 0.0;
   yconc = 0.0;
   x1 = 0.0;
@@ -636,14 +630,14 @@ void vdinit_ (float *aspect, int *justif)
   asp = *aspect;
   just = *justif;
 
-  if (asp < 0.) 
-    { 
+  if (asp < 0.)
+    {
       vdicgi_errh(" SVDI Shell (VDINIT) Error Number 721 Severity 5: ");
       asp = 0.;
     }
 
   if (just < 0 || just > 9 )
-    { 
+    {
       vdicgi_errh(" SVDI Shell (VDINIT) Error Number 720 Severity 5: ");
       just = 0;
     }
@@ -652,7 +646,7 @@ void vdinit_ (float *aspect, int *justif)
   temp = CACT;
   alpha_mode = FALSE;
   ci_(&temp);
- 
+
   /*  Inquire everything you always wanted to know about */
   vbinq();
 
@@ -664,12 +658,12 @@ void vdinit_ (float *aspect, int *justif)
 
   /*  Set up proper scaling to take advantage of whole device (not just square) */
   if (asp == 0.) asp = dev_cap[14] / dev_cap[15];
-  if (asp > 1.) 
+  if (asp > 1.)
     {
       ndc_xmax=1.;
       ndc_ymax=1./asp;
     }
-  else 
+  else
     {
       ndc_xmax=asp;
       ndc_ymax=1.;
@@ -677,16 +671,16 @@ void vdinit_ (float *aspect, int *justif)
   scale = 32767.;
   scaled_ndc_xmax = map_x(ndc_xmax);
   scaled_ndc_ymax = map_y(ndc_ymax);
-  temp = 0.;
-  cvdcx_(&temp, &temp, &scaled_ndc_xmax, &scaled_ndc_ymax);
+  rtemp = 0.0;
+  cvdcx_(&rtemp, &rtemp, &scaled_ndc_xmax, &scaled_ndc_ymax);
 
   /*  Set color mode to index, and set color index precision to 8 bits  */
   temp = CINDEX;
   ccsm_(&temp);
   temp = 8;
   ccixp_(&temp);
-  color_scale = 255.; 
-  
+  color_scale = 255.;
+
   /*  set up the standard 8 colors in indices 2 - 9 (0 reserved for background,
       1 reserved for default foreground) */
   temp = 2;
@@ -707,11 +701,11 @@ void vdinit_ (float *aspect, int *justif)
   temp_xcp = map_x(xcp);
   temp_ycp = map_y(ycp);
   cgtxx2_(&temp_xcp, &temp_ycp, &vstat, &vconc, &xconc, &yconc,
-	  &x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4);
+          &x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4);
   if (vstat == CVAL)
     {
       vector[5] = ndc_map_x(x2-x1);
-      vector[6] = ndc_map_y(y4-y1);    
+      vector[6] = ndc_map_y(y4-y1);
     }
   else
     vdicgi_errh(" SVDI Shell (VDINIT) inquire error from cgtxx ");
@@ -724,27 +718,21 @@ void vdinit_ (float *aspect, int *justif)
 }
 
 
-void vflush() 
+void vflush(void)
 /*  flush polyline buffer */
-{    
-  int temp1, temp2;
-  float temp3;
-  
-  if (alpha_mode)
-    {
-      temp1 = XEAGMD;
-      temp2 = 1;
-      temp3 = 1.;    /*  graphics  */
-      cesc2_(&temp1, &temp2, &temp3);
-      alpha_mode = FALSE;
-    }
+{
+  if (alpha_mode) {
+    int temp1 = XEAGMD;
+    int temp2 = 1;
+    float temp3 = 1.;    /*  graphics  */
+    cesc2_(&temp1, &temp2, &temp3);
+    alpha_mode = FALSE;
+  }
 
-  if (nvert > 0) 
-    {
-      cpl_(&nvert, vlist_x, vlist_y);
-      nvert = 0;
-    }
-
+  if (nvert > 0) {
+    cpl_(&nvert, vlist_x, vlist_y);
+    nvert = 0;
+  }
 }
 
 void
@@ -756,7 +744,7 @@ vdterm_ ()
 
 void vdiqdc_ (int *index, float *value)
 {
-  if (*index < 1 || *index > MAX_DEV_CAP) 
+  if (*index < 1 || *index > MAX_DEV_CAP)
     {
       vdicgi_errh(" SVDI Shell (VDIQDC) Error Number 726, Severity Code 5 ");
       return;
@@ -790,7 +778,7 @@ void vdnwpg_ ()
 
   /*  prepare drawing surface - do background color   */
   temp = CCONDC;
-  cpds_(&temp);     
+  cpds_(&temp);
 }
 
 
@@ -810,13 +798,13 @@ void vdwait_ ()
 
   /*  do read waiting for viewing for interactive devices only */
   /*  mod### changed from 0(erasibility) to 12(input)          */
-  if (dev_cap[12] != 0.) 
+  if (dev_cap[12] != 0.)
     {
       temp = 1;
       timout = 1.;
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat != CVAL)
-	vdicgi_errh(" SVDI Shell (VDWAIT) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDWAIT) invalid request for crqlc ");
     }
 }
 
@@ -838,7 +826,7 @@ void vdbufl_ ()
 }
 
 void vdstco_ (int *num, int index_array[],
-	      float color_array[][3], int *color_mod)
+              float color_array[][3], int *color_mod)
 {
   int i=0;
   int start_index=0;
@@ -847,13 +835,13 @@ void vdstco_ (int *num, int index_array[],
   int count = 0;
   int hld_colors[768];
 
-  if (*num < 1 || *num > dev_cap[3]) 
+  if (*num < 1 || *num > dev_cap[3])
     {
       vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 723, Severity Code 5 ");
       return;
     }
 
-  if (*color_mod != 0 && *color_mod != 1) 
+  if (*color_mod != 0 && *color_mod != 1)
     {
       vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 725, Severity Code 5 ");
       return;
@@ -863,53 +851,53 @@ void vdstco_ (int *num, int index_array[],
   first = TRUE;
 
   for (i=0; i<*num; i++)
-    { 
+    {
       if (index_array[i] < 0 || index_array[i] > 255)
-	vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 724, Severity Code 5 ");
+        vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 724, Severity Code 5 ");
 
       /*  Set RGB color                                               */
       else if (*color_mod == 0)
-	{
-	  if (color_array[i][0] < 0. || color_array[i][0] > 1. ||
-	      color_array[i][1] < 0. || color_array[i][1] > 1. ||
-	      color_array[i][2] < 0. || color_array[i][2] > 1. )
-	    vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 727, Severity Code 5 ");
-	  else
-	    /*  Check to see if indices are consecutive (buffer up if they are)  */
-	    {
+        {
+          if (color_array[i][0] < 0. || color_array[i][0] > 1. ||
+              color_array[i][1] < 0. || color_array[i][1] > 1. ||
+              color_array[i][2] < 0. || color_array[i][2] > 1. )
+            vdicgi_errh(" SVDI Shell (VDSTCO) Error Number 727, Severity Code 5 ");
+          else
+            /*  Check to see if indices are consecutive (buffer up if they are)  */
+            {
 
-	      if (first) 
-		{
+              if (first)
+                {
 
-		  /*  set color table from index requested + 2 (0 reserved for background) */
+                  /*  set color table from index requested + 2 (0 reserved for background) */
 
-		  start_index = index_array[i]+2;
-		  hld_colors_ptr = 0;
-		  first = FALSE;
-		}
+                  start_index = index_array[i]+2;
+                  hld_colors_ptr = 0;
+                  first = FALSE;
+                }
 
-	      hld_colors[hld_colors_ptr++]=(int) (color_array[i][0]*color_scale);
-	      hld_colors[hld_colors_ptr++]=(int) (color_array[i][1]*color_scale);
-	      hld_colors[hld_colors_ptr++]=(int) (color_array[i][2]*color_scale);
+              hld_colors[hld_colors_ptr++]=(int) (color_array[i][0]*color_scale);
+              hld_colors[hld_colors_ptr++]=(int) (color_array[i][1]*color_scale);
+              hld_colors[hld_colors_ptr++]=(int) (color_array[i][2]*color_scale);
 
-	      if (i<*num-1)
-		{
-		  if (index_array[i] != (index_array[i+1]-1))
-		    {
+              if (i<*num-1)
+                {
+                  if (index_array[i] != (index_array[i+1]-1))
+                    {
                       count = hld_colors_ptr/3;
-                      cct_(&start_index, &count, hld_colors);                
+                      cct_(&start_index, &count, hld_colors);
                       first = TRUE;
-		    }
-		}
-	    }
-	}  
+                    }
+                }
+            }
+        }
 
       /*  Set HLS color (HLS not supported)                           */
-      else 
-	{
-	  vdicgi_errh(" SVDI Shell (VDSTCO) HLS option being phased out - ignored ");
-	  vdicgi_errh(" Contact Computer Graphics Group - Div. 2644 ");
-	}
+      else
+        {
+          vdicgi_errh(" SVDI Shell (VDSTCO) HLS option being phased out - ignored ");
+          vdicgi_errh(" Contact Computer Graphics Group - Div. 2644 ");
+        }
     }
 
   count = hld_colors_ptr/3;
@@ -917,24 +905,24 @@ void vdstco_ (int *num, int index_array[],
 }
 
 void vdiqco_ (int *num, int index_array[],
-	      float color_array[][3], int *color_mod)
+              float color_array[][3], int *color_mod)
 {
   int i, ntotal, colors[3], first, nreq, vstat, nlist;
   int temp1, temp2;
   float temp3;
 
-  if (*num < 1 || *num > dev_cap[3]) 
+  if (*num < 1 || *num > dev_cap[3])
     {
       vdicgi_errh(" SVDI Shell (VDIQCO) Error Number 723, Severity Code 5 ");
       return;
     }
 
-  if (*color_mod != 0 && *color_mod != 1) 
+  if (*color_mod != 0 && *color_mod != 1)
     {
       vdicgi_errh(" SVDI Shell (VDIQCO) Error Number 725, Severity Code 5 ");
       return;
     }
-   
+
   if (alpha_mode)
     {
       temp1 = XEAGMD;
@@ -945,43 +933,43 @@ void vdiqco_ (int *num, int index_array[],
     }
 
   for (i=0; i<*num; i++)
-    { 
+    {
       if (index_array[i] < 0 || index_array[i] > 255)
-	vdicgi_errh(" SVDI Shell (VDIQCO) Error Number 724, Severity Code 5 ");
+        vdicgi_errh(" SVDI Shell (VDIQCO) Error Number 724, Severity Code 5 ");
 
       else
-	{
-	  if (*color_mod == 1)
-	    {
-	      vdicgi_errh(" HLS option being phased out - returning RGB values ");
-	      vdicgi_errh(" Contact Computer Graphics Group - Div. 2644 ");
-	    }
+        {
+          if (*color_mod == 1)
+            {
+              vdicgi_errh(" HLS option being phased out - returning RGB values ");
+              vdicgi_errh(" Contact Computer Graphics Group - Div. 2644 ");
+            }
 
-	  /*  find out from cgi what the color table is */ 
-	  nreq = 1;
-	  first = index_array[i] + 3;
-	  cqcte_(&nreq, &first, &vstat, &ntotal, &nlist, colors);
-	  if (vstat == CVAL)
-	    {
-	      color_array[i][0] = (float)colors[0]/color_scale ;   
-	      color_array[i][1] = (float)colors[1]/color_scale ;   
-	      color_array[i][2] = (float)colors[2]/color_scale ;    
-	    }
-	  else
-	    {
-	      vdicgi_errh(" SVDI Shell (VDIQCO) invalid inquire for cqcte ");
-	      color_array[i][0] = -1.;
-	    }
-	} 
+          /*  find out from cgi what the color table is */
+          nreq = 1;
+          first = index_array[i] + 3;
+          cqcte_(&nreq, &first, &vstat, &ntotal, &nlist, colors);
+          if (vstat == CVAL)
+            {
+              color_array[i][0] = (float)colors[0]/color_scale ;
+              color_array[i][1] = (float)colors[1]/color_scale ;
+              color_array[i][2] = (float)colors[2]/color_scale ;
+            }
+          else
+            {
+              vdicgi_errh(" SVDI Shell (VDIQCO) invalid inquire for cqcte ");
+              color_array[i][0] = -1.;
+            }
+        }
     }
 }
 
 void vdescp_ (int *escape_code, int *n, float args[])
 {
   int temp;
-  
+
   temp = XESVDI;
-  
+
   if (*n < 0) {
     vdicgi_errh(" SVDI Shell (VDESCP) Error Number 802, Severity Code 5 ");
     return;
@@ -1002,7 +990,7 @@ void vdiqnd_ (float *x_ndc, float *y_ndc)
 void vdmova_ (float *x, float *y)
 {
   vflush();
-  vlist_x[nvert] = map_x(*x);    
+  vlist_x[nvert] = map_x(*x);
   vlist_y[nvert] = map_y(*y);
   nvert++;
 
@@ -1022,8 +1010,11 @@ void vdlina_ (float *x, float *y)
     }
 
   /*  append to polyline buffer (if full, flush it first)  */
-  if (nvert > VBUF_SIZE) vflush();
-  vlist_x[nvert] = map_x(*x);    
+  if (nvert >= VBUF_SIZE) {
+    vflush();
+    nvert = 0; /* vflush sets this, but static analysis still warns. */
+  }
+  vlist_x[nvert] = map_x(*x);
   vlist_y[nvert] = map_y(*y);
   nvert++;
 
@@ -1032,7 +1023,7 @@ void vdlina_ (float *x, float *y)
 }
 
 void vdpnta_ (float *x, float *y)
-{ 
+{
   float new_x, new_y;
   int temp;
 
@@ -1041,7 +1032,7 @@ void vdpnta_ (float *x, float *y)
   temp = 1;
 
   vflush();
-  vlist_x[nvert] = new_x;    
+  vlist_x[nvert] = new_x;
   vlist_y[nvert] = new_y;
   nvert++;
 
@@ -1049,7 +1040,7 @@ void vdpnta_ (float *x, float *y)
 
   xcp = *x;
   ycp = *y;
-}   
+}
 
 void
 vdtext_ (int *length, int char_array[])
@@ -1064,12 +1055,12 @@ vdtext_ (int *length, int char_array[])
     vdicgi_errh(" SVDI Shell (VDTEXT) Error Number 212, Severity Code 5 ");
     return;
   }
-    
-  if (len > 136) { 
+
+  if (len > 136) {
     vdicgi_errh(" SVDI Shell (VDTEXT) Error Number 213, Severity Code 5 ");
     len = 136;
   }
-    
+
   if (alpha_mode) {
     temp1 = XEAGMD;
     temp2 = 1;
@@ -1080,50 +1071,50 @@ vdtext_ (int *length, int char_array[])
 
   lenout = 0;     /*count characters in string output buffer "strout" */
 
-  for (i=0; i<len; i++) 
+  for (i=0; i<len; i++)
     {
-      if (char_array[i] < 32 || char_array[i] > 126) 
-	{
-	  switch(char_array[i]) 
-	    {
-	    case 8:
-	      dx = -vector[6];
-	      dy = 0.;
-	      break;
-	    case 10:
-	      dx = 0.;
-	      dy = -vector[5];
-	      break;
-	    case 13:
-	      dx = -xcp;
-	      dy = 0.;
-	      break;
-	    default:
-	      dx = 0.;
-	      dy = 0.;
-	      vdicgi_errh(" SVDI Shell (VDTEXT) Error Number 208, Severity Code 5 ");
-	      break;
-	    }
-	  /*  Stuff to send, finish the string   */
- 
-	  if (lenout != 0 )
-	    {
-	      temp_xcp = map_x(xcp);
-	      temp_ycp = map_y(ycp);
-	      ctx2_(&temp_xcp, &temp_ycp, strout, &lenout);
-	      xcp += lenout*vector[6];
-	      lenout = 0;
-	    }
-	  xcp += dx;
-	  ycp += dy;
-	  vdmova_ (&xcp,&ycp);
-	}
+      if (char_array[i] < 32 || char_array[i] > 126)
+        {
+          switch(char_array[i])
+            {
+            case 8:
+              dx = -vector[6];
+              dy = 0.;
+              break;
+            case 10:
+              dx = 0.;
+              dy = -vector[5];
+              break;
+            case 13:
+              dx = -xcp;
+              dy = 0.;
+              break;
+            default:
+              dx = 0.;
+              dy = 0.;
+              vdicgi_errh(" SVDI Shell (VDTEXT) Error Number 208, Severity Code 5 ");
+              break;
+            }
+          /*  Stuff to send, finish the string   */
+
+          if (lenout != 0 )
+            {
+              temp_xcp = map_x(xcp);
+              temp_ycp = map_y(ycp);
+              ctx2_(&temp_xcp, &temp_ycp, strout, &lenout);
+              xcp += lenout*vector[6];
+              lenout = 0;
+            }
+          xcp += dx;
+          ycp += dy;
+          vdmova_ (&xcp,&ycp);
+        }
 
       else
- 
-	strout[lenout++] = char_array[i];
+
+        strout[lenout++] = char_array[i];
     }
- 
+
 
   /*  All done, get rid of them         */
   if (lenout != 0)
@@ -1150,7 +1141,7 @@ void vdpoly_ (float x_array[], float y_array[], int *npts)
   else if (*npts > VBUF_SIZE)
     {
       vdicgi_errh(
-		  " SVDI Shell (VDPOLY) exceeded max points - internal buffer limit ");
+                  " SVDI Shell (VDPOLY) exceeded max points - internal buffer limit ");
       iend = VBUF_SIZE;
     }
   else
@@ -1158,11 +1149,11 @@ void vdpoly_ (float x_array[], float y_array[], int *npts)
 
   for ( i=0; i<iend; i++)
     {
-      vlist_x[nvert] = map_x(x_array[i]);    
+      vlist_x[nvert] = map_x(x_array[i]);
       vlist_y[nvert] = map_y(y_array[i]);
       nvert++;
     }
-    
+
   cpg_(&nvert, vlist_x, vlist_y);
   nvert = 0;
 
@@ -1179,7 +1170,7 @@ void vdiqcp_ (float *x, float *y)
 void vdiqos_ (float attr_array[])
 {
   int i;
-  
+
   for(i=0; i<MAX_VECTOR; i++)
     attr_array[i] = vector[i];
 }
@@ -1201,7 +1192,7 @@ void vdstfc_ (int *color_index)
   new_color = *color_index+2;
 
   vflush();
-    
+
   clnc_(&new_color);
   cmkc_(&new_color);
   ctxc_(&new_color);
@@ -1221,7 +1212,7 @@ void vdstbc_ (int *color_index)
 
 void vdstin_ (float *intensity)
 {
-  if (*intensity < 0. || *intensity > 1.) 
+  if (*intensity < 0. || *intensity > 1.)
     {
       vdicgi_errh(" SVDI Shell (VDSTIN) Error Number 401 Severity 5: ");
       return;
@@ -1243,8 +1234,8 @@ void vdstls_ (int *line_style)
   switch (*line_style)
     {
       /*  cgi linestyles are: 1 - solid, 2 - dash, 3 - dot, 4 - dashdot 5 - dash dot dot
-	  vdi linestyles are: 0 - solid, 1 - dotted, 2 - dot dash
-	  3 - short dash, 4 - long dash, 5 - medium dash    */
+          vdi linestyles are: 0 - solid, 1 - dotted, 2 - dot dash
+          3 - short dash, 4 - long dash, 5 - medium dash    */
     case 0:
       temp = 1;
       clnt_(&temp);
@@ -1253,7 +1244,7 @@ void vdstls_ (int *line_style)
       temp = 3;
       clnt_(&temp);
       break;
-    case 2: 
+    case 2:
       temp = 4;
       clnt_(&temp);
       break;
@@ -1327,11 +1318,11 @@ void vdstcs_ (float *y_size)
   x = map_x(xcp);
   y = map_y(ycp);
   cgtxx2_(&x, &y, &vstat, &vconc, &xconc, &yconc,
-	  &x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4);
+          &x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4);
   if (vstat == CVAL)
     {
       /* mod## y value being stored incorrectyl; swapped x & y */
-      vector[5] = ndc_map_y(y4-y1);    
+      vector[5] = ndc_map_y(y4-y1);
       vector[6] = ndc_map_x(x2-x1);
     }
   else
@@ -1351,10 +1342,10 @@ void vdaabu_ (int *button)
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat == CVAL)
         {
-	  *button = trigger;
+          *button = trigger;
         }
       else
-	vdicgi_errh(" SVDI Shell (VDAABU) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDAABU) invalid request for crqlc ");
     }
 }
 
@@ -1371,11 +1362,11 @@ void vdaloc_ (float *x, float *y)
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat == CVAL)
         {
-	  *x = ndc_map_x(xpos);
-	  *y = ndc_map_y(ypos);
+          *x = ndc_map_x(xpos);
+          *y = ndc_map_y(ypos);
         }
       else
-	vdicgi_errh(" SVDI Shell (VDALOC) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDALOC) invalid request for crqlc ");
     }
 }
 
@@ -1392,12 +1383,12 @@ void vdabgl_ (int *button, float *x, float *y)
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat == CVAL)
         {
-	  *x = ndc_map_x(xpos);
-	  *y = ndc_map_y(ypos);
-	  *button = trigger;
+          *x = ndc_map_x(xpos);
+          *y = ndc_map_y(ypos);
+          *button = trigger;
         }
       else
-	vdicgi_errh(" SVDI Shell (VDABGL) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDABGL) invalid request for crqlc ");
     }
 }
 
@@ -1414,12 +1405,12 @@ void vdakgl_ (int *charac, float *x, float *y)
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat == CVAL)
         {
-	  *x = ndc_map_x(xpos);
-	  *y = ndc_map_y(ypos);
-	  *charac = trigger;
+          *x = ndc_map_x(xpos);
+          *y = ndc_map_y(ypos);
+          *charac = trigger;
         }
       else
-	vdicgi_errh(" SVDI Shell (VDAKGL) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDAKGL) invalid request for crqlc ");
     }
 }
 
@@ -1436,13 +1427,13 @@ void vdstla_ (float *x, float *y)
       crqlc_(&temp, &timout, &vstat, &rstat, &mvalid, &trigger, &xpos, &ypos);
       if (vstat == CVAL)
         {
-	  *x = ndc_map_x(xpos);
-	  *y = ndc_map_y(ypos);
+          *x = ndc_map_x(xpos);
+          *y = ndc_map_y(ypos);
         }
       else
-	vdicgi_errh(" SVDI Shell (VDSTLA) invalid request for crqlc ");
+        vdicgi_errh(" SVDI Shell (VDSTLA) invalid request for crqlc ");
     }
-   
+
 }
 
 void vdstos_ (float attr_array[])

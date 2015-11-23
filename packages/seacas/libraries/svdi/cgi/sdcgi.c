@@ -45,6 +45,8 @@
 #include "stdtyp.h"
 #include "fortyp.h"
 #include "cgi.h"
+#include "sdcgi.h"
+
 /* ifdefc.h - ifdef file for cgi routines
  * This file is used to define the system dependent ways C is
  * called from FORTRAN.  Underscores are used by default.
@@ -244,9 +246,7 @@ anything        *sol_surf = NULL;        /* current solicitation surface, */
 /*      ci - initialize CGI                                                   */
 /*                                                                            */
 /******************************************************************************/
-void
-ci_ (pds)
-f_integer       *pds;                   /* 1 to do prepare drawing surface */
+void ci_ (f_integer *pds)
 {
    short        func_id = CI_FN;
    short        i;
@@ -275,8 +275,7 @@ f_integer       *pds;                   /* 1 to do prepare drawing surface */
 /*      ct - terminate CGI                                                    */
 /*                                                                            */
 /******************************************************************************/
-void
-ct_ ()
+void ct_ (void)
 {
    short        func_id = CT_FN;
    short        i;
@@ -299,8 +298,7 @@ ct_ ()
 /*      cxdfac - execute deferred actions                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-cxdfac_ ()
+void cxdfac_ (void)
 {
    short        func_id = CXDFAC_FN;
    short        i;
@@ -323,9 +321,7 @@ cxdfac_ ()
 /*      cpds - prepare drawing surface                                        */
 /*                                                                            */
 /******************************************************************************/
-void
-cpds_ (clear)
-f_integer       *clear;         /* force clear viewsurface */
+void cpds_ (f_integer *clear)
 {
    short        func_id = CPDS_FN;
    short        i;
@@ -349,8 +345,7 @@ f_integer       *clear;         /* force clear viewsurface */
 /*      cendpg - end page                                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-cendpg_ ()
+void cendpg_ (void)
 {
    short        func_id = CENDPG_FN;
    short        i;
@@ -374,9 +369,7 @@ cendpg_ ()
 /*      cbc - set background color                                            */
 /*                                                                            */
 /******************************************************************************/
-void
-cbc_ (red, green, blue)
-f_integer       *red, *green, *blue;            
+void cbc_ (f_integer *red, f_integer *green, f_integer *blue)
 {
    short        func_id = CBC_FN;
    short        i;
@@ -402,10 +395,7 @@ f_integer       *red, *green, *blue;
 /*      cvdcx - VDC Extent                                                    */
 /*                                                                            */
 /******************************************************************************/
-void
-cvdcx_ (x1, y1, x2, y2)
-f_real          *x1, *y1;               /* first corner */
-f_real          *x2, *y2;               /* second corner */
+void cvdcx_ (f_real *x1, f_real *y1, f_real *x2, f_real *y2)
 {
    short        func_id = CVDCX_FN;
    short        i;
@@ -432,10 +422,7 @@ f_real          *x2, *y2;               /* second corner */
 /*      cv - Device Viewport                                                  */
 /*                                                                            */
 /******************************************************************************/
-void
-cv_ (x1, y1, x2, y2)
-f_real          *x1, *y1;               /* first corner */
-f_real          *x2, *y2;               /* second corner */
+void cv_ (f_real *x1, f_real *y1, f_real *x2, f_real *y2)
 {
    short        func_id = CV_FN;
    short        i;
@@ -461,9 +448,7 @@ f_real          *x2, *y2;               /* second corner */
 /*      ccl - Clip Indicator                                                  */
 /*                                                                            */
 /******************************************************************************/
-void
-ccl_ (clipi)
-f_integer       *clipi;
+void ccl_ (f_integer *clipi)
 {
    short        func_id = CCL_FN;
    short        i;
@@ -486,9 +471,7 @@ f_integer       *clipi;
 /*      cdscl - Drawing Surface Clip Indicator                                */
 /*                                                                            */
 /******************************************************************************/
-void
-cdscl_ (clipi)
-f_integer       *clipi;                 /* indicator, CDCOFF, CDCREC, CVPORT */
+void cdscl_ (f_integer *clipi)
 {
    short        func_id = CDSCL_FN;
    short        i;
@@ -512,15 +495,9 @@ f_integer       *clipi;                 /* indicator, CDCOFF, CDCREC, CVPORT */
 /*      cdqerr - dequeue error reports                                        */
 /*                                                                            */
 /******************************************************************************/
-void
-cdqerr_ (nreq, vstat, nrem, nret, errcl, errnm, funcid)
-f_integer       *nreq;
-f_integer       *vstat;
-f_integer       *nrem;
-f_integer       *nret;
-f_integer   *errcl;
-f_integer       *errnm;
-f_integer       *funcid;
+void cdqerr_ (f_integer *nreq, f_integer *vstat, f_integer *nrem,
+	      f_integer *nret, f_integer *errcl, f_integer *errnm,
+	      f_integer *funcid)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -564,11 +541,7 @@ f_integer       *funcid;
 /*      cerhct - error handling control                                       */
 /*                                                                            */
 /******************************************************************************/
-void
-cerhct_ (n, erclas, hflag)
-f_integer       *n;
-f_integer       *erclas;
-f_integer       *hflag;
+void cerhct_ (f_integer *n, f_integer *erclas, f_integer *hflag)
 {
    short        func_id = CERHCT_FN;
    short        i;
@@ -594,9 +567,7 @@ f_integer       *hflag;
 /*      ccixp - color index precision                                         */
 /*                                                                            */
 /******************************************************************************/
-void
-ccixp_ (cip)
-f_integer       *cip;
+void ccixp_ (f_integer *cip)
 {
    short        func_id = CCIXP_FN;
    short        i;
@@ -620,16 +591,7 @@ f_integer       *cip;
 /*      cesc - escape function                                                */
 /*                                                                            */
 /******************************************************************************/
-void
-cesc1_ (funcid, ldr, data, drec_size)
-f_integer       *funcid;        /* function identifier */
-f_integer       *ldr;           /* dimension of data record array */
-#if defined(ardent)
-struct FortranStr *data;
-#else
-char            *data;          /* 80 character data record array */
-#endif
-f_integer       *drec_size;     /* length of a data record */
+void cesc1_ (f_integer *funcid, f_integer *ldr, char *data, f_integer *drec_size)
 {
    char         *data1;
    short        func_id = CESC_FN;
@@ -662,12 +624,7 @@ f_integer       *drec_size;     /* length of a data record */
 /*      cqid - inquire device identification                                  */
 /*                                                                            */
 /******************************************************************************/
-void
-cqid_ (maxchr, vstat, dclass, devid)
-f_integer       *maxchr;
-f_integer       *vstat;
-f_integer       *dclass;
-char            *devid;
+void cqid_ (f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid[4])
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -708,19 +665,10 @@ char            *devid;
 /*      cqd - inquire device description                                      */
 /*                                                                            */
 /******************************************************************************/
-void
-cqd_ (vstat, hscopy, disp, bcolor, dynbc, dynvdm, dx1, dy1, dx2, dy2,
-      width, height, pixloc)
-f_integer       *vstat;
-f_integer       *hscopy;
-f_integer       *disp;
-f_integer       *bcolor;
-f_integer       *dynbc;
-f_integer       *dynvdm;
-f_integer       *dx1, *dy1;
-f_integer       *dx2, *dy2;
-f_real          *width, *height;
-f_integer       *pixloc;
+void cqd_ (f_integer *vstat, f_integer *hscopy, f_integer *disp, f_integer *bcolor,
+	   f_integer *dynbc, f_integer *dynvdm,
+	   f_integer *dx1, f_integer *dy1, f_integer *dx2, f_integer *dy2,
+	   f_real *width, f_real *height, f_integer *pixloc)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -770,13 +718,7 @@ f_integer       *pixloc;
 /*      clf - Lookup Function Support                                         */
 /*                                                                            */
 /******************************************************************************/
-void
-clf_ (n, funccl, funcid, vstat, supprt )
-f_integer       *n;
-f_integer       *funccl;
-f_integer       *funcid;
-f_integer       *vstat;
-f_integer       *supprt;
+void clf_ (f_integer *n, f_integer *funccl, f_integer *funcid, f_integer *vstat, f_integer *supprt )
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -818,13 +760,7 @@ f_integer       *supprt;
 /*      clpr - Lookup Profile Support                                         */
 /*                                                                            */
 /******************************************************************************/
-void
-clpr_ (n, profid, profid_size, vstat, supprt )
-f_integer       *n;
-char            *profid;
-f_integer       *profid_size;
-f_integer       *vstat;
-f_integer       *supprt;
+void clpr_ (f_integer *n, char *profid, f_integer *profid_size, f_integer *vstat, f_integer *supprt )
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -866,28 +802,11 @@ f_integer       *supprt;
 /*      cqsp - inquire supported precisions                                   */
 /*                                                                            */
 /******************************************************************************/
-void
-cqsp_ (vstat, nvip, vip, nvrp, vrfmt, vrexp, vrfrac, nip, ip, nrp, rfmt,
-       rexp, rfrac, nixp, ixp, ncp, cp, ncixp, cixp)
-f_integer       *vstat;
-f_integer       *nvip;
-f_integer       *vip;
-f_integer       *nvrp;
-f_integer       *vrfmt;
-f_integer       *vrexp;
-f_integer       *vrfrac;
-f_integer       *nip;
-f_integer       *ip;
-f_integer       *nrp;
-f_integer       *rfmt;
-f_integer       *rexp;
-f_integer       *rfrac;
-f_integer       *nixp;
-f_integer       *ixp;
-f_integer       *ncp;
-f_integer       *cp;
-f_integer       *ncixp;
-f_integer       *cixp;
+void cqsp_ (f_integer *vstat, f_integer *nvip, f_integer *vip, f_integer *nvrp,
+       f_integer *vrfmt, f_integer *vrexp, f_integer *vrfrac, f_integer *nip,
+       f_integer *ip, f_integer *nrp, f_integer *rfmt,
+       f_integer *rexp, f_integer *rfrac, f_integer *nixp, f_integer *ixp,
+       f_integer *ncp, f_integer *cp, f_integer *ncixp, f_integer *cixp)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -943,12 +862,7 @@ f_integer       *cixp;
 /*      clesc - Lookup Escape Support                                         */
 /*                                                                            */
 /******************************************************************************/
-void
-clesc_ (n, escid, vstat, supprt)
-f_integer       *n;
-f_integer       *escid;
-f_integer       *vstat;
-f_integer       *supprt;
+void clesc_ (f_integer *n, f_integer *escid, f_integer *vstat, f_integer *supprt)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -989,20 +903,9 @@ f_integer       *supprt;
 /*      cqp - inquire current precisions                                      */
 /*                                                                            */
 /******************************************************************************/
-void
-cqp_ (vstat, vip, vrfmt, vrexp, vrfrac, ip, rfmt, rexp, rfrac, ixp, cp, cixp)
-f_integer       *vstat;
-f_integer       *vip;
-f_integer       *vrfmt;
-f_integer       *vrexp;
-f_integer       *vrfrac;
-f_integer       *ip;
-f_integer       *rfmt;
-f_integer       *rexp;
-f_integer       *rfrac;
-f_integer       *ixp;
-f_integer       *cp;
-f_integer       *cixp;
+void cqp_ (f_integer *vstat, f_integer *vip, f_integer *vrfmt, f_integer *vrexp,
+	   f_integer *vrfrac, f_integer *ip, f_integer *rfmt, f_integer *rexp,
+	   f_integer *rfrac, f_integer *ixp, f_integer *cp, f_integer *cixp)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -1051,13 +954,8 @@ f_integer       *cixp;
 /*      cqcl - inquire clipping                               */
 /*                                                                            */
 /******************************************************************************/
-void
-cqcl_ (vstat, clip1, clipr, sclip1, sclipr )
-f_integer       *vstat;
-f_integer       *clip1;
-f_integer       *clipr;
-f_integer       *sclip1;
-f_integer       *sclipr;
+void cqcl_ (f_integer *vstat, f_integer *clip1, f_integer *clipr,
+	    f_integer *sclip1, f_integer *sclipr )
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -1099,10 +997,7 @@ f_integer       *sclipr;
 /*      cpl - polyline                                                        */
 /*                                                                            */
 /******************************************************************************/
-void
-cpl_ (np, px, py)
-f_integer       *np;
-f_real          *px, *py;
+void cpl_ (f_integer *np, f_real *px, f_real *py)
 {
    short        func_id = CPL_FN;
    short        i;
@@ -1128,10 +1023,7 @@ f_real          *px, *py;
 /*      cdjpl - disjoint polyline                                             */
 /*                                                                            */
 /******************************************************************************/
-void
-cdjpl_ (np, px, py)
-f_integer       *np;
-f_real          *px, *py;
+void cdjpl_ (f_integer *np, f_real *px, f_real *py)
 {
    short        func_id = CDJPL_FN;
    short        i;
@@ -1157,10 +1049,7 @@ f_real          *px, *py;
 /*      cpm - polymarker                                                      */
 /*                                                                            */
 /******************************************************************************/
-void
-cpm_ (np, px, py)
-f_integer       *np;
-f_real          *px, *py;
+void cpm_ (f_integer *np, f_real *px, f_real *py)
 {
    short        func_id = CPM_FN;
    short        i;
@@ -1186,17 +1075,7 @@ f_real          *px, *py;
 /*      ctx - text                                                            */
 /*                                                                            */
 /******************************************************************************/
-void
-ctx1_ (x, y, flag, text, text_size)
-
-f_real          *x, *y;
-f_integer       *flag;
-#if defined(ardent)
-struct FortranStr *text;
-#else
-char            *text;
-#endif
-f_integer       *text_size;
+void ctx1_ (f_real *x, f_real *y, f_integer *flag, char *text, f_integer *text_size)
 {
    char         *text1;
    short        func_id = CTX_FN;
@@ -1226,10 +1105,7 @@ f_integer       *text_size;
 /*      cpg - polygon                                                          */
 /*                                                                            */
 /******************************************************************************/
-void
-cpg_ (np, px, py)
-f_integer       *np;
-f_real          *px, *py;
+void cpg_ (f_integer *np, f_real *px, f_real *py)
 {
    short        func_id = CPG_FN;
    short        i;
@@ -1255,12 +1131,8 @@ f_real          *px, *py;
 /*      cca - cell array                                                      */
 /*                                                                            */
 /******************************************************************************/
-void
-cca_ (x1, y1, x2, y2, x3, y3, nx, ny, lcp, cells)
-f_real          *x1, *y1, *x2, *y2, *x3, *y3;
-f_integer       *nx, *ny;
-f_integer       *lcp;
-f_integer       *cells;
+void cca_ (f_real *x1, f_real *y1, f_real *x2, f_real *y2, f_real *x3, f_real *y3,
+	   f_integer *nx, f_integer *ny, f_integer *lcp, f_integer *cells)
 {
    short        func_id = CCA_FN;
    short        i;
@@ -1293,9 +1165,7 @@ f_integer       *cells;
 /*      clnt - line type                                                      */
 /*                                                                            */
 /******************************************************************************/
-void
-clnt_ (lntyp)
-f_integer       *lntyp;
+void clnt_ (f_integer *lntyp)
 {
    short        func_id = CLNT_FN;
    short        i;
@@ -1319,9 +1189,7 @@ f_integer       *lntyp;
 /*      clnw - line width                                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-clnw_ (lnwid)
-f_real          *lnwid;
+void clnw_ (f_real *lnwid)
 {
    short        func_id = CLNW_FN;
    short        i;
@@ -1345,9 +1213,7 @@ f_real          *lnwid;
 /*      clnc - line color                                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-clnc_ (lnclr)
-f_integer       *lnclr;
+void clnc_ (f_integer *lnclr)
 {
    short        func_id = CLNC_FN;
    short        i;
@@ -1371,9 +1237,7 @@ f_integer       *lnclr;
 /*      cmkt - marker type                                                    */
 /*                                                                            */
 /******************************************************************************/
-void
-cmkt_ (mktyp)
-f_integer       *mktyp;
+void cmkt_ (f_integer *mktyp)
 {
    short        func_id = CMKT_FN;
    short        i;
@@ -1397,9 +1261,7 @@ f_integer       *mktyp;
 /*      cmkc - marker color                                                   */
 /*                                                                            */
 /******************************************************************************/
-void
-cmkc_ (mkclr)
-f_integer       *mkclr;
+void cmkc_ (f_integer *mkclr)
 {
    short        func_id = CMKC_FN;
    short        i;
@@ -1423,9 +1285,7 @@ f_integer       *mkclr;
 /*      ctxp - text precision                                         */
 /*                                                                            */
 /******************************************************************************/
-void
-ctxp_ (txp)
-f_integer       *txp;
+void ctxp_ (f_integer *txp)
 {
    short        func_id = CTXP_FN;
    short        i;
@@ -1449,9 +1309,7 @@ f_integer       *txp;
 /*      ctxc - text color                                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-ctxc_ (txclr)
-f_integer       *txclr;
+void ctxc_ (f_integer *txclr)
 {
    short        func_id = CTXC_FN;
    short        i;
@@ -1475,9 +1333,7 @@ f_integer       *txclr;
 /*      cchh - character height                                               */
 /*                                                                            */
 /******************************************************************************/
-void
-cchh_ (chhit)
-f_real          *chhit;
+void cchh_ (f_real *chhit)
 {
    short        func_id = CCHH_FN;
    short        i;
@@ -1501,12 +1357,7 @@ f_real          *chhit;
 /*      ccho - character orientation                             */
 /*                                                                            */
 /******************************************************************************/
-void
-ccho_ (xup,yup,xbase,ybase)
-f_integer       *xup;
-f_integer       *yup;
-f_integer       *xbase;
-f_integer       *ybase;
+void ccho_ (f_integer *xup, f_integer *yup, f_integer *xbase, f_integer *ybase)
 {
    short        func_id = CCHO_FN;
    short        i;
@@ -1533,9 +1384,7 @@ f_integer       *ybase;
 /*      cis - interior style                                                  */
 /*                                                                            */
 /******************************************************************************/
-void
-cis_ (instyl)
-f_integer       *instyl;
+void cis_ (f_integer *instyl)
 {
    short        func_id = CIS_FN;
    short        i;
@@ -1559,9 +1408,7 @@ f_integer       *instyl;
 /*      cflc - fill colour specifier                                          */
 /*                                                                            */
 /******************************************************************************/
-void
-cflc_ (fclr)
-f_integer       *fclr;
+void cflc_ (f_integer *fclr)
 {
    short        func_id = CFLC_FN;
    short        i;
@@ -1585,9 +1432,7 @@ f_integer       *fclr;
 /*      ccsm - color selection mode                                           */
 /*                                                                            */
 /******************************************************************************/
-void
-ccsm_ (csmode)
-f_integer       *csmode;
+void ccsm_ (f_integer *csmode)
 {
    short        func_id = CCSM_FN;
    short        i;
@@ -1611,11 +1456,7 @@ f_integer       *csmode;
 /*      cct - color table                                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-cct_ (starti, nclrs, clrs)
-f_integer       *starti;
-f_integer       *nclrs;
-f_integer       *clrs;
+void cct_ (f_integer *starti, f_integer *nclrs, f_integer *clrs)
 {
    short        func_id = CCT_FN;
    short        i;
@@ -1641,21 +1482,10 @@ f_integer       *clrs;
 /*      cgtxx - get text extent                                               */
 /*                                                                            */
 /******************************************************************************/
-void
-cgtxx1_ (x, y, string, vstat, vconc, xconc, yconc,
-      x1, y1, x2, y2, x3, y3, x4, y4, string_size )
-
-f_real          *x, *y;                 /* text position (VDC)  */
-#if defined(ardent)
-struct FortranStr *string;                /* character string     */
-#else
-char            *string;                /* character string     */
-#endif
-f_integer       *vstat, *vconc;         /* validity status (CINVAL, CVAL)*/
-f_real          *xconc, *yconc;         /* concatenation point (VDC) */
-f_real          *x1, *y1, *x2, *y2;     /*text extent parallelogram (VDC)*/
-f_real          *x3, *y3, *x4, *y4;
-f_integer       *string_size;
+void cgtxx1_ (f_real *x, f_real *y, char *string, f_integer *vstat, f_integer *vconc,
+	      f_real *xconc, f_real *yconc,
+	      f_real *x1, f_real *y1, f_real *x2, f_real *y2, f_real *x3, f_real *y3,
+	      f_real *x4, f_real *y4, f_integer *string_size )
 {
    char         *string1;
    short        dev;                    /* which device to look at now */
@@ -1710,22 +1540,10 @@ f_integer       *string_size;
 /*      cqprl - inquire primitive support levels                              */
 /*                                                                            */
 /******************************************************************************/
-void
-cqprl_ (vstat, maxpl, maxdpl, maxpg, maxpgs, maxpm, maxcf, maxchr, maxcel,
-        celfil, celaln, comptx, clofig)
-f_integer       *vstat;
-f_integer       *maxpl;
-f_integer       *maxdpl;
-f_integer       *maxpg;
-f_integer       *maxpgs;
-f_integer       *maxpm;
-f_integer       *maxcf;
-f_integer       *maxchr;
-f_integer       *maxcel;
-f_integer       *celfil;
-f_integer       *celaln;
-f_integer       *comptx;
-f_integer       *clofig;
+void cqprl_ (f_integer *vstat, f_integer *maxpl, f_integer *maxdpl, f_integer *maxpg,
+	     f_integer *maxpgs, f_integer *maxpm, f_integer *maxcf, f_integer *maxchr,
+	     f_integer *maxcel, f_integer *celfil, f_integer *celaln, f_integer *comptx,
+	     f_integer *clofig)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -1775,16 +1593,9 @@ f_integer       *clofig;
 /*      cqln - inquire line capability                                        */
 /*                                                                            */
 /******************************************************************************/
-void
-cqln_ (vstat, npdefb, nsetb, maxbi, dynmod, nomwid, minwid, maxwid)
-f_integer       *vstat;
-f_integer       *npdefb;
-f_integer       *nsetb;
-f_integer       *maxbi;
-f_integer       *dynmod;
-f_integer       *nomwid;
-f_integer       *minwid;
-f_integer       *maxwid;
+void cqln_ (f_integer *vstat, f_integer *npdefb, f_integer *nsetb,
+	    f_integer *maxbi, f_integer *dynmod, f_integer *nomwid,
+	    f_integer *minwid, f_integer *maxwid)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -1829,14 +1640,8 @@ f_integer       *maxwid;
 /*      cqlnt - inquire list of available line types                          */
 /*                                                                            */
 /******************************************************************************/
-void
-cqlnt_ (nreq, first, vstat, ntotal, nlist, lntyp )
-f_integer       *nreq;
-f_integer       *first;
-f_integer       *vstat;
-f_integer       *ntotal;
-f_integer       *nlist;
-f_integer       *lntyp;
+void cqlnt_ (f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntotal,
+	     f_integer *nlist, f_integer *lntyp )
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -1878,21 +1683,9 @@ f_integer       *lntyp;
 /*      cqchh - inquire list of available character heights                   */
 /*                                                                            */
 /******************************************************************************/
-void
-cqchh1_ (font, txp, nreq, first, vstat, ntotal, nlist, chhit, font_size)
-#if defined(ardent)
-     struct FortranStr *font;
-#else
-	char            *font;
-#endif
-f_integer       *txp;
-f_integer       *nreq;
-f_integer       *first;
-f_integer       *vstat;
-f_integer       *ntotal;
-f_integer       *nlist;
-f_integer       *chhit;
-f_integer       *font_size;
+void cqchh1_ (char *font, f_integer *txp, f_integer *nreq, f_integer *first,
+	      f_integer *vstat, f_integer *ntotal, f_integer *nlist, f_integer *chhit,
+	      f_integer *font_size)
 {
    char         *font1;
    short        dev;                    /* which device to look at now */
@@ -1939,23 +1732,10 @@ f_integer       *font_size;
 /*      cqfl - inquire fill capability                                       */
 /*                                                                            */
 /******************************************************************************/
-void
-cqfl_ (vstat, npdefb, nsetb, maxbi, dynmod, ninsty, instyl, npdefp, nsetp,
-      maxpi, pdiv, maxpx, maxpy, ptrans)
-f_integer       *vstat;
-f_integer       *npdefb;
-f_integer       *nsetb;
-f_integer       *maxbi;
-f_integer       *dynmod;
-f_integer       *ninsty;
-f_integer       *instyl;
-f_integer       *npdefp;
-f_integer       *nsetp;
-f_integer       *maxpi;
-f_integer       *pdiv;
-f_integer       *maxpx;
-f_integer       *maxpy;
-f_integer       *ptrans;
+void cqfl_ (f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *maxbi,
+	    f_integer *dynmod, f_integer *ninsty, f_integer *instyl, f_integer *npdefp,
+	    f_integer *nsetp, f_integer *maxpi, f_integer *pdiv, f_integer *maxpx,
+	    f_integer *maxpy, f_integer *ptrans)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2004,16 +1784,8 @@ f_integer       *ptrans;
 /*      cqc - inquire colour capabilities                                     */
 /*                                                                            */
 /******************************************************************************/
-void
-cqc_ (vstat, nsimul, navail, nint, cmode, dynmod, overit, monoc)
-f_integer       *vstat;
-f_integer       *nsimul;
-f_integer       *navail;
-f_integer       *nint[3];
-f_integer       *cmode;
-f_integer       *dynmod;
-f_integer       *overit;
-f_integer       *monoc;
+void cqc_ (f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nint[3],
+	   f_integer *cmode, f_integer *dynmod, f_integer *overit, f_integer *monoc)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2057,16 +1829,8 @@ f_integer       *monoc;
 /*      cqlna - inquire line attributes                                       */
 /*                                                                            */
 /******************************************************************************/
-void
-cqlna_ (vstat, lnbi, lntyp, lwmode, lnwid, csmode, lnclr, lcmode)
-f_integer       *vstat;
-f_integer       *lnbi;
-f_integer       *lntyp;
-f_integer       *lwmode;
-f_real          *lnwid;
-f_integer       *csmode;
-f_integer       *lnclr;
-f_integer       *lcmode;
+void cqlna_ (f_integer *vstat, f_integer *lnbi, f_integer *lntyp, f_integer *lwmode,
+	     f_integer *lnwid, f_integer *csmode, f_integer *lnclr, f_integer *lcmode)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2110,26 +1874,10 @@ f_integer       *lcmode;
 /*      cqtxa - inquire text attributes                                       */
 /*                                                                            */
 /******************************************************************************/
-void
-cqtxa_ (vstat, txbi, fonti, fontp, chexp, chspac, csmode, txclr, chhit,
-        orient, txpath, horal, contha, veral, contva, chsi, achsi)
-f_integer       *vstat;
-f_integer       *txbi;
-f_integer       *fonti;
-f_integer       *fontp;
-f_real          *chexp;
-f_real          *chspac;
-f_integer       *csmode;
-f_integer       *txclr[3];
-f_real          *chhit;
-f_real          *orient[4];
-f_integer       *txpath;
-f_integer       *horal;
-f_real          *contha;
-f_integer       *veral;
-f_real          *contva;
-f_integer       *chsi;
-f_integer       *achsi;
+void cqtxa_ (f_integer *vstat, f_integer *txbi, f_integer *fonti, f_integer *fontp,
+	     f_real *chexp, f_real *chspac, f_integer *csmode, f_integer *txclr[3],
+	     f_real *chhit, f_real *orient[4], f_integer *txpath, f_integer *horal,
+	     f_real *contha, f_integer *veral, f_real *contva, f_integer *chsi, f_integer *achsi)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2181,14 +1929,8 @@ f_integer       *achsi;
 /*      cqcte - inquire list of colour table entries                          */
 /*                                                                            */
 /******************************************************************************/
-void
-cqcte_ (nreq, first, vstat, ntotal, nlist, colors)
-f_integer       *nreq;
-f_integer       *first;
-f_integer       *vstat;
-f_integer       *ntotal;
-f_integer       *nlist;
-f_integer       *colors;
+void cqcte_ (f_integer *nreq, f_integer *first, f_integer *vstat,
+	     f_integer *ntotal, f_integer *nlist, f_integer *colors)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2230,10 +1972,7 @@ f_integer       *colors;
 /*      cili - initialize logical input device                                */
 /*                                                                            */
 /******************************************************************************/
-void
-cili_ (iclass, idev)
-f_integer       *iclass;
-f_integer       *idev;
+void cili_ (f_integer *iclass, f_integer *idev)
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2271,15 +2010,9 @@ f_integer       *idev;
 /*      crqlc - request locator                                               */
 /*                                                                            */
 /******************************************************************************/
-void
-crqlc_ (idev, timout, vstat, rstat, mvalid, triggr, x, y) 
-f_integer       *idev;
-f_real          *timout;
-f_integer       *vstat;
-f_integer       *rstat;
-f_integer       *mvalid;
-f_integer       *triggr;
-f_real          *x, *y;
+void crqlc_ (f_integer *idev, f_real *timout, f_integer *vstat,
+	     f_integer *rstat, f_integer *mvalid, f_integer *triggr,
+	     f_real *x, f_real *y) 
 {
    short        dev;                    /* which device to look at now */
    short        dev_found;              /* which device was it found on */
@@ -2323,13 +2056,9 @@ f_real          *x, *y;
 /*      cpxa - pixel array                                                    */
 /*                                                                            */
 /******************************************************************************/
-void
-cpxa_ (x, y, nx, ny, xscal, yscal, xdir, ydir, pxclrs)
-f_real          *x, *y;
-f_integer       *nx, *ny;
-f_integer       *xscal, *yscal;
-f_integer       *xdir, *ydir;
-f_integer       *pxclrs;
+void cpxa_ (f_real *x, f_real *y, f_integer *nx, f_integer *ny,
+	    f_integer *xscal, f_integer *yscal, f_integer *xdir, f_integer *ydir,
+	    f_integer *pxclrs)
 {
    short        func_id = CPXA_FN;
    short        i;

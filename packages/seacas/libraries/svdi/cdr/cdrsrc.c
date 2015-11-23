@@ -892,8 +892,9 @@ int *ifilcd;
 {
   int fd;
   int errnum, errsev;
-  char symbol[80];
+  char symbol[1024];
   char err[50];
+  char *env;
 
   int i = 0;
   int j = 0;
@@ -914,8 +915,9 @@ int *ifilcd;
     sprintf(symbol,"file%d",*ifilcd );
 
   /* check the environment to see if a file name has been assigned */
-  if(getenv(symbol) != 0)
-    sprintf(symbol,"%s",getenv(symbol));
+ env = getenv(symbol);
+ if(env != 0 && strlen(env) < 1024)
+   sprintf(symbol,"%s",env);
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
   if (( fd = open(symbol,(O_CREAT | O_RDWR ),0664)) == -1)  
