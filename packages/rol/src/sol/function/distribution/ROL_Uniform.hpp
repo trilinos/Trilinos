@@ -87,6 +87,14 @@ public:
   Real moment(const size_t m) const {
     return (std::pow(b_,m+1)-std::pow(a_,m+1))/((Real)(m+1)*(b_-a_));
   }
+
+  Real lowerBound(void) const {
+    return a_;
+  }
+ 
+  Real upperBound(void) const {
+    return b_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 5;

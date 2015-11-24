@@ -114,6 +114,14 @@ public:
     return 6./std::pow(b_-a_,3)
            * (-(b3-a3)/(p+3) + (a_+b_)*(b2-a2)/(p+2) - a_*b_*(b1-a1)/(p+1));
   }
+
+  Real lowerBound(void) const {
+    return a_;
+  }
+ 
+  Real upperBound(void) const {
+    return b_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 5;

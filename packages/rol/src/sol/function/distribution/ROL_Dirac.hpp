@@ -83,6 +83,14 @@ public:
     }
     return std::pow(data_,(Real)m); 
   }
+
+  Real lowerBound(void) const {
+    return data_;
+  }
+
+  Real upperBound(void) const {
+    return data_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 0;

@@ -45,6 +45,8 @@
 #define ROL_MOMENTOBJECTIVE_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_BatchManager.hpp"
+#include "ROL_Distribution.hpp"
 #include "ROL_SROMVector.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
@@ -54,9 +56,11 @@ namespace ROL {
 template <class Real>
 class MomentObjective : public Objective<Real> {
 private:
-  const std::vector<std::vector<std::pair<size_t, Real> > > moments_;
+  std::vector<std::vector<std::pair<size_t, Real> > > moments_;
+  Teuchos::RCP<BatchManager<Real> > bman_;
 
-  Real momentValue(const size_t dim, const Real power, const Real moment, const SROMVector<Real> &x) const {
+  Real momentValue(const size_t dim, const Real power, const Real moment,
+                   const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
     Real val = 0., xpt = 0., xwt = 0.;
     for (size_t k = 0; k < numSamples; k++) {
@@ -67,7 +71,8 @@ private:
   }
 
   void momentGradient(std::vector<Real> &gradx, std::vector<Real> &gradp,  Real &scale,
-                const size_t dim, const Real power, const Real moment, const SROMVector<Real> &x) const {
+                const size_t dim, const Real power, const Real moment,
+                const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     scale = 0.;
@@ -87,7 +92,7 @@ private:
                      std::vector<Real> &hvp1, std::vector<Real> &hvp2,
                      Real &scale1, Real &scale2, Real &scale3,
                const size_t dim, const Real power, const Real moment,
-               const SROMVector<Real> &x, const SROMVector<Real> &v) const {
+               const PrimalSROMVector<Real> &x, const PrimalSROMVector<Real> &v) const {
     const size_t numSamples = x.getNumSamples();
     hvx1.resize(numSamples,0.); hvx2.resize(numSamples,0.); hvx3.resize(numSamples,0.);
     hvp1.resize(numSamples,0.); hvp2.resize(numSamples,0.);
@@ -118,13 +123,30 @@ private:
   }
 
 public:
-  MomentObjective(const std::vector<std::vector<std::pair<size_t, Real> > > &moments)
-    : Objective<Real>(), moments_(moments) {}
+  MomentObjective(const std::vector<std::vector<std::pair<size_t, Real> > > &moments,
+                        Teuchos::RCP<BatchManager<Real> > &bman)
+    : Objective<Real>(), moments_(moments), bman_(bman) {}
+
+  MomentObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
+                  const std::vector<size_t>                             &order,
+                        Teuchos::RCP<BatchManager<Real> > &bman)
+    : Objective<Real>(), bman_(bman) {
+    size_t numMoments = order.size();
+    size_t dimension  = dist.size();
+    std::vector<std::pair<size_t,Real> > data(numMoments);
+    moments_.clear(); moments_.resize(dimension);
+    for (size_t d = 0; d < dimension; d++) {
+      for (size_t i = 0; i < numMoments; i++) {
+        data[i] = std::make_pair(order[i],dist[d]->moment(order[i]));
+      }
+      moments_[d].assign(data.begin(),data.end());
+    }
+  }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     size_t dimension  = ex.getDimension();
-    Real val = 0.;
+    Real val = 0., sum = 0.;
     std::vector<std::pair<size_t, Real> > data;
     for (size_t d = 0; d < dimension; d++) {
       data = moments_[d];
@@ -132,12 +154,13 @@ public:
         val += momentValue(d,(Real)data[m].first,data[m].second,ex);
       }
     }
-    return val;
+    bman_->sumAll(&val,&sum,1);
+    return sum;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &eg = Teuchos::dyn_cast<DualSROMVector<Real> >(g);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     size_t dimension  = ex.getDimension();
     size_t numSamples = ex.getNumSamples();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
@@ -162,9 +185,9 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &ehv = Teuchos::dyn_cast<DualSROMVector<Real> >(hv);
+    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     const size_t dimension  = ex.getDimension();
     const size_t numSamples = ex.getNumSamples();
     std::vector<Real> hvx1(numSamples,0.), hvx2(numSamples,0.), hvx3(numSamples,0.);

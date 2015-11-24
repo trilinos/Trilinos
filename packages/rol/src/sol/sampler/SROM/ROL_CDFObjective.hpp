@@ -45,6 +45,7 @@
 #define ROL_CDFOBJECTIVE_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Distribution.hpp"
 #include "Teuchos_RCP.hpp"
@@ -56,6 +57,7 @@ template <class Real>
 class CDFObjective : public Objective<Real> {
 private:
   std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  Teuchos::RCP<BatchManager<Real> > bman_;
   const std::vector<Real> lowerBound_;
   const std::vector<Real> upperBound_;
   const Real scale_;
@@ -96,7 +98,8 @@ private:
     }
   }
 
-  Real valueCDF(const size_t dim, const Real loc, const SROMVector<Real> &x) const {
+  Real valueCDF(const size_t dim, const Real loc,
+                const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
     Real val = 0., hs = 0., xpt = 0., xwt = 0.;
     for (size_t k = 0; k < numSamples; k++) {
@@ -108,7 +111,8 @@ private:
   }
 
   Real gradientCDF(std::vector<Real> &gradx, std::vector<Real> &gradp,
-             const size_t dim, const Real loc, const SROMVector<Real> &x) const {
+             const size_t dim, const Real loc,
+             const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     Real val = 0., hs = 0., xpt = 0., xwt = 0.;
@@ -126,7 +130,8 @@ private:
   Real hessVecCDF(std::vector<Real> &hvxx, std::vector<Real> &hvxp, std::vector<Real> &hvpx,
                   std::vector<Real> &gradx, std::vector<Real> &gradp,
                   Real &sumx, Real &sump,
-            const size_t dim, const Real loc, const SROMVector<Real> &x, const SROMVector<Real> &v) const {
+            const size_t dim, const Real loc,
+            const PrimalSROMVector<Real> &x, const PrimalSROMVector<Real> &v) const {
     const size_t numSamples = x.getNumSamples();
     hvxx.resize(numSamples,0.); hvxp.resize(numSamples,0.); hvpx.resize(numSamples,0.);
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
@@ -153,16 +158,17 @@ private:
 public:
   CDFObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
                const std::vector<Real> &lo, const std::vector<Real> &up,
+                     Teuchos::RCP<BatchManager<Real> > &bman,
                const Real scale = 1.e-2)
-    : Objective<Real>(), dist_(dist), lowerBound_(lo), upperBound_(up), scale_(scale),
-      sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(M_PI)) {
+    : Objective<Real>(), dist_(dist), bman_(bman), lowerBound_(lo), upperBound_(up),
+      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(M_PI)) {
     initializeQuadrature();
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     const size_t dimension  = ex.getDimension();
-    Real val = 0., diff = 0., pt = 0., wt = 0., meas = 0., lb = 0.;
+    Real val = 0., diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., sum = 0.;
     for (size_t d = 0; d < dimension; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
@@ -172,13 +178,14 @@ public:
         diff = (valueCDF(d,pt,ex)-dist_[d]->evaluateCDF(pt));
         val += wt*std::pow(diff,2);
       }
-    } 
-    return 0.5*val;
+    }
+    bman_->sumAll(&val,&sum,1);
+    return 0.5*sum;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &eg = Teuchos::dyn_cast<DualSROMVector<Real> >(g);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     const size_t dimension  = ex.getDimension();
     const size_t numSamples = ex.getNumSamples();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
@@ -206,9 +213,9 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &ehv = Teuchos::dyn_cast<DualSROMVector<Real> >(hv);
+    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     const size_t dimension  = ex.getDimension();
     const size_t numSamples = ex.getNumSamples();
     std::vector<Real> hvxx(numSamples,0.), hvxp(numSamples,0.), hvpx(numSamples,0.);

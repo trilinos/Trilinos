@@ -45,45 +45,48 @@
 #define ROL_SROM_EQUALITY_CONSTRAINT_H
 
 #include "ROL_EqualityConstraint.hpp"
+#include "ROL_BatchManager.hpp"
 #include "ROL_SROMVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include <iostream>
 
 namespace ROL {
 
 template <class Real>
 class SROMEqualityConstraint : public EqualityConstraint<Real> {
 private:
+  Teuchos::RCP<BatchManager<Real> > bman_;
 
 public:
-  SROMEqualityConstraint(void) : EqualityConstraint<Real>() {}
+  SROMEqualityConstraint(Teuchos::RCP<BatchManager<Real> > &bman)
+    : EqualityConstraint<Real>(), bman_(bman) {}
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
     Teuchos::RCP<std::vector<Real> > ec =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(c)).getVector());
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
-    (*ec)[0] = -1.0;
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
+    Real psum = 0.0, sum = 0.0;
     for (size_t i = 0; i < ex.getNumSamples(); i++) {
-      (*ec)[0] += ex.getWeight(i);
+      psum += ex.getWeight(i);
     }
+    bman_->sumAll(&psum,&sum,1);
+    (*ec)[0] = sum - 1.0;
   }
 
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
     Teuchos::RCP<std::vector<Real> > ejv =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(jv)).getVector());
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
-    (*ejv)[0] = 0.0;
+    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
+    Real psum = 0.0, sum = 0.0;
     for (size_t i = 0; i < ev.getNumSamples(); i++) {
-      (*ejv)[0] += ev.getWeight(i);
+      psum += ev.getWeight(i);
     }
+    bman_->sumAll(&psum,&sum,1);
+    (*ejv)[0] = sum;
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    SROMVector<Real> &eajv = Teuchos::dyn_cast<SROMVector<Real> >(ajv);
+    DualSROMVector<Real> &eajv = Teuchos::dyn_cast<DualSROMVector<Real> >(ajv);
     Teuchos::RCP<const std::vector<Real> > ev =
       (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
     const std::vector<Real> pt(eajv.getDimension(),0.0);
