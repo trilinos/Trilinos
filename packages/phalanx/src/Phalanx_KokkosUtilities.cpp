@@ -29,6 +29,12 @@ namespace PHX {
     //std::cout << "available threads: " << omp_get_max_threads() << std::endl;
 #endif
   }
+
+  void InitializeKokkosDevice(int& narg, char* arg[])
+  {
+    Kokkos::initialize(narg, arg);
+  }
+
   
   void FinalizeKokkosDevice()
   {
