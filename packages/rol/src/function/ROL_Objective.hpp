@@ -303,7 +303,7 @@ public:
                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                                                         const int order = 1 ) {
 
-    return checkHessVec(x, x, v, printToStream, outStream, numSteps, order);
+    return checkHessVec(x, x.dual(), v, printToStream, outStream, numSteps, order);
 
   }
 
