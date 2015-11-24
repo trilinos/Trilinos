@@ -112,7 +112,7 @@ namespace Xpetra {
 
   private:
 
-	typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory_t;
+  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory_t;
 #undef XPETRA_STRIDEDMAP_SHORT
 #include "Xpetra_UseShortNamesOrdinal.hpp"
 
@@ -399,7 +399,14 @@ namespace Xpetra {
     StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset), indexBase_(map->getIndexBase())
     {
-      map_ = map;
+      // TAW: 11/24/15
+      //      A strided map never can be built from a strided map. getMap always returns the underlying
+      //      Xpetra::Map object which contains the data (either in a Xpetra::EpetraMapT or Xpetra::TpetraMap
+      //      object)
+      if(Teuchos::rcp_dynamic_cast<const StridedMap>(map) == Teuchos::null)
+        map_ = map; // if map is not a strided map, just store it (standard case)
+      else
+        map_ = map->getMap(); // if map is also a strided map, store the underlying plain Epetra/Tpetra Xpetra map object
     }
 
 
@@ -457,7 +464,7 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
-    RCP<const Map> getMap() const { return map_; }
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const { return map_; }
 
     //@}
 
@@ -558,7 +565,7 @@ namespace Xpetra {
     }
 
   private:
-    RCP<const Map>      map_;
+    RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >      map_;
 
     std::vector<size_t> stridingInfo_;      //!< vector with size of strided blocks (dofs)
     LocalOrdinal        stridedBlockId_;    //!< member variable denoting which dofs are stored in map
