@@ -2,7 +2,9 @@
 
 rm -f CMakeCache.txt;
 rm -rf CMakeFiles
-
+echo ""
+echo "WARNING: In order to get modules correctly loaded source this files, don't just execute it."
+echo ""
 EXTRA_ARGS=$@
 
 # Trilinos Path:
@@ -15,9 +17,10 @@ EXAMPLES=ON
 CUDA=OFF
 OPENMP=ON
 PTHREAD=OFF
-SERIAL=ON
+SERIAL=OFF
 
 COMPLEX=ON
+
 
 #----------------------------------------------------
 #TPL Paths-------------------------------------------
@@ -27,8 +30,14 @@ COMPLEX=ON
 #compiler while using same version numbers for tpl libraries
 #This is meant for Sandia SEMS module system and similar setups.
 TPL_PATH=/projects/install/rhel6-x86_64/sems/tpl
+
+#Options: gcc/4.7.2 gcc/4.8.4 gcc/4.9.2 gcc/5.1.0 intel/14.0.4 intel/15.0.5 clang/3.5.2 clang/3.6.1
 COMPILER_SUFFIX=gcc/4.7.2
+#Options: cuda/6.5.14 cuda/7.0.28
+CUDA_SUFFIX=cuda/7.0.28
+#Options: openmpi/1.6.5 openmpi/1.8.7
 MPI_SUFFIX=openmpi/1.8.7
+
 
 #Using Boost from sems
 BOOST_SUFFIX=boost/1.58.0
@@ -45,20 +54,28 @@ HDF5_PATH=${TPL_PATH}/${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 
 #Using NetCDF from sems
 NETCDF_SUFFIX=netcdf/4.3.2
-NETCDF_PATH=${TPL_PATH}/${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
+NETCDF_PATH=${TPL_PATH}/${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel
 
 #Zlib doesn't exist in the sems modules yet
-ZLIB_PATH=${HOME}/libs/zlib/1.2.8/gcc/4.8.4
+ZLIB_SUFFIX=zlib/1.2.8
+ZLIB_PATH=${TPL_PATH}/${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
 
 #--------------------------------------------------
 #--------------------------------------------------
 
 module purge 
 module load cmake/2.8.12
-module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}
+if [ "${CUDA}" == 'ON' ]; then
+  module load ${CUDA_SUFFIX}
+  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
+  export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper
+else
+  module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}
+fi
 module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
 module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
-module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
+module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/parallel
+module load ${ZLIB_SUFFIX}/${COMPILER_SUFFIX}/base
 
 # CMAKE Command structured
 #
@@ -75,10 +92,11 @@ module load ${NETCDF_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
 cmake \
 -D Trilinos_ENABLE_OpenMP=${OPENMP} \
 -D Kokkos_ENABLE_Pthread=${PTHREAD} \
--D Trilinos_ENABLE_Cuda=${CUDA} \
+-D TPL_ENABLE_CUDA=${CUDA} \
+  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
 \
--D CMAKE_CXX_FLAGS="-DKOKKOSP_ENABLE_PROFILING -Wall -ansi -pedantic -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow --std=c++11 -O3" \
+-D CMAKE_CXX_FLAGS="-DKOKKOSP_ENABLE_PROFILING -Wall -ansi -pedantic -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-delete-non-virtual-dtor -Wno-inline -Wshadow" \
 -D CMAKE_C_FLAGS="-Wall -ansi -pedantic -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow" \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D Trilinos_ENABLE_DEBUG:BOOL=OFF \
@@ -97,7 +115,6 @@ cmake \
   -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
 \
 -D TPL_ENABLE_MPI=ON \
-  -D Trilinos_ENABLE_MPI:BOOL=ON \
   -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \
 -D TPL_ENABLE_BinUtils=OFF \
 -D TPL_ENABLE_SuperLU=ON \
@@ -114,7 +131,7 @@ cmake \
 -D TPL_ENABLE_Netcdf=ON \
   -D Netcdf_INCLUDE_DIRS:PATH="${NETCDF_PATH}/include" \
   -D Netcdf_LIBRARY_DIRS:PATH="${NETCDF_PATH}/lib" \
-  -D TPL_Netcdf_LIBRARIES="${NETCDF_PATH}/lib/libnetcdf.a;${HDF5_PATH}/lib/libhdf5_hl.a;${HDF5_PATH}/lib/libhdf5.a;${ZLIB_PATH}/lib/libz.a" \
+  -D TPL_Netcdf_LIBRARIES:PATH="${NETCDF_PATH}/lib/libnetcdf.a;${HDF5_PATH}/lib/libhdf5_hl.a;${HDF5_PATH}/lib/libhdf5.a;${ZLIB_PATH}/lib/libz.a" \
 -D TPL_ENABLE_HDF5=ON \
   -D HDF5_INCLUDE_DIRS:PATH="${HDF5_PATH}/include" \
   -D TPL_HDF5_LIBRARIES:PATH="${HDF5_PATH}/lib/libhdf5_hl.a;${HDF5_PATH}/lib/libhdf5.a;${ZLIB_PATH}/lib/libz.a" \
@@ -155,12 +172,11 @@ cmake \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Panzer=ON \
   -D Panzer_ENABLE_TESTS:BOOL=${TESTS} \
--D Trilinos_ENABLE_Rol=ON \
-  -D Rol_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_ROL=ON \
+  -D ROL_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Sacado=ON \
   -D Sacado_ENABLE_UNINIT:BOOL=ON \
   -D Sacado_ENABLE_TESTS:BOOL=${TESTS} \
-  -D Sacado_ENABLE_PERFORMANCE_TESTS:BOOL=${TESTS} \
   -D Sacado_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Stokhos=ON \
   -D Stokhos_ENABLE_TESTS:BOOL=${TESTS} \
@@ -174,6 +190,7 @@ cmake \
   -D Tpetra_INST_OPENMP:BOOL=${OPENMP} \
   -D Tpetra_INST_PTHREAD:BOOL=${PTHREAD} \
   -D Tpetra_INST_CUDA:BOOL=${CUDA} \
+  -D Tpetra_INST_COMPLEX_DOUBLE:BOOL=${COMPLEX} \
   -D Tpetra_ENABLE_TESTS:BOOL=${TESTS} \
   -D Tpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_TrilinosCouplings=ON \
