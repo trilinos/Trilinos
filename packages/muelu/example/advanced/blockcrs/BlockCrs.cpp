@@ -141,6 +141,9 @@ namespace MueLuExamples {
     RCP<Tpetra_Operator>    Mt = MueLu::CreateTpetraPreconditioner(At,MueLuList);
     RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
     RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
+
+    if(Xt.is_null() || Bt.is_null() || At.is_null() || Mt.is_null()) throw std::runtime_error("ERROR: Xpetra to Tpetra conversion failed");
+
     typedef Tpetra_MultiVector MV;
     typedef Tpetra_Operator OP;
     RCP<Belos::LinearProblem<SC,MV,OP> > belosProblem = rcp(new Belos::LinearProblem<SC,MV,OP>(At, Xt, Bt));
@@ -310,7 +313,7 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     // Setups and solves
     // =========================================================================
-    map=A->getRowMap();
+    map=Xpetra::toXpetra(Acrs->getRowMap());
 
     RCP<Vector> X1 = VectorFactory::Build(map);
     RCP<Vector> X2 = VectorFactory::Build(map);
