@@ -5,6 +5,23 @@ Release Notes for Trilinos Package Tpetra
 Development version (12.5)
 --------------------------
 
+* (Multi)Vector: Add 'atomic' option to sumInto{Local,Global}Values
+
+The sumIntoLocalValues and sumIntoGlobalValues methods in
+Tpetra::MultiVector and Tpetra::Vector now take an optional bool
+'atomic' argument.  If true, the methods use Kokkos::atomic_add
+(atomic +=); if false, the methods use (non-atomic) += as before.
+
+This lets different threads call the methods concurrently on the same
+entries of the MultiVector or Vector.  To support this, I modified
+sumIntoGlobalValues so that it does not change Teuchos::RCP reference
+counts, thus making it thread safe.
+
+The default value of 'atomic' depends on the class' execution space.
+If Kokkos::Serial, atomic is false by default; else, it is true by
+default.  This ensures that existing MPI-only codes do not need to pay
+the (small integer factor) overhead of atomic updates.
+
 * Block(Multi)Vector: Add "offset view" constructors (Bug 6450)
 
 Tpetra::Experimental::{BlockMultiVector, BlockVector} now have two
