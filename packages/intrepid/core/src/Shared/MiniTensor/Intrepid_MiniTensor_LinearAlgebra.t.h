@@ -242,7 +242,7 @@ inverse_fast23(Tensor<T, N> const & A)
 // \return Subtensor with i-row and j-col deleted.
 //
 template<typename T, Index N>
-Tensor<T, dimension_subtract<N, 1>::value >
+Tensor<T, dimension_subtract<N, 1>::value>
 subtensor(Tensor<T, N> const & A, Index const i, Index const j)
 {
   Index const
@@ -255,9 +255,9 @@ subtensor(Tensor<T, N> const & A, Index const i, Index const j)
   B(dimension - 1);
 
   Index p = 0;
-  Index q = 0;
   for (Index m = 0; m < dimension; ++m) {
     if (m == i) continue;
+    Index q = 0;
     for (Index n = 0; n < dimension; ++n) {
       if (n == j) continue;
       B(p, q) = A(m, n);
