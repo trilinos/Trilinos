@@ -105,29 +105,35 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValue (GlobalOrdinal globalRow, const Scalar& value) {
+  replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value) {
     this->base_type::replaceGlobalValue (globalRow, 0, value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValue (GlobalOrdinal globalRow, const Scalar& value) {
-    this->base_type::sumIntoGlobalValue (globalRow, 0, value);
+  sumIntoGlobalValue (const GlobalOrdinal globalRow,
+                      const Scalar& value,
+                      const bool atomic)
+  {
+    this->base_type::sumIntoGlobalValue (globalRow, 0, value, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceLocalValue (LocalOrdinal myRow, const Scalar& value) {
+  replaceLocalValue (const LocalOrdinal myRow, const Scalar& value) {
     this->base_type::replaceLocalValue (myRow, 0, value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoLocalValue (LocalOrdinal myRow, const Scalar& value) {
-    this->base_type::sumIntoLocalValue (myRow, 0, value);
+  sumIntoLocalValue (const LocalOrdinal globalRow,
+                     const Scalar& value,
+                     const bool atomic)
+  {
+    this->base_type::sumIntoLocalValue (globalRow, 0, value, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
