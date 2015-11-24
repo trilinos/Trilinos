@@ -1272,14 +1272,14 @@ static yyconst flex_int16_t yy_rule_linenum[102] =
       143,  145,  154,  155,  182,  217,  241,  247,  268,  275,
       286,  291,  305,  310,  317,  341,  348,  350,  363,  376,
       401,  407,  412,  417,  422,  432,  440,  448,  457,  485,
-      506,  507,  508,  509,  511,  516,  539,  541,  543,  599,
-      600,  603,  605,  613,  614,  615,  616,  617,  618,  619,
-      620,  621,  622,  623,  624,  625,  626,  627,  628,  629,
-      630,  631,  632,  633,  634,  635,  636,  637,  638,  639,
-      640,  641,  642,  643,  644,  645,  646,  647,  648,  649,
-      655,  661,  673,  675,  677,  693,  694,  704,  707,  708,
+      506,  507,  508,  509,  511,  516,  539,  541,  543,  582,
+      583,  586,  588,  596,  597,  598,  599,  600,  601,  602,
+      603,  604,  605,  606,  607,  608,  609,  610,  611,  612,
+      613,  614,  615,  616,  617,  618,  619,  620,  621,  622,
+      623,  624,  625,  626,  627,  628,  629,  630,  631,  632,
+      638,  644,  656,  658,  660,  676,  677,  687,  690,  691,
 
-      710
+      693
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -1289,7 +1289,7 @@ static yyconst flex_int16_t yy_rule_linenum[102] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 1 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 /*
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -1325,7 +1325,7 @@ static yyconst flex_int16_t yy_rule_linenum[102] =
  * 
  */
 /* -*- Mode: c++ -*- */
-#line 39 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 39 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 
 #include <fstream>
 #include <iostream>
@@ -1559,7 +1559,7 @@ YY_DECL
 	register int yy_act;
     
 /* %% [7.0] user's declarations go here */
-#line 127 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 127 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 
 #line 1565 "apr_scanner.cc"
 
@@ -1676,56 +1676,56 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 129 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 129 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { BEGIN(INITIAL);   }
 	YY_BREAK
 case 2:
-#line 131 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 131 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 3:
 YY_RULE_SETUP
-#line 131 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 131 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo) ECHO; }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 132 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 132 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo) ECHO; aprepro.ap_file_list.top().lineno++;   }
 	YY_BREAK
 
 
 case 5:
 YY_RULE_SETUP
-#line 136 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 136 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { BEGIN(VERBATIM);  }
 	YY_BREAK
 case 6:
-#line 138 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 138 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 7:
 YY_RULE_SETUP
-#line 138 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 138 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { echo = true;	}
 	YY_BREAK
 case 8:
-#line 140 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 140 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 9:
 YY_RULE_SETUP
-#line 140 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 140 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { echo = false;	}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 142 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 142 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { aprepro.stateImmutable = true;	}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 143 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 143 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { aprepro.stateImmutable = aprepro.ap_options.immutable; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 145 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 145 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     BEGIN(GET_LOOP_VAR);
     if (aprepro.ap_options.debugging) 
@@ -1737,11 +1737,11 @@ YY_RULE_SETUP
 
 case 13:
 /* rule 13 can match eol */
-#line 155 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 155 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 155 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 155 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
@@ -1772,7 +1772,7 @@ YY_RULE_SETUP
 case 15:
 /* rule 15 can match eol */
 YY_RULE_SETUP
-#line 182 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 182 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     /* Loop control defined by variable */
     symrec *s;
@@ -1811,7 +1811,7 @@ YY_RULE_SETUP
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 217 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 217 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
     if(loop_lvl > 0)
@@ -1839,7 +1839,7 @@ YY_RULE_SETUP
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 241 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 241 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     loop_lvl++; /* Nested Loop */
     (*tmp_file) << yytext;
@@ -1849,7 +1849,7 @@ YY_RULE_SETUP
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 247 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 247 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     if(aprepro.ap_options.interactive ||
        aprepro.string_interactive())
@@ -1874,7 +1874,7 @@ YY_RULE_SETUP
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 268 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 268 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     (*tmp_file) << yytext;
     aprepro.ap_file_list.top().lineno++;
@@ -1885,7 +1885,7 @@ YY_RULE_SETUP
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 275 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 275 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
     if(loop_lvl > 0)
@@ -1900,7 +1900,7 @@ YY_RULE_SETUP
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 286 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 286 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     loop_lvl++; /* Nested Loop */
     aprepro.ap_file_list.top().lineno++;
@@ -1909,7 +1909,7 @@ YY_RULE_SETUP
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 291 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 291 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     if(aprepro.ap_options.interactive ||
        aprepro.string_interactive())
@@ -1927,7 +1927,7 @@ YY_RULE_SETUP
 case 23:
 /* rule 23 can match eol */
 YY_RULE_SETUP
-#line 305 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 305 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
   }
@@ -1936,7 +1936,7 @@ YY_RULE_SETUP
 case 24:
 /* rule 24 can match eol */
 YY_RULE_SETUP
-#line 310 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 310 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
   yyless(0);
   curr_index = 0;
@@ -1947,7 +1947,7 @@ YY_RULE_SETUP
 case 25:
 /* rule 25 can match eol */
 YY_RULE_SETUP
-#line 317 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 317 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
  aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
@@ -1975,7 +1975,7 @@ YY_RULE_SETUP
 case 26:
 /* rule 26 can match eol */
 YY_RULE_SETUP
-#line 341 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 341 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
   aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
@@ -1986,13 +1986,13 @@ YY_RULE_SETUP
 case 27:
 /* rule 27 can match eol */
 YY_RULE_SETUP
-#line 348 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 348 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {  aprepro.ap_file_list.top().lineno++; }
 	YY_BREAK
 case 28:
 /* rule 28 can match eol */
 YY_RULE_SETUP
-#line 350 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 350 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
   aprepro.ap_file_list.top().lineno++;
   if (!switch_active) {
@@ -2008,7 +2008,7 @@ YY_RULE_SETUP
    */
 case 29:
 YY_RULE_SETUP
-#line 363 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 363 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { 
     // Used to avoid undefined variable warnings in old ifdef/ifndef construct
     aprepro.inIfdefGetvar = true; 
@@ -2024,7 +2024,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 376 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 376 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     // Used to avoid undefined variable warnings in old ifdef/ifndef construct
     aprepro.inIfdefGetvar = true; 
@@ -2053,7 +2053,7 @@ YY_RULE_SETUP
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 401 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 401 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if (--if_skip_level == 0)
@@ -2063,7 +2063,7 @@ YY_RULE_SETUP
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 407 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 407 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { 
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -2072,7 +2072,7 @@ YY_RULE_SETUP
 case 33:
 /* rule 33 can match eol */
 YY_RULE_SETUP
-#line 412 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 412 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -2081,7 +2081,7 @@ YY_RULE_SETUP
 case 34:
 /* rule 34 can match eol */
 YY_RULE_SETUP
-#line 417 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 417 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;  
     if_skip_level++;
@@ -2090,7 +2090,7 @@ YY_RULE_SETUP
 case 35:
 /* rule 35 can match eol */
 YY_RULE_SETUP
-#line 422 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 422 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
   }
@@ -2103,7 +2103,7 @@ YY_RULE_SETUP
    */
 case 36:
 YY_RULE_SETUP
-#line 432 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 432 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { 
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
@@ -2114,7 +2114,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 440 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 440 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
@@ -2125,7 +2125,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 448 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 448 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     if (aprepro.ap_options.debugging) 
       fprintf (stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
@@ -2138,7 +2138,7 @@ YY_RULE_SETUP
 case 39:
 /* rule 39 can match eol */
 YY_RULE_SETUP
-#line 457 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 457 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { 
   aprepro.ap_file_list.top().lineno++; 
   if (aprepro.ap_options.debugging) 
@@ -2170,7 +2170,7 @@ YY_RULE_SETUP
 case 40:
 /* rule 40 can match eol */
 YY_RULE_SETUP
-#line 485 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 485 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     /* If any previous 'block' of this if has executed, then
      * just skip this block; otherwise see if condition is
@@ -2193,20 +2193,20 @@ YY_RULE_SETUP
   }
 	YY_BREAK
 case 41:
-#line 507 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 507 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 42:
-#line 508 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 508 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 43:
-#line 509 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 509 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 44:
 YY_RULE_SETUP
-#line 509 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 509 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { ; }
 	YY_BREAK
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 511 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 511 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
      aprepro.ap_file_list.top().lineno++;
    }
@@ -2215,7 +2215,7 @@ YY_RULE_SETUP
 case 46:
 /* rule 46 can match eol */
 YY_RULE_SETUP
-#line 516 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 516 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     aprepro.ap_file_list.top().lineno++;
 
@@ -2241,92 +2241,75 @@ YY_RULE_SETUP
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 539 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 539 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 541 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 541 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { BEGIN(GET_FILENAME);
                              file_must_exist = !true; }
 	YY_BREAK
 case 49:
 /* rule 49 can match eol */
 YY_RULE_SETUP
-#line 543 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
-{ BEGIN(INITIAL); 
-			     {
-			       symrec *s;
-			       int quoted = false;
-			       std::fstream *yytmp;
-			       char *pt = strchr(yytext, ')');
-			       *pt = '\0';
-			       /* Check to see if surrounded by double quote */ 
-			       if ((pt = strchr(yytext, '"')) != NULL) {
-				 yytext++;
-				 quoted = true;
-			       }
-			       if ((pt = strrchr(yytext, '"')) != NULL) {
-				 *pt = '\0';
-				 quoted = true;
-			       }
-
-			       if (quoted == false) {
-				 /* See if this is an aprepro variable referring to a name */
-				 s = aprepro.getsym(yytext);
-				 if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
-				   pt = yytext;
-				 } else {
-				   pt = (char*)s->value.svar;
-				 }
-			       } else {
-				 pt = yytext;
-			       }
-			       
-			       if (file_must_exist)
-				 yytmp = aprepro.open_file(pt, "r");
-			       else
-				 yytmp = aprepro.check_open_file(pt, "r");
-             if (yytmp != NULL) {
-				 yyin = yytmp;
-				 aprepro.info("Included File: '" +
-					      std::string(pt) + "'", true);
-
-				 SEAMS::file_rec new_file(pt, 0, false, 0);
-				 aprepro.ap_file_list.push(new_file);
-
-				 yyFlexLexer::yypush_buffer_state (
-            yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
-         curr_index = 0;
-
-         if(!aprepro.doIncludeSubstitution)
-           yy_push_state(VERBATIM);
-
-			       } else {
-				 aprepro.warning("Can't open '" +
-						 std::string(yytext) + "'", false);
-			       }
-			       aprepro.ap_file_list.top().lineno++;
-			     }
-			   }
+#line 543 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+{
+  BEGIN(INITIAL); 
+  {
+    symrec *s;
+    int quoted = false;
+    std::fstream *yytmp;
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    /* Check to see if surrounded by double quote */ 
+    if ((pt = strchr(yytext, '"')) != NULL) {
+      yytext++;
+      quoted = true;
+    }
+    if ((pt = strrchr(yytext, '"')) != NULL) {
+      *pt = '\0';
+      quoted = true;
+    }
+    
+    if (quoted == false) {
+      /* See if this is an aprepro variable referring to a name */
+      s = aprepro.getsym(yytext);
+      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
+	pt = yytext;
+      } else {
+	pt = (char*)s->value.svar;
+      }
+    } else {
+      pt = yytext;
+    }
+    
+    add_include_file(pt, file_must_exist);
+    
+    if(!aprepro.doIncludeSubstitution)
+      yy_push_state(VERBATIM);
+    
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
 	YY_BREAK
 case 50:
-#line 600 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 583 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 51:
 YY_RULE_SETUP
-#line 600 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 583 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { sscanf (yytext, "%lf", &yylval->val);
                        return(token::NUM); }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 603 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 586 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 ; // Empty rule
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 605 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 588 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
            symrec *s;
 			     s = aprepro.getsym(yytext);
@@ -2338,189 +2321,189 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 613 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 596 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQUAL);
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 614 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 597 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_PLUS);
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 615 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 598 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_MINUS);
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 616 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 599 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_TIME);
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 617 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 600 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_DIV);
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 618 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 601 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_POW);
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 619 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 602 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ_POW);
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 620 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 603 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::INC);
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 621 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 604 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::DEC);
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 622 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 605 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::PLU);
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 623 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 606 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::SUB);
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 624 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 607 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::TIM);
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 625 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 608 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::TIM);		/* ~ is same as multiply */
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 626 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 609 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::CONCAT);	/* String concatenation */
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 627 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 610 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::DIV);
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 628 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 611 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::MOD);
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 629 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 612 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::POW);
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 630 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 613 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::POW);
 	YY_BREAK
 case 72:
 /* rule 72 can match eol */
 YY_RULE_SETUP
-#line 631 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 614 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 aprepro.ap_file_list.top().lineno++;
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 632 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 615 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LPAR);
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 633 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 616 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::RPAR);
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 634 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 617 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::COMMA);
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 635 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 618 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::SEMI);
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 636 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 619 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::COLON);
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 637 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 620 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::QUEST);
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 638 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 621 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LT);
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 639 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 622 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::GT);
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 640 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 623 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LE);
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 641 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 624 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::GE);
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 642 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 625 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::EQ);
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 643 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 626 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::NE);
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 644 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 627 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LAND);
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 645 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 628 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LOR);
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 646 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 629 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::NOT);
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 647 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 630 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::LBRACK);
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 648 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 631 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 return(token::RBRACK);
 	YY_BREAK
 case 90:
 /* rule 90 can match eol */
 YY_RULE_SETUP
-#line 649 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 632 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
            char *pt = strrchr(yytext, '"');
 			     *pt = '\0';
@@ -2530,7 +2513,7 @@ YY_RULE_SETUP
 case 91:
 /* rule 91 can match eol */
 YY_RULE_SETUP
-#line 655 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 638 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
            char *pt = strrchr(yytext, '\'');
 			     *pt = '\0';
@@ -2539,7 +2522,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 661 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 644 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
   // Add to the history string
   save_history_string();
@@ -2553,17 +2536,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 673 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 656 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo) LexerOutput("{", 1); }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 675 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 658 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo) LexerOutput("}", 1); }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 677 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 660 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 {
     // Check if we need to save the substitution history first.
     if(aprepro.ap_options.keep_history &&
@@ -2581,44 +2564,44 @@ YY_RULE_SETUP
   }
 	YY_BREAK
 case 96:
-#line 694 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 677 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 97:
 YY_RULE_SETUP
-#line 694 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
-{ if (aprepro.ap_options.end_on_exit)
-			       {
-				 if (echo) ECHO;
-				 return((token::yytokentype)-1);  
-			       }
-                              else 
-                               if (echo) ECHO;
-			   }
+#line 677 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+{
+  if (aprepro.ap_options.end_on_exit) {
+    if (echo) ECHO;
+    return((token::yytokentype)-1);  
+  }
+  else 
+    if (echo) ECHO;
+}
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 704 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 687 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo) ECHO; }
 	YY_BREAK
 case 99:
-#line 708 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 691 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 case 100:
 YY_RULE_SETUP
-#line 708 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 691 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo && if_state[if_lvl] != IF_SKIP) ECHO; }
 	YY_BREAK
 case 101:
 /* rule 101 can match eol */
 YY_RULE_SETUP
-#line 710 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 693 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 { if (echo && !suppress_nl) ECHO; suppress_nl = false;
                              aprepro.ap_file_list.top().lineno++;}
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 713 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 696 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 ECHO;
 	YY_BREAK
-#line 2622 "apr_scanner.cc"
+#line 2605 "apr_scanner.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(PARSING):
 case YY_STATE_EOF(GET_FILENAME):
@@ -3667,7 +3650,7 @@ void SEAMSfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 713 "/Users/gdsjaar/src/seacas.git/packages/seacas/libraries/aprepro_lib/aprepro.ll"
+#line 696 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 
 
 
@@ -3689,6 +3672,33 @@ namespace SEAMS {
 
   Scanner::~Scanner()
   { }
+
+  void Scanner::add_include_file(const std::string &filename, bool must_exist)
+  {
+    std::fstream *yytmp = nullptr;
+    if (must_exist)
+      yytmp = aprepro.open_file(filename.c_str(), "r");
+    else
+      yytmp = aprepro.check_open_file(filename.c_str(), "r");
+
+    if (yytmp) {
+      if (yyin && !yy_init) {
+	yyFlexLexer::yypush_buffer_state (
+  	  yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+      }
+
+      yyin = yytmp;
+      aprepro.info("Included File: '" + filename + "'", true);
+
+      SEAMS::file_rec new_file(filename.c_str(), 0, false, 0);
+      aprepro.ap_file_list.push(new_file);
+
+    
+      yyFlexLexer::yypush_buffer_state (
+	yyFlexLexer::yy_create_buffer( yytmp, YY_BUF_SIZE));
+      curr_index = 0;
+    }
+  }
 
   void Scanner::LexerOutput(const char* buf, int size )
   {
@@ -3801,8 +3811,8 @@ namespace SEAMS {
       }
       else {
         delete yyin; yyin=NULL;
-        yyFlexLexer::yypop_buffer_state();
         aprepro.ap_file_list.pop();
+        yyFlexLexer::yypop_buffer_state();
 
 	if (aprepro.ap_file_list.top().name == "standard input")
 	  yyin = &std::cin;

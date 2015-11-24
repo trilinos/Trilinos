@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.24 (2015/11/16)";
+  const char* version_string = "4.25 (2015/11/24)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -112,18 +112,14 @@ namespace SEAMS {
     std::istream *in_cpy = &in;
     ap_file_list.top().name = in_name;
 
-    if (!ap_options.include_file.empty()) {
-      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
-      ap_file_list.push(include_file);
-      // File included on command line will be processed as immutable and no-echo
-      // Will revert to global settings at end of file.
-      stateImmutable = true;
-      echo = false;
-      in_cpy = open_file(ap_file_list.top().name, "r");
-    }
-    
     Scanner *scanner = new Scanner(*this, in_cpy, &parsingResults);
     this->lexer = scanner;
+
+    if (!ap_options.include_file.empty()) {
+      stateImmutable = true;
+      echo = false;
+      scanner->add_include_file(ap_options.include_file, true);
+    }
 
     Parser parser(*this);
     parser.set_debug_level(ap_options.trace_parsing);
@@ -159,17 +155,14 @@ namespace SEAMS {
     if(ap_file_list.size() == 1)
       ap_file_list.top().name = "interactive_input";
 
-    if (!ap_options.include_file.empty()) {
-      file_rec include_file(ap_options.include_file.c_str(), 0, false, 0);
-      ap_file_list.push(include_file);
-      // File included on command line will be processed as immutable and no-echo
-      // Will revert to global settings at end of file.
-      stateImmutable = true;
-      echo = false;
-    }
-
     if(!stringScanner)
       stringScanner = new Scanner(*this, &stringInput, &parsingResults);
+
+    if (!ap_options.include_file.empty()) {
+      stateImmutable = true;
+      echo = false;
+      stringScanner->add_include_file(ap_options.include_file, true);
+    }
 
     this->lexer = stringScanner;
 

@@ -76,6 +76,7 @@ public:
     /** Required for virtual functions */
     virtual ~Scanner();
 
+    void add_include_file(const std::string &filename, bool file_must_exist);
     int yywrap();
     void yyerror(const char *s);
     void LexerOutput(const char* buf, int size );

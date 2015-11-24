@@ -540,61 +540,44 @@ integer {D}+({E})?
                              file_must_exist = true; }
 <INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = !true; }
-<GET_FILENAME>.+")"{WS}"}"{NL}* { BEGIN(INITIAL); 
-			     {
-			       symrec *s;
-			       int quoted = false;
-			       std::fstream *yytmp;
-			       char *pt = strchr(yytext, ')');
-			       *pt = '\0';
-			       /* Check to see if surrounded by double quote */ 
-			       if ((pt = strchr(yytext, '"')) != NULL) {
-				 yytext++;
-				 quoted = true;
-			       }
-			       if ((pt = strrchr(yytext, '"')) != NULL) {
-				 *pt = '\0';
-				 quoted = true;
-			       }
-
-			       if (quoted == false) {
-				 /* See if this is an aprepro variable referring to a name */
-				 s = aprepro.getsym(yytext);
-				 if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
-				   pt = yytext;
-				 } else {
-				   pt = (char*)s->value.svar;
-				 }
-			       } else {
-				 pt = yytext;
-			       }
-			       
-			       if (file_must_exist)
-				 yytmp = aprepro.open_file(pt, "r");
-			       else
-				 yytmp = aprepro.check_open_file(pt, "r");
-             if (yytmp != NULL) {
-				 yyin = yytmp;
-				 aprepro.info("Included File: '" +
-					      std::string(pt) + "'", true);
-
-				 SEAMS::file_rec new_file(pt, 0, false, 0);
-				 aprepro.ap_file_list.push(new_file);
-
-				 yyFlexLexer::yypush_buffer_state (
-            yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
-         curr_index = 0;
-
-         if(!aprepro.doIncludeSubstitution)
-           yy_push_state(VERBATIM);
-
-			       } else {
-				 aprepro.warning("Can't open '" +
-						 std::string(yytext) + "'", false);
-			       }
-			       aprepro.ap_file_list.top().lineno++;
-			     }
-			   }
+<GET_FILENAME>.+")"{WS}"}"{NL}* {
+  BEGIN(INITIAL); 
+  {
+    symrec *s;
+    int quoted = false;
+    std::fstream *yytmp;
+    char *pt = strchr(yytext, ')');
+    *pt = '\0';
+    /* Check to see if surrounded by double quote */ 
+    if ((pt = strchr(yytext, '"')) != NULL) {
+      yytext++;
+      quoted = true;
+    }
+    if ((pt = strrchr(yytext, '"')) != NULL) {
+      *pt = '\0';
+      quoted = true;
+    }
+    
+    if (quoted == false) {
+      /* See if this is an aprepro variable referring to a name */
+      s = aprepro.getsym(yytext);
+      if (s == 0 || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
+	pt = yytext;
+      } else {
+	pt = (char*)s->value.svar;
+      }
+    } else {
+      pt = yytext;
+    }
+    
+    add_include_file(pt, file_must_exist);
+    
+    if(!aprepro.doIncludeSubstitution)
+      yy_push_state(VERBATIM);
+    
+    aprepro.ap_file_list.top().lineno++;
+  }
+}
 
 <PARSING>{integer}  |        
 <PARSING>{number}	   { sscanf (yytext, "%lf", &yylval->val);
@@ -691,14 +674,14 @@ integer {D}+({E})?
   }
 
 [Ee][Xx][Ii][Tt] |
-[Qq][Uu][Ii][Tt]           { if (aprepro.ap_options.end_on_exit)
-			       {
-				 if (echo) ECHO;
-				 return((token::yytokentype)-1);  
-			       }
-                              else 
-                               if (echo) ECHO;
-			   }
+[Qq][Uu][Ii][Tt] {
+  if (aprepro.ap_options.end_on_exit) {
+    if (echo) ECHO;
+    return((token::yytokentype)-1);  
+  }
+  else 
+    if (echo) ECHO;
+}
 
 
 \$			   { if (echo) ECHO; }
@@ -730,6 +713,33 @@ namespace SEAMS {
 
   Scanner::~Scanner()
   { }
+
+  void Scanner::add_include_file(const std::string &filename, bool must_exist)
+  {
+    std::fstream *yytmp = nullptr;
+    if (must_exist)
+      yytmp = aprepro.open_file(filename.c_str(), "r");
+    else
+      yytmp = aprepro.check_open_file(filename.c_str(), "r");
+
+    if (yytmp) {
+      if (yyin && !yy_init) {
+	yyFlexLexer::yypush_buffer_state (
+  	  yyFlexLexer::yy_create_buffer( yyin, YY_BUF_SIZE));
+      }
+
+      yyin = yytmp;
+      aprepro.info("Included File: '" + filename + "'", true);
+
+      SEAMS::file_rec new_file(filename.c_str(), 0, false, 0);
+      aprepro.ap_file_list.push(new_file);
+
+    
+      yyFlexLexer::yypush_buffer_state (
+	yyFlexLexer::yy_create_buffer( yytmp, YY_BUF_SIZE));
+      curr_index = 0;
+    }
+  }
 
   void Scanner::LexerOutput(const char* buf, int size )
   {
@@ -842,8 +852,8 @@ namespace SEAMS {
       }
       else {
         delete yyin; yyin=NULL;
-        yyFlexLexer::yypop_buffer_state();
         aprepro.ap_file_list.pop();
+        yyFlexLexer::yypop_buffer_state();
 
 	if (aprepro.ap_file_list.top().name == "standard input")
 	  yyin = &std::cin;
