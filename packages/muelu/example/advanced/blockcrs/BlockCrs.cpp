@@ -72,6 +72,7 @@
 #include <Xpetra_TpetraVector.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <Ifpack2_Factory.hpp>
 
 // Belos
 #include "BelosConfigDefs.hpp"
@@ -108,8 +109,25 @@ const std::string prefSeparator = "=====================================";
 namespace MueLuExamples {
 #include <MueLu_UseShortNames.hpp>
 
-  // --------------------------------------------------------------------------------------
-  void solve_system_list(RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, const std::string & belos_solver, RCP<Teuchos::ParameterList> & SList) {
+  Teuchos::ScalarTraits<SC>::magnitudeType diff_vectors(const Vector & X, const Vector & Y) {
+    RCP<Vector> diff = VectorFactory::Build(X.getMap());
+    diff->update(1.0,X,-1.0,Y,0.0);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> mt(1);
+    diff->norm2(mt);
+    return mt[0];
+  }
+
+  Teuchos::ScalarTraits<SC>::magnitudeType compute_resid_norm(const Matrix & A, const Vector & X, const Vector & B) {
+    RCP<Vector> temp = VectorFactory::Build(X.getMap());
+    A.apply(X,*temp);
+    temp->update(1.0,B,-1.0);
+    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> mt(1);
+    temp->norm2(mt);
+    return mt[0];
+  }
+
+// --------------------------------------------------------------------------------------
+  void solve_system_belos(RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, const std::string & belos_solver, RCP<Teuchos::ParameterList> & SList) {
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
@@ -132,12 +150,33 @@ namespace MueLuExamples {
     Belos::SolverFactory<SC, MV, OP> BelosFactory;
     Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(belos_solver, SList);
     BelosSolver->setProblem(belosProblem);
-    Belos::ReturnType result = BelosSolver->solve();
-    if(result==Belos::Unconverged)
-      throw std::runtime_error("Belos failed to converge");
+    BelosSolver->solve();
   }
 
- 
+ // --------------------------------------------------------------------------------------
+  void solve_system_ifpack2(RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, const std::string & ifpack2_solver, Teuchos::ParameterList & Ifpack2List) {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
+    typedef Ifpack2::Preconditioner<SC,LO,GO> Ifpack2_Preconditioner;
+    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+    typedef Tpetra::RowMatrix<SC,LO,GO> Tpetra_RowMatrix;
+    typedef Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Tpetra_BlockCrsMatrix;
+    typedef Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Xpetra_TpetraBlockCrsMatrix;
+    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
+    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
+
+    RCP<Tpetra_RowMatrix>    At = MueLu::Utilities<SC,LO,GO,Tpetra_CrsMatrix::node_type>::Op2NonConstTpetraRow(A);
+    RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
+    RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
+
+    RCP<Ifpack2_Preconditioner> Solver = Ifpack2::Factory::create<Tpetra_RowMatrix>(ifpack2_solver,At);
+    Solver->setParameters(Ifpack2List);
+    Solver->initialize();
+    Solver->compute();
+
+    Solver->apply(*Bt,*Xt);
+  }
 
   // --------------------------------------------------------------------------------------
   // This routine generate's the user's original A matrix and nullspace
@@ -195,7 +234,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
-  bool success = false;
+  bool success = true;
   bool verbose = true;
   try {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -237,11 +276,13 @@ int main(int argc, char *argv[]) {
     RCP<MultiVector> nullspace;
 
     typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
+    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
     typedef Tpetra::Experimental::BlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Tpetra_BlockCrsMatrix;
     typedef Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Xpetra_TpetraBlockCrsMatrix;
     typedef Xpetra::CrsMatrix<SC,LO,GO,Tpetra_CrsMatrix::node_type> Xpetra_CrsMatrix;
     typedef Xpetra::CrsMatrixWrap<SC,LO,GO,Tpetra_CrsMatrix::node_type> Xpetra_CrsMatrixWrap;
-    
+    typedef Teuchos::ScalarTraits<SC>::magnitudeType SCN;
+
     RCP<Tpetra_CrsMatrix> Acrs;
     RCP<Tpetra_BlockCrsMatrix> Ablock;
 
@@ -271,7 +312,8 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     map=A->getRowMap();
 
-    RCP<Vector> X = VectorFactory::Build(map);
+    RCP<Vector> X1 = VectorFactory::Build(map);
+    RCP<Vector> X2 = VectorFactory::Build(map);
     RCP<Vector> B = VectorFactory::Build(map);
     B->setSeed(846930886);
     B->randomize();
@@ -282,7 +324,7 @@ int main(int argc, char *argv[]) {
     SList->set("Verbosity",Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     SList->set("Output Frequency",10);
     SList->set("Output Style",Belos::Brief);
-    SList->set("Maximum Iterations",200);
+    SList->set("Maximum Iterations",10);
     SList->set("Convergence Tolerance",5e-2);
 
 
@@ -290,52 +332,44 @@ int main(int argc, char *argv[]) {
     // Solve #1 (fixed point + Jacobi)
     // =========================================================================
     out << thickSeparator << std::endl;
-    out << prefSeparator << " Solve 1: Fixed Point "<< prefSeparator <<std::endl;
-
+    out << prefSeparator << " Solve 1: Fixed Point + Jacobi"<< prefSeparator <<std::endl;
     {
       Teuchos::ParameterList MueList;
       MueList.set("max levels",1);
       MueList.set("coarse: type", "RELAXATION");
 
       std::string belos_solver("Fixed Point");   
-      MueLuExamples::solve_system_list(A,X,B,MueList,belos_solver,SList);
+      MueLuExamples::solve_system_belos(A,X1,B,MueList,belos_solver,SList);
+
+      SCN result = MueLuExamples::compute_resid_norm(*A,*X1,*B);
+      out<<"Solve #1: Residual Norm = "<<result<<std::endl;
     }
 
-  
-#ifdef OLD
-
+    // =========================================================================
+    // Solve #2 (striaght up Jacobi)
+    // =========================================================================
     out << thickSeparator << std::endl;
-    out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
+    out << prefSeparator << " Solve 2: Fixed Jacobi"<< prefSeparator <<std::endl;
     {
-      // Use an ML-style parameter list for variety
-      Teuchos::ParameterList MLList;
-      MLList.set("ML output", 10);
-      MLList.set("coarse: type","Amesos-Superlu");
-#ifdef HAVE_AMESOS2_KLU2
-      MLList.set("coarse: type","Amesos-KLU");
-#endif
-      MLParameterListInterpreter mueLuFactory(MLList);
-      RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
-      Teuchos::RCP<FactoryManagerBase> LevelFactory = mueLuFactory.GetFactoryManager(1);
-      H->setlib(lib);
-      H->AddNewLevel();
-      H->GetLevel(1)->Keep("Nullspace",LevelFactory->GetFactory("Nullspace").get());
-      H->GetLevel(0)->Set("A", A);
-      mueLuFactory.SetupHierarchy(*H);
+      Teuchos::ParameterList IList;
+      IList.set("relaxation: type","Jacobi");
+      IList.set("relaxation: damping factor",1.0);
+      IList.set("relaxation: sweeps",10);
+      std::string ifpack2_precond("RELAXATION");
+      
+      MueLuExamples::solve_system_ifpack2(A,X2,B,ifpack2_precond,IList);
 
-      // Solve
-      MueLuExamples::solve_system_hierarchy(A,X,B,H,SList);
-
-      // Extract R,P & Ac for LevelWrap Usage
-      H->GetLevel(1)->Get("R",R);
-      H->GetLevel(1)->Get("P",P);
-      H->GetLevel(1)->Get("A",Ac);
-
-      nullspace = H->GetLevel(1)->Get<RCP<MultiVector> >("Nullspace",LevelFactory->GetFactory("Nullspace").get());
+      SCN result = MueLuExamples::compute_resid_norm(*A,*X2,*B);
+      out<<"Solve #2: Residual Norm = "<<result<<std::endl;
     }
-    out << thickSeparator << std::endl;
-#endif
 
+    // Compare 1 & 2
+    SCN norm = MueLuExamples::diff_vectors(*X1,*X2);
+    if(norm > 1e-10) {
+      out<<"ERROR: Norm of Solve #1 and Solve #2 differs by "<<norm<<std::endl;
+      success=false;
+    }
+      
   }//end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
