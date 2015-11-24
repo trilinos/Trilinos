@@ -807,7 +807,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGraph(int i,int j) const
 {
-   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > GraphMap;
+  typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> GraphMap;
    
    typename GraphMap::const_iterator itr = graphs_.find(std::make_pair(i,j));
    Teuchos::RCP<const CrsGraphType> graph;
@@ -827,7 +827,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedGraph(int i,int j) const
 {
-   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType> > GraphMap;
+  typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> GraphMap;
    
    typename GraphMap::const_iterator itr = ghostedGraphs_.find(std::make_pair(i,j));
    Teuchos::RCP<const CrsGraphType> ghostedGraph;

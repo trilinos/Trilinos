@@ -193,8 +193,7 @@ namespace Xpetra {
     // need to understand the type of underlying matrix. But in src/Map we have no knowledge of StridedMaps, so
     // we cannot check for it by casting. This function allows us to avoid the restriction, as StridedMap redefines
     // it to return the base map.
-    virtual RCP<const Map> getMap() const { return rcpFromRef(*this); }
-
+    virtual RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const { return rcpFromRef(*this); }
 
     //@}
 

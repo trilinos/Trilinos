@@ -101,8 +101,10 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_IO.hpp>
 
-#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_Utilities.hpp"
+
+// FIXME
+#include "MueLu_UseDefaultTypes.hpp"
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
@@ -326,8 +328,9 @@ int main(int argc, char *argv[]) {
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
     //Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
-    Stratimikos::enableMueLu(linearSolverBuilder);
-    Stratimikos::enableMueLuTpetraQ2Q1<LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");
+
+    Stratimikos::enableMueLu(linearSolverBuilder);                                          // Epetra
+    Stratimikos::enableMueLuTpetraQ2Q1<LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
 
     linearSolverBuilder.setParameterList(stratimikosList);
     RCP<const LOWSFB> lowsFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);

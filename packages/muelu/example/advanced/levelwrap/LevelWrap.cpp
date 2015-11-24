@@ -90,13 +90,6 @@
 #endif
 #endif
 
-// Define default data types
-typedef double Scalar;
-typedef int LocalOrdinal;
-typedef int GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
-
 using Teuchos::RCP;
 
 //----------------------------------------------------------------------------------------------------------
@@ -114,20 +107,27 @@ const std::string thinSeparator  = "--------------------------------------------
 const std::string prefSeparator = "=====================================";
 
 namespace MueLuExamples {
-#include <MueLu_UseShortNames.hpp>
 
-  void solve_system_hierarchy(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, RCP<Hierarchy> & H, RCP<Teuchos::ParameterList> & SList) {
-    using Teuchos::RCP;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void solve_system_hierarchy(Xpetra::UnderlyingLib& lib,
+                              Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>&   A,
+                              Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>&   X,
+                              Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>&   B,
+                              Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& H,
+                              Teuchos::RCP<Teuchos::ParameterList>& SList) {
+#include "MueLu_UseShortNames.hpp"
     using Teuchos::rcp;
+
 #ifdef HAVE_MUELU_BELOS
-#ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
-    typedef Tpetra::CrsMatrix<SC,LO,GO> Tpetra_CrsMatrix;
-    typedef Tpetra::Vector<SC,LO,GO> Tpetra_Vector;
-    typedef Tpetra::MultiVector<SC,LO,GO> Tpetra_MultiVector;
-    if(lib==Xpetra::UseTpetra) {
-      RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO>::Op2NonConstTpetraCrs(A);
-      RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO>(H));
+# ifdef HAVE_MUELU_TPETRA
+    typedef Tpetra::Operator    <SC,LO,GO,NO> Tpetra_Operator;
+    typedef Tpetra::CrsMatrix   <SC,LO,GO,NO> Tpetra_CrsMatrix;
+    typedef Tpetra::Vector      <SC,LO,GO,NO> Tpetra_Vector;
+    typedef Tpetra::MultiVector <SC,LO,GO,NO> Tpetra_MultiVector;
+
+    if (lib == Xpetra::UseTpetra) {
+      RCP<Tpetra_CrsMatrix>   At = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra_Operator>    Mt = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
       RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
       RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
       typedef Tpetra_MultiVector MV;
@@ -140,12 +140,11 @@ namespace MueLuExamples {
       Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
       BelosSolver->setProblem(belosProblem);
       Belos::ReturnType result = BelosSolver->solve();
-      if(result==Belos::Unconverged)
-        throw std::runtime_error("Belos failed to converge");
+      TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
     }
 #endif
 #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
-    if(lib==Xpetra::UseEpetra) {
+    if (lib == Xpetra::UseEpetra) {
       RCP<Epetra_CrsMatrix> Ae;
       // Get the underlying Epetra Mtx
       try {
@@ -180,8 +179,7 @@ namespace MueLuExamples {
       Teuchos::RCP<Belos::SolverManager<SC, MV, OP> > BelosSolver = BelosFactory.create(std::string("CG"), SList);
       BelosSolver->setProblem(belosProblem);
       Belos::ReturnType result = BelosSolver->solve();
-      if(result==Belos::Unconverged)
-        throw std::runtime_error("Belos failed to converge");
+      TEUCHOS_TEST_FOR_EXCEPTION(result == Belos::Unconverged, std::runtime_error, "Belos failed to converge");
     }
 #endif
 #endif // #ifdef HAVE_MUELU_BELOS
@@ -189,9 +187,16 @@ namespace MueLuExamples {
 
 
   // --------------------------------------------------------------------------------------
-  void solve_system_list(Xpetra::UnderlyingLib & lib, RCP<Matrix> & A, RCP<Vector>&  X, RCP<Vector> & B, Teuchos::ParameterList & MueLuList, RCP<Teuchos::ParameterList> & SList) {
-    using Teuchos::RCP;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void solve_system_list(Xpetra::UnderlyingLib& lib,
+                         Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& A,
+                         Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& X,
+                         Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& B,
+                         Teuchos::ParameterList& MueLuList,
+                         Teuchos::RCP<Teuchos::ParameterList>& SList) {
+#include "MueLu_UseShortNames.hpp"
     using Teuchos::rcp;
+
 #ifdef HAVE_MUELU_BELOS
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::Operator<SC,LO,GO> Tpetra_Operator;
@@ -246,8 +251,14 @@ namespace MueLuExamples {
 
   // --------------------------------------------------------------------------------------
   // This routine generate's the user's original A matrix and nullspace
-  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib,Teuchos::ParameterList &galeriList,  RCP<const Teuchos::Comm<int> > &comm, RCP<Matrix> & A, RCP<MultiVector> & nullspace){
-    using Teuchos::RCP;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void generate_user_matrix_and_nullspace(std::string& matrixType,
+                                          Xpetra::UnderlyingLib& lib,
+                                          Teuchos::ParameterList& galeriList,
+                                          Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+                                          Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>>&      A,
+                                          Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& nullspace) {
+#include "MueLu_UseShortNames.hpp"
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
@@ -293,9 +304,12 @@ namespace MueLuExamples {
 
 // --------------------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
+  typedef double                                    Scalar;
+  typedef int                                       LocalOrdinal;
+  typedef int                                       GlobalOrdinal;
+  typedef Kokkos::Compat::KokkosSerialWrapperNode   Node;
+
 #include <MueLu_UseShortNames.hpp>
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
@@ -303,6 +317,7 @@ int main(int argc, char *argv[]) {
   bool success = false;
   bool verbose = true;
   try {
+#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT)
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -546,10 +561,9 @@ int main(int argc, char *argv[]) {
       MueLuExamples::solve_system_list(lib,A,X,B,MueLuList,SList);
 #endif
     }
+#endif
     success = true;
   }
-
-
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );

@@ -6,8 +6,7 @@
 // We need to define these typedefs as it is not possible to properly expand
 // macros with colons in them
 #if !defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)
-# define TPETRA_ETI_MANGLING_TYPEDEFS()  \
-  typedef Kokkos::Compat::KokkosSerialWrapperNode Kokkos_Compat_KokkosSerialWrapperNode;
+typedef Kokkos::Compat::KokkosSerialWrapperNode Kokkos_Compat_KokkosSerialWrapperNode;
 #else
 # include <TpetraCore_config.h>
 # include <TpetraCore_ETIHelperMacros.h>

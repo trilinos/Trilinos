@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     //***********************//
 
     GO nx,ny,nz;
-    int mx, my, mz;
+    GO mx, my, mz;
     double stretchx, stretchy, stretchz, h, delta;
     int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
     double omega, shift;

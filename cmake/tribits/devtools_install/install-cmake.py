@@ -161,6 +161,9 @@ command --download-cmnd=<download-cmnd> is:
     if self.inOptions.version == "2.8.11" or self.inOptions.version == "3.1.1":
       echoChDir(self.cmakeSrcDir+"/Source/CPack")
       echoRunSysCmnd("patch -i ../../../fix_cpack_symlink.patch")
+    elif self.inOptions.version == "3.4.0":
+      echoChDir(self.cmakeSrcDir+"/Source")
+      echoRunSysCmnd("patch -i ../../remove_getrealpath.patch")
 
   def doConfigure(self):
     createDir(self.cmakeBuildBaseDir, True, True)

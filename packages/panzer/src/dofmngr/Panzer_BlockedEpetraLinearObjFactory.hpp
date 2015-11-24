@@ -284,7 +284,7 @@ protected:
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
 
    // which block entries are ignored
-   std::unordered_set<std::pair<int,int> > excludedPairs_;
+  std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
   
 /*************** Thyra based methods/members *******************/
 
@@ -326,8 +326,8 @@ protected:
    Teuchos::RCP<Teuchos::MpiComm<int> > tComm_;
    mutable std::vector<Teuchos::RCP<Epetra_Map> > maps_;
    mutable std::vector<Teuchos::RCP<Epetra_Map> > ghostedMaps_;
-   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > graphs_ ;
-   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph> > ghostedGraphs_;
+  mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> graphs_ ;
+  mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> ghostedGraphs_;
 
    mutable std::vector<Teuchos::RCP<Epetra_Import> > importers_;
    mutable std::vector<Teuchos::RCP<Epetra_Export> > exporters_;

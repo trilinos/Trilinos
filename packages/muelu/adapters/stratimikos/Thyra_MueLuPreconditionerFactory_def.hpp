@@ -388,7 +388,7 @@ namespace Thyra {
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
 
       typedef MueLu::XpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    MueXpOp;
-      typedef Thyra::XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>    ThyXpLinOp;
+      //typedef Thyra::XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>    ThyXpLinOp; // unused
       const RCP<MueXpOp> muelu_xpetraOp = rcp(new MueXpOp(H));
 
       RCP<const VectorSpaceBase<Scalar> > thyraRangeSpace  = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(muelu_xpetraOp->getRangeMap());

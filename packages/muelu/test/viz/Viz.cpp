@@ -210,10 +210,10 @@ int main(int argc, char *argv[]) {
       if (matrixType == "Elasticity3D")
         map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
 
-      galeriStream << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
-        << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
-        << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
-        << "========================================================" << std::endl;
+      galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
+                   << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
+                   << "Processor subdomains in z direction: " << galeriList.get<GO>("mz") << std::endl
+                   << "========================================================" << std::endl;
 
       if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
         // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
