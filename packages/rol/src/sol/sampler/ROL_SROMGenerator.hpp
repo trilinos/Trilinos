@@ -56,7 +56,6 @@
 #include "ROL_MomentObjective.hpp"
 #include "ROL_CDFObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
-//#include "ROL_SROMBoundConstraint.hpp"
 #include "ROL_SROMEqualityConstraint.hpp"
 #include "ROL_SROMVector.hpp"
 
@@ -98,8 +97,9 @@ private:
   }
 
   void initialize(Teuchos::RCP<Vector<Real> >       &x,
+                  const size_t                       totalNumSamples,
                   Teuchos::RCP<BatchManager<Real> > &bman) {
-    std::vector<Real> pt(dimension_*nSamp_,0.), wt(nSamp_,1./(Real)nSamp_);
+    std::vector<Real> pt(dimension_*nSamp_,0.), wt(nSamp_,1./totalNumSamples);
     std::vector<Real> typx(dimension_*nSamp_,1.), typw(nSamp_,1.);
     std::vector<Real> pt_lo(dimension_*nSamp_,0.), pt_hi(dimension_*nSamp_,0.);
     std::vector<Real> wt_lo(nSamp_,0.), wt_hi(nSamp_,1.);
@@ -111,6 +111,7 @@ private:
       hi   = dist_[j]->upperBound();
       for (size_t i = 0; i < nSamp_; i++) {
         pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
+        //pt[i*dimension_ + j] = dist_[j]->invertCDF(0);;
         typx[i*dimension_ + j] = mean;
         pt_lo[i*dimension_ + j] = lo;
         pt_hi[i*dimension_ + j] = hi;
@@ -127,6 +128,34 @@ private:
                                                       bman,typx,typw));
     bnd_ = Teuchos::rcp(new BoundConstraint<Real>(bnd_lo_,bnd_hi_));
     con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>(bman));
+  }
+
+  void test(const Vector<Real> &x,
+            Teuchos::RCP<BatchManager<Real> > &bman) {
+    std::vector<Real> pt(dimension_*nSamp_,0.), wt(nSamp_,1./(Real)((nSamp_>0) ? nSamp_ : 1));
+    std::vector<Real> typx(dimension_*nSamp_,1.), typw(nSamp_,1.);
+    Real mean = 1.;
+    for ( size_t j = 0; j < dimension_; j++) {
+      mean = std::abs(dist_[j]->moment(1));
+      mean = ((mean > ROL_EPSILON) ? mean : 1.);
+      for (size_t i = 0; i < nSamp_; i++) {
+        pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
+        typx[i*dimension_ + j] = mean;
+      }
+    }
+    PrimalSROMVector<Real> d = PrimalSROMVector<Real>(Teuchos::rcp(new std::vector<Real>(pt)),
+                                                      Teuchos::rcp(new std::vector<Real>(wt)),
+                                                      bman,typx,typw);
+    if ( !SampleGenerator<Real>::batchID() ) {
+      std::cout << "\nCheck derivatives of CDFObjective\n";
+    }
+    obj_vec_[0]->checkGradient(x,d,!SampleGenerator<Real>::batchID());
+    obj_vec_[0]->checkHessVec(x,d,!SampleGenerator<Real>::batchID());
+    if ( !SampleGenerator<Real>::batchID() ) {
+      std::cout << "\nCheck derivatives of MomentObjective\n";
+    }
+    obj_vec_[1]->checkGradient(x,d,!SampleGenerator<Real>::batchID());
+    obj_vec_[1]->checkHessVec(x,d,!SampleGenerator<Real>::batchID());
   }
 
   void pruneSamples(const Vector<Real> &x) {
@@ -188,8 +217,9 @@ public:
     obj_ = Teuchos::rcp(new LinearCombinationObjective<Real>(coeff,obj_vec_));
     // Initialize constraints and initial guess
     Teuchos::RCP<Vector<Real> > x;
-    initialize(x,bman);
+    initialize(x,nSamp,bman);
     StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
+    test(*x,bman);
     // Solve optimization problems to sample
     bool useAugLag = true;
     buildOptimizer(useAugLag);
@@ -204,82 +234,3 @@ public:
 }
 
 #endif
-
-//  SROMGenerator(Teuchos::ParameterList &parlist,
-//                Teuchos::RCP<BatchManager<Real> > &bman, 
-//                Teuchos::RCP<Objective<Real> > &obj,
-//                const size_t dimension,
-//                const size_t nSamp = 10,
-//                const bool adaptive = false,
-//                const size_t numNewSamps = 0 ) 
-//    : SampleGenerator<Real>(bman), parlist_(parlist),
-//      obj_(obj), dimension_(dimension),
-//      nSamp_(nSamp), numNewSamps_(numNewSamps), adaptive_(adaptive) {
-//    // Build ROL algorithm and solve SROM optimization problem
-//    SROMVector<Real> x(Teuchos::rcp(new std::vector<Real>(dimension_*nSamp_,0.)),
-//                       Teuchos::rcp(new std::vector<Real>(nSamp_,0.)));
-//    StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
-//    //bnd_ = Teuchos::rcp(new SROMBoundConstraint<Real>(dimension_));
-//    bnd_ = Teuchos::rcp(new BoundConstraint<Real>);
-//    con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
-//    bool useAugLag = true;
-//    buildOptimizer(useAugLag);
-//    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-//    // Prune samples with zero weight and set samples/weights
-//    std::vector<std::vector<Real> > allPoints;
-//    std::vector<Real> allWeights;
-//    pruneSamples(allPoints,allWeights,x);
-//    splitSamples(allPoints,allWeights);
-//  }
-//
-//  SROMGenerator(Teuchos::ParameterList &parlist,
-//                Teuchos::RCP<BatchManager<Real> > &bman, 
-//                Teuchos::RCP<Objective<Real> > &obj,
-//                Teuchos::RCP<BoundConstraint<Real> > &bnd,
-//                const size_t dimension,
-//                const size_t nSamp = 10,
-//                const bool adaptive = false,
-//                const size_t numNewSamps = 0 ) 
-//    : SampleGenerator<Real>(bman), parlist_(parlist),
-//      obj_(obj), bnd_(bnd), dimension_(dimension),
-//      nSamp_(nSamp), numNewSamps_(numNewSamps), adaptive_(adaptive) {
-//    // Build ROL algorithm and solve SROM optimization problem
-//    SROMVector<Real> x(Teuchos::rcp(new std::vector<Real>(dimension_*nSamp_,0.)),
-//                       Teuchos::rcp(new std::vector<Real>(nSamp_,0.)));
-//    StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
-//    con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
-//    bool useAugLag = true;
-//    buildOptimizer(useAugLag);
-//    algo_->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-//    // Prune samples with zero weight and set samples/weights
-//    std::vector<std::vector<Real> > allPoints;
-//    std::vector<Real> allWeights;
-//    pruneSamples(allPoints,allWeights,x);
-//    splitSamples(allPoints,allWeights);
-//  }
-//
-//  SROMGenerator(Teuchos::ParameterList &parlist,
-//                Teuchos::RCP<BatchManager<Real> > &bman, 
-//                Teuchos::RCP<Objective<Real> > &obj,
-//                Teuchos::RCP<BoundConstraint<Real> > &bnd,
-//                Teuchos::RCP<Vector<Real> > &x,
-//                const size_t dimension,
-//                const size_t nSamp = 10,
-//                const bool adaptive = false,
-//                const size_t numNewSamps = 0 ) 
-//    : SampleGenerator<Real>(bman), parlist_(parlist), obj_(obj), bnd_(bnd),
-//      dimension_(dimension), nSamp_(nSamp), numNewSamps_(numNewSamps),
-//      adaptive_(adaptive) {
-//    // Build ROL algorithm and solve SROM optimization problem
-//    StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
-//    con_ = Teuchos::rcp(new SROMEqualityConstraint<Real>);
-//    bool useAugLag = true;
-//    buildOptimizer(useAugLag);
-//    algo_->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-//    // Prune samples with zero weight and set samples/weights
-//    const SROMVector<Real> &ex = Teuchos::static_cast<const SROMVector<Real> >(*x);
-//    std::vector<std::vector<Real> > allPoints;
-//    std::vector<Real> allWeights;
-//    pruneSamples(allPoints,allWeights,ex);
-//    splitSamples(allPoints,allWeights);
-//  }

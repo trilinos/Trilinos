@@ -81,7 +81,10 @@ public:
              const std::vector<Real> &scale_wts)
     : bman_(bman), pts_vec_(pts_vec), wts_vec_(wts_vec) {
     numSamples_ = wts_vec_->size();
-    dimension_  = pts_vec_->size()/numSamples_; 
+    dimension_  = 0;
+    if (numSamples_ > 0) { 
+      dimension_  = pts_vec_->size()/numSamples_;
+    }
 
     Real wi = 1., xij = 1.;
     scale_wts_.clear(); scale_wts_.resize(numSamples_,1.);
@@ -212,7 +215,8 @@ public:
     }
     // Global sum
     Real sum = 0.;
-    bman_->sumAll(&result,&sum,1);
+    bman_->reduceAll(&result,&sum,r);
+//    bman_->sumAll(&result,&sum,1);
     return sum;
   }
 

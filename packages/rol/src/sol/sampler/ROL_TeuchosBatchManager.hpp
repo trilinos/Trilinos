@@ -68,6 +68,18 @@ public:
     return Teuchos::size<Ordinal>(*comm_);
   }
 
+  void reduceAll(Real* input, Real* output,
+                 const Elementwise::ReductionOp<Real> &r) {
+    int nB = this->numBatches();
+    std::vector<Real> receiveBuffer(nB);
+    Teuchos::gather<Ordinal,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
+    output[0] = 0;
+    for (int i = 0; i < numBatches(); i++) {
+      r.reduce(receiveBuffer[i],output[0]);
+    }
+    Teuchos::broadcast<Ordinal,Real>(*comm_,0,1,output);
+  }
+
   void minAll(Real* input, Real* output, int dim) {
     Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MIN,
       dim, input, output);
@@ -83,7 +95,10 @@ public:
       dim, input, output);
   }
 
-  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) = 0;
+  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+      ">>> ERROR (ROL::TeuchosBatchManager): sumAll(Vector<Real> &input, Vector<Real> &output) is not implemented");
+  }
 
   void barrier(void) {
     Teuchos::barrier<Ordinal>(*comm_); 
