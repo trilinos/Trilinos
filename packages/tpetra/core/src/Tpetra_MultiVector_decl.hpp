@@ -775,6 +775,19 @@ namespace Tpetra {
     //! @name Post-construction modification routines
     //@{
 
+  protected:
+    /// \brief Whether sumIntoLocalValue and sumIntoGlobalValue should
+    ///   use atomic updates by default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_HAVE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_HAVE_SERIAL
+
+  public:
     /// \brief Replace value, using global (row) index.
     ///
     /// Replace the current value at row \c globalRow (a global index)
@@ -836,12 +849,19 @@ namespace Tpetra {
     /// discussion of DualView semantics elsewhere in the
     /// documentation.
     ///
-    /// \pre \c globalRow must be a valid global element on this
-    ///   process, according to the row Map.
+    /// \param globalRow [in] Global row index of the entry to modify.
+    ///   This <i>must</i> be a valid global row index on the calling
+    ///   process with respect to the MultiVector's Map.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
+    /// \param atomic [in] Whether to use an atomic update.  If this
+    ///   class' execution space is not Kokkos::Serial, then this is
+    ///   true by default, else it is false by default.
     void
-    sumIntoGlobalValue (GlobalOrdinal globalRow,
-                        size_t col,
-                        const impl_scalar_type& value);
+    sumIntoGlobalValue (const GlobalOrdinal globalRow,
+                        const size_t col,
+                        const impl_scalar_type& value,
+                        const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Like the above sumIntoGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -860,13 +880,23 @@ namespace Tpetra {
     /// getDualView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
     /// documentation.
+    ///
+    /// \param globalRow [in] Global row index of the entry to modify.
+    ///   This <i>must</i> be a valid global row index on the calling
+    ///   process with respect to the MultiVector's Map.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
+    /// \param atomic [in] Whether to use an atomic update.  If this
+    ///   class' execution space is not Kokkos::Serial, then this is
+    ///   true by default, else it is false by default.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
-    sumIntoGlobalValue (GlobalOrdinal globalRow,
-                        size_t col,
-                        const T& value)
+    sumIntoGlobalValue (const GlobalOrdinal globalRow,
+                        const size_t col,
+                        const T& value,
+                        const bool atomic = useAtomicUpdatesByDefault)
     {
-      sumIntoGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
+      sumIntoGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value), atomic);
     }
 
     /// \brief Replace value, using local (row) index.
@@ -930,12 +960,17 @@ namespace Tpetra {
     /// discussion of DualView semantics elsewhere in the
     /// documentation.
     ///
-    /// \pre \c localRow must be a valid local element on this process,
-    ///   according to the row Map.
+    /// \param localRow [in] Local row index of the entry to modify.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
+    /// \param atomic [in] Whether to use an atomic update.  If this
+    ///   class' execution space is not Kokkos::Serial, then this is
+    ///   true by default, else it is false by default.
     void
-    sumIntoLocalValue (LocalOrdinal localRow,
-                       size_t col,
-                       const impl_scalar_type& value);
+    sumIntoLocalValue (const LocalOrdinal localRow,
+                       const size_t col,
+                       const impl_scalar_type& value,
+                       const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Like the above sumIntoLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -954,17 +989,38 @@ namespace Tpetra {
     /// getDualView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
     /// documentation.
+    ///
+    /// \param localRow [in] Local row index of the entry to modify.
+    /// \param col [in] Column index of the entry to modify.
+    /// \param value [in] Incoming value to add to the entry.
+    /// \param atomic [in] Whether to use an atomic update.  If this
+    ///   class' execution space is not Kokkos::Serial, then this is
+    ///   true by default, else it is false by default.
     template<typename T>
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     sumIntoLocalValue (LocalOrdinal localRow,
                        size_t col,
-                       const T& value)
+                       const T& value,
+                       const bool atomic = useAtomicUpdatesByDefault)
     {
-      sumIntoLocalValue (localRow, col, static_cast<impl_scalar_type> (value));
+      sumIntoLocalValue (localRow, col, static_cast<impl_scalar_type> (value), atomic);
     }
 
     //! Set all values in the multivector with the given value.
     void putScalar (const Scalar& value);
+
+    /// \brief Set all values in the multivector with the given value.
+    ///
+    /// This method only exists if the template parameter \c T and
+    /// impl_scalar_type differ.  If C++11 is enabled, we further
+    /// require that it be possible to convert \c T to
+    /// impl_scalar_type.
+    template<typename T>
+    typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
+    putScalar (const T& value)
+    {
+      putScalar (static_cast<impl_scalar_type> (value));
+    }
 
     /// \brief Set all values in the multivector to pseudorandom numbers.
     ///

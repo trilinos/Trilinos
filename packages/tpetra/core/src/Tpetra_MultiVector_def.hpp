@@ -3619,29 +3619,34 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoLocalValue (LocalOrdinal MyRow,
-                     size_t VectorIndex,
-                     const impl_scalar_type& ScalarValue)
+  sumIntoLocalValue (const LocalOrdinal localRow,
+                     const size_t col,
+                     const impl_scalar_type& value,
+                     const bool atomic)
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      localRow < minLocalIndex || localRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << MyRow
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << localRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
+      vectorIndexOutOfRange(col),
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << VectorIndex
+      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << col
       << " of the multivector is invalid.");
 #endif
-    const size_t colInd = isConstantStride () ?
-      VectorIndex : whichVectors_[VectorIndex];
-    view_.h_view (MyRow, colInd) += ScalarValue;
+    const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+    if (atomic) {
+      Kokkos::atomic_add (& (view_.h_view(localRow, colInd)), value);
+    }
+    else {
+      view_.h_view (localRow, colInd) += value;
+    }
   }
 
 
@@ -3652,7 +3657,9 @@ namespace Tpetra {
                       size_t VectorIndex,
                       const impl_scalar_type& ScalarValue)
   {
-    const LocalOrdinal MyRow = this->getMap ()->getLocalElement (GlobalRow);
+    // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
+    // touches the RCP's reference count, which isn't thread safe.
+    const LocalOrdinal MyRow = this->map_->getLocalElement (GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
@@ -3671,25 +3678,28 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoGlobalValue (GlobalOrdinal GlobalRow,
-                      size_t VectorIndex,
-                      const impl_scalar_type& ScalarValue)
+  sumIntoGlobalValue (const GlobalOrdinal globalRow,
+                      const size_t col,
+                      const impl_scalar_type& value,
+                      const bool atomic)
   {
-    const LocalOrdinal MyRow = this->getMap ()->getLocalElement (GlobalRow);
+    // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
+    // touches the RCP's reference count, which isn't thread safe.
+    const LocalOrdinal lclRow = this->map_->getLocalElement (globalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+      lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << GlobalRow
+      "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
       << "is not present on this process "
       << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
+      vectorIndexOutOfRange(col),
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << VectorIndex
+      "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
       << " of the multivector is invalid.");
 #endif
-    sumIntoLocalValue (MyRow, VectorIndex, ScalarValue);
+    sumIntoLocalValue (lclRow, col, value, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
