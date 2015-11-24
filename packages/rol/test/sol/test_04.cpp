@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
         }
         bman->sumAll(&val,&sum,1);
         error = std::abs(sum-data)/std::abs(data);
-        if ( error > 1.e-2 ) {
+        if ( error > 1.e-1 ) {
           errorFlag++;
         }
         *outStream << std::right << std::setw(20) << sum
