@@ -56,11 +56,27 @@ protected:
 
 public:
   virtual ~EpetraBatchManager() {}
+
   EpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : comm_(comm) {}
+
   int batchID(void) { return comm_->MyPID(); }
+
   int numBatches(void) { return comm_->NumProc(); }
+
+  void reduceAll(Real* input, Real* output,
+                 const Elementwise::ReductionOp<Real> &r) {
+    int nB = this->numBatches();
+    std::vector<Real> receiveBuffer(nB);
+    comm_->GatherAll(input,&receiveBuffer[0],1);
+    output[0] = 0;
+    for (int i = 0; i < nB; i++) {
+      r.reduce(receiveBuffer[i],output[0]);
+    }
+    comm_->Broadcast(output,1,0);
+  }
+
   void sumAll(Real* input, Real* output, int dim) { comm_->SumAll(input,output,dim); }
-  virtual void sumAll(Vector<Real> &input, Vector<Real> &output) = 0;
+
   void barrier(void) {
     comm_->Barrier();
   }

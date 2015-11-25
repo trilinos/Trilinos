@@ -137,6 +137,14 @@ public:
     }
     return val;
   }
+
+  Real lowerBound(void) const {
+    return a_;
+  }
+ 
+  Real upperBound(void) const {
+    return b_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 5;

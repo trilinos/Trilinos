@@ -112,6 +112,14 @@ public:
     return (2./d)*(((bm2-am2)/((Real)m+2)-a_*(bm1-am1)/((Real)m+1))/d1
                   +(c_*(cm1-bm1)/((Real)m+1)-(cm2-bm2)/((Real)m+2))/d2);
   }
+
+  Real lowerBound(void) const {
+    return a_;
+  }
+ 
+  Real upperBound(void) const {
+    return c_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 7;

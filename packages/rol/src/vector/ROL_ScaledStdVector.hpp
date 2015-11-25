@@ -145,9 +145,11 @@ public:
   }
 
   const ROL::Vector<Real> & dual() const {
+    uint dimension = std_vec_->size();
     std::vector<Element> tmp_vec(*std_vec_);
-    tmp_vec[0] *= (*scaling_vec_)[0];
-    tmp_vec[1] *= (*scaling_vec_)[1];
+    for (uint i = 0; i < dimension; i++) { 
+      tmp_vec[i] *= (*scaling_vec_)[i];
+    }
     dual_vec_ = Teuchos::rcp( new DualScaledStdVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
     return *dual_vec_;
   }
@@ -278,9 +280,11 @@ public:
   }
 
   const ROL::Vector<Real> & dual() const {
+    uint dimension = std_vec_->size();
     std::vector<Element> tmp_vec(*std_vec_);
-    tmp_vec[0] /= (*scaling_vec_)[0];
-    tmp_vec[1] /= (*scaling_vec_)[1];
+    for (uint i = 0; i < dimension; i++) { 
+      tmp_vec[i] /= (*scaling_vec_)[i];
+    }
     dual_vec_ = Teuchos::rcp( new PrimalScaledStdVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
     return *dual_vec_;
   }

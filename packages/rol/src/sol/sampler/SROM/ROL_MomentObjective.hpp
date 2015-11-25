@@ -45,6 +45,8 @@
 #define ROL_MOMENTOBJECTIVE_H
 
 #include "ROL_Objective.hpp"
+#include "ROL_BatchManager.hpp"
+#include "ROL_Distribution.hpp"
 #include "ROL_SROMVector.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
@@ -54,31 +56,36 @@ namespace ROL {
 template <class Real>
 class MomentObjective : public Objective<Real> {
 private:
-  const std::vector<std::vector<std::pair<size_t, Real> > > moments_;
+  std::vector<std::vector<std::pair<size_t, Real> > > moments_;
+  Teuchos::RCP<BatchManager<Real> > bman_;
 
-  Real momentValue(const size_t dim, const Real power, const Real moment, const SROMVector<Real> &x) const {
+  Real momentValue(const size_t dim, const Real power, const Real moment,
+                   const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
-    Real val = 0., xpt = 0., xwt = 0.;
+    Real val = 0., xpt = 0., xwt = 0., sum = 0.;
     for (size_t k = 0; k < numSamples; k++) {
       xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
       val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
     }
-    return 0.5*std::pow((val-moment)/moment,2);
+    bman_->sumAll(&val,&sum,1);
+    return 0.5*std::pow((sum-moment)/moment,2);
   }
 
   void momentGradient(std::vector<Real> &gradx, std::vector<Real> &gradp,  Real &scale,
-                const size_t dim, const Real power, const Real moment, const SROMVector<Real> &x) const {
+                const size_t dim, const Real power, const Real moment,
+                const PrimalSROMVector<Real> &x) const {
     const size_t numSamples = x.getNumSamples();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     scale = 0.;
-    Real xpt = 0., xwt = 0., xpow = 0.;
+    Real xpt = 0., xwt = 0., xpow = 0., psum = 0.;
     for (size_t k = 0; k < numSamples; k++) {
       xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
       xpow = ((power==1) ? 1. : ((power==2) ? xpt : std::pow(xpt,power-1)));
-      scale += xwt * xpow * xpt;
+      psum += xwt * xpow * xpt;
       gradx[k] = xwt * xpow * power;
       gradp[k] = xpow * xpt;
     }
+    bman_->sumAll(&psum,&scale,1);
     scale -= moment;
     scale /= std::pow(moment,2);
   }
@@ -87,11 +94,12 @@ private:
                      std::vector<Real> &hvp1, std::vector<Real> &hvp2,
                      Real &scale1, Real &scale2, Real &scale3,
                const size_t dim, const Real power, const Real moment,
-               const SROMVector<Real> &x, const SROMVector<Real> &v) const {
+               const PrimalSROMVector<Real> &x, const PrimalSROMVector<Real> &v) const {
     const size_t numSamples = x.getNumSamples();
     hvx1.resize(numSamples,0.); hvx2.resize(numSamples,0.); hvx3.resize(numSamples,0.);
     hvp1.resize(numSamples,0.); hvp2.resize(numSamples,0.);
     scale1 = 0.; scale2 = 0.; scale3 = 0.;
+    std::vector<Real> psum(3,0.0), scale(3,0.0);
     Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
     Real xpow0 = 0., xpow1 = 0., xpow2 = 0.;
     const Real moment2 = std::pow(moment,2);
@@ -102,27 +110,44 @@ private:
                 std::pow(xpt,power-2))));
       xpow1 = ((power==1) ? 1. : xpow2 * xpt);
       xpow0 = xpow1 * xpt;
-      scale1 += xwt * xpow1 * vpt;
-      scale2 += xwt * xpow0;
-      scale3 += vwt * xpow0;
+      psum[0] += xwt * xpow1 * vpt;
+      psum[1] += xwt * xpow0;
+      psum[2] += vwt * xpow0;
       hvx1[k] = power * xwt * xpow1;
       hvx2[k] = power * (power-1.) * xwt * xpow2 * vpt;
       hvx3[k] = power * vwt * xpow1;
       hvp1[k] = xpow0;
       hvp2[k] = power * xpow1 * vpt;
     }
-    scale1 *= power/moment2;
-    scale2 -= moment;
-    scale2 /= moment2;
-    scale3 /= moment2;
+    bman_->sumAll(&psum[0],&scale[0],3);
+    scale1 = scale[0] * power/moment2;
+    scale2 = (scale[1] - moment)/moment2 ;
+    scale3 = scale[2]/moment2;
   }
 
 public:
-  MomentObjective(const std::vector<std::vector<std::pair<size_t, Real> > > &moments)
-    : Objective<Real>(), moments_(moments) {}
+  MomentObjective(const std::vector<std::vector<std::pair<size_t, Real> > > &moments,
+                        Teuchos::RCP<BatchManager<Real> > &bman)
+    : Objective<Real>(), moments_(moments), bman_(bman) {}
+
+  MomentObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
+                  const std::vector<size_t>                             &order,
+                        Teuchos::RCP<BatchManager<Real> > &bman)
+    : Objective<Real>(), bman_(bman) {
+    size_t numMoments = order.size();
+    size_t dimension  = dist.size();
+    std::vector<std::pair<size_t,Real> > data(numMoments);
+    moments_.clear(); moments_.resize(dimension);
+    for (size_t d = 0; d < dimension; d++) {
+      for (size_t i = 0; i < numMoments; i++) {
+        data[i] = std::make_pair(order[i],dist[d]->moment(order[i]));
+      }
+      moments_[d].assign(data.begin(),data.end());
+    }
+  }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     size_t dimension  = ex.getDimension();
     Real val = 0.;
     std::vector<std::pair<size_t, Real> > data;
@@ -136,8 +161,8 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &eg = Teuchos::dyn_cast<DualSROMVector<Real> >(g);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     size_t dimension  = ex.getDimension();
     size_t numSamples = ex.getNumSamples();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
@@ -162,9 +187,9 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
-    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
-    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    DualSROMVector<Real> &ehv = Teuchos::dyn_cast<DualSROMVector<Real> >(hv);
+    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
+    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
     const size_t dimension  = ex.getDimension();
     const size_t numSamples = ex.getNumSamples();
     std::vector<Real> hvx1(numSamples,0.), hvx2(numSamples,0.), hvx3(numSamples,0.);

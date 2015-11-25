@@ -44,26 +44,31 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
 
-#include "ROL_TeuchosBatchManager.hpp"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
+#include "ROL_EpetraBatchManager.hpp"
 #include "ROL_SROMGenerator.hpp"
 #include "ROL_DistributionFactory.hpp"
 
 int main(int argc, char* argv[]) {
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > commptr =
-    Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<Epetra_Comm> comm;
+#ifdef HAVE_MPI
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = Teuchos::rcp(new Epetra_SerialComm());
+#endif
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0 && commptr->getRank() == 0)
+  if (iprint > 0 && comm->MyPID() == 0)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
@@ -105,7 +110,7 @@ int main(int argc, char* argv[]) {
     size_t numMoments = static_cast<size_t>(moments.size());
 
     Teuchos::RCP<ROL::BatchManager<double> > bman =
-      Teuchos::rcp(new ROL::TeuchosBatchManager<double,int>(commptr));
+      Teuchos::rcp(new ROL::EpetraBatchManager<double>(comm));
     Teuchos::RCP<ROL::SampleGenerator<double> > sampler =
       Teuchos::rcp(new ROL::SROMGenerator<double>(*parlist,bman,distVec));
 
