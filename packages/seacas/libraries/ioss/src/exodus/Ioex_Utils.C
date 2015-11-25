@@ -626,7 +626,7 @@ namespace Ioex {
     Ioss::tokenize(name, suffix, tokens);
     size_t num_tokens = tokens.size();
 
-    // Check that separator is not first or last character of the name...
+    // Check that tokenizer did not return empty tokens...
     bool invalid = tokens[0].empty() || tokens[num_tokens-1].empty();
     if (num_tokens == 1 || invalid) {
       // It is not a (Sierra-generated) name for a non-SCALAR variable
@@ -636,6 +636,13 @@ namespace Ioex {
       return field;
     }
 
+    // If 'name' begins with 'suffix_separator', then tokenize will strip that
+    // of and the first token will not have the leading 'suffix_separator'.
+    // If that is the case, put 'suffix_separator' back on the first token...
+    if (name[0] == suffix_separator && tokens[0][0] != suffix_separator) {
+      tokens[0] = suffix_separator + tokens[0];
+    }
+    
     // KNOW: The field_suffix_sep is not in first or last position.
     // KNOW: num_tokens > 1 at this point.  Possible that we still
     // just have a scalar with an embedded separator character...
