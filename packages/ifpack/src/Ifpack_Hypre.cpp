@@ -121,7 +121,9 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   for(int i = ilower; i <= iupper; i++){
     rows[i-ilower] = i;
   }
-  MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
+  // amk November 24, 2015: This previously created a map that Epetra does not consider
+  // to be contiguous.  hypre doesn't like that, so I changed it.
+  MySimpleMap_ = rcp(new Epetra_Map(A_->NumGlobalRows(), iupper-ilower+1, 0, Comm()));
 } //Constructor
 
 //==============================================================================
@@ -295,6 +297,21 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   if(IsComputed() == false){
     IFPACK_CHK_ERR(-1);
   }
+  // These are hypre requirements
+  // hypre needs A, X, and Y to have the same contiguous distribution
+  // NOTE: Maps are only considered to be contiguous if they were generated using a
+  // particular constructor.  Otherwise, LinearMap() will not detect whether they are
+  // actually contiguous.
+  if(!X.Map().LinearMap() || !Y.Map().LinearMap()) {
+    std::cerr << "ERROR: X and Y must have contiguous maps.\n";
+    IFPACK_CHK_ERR(-1);
+  }
+  if(!X.Map().PointSameAs(*MySimpleMap_) ||
+     !Y.Map().PointSameAs(*MySimpleMap_)) {
+    std::cerr << "ERROR: X, Y, and A must have the same distribution.\n";
+    IFPACK_CHK_ERR(-1);
+  }
+
   Time_.ResetStartTime();
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
@@ -304,6 +321,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
+    // FIXME amk Nov 23, 2015: This will not work for funky data layouts
     double * XValues;
     IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
     double * YValues;
