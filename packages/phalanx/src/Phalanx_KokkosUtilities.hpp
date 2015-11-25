@@ -5,8 +5,10 @@
 #include "Phalanx_MDField.hpp"
 
 namespace PHX {
-  
+
   void InitializeKokkosDevice(const int& num_threads = 1);
+
+  void InitializeKokkosDevice(int&  narg, char* arg[]);
 
   void FinalizeKokkosDevice();
 
