@@ -74,7 +74,7 @@ public:
     std::vector<Real> receiveBuffer(nB);
     Teuchos::gather<Ordinal,Real>(input,1,&receiveBuffer[0],1,0,*comm_);
     output[0] = 0;
-    for (int i = 0; i < numBatches(); i++) {
+    for (int i = 0; i < nB; i++) {
       r.reduce(receiveBuffer[i],output[0]);
     }
     Teuchos::broadcast<Ordinal,Real>(*comm_,0,1,output);
