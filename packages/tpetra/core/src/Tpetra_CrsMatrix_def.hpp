@@ -2218,11 +2218,11 @@ namespace Tpetra {
                         Kokkos::MemoryUnmanaged>& indices,
                       const Kokkos::View<const impl_scalar_type*,
                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::device_type,
-                        Kokkos::MemoryUnmanaged>& values)
+                        Kokkos::MemoryUnmanaged>& values,
+                      const bool atomic)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
     typedef impl_scalar_type ST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -2263,7 +2263,8 @@ namespace Tpetra {
         return staticGraph_->template sumIntoLocalValues<ST, DD, DD> (rowInfo,
                                                                       curVals,
                                                                       indices,
-                                                                      values);
+                                                                      values,
+                                                                      atomic);
       }
       else if (isGloballyIndexed ()) {
         ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
@@ -2298,7 +2299,8 @@ namespace Tpetra {
                                                                     curVals, // target
                                                                     gblInds,
                                                                     valsIn, // source
-                                                                    f_type ());
+                                                                    f_type (),
+                                                                    atomic);
         if (static_cast<size_type> (numXformed) != numValid) {
           return Teuchos::OrdinalTraits<LO>::invalid ();
         } else {
@@ -2322,7 +2324,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sumIntoLocalValues (const LocalOrdinal localRow,
                       const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                      const Teuchos::ArrayView<const Scalar>& values)
+                      const Teuchos::ArrayView<const Scalar>& values,
+                      const bool atomic)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -2375,7 +2378,8 @@ namespace Tpetra {
         return staticGraph_->template sumIntoLocalValues<ST, HD, DD> (rowInfo,
                                                                       curVals,
                                                                       indsIn,
-                                                                      valsIn);
+                                                                      valsIn,
+                                                                      atomic);
       }
       else if (isGloballyIndexed ()) {
         ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
@@ -2408,7 +2412,8 @@ namespace Tpetra {
                                                                     curVals, // target
                                                                     gblInds,
                                                                     valsIn, // source
-                                                                    f_type ());
+                                                                    f_type (),
+                                                                    atomic);
         if (static_cast<size_type> (numXformed) != numValid) {
           return Teuchos::OrdinalTraits<LO>::invalid ();
         } else {
