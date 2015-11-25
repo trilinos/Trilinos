@@ -86,6 +86,8 @@ private:
 
   bool softUp_;
 
+  unsigned verbosity_;
+
   void updateObj( Vector<Real> &x, int iter, ProjectedObjective<Real> &pObj ) {
     if ( !softUp_ ) {
       pObj.update(x,true,iter);
@@ -101,7 +103,8 @@ public:
   virtual ~TrustRegion() {}
 
   // Constructor
-  TrustRegion( Teuchos::ParameterList & parlist ) : ftol_old_(ROL_OVERFLOW), cnt_(0) {
+  TrustRegion( Teuchos::ParameterList & parlist )
+    : ftol_old_(ROL_OVERFLOW), cnt_(0), verbosity_(0) {
     // Unravel Parameter List
     // Trust-Region Parameters
     delmax_ = parlist.sublist("Step").sublist("Trust Region").get("Maximum Radius",5000.0);
@@ -190,6 +193,15 @@ public:
       pRed_ -= s.dot(Hs_->dual());
     }
 
+    if ( verbosity_ > 0 ) {
+      std::cout << std::endl;
+      std::cout << "  Computation of actual and predicted reduction" << std::endl;
+      std::cout << "    Current objective function value:        " << fold1 << std::endl;
+      std::cout << "    New objective function value:            " << fnew  << std::endl;
+      std::cout << "    Actual reduction:                        " << aRed  << std::endl;
+      std::cout << "    Predicted reduction:                     " << pRed_ << std::endl;
+    }
+
     // Compute Ratio of Actual and Predicted Reduction
     aRed  -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
     pRed_ -= eps_*((1.0 > std::abs(fold1)) ? 1.0 : std::abs(fold1));
@@ -212,6 +224,13 @@ public:
       else {
         flagTR = 0;
       }
+    }
+
+    if ( verbosity_ > 0 ) {
+      std::cout << "    Actual reduction with safeguard:         " << aRed   << std::endl;
+      std::cout << "    Predicted reduction with safeguard:      " << pRed_  << std::endl;
+      std::cout << "    Ratio of actual and predicted reduction: " << rho    << std::endl;
+      std::cout << "    Trust-region flag:                       " << flagTR << std::endl;
     }
 
     // Check Sufficient Decrease in the Reduced Quadratic Model
@@ -237,6 +256,16 @@ public:
       // Sufficient decrease?
       decr = ( aRed >= 0.1*eta0_*pgnorm );
       flagTR = (!decr ? 4 : flagTR);
+
+      if ( verbosity_ > 0 ) {
+        std::cout << "    Decrease lower bound (constraints):      " << 0.1*eta0_*pgnorm << std::endl;
+        std::cout << "    Trust-region flag (constraints):         " << flagTR << std::endl;
+        std::cout << "    Is step feasible:                        " << pObj.isFeasible(x) << std::endl;
+      }
+    }
+
+    if ( verbosity_ > 0 ) {
+      std::cout << std::endl;
     }
     
     // Accept or Reject Step and Update Trust Region
