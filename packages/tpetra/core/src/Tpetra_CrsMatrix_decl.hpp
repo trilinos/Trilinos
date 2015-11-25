@@ -954,6 +954,19 @@ namespace Tpetra {
                          const ArrayView<const GlobalOrdinal> &cols,
                          const ArrayView<const Scalar>        &vals);
 
+  private:
+    /// \brief Whether sumIntoLocalValues should use atomic updates by
+    ///   default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_HAVE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_HAVE_SERIAL
+
+  public:
     /// \brief Sum into one or more sparse matrix entries, using local indices.
     ///
     /// \param localRow [in] Local index of a row.  This row
@@ -962,6 +975,7 @@ namespace Tpetra {
     ///   want to modify.
     /// \param vals [in] Values corresponding to the above column
     ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
+    /// \param atomic [in] Whether to use atomic updates.
     ///
     /// \return The number of indices for which values were actually
     ///   modified; the number of "correct" indices.
@@ -970,8 +984,30 @@ namespace Tpetra {
     /// meaning as replaceLocalValues() (which see).
     LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal>& cols,
-                        const ArrayView<const Scalar>& vals);
+                        const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& cols,
+                        const Kokkos::View<const impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>& vals,
+                        const bool atomic = useAtomicUpdatesByDefault);
+
+    /// \brief Sum into one or more sparse matrix entries, using local indices.
+    ///
+    /// \param localRow [in] Local index of a row.  This row
+    ///   <i>must</i> be owned by the calling process.
+    /// \param cols [in] Local indices of the columns whose entries we
+    ///   want to modify.
+    /// \param vals [in] Values corresponding to the above column
+    ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
+    /// \param atomic [in] Whether to use atomic updates.
+    ///
+    /// \return The number of indices for which values were actually
+    ///   modified; the number of "correct" indices.
+    ///
+    /// This method has the same preconditions and return value
+    /// meaning as replaceLocalValues() (which see).
+    LocalOrdinal
+    sumIntoLocalValues (const LocalOrdinal localRow,
+                        const Teuchos::ArrayView<const LocalOrdinal>& cols,
+                        const Teuchos::ArrayView<const Scalar>& vals,
+                        const bool atomic = useAtomicUpdatesByDefault);
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar &alpha);

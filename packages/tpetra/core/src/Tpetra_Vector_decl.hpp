@@ -240,22 +240,58 @@ public:
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
    */
-  void replaceGlobalValue (GlobalOrdinal globalRow, const Scalar& value);
+  void replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value);
 
-  //! Adds specified value to existing value at the specified location.
-  /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-   */
-  void sumIntoGlobalValue (GlobalOrdinal globalRow, const Scalar& value);
+  /// \brief Add value to existing value, using global (row) index.
+  ///
+  /// Add the given value to the existing value at row \c globalRow
+  /// (a global index).
+  ///
+  /// This method affects the host memory version of the data.  If the
+  /// \c DeviceType template parameter is a device that has two memory
+  /// spaces, and you want to modify the non-host version of the data,
+  /// you must access the DualView directly by calling getDualView().
+  /// Please see modify(), sync(), and the discussion of DualView
+  /// semantics elsewhere in the documentation.
+  ///
+  /// \param globalRow [in] Global row index of the entry to modify.
+  ///   This <i>must</i> be a valid global row index on the calling
+  ///   process with respect to the Vector's Map.
+  /// \param value [in] Incoming value to add to the entry.
+  /// \param atomic [in] Whether to use an atomic update.  If this
+  ///   class' execution space is not Kokkos::Serial, then this is
+  ///   true by default, else it is false by default.
+  void
+  sumIntoGlobalValue (const GlobalOrdinal globalRow,
+                      const Scalar& value,
+                      const bool atomic = base_type::useAtomicUpdatesByDefault);
 
   //! Replace current value at the specified location with specified values.
   /** \pre \c localRow must be a valid local element on this node, according to the row map.
    */
-  void replaceLocalValue (LocalOrdinal myRow, const Scalar& value);
+  void replaceLocalValue (const LocalOrdinal myRow, const Scalar& value);
 
-  //! Adds specified value to existing value at the specified location.
-  /** \pre \c localRow must be a valid local element on this node, according to the row map.
-   */
-  void sumIntoLocalValue (LocalOrdinal myRow, const Scalar& value);
+  /// \brief Add \c value to existing value, using local (row) index.
+  ///
+  /// Add the given value to the existing value at row \c localRow (a
+  /// local index).
+  ///
+  /// This method affects the host memory version of the data.  If the
+  /// \c DeviceType template parameter is a device that has two memory
+  /// spaces, and you want to modify the non-host version of the data,
+  /// you must access the DualView directly by calling getDualView().
+  /// Please see modify(), sync(), and the discussion of DualView
+  /// semantics elsewhere in the documentation.
+  ///
+  /// \param localRow [in] Local row index of the entry to modify.
+  /// \param value [in] Incoming value to add to the entry.
+  /// \param atomic [in] Whether to use an atomic update.  If this
+  ///   class' execution space is not Kokkos::Serial, then this is
+  ///   true by default, else it is false by default.
+  void
+  sumIntoLocalValue (const LocalOrdinal myRow,
+                     const Scalar& value,
+                     const bool atomic = base_type::useAtomicUpdatesByDefault);
 
   //@}
 

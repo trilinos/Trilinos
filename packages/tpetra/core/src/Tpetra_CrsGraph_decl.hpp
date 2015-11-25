@@ -1491,6 +1491,17 @@ namespace Tpetra {
     }
 
   private:
+    /// \brief Whether sumIntoLocalValues should use atomic updates by
+    ///   default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_HAVE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_HAVE_SERIAL
+
     /// \brief Implementation detail of CrsMatrix::sumIntoLocalValues.
     ///
     /// \tparam Scalar The type of each entry in the sparse matrix.
@@ -1517,7 +1528,8 @@ namespace Tpetra {
                         const Kokkos::View<const LocalOrdinal*, InputMemorySpace,
                           Kokkos::MemoryUnmanaged>& inds,
                         const Kokkos::View<const Scalar*, InputMemorySpace,
-                          Kokkos::MemoryUnmanaged>& newVals) const
+                        Kokkos::MemoryUnmanaged>& newVals,
+                        const bool atomic = useAtomicUpdatesByDefault) const
     {
       // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
       // accurately, it assumes that the host execution space can
@@ -1535,7 +1547,12 @@ namespace Tpetra {
       for (LocalOrdinal j = 0; j < numElts; ++j) {
         const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
         if (k != STINV) {
-          rowVals(k) += newVals(j);
+          if (atomic) {
+            Kokkos::atomic_add (&rowVals(k), newVals(j));
+          }
+          else {
+            rowVals(k) += newVals(j);
+          }
           hint = k+1;
           ++numValid;
         }
@@ -1621,7 +1638,8 @@ namespace Tpetra {
                            const Teuchos::ArrayView<Scalar>& rowVals,
                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
                            const Teuchos::ArrayView<const Scalar>& newVals,
-                           BinaryFunction f) const
+                           BinaryFunction f,
+                           const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
       typedef LocalOrdinal LO;
@@ -1649,7 +1667,13 @@ namespace Tpetra {
           if (lclColInd != LINV) {
             const size_t k = findLocalIndex (rowInfo, lclColInd, hint);
             if (k != STINV) {
-              rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+              if (atomic) {
+                const Scalar newVal = f (rowVals[k], newVals[j]);
+                Kokkos::atomic_assign (&rowVals[k], newVal);
+              }
+              else {
+                rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+              }
               hint = k+1;
               numValid++;
             }
@@ -1660,7 +1684,13 @@ namespace Tpetra {
         for (size_type j = 0; j < numElts; ++j) {
           const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
           if (k != STINV) {
-            rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+            if (atomic) {
+                const Scalar newVal = f (rowVals[k], newVals[j]);
+                Kokkos::atomic_assign (&rowVals[k], newVal);
+            }
+            else {
+              rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+            }
             hint = k+1;
             numValid++;
           }
