@@ -42,34 +42,35 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
-#include "MueLu_config.hpp"
+#include <MueLu_config.hpp>
 
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
-#include "Xpetra_Map.hpp"
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_Operator.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_IO.hpp"
+#include <Xpetra_Map.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_HierarchyManager.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
+#include <MueLu_AmesosSmoother.hpp>
+#include <MueLu_AmesosSmoother.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_FactoryManagerBase.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_HierarchyManager.hpp>
+#include <MueLu_PFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_TrilinosSmoother.hpp>
+#include <MueLu_DirectSolver.hpp>
 
 namespace MueLuTests {
 
@@ -196,13 +197,10 @@ namespace MueLuTests {
     RCP<RAPFactory>    Acfact = rcp( new RAPFactory() );
 
     RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSmootherPrototype("Gauss-Seidel", 2);
-
     RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-    //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
-    Teuchos::ParameterList amesosList;
-    RCP<SmootherPrototype> coarseProto = MueLu::GetAmesosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Amesos_Klu", amesosList);
+    RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver("Klu"));
     RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
 
     int maxLevels = 5;
@@ -295,13 +293,10 @@ namespace MueLuTests {
     Acfact->SetParameterList(Aclist);
 
     RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSmootherPrototype("Gauss-Seidel", 2);
-
     RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
     Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-    //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
-    Teuchos::ParameterList amesosList;
-    RCP<SmootherPrototype> coarseProto = MueLu::GetAmesosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Amesos_Klu", amesosList);
+    RCP<SmootherPrototype> coarseProto = rcp(new DirectSolver("Klu"));
     RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
 
     int maxLevels = 5;

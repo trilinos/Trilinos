@@ -408,15 +408,14 @@ namespace MueLuTests {
 #endif
       }
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
+        std::string ifpackType = "RELAXATION";
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", type);
         ifpackList.set("relaxation: sweeps", (LO) sweeps);
         ifpackList.set("relaxation: damping factor", (SC) 1.0);
-        return MueLu::GetIfpackSmoother<SC,LO,GO,NO>("point relaxation stand-alone",ifpackList);
+        return Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
       }
-#endif
 
     }; // class Factory
 
