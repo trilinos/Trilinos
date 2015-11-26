@@ -8,7 +8,7 @@ A) Prerequisites:
 
 First, manually ensure that the following prerequisites are satisfied:
 
-(*) python version 2.4 or later
+(*) python version 2.6 or later
 
 (*) eg or git version 1.6.x or later
 

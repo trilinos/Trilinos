@@ -265,7 +265,7 @@ def getHeaderOutputAndExtraReposDictList(rawOutputFromCmakefile):
   headerOuput = ""
   pythonDictListStr = ""
   processingPythonDict = False
-  for line in rawOutputFromCmakefile.split("\n"):
+  for line in rawOutputFromCmakefile.splitlines():
     if line == "*** Extra Repositories Python Dictionary":
       processingPythonDict=True
       continue
@@ -304,7 +304,7 @@ def getExtraReposDictListFromCmakefile(projectDir, extraReposFile, withCmake,
 # repos.
 def parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=False):
 
-  rawSshGitoliteRootInfoOutputList = rawSshGitoliteRootInfoOutput.split("\n")
+  rawSshGitoliteRootInfoOutputList = rawSshGitoliteRootInfoOutput.splitlines()
 
   gitoliteSshHeader = rawSshGitoliteRootInfoOutputList[0]
   if verbose:

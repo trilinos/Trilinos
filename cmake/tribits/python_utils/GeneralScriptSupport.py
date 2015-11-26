@@ -46,8 +46,8 @@ Python module containing general support functions for creating scripts
 #
 
 import sys
-if sys.version < '2.4':
-   print "Error, Python version is "+sys.version+" < 2.4!"
+if sys.version < '2.6':
+   print "Error, Python version is "+sys.version+" < 2.6!"
    sys.exit(1)
 
 #
@@ -152,7 +152,7 @@ def extractLinesAfterRegex(string_in, regex_in):
   reMatch = re.compile(regex_in)
   linesExtracted = ""
   foundRegex = False
-  for line in string_in.strip().split("\n"):
+  for line in string_in.strip().splitlines():
     #print "line = '" + line + "'"
     if not foundRegex:
       matchObj = reMatch.match(line)
@@ -248,7 +248,7 @@ class SysCmndInterceptor:
     self.__allowExtraCmnds = True
 
   def readCommandsFromStr(self, cmndsStr):
-    lines = cmndsStr.split('\n')
+    lines = cmndsStr.splitlines()
     for line in lines:
       #print "line: '"+line+"'"
       if line == "":

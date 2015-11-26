@@ -215,28 +215,14 @@ def doRemoveOutputFiles(inOptions):
   return performAnyActions(inOptions)
 
 
-def assertEgGitVersionHelper(returnedVersion, expectedVersion):
-  if returnedVersion != expectedVersion:
-    raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
-      +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
+def assertAndSetupGit(inOptions):
 
-
-def setupAndAssertEgGitVersions(inOptions):
-
-  egWhich = getCmndOutput("which eg", True, False)
-  if egWhich == "" or re.match(".+no eg.+", egWhich):
-    print "Warning, the eg command is not in your path! ("+egWhich+")"
-    setattr(inOptions, "eg", os.path.abspath(inOptions.ciSupportDir+"/eg"))
-    print "Setting to default eg in TriBITS source tree '"+inOptions.eg+"'!"
+  gitWhich = getCmndOutput("which git", True, False)
+  if gitWhich == "" or re.match(".+no git.+", gitWhich):
+    print "Error, the 'git' command is not in your path! ("+gitWhich+")"
+    raise Exception("Error, the 'git' command is not in your path! ("+gitWhich+")")
   else:
-    setattr(inOptions, "eg", "eg")
-
-  egVersionOuput = getCmndOutput(inOptions.eg+" --version", True, False)
-  egVersionsList = egVersionOuput.split('\n')
-
-  if inOptions.enableEgGitVersionCheck:
-    assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
-    assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
+    setattr(inOptions, "git", "git")
 
 
 def assertGitRepoExists(inOptions, gitRepo):
@@ -292,18 +278,18 @@ def didSinglePullBringChanges(pullOutFileFullPath):
 def executePull(gitRepo, inOptions, baseTestDir, outFile, pullFromRepo=None,
   doRebase=False)\
   :
-  cmnd = inOptions.eg+" pull"
+  cmnd = inOptions.git+" pull"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
     cmnd += " " + repoSpaceBranch
   else:
     print "\nPulling in updates from 'origin' ..."
-    # NOTE: If you do 'eg pull origin <branch>', then the list of locally
+    # NOTE: If you do 'git pull origin <branch>', then the list of locally
     # modified files will be wrong.  I don't know why this is but if instead
-    # you do a raw 'eg pull', then the right list of files shows up.
+    # you do a raw 'git pull', then the right list of files shows up.
   if doRebase:
-    cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
+    cmnd += " && "+inOptions.git+" rebase --against origin/"+inOptions.currentBranch
   outFileFullPath = os.path.join(baseTestDir, outFile)
   (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
@@ -709,8 +695,8 @@ reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
-  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.srcDir)
-  for branchName in branchesStr.split('\n'):
+  branchesStr = getCmndOutput(inOptions.git+" branch", workingDir=inOptions.srcDir)
+  for branchName in branchesStr.splitlines():
     #print "branchName =", branchName
     if branchName[0] == '*':
       currentBranch = branchName.split(' ')[1]
@@ -721,7 +707,7 @@ def getCurrentBranchName(inOptions, baseTestDir):
 
 def getCurrentDiffOutput(gitRepo, inOptions, baseTestDir):
   echoRunSysCmnd(
-    inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
+    inOptions.git+" diff --name-status origin/"+inOptions.currentBranch,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepo.repoName)),
     timeCmnd=True
@@ -754,7 +740,7 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
     projectDependenciesLocal = getDefaultProjectDependenices()
 
   modifiedFilesList = extractFilesListMatchingPattern(
-    changedFileDiffOutputStr.split('\n'), reModifiedFiles )
+    changedFileDiffOutputStr.splitlines(), reModifiedFiles )
 
   for modifiedFileFullPath in modifiedFilesList:
 
@@ -1694,7 +1680,7 @@ def getEnableStatusList(inOptions, enabledPackagesList):
 
 # Extract the original log message from the output from:
 #
-#   eg cat-file -p HEAD
+#   git cat-file -p HEAD
 #
 # This function strips off the git-generated header info and strips off the
 # trailing build/test summary data.
@@ -1710,7 +1696,7 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
   numBlankLines = 0
   lastNumBlankLines = 0
   foundStatusHeader = False
-  for line in rawLogOutput.split('\n'):
+  for line in rawLogOutput.splitlines():
     #print "\nline = '"+line+"'\n"
     if pastHeader:
       origLogStrList.append(line)
@@ -1734,17 +1720,19 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
         " build/test summary block!  This is a corrupted commit message.  Please" \
         " use 'git commit --amend' and manually remove the 'Build/test Cases Summary' block.")
     origLogStrList = origLogStrList[0:-lastNumBlankLines]
+    lastCommitMessageStr = '\n'.join(origLogStrList)
   else:
+    lastCommitMessageStr = ('\n'.join(origLogStrList))+'\n'
     lastNumBlankLines = -1 # Flag we did not find status header
 
-  return ('\n'.join(origLogStrList), lastNumBlankLines)
+  return (lastCommitMessageStr, lastNumBlankLines)
 
 
 def getLastCommitMessageStr(inOptions, gitRepo):
 
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
-    inOptions.eg+" cat-file -p HEAD",
+    inOptions.git+" cat-file -p HEAD",
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
@@ -1755,7 +1743,7 @@ def getLocalCommitsSummariesStr(inOptions, gitRepo, appendRepoName):
 
   # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
-    inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
+    inOptions.git+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
@@ -1794,14 +1782,14 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepo):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
+    inOptions.git+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
   if rawLocalCommitsStr:
     return ("Other local commits for this build/test group: "
-      + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
+      + (", ".join(rawLocalCommitsStr.splitlines()))) + "\n"
 
   return ""
 
@@ -1885,7 +1873,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
     inOptions.doBuild = True
     inOptions.doTest = True
 
-  setupAndAssertEgGitVersions(inOptions)
+  assertAndSetupGit(inOptions)
 
   if inOptions.overallNumProcs:
     inOptions.makeOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.makeOptions
@@ -2018,26 +2006,26 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-        egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
+        gitStatusOutput = getCmndOutput(inOptions.git+" status", True, throwOnError=False,
           workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir))
   
         print \
-          "\nOutput from 'eg status':\n" + \
+          "\nOutput from 'git status':\n" + \
           "\n--------------------------------------------------------------\n" + \
-          egStatusOutput + \
+          gitStatusOutput + \
           "\n--------------------------------------------------------------\n"
 
         # See if the repo is clean
   
-        if isSubstrInMultiLineString(egStatusOutput, "Changed but not updated"):
+        if isSubstrInMultiLineString(gitStatusOutput, "Changed but not updated"):
           print "\nERROR: There are changed unstaged uncommitted files => cannot continue!"
           repoIsClean = False
   
-        if isSubstrInMultiLineString(egStatusOutput, "Changes ready to be committed"):
+        if isSubstrInMultiLineString(gitStatusOutput, "Changes ready to be committed"):
           print "\nERROR: There are changed staged uncommitted files => cannot continue!"
           repoIsClean = False
   
-        if isSubstrInMultiLineString(egStatusOutput, "Newly created unknown files"):
+        if isSubstrInMultiLineString(gitStatusOutput, "Newly created unknown files"):
           print "\nERROR: There are newly created uncommitted files => Cannot continue!"
           repoIsClean = False
   
@@ -2047,7 +2035,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
              "in the local repo must be committed.  Otherwise, if there are changed but not\n" \
              "committed files or new unknown files that are used in the build or the test, then\n" \
              "what you are testing is *not* what you will be pushing.  If you have changes that\n" \
-             "you don't want to push, then try using 'eg stash' before you run this script to\n" \
+             "you don't want to push, then try using 'git stash' before you run this script to\n" \
              "stash away all of the changes you don't want to push.  That way, what you are testing\n" \
              "will be consistent with what you will be pushing.\n"
           pullPassed = False
@@ -2473,7 +2461,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
             if localCommitsExist:
   
               commitAmendRtn = echoRunSysCmnd(
-                inOptions.eg+" commit --amend" \
+                inOptions.git+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
                 workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
@@ -2545,7 +2533,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
-                inOptions.eg+" push origin "+inOptions.currentBranch,
+                inOptions.git+" push origin "+inOptions.currentBranch,
                 workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )

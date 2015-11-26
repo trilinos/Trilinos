@@ -66,7 +66,7 @@ clp.add_option(
 if not options.filesListFile:
   raise Exception("Error, the option --files-list-file=FILENAME must be set!")
 
-filesList = readStrFromFile(options.filesListFile).split('\n')
+filesList = readStrFromFile(options.filesListFile).splitlines()
 
 trilinosDependencies = getProjectDependenciesFromXmlFile(options.depsXmlFile)
 
