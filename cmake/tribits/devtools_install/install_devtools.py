@@ -395,7 +395,7 @@ def getToolsSelectedArray(toolsSelectedStr, validToolsArray):
 #
 def substituteStrings(inputStr, subPairArray):
   outputStr = ""
-  inputStrArray = inputStr.split("\n")
+  inputStrArray = inputStr.splitlines()
   if inputStrArray[-1] == "": inputStrArray = inputStrArray[0:-1]
   for line in inputStrArray:
     #print "line = '"+line+"'"

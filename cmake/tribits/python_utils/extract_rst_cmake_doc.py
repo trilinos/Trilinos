@@ -238,7 +238,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
   currentRstBlockBody = ""
 
   line_i = 0
-  for line in rawText.split("\n"):
+  for line in rawText.splitlines():
     #print "\nline = '"+line+"'"
 
     line_i += 1
@@ -365,7 +365,7 @@ def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fi
 
   replacedText = ""
 
-  textToReplaceLines = textToReplace.split("\n")
+  textToReplaceLines = textToReplace.splitlines()
   numTextToReplaceLines = len(textToReplaceLines)
 
   line_i = 0
