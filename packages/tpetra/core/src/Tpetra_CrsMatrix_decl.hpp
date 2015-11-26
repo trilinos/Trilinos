@@ -882,7 +882,8 @@ namespace Tpetra {
                          const ArrayView<const GlobalOrdinal>& cols,
                          const ArrayView<const Scalar>& vals);
 
-    /// \brief Replace one or more entries' values, using local indices.
+    /// \brief Replace one or more entries' values, using local
+    ///   row and column indices.
     ///
     /// \param localRow [in] local index of the row in which to
     ///   replace the entries.  This row <i>must</i> be owned by the
@@ -891,10 +892,13 @@ namespace Tpetra {
     ///   replace the entries.
     /// \param vals [in] Values to use for replacing the entries.
     ///
-    /// For all k in 0, ..., <tt>cols.size()-1</tt>, replace the value
-    /// at entry <tt>(localRow, cols[k])</tt> of the matrix with
-    /// <tt>vals[k]</tt>.  That entry must exist in the matrix
-    /// already.
+    /// For local row index \c localRow and local column indices
+    /// <tt>cols</tt>, do <tt>A(localRow, cols[k]) = vals[k]</tt>.
+    /// The row index and column indices must be valid on the calling
+    /// process, and all matrix entries <tt>A(localRow, cols[k])</tt>
+    /// must already exist.  (This method does <i>not</i> change the
+    /// matrix's structure.)  If the row index is valid, any invalid
+    /// column indices are ignored, but counted in the return value.
     ///
     /// \return The number of indices for which values were actually
     ///   replaced; the number of "correct" indices.
@@ -914,10 +918,11 @@ namespace Tpetra {
     ///   </ul>
     LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
-                        const ArrayView<const LocalOrdinal>& cols,
-                        const ArrayView<const Scalar>& vals);
+                        const Teuchos::ArrayView<const LocalOrdinal>& cols,
+                        const Teuchos::ArrayView<const Scalar>& vals);
 
-    /// \brief Sum into one or more sparse matrix entries, using global indices.
+    /// \brief Sum into one or more sparse matrix entries, using
+    ///   global indices.
     ///
     /// This is a local operation; it does not involve communication.
     /// However, if you sum into rows not owned by the calling
@@ -967,14 +972,28 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_SERIAL
 
   public:
-    /// \brief Sum into one or more sparse matrix entries, using local indices.
+    /// \brief Sum into one or more sparse matrix entries, using local
+    ///   row and column indices.
+    ///
+    /// For local row index \c localRow and local column indices
+    /// <tt>cols</tt>, perform the update <tt>A(localRow, cols[k]) +=
+    /// vals[k]</tt>.  The row index and column indices must be valid
+    /// on the calling process, and all matrix entries <tt>A(localRow,
+    /// cols[k])</tt> must already exist.  (This method does
+    /// <i>not</i> change the matrix's structure.)  If the row index
+    /// is valid, any invalid column indices are ignored, but counted
+    /// in the return value.
+    ///
+    /// This overload of the method takes the column indices and
+    /// values as Kokkos::View.  See below for an overload that takes
+    /// Teuchos::ArrayView instead.
     ///
     /// \param localRow [in] Local index of a row.  This row
     ///   <i>must</i> be owned by the calling process.
     /// \param cols [in] Local indices of the columns whose entries we
     ///   want to modify.
     /// \param vals [in] Values corresponding to the above column
-    ///   indices.  <tt>vals[k]</tt> corresponds to <tt>cols[k]</tt>.
+    ///   indices.  <tt>vals(k)</tt> corresponds to <tt>cols(k)</tt>.
     /// \param atomic [in] Whether to use atomic updates.
     ///
     /// \return The number of indices for which values were actually
@@ -984,11 +1003,27 @@ namespace Tpetra {
     /// meaning as replaceLocalValues() (which see).
     LocalOrdinal
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& cols,
-                        const Kokkos::View<const impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>& vals,
+                        const Kokkos::View<const LocalOrdinal*, device_type,
+                          Kokkos::MemoryUnmanaged>& cols,
+                        const Kokkos::View<const impl_scalar_type*, device_type,
+                          Kokkos::MemoryUnmanaged>& vals,
                         const bool atomic = useAtomicUpdatesByDefault);
 
-    /// \brief Sum into one or more sparse matrix entries, using local indices.
+    /// \brief Sum into one or more sparse matrix entries, using local
+    ///   row and column indices.
+    ///
+    /// For local row index \c localRow and local column indices
+    /// <tt>cols</tt>, perform the update <tt>A(localRow, cols[k]) +=
+    /// vals[k]</tt>.  The row index and column indices must be valid
+    /// on the calling process, and all matrix entries <tt>A(localRow,
+    /// cols[k])</tt> must already exist.  (This method does
+    /// <i>not</i> change the matrix's structure.)  If the row index
+    /// is valid, any invalid column indices are ignored, but counted
+    /// in the return value.
+    ///
+    /// This overload of the method takes the column indices and
+    /// values as Teuchos::ArrayView.  See below for an overload that
+    /// takes Kokkos::View instead.
     ///
     /// \param localRow [in] Local index of a row.  This row
     ///   <i>must</i> be owned by the calling process.
@@ -1010,10 +1045,10 @@ namespace Tpetra {
                         const bool atomic = useAtomicUpdatesByDefault);
 
     //! Set all matrix entries equal to \c alpha.
-    void setAllToScalar (const Scalar &alpha);
+    void setAllToScalar (const Scalar& alpha);
 
     //! Scale the matrix's values: <tt>this := alpha*this</tt>.
-    void scale (const Scalar &alpha);
+    void scale (const Scalar& alpha);
 
     //! Sets the 1D pointer arrays of the graph.
     /**
