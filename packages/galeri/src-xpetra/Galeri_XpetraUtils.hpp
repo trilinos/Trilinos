@@ -53,10 +53,20 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Galeri_VectorTraits.hpp"
-#include "Galeri_Utils.h"
 #include "Galeri_Exception.h"
 
 #include <iostream>
+namespace Galeri {
+  namespace Xpetra {
+
+    template<typename T>
+    std::string toString(T &a) {
+      std::ostringstream ss;
+      ss << a;
+      return ss.str();
+    }
+  }
+}
 
 namespace Galeri {
   namespace Xpetra {

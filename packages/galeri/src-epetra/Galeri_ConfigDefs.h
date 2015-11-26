@@ -83,8 +83,10 @@
 #include <Galeri_config.h>
 
 #ifdef HAVE_MPI
+#ifdef HAVE_GALERI_EPETRA
 #ifndef EPETRA_MPI
 #define EPETRA_MPI
+#endif
 #endif
 #endif
 
