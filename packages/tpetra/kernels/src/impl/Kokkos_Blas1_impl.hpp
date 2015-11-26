@@ -105,11 +105,11 @@ struct DotFunctor
 /// declare full specializations in this header file.  Definitions of
 /// those specializations live in one or more .cpp files in this
 /// directory.
-template<class XT, class XL, class XD, class XM, class XS,
-         class YT, class YL, class YD, class YM, class YS>
+template<class XT, class XL, class XD, class XM,
+         class YT, class YL, class YD, class YM>
 struct Dot {
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XVector;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YVector;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
   typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot_type;
 
   //! Return the dot product of x and y.
@@ -168,26 +168,22 @@ template<> \
 struct Dot<const SCALAR*, \
            LAYOUT, \
            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-           Kokkos::Impl::ViewDefault, \
+           Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
            const SCALAR*, \
            LAYOUT, \
            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-           Kokkos::Impl::ViewDefault> \
+           Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
 { \
   typedef const SCALAR* XT; \
   typedef LAYOUT XL; \
   typedef Kokkos::Device<EXEC_SPACE, MEM_SPACE> XD; \
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> XM; \
-  typedef Kokkos::Impl::ViewDefault XS; \
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XVector; \
+  typedef Kokkos::View<XT,XL,XD,XM> XVector; \
   typedef const SCALAR* YT; \
   typedef LAYOUT YL; \
   typedef Kokkos::Device<EXEC_SPACE, MEM_SPACE> YD; \
   typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> YM; \
-  typedef Kokkos::Impl::ViewDefault YS; \
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YVector; \
+  typedef Kokkos::View<YT,YL,YD,YM> YVector; \
   typedef Kokkos::Details::InnerProductSpaceTraits<XVector::non_const_value_type>::dot_type dot_type; \
  \
   static dot_type \
@@ -239,23 +235,19 @@ struct Dot<const SCALAR*, \
 Dot<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
     const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault>::dot_type \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> >::dot_type \
 Dot<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
     const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault>:: \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 dot (const XVector& x, const XVector& y) \
 { \
   dot_type result; \
@@ -276,23 +268,19 @@ dot (const XVector& x, const XVector& y) \
 Dot<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
     const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault>::dot_type \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> >::dot_type \
 Dot<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault, \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
     const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault>:: \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 dot (const std::string& label, const XVector& x, const XVector& y) \
 { \
   dot_type result; \

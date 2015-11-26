@@ -534,35 +534,29 @@ template<> \
 struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               2> \
 { \
   typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type*, \
     EXEC_SPACE::array_layout, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> RV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::View<const SCALAR**, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> XMV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
   typedef Kokkos::View<const SCALAR**, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> YMV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
  \
   static void dot (const RV& r, const XMV& X, const YMV& Y); \
 };
@@ -579,35 +573,29 @@ template<> \
 struct Dot_MV<Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
                            EXEC_SPACE::array_layout, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               1> \
 { \
   typedef Kokkos::View<Kokkos::Details::InnerProductSpaceTraits<SCALAR>::dot_type, \
     EXEC_SPACE::array_layout, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> RV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::View<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> XV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<const SCALAR*, \
     LAYOUT, \
     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-    Kokkos::Impl::ViewDefault> YV; \
+    Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
  \
   static void dot (const RV& r, const XV& X, const YV& Y); \
 };
@@ -671,18 +659,15 @@ void \
 Dot_MV<Kokkos::View<SCALAR*, \
                     EXEC_SPACE::array_layout, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        Kokkos::View<const SCALAR**, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        Kokkos::View<const SCALAR**, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        2>:: \
 dot (const RV& r, const XMV& X, const XMV& Y) \
 { \
@@ -705,18 +690,15 @@ void \
 Dot_MV<Kokkos::View<SCALAR, \
                     EXEC_SPACE::array_layout, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        Kokkos::View<const SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        Kokkos::View<const SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
        1>:: \
 dot (const RV& r, const XV& X, const XV& Y) \
 { \

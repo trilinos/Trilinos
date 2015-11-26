@@ -1749,8 +1749,7 @@ namespace Tpetra {
     typedef Kokkos::View<impl_scalar_type*,
       typename local_view_type::HostMirror::array_layout,
       Kokkos::HostSpace,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename local_view_type::HostMirror::specialize> host_local_view_type;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > host_local_view_type;
     host_local_view_type meansOut (means.getRawPtr (), numMeans);
 
     RCP<const Comm<int> > comm = this->getMap ().is_null () ? Teuchos::null :

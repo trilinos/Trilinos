@@ -496,12 +496,12 @@ void spmv_alpha(const char mode[], typename AMatrix::const_value_type& alpha, co
 /// For the implementation of KokkosSparse::spmv for multivectors (2-D
 /// Views), see the SPMV_MV struct below.
 template<class AT, class AO, class AD, class AM, class AS,
-         class XT, class XL, class XD, class XM, class XS,
-         class YT, class YL, class YD, class YM, class YS>
+         class XT, class XL, class XD, class XM,
+         class YT, class YL, class YD, class YM>
 struct SPMV {
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XVector;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YVector;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
   typedef typename YVector::non_const_value_type Scalar;
 
   static void
@@ -548,12 +548,10 @@ struct SPMV<const SCALAR_TYPE, \
             LAYOUT_TYPE, \
             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
             Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-            Kokkos::Impl::ViewDefault, \
             SCALAR_TYPE*, \
             LAYOUT_TYPE, \
             Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-            Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-            Kokkos::Impl::ViewDefault> \
+            Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
 { \
   typedef CrsMatrix<const SCALAR_TYPE, \
                     ORDINAL_TYPE, \
@@ -563,13 +561,11 @@ struct SPMV<const SCALAR_TYPE, \
   typedef Kokkos::View<const SCALAR_TYPE*, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-                       Kokkos::Impl::ViewDefault> XVector; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector; \
   typedef Kokkos::View<SCALAR_TYPE*, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YVector; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
   typedef typename YVector::non_const_value_type Scalar; \
  \
   static void \
@@ -636,12 +632,10 @@ SPMV<const SCALAR_TYPE, \
      Kokkos::LayoutLeft, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-     Kokkos::Impl::ViewDefault, \
      SCALAR_TYPE*, \
      Kokkos::LayoutLeft, \
      Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-     Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-     Kokkos::Impl::ViewDefault>:: \
+     Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv (const char mode[], const Scalar& alpha, const AMatrix& A, \
       const XVector& x, const Scalar& beta, const YVector& y) \
 { \
@@ -1474,17 +1468,17 @@ void spmv_alpha_mv(const char mode[], typename aCoeffs::const_value_type& alpha,
 /// input 1-D View of coefficients 'beta'.  Finally, the last 5
 /// template parameters (that start with Y) correspond to the output
 /// Kokkos::View.
-template<class aT, class aL, class aD, class aM, class aS,
+template<class aT, class aL, class aD, class aM,
          class AT, class AO, class AD, class AM, class AS,
-         class XT, class XL, class XD, class XM, class XS,
-         class bT, class bL, class bD, class bM, class bS,
-         class YT, class YL, class YD, class YM, class YS>
+         class XT, class XL, class XD, class XM,
+         class bT, class bL, class bD, class bM,
+         class YT, class YL, class YD, class YM>
 struct SPMV_MV {
   typedef CrsMatrix<AT,AO,AD,AM,AS> AMatrix;
-  typedef Kokkos::View<XT,XL,XD,XM,XS> XVector;
-  typedef Kokkos::View<YT,YL,YD,YM,YS> YVector;
-  typedef Kokkos::View<aT,aL,aD,aM,aS> aCoeffs;
-  typedef Kokkos::View<bT,bL,bD,bM,bS> bCoeffs;
+  typedef Kokkos::View<XT,XL,XD,XM> XVector;
+  typedef Kokkos::View<YT,YL,YD,YM> YVector;
+  typedef Kokkos::View<aT,aL,aD,aM> aCoeffs;
+  typedef Kokkos::View<bT,bL,bD,bM> bCoeffs;
 
   static void
   spmv_mv (const char mode[],
@@ -1641,7 +1635,6 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
         const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1651,23 +1644,19 @@ struct SPMV_MV<const SCALAR_TYPE*, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        Kokkos::Impl::ViewDefault, \
         const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault> \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
 { \
   typedef Kokkos::View<const SCALAR_TYPE*, \
                        EXEC_SPACE_TYPE::array_layout, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> aCoeffs; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > aCoeffs; \
   typedef CrsMatrix<const SCALAR_TYPE, \
                     ORDINAL_TYPE, \
                     Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1676,18 +1665,15 @@ struct SPMV_MV<const SCALAR_TYPE*, \
   typedef Kokkos::View<const SCALAR_TYPE**, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-                       Kokkos::Impl::ViewDefault> XVector; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector; \
   typedef Kokkos::View<SCALAR_TYPE**, \
                        LAYOUT_TYPE, \
                        Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YVector; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector; \
  typedef Kokkos::View<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault> bCoeffs; \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> > bCoeffs; \
  \
   static void \
   spmv_mv (const char mode[], \
@@ -1774,7 +1760,6 @@ SPMV_MV<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
         const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1784,17 +1769,14 @@ SPMV_MV<const SCALAR_TYPE*, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        Kokkos::Impl::ViewDefault, \
         const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault>:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1815,8 +1797,7 @@ void \
 SPMV_MV<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1825,18 +1806,15 @@ SPMV_MV<const SCALAR_TYPE*, \
         const SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
         const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault>:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \
@@ -1886,8 +1864,7 @@ void \
 SPMV_MV<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1896,18 +1873,15 @@ SPMV_MV<const SCALAR_TYPE*, \
         const SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
         const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault>:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv_mv (const char mode[], \
          const aCoeffs& alpha, \
          const AMatrix& A, \
@@ -1955,8 +1929,7 @@ void \
 SPMV_MV<const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         const SCALAR_TYPE, \
         ORDINAL_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
@@ -1965,18 +1938,15 @@ SPMV_MV<const SCALAR_TYPE*, \
         const SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> , \
         const SCALAR_TYPE*, \
         EXEC_SPACE_TYPE::array_layout, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault, \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> , \
         SCALAR_TYPE**, \
         LAYOUT_TYPE, \
         Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-        Kokkos::Impl::ViewDefault>:: \
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >:: \
 spmv_mv (const char mode[], \
          const aCoeffs::non_const_value_type& alpha, \
          const AMatrix& A, \

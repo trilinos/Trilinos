@@ -206,15 +206,13 @@ template<> \
 struct Fill<Kokkos::View<SCALAR**, \
                          LAYOUT, \
                          Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                         Kokkos::Impl::ViewDefault>, \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
             2> \
 { \
   typedef Kokkos::View<SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> XMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
   static void fill (const XMV& X, const XMV::non_const_value_type& val); \
 };
 
@@ -265,8 +263,7 @@ void \
 Fill<Kokkos::View<SCALAR**, \
                   LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                  Kokkos::Impl::ViewDefault>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
                   2>:: \
 fill (const XMV& X, const XMV::non_const_value_type& val) \
 { \
