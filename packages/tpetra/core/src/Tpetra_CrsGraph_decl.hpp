@@ -1523,7 +1523,7 @@ namespace Tpetra {
         for (size_type j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds[j]);
           if (gblColInd != GINV) {
-            const size_t k = findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
             if (k != STINV) {
               if (atomic) {
                 const Scalar newVal = f (rowVals[k], newVals[j]);
@@ -1625,7 +1625,7 @@ namespace Tpetra {
         for (size_type j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds[j]);
           if (gblColInd != GINV) {
-            const size_t k = findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
             if (k != STINV) {
               if (atomic) {
                 const Scalar newVal = f (rowVals[k], newVals[j]);
@@ -1940,7 +1940,7 @@ namespace Tpetra {
       else if (isGloballyIndexed ()) {
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = findGlobalIndex (rowInfo, inds(j), hint);
+          const size_t k = this->findGlobalIndex (rowInfo, inds(j), hint);
           if (k != STINV) {
             if (atomic) {
               Kokkos::atomic_add (&rowVals(k), newVals(j));
@@ -2032,7 +2032,7 @@ namespace Tpetra {
       else if (isGloballyIndexed ()) {
         const LO numElts = static_cast<LO> (inds.size ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
+          const size_t k = this->findGlobalIndex (rowInfo, inds[j], hint);
           if (k != STINV) {
             if (atomic) {
               const Scalar newVal = f (rowVals[k], newVals[j]);
@@ -2173,7 +2173,8 @@ namespace Tpetra {
   private:
 
     /// \brief Get a const nonowned view of the local column indices
-    ///   of row rowinfo.localRow.
+    ///   indices of row rowinfo.localRow (only works if the matrix is
+    ///   locally indexed on the calling process).
     ///
     /// \param rowinfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
@@ -2181,12 +2182,22 @@ namespace Tpetra {
     getLocalKokkosRowView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
-    ///   indices of row rowinfo.localRow.
+    ///   indices of row rowinfo.localRow (only works if the matrix is
+    ///   locally indexed on the calling process).
     ///
     /// \param rowinfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
     Kokkos::View<LocalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowViewNonConst (const RowInfo& rowinfo);
+
+    /// \brief Get a const nonowned view of the global column indices
+    ///   of row rowinfo.localRow (only works if the matrix is
+    ///   globally indexed).
+    ///
+    /// \param rowinfo [in] Result of calling getRowInfo with the
+    ///   index of the local row to view.
+    Kokkos::View<const GlobalOrdinal*, execution_space, Kokkos::MemoryUnmanaged>
+    getGlobalKokkosRowView (const RowInfo& rowinfo) const;
 
   protected:
 
@@ -2273,7 +2284,8 @@ namespace Tpetra {
     size_t
     findLocalIndex (const RowInfo& rowinfo,
                     const LocalOrdinal ind,
-                    const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                    const Kokkos::View<const LocalOrdinal*, device_type,
+                      Kokkos::MemoryUnmanaged>& colInds,
                     const size_t hint) const;
 
     /// \brief Legacy version of the 4-argument findLocalIndex above,
@@ -2292,7 +2304,25 @@ namespace Tpetra {
     /// column index \c ind, and returns the corresponding offset
     /// into the raw array of column indices (whether that be 1-D or
     /// 2-D storage).
-    size_t findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint = 0) const;
+    size_t
+    findGlobalIndex (const RowInfo& rowinfo,
+                     const GlobalOrdinal ind,
+                     const size_t hint = 0) const;
+
+    /// \brief Find the column offset corresponding to the given
+    ///   (global) column index.
+    ///
+    /// The name of this method is a bit misleading.  It does not
+    /// actually find the column index.  Instead, it takes a global
+    /// column index \c ind, and returns the corresponding offset
+    /// into the raw array of column indices (whether that be 1-D or
+    /// 2-D storage).
+    size_t
+    findGlobalIndex (const RowInfo& rowinfo,
+                     const GlobalOrdinal ind,
+                     const Kokkos::View<const GlobalOrdinal*,
+                       device_type, Kokkos::MemoryUnmanaged>& colInds,
+                     const size_t hint = 0) const;
 
     /// \brief Get the local graph.
     ///

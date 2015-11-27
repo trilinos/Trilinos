@@ -1334,6 +1334,46 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Kokkos::View<const GlobalOrdinal*,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
+               Kokkos::MemoryUnmanaged>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getGlobalKokkosRowView (const RowInfo& rowinfo) const
+  {
+    typedef GlobalOrdinal GO;
+    typedef Kokkos::View<const GO*, execution_space,
+      Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) {
+      return row_view_type ();
+    }
+    else { // nothing in the row to view
+      if (this->k_gblInds1D_.dimension_0 () != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        // mfh 23 Nov 2015: Don't just create a subview of
+        // k_gblInds1D_ directly, because that first creates a
+        // _managed_ subview, then returns an unmanaged version of
+        // that.  That touches the reference count, which costs
+        // performance in a measurable way.
+        return Kokkos::subview (row_view_type (this->k_gblInds1D_), rng);
+      }
+      else if (! this->gblInds2D_[rowinfo.localRow].empty ()) { // 2-D storage
+        Teuchos::ArrayView<const GO> rowAv = this->gblInds2D_[rowinfo.localRow] ();
+        // FIXME (mfh 26 Nov 2015) This assumes UVM, because it
+        // assumes that host code can access device memory through
+        // Teuchos::ArrayView.
+        return row_view_type (rowAv.getRawPtr (), rowAv.size ());
+      }
+      else {
+        return row_view_type (); // nothing in the row to view
+      }
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalView (const RowInfo rowinfo) const
@@ -2053,7 +2093,6 @@ namespace Tpetra {
                   const LocalOrdinal ind,
                   const size_t hint) const
   {
-    using Teuchos::ArrayView;
     auto colInds = this->getLocalKokkosRowView (rowinfo);
     return this->findLocalIndex (rowinfo, ind, colInds, hint);
   }
@@ -2107,13 +2146,13 @@ namespace Tpetra {
   }
 
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   findLocalIndex (const RowInfo& rowinfo,
                   const LocalOrdinal ind,
-                  const Kokkos::View<const LocalOrdinal*, device_type, Kokkos::MemoryUnmanaged>& colInds,
+                  const Kokkos::View<const LocalOrdinal*, device_type,
+                    Kokkos::MemoryUnmanaged>& colInds,
                   const size_t hint) const
   {
     typedef const LocalOrdinal* IT;
@@ -2160,46 +2199,68 @@ namespace Tpetra {
   }
 
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  findGlobalIndex (const RowInfo& rowinfo,
+                   const GlobalOrdinal ind,
+                   const Kokkos::View<const GlobalOrdinal*,
+                     device_type, Kokkos::MemoryUnmanaged>& colInds,
+                   const size_t hint) const
+  {
+    typedef const GlobalOrdinal* IT;
+
+    // NOTE (mfh 26 Nov 2015) This method assumes UVM.  We could
+    // imagine templating this method on the memory space, but makes
+    // more sense to let UVM work.
+
+    // If the hint was correct, then the hint is the offset to return.
+    if (hint < rowinfo.numEntries && colInds(hint) == ind) {
+      return hint;
+    }
+
+    // The hint was wrong, so we must search for the given column
+    // index in the column indices for the given row.  How we do the
+    // search depends on whether the graph's column indices are
+    // sorted.
+    IT beg = colInds.ptr_on_device ();
+    IT end = beg + rowinfo.numEntries;
+    IT ptr = beg + rowinfo.numEntries; // "null"
+    bool found = true;
+
+    if (isSorted ()) {
+      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
+      if (p.first == p.second) {
+        found = false;
+      } else {
+        ptr = p.first;
+      }
+    }
+    else {
+      ptr = std::find (beg, end, ind); // direct search
+      if (ptr == end) {
+        found = false;
+      }
+    }
+
+    if (found) {
+      return static_cast<size_t> (ptr - beg);
+    }
+    else {
+      return Teuchos::OrdinalTraits<size_t>::invalid ();
+    }
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findGlobalIndex (RowInfo rowinfo, GlobalOrdinal ind, size_t hint) const
+  findGlobalIndex (const RowInfo& rowinfo,
+                   const GlobalOrdinal ind,
+                   const size_t hint) const
   {
-    using Teuchos::ArrayView;
-    typedef typename ArrayView<const GlobalOrdinal>::iterator IT;
-
-    // Don't let an invalid global column index through.
-    if (ind == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()) {
-      return Teuchos::OrdinalTraits<size_t>::invalid ();
-    }
-
-    ArrayView<const GlobalOrdinal> indices = getGlobalView (rowinfo);
-
-    // We don't actually require that the hint be a valid index.
-    // If it is not in range, we just ignore it.
-    if (hint < rowinfo.numEntries && indices[hint] == ind) {
-      return hint;
-    }
-
-    IT beg = indices.begin ();
-    IT end = indices.begin () + rowinfo.numEntries; // not indices.end()
-    if (isSorted ()) { // use binary search
-      const std::pair<IT,IT> p = std::equal_range (beg, end, ind);
-      if (p.first == p.second) { // range of matching entries is empty
-        return Teuchos::OrdinalTraits<size_t>::invalid ();
-      } else {
-        return p.first - beg;
-      }
-    }
-    else { // not sorted; must use linear search
-      const IT loc = std::find (beg, end, ind);
-      if (loc == end) {
-        return Teuchos::OrdinalTraits<size_t>::invalid ();
-      } else {
-        return loc - beg;
-      }
-    }
+    auto colInds = this->getGlobalKokkosRowView (rowinfo);
+    return this->findGlobalIndex (rowinfo, ind, colInds, hint);
   }
 
 
