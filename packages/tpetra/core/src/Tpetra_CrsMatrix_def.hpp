@@ -2256,9 +2256,6 @@ namespace Tpetra {
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
     typedef impl_scalar_type ST;
     typedef LocalOrdinal LO;
     typedef device_type DD;
