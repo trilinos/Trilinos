@@ -1784,27 +1784,73 @@ namespace Tpetra {
                         const Kokkos::View<const Scalar*, InputMemorySpace,
                           Kokkos::MemoryUnmanaged>& newVals) const
     {
+      typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+
+      // Don't call this->hasColMap(), because that changes RCP's
+      // reference count, which is not thread safe.  Just
+      // dereferencing an RCP or calling RCP::is_null() does not
+      // change its reference count.
+      if (colMap_.is_null ()) {
+        // No such thing as local column indices without a column Map.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      else if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The dimensions of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      size_t hint = 0; // Guess for the current index k into rowVals
+      LO numValid = 0; // number of valid local column indices
+
       // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
       // accurately, it assumes that the host execution space can
       // access data in both InputMemorySpace and ValsMemorySpace.
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-      const LocalOrdinal numElts = static_cast<LocalOrdinal> (inds.size ());
-      size_t hint = 0; // Guess for the current index k into rowVals
+      if (isLocallyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getLocalKokkosRowView (rowInfo);
 
-      // Get a view of the column indices in the row.  This amortizes
-      // the cost of getting the view over all the entries of inds.
-      auto colInds = this->getLocalKokkosRowView (rowInfo);
-
-      LocalOrdinal numValid = 0; // number of valid local column indices
-      for (LocalOrdinal j = 0; j < numElts; ++j) {
-        const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-        if (k != STINV) {
-          rowVals(k) = newVals[j];
-          hint = k+1;
-          ++numValid;
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
+          if (k != STINV) {
+            rowVals(k) = newVals(j);
+            hint = k+1;
+            ++numValid;
+          }
         }
       }
+      else if (isGloballyIndexed ()) {
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
+          if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
+            // mfh 26 Nov 2015: findGlobalIndex doesn't have a
+            // four-argument version that amortizes the cost of
+            // calling getGlobalKokkosRowView().  However, that's OK,
+            // because if the graph / matrix is globally indexed, it's
+            // suboptimal to call replaceLocalValues anyway.
+            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
+            if (k != STINV) {
+              rowVals(k) = newVals(j);
+              hint = k+1;
+              ++numValid;
+            }
+          }
+        }
+      }
+      // NOTE (mfh 26 Jun 2014, 26 Nov 2015) In the current version of
+      // CrsGraph and CrsMatrix, it's possible for a matrix (or graph)
+      // to be neither locally nor globally indexed on a process.
+      // This means that the graph or matrix has no entries on that
+      // process.  Epetra also works like this.  It's related to lazy
+      // allocation (on first insertion, not at graph / matrix
+      // construction).  Lazy allocation will go away because it is
+      // not thread scalable.
+
       return numValid;
     }
 
