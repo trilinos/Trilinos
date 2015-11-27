@@ -961,6 +961,7 @@ namespace Tpetra {
     /// \param vals [in] One or more values corresponding to those
     ///   column indices.  <tt>vals[k]</tt> corresponds to
     ///   <tt>cols[k]</tt>.
+    /// \param atomic [in] Whether to use atomic updates.
     ///
     /// \return The number of indices for which values were actually
     ///   modified; the number of "correct" indices.
@@ -2934,77 +2935,35 @@ namespace Tpetra {
     transformGlobalValues (const GlobalOrdinal globalRow,
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>& values,
-                           BinaryFunction f)
+                           BinaryFunction f,
+                           const bool atomic = useAtomicUpdatesByDefault)
     {
-      using Teuchos::Array;
       using Teuchos::ArrayView;
+      using Teuchos::av_reinterpret_cast;
       typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
       typedef impl_scalar_type ST;
-      typedef typename ArrayView<const GO>::size_type size_type;
+      typedef BinaryFunction BF;
 
-      if (! isFillActive ()) {
-        // Fill must be active in order to call this method.
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      else if (values.size () != indices.size ()) {
-        // The sizes of values and indices must match.
+      if (! isFillActive () || staticGraph_.is_null ()) {
+        // Fill must be active and the "nonconst" graph must exist.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
-      if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
-        // We don't own the row, so we're not allowed to modify its values.
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-
-      if (staticGraph_.is_null ()) {
-        return Teuchos::OrdinalTraits<LO>::invalid ();
-      }
-      const crs_graph_type& graph = *staticGraph_;
-      RowInfo rowInfo = graph.getRowInfo (lrow);
-      if (indices.size () == 0) {
+      const RowInfo rowInfo =
+        staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The calling process does not own this row, so it is not
+        // allowed to modify its values.
         return static_cast<LO> (0);
       }
-      else {
-        ArrayView<const ST> valsIn =
-          Teuchos::av_reinterpret_cast<const ST> (values);
-        ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-        if (isLocallyIndexed ()) {
-          // Convert the given global indices to local indices.
-          //
-          // FIXME (mfh 08 Jul 2014) Why can't we ask the graph to do
-          // that?  It could do the conversions in place, so that we
-          // wouldn't need temporary storage.
-          const map_type& colMap = * (this->getColMap ());
-          const size_type numInds = indices.size ();
-          Array<LO> lclInds (numInds);
-          for (size_type k = 0; k < numInds; ++k) {
-            // There is no need to filter out indices not in the
-            // column Map.  Those that aren't will be mapped to
-            // invalid(), which the graph's transformGlobalValues()
-            // will filter out (but not count in its return value).
-            lclInds[k] = colMap.getLocalElement (indices[k]);
-          }
-          return graph.template transformLocalValues<ST, BinaryFunction> (rowInfo,
-                                                                          curVals,
-                                                                          lclInds (),
-                                                                          valsIn, f);
-        }
-        else if (isGloballyIndexed ()) {
-          return graph.template transformGlobalValues<ST, BinaryFunction> (rowInfo,
-                                                                           curVals,
-                                                                           indices,
-                                                                           valsIn, f);
-        }
-        else {
-          // If the graph is neither locally nor globally indexed on
-          // the calling process, that means that the calling process
-          // can't possibly have any entries in the owned row.  Thus,
-          // there are no entries to transform, so we return zero.
-          return static_cast<LO> (0);
-        }
-      }
+      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
+      return staticGraph_->template transformGlobalValues<ST, BF> (rowInfo,
+                                                                   curVals,
+                                                                   indices,
+                                                                   valsIn,
+                                                                   f,
+                                                                   atomic);
     }
 
   private:
