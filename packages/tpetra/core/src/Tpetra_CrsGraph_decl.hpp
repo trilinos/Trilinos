@@ -1520,10 +1520,15 @@ namespace Tpetra {
         const map_type& colMap = *colMap_;
         const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
 
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         for (size_type j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds[j]);
           if (gblColInd != GINV) {
-            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k =
+              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
                 const Scalar newVal = f (rowVals[k], newVals[j]);
@@ -1622,10 +1627,15 @@ namespace Tpetra {
         const map_type& colMap = *colMap_;
         const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
 
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         for (size_type j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds[j]);
           if (gblColInd != GINV) {
-            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k =
+              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
                 const Scalar newVal = f (rowVals[k], newVals[j]);
@@ -1721,16 +1731,16 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            // mfh 26 Nov 2015: findGlobalIndex doesn't have a
-            // four-argument version that amortizes the cost of
-            // calling getGlobalKokkosRowView().  However, that's OK,
-            // because if the graph / matrix is globally indexed, it's
-            // suboptimal to call sumIntoLocalValues anyway.
-            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k =
+              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
                 Kokkos::atomic_add (&rowVals(k), newVals(j));
@@ -1824,16 +1834,16 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            // mfh 26 Nov 2015: findGlobalIndex doesn't have a
-            // four-argument version that amortizes the cost of
-            // calling getGlobalKokkosRowView().  However, that's OK,
-            // because if the graph / matrix is globally indexed, it's
-            // suboptimal to call replaceLocalValues anyway.
-            const size_t k = this->findGlobalIndex (rowInfo, gblColInd, hint);
+            const size_t k =
+              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               rowVals(k) = newVals(j);
               hint = k+1;
@@ -1938,9 +1948,14 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findGlobalIndex (rowInfo, inds(j), hint);
+          const size_t k =
+            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
           if (k != STINV) {
             if (atomic) {
               Kokkos::atomic_add (&rowVals(k), newVals(j));
@@ -2030,9 +2045,14 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getGlobalKokkosRowView (rowInfo);
+
         const LO numElts = static_cast<LO> (inds.size ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findGlobalIndex (rowInfo, inds[j], hint);
+          const size_t k =
+            this->findGlobalIndex (rowInfo, inds[j], colInds, hint);
           if (k != STINV) {
             if (atomic) {
               const Scalar newVal = f (rowVals[k], newVals[j]);
