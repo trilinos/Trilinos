@@ -1854,7 +1854,6 @@ namespace Tpetra {
       return numValid;
     }
 
-  protected:
     /// \brief Transform the given values using global indices.
     ///
     /// \param rowInfo [in] Information about a given row of the graph.
