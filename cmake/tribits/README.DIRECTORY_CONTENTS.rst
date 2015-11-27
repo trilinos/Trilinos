@@ -76,7 +76,7 @@ subdirectory. It supports the argument ``--components`` with values ``core``,
 ``devtools_install``. These snapshot components have the dependencies:
 
 * ``core`` => (external CMake)
-* ``python_utils`` => (external Python 2.4)
+* ``python_utils`` => (external Python 2.6)
 * ``win_interface`` => (external C compiler)
 * ``TriBITS.cmake`` => ``core``
 * ``ci_support`` => ``core``, ``python_utils``

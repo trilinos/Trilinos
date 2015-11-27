@@ -86,9 +86,12 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, nonsymExample, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   if defined(IFPACK) && defined(IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "Skipping test because not all required packages are enabled (Ifpack, Ifpack2)." << std::endl;
+    return;
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory within" << std::endl;
     out << "level AMG solver using Petrov Galerkin smoothed aggregation with" << std::endl;
@@ -259,7 +262,9 @@ namespace MueLuTests {
       if (comm->getRank() == 0)
         out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
     }
-
+#   else
+    out << "Skipping test because some required packages are not enabled (Ifpack, Ifpack2)." << std::endl;
+#   endif
   } //nonsymExample
 
 
@@ -633,6 +638,9 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra,"Ifpack2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
@@ -805,6 +813,9 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra,"Amesos2, Ifpack2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test PgPFactory (reuse row based omegas for restriction operator)" << std::endl;
 
@@ -970,9 +981,9 @@ namespace MueLuTests {
     TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
   }
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
@@ -1166,17 +1177,20 @@ namespace MueLuTests {
       std::cout << results[0] << " VS " << results[1] << std::endl;
       TEST_EQUALITY(results[0] - results[1] < 1e-10, true); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
+#   endif
 
   } //EpetraVsTpetra
-#endif
 
-# define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, Test0, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, nonsymExample, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, MinimizationModes, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegas, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegasTransP, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, EpetraVsTpetra, Scalar, LO, GO, Node)
+
+#   define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, Test0, Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, nonsymExample, Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, MinimizationModes, Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegas, Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegasTransP, Scalar, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, EpetraVsTpetra, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 

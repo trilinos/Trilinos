@@ -120,6 +120,14 @@ public:
     }
     return 0.5*((bm-am)/((Real)m+1) + val_cos + val_sin)/var_;
   }
+
+  Real lowerBound(void) const {
+    return mean_-var_;
+  }
+ 
+  Real upperBound(void) const {
+    return mean_+var_;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 5;

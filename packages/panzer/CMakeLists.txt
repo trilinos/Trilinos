@@ -4,13 +4,11 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-TRIBITS_PACKAGE(Panzer)
+TRIBITS_PACKAGE_DECL(Panzer)
 
 #
 # B) Set up package-specific options
 #
-
-TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   PANZER_DEBUG
@@ -22,81 +20,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
   "Build with debug code enabled."
   "Sacado::Fad::DFad<RealType>" )
 
-# optional package specific configurations
-############################################################
-
-IF(${PACKAGE_NAME}_ENABLE_SEACASIoss)
-   GLOBAL_SET(HAVE_IOSS ON)
-ELSE()
-   GLOBAL_SET(HAVE_IOSS OFF)
-ENDIF()
-
-#IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-#   GLOBAL_SET(HAVE_STOKHOS ON)
-#ELSE()
-   GLOBAL_SET(HAVE_STOKHOS OFF)
-#ENDIF()
-
-IF(${PACKAGE_NAME}_ENABLE_Teko)
-   GLOBAL_SET(HAVE_TEKO ON)
-ELSE()
-   GLOBAL_SET(HAVE_TEKO OFF)
-ENDIF()
-
-IF(${PACKAGE_NAME}_ENABLE_MueLu)
-   GLOBAL_SET(HAVE_MUELU ON)
-ELSE()
-   GLOBAL_SET(HAVE_MUELU OFF)
-ENDIF()
-
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
-   GLOBAL_SET(HAVE_IFPACK2 ON)
-ELSE()
-   GLOBAL_SET(HAVE_IFPACK2 OFF)
-ENDIF()
-
-IF(${PACKAGE_NAME}_ENABLE_FEI)
-   GLOBAL_SET(PANZER_HAVE_FEI ON)
-   MESSAGE("-- FEI On")
-ELSE()
-   GLOBAL_SET(PANZER_HAVE_FEI OFF)
-   MESSAGE("-- FEI Off")
-ENDIF()
-
-#GLOBAL_SET(PANZER_HAVE_FEI ON)
-#MESSAGE("-- FEI On")
+TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
 
 IF(Teuchos_ENABLE_LONG_LONG_INT)
    GLOBAL_SET(PANZER_HAVE_LONG_LONG_INT ON)
 ELSE()
    GLOBAL_SET(PANZER_HAVE_LONG_LONG_INT OFF)
 ENDIF()
-
-############################################################
-
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_Stratimikos ${PACKAGE_NAME}_ENABLE_Piro ${PACKAGE_NAME}_ENABLE_NOX ${PACKAGE_NAME}_ENABLE_Rythmos
-  DOCSTR "Enables support for the solver drivers for the tests/examples."
-    " Defaults to ON if Stratimikos, Piro, NOX, and Rythmos are"
-    " enabled, otherwise defaults to OFF."
-  )
-
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STKClassic_AND_SEACAS_SUPPORT
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_STKClassic ${PACKAGE_NAME}_ENABLE_SEACASIoss ${PACKAGE_NAME}_ENABLE_SEACASExodus
-  DOCSTR "Enables support for the STK mesh database and SEACAS I/O Layers."
-    " Defaults to ON if STK, SEACASIoss, SEACASExodus are"
-    " enabled, otherwise defaults to OFF."
-  )
-
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_PAPI Teuchos_ENABLE_LONG_LONG_INT
-  DOCSTR "Enables support for the PAPI performance counters."
-    " Defaults to ON if both the PAPI TPL is enabled and long long int "
-    " support is enabled in Teuchos, otherwise defaults to OFF."
-  )
-
-# use this to create compiler defines 
-SET(PANZER_HAVE_CAMAL ${${PACKAGE_NAME}_ENABLE_CAMAL} )
 
 # Explicit Template Instantiation
 
@@ -121,26 +51,8 @@ SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_impl.hpp")
 #  "panzer::Traits::Residual 2 panzer::Traits::Jacobian 1" )
 #FILE(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ${DEPS_XML} )
 
+TRIBITS_PROCESS_SUBPACKAGES()
 
-#
-# C) Add the libraries, tests, and examples
-#
-
-ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(adapters)
-
-TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
-#
-# Exclude files for source package.
-#
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
-
-#
-# D) Do standard postprocessing
-#
+TRIBITS_PACKAGE_DEF()
 
 TRIBITS_PACKAGE_POSTPROCESS()

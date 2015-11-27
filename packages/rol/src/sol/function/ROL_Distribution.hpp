@@ -86,6 +86,18 @@ public:
     return 0.;
   }
 
+  virtual Real lowerBound(void) const {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+      ">>> ERROR (ROL::Distribution): lowerBound not implemented!");
+    return 0.;
+  }
+
+  virtual Real upperBound(void) const {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+      ">>> ERROR (ROL::Distribution): upperBound not implemented!");
+    return 0.;
+  }
+
   virtual void test(std::ostream &outStream = std::cout) const {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Distribution): test not implemented!");

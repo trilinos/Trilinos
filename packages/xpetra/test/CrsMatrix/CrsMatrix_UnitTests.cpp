@@ -43,17 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * BlockedCrsMatrix_UnitTests.cpp
- *
- *  Created on: Aug 22, 2011
- *      Author: wiesner
- */
 
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_CommHelpers.hpp>
+#include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
@@ -61,71 +53,25 @@
 #endif
 
 #include <Xpetra_ConfigDefs.hpp>
-
-#ifdef HAVE_XPETRA_EPETRAEXT
-// EpetraExt
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
-#endif
-
 #include <Xpetra_DefaultPlatform.hpp>
-#include <Teuchos_as.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#ifdef HAVE_XPETRA_TPETRA
-#include <Xpetra_TpetraCrsMatrix.hpp>
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
-
-//#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
 
 namespace {
 
-  using Teuchos::Array;
-  using Teuchos::as;
   using Teuchos::RCP;
-  using Teuchos::arcp;
-  using Teuchos::rcp;
-  using Teuchos::outArg;
-  using Teuchos::Tuple;
-  using Teuchos::tuple;
-  using std::sort;
-  using std::find;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
-  using Teuchos::Comm;
-
-  using Xpetra::DefaultPlatform;
-  using Xpetra::Matrix;
-  using Xpetra::CrsMatrix;
-#ifdef HAVE_XPETRA_TPETRA
-  using Xpetra::TpetraCrsMatrix; //TMP
-#endif
-  using Xpetra::Map;
-
-  using Xpetra::viewLabel_t;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
-
-
-  RCP<const Comm<int> > getDefaultComm()
+  RCP<const Teuchos::Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -149,18 +95,16 @@ namespace {
   // UNIT TESTS
   //
 
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Apply, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, Apply, M, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_EPETRA
-
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
 
     // generate problem
     LO nEle = 63;
@@ -197,7 +141,6 @@ namespace {
     matrix->apply(*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, -0.5);
 
     TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
-#endif
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Epetra_ReplaceLocalValues, Scalar, LO, GO, Node )
@@ -208,10 +151,9 @@ namespace {
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
     Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // generate problem
     LO nEle = 63;
@@ -283,7 +225,7 @@ namespace {
     out << "Tpetra replaceLocalValues test" << endl;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm ();
 
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
     //Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -500,7 +442,7 @@ namespace {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
     {
       using std::cerr;
@@ -838,7 +780,7 @@ namespace {
     Teuchos::ArrayRCP<const Scalar> rdatacopy = rcopy->getData (0);
     magnitude_type s = STM::zero ();
     for (LO i = 0; i < NumMyElements; ++i) {
-      s += Teuchos::ScalarTraits<magnitude_type>::magnitude (rdata[i] - rdatacopy[i]);
+      s += Teuchos::ScalarTraits<Scalar>::magnitude (rdata[i] - rdatacopy[i]);
     }
     TEUCHOS_TEST_COMPARE(s, <, 1e-16, out, success);
 #endif
@@ -852,7 +794,7 @@ namespace {
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
     Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
 
@@ -897,123 +839,111 @@ namespace {
 #endif
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GetLocalMatrix, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, GetLocalMatrix, M, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
     typedef typename local_matrix_type::size_type size_type;
+    typedef typename local_matrix_type::value_type value_type;
+    typedef typename local_matrix_type::ordinal_type ordinal_type;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-    std::vector<Xpetra::UnderlyingLib> libs;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    // only test LO=GO=int case here
-    libs.push_back(Xpetra::UseTpetra);
-#endif
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-    libs.push_back(Xpetra::UseEpetra);
-#endif
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
 
-    for(size_t lll = 0; lll < libs.size(); lll++) {
-      Xpetra::UnderlyingLib lib = libs[lll];
-      // generate problem
-      LO nEle = 63;
-      const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-      RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
-          Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
 
-      LO NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+    LO NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
-      for (LO i = 0; i < NumMyElements; ++i) {
-          A->insertGlobalValues(MyGlobalElements[i],
-                                  Teuchos::tuple<GO>(MyGlobalElements[i]),
-                                  Teuchos::tuple<Scalar>(1.0) );
+    for (LO i = 0; i < NumMyElements; ++i) {
+        A->insertGlobalValues(MyGlobalElements[i],
+                                Teuchos::tuple<GO>(MyGlobalElements[i]),
+                                Teuchos::tuple<Scalar>(1.0) );
+    }
+
+    // access data before fill complete!
+    bool bSuccess = true;
+    TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
+    TEST_EQUALITY(bSuccess, true);
+
+    A->fillComplete();
+
+    // access data after fill complete!
+    local_matrix_type view2 = A->getLocalMatrix();
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+
+    // check that the local_matrix_type taken the second time is the same
+    local_matrix_type view3 = A->getLocalMatrix();
+    TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
+
+    for (LO r = 0; r < view2.numRows(); ++r) {
+      // extract data from current row r
+      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
+
+      for(LO c = 0; c < rowview.length; c++) {
+        Scalar   vv  = rowview.value  (c);
+        LO       cc = rowview.colidx (c);
+        TEST_EQUALITY(rowview.length, 1);
+        TEST_EQUALITY(cc, r);
+        TEST_EQUALITY(vv, 1.0);
       }
+    }
 
-      // access data before fill complete!
-      bool bSuccess = true;
-      TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
-      TEST_EQUALITY(bSuccess, true);
+    Teuchos::ArrayView< const LO > indices;
+    Teuchos::ArrayView< const Scalar > values;
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 1.0);
 
-      A->fillComplete();
+    /////////////////////////////////////////
 
-      // access data after fill complete!
-      local_matrix_type view2 = A->getLocalMatrix();
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+    // check whether later changes are updated in view!
+    ordinal_type nColIdx = 0;
+    value_type value = 42.0;
+    view2.replaceValues (0, &nColIdx, 1, &value);
 
-      // check that the local_matrix_type taken the second time is the same
-      local_matrix_type view3 = A->getLocalMatrix();
-      TEST_EQUALITY(view2.graph.row_map.ptr_on_device(), view3.graph.row_map.ptr_on_device());
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 42.0);  // changes in the view also changes matrix values
 
-      for (LO r = 0; r < view2.numRows(); ++r) {
-        // extract data from current row r
-        Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
+    A->resumeFill();
+    A->setAllToScalar(-123.4);
+    A->fillComplete();
 
-        for(LO c = 0; c < rowview.length; c++) {
-          Scalar   vv  = rowview.value  (c);
-          LO       cc = rowview.colidx (c);
-          TEST_EQUALITY(rowview.length, 1);
-          TEST_EQUALITY(cc, r);
-          TEST_EQUALITY(vv, 1.0);
-        }
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
+
+    for (LO r = 0; r < view2.numRows(); ++r) {
+      // extract data from current row r
+      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
+
+      for(LO c = 0; c < rowview.length; c++) {
+        Scalar   vv  = rowview.value  (c);
+        LO       cc = rowview.colidx (c);
+        TEST_EQUALITY(rowview.length, 1);
+        TEST_EQUALITY(cc, r);
+        TEST_EQUALITY(vv, -123.4);
       }
-
-      Teuchos::ArrayView< const LO > indices;
-      Teuchos::ArrayView< const Scalar > values;
-      A->getLocalRowView(0, indices, values);
-      TEST_EQUALITY(indices.size(), 1);
-      TEST_EQUALITY(values[0], 1.0);
-
-      /////////////////////////////////////////
-
-      // check whether later changes are updated in view!
-      int nColIdx = 0;
-      double value = 42.0;
-      view2.replaceValues (0, &nColIdx, 1, &value);
-
-      A->getLocalRowView(0, indices, values);
-      TEST_EQUALITY(indices.size(), 1);
-      TEST_EQUALITY(values[0], 42.0);  // changes in the view also changes matrix values
-
-      A->resumeFill();
-      A->setAllToScalar(-123.4);
-      A->fillComplete();
-
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
-
-      for (LO r = 0; r < view2.numRows(); ++r) {
-        // extract data from current row r
-        Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
-
-        for(LO c = 0; c < rowview.length; c++) {
-          Scalar   vv  = rowview.value  (c);
-          LO       cc = rowview.colidx (c);
-          TEST_EQUALITY(rowview.length, 1);
-          TEST_EQUALITY(cc, r);
-          TEST_EQUALITY(vv, -123.4);
-        }
-      }
-
-    } // endl loop over linear algebra packages
+    }
 #endif
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ConstructMatrixKokkos, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
@@ -1021,183 +951,177 @@ namespace {
     typedef typename CrsMatrixClass::local_matrix_type local_matrix_type;
 
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     int rank = comm->getRank();
     int numProcs = comm->getSize();
 
-    std::vector<Xpetra::UnderlyingLib> libs;
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    // only test LO=GO=int case here
-    libs.push_back(Xpetra::UseTpetra);
-#endif
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-    libs.push_back(Xpetra::UseEpetra);
-#endif
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
 
-    for(size_t lll = 0; lll < libs.size(); lll++) {
-      Xpetra::UnderlyingLib lib = libs[lll];
-      // TODO change this: choose a different ExecutionSpace/memory space here
-      typedef Kokkos::DefaultExecutionSpace MemorySpace;
-      typedef typename MemorySpace::size_type size_type;
+    // choose memory space of local_matrix_type (could be e.g. on the device)
+    typedef typename local_matrix_type::memory_space MemorySpace;
+    typedef typename local_matrix_type::size_type size_type;
+    typedef typename local_matrix_type::value_type value_type;
+    typedef typename local_matrix_type::ordinal_type ordinal_type;
 
-      // typedefs for the data of the local CRS matrix
-      typedef Kokkos::View<size_type*,MemorySpace> ptr_type ;
-      typedef Kokkos::View<int*,   MemorySpace> ind_type ;
-      typedef Kokkos::View<double*,MemorySpace> val_type ;
+    // typedefs for the data of the local CRS matrix
+    typedef Kokkos::View<size_type*,   MemorySpace> ptr_type ;
+    typedef Kokkos::View<ordinal_type*,MemorySpace> ind_type ;
+    typedef Kokkos::View<value_type*,  MemorySpace> val_type ;
 
-      // build local Kokkos::CrsMatrix
-      int numRows, numCols, nnz;
-      if (rank == 0 && numProcs == 1) { /* special case: only one proc */
-        numRows = 3;
-        numCols = 3;
-        nnz = 7;
-      } else if (rank == 0 || rank == numProcs-1) {  /* first or last processor */
-        numRows = 3;
-        numCols = 4;
-        nnz = 8;
-      } else {  /* all other processors processor */
-        numRows = 3;
-        numCols = 5;
-        nnz = 9;
-      }
+    // build local Kokkos::CrsMatrix
+    LO numRows, numCols, nnz;
+    if (rank == 0 && numProcs == 1) { /* special case: only one proc */
+      numRows = 3;
+      numCols = 3;
+      nnz = 7;
+    } else if (rank == 0 || rank == numProcs-1) {  /* first or last processor */
+      numRows = 3;
+      numCols = 4;
+      nnz = 8;
+    } else {  /* all other processors processor */
+      numRows = 3;
+      numCols = 5;
+      nnz = 9;
+    }
 
-      // Create the output Views.
-      ptr_type ptr = ptr_type("ptr", numRows + 1);
-      ind_type ind = ind_type("ind", nnz);
-      val_type val = val_type("val", nnz);
+    // Create the output Views.
+    ptr_type ptr = ptr_type("ptr", numRows + 1);
+    ind_type ind = ind_type("ind", nnz);
+    val_type val = val_type("val", nnz);
 
-      // build local Kokkos::CrsMatrix
-      if (rank == 0 && numProcs == 1) { /* special case: only one processor */
-        const size_type ptrRaw[] = {0, 2, 5, 7};
-        const int indRaw[] = {0, 1,
-                              0, 1, 2,
-                                 1, 2};
-        const double valRaw[] = { 2.0, -1.0,
-                                 -1.0,  2.0, -1.0,
-                                 -1.0,  2.0};
-        // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-        typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
-        typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
-        typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
+    // build local Kokkos::CrsMatrix
+    if (rank == 0 && numProcs == 1) { /* special case: only one processor */
+      const size_type ptrRaw[] = {0, 2, 5, 7};
+      const ordinal_type indRaw[] = {0, 1,
+                            0, 1, 2,
+                               1, 2};
+      const value_type valRaw[] = { 2.0, -1.0,
+                               -1.0,  2.0, -1.0,
+                               -1.0,  2.0};
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
-        Kokkos::deep_copy (ptr, ptrIn);
-        Kokkos::deep_copy (ind, indIn);
-        Kokkos::deep_copy (val, valIn);
-      } else if (rank == 0 && numProcs > 1) {  /* first processor */
-        const size_type ptrRaw[] = {0, 2, 5, 8};
-        const int indRaw[] = {0, 1,
-                              0, 1, 2,
-                                 1, 2, 3};
-        const double valRaw[] = { 2.0, -1.0,
-                                 -1.0,  2.0, -1.0,
-                                 -1.0,  2.0, -1.0};
-        // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-        typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
-        typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
-        typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
+      Kokkos::deep_copy (ptr, ptrIn);
+      Kokkos::deep_copy (ind, indIn);
+      Kokkos::deep_copy (val, valIn);
+    } else if (rank == 0 && numProcs > 1) {  /* first processor */
+      const size_type ptrRaw[] = {0, 2, 5, 8};
+      const ordinal_type indRaw[] = {0, 1,
+                            0, 1, 2,
+                               1, 2, 3};
+      const value_type valRaw[] = { 2.0, -1.0,
+                               -1.0,  2.0, -1.0,
+                               -1.0,  2.0, -1.0};
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
-        Kokkos::deep_copy (ptr, ptrIn);
-        Kokkos::deep_copy (ind, indIn);
-        Kokkos::deep_copy (val, valIn);
-      } else if (rank == numProcs-1) {  /* last processor */
-        const size_type ptrRaw[] = {0, 3, 6, 8};
-        const int indRaw[] = {3, 0, 1,
-                                 0, 1, 2,
-                                    1, 2};
-        const double valRaw[] = {-1.0,  2.0, -1.0,
-                                 -1.0,  2.0, -1.0,
-                                 -1.0,  2.0};
-        // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-        typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
-        typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
-        typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
+      Kokkos::deep_copy (ptr, ptrIn);
+      Kokkos::deep_copy (ind, indIn);
+      Kokkos::deep_copy (val, valIn);
+    } else if (rank == numProcs-1) {  /* last processor */
+      const size_type ptrRaw[] = {0, 3, 6, 8};
+      const ordinal_type indRaw[] = {3, 0, 1,
+                               0, 1, 2,
+                                  1, 2};
+      const value_type valRaw[] = {-1.0,  2.0, -1.0,
+                               -1.0,  2.0, -1.0,
+                               -1.0,  2.0};
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
-        Kokkos::deep_copy (ptr, ptrIn);
-        Kokkos::deep_copy (ind, indIn);
-        Kokkos::deep_copy (val, valIn);
-      } else {  /* all other processors processor */
-        const size_type ptrRaw[] = {0, 3, 6, 9};
-        const int indRaw[] = {3, 0, 1,
-                                 0, 1, 2,
-                                    1, 2, 4};
-        const double valRaw[] = {-1.0,  2.0, -1.0,
-                                 -1.0,  2.0, -1.0,
-                                 -1.0,  2.0, -1.0};
-        // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-        typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
-        typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
-        typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
+      Kokkos::deep_copy (ptr, ptrIn);
+      Kokkos::deep_copy (ind, indIn);
+      Kokkos::deep_copy (val, valIn);
+    } else {  /* all other processors processor */
+      const size_type ptrRaw[] = {0, 3, 6, 9};
+      const ordinal_type indRaw[] = {3, 0, 1,
+                               0, 1, 2,
+                                  1, 2, 4};
+      const value_type valRaw[] = {-1.0,  2.0, -1.0,
+                               -1.0,  2.0, -1.0,
+                               -1.0,  2.0, -1.0};
+      // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
+      typename ptr_type::HostMirror::const_type  ptrIn( ptrRaw , numRows+1 );
+      typename ind_type::HostMirror::const_type  indIn( indRaw , nnz );
+      typename val_type::HostMirror::const_type  valIn( valRaw , nnz );
 
-        Kokkos::deep_copy (ptr, ptrIn);
-        Kokkos::deep_copy (ind, indIn);
-        Kokkos::deep_copy (val, valIn);
-      }
+      Kokkos::deep_copy (ptr, ptrIn);
+      Kokkos::deep_copy (ind, indIn);
+      Kokkos::deep_copy (val, valIn);
+    }
 
-      // create local CrsMatrix
-      local_matrix_type lclMatrix = local_matrix_type("A", numRows, numCols, nnz, val, ptr, ind);
+    // create local CrsMatrix
+    local_matrix_type lclMatrix = local_matrix_type("A", numRows, numCols, nnz, val, ptr, ind);
 
-      // reconstruct row and column map
-      std::vector<GO> rowMapGids;  // vector for collecting row map GIDs
-      std::vector<GO> colMapGids;  // vector for collecting column map GIDs
-      if (rank == 0 && numProcs == 1) {
-        rowMapGids.push_back(0);       colMapGids.push_back(0);
-        rowMapGids.push_back(1);       colMapGids.push_back(1);
-        rowMapGids.push_back(2);       colMapGids.push_back(2);
-      } else if (rank == 0 && numProcs > 1) {  /* first processor */
-        rowMapGids.push_back(0);       colMapGids.push_back(0);
-        rowMapGids.push_back(1);       colMapGids.push_back(1);
-        rowMapGids.push_back(2);       colMapGids.push_back(2);
-                                       colMapGids.push_back(3);
-      } else if (rank == numProcs-1) {  /* last processor */
-        rowMapGids.push_back(rank*3+0);       colMapGids.push_back(rank*3+0);
-        rowMapGids.push_back(rank*3+1);       colMapGids.push_back(rank*3+1);
-        rowMapGids.push_back(rank*3+2);       colMapGids.push_back(rank*3+2);
-                                              colMapGids.push_back(rank*3-1);
-      } else {  /* all other processors */
+    // reconstruct row and column map
+    //std::vector<GO> rowMapGids;  // vector for collecting row map GIDs
+    //std::vector<GO> colMapGids;  // vector for collecting column map GIDs
+    Teuchos::Array<GO> rowMapGids;  // vector for collecting row map GIDs
+    Teuchos::Array<GO> colMapGids;  // vector for collecting column map GID
+    if (rank == 0 && numProcs == 1) {
+      rowMapGids.push_back(0);       colMapGids.push_back(0);
+      rowMapGids.push_back(1);       colMapGids.push_back(1);
+      rowMapGids.push_back(2);       colMapGids.push_back(2);
+    } else if (rank == 0 && numProcs > 1) {  /* first processor */
+      rowMapGids.push_back(0);       colMapGids.push_back(0);
+      rowMapGids.push_back(1);       colMapGids.push_back(1);
+      rowMapGids.push_back(2);       colMapGids.push_back(2);
+                                     colMapGids.push_back(3);
+    } else if (rank == numProcs-1) {  /* last processor */
+      rowMapGids.push_back(rank*3+0);       colMapGids.push_back(rank*3+0);
+      rowMapGids.push_back(rank*3+1);       colMapGids.push_back(rank*3+1);
+      rowMapGids.push_back(rank*3+2);       colMapGids.push_back(rank*3+2);
+                                            colMapGids.push_back(rank*3-1);
+    } else {  /* all other processors */
 
-        rowMapGids.push_back(rank*3+0);       colMapGids.push_back(rank*3+0);
-        rowMapGids.push_back(rank*3+1);       colMapGids.push_back(rank*3+1);
-        rowMapGids.push_back(rank*3+2);       colMapGids.push_back(rank*3+2);
-                                              colMapGids.push_back(rank*3-1);
-                                              colMapGids.push_back(rank*3+3);
-      }
+      rowMapGids.push_back(rank*3+0);       colMapGids.push_back(rank*3+0);
+      rowMapGids.push_back(rank*3+1);       colMapGids.push_back(rank*3+1);
+      rowMapGids.push_back(rank*3+2);       colMapGids.push_back(rank*3+2);
+                                            colMapGids.push_back(rank*3-1);
+                                            colMapGids.push_back(rank*3+3);
+    }
 
-      // create Xpetra::Map objects for row map and column map
-      const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
-      Teuchos::ArrayView<GO> rowMapGidsView(&rowMapGids[0], rowMapGids.size());
-      Teuchos::ArrayView<GO> colMapGidsView(&colMapGids[0], colMapGids.size());
-      Teuchos::RCP<const MapClass > rowMap = MapFactoryClass::Build(lib, INVALID, rowMapGidsView, 0, comm);
-      Teuchos::RCP<const MapClass > colMap = MapFactoryClass::Build(lib, INVALID, colMapGidsView, 0, comm);
+    // create Xpetra::Map objects for row map and column map
+    const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    //Teuchos::ArrayView<GO> rowMapGidsView(&rowMapGids[0], rowMapGids.size());
+    //Teuchos::ArrayView<GO> colMapGidsView(&colMapGids[0], colMapGids.size());
+    Teuchos::RCP<const MapClass > rowMap = MapFactoryClass::Build(lib, INVALID, rowMapGids.view(0,rowMapGids.size()), 0, comm);
+    Teuchos::RCP<const MapClass > colMap = MapFactoryClass::Build(lib, INVALID, colMapGids.view(0,colMapGids.size()), 0, comm);
 
-      Teuchos::RCP<CrsMatrixClass> mat = CrsMatrixFactoryClass::Build(rowMap,colMap,lclMatrix);
-      if(mat == Teuchos::null) std::cout << "mat is Teuchos::null..." << std::endl;
+    Teuchos::RCP<CrsMatrixClass> mat = CrsMatrixFactoryClass::Build(rowMap,colMap,lclMatrix);
+    if(mat == Teuchos::null) std::cout << "mat is Teuchos::null..." << std::endl;
 
-      TEST_EQUALITY(mat->isFillComplete(),true);
-      TEST_EQUALITY(mat->getGlobalMaxNumRowEntries(),3);
-      TEST_EQUALITY(mat->getNodeMaxNumRowEntries(),3);
-      TEST_EQUALITY(mat->getNodeNumRows(),3);
-      TEST_EQUALITY(mat->getGlobalNumCols(),3*numProcs);
-      TEST_EQUALITY(mat->getGlobalNumRows(),3*numProcs);
-      TEST_EQUALITY(mat->getGlobalNumEntries(),9*numProcs-2);
+    TEST_EQUALITY(mat->isFillComplete(),true);
+    TEST_EQUALITY(mat->getGlobalMaxNumRowEntries(),3);
+    TEST_EQUALITY(mat->getNodeMaxNumRowEntries(),3);
+    TEST_EQUALITY(mat->getNodeNumRows(),3);
+    TEST_EQUALITY(mat->getGlobalNumCols(),3*numProcs);
+    TEST_EQUALITY(mat->getGlobalNumRows(),3*numProcs);
+    TEST_EQUALITY(mat->getGlobalNumEntries(),9*numProcs-2);
 
-      size_t numLocalRows = mat->getNodeNumRows();
-      for(size_t row=0; row<numLocalRows; row++) {
-        GO grid = mat->getRowMap()->getGlobalElement(row);
-        // extract row information from input matrix
-        Teuchos::ArrayView<const LO> indices;
-        Teuchos::ArrayView<const Scalar> vals;
-        mat->getLocalRowView(row, indices, vals);
-        for(size_t col = 0; col< indices.size(); col++) {
-          if(grid == colMap->getGlobalElement(indices[col])) {
-            TEST_EQUALITY(vals[col],2.0);
-          } else {
-            TEST_EQUALITY(vals[col],-1.0);
-          }
+    size_t numLocalRows = mat->getNodeNumRows();
+    for(size_t row=0; row<numLocalRows; row++) {
+      GO grid = mat->getRowMap()->getGlobalElement(row);
+      // extract row information from input matrix
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const Scalar> vals;
+      mat->getLocalRowView(row, indices, vals);
+      for(size_t col = 0; col< indices.size(); col++) {
+        if(grid == colMap->getGlobalElement(indices[col])) {
+          TEST_EQUALITY(vals[col],2.0);
+        } else {
+          TEST_EQUALITY(vals[col],-1.0);
         }
       }
-    } // loop over linear Algebra frameworks
+    }
+
 #endif
   }
 
@@ -1205,53 +1129,59 @@ namespace {
   // INSTANTIATIONS
   //
 
-// for common tests (Epetra and Tpetra...)
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Apply, SC, LO, GO, Node )
-// for Tpetra tests only
-#define UNIT_TEST_GROUP_ORDINAL1( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
-// for Epetra tests only
-#define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
-// for Kokkos-specific tests
-#define UNIT_TEST_GROUP_ORDINAL3( SC, LO, GO, Node )                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GetLocalMatrix,  SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ConstructMatrixKokkos, SC, LO, GO, Node )
-
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
-
 #ifdef HAVE_XPETRA_TPETRA
 
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-  // tests must not be redefined!!!
-  UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
-  UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
-  UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
-#endif
-#ifdef HAVE_TPETRA_INT_LONG // are these working??
-  // tests must not be redefined!!!
-  //UNIT_TEST_GROUP_ORDINAL(double, int, long, DefaultNodeType)
-  //UNIT_TEST_GROUP_ORDINAL1(double, int, long, DefaultNodeType)
-  ////UNIT_TEST_GROUP_ORDINAL3(double, int, long, DefaultNodeType)
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-  // TODO tests must not be redefined...
-  //typedef long long LongLongInt;
-  //UNIT_TEST_GROUP_ORDINAL(double, int, LongLongInt, DefaultNodeType)
-  //UNIT_TEST_GROUP_ORDINAL1(double, int, LongLongInt, DefaultNodeType)
-  //UNIT_TEST_GROUP_ORDINAL3(double, int, LongLongInt, DefaultNodeType)
-#endif
+  #define XPETRA_TPETRA_TYPES( SC, LO, GO, Node) \
+      typedef typename Xpetra::TpetraMap<LO,GO,Node> M##LO##GO##Node; \
+
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-  // TODO tests must not be redefined!!
-  //UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
-  //// UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
-  //UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
-  //UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
+
+  #define XPETRA_EPETRA_TYPES( SC, LO, GO, Node) \
+      typedef typename Xpetra::EpetraMapT<GO,Node> M##LO##GO##Node; \
+
 #endif
+
+// for common tests (Epetra and Tpetra...)
+#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Apply , M##LO##GO##Node , SC, LO, GO, Node ) \
+// for Tpetra tests only
+#define UNIT_TEST_GROUP_ORDINAL_TPETRAONLY( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
+// for Epetra tests only
+#define UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
+// for Kokkos-specific tests
+#define UNIT_TEST_GROUP_ORDINAL_KOKKOS( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( CrsMatrix, GetLocalMatrix, M##LO##GO##Node, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( CrsMatrix, ConstructMatrixKokkos, M##LO##GO##Node, SC, LO, GO, Node )
+
+
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_XPETRA_INT_INT)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_TPETRAONLY )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_KOKKOS )
+
+#endif
+
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+XPETRA_EPETRA_TYPES ( double, int, int, EpetraNode )
+UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( double, int, int, EpetraNode )
+UNIT_TEST_GROUP_ORDINAL_KOKKOS( double, int, int, EpetraNode )
+
+#endif
+
 }
 

@@ -78,9 +78,9 @@ namespace MueLuTests {
 
   }
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
@@ -279,13 +279,15 @@ namespace MueLuTests {
 
       TEST_EQUALITY(results[0] - results[1] < 1e-10, true); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
+#   endif
 
   } //SaPFactory_EpetraVsTpetra
-#endif
 
-#define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node)
+#  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

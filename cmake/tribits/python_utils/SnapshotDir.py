@@ -463,7 +463,7 @@ def getGitRepoUrl(gitDir):
   #print "remoteReposListStr =", remoteReposListStr
 
   # Loop through looking for remoteRepoName
-  for remoteRepo in remoteReposListStr.split("\n"):
+  for remoteRepo in remoteReposListStr.splitlines():
 
     #print "remoteRepo = '"+remoteRepo+"'"
     if remoteRepo == "":

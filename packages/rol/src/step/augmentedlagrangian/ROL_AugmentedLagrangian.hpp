@@ -80,10 +80,6 @@ private:
   int ngval_;
 
   Real penaltyParameter_;
-  Real penaltyUpdate_;
-  Real multiplierUpdateScale_;
-  Real multiplierUpdateExponent_;
-  int multiplierUpdateMethod_;
   bool scaleLagrangian_;
   int HessianLevel_;
 
@@ -113,50 +109,8 @@ public:
     lam_->set(l);
 
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
-    penaltyUpdate_            = sublist.get("Penalty Parameter Growth Factor", 1.e1);
-    multiplierUpdateScale_    = sublist.get("Multiplier Update Scale",         1.e0); 
-    multiplierUpdateExponent_ = sublist.get("Multiplier Update Exponent",      1.e0);
-    multiplierUpdateMethod_   = sublist.get("Multiplier Update Method",        1);
-    scaleLagrangian_          = sublist.get("Use Scaled Augmented Lagrangian", false);
-    HessianLevel_             = sublist.get("Level of Hessian Approximation",  0);
-  }
-
-  bool updateMultipliers(Vector<Real> &l, Real &penaltyParameter,
-                         const Vector<Real> &x, const Real feasTolerance) {
-    Real tol = std::sqrt(ROL_EPSILON);
-    if ( !isConstraintComputed_ ) {
-      // Evaluate constraint
-      con_->value(*c_,x,tol);
-      ncval_++;
-      isConstraintComputed_ = true;
-    }
-    if ( !isGradientComputed_ ) {
-      // Compute objective function gradient
-      obj_->gradient(*g_,x,tol);
-      ngval_++;
-      isGradientComputed_ = true;
-    }
-    bool updated = false;
-    if ( multiplierUpdateMethod_ == 0 ) {
-      l.axpy(penaltyParameter,c_->dual());
-    }
-    else if ( multiplierUpdateMethod_ == 1 ) {
-      dc2_->zero();
-      con_->solveAugmentedSystem(*x_,l,*g_,*dc2_,x,tol);
-      l.scale(-1.);
-    }
-
-    penaltyParameter *= ((c_->norm() < feasTolerance) ? 1. : penaltyUpdate_);
-    penaltyParameter_ = penaltyParameter;
-
-    if ( l.norm() < multiplierUpdateScale_*std::pow(penaltyParameter_,multiplierUpdateExponent_) ) {
-      updated = true;
-      lam_->set(l);
-    }
-    else {
-      l.set(*lam_);
-    }
-    return updated;
+    scaleLagrangian_ = sublist.get("Use Scaled Augmented Lagrangian", false);
+    HessianLevel_    = sublist.get("Level of Hessian Approximation",  0);
   }
 
   Real getObjectiveValue(const Vector<Real> &x) {
@@ -204,8 +158,10 @@ public:
     return ngval_;
   }
 
-  void reset(void) {
+  void reset(const Vector<Real> &lam, const Real penaltyParameter) {
     ncval_ = 0.; nfval_ = 0.; ngval_ = 0.;
+    lam_->set(lam);
+    penaltyParameter_ = penaltyParameter;
   }
 
   /** \brief Update augmented Lagrangian function. 

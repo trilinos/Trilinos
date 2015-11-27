@@ -43,33 +43,35 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Teuchos_UnitTestHarness.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
-#include "MueLu_config.hpp"
 
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <MueLu_config.hpp>
+
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_Utilities.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_FactoryManager.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_SmootherFactory.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_Utilities.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_FactoryManager.hpp>
+#include <MueLu_MultiVectorTransferFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_TrilinosSmoother.hpp>
+#include <MueLu_SmootherFactory.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
 
-  TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<Factory> TentativePFact = rcp(new TentativePFactory());
@@ -83,13 +85,18 @@ namespace MueLuTests {
 
   //------------------------------------------------------------------------------------------
 
-  TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, Build)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     out << "Tests the action of the transfer factory on a vector.  In this test, the transfer is the tentative" << std::endl;
     out << "prolongator, and the vector is all ones.  So the norm of the resulting coarse grid vector should be" << std::endl;
     out << "equal to the number of fine degrees of freedom." << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -121,16 +128,24 @@ namespace MueLuTests {
     mvtf->Build(fineLevel,coarseLevel);
 
     RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector",mvtf.get());
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
+    Teuchos::Array<magnitude_type> vn(1);
     coarseOnes->norm2(vn);
-
-    TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
+    TEST_FLOATING_EQUALITY(vn[0]*vn[0],(Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())),1e-12);
   } // Build test
 
   //------------------------------------------------------------------------------------------
 
-  TEUCHOS_UNIT_TEST(MultiVectorTransferFactory, ThreeLevels)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, ThreeLevels, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra,"Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra,"Ifpack2");
+#   endif
     out << "version: " << MueLu::Version() << std::endl;
 
     out << "Tests usage on a three-level hierarchy." << std::endl;
@@ -166,7 +181,7 @@ namespace MueLuTests {
     smootherParamList.set("relaxation: sweeps", (LO) 1);
     smootherParamList.set("relaxation: damping factor", (SC) 1.0);
     RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
-    RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+    RCP<SmootherFactory> SmooFact = Teuchos::null;
     AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
     FactoryManager M;
@@ -206,5 +221,12 @@ namespace MueLuTests {
        */
   } // ThreeLevels
 
-} // namespace MueLuTests
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, Constructor, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, Build, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, ThreeLevels, Scalar, LO, GO, Node)
 
+#include <MueLu_ETI_4arg.hpp>
+
+
+} // namespace MueLuTests

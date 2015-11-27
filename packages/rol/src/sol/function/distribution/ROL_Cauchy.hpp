@@ -87,6 +87,14 @@ public:
       ">>> ERROR (ROL::Cauchy): Cauchy moments are undefined!");
     return 0.;
   }
+
+  Real lowerBound(void) const {
+    return ROL_NINF;
+  }
+
+  Real upperBound(void) const {
+    return ROL_INF;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 1;

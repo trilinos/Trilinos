@@ -55,8 +55,8 @@ if not os.path.exists('.mockprogram_inout.txt'):
   sys.exit(1)
 
 mockprogramInout = open('.mockprogram_inout.txt', 'r').read()
-mockprogramInoutArray = mockprogramInout.split("\n")
-if mockprogramInoutArray[-1] == "":
+mockprogramInoutArray = mockprogramInout.splitlines()
+if len(mockprogramInoutArray) and mockprogramInoutArray[-1] == "":
   mockprogramInoutArray = mockprogramInoutArray[:-1]
 
 if len(mockprogramInoutArray) < 3:

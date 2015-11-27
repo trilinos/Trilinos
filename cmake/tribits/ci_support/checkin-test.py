@@ -72,7 +72,7 @@ from GeneralScriptSupport import *
 usageHelp = r"""checkin-test.py [OPTIONS]
 
 This tool does testing of a TriBITS-based project using CTest and this script
-can actually do the push itself using eg/git in a safe way.  In fact, it is
+can actually do the push itself using git in a safe way.  In fact, it is
 recommended that one uses this script to push since it will amend the last
 commit message with a (minimal) summary of the builds and tests run with
 results and/or send out a summary email about the builds/tests performed.
@@ -88,43 +88,40 @@ In order to do a safe push, perform the following recommended workflow
 
   # 1.a) See what files are changed, newly added, etc. that need to be committed
   # or stashed.
-  $ eg status
+  $ git status
 
   # 1.b) Stage the files you want to commit (optional)
-  $ eg stage <files you want to commit>
+  $ git stage <files you want to commit>
 
   # 1.c) Create your local commits
-  $ eg commit -- SOMETHING
-  $ eg commit -- SOMETHING_ELSE
+  $ git commit -- SOMETHING
+  $ git commit -- SOMETHING_ELSE
   ...
 
   # 1.d) Stash whatever changes are left you don't want to test/push (optional)
-  $ eg stash
+  $ git stash
 
   NOTE: You can group your commits any way that you would like (see the basic
-  eg/git documentation).
+  git documentation).
 
-  NOTE: If not installed on your system, the eg script can be found at
-  tribits/common_tools/git/eg.  Just add it to your path.
-
-  NOTE: When multiple repos are involved, use egdist instead.  It is provided
-  at tribits/common_tools/git/egdist.  See egdist --help for details.
+  NOTE: When multiple repos are involved, use gitdist instead.  It is provided
+  at tribits/python_utils/gitdist.  See gitdist --help for details.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
   $ cd $PROJECT_HOME
-  $ eg local-stat                  # Look at the full status of local repo
-  $ eg diff --name-status origin   # [Optional] Look at the files that have changed
+  $ git local-stat                  # Look at the full status of local repo
+  $ git diff --name-status origin   # [Optional] Look at the files that have changed
 
   NOTE: The command 'local-stat' is a git alias that can be installed with the
   script tribits/common_tools/git/git-config-alias.sh.  It is highly
-  recommended over just a raw 'eg status' or 'eg log' to review commits before
+  recommended over just a raw 'git status' or 'git log' to review commits before
   attempting to test/push commits.
 
   NOTE: If you see any files/directories that are listed as 'unknown' returned
-  from 'eg local-stat', then you will need to do an 'eg add' to track them or
+  from 'git local-stat', then you will need to do an 'git add' to track them or
   add them to an ignore list *before* you run the checkin-test.py script.
-  The eg script will not allow you to push if there are new 'unknown' files or
+  The git script will not allow you to push if there are new 'unknown' files or
   uncommitted changes to tracked files.
 
 3) Set up the checkin base build directory (first time only):
@@ -157,20 +154,16 @@ In order to do a safe push, perform the following recommended workflow
   with the test results, and h) finally push local commits to the global
   repo(s) if everything passes.
 
-  NOTE: You must have installed the official versions of eg/git with the
-  install-git.py script in order to run this script.  If you don't, the script
-  will die right away with an error message telling you what the problem is.
-
-  NOTE: The current branch will be used to pull and push to.  A raw 'eg pull'
+  NOTE: The current branch will be used to pull and push to.  A raw 'git pull'
   is performed which will get all of the branches from 'origin'.  This means
   that your current branch must be a tracking branch so that it will get
   updated correctly.  The branch 'master' is the most common branch but
   release tracking branches are also common.
 
-  NOTE: You must not have any uncommitted changes or the 'eg pull && eg rebase
+  NOTE: You must not have any uncommitted changes or the 'git pull && git rebase
   --against origin' command will fail on the final pull/rebase before the push
   and therefore the whole script will fail.  To run the script, you will may
-  need to first use 'eg stash' to stash away your unstaged/uncommitted changes
+  need to first use 'git stash' to stash away your unstaged/uncommitted changes
   *before* running this script.
 
   NOTE: You need to have SSH public/private keys set up to the remote repo
@@ -203,13 +196,13 @@ The following approximate steps are performed by this script:
 
 1) Check to see if the local repo(s) are clean:
 
-  $ eg status
+  $ git status
 
   NOTE: If any modified or any unknown files are shown, the process will be
   aborted.  The local repo(s) working directory must be clean and ready to
   push *everything* that is not stashed away.
 
-2) Do a 'eg pull' to update the code (done if --pull or --do-all is set):
+2) Do a 'git pull' to update the code (done if --pull or --do-all is set):
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
@@ -242,12 +235,12 @@ extra builds specified with --extra-builds):
 5) Do final pull and rebase, append test results to last commit message, and
 push (done if --push is set)
 
-  5.a) Do a final 'eg pull' (done if --pull or --do-all is set)
+  5.a) Do a final 'git pull' (done if --pull or --do-all is set)
 
-  5.b) Do 'eg rebase --against origin/<current_branch>' (done if --pull or
+  5.b) Do 'git rebase --against origin/<current_branch>' (done if --pull or
   --do-all is set and --rebase is set)
 
-    NOTE: The final 'eg rebase --against origin/<current_branch>' is
+    NOTE: The final 'git rebase --against origin/<current_branch>' is
     required to avoid trivial merge commits that the global get repo
     will reject on the push.
   
@@ -313,12 +306,12 @@ the standard build/test configurations described above, then you need
 to create extra builds with the --extra-builds and/or
 --st-extra-builds options (see below).
 
-NOTE: Before running this script, you should first do an 'eg status' and 'eg
+NOTE: Before running this script, you should first do an 'git status' and 'git
 diff --name-status origin..' and examine what files are changed to make sure
 you want to push what you have in your local working directory.  Also, please
 look out for unknown files that you may need to add to the git repository with
-'eg add' or add to your ignores list.  There cannot be any uncommitted changes
-in the local repo before running this script.
+'git add' or add to your ignores list.  There cannot be any uncommitted
+changes in the local repo before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
 affect the build or the tests.  For example, if all you have changed are
@@ -702,14 +695,6 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     default=None)
 
   clp.add_option(
-    "--eg-git-version-check", dest="enableEgGitVersionCheck", action="store_true",
-    help="Enable automatic check for the right versions of eg and git. [default]" )
-  clp.add_option(
-    "--no-eg-git-version-check", dest="enableEgGitVersionCheck", action="store_false",
-    help="Do not check the versions of eg and git, just trust they are okay.",
-    default=True )
-
-  clp.add_option(
     '--src-dir', dest="srcDir", type="string", default="",
     help="The source base directory for code to be tested.  The default is determined" \
      +" by the location of the found project-checkin-test-config.py file." )
@@ -1073,10 +1058,6 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   print "**************************************************************************"
   print "Script: checkin-test.py \\"
 
-  if options.enableEgGitVersionCheck:
-    print "  --eg-git-version-check \\"
-  else:
-    print "  --no-eg-git-version-check \\"
   print "  --src-dir='" + options.srcDir+"' \\"
   print "  --default-builds='" + options.defaultBuilds + "' \\"
   print "  --extra-repos-file='"+options.extraReposFile+"' \\"
@@ -1337,7 +1318,7 @@ def main(cmndLineArgs):
         print "\nConfiguration loaded from configuration file =", configuration 
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
     except SystemExit, e:
-      # In Python 2.4, SystemExit inherits Exception, but for proper exit
+      # In Python 2.6, SystemExit inherits Exception, but for proper exit
       # behavior the SystemExit exception must propagate all the way to the top
       # of the call stack. It cannot get handled by the catch Exception below.
       raise e

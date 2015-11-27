@@ -114,6 +114,14 @@ public:
       ">>> ERROR (ROL::Smale): Smale moment is not implemented!");
     return 0.;
   }
+
+  Real lowerBound(void) const {
+    return ROL_NINF;
+  }
+ 
+  Real upperBound(void) const {
+    return ROL_INF;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 1;

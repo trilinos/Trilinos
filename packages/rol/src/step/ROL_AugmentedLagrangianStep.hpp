@@ -77,6 +77,8 @@ private:
   bool scaleLagrangian_;
   Real minPenaltyReciprocal_;
   Real minPenaltyLowerBound_;
+  Real penaltyUpdate_;
+  Real maxPenaltyParam_;
   // Optimality tolerance update
   Real optIncreaseExponent_;
   Real optDecreaseExponent_;
@@ -94,6 +96,7 @@ private:
   std::string subStep_;
   Real outerOptTolerance_;
   Real outerFeasTolerance_;
+  Real outerStepTolerance_;
 
   Real computeGradient(Vector<Real> &g, const Vector<Real> &x,
                        const Real mu, BoundConstraint<Real> &bnd) {
@@ -128,6 +131,8 @@ public:
     scaleLagrangian_      = sublist.get("Use Scaled Augmented Lagrangian",          false);
     minPenaltyLowerBound_ = sublist.get("Penalty Parameter Reciprocal Lower Bound", 0.1);
     minPenaltyReciprocal_ = 0.1;
+    penaltyUpdate_        = sublist.get("Penalty Parameter Growth Factor",          1.e1);
+    maxPenaltyParam_      = sublist.get("Maximum Penalty Parameter",                1.e8);
     // Optimality tolerance update
     optIncreaseExponent_ = sublist.get("Optimality Tolerance Update Exponent",    1.0);
     optDecreaseExponent_ = sublist.get("Optimality Tolerance Decrease Exponent",  1.0);
@@ -144,6 +149,7 @@ public:
     // Outer iteration tolerances
     outerFeasTolerance_ = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
     outerOptTolerance_  = parlist.sublist("Status Test").get("Gradient Tolerance", 1.e-8);
+    outerStepTolerance_ = parlist.sublist("Status Test").get("Step Tolerance", 1.e-8);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -162,10 +168,6 @@ public:
     algo_state.nfval = 0;
     algo_state.ncval = 0;
     algo_state.ngrad = 0;
-    // Initialize intermediate stopping tolerances
-    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
-    optTolerance_  = optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_);
-    feasTolerance_ = feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_);
     // Initialize the Augmented Lagrangian
     augLag_ = Teuchos::rcp(new AugmentedLagrangian<Real>(obj,con,x,c,l,state->searchSize,parlist_));
     // Project x onto the feasible set
@@ -183,6 +185,13 @@ public:
     algo_state.ncval += augLag_->getNumberConstraintEvaluations();
     algo_state.nfval += augLag_->getNumberFunctionEvaluations();
     algo_state.ngrad += augLag_->getNumberGradientEvaluations();
+    // Initialize intermediate stopping tolerances
+    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
+    optTolerance_  = std::max(1.e-2*outerOptTolerance_,
+                              optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
+    optTolerance_  = std::min(optTolerance_,1.e-2*algo_state.gnorm);
+    feasTolerance_ = std::max(1.e-2*outerFeasTolerance_,
+                              feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
   }
 
   /** \brief Compute step (equality and bound constraints).
@@ -217,22 +226,6 @@ public:
     state->descentVec->set(s);
     algo_state.snorm = s.norm();
     algo_state.iter++;
-    // Update objective function and constraints
-    augLag_->update(x,true,algo_state.iter);
-    bnd.update(x,true,algo_state.iter);
-    // Update multipliers
-    bool updated = augLag_->updateMultipliers(l,state->searchSize,x,feasTolerance_);
-    algo_state.snorm += (updated ? l.norm() + 1. : 0.);
-    algo_state.lagmultVec->set(l);
-    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
-    if ( algo_state.cnorm < feasTolerance_ ) {
-      optTolerance_  *= std::pow(minPenaltyReciprocal_,optIncreaseExponent_);
-      feasTolerance_ *= std::pow(minPenaltyReciprocal_,feasIncreaseExponent_);
-    }
-    else {
-      optTolerance_  = optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_);
-      feasTolerance_ = feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_);
-    }
     // Update objective function value
     algo_state.value = augLag_->getObjectiveValue(x);
     // Update constraint value
@@ -244,7 +237,29 @@ public:
     algo_state.nfval += augLag_->getNumberFunctionEvaluations();
     algo_state.ngrad += augLag_->getNumberGradientEvaluations();
     algo_state.ncval += augLag_->getNumberConstraintEvaluations();
-    augLag_->reset();
+    // Update objective function and constraints
+    augLag_->update(x,true,algo_state.iter);
+    bnd.update(x,true,algo_state.iter);
+    // Update multipliers
+    minPenaltyReciprocal_ = std::min(1./state->searchSize,minPenaltyLowerBound_);
+    if ( algo_state.cnorm < feasTolerance_ ) {
+      l.axpy(state->searchSize,(state->constraintVec)->dual());
+      optTolerance_  = std::max(1.e-2*outerOptTolerance_,
+                       optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+      feasTolerance_ = std::max(1.e-2*outerFeasTolerance_,
+                       feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
+      // Update Algorithm State
+      algo_state.snorm += state->searchSize*algo_state.cnorm;
+      algo_state.lagmultVec->set(l);
+    }
+    else {
+      state->searchSize = std::min(penaltyUpdate_*state->searchSize,maxPenaltyParam_);
+      optTolerance_     = std::max(1.e-2*outerOptTolerance_,
+                          optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
+      feasTolerance_    = std::max(1.e-2*outerFeasTolerance_,
+                          feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
+    }
+    augLag_->reset(l,state->searchSize);
   }
 
   /** \brief Print iterate header.

@@ -101,6 +101,14 @@ public:
     } 
     return val;
   }
+
+  Real lowerBound(void) const {
+    return 0.;
+  }
+
+  Real upperBound(void) const {
+    return ROL_INF;
+  }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 3;
