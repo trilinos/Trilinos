@@ -2930,7 +2930,7 @@ namespace Tpetra {
     /// for the input array type.
     template<class BinaryFunction>
     LocalOrdinal
-    transformGlobalValues (GlobalOrdinal globalRow,
+    transformGlobalValues (const GlobalOrdinal globalRow,
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>& values,
                            BinaryFunction f)
