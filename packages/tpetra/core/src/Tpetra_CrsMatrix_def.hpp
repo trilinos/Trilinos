@@ -1987,8 +1987,41 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValues (const LocalOrdinal localRow,
+                      const Kokkos::View<const LocalOrdinal*, device_type,
+                        Kokkos::MemoryUnmanaged>& cols,
+                      const Kokkos::View<const impl_scalar_type*, device_type,
+                        Kokkos::MemoryUnmanaged>& vals) const
+  {
+    typedef impl_scalar_type ST;
+    typedef LocalOrdinal LO;
+    typedef device_type DD;
+
+    if (! isFillActive () || staticGraph_.is_null ()) {
+      // Fill must be active and the graph must exist.
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+
+    const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      // The input local row is invalid on the calling process,
+      // which means that the calling process summed 0 entries.
+      return static_cast<LO> (0);
+    }
+
+    auto curVals = this->getRowViewNonConst (rowInfo);
+    return staticGraph_->template replaceLocalValues<ST, DD, DD> (rowInfo,
+                                                                  curVals,
+                                                                  cols,
+                                                                  vals);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceLocalValues (const LocalOrdinal localRow,
                       const Teuchos::ArrayView<const LocalOrdinal> &indices,
-                      const Teuchos::ArrayView<const Scalar>& values)
+                      const Teuchos::ArrayView<const Scalar>& values) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2024,9 +2057,9 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValues (GlobalOrdinal globalRow,
+  replaceGlobalValues (const GlobalOrdinal globalRow,
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                       const Teuchos::ArrayView<const Scalar>& values)
+                       const Teuchos::ArrayView<const Scalar>& values) const
   {
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
@@ -2136,7 +2169,7 @@ namespace Tpetra {
                       const Kokkos::View<const impl_scalar_type*,
                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::device_type,
                         Kokkos::MemoryUnmanaged>& values,
-                      const bool atomic)
+                      const bool atomic) const
   {
     typedef impl_scalar_type ST;
     typedef LocalOrdinal LO;
@@ -2169,7 +2202,7 @@ namespace Tpetra {
   sumIntoLocalValues (const LocalOrdinal localRow,
                       const Teuchos::ArrayView<const LocalOrdinal>& indices,
                       const Teuchos::ArrayView<const Scalar>& values,
-                      const bool atomic)
+                      const bool atomic) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2287,7 +2320,7 @@ namespace Tpetra {
                typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::execution_space,
                Kokkos::MemoryUnmanaged>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getRowViewNonConst (const RowInfo& rowInfo)
+  getRowViewNonConst (const RowInfo& rowInfo) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2325,7 +2358,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::impl_scalar_type>
   CrsMatrix<Scalar, LocalOrdinal,GlobalOrdinal, Node, classic>::
-  getViewNonConst (RowInfo rowinfo)
+  getViewNonConst (const RowInfo& rowinfo) const
   {
     return Teuchos::av_const_cast<impl_scalar_type> (this->getView (rowinfo));
   }

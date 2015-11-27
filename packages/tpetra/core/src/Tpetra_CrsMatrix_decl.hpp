@@ -878,9 +878,9 @@ namespace Tpetra {
     ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
     ///   </ul>
     LocalOrdinal
-    replaceGlobalValues (GlobalOrdinal globalRow,
-                         const ArrayView<const GlobalOrdinal>& cols,
-                         const ArrayView<const Scalar>& vals);
+    replaceGlobalValues (const GlobalOrdinal globalRow,
+                         const Teuchos::ArrayView<const GlobalOrdinal>& cols,
+                         const Teuchos::ArrayView<const Scalar>& vals) const;
 
     /// \brief Replace one or more entries' values, using local
     ///   row and column indices.
@@ -893,9 +893,9 @@ namespace Tpetra {
     /// \param vals [in] Values to use for replacing the entries.
     ///
     /// For local row index \c localRow and local column indices
-    /// <tt>cols</tt>, do <tt>A(localRow, cols[k]) = vals[k]</tt>.
+    /// <tt>cols</tt>, do <tt>A(localRow, cols(k)) = vals(k)</tt>.
     /// The row index and column indices must be valid on the calling
-    /// process, and all matrix entries <tt>A(localRow, cols[k])</tt>
+    /// process, and all matrix entries <tt>A(localRow, cols(k))</tt>
     /// must already exist.  (This method does <i>not</i> change the
     /// matrix's structure.)  If the row index is valid, any invalid
     /// column indices are ignored, but counted in the return value.
@@ -905,21 +905,30 @@ namespace Tpetra {
     ///
     /// If the returned value N satisfies
     ///
-    /// <tt>0 <= N < cols.size()</tt>,
+    /// <tt>0 <= N < cols.dimension_0()</tt>,
     ///
-    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
-    /// are not valid local column indices.  If the returned value is
-    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
-    /// one of the following is true:
+    /// then <tt>cols.dimension_0() - N</tt> of the entries of
+    /// <tt>cols</tt> are not valid local column indices.  If the
+    /// returned value is
+    /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>,
+    /// then at least one of the following is true:
     ///   <ul>
     ///   <li> <tt>! isFillActive ()</tt> </li>
     ///   <li> <tt>! hasColMap ()</tt> </li>
-    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   <li> <tt> cols.dimension_0 () != vals.dimension_0 ()</tt> </li>
     ///   </ul>
     LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
+                        const Kokkos::View<const LocalOrdinal*, device_type,
+                          Kokkos::MemoryUnmanaged>& cols,
+                        const Kokkos::View<const impl_scalar_type*, device_type,
+                          Kokkos::MemoryUnmanaged>& vals) const;
+
+    //! Backwards compatibility version of replaceLocalValues (see above).
+    LocalOrdinal
+    replaceLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
-                        const Teuchos::ArrayView<const Scalar>& vals);
+                        const Teuchos::ArrayView<const Scalar>& vals) const;
 
   private:
     /// \brief Whether sumIntoLocalValues should use atomic updates by
@@ -1009,7 +1018,7 @@ namespace Tpetra {
                           Kokkos::MemoryUnmanaged>& cols,
                         const Kokkos::View<const impl_scalar_type*, device_type,
                           Kokkos::MemoryUnmanaged>& vals,
-                        const bool atomic = useAtomicUpdatesByDefault);
+                        const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
@@ -1044,7 +1053,7 @@ namespace Tpetra {
     sumIntoLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals,
-                        const bool atomic = useAtomicUpdatesByDefault);
+                        const bool atomic = useAtomicUpdatesByDefault) const;
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar& alpha);
@@ -3156,7 +3165,11 @@ namespace Tpetra {
     /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
-    Teuchos::ArrayView<impl_scalar_type> getViewNonConst (RowInfo rowinfo);
+    ///
+    /// This method is \c const because it doesn't change allocations
+    /// (and thus doesn't change pointers).  Consider the difference
+    /// between <tt>const double*</tt> and <tt>double* const</tt>.
+    Teuchos::ArrayView<impl_scalar_type> getViewNonConst (const RowInfo& rowinfo) const;
 
   private:
     /// \brief Constant view of all entries (including extra space) in
@@ -3176,8 +3189,12 @@ namespace Tpetra {
     /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
+    ///
+    /// This method is \c const because it doesn't change allocations
+    /// (and thus doesn't change pointers).  Consider the difference
+    /// between <tt>const double*</tt> and <tt>double* const</tt>.
     Kokkos::View<impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
-    getRowViewNonConst (const RowInfo& rowInfo);
+    getRowViewNonConst (const RowInfo& rowInfo) const;
 
   protected:
 
