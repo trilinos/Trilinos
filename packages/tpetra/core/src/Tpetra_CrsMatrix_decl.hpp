@@ -1024,7 +1024,7 @@ namespace Tpetra {
     /// in the return value.
     ///
     /// This overload of the method takes the column indices and
-    /// values as Teuchos::ArrayView.  See below for an overload that
+    /// values as Teuchos::ArrayView.  See above for an overload that
     /// takes Kokkos::View instead.
     ///
     /// \param localRow [in] Local index of a row.  This row
