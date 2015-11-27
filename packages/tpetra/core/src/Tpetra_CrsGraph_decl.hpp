@@ -1854,6 +1854,112 @@ namespace Tpetra {
       return numValid;
     }
 
+    /// \brief Implementation detail of CrsMatrix::sumIntoGlobalValues.
+    ///
+    /// \tparam Scalar The type of each entry in the sparse matrix.
+    /// \tparam InputMemorySpace Kokkos memory space / device in which
+    ///   the input data live.  This may differ from the memory space
+    ///   in which the current matrix values (rowVals) live.
+    /// \tparam ValsMemorySpace Kokkos memory space / device in which
+    ///   the matrix's current values live.  This may differ from the
+    ///   memory space in which the input data (inds and newVals)
+    ///   live.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo on the index of the
+    ///   local row of the matrix to modify.
+    /// \param rowVals [in/out] On input: Values of the row of the
+    ///   sparse matrix to modify.  On output: The modified values.
+    /// \param inds [in] Global column indices of that row to modify.
+    /// \param newVals [in] For each k, increment the value in rowVals
+    ///   corresponding to global column index inds[k] by newVals[k].
+    ///
+    /// \return The number of valid input column indices.  In case of
+    ///   error other than one or more invalid column indices, this
+    ///   method returns
+    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    template<class Scalar, class InputMemorySpace, class ValsMemorySpace>
+    LocalOrdinal
+    sumIntoGlobalValues (const RowInfo& rowInfo,
+                         const Kokkos::View<Scalar*, ValsMemorySpace,
+                           Kokkos::MemoryUnmanaged>& rowVals,
+                         const Kokkos::View<const GlobalOrdinal*, InputMemorySpace,
+                           Kokkos::MemoryUnmanaged>& inds,
+                         const Kokkos::View<const Scalar*, InputMemorySpace,
+                           Kokkos::MemoryUnmanaged>& newVals,
+                         const bool atomic = useAtomicUpdatesByDefault) const
+    {
+      typedef LocalOrdinal LO;
+
+      if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The dimensions of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      size_t hint = 0; // guess at the index's relative offset in the row
+      LO numValid = 0; // number of valid input column indices
+
+      // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
+      // accurately, it assumes that the host execution space can
+      // access data in both InputMemorySpace and ValsMemorySpace.
+
+      if (isLocallyIndexed ()) {
+        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
+        // pointer does NOT change its reference count.  Thus, this
+        // code is still thread safe.
+        if (colMap_.is_null ()) {
+          // NO input column indices are valid in this case, since if
+          // the column Map is null on the calling process, then the
+          // calling process owns no graph entries.
+          return numValid;
+        }
+        // Get a view of the column indices in the row.  This amortizes
+        // the cost of getting the view over all the entries of inds.
+        auto colInds = this->getLocalKokkosRowView (rowInfo);
+        const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const LO lclColInd = this->colMap_->getLocalElement (inds(j));
+          if (lclColInd != LINV) {
+            const size_t k =
+              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
+            if (k != STINV) {
+              if (atomic) {
+                Kokkos::atomic_add (&rowVals(k), newVals(j));
+              }
+              else {
+                rowVals(k) += newVals(j);
+              }
+              hint = k+1;
+              numValid++;
+            }
+          }
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        const LO numElts = static_cast<LO> (inds.dimension_0 ());
+        for (LO j = 0; j < numElts; ++j) {
+          const size_t k = findGlobalIndex (rowInfo, inds(j), hint);
+          if (k != STINV) {
+            if (atomic) {
+              Kokkos::atomic_add (&rowVals(k), newVals(j));
+            }
+            else {
+              rowVals(k) += newVals(j);
+            }
+            hint = k+1;
+            numValid++;
+          }
+        }
+      }
+      // If the graph is neither locally nor globally indexed on the
+      // calling process, that means the calling process has no graph
+      // entries.  Thus, none of the input column indices are valid.
+
+      return numValid;
+    }
+
     /// \brief Transform the given values using global indices.
     ///
     /// \param rowInfo [in] Information about a given row of the graph.

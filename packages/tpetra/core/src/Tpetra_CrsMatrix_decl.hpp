@@ -921,6 +921,19 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals);
 
+  private:
+    /// \brief Whether sumIntoLocalValues should use atomic updates by
+    ///   default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_HAVE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_HAVE_SERIAL
+
+  public:
     /// \brief Sum into one or more sparse matrix entries, using
     ///   global indices.
     ///
@@ -956,22 +969,10 @@ namespace Tpetra {
     /// meaning as replaceGlobalValues() (which see).
     LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                         const ArrayView<const GlobalOrdinal> &cols,
-                         const ArrayView<const Scalar>        &vals);
+                         const Teuchos::ArrayView<const GlobalOrdinal>& cols,
+                         const Teuchos::ArrayView<const Scalar>& vals,
+                         const bool atomic = useAtomicUpdatesByDefault);
 
-  private:
-    /// \brief Whether sumIntoLocalValues should use atomic updates by
-    ///   default.
-    ///
-    /// \warning This is an implementation detail.
-    static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
-      ! std::is_same<execution_space, Kokkos::Serial>::value;
-#else
-      true;
-#endif // KOKKOS_HAVE_SERIAL
-
-  public:
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
     ///

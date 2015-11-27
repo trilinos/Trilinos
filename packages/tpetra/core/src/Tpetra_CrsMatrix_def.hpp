@@ -2079,26 +2079,31 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   sumIntoGlobalValues (const GlobalOrdinal globalRow,
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                       const Teuchos::ArrayView<const Scalar>& values)
-
+                       const Teuchos::ArrayView<const Scalar>& values,
+                       const bool atomic)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
-    typedef LocalOrdinal LO;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
     typedef impl_scalar_type ST;
-    typedef std::plus<Scalar> f_type;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<LO*, DD>::HostMirror::device_type HD;
 
     if (! isFillActive ()) {
       // Fill must be active in order to call this method.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    else if (values.size () != indices.size ()) {
-      // The sizes of values and indices must match.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
 
-    const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
+    // mfh 26 Nov 2015: Avoid calling getRowMap() or getCrsGraph(),
+    // because they touch RCP's reference count, which is not thread
+    // safe.  Dereferencing an RCP or calling op-> does not touch the
+    // reference count.
+    const LO lrow = this->staticGraph_.is_null () ?
+      myGraph_->rowMap_->getLocalElement (globalRow) :
+      staticGraph_->rowMap_->getLocalElement (globalRow);
+    //const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
+
     if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
       // globalRow is not in the row Map, so stash the given entries
       // away in a separate data structure.  globalAssemble() (called
@@ -2117,20 +2122,18 @@ namespace Tpetra {
     if (staticGraph_.is_null ()) {
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
-    const crs_graph_type& graph = *staticGraph_;
-    RowInfo rowInfo = graph.getRowInfo (lrow);
-    if (indices.size () == 0) {
-      return static_cast<LO> (0);
-    }
-    else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-      return graph.template transformGlobalValues<ST, f_type> (rowInfo,
-                                                               curVals,
-                                                               indices,
-                                                               valsIn,
-                                                               f_type ());
-    }
+    const RowInfo rowInfo = this->staticGraph_->getRowInfo (lrow);
+
+    auto curVals = this->getRowViewNonConst (rowInfo);
+    const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
+    View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
+    View<const GO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
+                                                 indices.size ());
+    return staticGraph_->template sumIntoGlobalValues<ST, HD, DD> (rowInfo,
+                                                                   curVals,
+                                                                   indsIn,
+                                                                   valsIn,
+                                                                   atomic);
   }
 
 
@@ -2191,7 +2194,7 @@ namespace Tpetra {
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
 
-    const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+    const RowInfo rowInfo = this->staticGraph_->getRowInfo (localRow);
     if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // The input local row is invalid on the calling process,
       // which means that the calling process summed 0 entries.
