@@ -1988,12 +1988,15 @@ namespace Tpetra {
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
-      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
       typedef LocalOrdinal LO;
       const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-      const size_type numElts = inds.size ();
       size_t hint = 0; // guess at the index's relative offset in the row
       LO numValid = 0; // number of valid input column indices
+
+      if (newVals.size () != inds.size ()) {
+        // The sizes of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
 
       if (isLocallyIndexed ()) {
         // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
@@ -2007,8 +2010,8 @@ namespace Tpetra {
         }
         const map_type& colMap = *colMap_;
         const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
-
-        for (size_type j = 0; j < numElts; ++j) {
+        const LO numElts = static_cast<LO> (inds.size ());
+        for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = colMap.getLocalElement (inds[j]);
           if (lclColInd != LINV) {
             const size_t k = findLocalIndex (rowInfo, lclColInd, hint);
@@ -2027,12 +2030,13 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
-        for (size_type j = 0; j < numElts; ++j) {
+        const LO numElts = static_cast<LO> (inds.size ());
+        for (LO j = 0; j < numElts; ++j) {
           const size_t k = findGlobalIndex (rowInfo, inds[j], hint);
           if (k != STINV) {
             if (atomic) {
-                const Scalar newVal = f (rowVals[k], newVals[j]);
-                Kokkos::atomic_assign (&rowVals[k], newVal);
+              const Scalar newVal = f (rowVals[k], newVals[j]);
+              Kokkos::atomic_assign (&rowVals[k], newVal);
             }
             else {
               rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -2139,6 +2143,20 @@ namespace Tpetra {
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const size_t myRow) const;
+
+    /// \brief Get information about the locally owned row with global
+    ///   index gblRow.
+    ///
+    /// If \c gblRow is not locally owned, the \c localRow field of
+    /// the returned struct is
+    /// <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt>.
+    ///
+    /// The point of this method is to fuse the global-to-local row
+    /// index lookup for checking whether \c gblRow is locally owned,
+    /// with other error checking that getRowInfo() does.  This avoids
+    /// an extra global-to-local index lookup in methods like
+    /// CrsMatrix::replaceGlobalValues().
+    RowInfo getRowInfoFromGlobalRowIndex (const GlobalOrdinal gblRow) const;
 
     /// \brief Get a const, nonowned, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =

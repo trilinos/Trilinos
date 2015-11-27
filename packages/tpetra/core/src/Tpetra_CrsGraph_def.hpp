@@ -1472,6 +1472,83 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  RowInfo
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getRowInfoFromGlobalRowIndex (const GlobalOrdinal gblRow) const
+  {
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    RowInfo ret;
+    if (! this->hasRowInfo () || this->rowMap_.is_null ()) {
+      ret.localRow = STINV;
+      ret.allocSize = 0;
+      ret.numEntries = 0;
+      ret.offset1D = STINV;
+      return ret;
+    }
+    const LocalOrdinal myRow = this->rowMap_->getLocalElement (gblRow);
+    if (myRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+      ret.localRow = STINV;
+      ret.allocSize = 0;
+      ret.numEntries = 0;
+      ret.offset1D = STINV;
+      return ret;
+    }
+
+    ret.localRow = static_cast<size_t> (myRow);
+    if (nodeNumAllocated_ != 0 && nodeNumAllocated_ != STINV) {
+      // graph data structures have the info that we need
+      //
+      // if static graph, offsets tell us the allocation size
+      if (getProfileType() == StaticProfile) {
+        ret.offset1D  = k_rowPtrs_(myRow);
+        ret.allocSize = k_rowPtrs_(myRow+1) - k_rowPtrs_(myRow);
+        if (k_numRowEntries_.dimension_0 () == 0) {
+          ret.numEntries = ret.allocSize;
+        } else {
+          ret.numEntries = k_numRowEntries_.h_view(myRow);
+        }
+      }
+      else {
+        ret.offset1D = STINV;
+        if (isLocallyIndexed ()) {
+          ret.allocSize = lclInds2D_[myRow].size ();
+        }
+        else {
+          ret.allocSize = gblInds2D_[myRow].size ();
+        }
+        ret.numEntries = k_numRowEntries_.h_view(myRow);
+      }
+    }
+    else if (nodeNumAllocated_ == 0) {
+      // have performed allocation, but the graph has no allocation or entries
+      ret.allocSize = 0;
+      ret.numEntries = 0;
+      ret.offset1D = STINV;
+    }
+    else if (! indicesAreAllocated ()) {
+      // haven't performed allocation yet; probably won't hit this code
+      //
+      // FIXME (mfh 07 Aug 2014) We want graph's constructors to
+      // allocate, rather than doing lazy allocation at first insert.
+      // This will make k_numAllocPerRow_ obsolete.
+      const bool useNumAllocPerRow = (k_numAllocPerRow_.dimension_0 () != 0);
+      if (useNumAllocPerRow) {
+        ret.allocSize = k_numAllocPerRow_.h_view(myRow);
+      } else {
+        ret.allocSize = numAllocForAllRows_;
+      }
+      ret.numEntries = 0;
+      ret.offset1D = STINV;
+    }
+    else {
+      // don't know how we ended up here...
+      TEUCHOS_TEST_FOR_EXCEPT(true);
+    }
+    return ret;
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   staticAssertions () const

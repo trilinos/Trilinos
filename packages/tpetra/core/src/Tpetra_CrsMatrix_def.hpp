@@ -2028,7 +2028,6 @@ namespace Tpetra {
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                        const Teuchos::ArrayView<const Scalar>& values)
   {
-    using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
     typedef LocalOrdinal LO;
@@ -2038,39 +2037,29 @@ namespace Tpetra {
     // corresponding entry of values.
     typedef Tpetra::project2nd<ST, ST> f_type;
 
-    if (! isFillActive ()) {
-      // Fill must be active in order to call this method.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-    else if (values.size () != indices.size ()) {
-      // The sizes of values and indices must match.
+    if (! isFillActive () || staticGraph_.is_null ()) {
+      // Fill must be active and the "nonconst" graph must exist.
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
 
-    const LO lrow = this->getRowMap ()->getLocalElement (globalRow);
-    if (lrow == Teuchos::OrdinalTraits<LO>::invalid ()) {
+    const RowInfo rowInfo =
+      staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
       return static_cast<LO> (0);
     }
-
-    if (staticGraph_.is_null ()) {
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-    const crs_graph_type& graph = *staticGraph_;
-    RowInfo rowInfo = graph.getRowInfo (lrow);
-    if (indices.size () == 0) {
-      return static_cast<LO> (0);
-    }
-    else {
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-      return graph.template transformGlobalValues<ST, f_type> (rowInfo,
-                                                               curVals,
-                                                               indices,
-                                                               valsIn,
-                                                               f_type ());
-    }
+    ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
+    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
+    // It doesn't make sense for replace to use atomic updates, since
+    // the result of multiple threads replacing the same value
+    // concurrently is undefined.
+    return staticGraph_->template transformGlobalValues<ST, f_type> (rowInfo,
+                                                                     curVals,
+                                                                     indices,
+                                                                     valsIn,
+                                                                     f_type (),
+                                                                     false);
   }
 
 
