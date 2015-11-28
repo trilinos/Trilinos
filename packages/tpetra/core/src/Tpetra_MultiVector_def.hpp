@@ -1121,7 +1121,7 @@ namespace Tpetra {
 
       if (lclNumRows == 0) {
         const dot_type zero = Kokkos::Details::ArithTraits<dot_type>::zero ();
-        Kokkos::Impl::ViewFill<RV> (theDots, zero);
+        Kokkos::deep_copy(theDots, zero);
       }
       else { // lclNumRows != 0
         if (constantStrideX && constantStrideY) {
@@ -1529,7 +1529,7 @@ namespace Tpetra {
 
       if (lclNumRows == 0) {
         const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
-        Kokkos::Impl::ViewFill<RV> (theNorms, zeroMag);
+        Kokkos::deep_copy(theNorms, zeroMag);
       }
       else { // lclNumRows != 0
         if (constantStride) {
@@ -1883,7 +1883,7 @@ namespace Tpetra {
   putScalar (const Scalar& alpha)
   {
     using Kokkos::ALL;
-    using Kokkos::Impl::ViewFill;
+    using Kokkos::deep_copy;
     using Kokkos::subview;
     typedef typename dual_view_type::t_dev::device_type DMS;
     typedef typename dual_view_type::t_host::device_type HMS;
@@ -1913,18 +1913,16 @@ namespace Tpetra {
       if (numVecs == 1) {
         vec_view_type X_0 =
           subview (X, ALL (), static_cast<size_t> (0));
-        // The constructor of ViewFill invokes the functor in
-        // parallel, so we don't have to call parallel_for ourselves.
-        ViewFill<vec_view_type> vf (X_0, theAlpha);
+        deep_copy (X_0, theAlpha);
       }
       else if (isConstantStride ()) {
-        ViewFill<mv_view_type> vf (X, theAlpha);
+        deep_copy (X, theAlpha);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
           vec_view_type X_k = subview (X, ALL (), col);
-          ViewFill<vec_view_type> vf (X_k, theAlpha);
+          deep_copy (X_k, theAlpha);
         }
       }
     }
@@ -1940,18 +1938,16 @@ namespace Tpetra {
       if (numVecs == 1) {
         vec_view_type X_0 =
           subview (X, ALL (), static_cast<size_t> (0));
-        // The constructor of ViewFill invokes the functor in
-        // parallel, so we don't have to call parallel_for ourselves.
-        ViewFill<vec_view_type> vf (X_0, theAlpha);
+        deep_copy (X_0, theAlpha);
       }
       else if (isConstantStride ()) {
-        ViewFill<mv_view_type> vf (X, theAlpha);
+        deep_copy (X, theAlpha);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
           vec_view_type X_k = subview (X, ALL (), col);
-          ViewFill<vec_view_type> vf (X_k, theAlpha);
+          deep_copy (X_k, theAlpha);
         }
       }
     }

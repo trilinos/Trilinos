@@ -3319,7 +3319,7 @@ namespace {
     // differ even in the finite field Z_2.)
     typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
     X_lcl.template modify<HMS> ();
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_host> (X_lcl_h, ONE);
+    Kokkos::deep_copy (X_lcl_h, ONE);
     X_lcl.template sync<DMS> ();
 
     // Now compute the inf-norms of the columns of X.  (We want a
@@ -3379,7 +3379,7 @@ namespace {
     // Modify the Kokkos::DualView's data on the host.
     typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
     X_lcl.template modify<HMS> ();
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_host> (X_lcl_h, ONE);
+    Kokkos::deep_copy (X_lcl_h, ONE);
     X_lcl.template sync<DMS> ();
 
     // Make sure that the DualView actually sync'd.
@@ -3421,7 +3421,7 @@ namespace {
     // for variety, we do this on the device, not on the host.
     typename dual_view_type::t_dev X_lcl_d = X_lcl.template view<DMS> ();
     X_lcl.template modify<DMS> ();
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl_d, TWO);
+    Kokkos::deep_copy (X_lcl_d, TWO);
     X_lcl.template sync<HMS> ();
 
     // Make sure that the DualView actually sync'd.
@@ -3503,7 +3503,7 @@ namespace {
     typename dual_view_type::t_dev X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::View's data.
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl, ONE);
+    Kokkos::deep_copy (X_lcl, ONE);
 
     // Hand off the Kokkos::View to a Tpetra::MultiVector.
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -3527,7 +3527,7 @@ namespace {
     // Now change the values in X_lcl.  X_gbl should see them.  Be
     // sure to tell X_gbl that we want to modify its data on device.
     X_gbl.template modify<DMS> ();
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_dev> (X_lcl, TWO);
+    Kokkos::deep_copy (X_lcl, TWO);
 
     // Tpetra::MultiVector::normInf _should_ either read from the most
     // recently modified memory space, or do a sync to device first.
@@ -3550,7 +3550,7 @@ namespace {
       X_gbl.template getLocalView<HMS> ();
     X_gbl.template modify<HMS> ();
 
-    Kokkos::Impl::ViewFill<typename dual_view_type::t_host> (X_host, THREE);
+    Kokkos::deep_copy (X_host, THREE);
     X_gbl.template sync<DMS> ();
 
     // FIXME (mfh 01 Mar 2015) We avoid writing a separate functor to
