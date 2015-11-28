@@ -48,7 +48,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
+#include <MueLu_ConfigDefs.hpp>
 
 #if defined(HAVE_MUELU_AMESOS)
 #include <Amesos_config.h>
@@ -57,30 +57,31 @@
 #include <Amesos2_config.h>
 #endif
 
-#include "MueLu_TestHelpers.hpp"
+#include <MueLu_TestHelpers.hpp>
 
-#include "MueLu_Exceptions.hpp"
+#include <MueLu_Exceptions.hpp>
 
-#include "MueLu_FactoryFactory.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_FactoryFactory.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
 #define RUN  FactoryFactory().BuildFactory(paramValue, factoryMapIn, factoryManagersIn)
 
-  typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap;
-  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
   // This is not a real unit test, because output of BuildFactory is not verified. But anyway, it still useful.
-  TEUCHOS_UNIT_TEST(FactoryFactory, BuildFactory)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+
     // Determine Epetra/Tpetra mode
     Teuchos::CommandLineProcessor clp(false);
     Xpetra::Parameters xpetraParameters(clp);
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+    typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap;
+    typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
 
     ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/FactoryFactory/"), std::string(".xml"));
 
@@ -187,6 +188,10 @@ namespace MueLuTests {
       }
     }
   }
+
+#define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FactoryFactory, BuildFactory, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
 

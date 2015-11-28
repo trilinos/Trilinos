@@ -43,14 +43,12 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_TestHelpers.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <MueLu_TestHelpers.hpp>
 #include "MueLu_TestHelpersSmoothers.hpp"
 
-#include "MueLu_Ifpack2Smoother.hpp"
-#include "MueLu_Utilities.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_Ifpack2Smoother.hpp>
+#include <MueLu_Utilities.hpp>
 
 /*
    Comments about tests with hard coded results:
@@ -62,13 +60,14 @@
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
   // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, NotSetup, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       Ifpack2Smoother smoother("RELAXATION", Teuchos::ParameterList());
@@ -78,10 +77,16 @@ namespace MueLuTests {
   }
 
   // Tests interface to Ifpack2's Gauss-Seidel preconditioner.
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_GaussSeidel)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_GaussSeidel, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-
+      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+        out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
+        return;
+      }
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: type", "Gauss-Seidel");
       paramList.set("relaxation: sweeps", (int) 1);
@@ -90,7 +95,7 @@ namespace MueLuTests {
 
       Ifpack2Smoother smoother("RELAXATION", paramList);
 
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
@@ -107,10 +112,17 @@ namespace MueLuTests {
   } // GaussSeidel
 
   // Tests interface to Ifpack2's Gauss-Seidel preconditioner.
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_GaussSeidel2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_GaussSeidel2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
+      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+        out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
+        return;
+      }
       Teuchos::ParameterList paramList;
       paramList.set("relaxation: type", "Gauss-Seidel");
       paramList.set("relaxation: sweeps", (int) 10);
@@ -119,7 +131,7 @@ namespace MueLuTests {
 
       Ifpack2Smoother smoother("RELAXATION",paramList);
 
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       switch (comm->getSize()) {
@@ -138,9 +150,17 @@ namespace MueLuTests {
   } // GaussSeidel
 
   // Tests interface to Ifpack2's Chebyshev preconditioner
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_Chebyshev)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_Chebyshev, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+        out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
+        return;
+      }
 
       Teuchos::ParameterList paramList;
       paramList.set("chebyshev: degree", (int) 3);
@@ -150,7 +170,7 @@ namespace MueLuTests {
       paramList.set("chebyshev: zero starting solution", false);
       Ifpack2Smoother smoother("CHEBYSHEV",paramList);
 
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       TEST_FLOATING_EQUALITY(residualNorms, 5.269156e-01, 1e-7);  // Compare to residual reported by ML
 
@@ -158,8 +178,11 @@ namespace MueLuTests {
   } // Chebyshev
 
   // Tests interface to Ifpack2's ILU(0) preconditioner.
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, HardCodedResult_ILU)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_ILU, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       //FIXME this will probably fail in parallel b/c it becomes block Jacobi
@@ -167,7 +190,7 @@ namespace MueLuTests {
       Teuchos::ParameterList paramList;
       Ifpack2Smoother smoother("ILUT",paramList);
 
-      Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X0_RandomRHS(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if (comm->getSize() == 1) {
@@ -180,8 +203,12 @@ namespace MueLuTests {
   } // ILU
 
   // Tests two sweeps of ILUT in Ifpack2
-  TEUCHOS_UNIT_TEST(Ifpack2Smoother, ILU_TwoSweeps)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, ILU_TwoSweeps, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
       //FIXME this will probably fail in parallel b/c it becomes block Jacobi
@@ -203,7 +230,7 @@ namespace MueLuTests {
       X->randomize();
 
       // Normalize X
-      Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1); X->norm2(norms);
+      Array<magnitude_type> norms(1); X->norm2(norms);
       X->scale(1/norms[0]);
 
       // Compute RHS corresponding to X
@@ -216,13 +243,13 @@ namespace MueLuTests {
       out << "||RHS|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
       out << "solve with zero initial guess" << std::endl;
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> initialNorms(1); X->norm2(initialNorms);
+      Teuchos::Array<magnitude_type> initialNorms(1); X->norm2(initialNorms);
       out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
 
       smoother.Apply(*X, *RHS, true);  //zero initial guess
 
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> finalNorms(1); X->norm2(finalNorms);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<magnitude_type> finalNorms(1); X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
@@ -234,7 +261,7 @@ namespace MueLuTests {
       smoother.Apply(*X, *RHS, false); //nonzero initial guess
 
       X->norm2(finalNorms);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
+      Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm2[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
@@ -248,5 +275,15 @@ namespace MueLuTests {
 
     }
   } // ILU
+
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,NotSetup,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel2,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_Chebyshev,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_ILU,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,ILU_TwoSweeps,SC,LO,GO,NO)
+
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

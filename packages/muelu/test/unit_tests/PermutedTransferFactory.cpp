@@ -43,39 +43,37 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Teuchos_UnitTestHarness.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
 
-#include "MueLu_config.hpp"
+#include <MueLu_config.hpp>
 
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_Utilities.hpp"
-#include "MueLu_RebalanceTransferFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_NullspaceFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_FactoryManager.hpp"
-#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
-
-#include "Galeri_XpetraUtils.hpp"
+#include <MueLu_Utilities.hpp>
+#include <MueLu_RebalanceTransferFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_NullspaceFactory.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_FactoryManager.hpp>
+#include <MueLu_ZoltanInterface.hpp>
+#include <MueLu_RepartitionFactory.hpp>
+#include <MueLu_MultiVectorTransferFactory.hpp>
+#include <Galeri_XpetraUtils.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  TEUCHOS_UNIT_TEST(RebalanceTransfer, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceTransfer, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<RebalanceTransferFactory> ptFactory = rcp(new RebalanceTransferFactory());
@@ -84,8 +82,11 @@ namespace MueLuTests {
 
 #ifdef NEVER_TESTED_TODO
 
-  TEUCHOS_UNIT_TEST(RebalanceTransfer, Build1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceTransfer, Build1, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     Level fineLevel, coarseLevel;
@@ -133,6 +134,12 @@ namespace MueLuTests {
   } // Constructor test
 
 #endif
+
+#define MUELU_ETI_GROUP(SC, LO, GO, NO) \
+     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceTransfer, Constructor, SC, LO, GO, NO)
+#include <MueLu_ETI_4arg.hpp>
+
+
 
 } // namespace MueLuTests
 

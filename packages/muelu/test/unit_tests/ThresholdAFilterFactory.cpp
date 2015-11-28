@@ -51,28 +51,27 @@
  */
 
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_config.hpp"
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Version.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <MueLu_config.hpp>
+#include <MueLu_ConfigDefs.hpp>
+#include <MueLu_Version.hpp>
 
-#include "MueLu_Utilities.hpp"
+#include <MueLu_Utilities.hpp>
 
-#include "MueLu_NoFactory.hpp"
+#include <MueLu_NoFactory.hpp>
 
-#include "MueLu_TestHelpers.hpp"
+#include <MueLu_TestHelpers.hpp>
 
-#include "MueLu_Level.hpp"
-#include "MueLu_ThresholdAFilterFactory.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_Level.hpp>
+#include <MueLu_ThresholdAFilterFactory.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  TEUCHOS_UNIT_TEST(ThresholdAFilterFactory, Basic)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ThresholdAFilterFactory, Basic, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     Level aLevel;
@@ -113,5 +112,11 @@ namespace MueLuTests {
 
 
   }
+
+#define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ThresholdAFilterFactory, Basic, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+
+#include <MueLu_ETI_4arg.hpp>
+
 } // end MueLuTests namespace
 

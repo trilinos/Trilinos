@@ -43,40 +43,42 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_TestHelpers.hpp"
-#include "MueLu_Version.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+
+#include <MueLu_TestHelpers.hpp>
+#include <MueLu_Version.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 
-#include "MueLu_FactoryManagerBase.hpp"
-#include "MueLu_Hierarchy.hpp"
-#include "MueLu_PFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_AmesosSmoother.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_TpetraOperator.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_FactoryManagerBase.hpp>
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_PFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
+#include <MueLu_TransPFactory.hpp>
+#include <MueLu_RAPFactory.hpp>
+#include <MueLu_AmesosSmoother.hpp>
+#include <MueLu_TrilinosSmoother.hpp>
+#include <MueLu_SmootherFactory.hpp>
+#include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_TentativePFactory.hpp>
+#include <MueLu_AmesosSmoother.hpp>
+#include <MueLu_Utilities.hpp>
+#include <MueLu_TpetraOperator.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-  typedef MueLu::TpetraOperator<SC,LO,GO,NO> TpetraOperator;
-
-  TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
+    typedef MueLu::TpetraOperator<SC,LO,GO,NO> muelu_tpetra_operator_type;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 
     if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra )
     {
@@ -87,7 +89,8 @@ namespace MueLuTests {
 
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
       nullSpace->putScalar( (SC) 1.0);
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      //Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<magnitude_type> norms(1);
       nullSpace->norm1(norms);
 
       RCP<Hierarchy> H = rcp(new Hierarchy());
@@ -100,7 +103,7 @@ namespace MueLuTests {
 
 
       // ------------- test Tpetra Operator wrapping MueLu hierarchy ------------
-      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+      RCP<muelu_tpetra_operator_type> tH = rcp(new muelu_tpetra_operator_type(H));
 
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
       RCP<MultiVector> X1   = MultiVectorFactory::Build(Op->getRowMap(), 1);
@@ -148,7 +151,15 @@ namespace MueLuTests {
       out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
 
     }
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
+#   endif
 
   } //Apply
+
+#define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraOperator, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+
+#include <MueLu_ETI_4arg.hpp>
 
 }//namespace MueLuTests
