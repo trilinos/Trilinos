@@ -2459,7 +2459,7 @@ namespace {
 #endif
   }
 
-  ////
+  //// TODO this code should be generalized
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MultiVector, BadCombinations, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
@@ -2481,31 +2481,34 @@ namespace {
     MV m1n1(map1,1), m1n2(map1,2), m2n2(map2,2), m1n2_2(map1,2);
     Array<Scalar> dots(1);
     Array<Mag>    norms(1);
-    // FINISH: test multiply (both), reciprocalMultiply
-    TEST_THROW(m1n2.dot(m1n1,dots()), std::runtime_error); // dot
-    TEST_THROW(m1n2.dot(m2n2,dots()), std::runtime_error);
-    TEST_THROW(m1n2.abs(m1n1), std::runtime_error);       // abs
-    TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
-    TEST_THROW(m1n2.abs(m1n1), std::runtime_error);       // abs
-    TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
-    //TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs  // TODO only available with Tpetra??
-    //TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
-    TEST_THROW(m1n2.update(rnd,m1n1,rnd), std::runtime_error); // update(alpha,A,beta)
-    TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
-    TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
-    TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
-    TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-    TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-    TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-    TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-    TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
-    TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
-    TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
-    TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
-    TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
-    TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
-    TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
-    TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
+    // TODO: what exceptions are on the other processors thrown?
+    if(myImageID==0) {
+      // FINISH: test multiply (both), reciprocalMultiply
+      TEST_THROW(m1n2.dot(m1n1,dots()), std::runtime_error); // dot
+      TEST_THROW(m1n2.dot(m2n2,dots()), std::runtime_error);
+      TEST_THROW(m1n2.abs(m1n1), std::runtime_error);       // abs
+      TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
+      TEST_THROW(m1n2.abs(m1n1), std::runtime_error);       // abs
+      TEST_THROW(m1n2.abs(m2n2), std::runtime_error);
+      //TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs  // TODO only available with Tpetra??
+      //TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
+      TEST_THROW(m1n2.update(rnd,m1n1,rnd), std::runtime_error); // update(alpha,A,beta)
+      TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
+      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
+      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
+      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
+      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
+      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
+      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
+      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
+      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
+      TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
+      TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
+    }
 #endif
   }
 
