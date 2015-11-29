@@ -1979,28 +1979,24 @@ struct Axpby<SCALAR, \
              Kokkos::View<const SCALAR**, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                          Kokkos::Impl::ViewDefault>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
              SCALAR, \
              Kokkos::View<SCALAR**, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                          Kokkos::Impl::ViewDefault>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
              2> \
 { \
   typedef SCALAR AV; \
   typedef Kokkos::View<const SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> XMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
   typedef SCALAR BV; \
   typedef Kokkos::View<SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
   typedef YMV::size_type size_type; \
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
@@ -2024,28 +2020,24 @@ struct Axpby<SCALAR, \
              Kokkos::View<const SCALAR*, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                          Kokkos::Impl::ViewDefault>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
              SCALAR, \
              Kokkos::View<SCALAR*, \
                           LAYOUT, \
                           Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                          Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                          Kokkos::Impl::ViewDefault>, \
+                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
              1> \
 { \
   typedef SCALAR AV; \
   typedef Kokkos::View<const SCALAR*, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> XV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef SCALAR BV; \
   typedef Kokkos::View<SCALAR*, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
   typedef YV::size_type size_type; \
   typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
   typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
@@ -2115,14 +2107,12 @@ Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       SCALAR, \
       Kokkos::View<SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       2>:: \
 axpby (const XMV::non_const_value_type& alpha, \
        const XMV& X, const YMV::non_const_value_type& beta, \
@@ -2167,14 +2157,12 @@ Axpby<SCALAR, \
       Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       SCALAR, \
       Kokkos::View<SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       2>:: \
 axpby (const XMV::non_const_value_type& alpha, \
        const XMV& X, const YMV::non_const_value_type& beta, \
@@ -2239,14 +2227,12 @@ Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       SCALAR, \
       Kokkos::View<SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       1>:: \
 axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
 { \
@@ -2296,14 +2282,12 @@ Axpby<SCALAR, \
       Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       SCALAR, \
       Kokkos::View<SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       1>:: \
 axpby (const AV& alpha, const XV& X, const AV& beta, const YV& Y) \
 { \

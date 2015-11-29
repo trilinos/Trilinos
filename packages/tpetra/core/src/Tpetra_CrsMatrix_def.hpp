@@ -2671,7 +2671,7 @@ namespace Tpetra {
         // semantics, this would be the place to mark memory as
         // modified.
         typedef typename local_matrix_type::values_type values_type;
-        Kokkos::Impl::ViewFill<values_type> (k_values1D_, theAlpha);
+        Kokkos::deep_copy (k_values1D_, theAlpha);
       }
       else if (profType == DynamicProfile) {
         for (size_t row = 0; row < nlrs; ++row) {

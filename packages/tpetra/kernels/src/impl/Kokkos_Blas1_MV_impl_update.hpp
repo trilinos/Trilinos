@@ -683,35 +683,29 @@ template<> \
 struct Update<Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<SCALAR**, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               2> \
 { \
   typedef Kokkos::View<const SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> XMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV; \
   typedef Kokkos::View<const SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV; \
   typedef Kokkos::View<SCALAR**, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> ZMV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > ZMV; \
   typedef XMV::size_type size_type; \
   typedef Kokkos::Details::ArithTraits<XMV::non_const_value_type> ATA; \
   typedef Kokkos::Details::ArithTraits<YMV::non_const_value_type> ATB; \
@@ -768,18 +762,15 @@ void \
 Update<Kokkos::View<const SCALAR**, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       Kokkos::View<const SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       Kokkos::View<SCALAR**, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       2>:: \
 update (const XMV::non_const_value_type& alpha, const XMV& X, \
         const YMV::non_const_value_type& beta, const YMV& Y, \
@@ -832,35 +823,29 @@ template<> \
 struct Update<Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<const SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               Kokkos::View<SCALAR*, \
                            LAYOUT, \
                            Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                           Kokkos::Impl::ViewDefault>, \
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
               1> \
 { \
   typedef Kokkos::View<const SCALAR*, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> XV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef Kokkos::View<const SCALAR*, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> YV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
   typedef Kokkos::View<SCALAR*, \
                        LAYOUT, \
                        Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                       Kokkos::Impl::ViewDefault> ZV; \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > ZV; \
   typedef XV::size_type size_type; \
   typedef Kokkos::Details::ArithTraits<XV::non_const_value_type> ATA; \
   typedef Kokkos::Details::ArithTraits<YV::non_const_value_type> ATB; \
@@ -917,18 +902,15 @@ void \
 Update<Kokkos::View<const SCALAR*, \
                     LAYOUT, \
                     Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                    Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                    Kokkos::Impl::ViewDefault>, \
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       Kokkos::View<const SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       Kokkos::View<SCALAR*, \
                    LAYOUT, \
                    Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>, \
-                   Kokkos::Impl::ViewDefault>, \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
       1>:: \
 update (const XV::non_const_value_type& alpha, const XV& X, \
         const YV::non_const_value_type& beta, const YV& Y, \

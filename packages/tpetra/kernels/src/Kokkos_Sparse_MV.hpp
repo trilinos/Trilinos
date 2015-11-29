@@ -121,14 +121,12 @@ spmv(const char mode[],
       typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
                                   Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
       typename XVector::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>,
-      typename XVector::specialize> XVector_SubInternal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
     typedef Kokkos::View<typename YVector::non_const_value_type*,
       typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
                                   Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
       typename YVector::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename YVector::specialize> YVector_SubInternal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
 
     XVector_SubInternal x_i = Kokkos::subview(x,Kokkos::ALL(),0);
     YVector_SubInternal y_i = Kokkos::subview(y,Kokkos::ALL(),0);
@@ -149,13 +147,11 @@ spmv(const char mode[],
     typedef Kokkos::View<typename XVector::const_value_type**,
       typename XVector::array_layout,
       typename XVector::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>,
-      typename XVector::specialize> XVector_Internal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_Internal;
     typedef Kokkos::View<typename YVector::non_const_value_type**,
       typename YVector::array_layout,
       typename YVector::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename YVector::specialize> YVector_Internal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_Internal;
 
     XVector_Internal x_i = x;
     YVector_Internal y_i = y;
@@ -163,13 +159,11 @@ spmv(const char mode[],
     typedef Kokkos::View<typename alpha_view_type::const_value_type*,
       typename alpha_view_type::array_layout,
       typename alpha_view_type::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename alpha_view_type::specialize> alpha_view_type_Internal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > alpha_view_type_Internal;
     typedef Kokkos::View<typename beta_view_type::const_value_type*,
       typename beta_view_type::array_layout,
       typename beta_view_type::device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-      typename beta_view_type::specialize> beta_view_type_Internal;
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> > beta_view_type_Internal;
 
     //alpha_view_type_Internal alpha_c = alpha;
     //beta_view_type_Internal  beta_c  = beta;
@@ -177,7 +171,6 @@ spmv(const char mode[],
                          typename alpha_view_type_Internal::array_layout,
                          typename alpha_view_type_Internal::device_type,
                          typename alpha_view_type_Internal::memory_traits,
-                         typename alpha_view_type_Internal::specialize,
                          typename AMatrix_Internal::value_type,
                          typename AMatrix_Internal::ordinal_type,
                          typename AMatrix_Internal::device_type,
@@ -187,17 +180,14 @@ spmv(const char mode[],
                          typename XVector_Internal::array_layout,
                          typename XVector_Internal::device_type,
                          typename XVector_Internal::memory_traits,
-                         typename XVector_Internal::specialize,
                          typename beta_view_type_Internal::value_type*,
                          typename beta_view_type_Internal::array_layout,
                          typename beta_view_type_Internal::device_type,
                          typename beta_view_type_Internal::memory_traits,
-                         typename beta_view_type_Internal::specialize,
                          typename YVector_Internal::value_type**,
                          typename YVector_Internal::array_layout,
                          typename YVector_Internal::device_type,
-                         typename YVector_Internal::memory_traits,
-                         typename YVector_Internal::specialize>::spmv_mv(mode,alpha_in,A,x,beta_in,y);
+                         typename YVector_Internal::memory_traits>::spmv_mv(mode,alpha_in,A,x,beta_in,y);
   }
 }
 

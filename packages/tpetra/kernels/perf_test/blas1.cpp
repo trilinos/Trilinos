@@ -92,12 +92,12 @@ benchmarkKokkos (std::ostream& out,
   {
     TimeMonitor timeMon (*vecFillTimer);
     for (int k = 0; k < numTrials; ++k) {
-      Kokkos::Impl::ViewFill<vector_type> (x, 1.0);
+      Kokkos::deep_copy (x, 1.0);
     }
   }
 
   vector_type y ("y", lclNumRows);
-  Kokkos::Impl::ViewFill<vector_type> (y, -1.0);
+  Kokkos::deep_copy (y, -1.0);
 
   // Benchmark computing the dot product of two Vectors.
   double dotResults[2];

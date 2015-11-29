@@ -3360,7 +3360,7 @@ V_ElementWiseMultiply (const typename CVector::const_value_type& c,
 
   if (ab == zero_A && c == zero_C) {
     // Overwrite m_C with zeros, per BLAS update rules.
-    Kokkos::Impl::ViewFill<CVector> (C, zero_C);
+    Kokkos::deep_copy (C, zero_C);
   }
   else {
     V_ElementWiseMultiplyFunctor<CVector, AVector, BVector> op (c, C, ab, A, B);

@@ -65,8 +65,7 @@ void
 Fill<Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR**,
                   Kokkos::LayoutLeft,
                   Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-                  Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                  Kokkos::Impl::ViewDefault>,
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >,
      2>::
 fill (const XMV& X, const XMV::non_const_value_type& val)
 {
@@ -89,11 +88,10 @@ fill (const XMV& X, const XMV::non_const_value_type& val)
       typedef Kokkos::View<KOKKOSBLAS_IMPL_MV_SCALAR*,
         Kokkos::LayoutLeft,
         Kokkos::Device<KOKKOSBLAS_IMPL_MV_EXEC_SPACE, KOKKOSBLAS_IMPL_MV_MEM_SPACE>,
-        Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-        Kokkos::Impl::ViewDefault> XV1D;
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV1D;
 
       XV1D X1D (X.ptr_on_device (), X.capacity ());
-      Kokkos::Impl::ViewFill<XV1D> (X1D, val);
+      Kokkos::deep_copy(X1D, val);
 
       // mfh 14 Apr 2015: This didn't actually help performance over
       // using ViewFill on the 1-D View.  The key thing is using the
