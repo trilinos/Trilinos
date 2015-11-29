@@ -289,7 +289,7 @@ def executePull(gitRepo, inOptions, baseTestDir, outFile, pullFromRepo=None,
     # modified files will be wrong.  I don't know why this is but if instead
     # you do a raw 'git pull', then the right list of files shows up.
   if doRebase:
-    cmnd += " && "+inOptions.git+" rebase --against origin/"+inOptions.currentBranch
+    cmnd += " && "+inOptions.git+" rebase origin/"+inOptions.currentBranch
   outFileFullPath = os.path.join(baseTestDir, outFile)
   (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
