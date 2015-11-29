@@ -495,6 +495,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, SC, LO, GO, Node ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, SC, LO, GO, Node)
 
+// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
+// build Serial, then the code inside the #ifdef HAVE_XPETRA_SERIAL
+// ... #endif below causes linker errors.  My temporary fix is to
+// include TpetraCore_config.h to get HAVE_TPETRA_SERIAL, and test
+// that.
+
+#ifdef HAVE_XPETRA_TPETRA
+#include "TpetraCore_config.h"
+#ifdef HAVE_TPETRA_SERIAL
+
 // TODO: fix me
 #ifdef HAVE_XPETRA_SERIAL
 typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
@@ -503,5 +513,6 @@ typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 #endif
 
-
+#endif
+#endif
 }

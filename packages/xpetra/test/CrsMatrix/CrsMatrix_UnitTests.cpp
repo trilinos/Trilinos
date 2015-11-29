@@ -1176,10 +1176,15 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_KOKKOS )
 
 #if defined(HAVE_XPETRA_EPETRA)
 
+// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
+// build Serial, then the code inside the #ifdef ... #endif causes
+// linker errors.
+#ifdef HAVE_TPETRA_SERIAL
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 XPETRA_EPETRA_TYPES ( double, int, int, EpetraNode )
 UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( double, int, int, EpetraNode )
 UNIT_TEST_GROUP_ORDINAL_KOKKOS( double, int, int, EpetraNode )
+#endif // HAVE_TPETRA_SERIAL
 
 #endif
 

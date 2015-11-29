@@ -330,11 +330,17 @@ namespace {
 
 
 #if defined(HAVE_XPETRA_EPETRA)
+
+// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
+// build Serial, then the code inside the #ifdef ... #endif causes
+// linker errors.
+#ifdef HAVE_TPETRA_SERIAL
   typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
   #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
   XP_THYRAMULTIVECTOR_INSTANT(double,int,int,EpetraNode)
   #endif
+#endif // HAVE_TPETRA_SERIAL
 
   // Thyra has support for Epetra only but not for Epetra64
   //#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
