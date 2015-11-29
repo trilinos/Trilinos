@@ -2670,7 +2670,6 @@ namespace Tpetra {
         // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
         // semantics, this would be the place to mark memory as
         // modified.
-        typedef typename local_matrix_type::values_type values_type;
         Kokkos::deep_copy (k_values1D_, theAlpha);
       }
       else if (profType == DynamicProfile) {
