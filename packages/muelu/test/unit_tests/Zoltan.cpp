@@ -97,8 +97,8 @@ namespace MueLuTests {
     Level level;
     RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
     level.SetFactoryManager(factoryHandler);
-    int nx=7;
-    int ny=nx;
+    GO nx=7;
+    GO ny=nx;
     GO numGlobalElements = nx*ny;
     size_t maxEntriesPerRow=30;
 
@@ -115,11 +115,14 @@ namespace MueLuTests {
     RCP<Xpetra::Vector<LO,LO,GO,NO> > entriesPerRow = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map,false);
     Teuchos::ArrayRCP<LO> eprData = entriesPerRow->getDataNonConst(0);
     for (typename Teuchos::ArrayRCP<LO>::iterator i=eprData.begin(); i!=eprData.end(); ++i) {
-      *i = (LO)(std::floor(((ST::magnitude(ST::random())+1)*0.5*maxEntriesPerRow)+1));
+      *i = (LO)(std::floor(((Teuchos::ScalarTraits<double>::random()+1)*0.5*maxEntriesPerRow)+1));
     }
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
+
+    GO zero = Teuchos::OrdinalTraits<GO>::zero();
+    GO one = Teuchos::OrdinalTraits<GO>::one();
 
     Teuchos::Array<Scalar> vals(maxEntriesPerRow);
     Teuchos::Array<GO> cols(maxEntriesPerRow);
@@ -129,7 +132,7 @@ namespace MueLuTests {
       //stick in ones for values
       for (LO j=0; j< eprData[i]; ++j) vals[j] = ST::one();
       //figure out valid column indices
-      GO start = std::max(Teuchos::as<GO>(myGlobalElements[i]-eprData[i]+1),Teuchos::as<GO>(0));
+      GO start = std::max(myGlobalElements[i]-eprData[i]+one,zero);
       for (LO j=0; j< eprData[i]; ++j) cols[j] = start+j;
       A->insertGlobalValues(myGlobalElements[i], iv, av);
     }
@@ -142,10 +145,11 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
-    RCP<MultiVector> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",rowMap,list);
+    typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    RCP<double_multivector_type> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,double_multivector_type>("2D",rowMap,list);
     level.Set("Coordinates",XYZ);
 
-    LO numPartitions = comm->getSize();
+    GO numPartitions = comm->getSize();
     level.Set("number of partitions",numPartitions);
     RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
     //zoltan->SetNumberOfPartitions(numPartitions);
@@ -251,8 +255,8 @@ namespace MueLuTests {
     //
     //Now write everything to a comma-separate list that ParaView can grok
     //
-    Teuchos::ArrayRCP<const Scalar> X = XYZ->getData(0);
-    Teuchos::ArrayRCP<const Scalar> Y = XYZ->getData(1);
+    Teuchos::ArrayRCP<const double> X = XYZ->getData(0);
+    Teuchos::ArrayRCP<const double> Y = XYZ->getData(1);
     Teuchos::ArrayRCP<const GO> D = decomposition->getData(0);
     RCP<std::ofstream> outFile;
     std::string fileName = "zoltanResults.csv";
@@ -544,8 +548,8 @@ namespace MueLuTests {
     //
     //Now write everything to a comma-separate list that ParaView can grok
     //
-    Teuchos::ArrayRCP<const Scalar> X = XYZ->getData(0);
-    Teuchos::ArrayRCP<const Scalar> Y = XYZ->getData(1);
+    Teuchos::ArrayRCP<const double> X = XYZ->getData(0);
+    Teuchos::ArrayRCP<const double> Y = XYZ->getData(1);
     Teuchos::ArrayRCP<const GO> D = decomposition->getData(0);
     RCP<std::ofstream> outFile;
     std::string fileName = "zoltanResults.csv";
