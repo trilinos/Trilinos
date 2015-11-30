@@ -437,9 +437,6 @@ namespace Belos {
       using Teuchos::Comm;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      using Teuchos::REDUCE_SUM;
-      using Teuchos::reduceAll;
-      using Teuchos::SerialComm;
       using Teuchos::TimeMonitor;
       typedef ::Tpetra::Map<LO,GO,Node> map_type;
 
@@ -484,10 +481,12 @@ namespace Belos {
         return;
       }
 
-      RCP<const Comm<int> > serialComm (new SerialComm<int> ());
-      // create local map with serial comm
+      // get comm
+      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
+
+      // create local map with comm
       RCP<const map_type> LocalMap =
-        rcp (new map_type (numRowsC, 0, serialComm, LocallyReplicated,
+        rcp (new map_type (numRowsC, 0, pcomm, LocallyReplicated,
                            A.getMap ()->getNode ()));
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
@@ -496,36 +495,15 @@ namespace Belos {
       // multiply result into local multivector
       C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B,
                      Teuchos::ScalarTraits<Scalar>::zero ());
-      // get comm
-      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
+
       // create arrayview encapsulating the Teuchos::SerialDenseMatrix
       Teuchos::ArrayView<Scalar> C_view (C.values (), strideC * numColsC);
-      if (pcomm->getSize () == 1) {
-        // No accumulation to do; simply extract the multivector data
-        // into C.  Extract a copy of the result into the array view
-        // (and therefore, the SerialDenseMatrix).
-        C_mv.get1dCopy (C_view, strideC);
-      }
-      else {
-        // get a const host view of the data in C_mv
-        Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView ();
-        if (strideC == numRowsC) {
-          // sum-all into C
-          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
-                                 C_mv_view.getRawPtr (), C_view.getRawPtr ());
-        }
-        else {
-          // sum-all into temp, copy into C
-          Teuchos::Array<Scalar> destBuff (numColsC * numRowsC);
-          reduceAll<int,Scalar> (*pcomm, REDUCE_SUM, numColsC*numRowsC,
-                                 C_mv_view.getRawPtr (), destBuff.getRawPtr ());
-          for (int j = 0; j < numColsC; ++j) {
-            for (int i = 0; i < numRowsC; ++i) {
-              C_view[strideC*j+i] = destBuff[numRowsC*j+i];
-            }
-          }
-        }
-      }
+
+      // No accumulation to do (since Tpetra has already done it);
+      // simply extract the multivector data into C.
+      // Extract a copy of the result into the array view
+      // (and therefore, the SerialDenseMatrix).
+      C_mv.get1dCopy (C_view, strideC);
     }
 
     //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
