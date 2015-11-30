@@ -595,13 +595,13 @@ vi:
 					}
 					break;
 				case 'k':	/* up */
-					strcpy(gl_buf, hist_prev());
+				        strncpy(gl_buf, hist_prev(), GL_BUF_SIZE-1);
 					if (gl_in_hook)
 					    gl_in_hook(gl_buf);
 					gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
 					break;
 				case 'j':	/* down */
-					strcpy(gl_buf, hist_next());
+					strncpy(gl_buf, hist_next(), GL_BUF_SIZE-1);
 					if (gl_in_hook)
 					    gl_in_hook(gl_buf);
 					gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -750,7 +750,7 @@ vi_break:
 	      case '\014': gl_redraw();				/* ^L */
 		break;
 	      case '\016': 					/* ^N */
-		strcpy(gl_buf, hist_next());
+		strncpy(gl_buf, hist_next(), GL_BUF_SIZE-1);
                 if (gl_in_hook)
 	            gl_in_hook(gl_buf);
 		gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -758,7 +758,7 @@ vi_break:
 	      case '\017': gl_overwrite = !gl_overwrite;       	/* ^O */
 		break;
 	      case '\020': 					/* ^P */
-		strcpy(gl_buf, hist_prev());
+		strncpy(gl_buf, hist_prev(), GL_BUF_SIZE-1);
                 if (gl_in_hook)
 	            gl_in_hook(gl_buf);
 		gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -778,13 +778,13 @@ vi_break:
 		if (c == '[') {
 		    switch(c = gl_getc()) {
 		      case 'A':             			/* up */
-		        strcpy(gl_buf, hist_prev());
+		        strncpy(gl_buf, hist_prev(), GL_BUF_SIZE-1);
                         if (gl_in_hook)
 	                    gl_in_hook(gl_buf);
 		        gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
 		        break;
 		      case 'B':                         	/* down */
-		        strcpy(gl_buf, hist_next());
+		        strncpy(gl_buf, hist_next(), GL_BUF_SIZE-1);
                         if (gl_in_hook)
 	                    gl_in_hook(gl_buf);
 		        gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -981,7 +981,7 @@ gl_kill(int pos)
 /* delete from pos to the end of line */
 {
     if (pos < gl_cnt) {
-	strcpy(gl_killbuf, gl_buf + pos);
+	strncpy(gl_killbuf, gl_buf + pos, GL_BUF_SIZE-1);
 	gl_buf[pos] = '\0';
 	gl_fixup(gl_prompt, pos, pos);
     } else
@@ -1093,14 +1093,14 @@ gl_fixup(const char *prompt, int change, int cursor)
 	gl_pos = gl_cnt = gl_shift = off_right = off_left = 0;
 	gl_putc('\r');
 	gl_puts(prompt);
-	strcpy(last_prompt, prompt);
+	strncpy(last_prompt, prompt, 80-1);
 	change = 0;
         gl_width = gl_termw - gl_strlen(prompt);
     } else if (strcmp(prompt, last_prompt) != 0) {
 	l1 = gl_strlen(last_prompt);
 	l2 = gl_strlen(prompt);
 	gl_cnt = gl_cnt + l1 - l2;
-	strcpy(last_prompt, prompt);
+	strncpy(last_prompt, prompt, 80-1);
 	gl_putc('\r');
 	gl_puts(prompt);
 	gl_pos = gl_shift;
@@ -1425,7 +1425,7 @@ search_addchar(int c)
 	    gl_buf[0] = 0;
 	    hist_pos = hist_last;
 	}
-	strcpy(gl_buf, hist_buf[hist_pos]);
+	strncpy(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE-1);
     }
     if ((loc = strstr(gl_buf, search_string)) != 0) {
 	gl_fixup(search_prompt, 0, loc - gl_buf);
@@ -1472,7 +1472,7 @@ search_back(int new_search)
 	       gl_fixup(search_prompt, 0, 0);
 	       found = 1;
 	    } else if ((loc = strstr(p, search_string)) != 0) {
-	       strcpy(gl_buf, p);
+	       strncpy(gl_buf, p, GL_BUF_SIZE-1);
 	       gl_fixup(search_prompt, 0, loc - p);
 	       if (new_search)
 		   search_last = hist_pos;
@@ -1506,7 +1506,7 @@ search_forw(int new_search)
 	       gl_fixup(search_prompt, 0, 0);
 	       found = 1;
 	    } else if ((loc = strstr(p, search_string)) != 0) {
-	       strcpy(gl_buf, p);
+	       strncpy(gl_buf, p, GL_BUF_SIZE-1);
 	       gl_fixup(search_prompt, 0, loc - p);
 	       if (new_search)
 		   search_last = hist_pos;
@@ -1626,7 +1626,8 @@ gl_display_matches(int nused)
 			for (cp1 = buf + sizeof(buf); *--cp1 == ' '; )
 				;
 			++cp1;
-			*cp1 = '\0';
+			if (cp1 != buf+sizeof(buf))
+			  *cp1 = '\0';
 			gl_puts(buf);
 			gl_putc('\n');
 		}
@@ -2012,8 +2013,11 @@ gl_local_filename_completion_proc(const char *start, int idx)
 		if (strcmp(dirtoopen, "~") == 0) {
 			if (gl_home_dir == NULL)
 				gl_set_home_dir(NULL);
-			if (gl_home_dir == NULL)
-				return (NULL);
+			if (gl_home_dir == NULL) {
+			  if (dirtoopen1 != NULL)
+			    free(dirtoopen1);
+			  return (NULL);
+			}
 			dirtoopen = gl_home_dir;
 		}
 

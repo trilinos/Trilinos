@@ -512,7 +512,7 @@ unsigned ibuf[], *next;
       ctemp = *(p_temp+1); *(p_temp+1) = *(p_temp+2); *(p_temp+2) = ctemp;
 #endif
       temp = temp << (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
-      mask = ~(~0 << cdrcom_.KWRDSZ - *ibitlc ) << i;
+      mask = ~(~0 << (cdrcom_.KWRDSZ - *ibitlc) ) << i;
       *next = (mask & temp);   
       *ibitlc = i;
       (*iword)++;
