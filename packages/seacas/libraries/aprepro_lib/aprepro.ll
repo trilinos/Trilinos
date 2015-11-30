@@ -716,7 +716,7 @@ namespace SEAMS {
 
   void Scanner::add_include_file(const std::string &filename, bool must_exist)
   {
-    std::fstream *yytmp = nullptr;
+    std::fstream *yytmp = NULL;
     if (must_exist)
       yytmp = aprepro.open_file(filename.c_str(), "r");
     else

@@ -433,7 +433,7 @@ namespace SEAMS {
 
     else if (option.find("--comment") != std::string::npos || (option[1] == 'c')) {
       std::string comment = "";
-      // In short version, do not require equal sign (-c#)
+      // In short version, do not require equal sign (-c# -c// )
       if (option[1] == 'c' && option.length() > 2 && option[2] != '=') {
 	comment = option.substr(2);
       }
@@ -447,7 +447,6 @@ namespace SEAMS {
 	  ret_value = 1;
 	}
       }
-
       symrec *ptr = getsym("_C_");
       if (ptr != NULL) {
 	char *tmp = NULL;

@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       size_t index = arg.find_first_of('=');
       std::string var   = arg.substr(0,index);
       std::string value = arg.substr(index+1);
-      if (value[0] == '\"') {
+      if (value[0] == '\"' || value[0] == '\'') {
 	value = value.substr(1,value.length()-2);
 	aprepro.add_variable(var, value, true);  // Make it immutable
       } 
