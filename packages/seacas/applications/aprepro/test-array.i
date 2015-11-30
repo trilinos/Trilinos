@@ -13,10 +13,10 @@ a[{_r},{_c}] = {a[_r,_c++]}
 
 {b = make_array(3,2)}
 {NOECHO}
-{_row = rows(b)}
+{_therow = rows(b)}
 {_col = cols(b)}
 {_r = 0}
-{loop(_row)}
+{loop(_therow)}
 {_c = 0}
 {loop(_col)}
 {b[_r,_c] = 10*(_r+1) + _c++ + 1}
@@ -28,10 +28,10 @@ b = {print_array(b)}
 
 {c = make_array(2,3)}
 {NOECHO}
-{_row = rows(c)}
+{_therow = rows(c)}
 {_col = cols(c)}
 {_r = 0}
-{loop(_row)}
+{loop(_therow)}
 {_c = 0}
 {loop(_col)}
 {c[_r,_c] = 10*(_r+1) + _c++ + 1}
@@ -58,4 +58,8 @@ sum = e + e = {print_array(e+e)}
 e+e-2*e = {print_array(e+e-2*e)}
 
 scale = {print_array(e*1/e[0,0])}
+
+{asub = csv_array("rect.csv", 10)}
+{asub_rows = rows(asub)}
+{a_rows = rows(a)}
 {DUMP()}

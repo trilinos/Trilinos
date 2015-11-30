@@ -73,7 +73,7 @@ namespace SEAMS {
       isCollectingLoop(false), inIfdefGetvar(false)
   {
     ap_file_list.push(file_rec());
-    init_table("#");
+    init_table("$");
     aprepro = this;
 
     // Seed the random number generator...
@@ -434,8 +434,8 @@ namespace SEAMS {
     else if (option.find("--comment") != std::string::npos || (option[1] == 'c')) {
       std::string comment = "";
       // In short version, do not require equal sign (-c#)
-      if (option[1] == 'c' && option.length() == 3) {
-	comment = option[2];
+      if (option[1] == 'c' && option.length() > 2 && option[2] != '=') {
+	comment = option.substr(2);
       }
       else {
 	size_t index = option.find_first_of('=');
@@ -447,6 +447,7 @@ namespace SEAMS {
 	  ret_value = 1;
 	}
       }
+
       symrec *ptr = getsym("_C_");
       if (ptr != NULL) {
 	char *tmp = NULL;
