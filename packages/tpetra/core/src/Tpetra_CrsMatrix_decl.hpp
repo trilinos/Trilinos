@@ -2945,7 +2945,7 @@ namespace Tpetra {
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>& values,
                            BinaryFunction f,
-                           const bool atomic = useAtomicUpdatesByDefault)
+                           const bool atomic = useAtomicUpdatesByDefault) const
     {
       using Teuchos::ArrayView;
       using Teuchos::av_reinterpret_cast;
