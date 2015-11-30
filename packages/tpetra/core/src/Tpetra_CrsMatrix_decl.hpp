@@ -2947,15 +2947,17 @@ namespace Tpetra {
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
-      using Teuchos::ArrayView;
-      using Teuchos::av_reinterpret_cast;
-      typedef LocalOrdinal LO;
+      using Kokkos::MemoryUnmanaged;
+      using Kokkos::View;
       typedef impl_scalar_type ST;
       typedef BinaryFunction BF;
+      typedef GlobalOrdinal GO;
+      typedef device_type DD;
+      typedef typename View<GO*, DD>::HostMirror::device_type HD;
 
       if (! isFillActive () || staticGraph_.is_null ()) {
         // Fill must be active and the "nonconst" graph must exist.
-        return Teuchos::OrdinalTraits<LO>::invalid ();
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
       }
 
       const RowInfo rowInfo =
@@ -2963,16 +2965,21 @@ namespace Tpetra {
       if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
         // The calling process does not own this row, so it is not
         // allowed to modify its values.
-        return static_cast<LO> (0);
+        return static_cast<LocalOrdinal> (0);
       }
-      ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-      ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
-      return staticGraph_->template transformGlobalValues<ST, BF> (rowInfo,
-                                                                   curVals,
-                                                                   indices,
-                                                                   valsIn,
-                                                                   f,
-                                                                   atomic);
+      auto curRowValsK = this->getRowViewNonConst (rowInfo);
+
+      // The 'indices' and 'values' arrays come from the user, so we
+      // assume that they are host data, not device data.
+      const ST* const rawInputVals =
+        reinterpret_cast<const ST*> (values.getRawPtr ());
+      View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals, values.size ());
+      View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (), indices.size ());
+      return staticGraph_->template transformGlobalValues<ST, BF, HD, DD> (rowInfo,
+                                                                           curRowValsK,
+                                                                           inputIndsK,
+                                                                           inputValsK,
+                                                                           f, atomic);
     }
 
   private:
