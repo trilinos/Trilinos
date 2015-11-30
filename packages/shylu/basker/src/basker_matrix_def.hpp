@@ -1,0 +1,692 @@
+#ifndef BASKER_MATRIX_DEF_HPP
+#define BASKER_MATRIX_DEF_HPP
+
+#include "basker_matrix_decl.hpp"
+#include "basker_types.hpp"
+#include "basker_util.hpp"
+
+#include <assert.h>
+
+#ifdef BASKER_KOKKOS
+#include <Kokkos_Core.hpp>
+#include <impl/Kokkos_Timer.hpp>
+#else
+#include <omp.h>
+#endif
+
+
+#include <iostream>
+using namespace std;
+
+namespace BaskerNS
+{
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix()
+  {
+    label = "default called";
+    ncol  = 0;
+    nrow  = 0;
+    nnz   = 0;
+    v_fill = false;
+    tpivot = 0;
+    #ifdef BASKER_2DL
+    p_size = 0;
+    #endif
+    //printf("matrix init\n");
+  }//end BaskerMatrix()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix(string _label)
+  {
+    label = _label;
+    ncol  = 0;
+    nrow  = 0;
+    nnz   = 0;
+    v_fill = false;
+    tpivot = 0;
+    #ifdef BASKER_2DL
+    p_size = 0;
+    #endif
+  }//end BaskerMatrix()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
+  (Int _m, Int _n, Int _nnz,
+   Int *col_ptr, Int *row_idx, Entry *val
+   )
+  {
+    tpivot = 0;
+    #ifdef BASKER_2DL
+    p_size =0;
+    #endif
+
+    v_fill = false;
+    init_matrix("matrix", _m,_n,_nnz, col_ptr, row_idx, val);
+  }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
+  (
+   string label, Int _m, Int _n, Int _nnz,
+   Int *col_ptr, Int *row_idx, Entry *val
+   )
+  {
+    tpivot = 0;
+    #ifdef BASKER_2DL
+    p_size = 0;
+    #endif
+
+    v_fill = false;
+    init_matrix(label, _m,_n,_nnz, col_ptr, row_idx, val);
+  }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  BaskerMatrix<Int,Entry,Exe_Space>::~BaskerMatrix()
+  {}//end ~BaskerMatrix
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int,Entry,Exe_Space>::set_shape
+  (
+   Int _sr, Int _m, Int _sc, Int _n
+   )
+  {
+    
+    //printf("\n\n Set_Shape -- DEBUG \n");
+    //printf("sr: %d m: %d sc: %d n: %d \n",
+    //	   _sr, _m, _sc, _n);
+    //printf("\n\n");
+
+    srow = _sr;
+    nrow = _m;
+    scol = _sc;
+    ncol = _n;
+    nnz = 0;
+
+    //return 0;
+  }//end set_shape()
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int, Entry, Exe_Space>::copy_vec
+  (
+   Int* ptr, Int size, INT_1DARRAY a
+   )
+  {
+    //Kokkos::deep_copy(a.data, ptr);
+    for(Int i=0; i < size; i++)
+      {
+        a[i] = ptr[i];
+      }
+    //return 0;
+  }//end copy_vec(Int*, 1d)
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int, Entry, Exe_Space>::copy_vec
+  (
+   Entry* ptr, Int size, ENTRY_1DARRAY a
+   )
+  {
+    //Kokkos::deep_copy(a.data, ptr);
+    for(Int i=0; i < size; i++)
+      {
+        a[i] = ptr[i];
+      }
+    //return 0;
+  }//edn copy_vec(Entry*, 1d);
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int, Entry, Exe_Space>::init_col()
+  {
+    BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
+    MALLOC_INT_1DARRAY(col_ptr, ncol+1);
+    for(Int i = 0; i < ncol+1; i++)
+      {
+	col_ptr(i) = (Int) BASKER_MAX_IDX;
+      }
+
+  }//end init_col()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::clean_col()
+  {
+    for(Int i = 0; i < ncol+1; i++)
+      {
+	col_ptr(i) = (Int) BASKER_MAX_IDX;
+      }
+    nnz = 0;
+
+  }//end clean_col()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int, Entry, Exe_Space>::init_vectors
+  (
+   Int _m, Int _n, Int _nnz
+   )
+  {
+
+    //printf("start init_vectors\n");
+    nrow = _m;
+    ncol = _n;
+    nnz  = _nnz;
+    
+
+    //printf("init_vectors called\n");
+
+    if(ncol >= 0)
+      {
+	BASKER_ASSERT((ncol+1)>0, "matrix init_vector ncol");
+	MALLOC_INT_1DARRAY(col_ptr,ncol+1);
+	//col_ptr.malloc(label + "::col_ptr", ncol+1);
+      }
+    if(nnz > 0)
+      {
+	//cout << "init size " << nnz << endl;
+	BASKER_ASSERT(nnz > 0, "matrix init_vector nnz");
+	MALLOC_INT_1DARRAY(row_idx,nnz);
+        //row_idx.malloc(label + "::row_idx", nnz);
+	MALLOC_ENTRY_1DARRAY(val,nnz);
+        //val.malloc(label + "::row_idx", nnz);
+	#ifdef BASKER_INC_LVL
+	MALLOC_INT_1DARRAY(inc_lvl, nnz);
+	#endif
+
+      }
+    else if(nnz==0)
+      {
+
+	BASKER_ASSERT((nnz+1)>0, "nnz+1 init_vector ");
+	MALLOC_INT_1DARRAY(row_idx, nnz+1);
+	row_idx(0) = (Int) 0;
+        //row_idx.malloc(label + "::row_idx", nnz);
+	MALLOC_ENTRY_1DARRAY(val, nnz+1);
+	val(0) = (Entry) 0;
+        //val.malloc(label + "::row_idx", nnz);
+	#ifdef BASKER_INC_LVL
+	MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
+	#endif
+
+
+
+      }
+
+    //printf("done init_vector \n");
+    //return 0;
+  }//end init_vectors(Int, Int, Int)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int, Entry, Exe_Space>::init_matrix
+  (
+   string _label, Int _m, Int _n, 
+   Int _nnz
+   )
+  {
+    label = _label;
+    init_vectors(_m, _n, _nnz);
+    //return 0;
+  }//end init_matrix(string, Int, Int, Int)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_matrix
+  (
+   string _label, Int _m, Int _n, Int _nnz,
+   Int *_col_ptr, Int *_row_idx, Entry *_val
+   )
+  {
+    label = _label;
+    init_vectors(_m, _n, _nnz);
+    copy_vec(_col_ptr, _n+1,  col_ptr);
+    copy_vec(_row_idx, _nnz, row_idx);
+    copy_vec(_val,_nnz,     val);
+    //return 0;
+  }//end init_matrix(string with ptrs)
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int, Entry, Exe_Space>::init_matrix
+  (
+   string _label,
+   Int _sr, Int _m,
+   Int _sc, Int _n,
+   Int _nnz
+   )
+  {
+    //cout << "CALLED INIT MATRIX " << endl;
+    //cout <<_sr << " " << _sc << endl;
+    //cout << _m << " " << _n << " " << _nnz << endl;
+    //label = _label;
+    srow = _sr;
+    erow = srow + _m;
+    scol = _sc;
+    ecol = scol + _n;
+    //cout << "CALLED BEFORE INIT_VECTOR" << endl;
+    //cout << _m << " " << _n << " " << _nnz << endl;
+    init_vectors(_m, _n, _nnz);
+    //MALLOC_INT_1DARRAY(col_ptr, _n+1);
+    //cout << "after col_pter malloc " << endl;
+    //MALLOC_INT_1DARRAY(row_idx, _nnz);
+    //cout << "after row_idx malloc " << endl;
+    //MALLOC_ENTRY_1DARRAY(val, _nnz);
+    //cout << "after val malloc " << endl;
+    //return 0;
+  }//end init_matrix(Int, Int, Int, Int, Int)//srow and scol
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int BaskerMatrix<Int,Entry,Exe_Space>::copy_values
+  (
+   Int _sr, Int _m, 
+   Int _sc, Int _n, 
+   Int _nnz,
+   Int *_col_ptr, Int *_row_idx, Entry *_val)
+  {
+    if(nrow!=_m)
+      {
+	printf("Error: Changed m size\n");
+	return BASKER_ERROR;
+      }
+    if(ncol==_n)
+      {
+	copy_vec(_col_ptr, _n+1,  col_ptr);
+      }
+    else
+      {
+	printf("ERROR: Changed size \n");
+	return BASKER_ERROR;
+      }
+    if(nnz == _nnz)
+      {
+	copy_vec(_row_idx, _nnz, row_idx);
+	copy_vec(_val,_nnz,     val);
+      }
+    else
+      {
+	printf("ERROR: Changed number of entries \n");
+	return BASKER_ERROR;
+      }
+    
+    srow = _sr;
+    erow = srow + _m;
+    scol = _sc;
+    ecol = scol + _n;
+    
+    return 0;
+
+  }//end copy_values()
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int BaskerMatrix<Int,Entry,Exe_Space>::copy_values(Int _m, Int _n, Int _nnz,
+				   Int *_col_ptr, Int *_row_idx, Entry *_val)
+  {
+
+    if(nrow!=_m)
+      {
+	printf("Error: Changed m size\n");
+	return BASKER_ERROR;
+      }
+    if(ncol==_n)
+      {
+	copy_vec(_col_ptr, _n+1,  col_ptr);
+      }
+    else
+      {
+	printf("ERROR: Changed size \n");
+	return BASKER_ERROR;
+      }
+    if(nnz == _nnz)
+      {
+	copy_vec(_row_idx, _nnz, row_idx);
+	copy_vec(_val,_nnz,     val);
+      }
+    else
+      {
+	printf("ERROR: Changed number of entries \n");
+	return BASKER_ERROR;
+      }
+    
+    return 0;
+
+  }//end copy_values()
+
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::malloc_perm(Int n)
+  {
+    //lpinv.malloc(label+"::lperm", n);
+    //malloc(lpinv, n);
+    BASKER_ASSERT(n > 0, "matrix malloc_perm");
+    MALLOC_INT_1DARRAY(lpinv,n);
+    
+    //Fix later.
+    init_perm();
+    //return 0;
+  }//end init_perm(Int)
+
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry, Exe_Space>::init_perm()
+  {
+    for(Int i =0 ; i < nrow; i++)
+      {
+        //lpinv[i] = max_idx;
+	lpinv(i) = BASKER_MAX_IDX;
+      }
+  }//end init_perm
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::malloc_union_bit()
+  {
+    //union_bit.malloc("union_bit", row_idx.size());
+    //malloc(union_bit, nnz);
+    BASKER_ASSERT(nrow > 0, "matrix_malloc_union_bit");
+    MALLOC_BOOL_1DARRAY(union_bit, nrow);
+    //return 0;
+  }//end malloc_union_bit
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_union_bit()
+  {
+    //union_bit.init(0,false);
+    //Basker<Int,Entry,Exe_Space>::init_value(union_bit, nrow, false);
+    for(Int i =0 ; i <nrow; i++)
+      {
+	union_bit[i] = BASKER_FALSE;
+      }
+  }//end init_union_bit
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int,Entry,Exe_Space>::init_pend()
+  {
+    if(ncol > 0)
+      {
+	BASKER_ASSERT((ncol+1)>0, "matrix init_pend")
+	MALLOC_INT_1DARRAY(pend,ncol+1);
+	for(Int i =0; i < ncol+1; ++i)
+	  {
+	    pend(i) = BASKER_MAX_IDX;
+	  }
+      }
+  }//edn init_pend()
+
+
+ 
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int BaskerMatrix<Int,Entry,Exe_Space>::fill()
+  {
+    if(v_fill == true)
+      return -1;
+
+    //info();
+    //printf("ncol: %d \n", ncol);
+
+    for(Int i = 0; i < ncol+1; i++)
+      {
+        col_ptr(i) = 0;
+      }
+    //printf("Done int col_ptr \n");
+    for(Int i = 0; i < nnz; i++)
+      {
+	//row_idx[0] = 0;
+        row_idx(i) = 0;
+	//row_idx.operator[]<Int>(i) = 0;
+	//row_idx.template operator[]<Int>(i) = 0;
+      }
+    //printf("Done init row_idx\n");
+    for(Int i = 0; i < nnz; i++)
+      {
+        val(i) = 0;
+      }
+
+    #ifdef BASKER_INC_LVL
+    for(Int i = 0; i < nnz; i++)
+      {
+	inc_lvl(i) = 0;
+      }
+    #endif
+
+    //printf("Done init val \n");
+    v_fill = true;
+    return 0;
+  }
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::convert2D
+  (
+   BASKER_MATRIX &M,
+   BASKER_BOOL   alloc
+   )
+  {
+
+    //printf("Matrix convert 2D, alloc: %d \n", alloc);
+    //M.info();
+    //info();
+
+    if(nnz == 0)
+      {
+	for(Int i = 0; i < ncol+1; i++)
+	  {
+	    col_ptr(i) = 0;
+	  }
+
+	MALLOC_INT_1DARRAY(row_idx, 1);
+	row_idx(0) = (Int) 0;
+	MALLOC_ENTRY_1DARRAY(val, 1);
+	val(0) = (Entry) 0;
+
+
+	return;
+      }
+
+    //info();
+
+    //We could check some flag ??
+    //We assume a pre-scan has already happened
+    if(alloc == BASKER_TRUE)
+      {
+	if(nnz > 0)
+	  {
+	    BASKER_ASSERT(nnz > 0, "matrix row nnz 2");
+	    MALLOC_INT_1DARRAY(row_idx, nnz);
+	  }
+	else if(nnz ==0)
+	  {
+	    BASKER_ASSERT((nnz+1)>0, "matrix row nnz 3");
+	    MALLOC_INT_1DARRAY(row_idx, nnz+1);
+	  }
+      }
+    //init_value(row_idx, nnz, (Int) 0);
+    for(Int i = 0; i < nnz; ++i)
+      {
+	//printf("clear row_idx(%d) \n", i);
+	row_idx(i) = 0;
+      }
+
+    if(alloc == BASKER_TRUE)
+      {
+	if(nnz > 0)
+	  {
+	    BASKER_ASSERT(nnz > 0, "matrix nnz 4");
+	    MALLOC_ENTRY_1DARRAY(val, nnz);
+	  }
+	else if(nnz == 0)
+	  {
+	    BASKER_ASSERT((nnz+1) > 0, "matrix nnz 5");
+	    MALLOC_ENTRY_1DARRAY(val, nnz+1);
+	  }
+      }
+    //init_value(val, nnz, (Entry) 0);
+    for(Int i = 0; i < nnz; ++i)
+      {
+	val(i) = 0;
+      }
+    
+    Int temp_count = 0;
+    
+    for(Int k = scol; k < scol+ncol; ++k)
+      {
+	//note col_ptr[k-scol] contains the starting index
+
+	if(k > 118798 && k < 118802)
+	  {
+	    ///printf("starting point:k  %d %d \n", k, col_ptr[k-scol]);
+	  }
+
+	if(col_ptr(k-scol) == BASKER_MAX_IDX)
+	  {
+	    col_ptr(k-scol) = temp_count;
+	    //printf("continue called, k: %d  \n", k);
+	    continue;
+	  }
+  
+	for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
+	  {
+	    Int j = M.row_idx(i);
+	    //printf("i: %d j:%d \n", i,j);
+	    if(j >= srow+nrow)
+	      {
+		break;
+	      }
+	    //printf("writing row_dix: %d i: %d  val: %d nnz: %d srow: %d nrow: %d \n",
+	    //	   temp_count, i, j, nnz, 
+	    //	   srow, nrow);
+	    //BASKER_ASSERT(temp_count < nnz, "2DConvert, too many values");
+
+	    //row_idx[temp_count] = j;
+
+	    if(j-srow <0)
+	      {
+		printf("j: %ld srow: %ld k: %d idx: %d   \n",
+		       j, srow, k, i);
+		BASKER_ASSERT(0==1, "NO");
+	      }
+
+
+	    row_idx(temp_count) = j-srow;
+	    val(temp_count) = M.val(i);
+	    temp_count++;
+	  }
+	col_ptr(k-scol) = temp_count;
+	
+      }
+   
+    //col_ptr[0] = 0;
+    
+    //NO!!1
+    //Slide over the col counts
+    for(Int i = ncol; i > 0; i--)
+    {
+      col_ptr(i) = col_ptr(i-1);
+     }
+    col_ptr(0) = (Int) 0;
+    
+    //info();
+    //print();
+    
+  }//end convert2d(Matrix)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::info()
+  {
+
+    printf("\n Matrix Information: scol: %d ncol: %d srow: %d nrow: %d nnz: %d \n \n", 
+	   scol, ncol, srow, nrow, nnz);
+
+    /*
+    printf("\n Matrix Information: \n Label: %s \n ncol: %d nrow: %d nnz: %d \n \n", 
+	   label.c_str(), ncol, nrow, nnz);
+    */
+
+  }//end info()
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::print()
+  {
+    printf("\n Matrix Print: \n Label: %s sr: %d sc: %d \n", 
+	   label.c_str(), srow, scol);
+    printf("ncol: %d nnz: %d \n", 
+	   ncol, nnz);
+    printf(" col_ptr: ");
+    for(Int i=0; i < ncol+1; i++)
+      {
+        printf(" %d , ", col_ptr(i));
+      }
+    printf("\n row_idx: ");
+    for(Int i=0; i < nnz; i++)
+      {
+        printf(" %d , ", row_idx(i));
+      }
+    printf("\n val: ");
+    for(Int i=0; i < nnz; i++)
+      {
+        printf(" %e , " , val(i));
+      }
+    /*
+    printf("\n perm:  ");
+    for(Int i = 0; i < lpinv.size(); i++)
+      {
+        printf(" %d , ", lpinv[i]);
+      }
+    */
+
+    printf("\n END PRINT \n");
+
+  }//end print()
+
+}//end namespace basker
+
+
+namespace Kokkos
+{
+namespace Impl
+{
+
+//-------------------------------Specialization for BaskerMatrix------------------//
+  template <class ExecSpace, class Int, class Entry>
+  struct ViewDefaultConstruct<ExecSpace, BaskerNS::BaskerMatrix<Int,Entry,ExecSpace>, true>
+  {
+    typedef BaskerNS::BaskerMatrix<Int,Entry,ExecSpace> type;
+    type * const m_ptr;
+ 
+    
+    KOKKOS_FORCEINLINE_FUNCTION
+    void operator()(const typename ExecSpace::size_type& i) const
+    {
+      new(m_ptr+i) type();
+    }
+
+    ViewDefaultConstruct( type * pointer, size_t capacity )
+      :m_ptr( pointer )
+    {
+
+      Kokkos::RangePolicy<ExecSpace> range(0, capacity);
+      parallel_for(range, *this);
+      ExecSpace::fence();
+
+    }//end constructor
+   
+  };//end ViewDefault Construct BaskerMatrix
+
+}//end namespace imp
+}//end namepace kokkos
+
+#endif //end BASKER_MATRIX_DEF_HPP
