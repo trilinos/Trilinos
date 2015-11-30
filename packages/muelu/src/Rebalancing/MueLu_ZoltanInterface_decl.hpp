@@ -73,11 +73,11 @@ namespace MueLu {
   */
 
   //FIXME: this class should not be templated
-  template <class LocalOrdinal = typename Xpetra::Matrix<double>::local_ordinal_type,
+  template <class Scalar,
+            class LocalOrdinal = typename Xpetra::Matrix<double>::local_ordinal_type,
             class GlobalOrdinal = typename Xpetra::Matrix<double, LocalOrdinal>::global_ordinal_type,
             class Node = typename Xpetra::Matrix<double, LocalOrdinal, GlobalOrdinal>::node_type>
   class ZoltanInterface : public SingleLevelFactoryBase {
-    typedef double Scalar; // FIXME
 #undef MUELU_ZOLTANINTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
 
