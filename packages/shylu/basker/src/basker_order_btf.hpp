@@ -433,14 +433,14 @@ namespace BaskerNS
 
     
     
-    #ifdef BASKER_DEBUG_ORDER_BTF
+    //#ifdef BASKER_DEBUG_ORDER_BTF
     printf("Set Shape BTF_B: %d %d %d %d \n",
 	   BTF_B.srow, BTF_B.nrow,
 	   BTF_B.scol, BTF_B.ncol);
     printf("Set Shape BTF_C: %d %d %d %d \n",
 	   BTF_C.srow, BTF_C.nrow,
 	   BTF_C.scol, BTF_C.nrow);
-    #endif
+    //#endif
     
     //Scan and find nnz
     //We can do this much better!!!!

@@ -28,7 +28,8 @@
 
 //MACRO BTF METHOD
 #define BASKER_BTF_MAX_PERCENT  1.00
-#define BASKER_BTF_LARGE        500
+#define BASKER_BTF_LARGE        500  //Made smaller for unit test
+//#define BASKER_BTF_LARGE        100
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG
