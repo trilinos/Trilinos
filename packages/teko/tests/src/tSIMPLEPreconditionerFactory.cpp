@@ -47,7 +47,7 @@
 #include "Teko_Config.h"
 #include "tSIMPLEPreconditionerFactory.hpp"
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
-#include "Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_TimingsSIMPLEPreconditionerFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
 
 // Teuchos includes
@@ -245,6 +245,12 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
 
    status = test_result(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"result(diag)\" ... PASSED","   \"result(diag)\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_result_timings(verbosity,failstrm,0);
+   Teko_TEST_MSG(stdstrm,1,"   \"result_timings(diag)\" ... PASSED","   \"result_timings(diag)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -506,7 +512,7 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
    return allPassed;
 }
 
-  bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os,int use_blocking)
+bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os,int use_blocking)
 {
    bool status = false;
    bool allPassed = true;
@@ -607,6 +613,117 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
    status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   return allPassed;
+}
+
+bool tSIMPLEPreconditionerFactory::test_result_timings(int verbosity,std::ostream & os,int use_blocking)
+{
+   bool status = false;
+   bool allPassed = true;
+   double diff = -1000.0;
+ 
+   // Build block2x2 preconditioner
+   RCP<TimingsSIMPLEPreconditionerFactory> sFactory = rcp(new TimingsSIMPLEPreconditionerFactory(invF_,invS_,0.9));
+   const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory  = sFactory;
+   RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A_);
+   
+   if(use_blocking){
+     // parameter list for (1,1) block
+     Teuchos::ParameterList List,BlkList;   
+     BlkList.set("number of local blocks",1);
+     BlkList.set("block start index",&*block_starts_);
+     BlkList.set("block entry gids",&*block_gids_);
+     List.set("H options",BlkList);
+     List.set("Explicit Velocity Inverse Type","BlkDiag");
+     List.set("Inverse Pressure Type","Amesos");
+     sFactory->initializeFromParameterList(List);
+   }
+   else if(use_blocking==2){
+     Teuchos::ParameterList List,BlkList;   
+     BlkList.set("contiguous block size",2);
+     List.set("H options",BlkList);
+     List.set("Explicit Velocity Inverse Type","BlkDiag");
+     List.set("Inverse Pressure Type","Amesos");
+     sFactory->initializeFromParameterList(List);
+   }
+
+   // build linear operator
+   RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp();
+
+   const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
+   // construct a couple of vectors
+   Epetra_Vector ea(*map),eb(*map);
+   Epetra_Vector ef(*map),eg(*map);
+   
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A_->domain());
+   const RCP<const Thyra::MultiVectorBase<double> > z = BlockVector(ef,eg,A_->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A_->range(),1); 
+
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+
+   // now checks of the preconditioner (should be exact!)
+   /////////////////////////////////////////////////////////////////////////
+
+   // test vector [0 1 1 3]
+   ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
+   ef[0] = 0.987654320987654; ef[1] = 1.074074074074074;
+   eg[0] = 0.777777777777778; eg[1] = 1.066666666666667;
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tTimingsSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [-2 4 7 9]
+   ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
+   ef[0] = 4.197530864197531; ef[1] = 2.814814814814815;
+   eg[0] = 2.855555555555555; eg[1] = 3.633333333333334;
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tTimingsSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [1 0 0 -5]
+   ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
+   ef[0] = -0.567901234567901; ef[1] = -1.592592592592592;
+   eg[0] = -1.122222222222222; eg[1] = -1.333333333333333;
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tTimingsSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [4 -4 6 12]
+   ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
+   ef[0] = 0.518518518518519; ef[1] = 2.888888888888889;
+   eg[0] = 1.533333333333334; eg[1] = 5.600000000000001;
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tTimingsSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
