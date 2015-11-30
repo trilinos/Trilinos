@@ -43,7 +43,7 @@
 #ifndef __Panzer_LinearObjContainer_hpp__
 #define __Panzer_LinearObjContainer_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_GlobalEvaluationData.hpp"
 

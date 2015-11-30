@@ -46,7 +46,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"

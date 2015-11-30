@@ -48,7 +48,7 @@
 
 #include "Panzer_BlockedDOFManagerFactory.hpp"
 #include "Panzer_STK_Version.hpp"
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_DOFManagerFEI.hpp"

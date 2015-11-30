@@ -50,7 +50,7 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"

@@ -41,7 +41,7 @@
 // @HEADER
 
 #include <string>
-#include "Panzer_ConfigDefs.hpp"
+#include "Panzer_Version.hpp"
 
 namespace panzer {
   

@@ -43,7 +43,7 @@
 #ifndef EXAMPLE_SIMPLE_SOURCE_DECL_HPP
 #define EXAMPLE_SIMPLE_SOURCE_DECL_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"

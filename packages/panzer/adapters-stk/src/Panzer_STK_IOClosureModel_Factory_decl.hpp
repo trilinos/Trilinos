@@ -43,7 +43,7 @@
 #ifndef PANZER_STK_IOCLOSURE_MODEL_FACTORY_DECL_HPP
 #define PANZER_STK_IOCLOSURE_MODEL_FACTORY_DECL_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_ClosureModel_Factory.hpp"
 

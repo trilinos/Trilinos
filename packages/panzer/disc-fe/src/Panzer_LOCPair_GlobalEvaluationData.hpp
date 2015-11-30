@@ -43,7 +43,7 @@
 #ifndef __Panzer_LOCPair_GlobalEvaluationData_hpp__
 #define __Panzer_LOCPair_GlobalEvaluationData_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 

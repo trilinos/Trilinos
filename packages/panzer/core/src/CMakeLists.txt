@@ -2,8 +2,6 @@
 # A) Package-specific configuration options
 #
 
-TRIBITS_CONFIGURE_FILE(${PARENT_PACKAGE_NAME}_config.hpp)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -11,10 +9,10 @@ TRIBITS_CONFIGURE_FILE(${PARENT_PACKAGE_NAME}_config.hpp)
 SET(HEADERS "")
 SET(SOURCES "")
 
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
 SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PARENT_PACKAGE_NAME}_config.hpp
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.hpp
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

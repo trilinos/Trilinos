@@ -57,7 +57,7 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"

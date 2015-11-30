@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"

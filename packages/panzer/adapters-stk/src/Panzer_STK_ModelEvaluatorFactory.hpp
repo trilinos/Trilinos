@@ -54,7 +54,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_STK_MeshFactory.hpp"
 #include "Panzer_STK_Interface.hpp"

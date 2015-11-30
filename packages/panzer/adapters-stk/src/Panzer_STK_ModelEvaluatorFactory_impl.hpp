@@ -49,7 +49,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"

@@ -77,7 +77,7 @@
 #include "Panzer_FieldAggPattern.hpp"
 
 // Panzer_STK includes
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeTetMeshFactory.hpp"

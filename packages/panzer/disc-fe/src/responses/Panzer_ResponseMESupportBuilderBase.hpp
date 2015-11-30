@@ -3,7 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseEvaluatorFactory.hpp"

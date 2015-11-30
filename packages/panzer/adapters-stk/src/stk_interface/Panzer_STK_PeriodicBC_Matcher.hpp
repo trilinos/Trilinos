@@ -47,7 +47,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_STK_Version.hpp"
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 
 namespace panzer_stk_classic {

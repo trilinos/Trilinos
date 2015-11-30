@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Panzer_config.hpp>
+#include <PanzerAdaptersSTK_config.hpp>
 #include <Panzer_STK_Interface.hpp>
 
 #include <Teuchos_as.hpp>

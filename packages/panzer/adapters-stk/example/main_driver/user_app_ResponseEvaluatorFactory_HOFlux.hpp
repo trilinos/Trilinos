@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 
 namespace user_app {

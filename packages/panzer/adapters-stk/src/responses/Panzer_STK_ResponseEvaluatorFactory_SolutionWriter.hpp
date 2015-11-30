@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_BC.hpp"
 #include "Panzer_Traits.hpp"

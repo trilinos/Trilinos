@@ -54,7 +54,7 @@
 
 #include "Phalanx_FieldManager.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 

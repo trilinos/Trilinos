@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #ifdef PANZER_HAVE_FEI
 

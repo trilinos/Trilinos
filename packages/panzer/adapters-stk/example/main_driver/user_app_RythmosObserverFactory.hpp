@@ -43,7 +43,7 @@
 #ifndef USER_APP_RYTHMOS_OBSERVER_FACTORY_HPP
 #define USER_APP_RYTHMOS_OBSERVER_FACTORY_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_ResponseLibrary.hpp"

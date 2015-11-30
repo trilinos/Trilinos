@@ -48,7 +48,7 @@
 #include <string>
 #include <iostream>
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 

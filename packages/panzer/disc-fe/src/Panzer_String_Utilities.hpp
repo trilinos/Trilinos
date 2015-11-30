@@ -46,7 +46,7 @@
 #include <vector>
 #include <string>
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

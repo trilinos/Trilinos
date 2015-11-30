@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_Workset_Builder_decl.hpp"
 

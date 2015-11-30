@@ -16,7 +16,7 @@
 #ifndef PANZER_IOS_ALL_SAVER_HPP
 #define PANZER_IOS_ALL_SAVER_HPP
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include <iomanip>
 #include <iosfwd>  // for std::char_traits (declaration)
 

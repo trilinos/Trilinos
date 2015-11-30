@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_IOClosureModel_Factory.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"

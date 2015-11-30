@@ -41,7 +41,7 @@
 // @HEADER
 
 #include <string>
-#include "Panzer_STK_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 namespace panzer_stk_classic {
   

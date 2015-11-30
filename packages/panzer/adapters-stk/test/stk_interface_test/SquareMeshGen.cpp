@@ -44,7 +44,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"

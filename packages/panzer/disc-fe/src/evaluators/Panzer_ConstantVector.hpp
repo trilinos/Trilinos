@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_CONSTANT_VECTOR_HPP
 #define PANZER_EVALUATOR_CONSTANT_VECTOR_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"

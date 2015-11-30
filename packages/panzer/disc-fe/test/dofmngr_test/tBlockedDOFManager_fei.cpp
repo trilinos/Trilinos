@@ -52,7 +52,7 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"

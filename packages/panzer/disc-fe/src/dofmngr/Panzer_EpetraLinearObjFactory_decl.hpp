@@ -51,7 +51,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"

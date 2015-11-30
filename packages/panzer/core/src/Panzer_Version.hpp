@@ -44,7 +44,7 @@
 #define PANZER_VERSION_HPP
 
 #include <string>
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerCore_config.hpp"
 
 namespace panzer {
   

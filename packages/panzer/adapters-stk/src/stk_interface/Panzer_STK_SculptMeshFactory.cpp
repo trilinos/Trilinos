@@ -42,7 +42,7 @@
 
 #include <Panzer_STK_SculptMeshFactory.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Panzer_config.hpp>
+#include <PanzerAdaptersSTK_config.hpp>
 
 #include "elsa.h"
 using Teuchos::RCP;

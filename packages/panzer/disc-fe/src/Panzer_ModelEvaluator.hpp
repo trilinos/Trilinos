@@ -43,7 +43,7 @@
 #ifndef PANZER_MODEL_EVALUATOR_DECL_HPP
 #define PANZER_MODEL_EVALUATOR_DECL_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"

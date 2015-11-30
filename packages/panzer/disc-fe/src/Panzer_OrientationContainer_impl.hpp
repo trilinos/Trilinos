@@ -43,7 +43,7 @@
 #ifndef __Panzer_OrientationContainer_impl_hpp__
 #define __Panzer_OrientationContainer_impl_hpp__
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 

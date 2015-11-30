@@ -52,7 +52,7 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -71,7 +71,7 @@
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
 
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_Version.hpp"

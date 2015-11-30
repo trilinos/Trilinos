@@ -43,7 +43,7 @@
 #ifndef PANZER_EXPLICIT_MODEL_EVALUATOR_HPP
 #define PANZER_EXPLICIT_MODEL_EVALUATOR_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"

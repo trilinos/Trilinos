@@ -43,7 +43,7 @@
 #ifndef PANZER_PARAMETER_IMPL_HPP
 #define PANZER_PARAMETER_IMPL_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_ScalarParameterEntry.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
 #include <cstddef>

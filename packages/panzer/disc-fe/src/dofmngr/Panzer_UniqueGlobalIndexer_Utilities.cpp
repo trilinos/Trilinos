@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 

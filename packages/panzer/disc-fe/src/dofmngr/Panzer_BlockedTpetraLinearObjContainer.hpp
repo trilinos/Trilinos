@@ -43,7 +43,7 @@
 #ifndef __Panzer_BlockedTpetraLinearObjContainer_hpp__
 #define __Panzer_BlockedTpetraLinearObjContainer_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 // Tpetra includes
 #include "Tpetra_Vector.hpp"

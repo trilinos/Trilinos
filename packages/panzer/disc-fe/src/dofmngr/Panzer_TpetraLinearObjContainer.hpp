@@ -43,7 +43,7 @@
 #ifndef __Panzer_TpetraLinearObjContainer_hpp__
 #define __Panzer_TpetraLinearObjContainer_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include <map>
 

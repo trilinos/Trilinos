@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_PointValues2.hpp"
 #include "Panzer_PointValues2_impl.hpp"
 

@@ -46,7 +46,7 @@
 #include "NOX_Abstract_PrePostOperator.H"
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_ResponseLibrary.hpp"

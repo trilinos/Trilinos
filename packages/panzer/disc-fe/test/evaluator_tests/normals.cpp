@@ -53,7 +53,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues.hpp"
 #include "Panzer_CellData.hpp"

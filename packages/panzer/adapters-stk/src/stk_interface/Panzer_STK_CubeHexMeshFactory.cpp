@@ -42,7 +42,7 @@
 
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Panzer_config.hpp>
+#include <PanzerAdaptersSTK_config.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;

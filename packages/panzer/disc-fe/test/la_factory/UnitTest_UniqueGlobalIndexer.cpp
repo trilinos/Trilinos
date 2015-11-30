@@ -42,7 +42,7 @@
 
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_Traits.hpp"
 
 namespace panzer {

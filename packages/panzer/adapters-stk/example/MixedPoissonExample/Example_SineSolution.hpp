@@ -43,7 +43,7 @@
 #ifndef __Example_SineSolution_hpp__
 #define __Example_SineSolution_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"

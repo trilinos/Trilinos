@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_SetupLOWSFactory_impl_hpp__
 #define __Panzer_STK_SetupLOWSFactory_impl_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 

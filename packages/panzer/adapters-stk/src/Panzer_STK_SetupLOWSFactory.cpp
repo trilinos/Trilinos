@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_SetupLOWSFactory_impl.hpp"

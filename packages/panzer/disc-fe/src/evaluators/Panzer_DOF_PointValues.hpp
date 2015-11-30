@@ -47,7 +47,7 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_BasisValues2.hpp"
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"

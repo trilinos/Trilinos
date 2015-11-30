@@ -42,7 +42,7 @@
 
 
 #include <Teuchos_TimeMonitor.hpp>
-#include <Panzer_config.hpp>
+#include <PanzerAdaptersSTK_config.hpp>
 
 #include "Panzer_STK_PamgenReaderFactory.hpp"
 #include "Panzer_STK_Interface.hpp"

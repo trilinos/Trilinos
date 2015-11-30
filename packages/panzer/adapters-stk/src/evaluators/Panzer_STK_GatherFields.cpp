@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 

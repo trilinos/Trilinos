@@ -43,7 +43,7 @@
 #ifndef __Panzer_FieldSpy_hpp__
 #define __Panzer_FieldSpy_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"

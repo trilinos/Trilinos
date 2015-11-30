@@ -43,7 +43,7 @@
 #ifndef __Panzer_ThyraObjContainer_hpp__
 #define __Panzer_ThyraObjContainer_hpp__
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_dyn_cast.hpp"

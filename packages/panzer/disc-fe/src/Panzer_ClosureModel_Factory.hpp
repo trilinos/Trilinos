@@ -43,7 +43,7 @@
 #ifndef PANZER_CLOSURE_MODEL_FACTORY_HPP
 #define PANZER_CLOSURE_MODEL_FACTORY_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

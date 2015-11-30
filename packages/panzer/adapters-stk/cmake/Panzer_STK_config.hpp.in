@@ -1,6 +1,0 @@
-#include "Panzer_config.hpp"
-#cmakedefine PANZER_STK_DEBUG
-#cmakedefine HAVE_IOSS
-#cmakedefine HAVE_TEKO
-#cmakedefine HAVE_MUELU
-#cmakedefine HAVE_IFPACK2

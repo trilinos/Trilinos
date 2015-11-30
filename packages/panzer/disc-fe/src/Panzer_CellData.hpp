@@ -43,7 +43,7 @@
 #ifndef PANZER_CELL_DATA_HPP
 #define PANZER_CELL_DATA_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"

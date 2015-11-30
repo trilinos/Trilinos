@@ -49,7 +49,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_WorksetNeeds.hpp"
 
 namespace shards {

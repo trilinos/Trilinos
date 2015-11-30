@@ -43,7 +43,7 @@
 #ifndef PANZER_POINT_VALUES_HPP
 #define PANZER_POINT_VALUES_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_PointRule.hpp"
 #include "Panzer_ArrayTraits.hpp"
 

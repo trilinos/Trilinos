@@ -57,7 +57,7 @@
 #include <Shards_CellTopology.hpp>
 #include <Shards_CellTopologyData.h>
 
-#include <Panzer_STK_config.hpp>
+#include <PanzerAdaptersSTK_config.hpp>
 
 #include <unordered_map>
 

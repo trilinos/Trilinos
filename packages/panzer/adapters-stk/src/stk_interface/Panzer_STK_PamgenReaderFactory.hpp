@@ -45,7 +45,7 @@
 
 #include <string>
 
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_MeshFactory.hpp"
 
 #ifdef HAVE_IOSS

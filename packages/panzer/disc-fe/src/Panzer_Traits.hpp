@@ -43,7 +43,7 @@
 #ifndef PANZER_TRAITS_HPP
 #define PANZER_TRAITS_HPP
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

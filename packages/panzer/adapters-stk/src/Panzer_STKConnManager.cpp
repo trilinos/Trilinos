@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STKConnManager_impl.hpp"

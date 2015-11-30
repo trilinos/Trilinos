@@ -46,7 +46,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"

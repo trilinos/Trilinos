@@ -1,3 +1,10 @@
+#ifndef PANZER_CORE_CONFIG_HPP
+#define PANZER_CORE_CONFIG_HPP
+
+#ifndef __cplusplus
+#define __cplusplus
+#endif
+
 #cmakedefine HAVE_MPI
 
 // What AD Type are you going to use?
@@ -8,8 +15,15 @@
 #cmakedefine HAVE_PANZER_EXPLICIT_INSTANTIATION
 #cmakedefine PANZER_EXPLICIT_INSTANTIATION
 
-#cmakedefine PANZER_HAVE_FEI
-#cmakedefine Panzer_BUILD_PAPI_SUPPORT
-#cmakedefine PANZER_HAVE_CAMAL
+namespace panzer {
+#ifdef PANZER_HAVE_LONG_LONG_INT
+  typedef long long int Ordinal64;
+#else
+  #define PANZER_ORDINAL64_IS_INT
+  typedef int Ordinal64;
+#endif
+}
 
 @PANZER_TEUCHOS_TIME_MONITOR_DECLARATIONS@
+
+#endif

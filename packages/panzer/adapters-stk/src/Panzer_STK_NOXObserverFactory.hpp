@@ -47,7 +47,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"

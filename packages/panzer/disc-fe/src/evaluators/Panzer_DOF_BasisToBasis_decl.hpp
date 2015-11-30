@@ -49,7 +49,7 @@
 #include "Phalanx_Field.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_PureBasis.hpp"
 
 #include "Intrepid_FieldContainer.hpp"

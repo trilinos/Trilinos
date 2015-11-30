@@ -43,7 +43,7 @@
 #ifndef USER_APP_NOX_OBSERVER_NEUMANN_BC_ANALYTIC_SYSTEM_TEST_HPP
 #define USER_APP_NOX_OBSERVER_NEUMANN_BC_ANALYTIC_SYSTEM_TEST_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "NOX_Abstract_PrePostOperator.H"
 

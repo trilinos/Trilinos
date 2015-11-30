@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_SurfaceNormals_hpp__
 #define __Panzer_STK_SurfaceNormals_hpp__
 
-#include "Panzer_STK_config.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include <unordered_map>

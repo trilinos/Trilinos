@@ -51,7 +51,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"

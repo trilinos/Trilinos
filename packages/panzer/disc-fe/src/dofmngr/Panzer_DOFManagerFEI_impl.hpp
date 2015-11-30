@@ -43,7 +43,7 @@
 #ifndef PANZER_DOF_MANAGER_FEI_IMPL_HPP
 #define PANZER_DOF_MANAGER_FEI_IMPL_HPP
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #ifdef PANZER_HAVE_FEI
 

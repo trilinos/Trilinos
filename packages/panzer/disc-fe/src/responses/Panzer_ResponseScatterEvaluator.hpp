@@ -46,7 +46,7 @@
 #include <iostream>
 #include <string>
 
-#include "Panzer_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_Dimension.hpp"
 
 #include "Panzer_ResponseFunctional_Aggregator.hpp"

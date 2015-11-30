@@ -49,7 +49,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
-#include "Panzer_ConfigDefs.hpp"
+#include "PanzerAdaptersSTK_config.hpp"
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_ConnManager.hpp"
