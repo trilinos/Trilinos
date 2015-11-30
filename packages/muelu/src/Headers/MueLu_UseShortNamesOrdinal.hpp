@@ -101,9 +101,6 @@ typedef MueLu::UncoupledAggregationFactory_kokkos<LocalOrdinal,GlobalOrdinal,Nod
 #ifdef MUELU_USERAGGREGATIONFACTORY_SHORT
 typedef MueLu::UserAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UserAggregationFactory;
 #endif
-#ifdef MUELU_ZOLTANINTERFACE_SHORT
-typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;
-#endif
 #ifdef MUELU_AMESOSSMOOTHER_SHORT
 typedef MueLu::AmesosSmoother<Node> AmesosSmoother;
 #endif
