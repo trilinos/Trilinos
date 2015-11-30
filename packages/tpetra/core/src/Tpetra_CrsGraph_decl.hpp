@@ -95,6 +95,30 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
   } // namespace Details
+
+  namespace { // (anonymous)
+
+    template<class T, class BinaryFunction>
+    T atomic_binary_function_update (volatile T* const dest, const T& inputVal, BinaryFunction f)
+    {
+      T oldVal = *dest;
+      T assume;
+
+      // NOTE (mfh 30 Nov 2015) I do NOT need a fence here for IBM
+      // POWER architectures, because 'newval' depends on 'assume',
+      // which depends on 'oldVal', which depends on '*dest'.  This
+      // sets up a chain of read dependencies that should ensure
+      // correct behavior given a sane memory model.
+      do {
+        assume = oldVal;
+        T newVal = f (assume, inputVal);
+        oldVal = Kokkos::atomic_compare_exchange (dest, assume, newVal);
+      } while (assume != oldVal);
+
+      return oldVal;
+    }
+
+  } // namespace (anonymous)
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \struct RowInfo
@@ -1495,8 +1519,15 @@ namespace Tpetra {
           const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
           if (k != STINV) {
             if (atomic) {
-              const Scalar newVal = f (rowVals[k], newVals[j]);
-              Kokkos::atomic_assign (&rowVals[k], newVal);
+              // NOTE (mfh 30 Nov 2015) The commented-out code is
+              // wrong because another thread may have changed
+              // rowVals[k] between those two lines of code.
+              //
+              //const Scalar newVal = f (rowVals[k], newVals[j]);
+              //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+              volatile Scalar* const dest = &rowVals[k];
+              (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
               rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -1531,8 +1562,15 @@ namespace Tpetra {
               this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
-                const Scalar newVal = f (rowVals[k], newVals[j]);
-                Kokkos::atomic_assign (&rowVals[k], newVal);
+                // NOTE (mfh 30 Nov 2015) The commented-out code is
+                // wrong because another thread may have changed
+                // rowVals[k] between those two lines of code.
+                //
+                //const Scalar newVal = f (rowVals[k], newVals[j]);
+                //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+                volatile Scalar* const dest = &rowVals[k];
+                (void) atomic_binary_function_update (dest, newVals[j], f);
               }
               else {
                 rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -1602,8 +1640,15 @@ namespace Tpetra {
           const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
           if (k != STINV) {
             if (atomic) {
-              const Scalar newVal = f (rowVals[k], newVals[j]);
-              Kokkos::atomic_assign (&rowVals[k], newVal);
+              // NOTE (mfh 30 Nov 2015) The commented-out code is
+              // wrong because another thread may have changed
+              // rowVals[k] between those two lines of code.
+              //
+              //const Scalar newVal = f (rowVals[k], newVals[j]);
+              //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+              volatile Scalar* const dest = &rowVals[k];
+              (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
               rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -1638,8 +1683,15 @@ namespace Tpetra {
               this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
-                const Scalar newVal = f (rowVals[k], newVals[j]);
-                Kokkos::atomic_assign (&rowVals[k], newVal);
+                // NOTE (mfh 30 Nov 2015) The commented-out code is
+                // wrong because another thread may have changed
+                // rowVals[k] between those two lines of code.
+                //
+                //const Scalar newVal = f (rowVals[k], newVals[j]);
+                //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+                volatile Scalar* const dest = &rowVals[k];
+                (void) atomic_binary_function_update (dest, newVals[j], f);
               }
               else {
                 rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -1996,7 +2048,7 @@ namespace Tpetra {
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
     template<class Scalar, class BinaryFunction>
     LocalOrdinal
-    transformGlobalValues (RowInfo rowInfo,
+    transformGlobalValues (const RowInfo rowInfo,
                            const Teuchos::ArrayView<Scalar>& rowVals,
                            const Teuchos::ArrayView<const GlobalOrdinal>& inds,
                            const Teuchos::ArrayView<const Scalar>& newVals,
@@ -2032,8 +2084,15 @@ namespace Tpetra {
             const size_t k = findLocalIndex (rowInfo, lclColInd, hint);
             if (k != STINV) {
               if (atomic) {
-                const Scalar newVal = f (rowVals[k], newVals[j]);
-                Kokkos::atomic_assign (&rowVals[k], newVal);
+                // NOTE (mfh 30 Nov 2015) The commented-out code is
+                // wrong because another thread may have changed
+                // rowVals[k] between those two lines of code.
+                //
+                //const Scalar newVal = f (rowVals[k], newVals[j]);
+                //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+                volatile Scalar* const dest = &rowVals[k];
+                (void) atomic_binary_function_update (dest, newVals[j], f);
               }
               else {
                 rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
@@ -2055,8 +2114,15 @@ namespace Tpetra {
             this->findGlobalIndex (rowInfo, inds[j], colInds, hint);
           if (k != STINV) {
             if (atomic) {
-              const Scalar newVal = f (rowVals[k], newVals[j]);
-              Kokkos::atomic_assign (&rowVals[k], newVal);
+              // NOTE (mfh 30 Nov 2015) The commented-out code is
+              // wrong because another thread may have changed
+              // rowVals[k] between those two lines of code.
+              //
+              //const Scalar newVal = f (rowVals[k], newVals[j]);
+              //Kokkos::atomic_assign (&rowVals[k], newVal);
+
+              volatile Scalar* const dest = &rowVals[k];
+              (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
               rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
