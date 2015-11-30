@@ -182,6 +182,20 @@ namespace Anasazi {
 
     //@}
     
+    //! @name Apply / Compute Methods
+    //@{
+
+    /*! \brief Returns the residual vector corresponding to the computed solution
+     *
+     * If there is no computed solution, returns Teuchos::null.
+     *
+     * \note If A has not been set, this function will compute \f$R = OpX-MX\Lambda\f$
+     * If you are using a spectral transformation, this may not be what you want.
+     */
+    Teuchos::RCP<const MV> computeCurrResVec() const;
+
+    //@}
+
   protected:
     
     //! Reference-counted pointer for \c A of the eigenproblem \f$Ax=\lambda Mx\f$
@@ -298,7 +312,7 @@ namespace Anasazi {
     
     // If there is an A, but no operator, we can set them equal.
     if (_AOp.get() && !_Op.get()) { _Op = _AOp; }
-    
+
     // Clear the storage from any previous call to setSolution()
     Eigensolution<ScalarType,MV> emptysol;
     _sol = emptysol;
@@ -306,7 +320,57 @@ namespace Anasazi {
     // mark the problem as set and return no-error
     _isSet=true;
     return true;
-  }        
+  }
+
+  //=============================================================================
+  //    Computes the residual vector
+  //=============================================================================
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<const MV> BasicEigenproblem<ScalarType, MV, OP>::computeCurrResVec() const
+  {
+    using Teuchos::RCP;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!isHermitian(), std::invalid_argument,
+        "BasicEigenproblem::computeCurrResVec: This method is not currently "
+        "implemented for non-Hermitian problems.  Sorry for any inconvenience.");
+
+    const Eigensolution<ScalarType,MV> sol = getSolution();
+
+    if(sol.numVecs <= 0)
+      return Teuchos::null;
+
+    // Copy the eigenvalues
+    RCP<MV> X = sol.Evecs;
+    std::vector<ScalarType> Lambda(sol.numVecs);
+    for(int i = 0; i < sol.numVecs; i++)
+      Lambda[i] = sol.Evals[i].realpart;
+
+    // Compute AX
+    RCP<MV> AX = MVT::Clone(*X,sol.numVecs);
+    if(_AOp != Teuchos::null)
+      OPT::Apply(*_AOp,*X,*AX);
+    else
+      OPT::Apply(*_Op,*X,*AX);
+
+    // Compute MX if necessary
+    RCP<MV> MX;
+    if(_MOp != Teuchos::null)
+    {
+      MX = MVT::Clone(*X,sol.numVecs);
+      OPT::Apply(*_MOp,*X,*MX);
+    }
+    else
+    {
+      MX = MVT::CloneCopy(*X);
+    }
+
+    // Compute R = AX - MX \Lambda
+    RCP<MV> R = MVT::Clone(*X,sol.numVecs);
+    MVT::MvScale(*MX,Lambda);
+    MVT::MvAddMv(1.0,*AX,-1.0,*MX,*R);
+
+    return R;
+  }
   
 } // end Anasazi namespace
 #endif
