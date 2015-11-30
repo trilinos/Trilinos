@@ -76,7 +76,7 @@ extern aprepro_options ap_options;
 
 /* Global variables used by the looping mechanism */
 int loop_lvl = 0;
-FILE *tmp_file;
+FILE *tmp_file = NULL;
 char  *temp_f, *tmpstr;
 
 /* Routines used by material database routines */
@@ -150,6 +150,7 @@ integer {D}+({E})?
     else /* Value defined and != 0. */
       {
 	temp_f = get_temp_filename();
+	if (tmp_file) fclose(tmp_file);
 	tmp_file = open_file(temp_f, "w");
 	loop_lvl++;
 	BEGIN(LOOP);
@@ -176,6 +177,7 @@ integer {D}+({E})?
 	{
 	  ap_file_list[nfile+1].loop_count = s->value.var;
 	  temp_f = get_temp_filename();
+	  if (tmp_file) fclose(tmp_file);
 	  tmp_file = open_file(temp_f, "w");
 	  loop_lvl++;
 	  BEGIN(LOOP);
@@ -191,7 +193,7 @@ integer {D}+({E})?
     if (--loop_lvl == 0)
       {
 	BEGIN(INITIAL);
-	fclose(tmp_file);
+	if (tmp_file) { fclose(tmp_file); tmp_file = NULL; }
 	file_pointer[nfile++] = YY_CURRENT_BUFFER;
 	NEWSTR(temp_f, ap_file_list[nfile].name);
 	SET_FILE_LIST(nfile, 0, True, -1);
@@ -595,9 +597,9 @@ integer {D}+({E})?
   }
 } /* End of <PARSING> start condition block */
 
-\\\{                      { if (echo) fwrite( "{", 1, 1, yyout ); }
+\\\{                      { if (echo) (void)fwrite( "{", 1, 1, yyout ); }
 
-\\\}                      { if (echo) fwrite( "}", 1, 1, yyout ); }
+\\\}                      { if (echo) (void)fwrite( "}", 1, 1, yyout ); }
 
 "{"                        { BEGIN(PARSING); return('{'); }
 

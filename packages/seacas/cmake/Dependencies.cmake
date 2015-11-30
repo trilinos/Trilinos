@@ -11,6 +11,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SVDI        libraries/svdi          SS  OPTIONAL
   PLT         libraries/plt           SS  OPTIONAL
   Algebra     applications/algebra    SS  REQUIRED
+  Aprepro-orig applications/aprepro-orig    SS  OPTIONAL
   Aprepro     applications/aprepro    SS  REQUIRED
   Blot        applications/blot       SS  OPTIONAL
   Conjoin     applications/conjoin    SS  REQUIRED
@@ -39,11 +40,4 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Ex2ex1v2    applications/ex2ex1v2   SS  OPTIONAL
 )
 
-SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
 SET(LIB_OPTIONAL_DEP_TPLS MPI)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)

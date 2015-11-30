@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2015/07/20",
-  "Revision: 3.06"
+  "Date: 2015/11/17",
+  "Revision: 3.07"
 };
 
 #include <ctype.h>                      // for isdigit
@@ -265,12 +265,17 @@ int main (int argc, char *argv[])
 	  }
 	}
 	else {
-	  sscanf (val, "%lf", &value);
-	  if (var[0] == '_')
-	    s = putsym (var, VAR, 0);
-	  else
-	    s = putsym (var, IMMVAR, 0);
-	  s->value.var = value;
+	  int err = sscanf (val, "%lf", &value);
+	  if (err <= 0) {
+	    fprintf(stderr, "ERROR: Could not parse value in assignment of variable '%s'; it will not be defined\n", var);
+	  }
+	  else {
+	    if (var[0] == '_')
+	      s = putsym (var, VAR, 0);
+	    else
+	      s = putsym (var, IMMVAR, 0);
+	    s->value.var = value;
+	  }
 	}
       }
     }
