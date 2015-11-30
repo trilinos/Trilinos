@@ -25,7 +25,6 @@ As a package WITH Amesos2.
 Do instruction with Amesos2, PLUS
 -DCMAKE_CXX_FLAGS:STRING="-DSHYLUBASKER"
 
-
 <Current Limitations>
 Due to converting my experiemental code into a package that can easily be compiled in the Trilinos FrameWork, the following options where set.
 
@@ -69,7 +68,7 @@ Basker/src/                Source files
 
 
 Compiler Option Flags:
-
+NA
 
     
 
