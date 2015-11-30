@@ -10,6 +10,53 @@
 
 
 namespace {
+namespace {
+  bool is_separator(const char separator, const char value)
+  {
+    return separator == value;
+  }
+}
+  
+  // Split 'str' into 'tokens' based on the 'separator' character.
+  // If 'str' starts with 1 or more 'separator', they are part of the
+  // first token and not used for splitting.  If there are multiple
+  // 'separator' characters in a row, then the first is used to split
+  // and the subsequent 'separator' characters are put as leading
+  // characters of the next token.
+  // __this___is_a_string__for_tokens will split to 6 tokens:
+  // __this __is a string _for tokens
+  void field_tokenize(const std::string& str, const char separator,
+		std::vector<std::string>& tokens)
+  {
+    std::string curr_token = "";
+    // Skip leading separators...
+    size_t i = 0;
+    while (i < str.length() && is_separator(separator, str[i])) {
+      curr_token += str[i++];
+    }
+    for ( ; i < str.length(); ++i) {
+      char curr_char = str[i];
+      
+      // determine if current character is a separator
+      bool is_sep = is_separator(separator, curr_char);
+      if (is_sep && curr_token != "") {
+	// we just completed a token
+	tokens.push_back(curr_token);
+	curr_token.clear();
+	while (i++ < str.length() && is_separator(separator, str[i])) {
+	  curr_token += str[i];
+	}
+	i--;
+      }
+      else if (!is_sep) {
+	curr_token += curr_char;
+      }
+    }
+    if (curr_token != "") {
+      tokens.push_back(curr_token);
+    }
+  }
+
   const size_t max_line_length   = MAX_LINE_LENGTH;
 
   const std::string SCALAR()     {return std::string("scalar");}
@@ -619,11 +666,8 @@ namespace Ioex {
     // (back_stress_xx_01). At the current time, a composite variable
     // type can only contain two non-composite variable types, so we
     // only need to look to be concerned with the last 1 or 2 tokens...
-    char suffix[2];
-    suffix[0] = suffix_separator;
-    suffix[1] = 0;
     std::vector<std::string> tokens;
-    Ioss::tokenize(name, suffix, tokens);
+    field_tokenize(name, suffix_separator, tokens);
     size_t num_tokens = tokens.size();
 
     // Check that tokenizer did not return empty tokens...
@@ -636,16 +680,8 @@ namespace Ioex {
       return field;
     }
 
-    // If 'name' begins with 'suffix_separator', then tokenize will strip that
-    // of and the first token will not have the leading 'suffix_separator'.
-    // If that is the case, put 'suffix_separator' back on the first token...
-    if (name[0] == suffix_separator && tokens[0][0] != suffix_separator) {
-      tokens[0] = suffix_separator + tokens[0];
-    }
-    
-    // KNOW: The field_suffix_sep is not in first or last position.
     // KNOW: num_tokens > 1 at this point.  Possible that we still
-    // just have a scalar with an embedded separator character...
+    // just have a scalar with one or more embedded separator characters...
     int suffix_size = 1;
     if (num_tokens > 2)
       suffix_size = 2;
@@ -684,7 +720,7 @@ namespace Ioex {
       for (int i = index+1; i < num_names; i++) {
 	char *tst_name = names[i];
 	std::vector<std::string> subtokens;
-	Ioss::tokenize(tst_name,suffix,subtokens);
+	field_tokenize(tst_name,suffix_separator,subtokens);
 	if ((truth_table == NULL || truth_table[i] == 1) &&  // Defined on this entity
 	    std::strlen(tst_name) == length &&              // names must be same length
 	    std::strncmp(name, tst_name, bn_len) == 0 &&   // base portion must match
