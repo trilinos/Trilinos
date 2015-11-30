@@ -45,7 +45,6 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
-#include <tokenize.h>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -975,7 +974,7 @@ namespace Ioex {
 
 	for (int i=0; i < nvar; i++) {
 	  // Verify that all names were used for a field...
-	  assert(names[i][0] == '\0' || local_truth[i] == 0);
+	  assert(names[i][0] == '\0' || (local_truth && local_truth[i] == 0));
 	  delete [] names[i];
 	}
 	delete [] names;
