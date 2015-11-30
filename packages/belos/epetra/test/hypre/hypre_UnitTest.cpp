@@ -123,20 +123,20 @@ TEUCHOS_UNIT_TEST(Belos_Hypre, Laplace2D){
   // Test the EpetraExt wrapper
   // amk November 24, 2015: Should we deprecate this?
   //
-  RCP<ParameterList> pl = rcp(new ParameterList());
-  TEST_EQUALITY(X->PutScalar(0.0),0);
-  HYPRE_IJMatrix hypre_mat = preconditioner->HypreMatrix();
-  RCP<EpetraExt_HypreIJMatrix> Hyp_Matrix = rcp(new EpetraExt_HypreIJMatrix(hypre_mat));
-  TEST_EQUALITY(Hyp_Matrix->SetParameter(Preconditioner, ParaSails),0);
-  TEST_EQUALITY(Hyp_Matrix->SetParameter(Preconditioner),0);
-  TEST_EQUALITY(EquivalentMatrices(*Hyp_Matrix, *Crs_Matrix, tol), true);
-  RCP<LinearProblem> problem1 = rcp(new LinearProblem(Crs_Matrix,X,B));
-  problem1->setLeftPrec(Hyp_Matrix);
-  TEST_EQUALITY(problem1->setProblem(),true);
-  Belos::PseudoBlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator> solMgr1(problem1,pl);
-  Belos::ReturnType rv1 = solMgr1.solve(); // TEST_EQUALITY(solMgr2.solve(),Belos::Converged);
-  TEST_EQUALITY(rv1,Belos::Converged);
-  TEST_EQUALITY(EquivalentVectors(*X, *KnownX, tol*10*pow(10.0,NumProc)), true);
+//  RCP<ParameterList> pl = rcp(new ParameterList());
+//  TEST_EQUALITY(X->PutScalar(0.0),0);
+//  HYPRE_IJMatrix hypre_mat = preconditioner->HypreMatrix();
+//  RCP<EpetraExt_HypreIJMatrix> Hyp_Matrix = rcp(new EpetraExt_HypreIJMatrix(hypre_mat));
+//  TEST_EQUALITY(Hyp_Matrix->SetParameter(Preconditioner, ParaSails),0);
+//  TEST_EQUALITY(Hyp_Matrix->SetParameter(Preconditioner),0);
+//  TEST_EQUALITY(EquivalentMatrices(*Hyp_Matrix, *Crs_Matrix, tol), true);
+//  RCP<LinearProblem> problem1 = rcp(new LinearProblem(Crs_Matrix,X,B));
+//  problem1->setLeftPrec(Hyp_Matrix);
+//  TEST_EQUALITY(problem1->setProblem(),true);
+//  Belos::PseudoBlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator> solMgr1(problem1,pl);
+//  Belos::ReturnType rv1 = solMgr1.solve(); // TEST_EQUALITY(solMgr2.solve(),Belos::Converged);
+//  TEST_EQUALITY(rv1,Belos::Converged);
+//  TEST_EQUALITY(EquivalentVectors(*X, *KnownX, tol*10*pow(10.0,NumProc)), true);
 
   //
   // Test the Ifpack hypre interface
