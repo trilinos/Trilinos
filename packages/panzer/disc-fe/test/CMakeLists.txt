@@ -8,7 +8,3 @@ ADD_SUBDIRECTORY(epetra_gatherscatter)
 ADD_SUBDIRECTORY(la_factory)
 ADD_SUBDIRECTORY(evaluator_tests)
 ADD_SUBDIRECTORY(workset_container)
-
-IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-   ADD_SUBDIRECTORY(stokhos_test)
-ENDIF()

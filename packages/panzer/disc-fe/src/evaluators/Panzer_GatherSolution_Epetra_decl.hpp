@@ -247,10 +247,4 @@ private:
 }
 
 // **************************************************************
-
-#ifdef HAVE_STOKHOS
-#include "Panzer_GatherSolution_EpetraSG.hpp"
-#endif
-
-// **************************************************************
 #endif

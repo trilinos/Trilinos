@@ -48,6 +48,8 @@
 #include <string>
 #include <iostream>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_ConfigDefs.hpp"
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
@@ -82,6 +84,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
   typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+
+  PHX::KokkosDeviceSession session;
 
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
@@ -260,6 +264,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, blocked)
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
   typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
 
+  PHX::KokkosDeviceSession session;
+
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // This is required
@@ -405,6 +411,8 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   typedef Tpetra::Vector<double,int,panzer::Ordinal64> Tpetra_Vector;
   typedef Tpetra::Map<int,panzer::Ordinal64> Tpetra_Map;
   typedef Tpetra::Import<int,panzer::Ordinal64> Tpetra_Import;
+
+  PHX::KokkosDeviceSession session;
 
   Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 

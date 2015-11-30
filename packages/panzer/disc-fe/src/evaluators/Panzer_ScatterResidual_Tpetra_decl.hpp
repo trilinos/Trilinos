@@ -248,10 +248,4 @@ private:
 }
 
 // **************************************************************
-
-#ifdef HAVE_STOKHOS
-#include "Panzer_ScatterResidual_TpetraSG.hpp"
-#endif
-
-// **************************************************************
 #endif

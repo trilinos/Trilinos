@@ -272,10 +272,4 @@ private:
 }
 
 // **************************************************************
-
-#ifdef HAVE_STOKHOS
-#include "Panzer_GatherSolution_TpetraSG.hpp"
-#endif
-
-// **************************************************************
 #endif

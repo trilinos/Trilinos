@@ -41,15 +41,6 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
     " enabled, otherwise defaults to OFF."
   )
 
-# Combined option for testing
-#############################
-COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STKClassic_AND_SEACAS_SUPPORT
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_STKClassic ${PACKAGE_NAME}_ENABLE_SEACASIoss ${PACKAGE_NAME}_ENABLE_SEACASExodus
-  DOCSTR "Enables support for the STK mesh database and SEACAS I/O Layers."
-    " Defaults to ON if STK, SEACASIoss, SEACASExodus are"
-    " enabled, otherwise defaults to OFF."
-  )
-
 ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

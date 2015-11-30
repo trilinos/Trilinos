@@ -48,11 +48,6 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// add embedded UQ
-#ifdef HAVE_STOKHOS
-   #include "Stokhos_Sacado.hpp"
-#endif
-
 // mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_find.hpp"
@@ -73,13 +68,6 @@
 // Debugging information
 //#include "Phalanx_TypeStrings.hpp"
 
-// add embedded UQ
-#ifdef HAVE_STOKHOS
-   #include "Stokhos_StandardStorage.hpp"
-   #include "Sacado_PCE_OrthogPoly.hpp"
-   #include "Stokhos_OrthogPolyExpansion.hpp"
-#endif
-
 namespace panzer {
   
   class LinearObjContainer;
@@ -98,12 +86,6 @@ namespace panzer {
     // typedef Sacado::ELRCacheFad::DFad<double> FadType;
     // typedef Sacado::Fad::SLFad<double,8> FadType;
     typedef PANZER_FADTYPE FadType;
-
-    #ifdef HAVE_STOKHOS
-       typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
-       typedef Sacado::PCE::OrthogPoly<RealType,SGStorageType> SGType;
-       typedef Sacado::Fad::DFad<SGType> SGFadType;
-    #endif
     
     // ******************************************************************
     // *** Evaluation Types
@@ -111,15 +93,7 @@ namespace panzer {
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
     struct Tangent { typedef FadType ScalarT;  };
-    #ifdef HAVE_STOKHOS
-       struct SGResidual { typedef SGType ScalarT; };
-       struct SGJacobian { typedef SGFadType ScalarT;  };
-    #endif
-    typedef Sacado::mpl::vector<Residual, Jacobian, Tangent
-                                #ifdef HAVE_STOKHOS
-                                   , SGResidual, SGJacobian
-                                #endif
-                               > EvalTypes;
+    typedef Sacado::mpl::vector<Residual, Jacobian, Tangent> EvalTypes;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method

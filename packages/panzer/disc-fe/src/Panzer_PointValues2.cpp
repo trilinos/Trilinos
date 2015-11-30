@@ -70,20 +70,10 @@ template void PointValues2<SCALAR,PHX::MDField>::copyPointCoords<Intrepid::Field
 
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)
-#ifdef HAVE_STOKHOS
-  POINT_VALUES_INSTANTIATION(panzer::Traits::SGType)
-  POINT_VALUES_INSTANTIATION(panzer::Traits::SGFadType)
-#endif
 
 // This is very complicated for reasons I don't fully understand...
 POINT_VALUES_INSTANTIATION2(panzer::Traits::RealType,panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::FadType)
-#ifdef HAVE_STOKHOS
-  POINT_VALUES_INSTANTIATION2(panzer::Traits::SGType,panzer::Traits::RealType)
-  POINT_VALUES_INSTANTIATION2(panzer::Traits::SGType,panzer::Traits::SGType)
-  POINT_VALUES_INSTANTIATION2(panzer::Traits::SGFadType,panzer::Traits::RealType)
-  POINT_VALUES_INSTANTIATION2(panzer::Traits::SGFadType,panzer::Traits::SGFadType)
-#endif
 
 } // namespace panzer

@@ -219,12 +219,4 @@ typedef Traits::Jacobian JacobianType;
 UNIT_TEST_GROUP(ResidualType)
 UNIT_TEST_GROUP(JacobianType)
 
-#ifdef HAVE_STOKHOS
-   typedef Traits::SGResidual SGResidualType;
-   typedef Traits::SGJacobian SGJacobianType;
-
-   UNIT_TEST_GROUP(SGResidualType)
-   UNIT_TEST_GROUP(SGJacobianType)
-#endif
-
 }

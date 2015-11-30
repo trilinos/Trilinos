@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos KokkosCore Sacado Phalanx Intrepid ThyraCore ThyraTpetraAdapters ThyraEpetraAdapters ThyraEpetraExtAdapters Tpetra Epetra EpetraExt Zoltan)
-SET(LIB_OPTIONAL_DEP_PACKAGES FEI Stokhos)
+SET(LIB_OPTIONAL_DEP_PACKAGES FEI )
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
 SET(LIB_REQUIRED_DEP_TPLS MPI)

@@ -49,9 +49,6 @@
 #include "Panzer_GatherSolution_Epetra_decl.hpp"
 #include "Panzer_GatherSolution_Epetra_impl.hpp"
 
-#include "Panzer_GatherSolution_EpetraSG_decl.hpp"
-#include "Panzer_GatherSolution_EpetraSG_impl.hpp"
-
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherSolution_Epetra,int,int)
 
 #endif

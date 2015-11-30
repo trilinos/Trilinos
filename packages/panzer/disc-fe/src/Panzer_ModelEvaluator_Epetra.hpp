@@ -69,11 +69,7 @@ namespace panzer {
 
   class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
-  #ifdef HAVE_STOKHOS
-     template<typename, typename>  class SGEpetraLinearObjFactory;
-  #endif
   class EpetraLinearObjContainer;
-  class SGEpetraLinearObjContainer;
   struct GlobalData;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
@@ -94,15 +90,6 @@ namespace panzer {
 			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
-
-    #ifdef HAVE_STOKHOS
-       ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
-                             const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-   			     const Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> >& sg_lof,
-   			     const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
-			     const Teuchos::RCP<panzer::GlobalData>& global_data,
-			     bool build_transient_support);
-    #endif
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -280,28 +267,6 @@ namespace panzer {
     //! Are derivatives of the residual with respect to the parameters in the out args? DfDp 
     bool required_basic_dfdp(const OutArgs & outArgs) const;
 
-    #ifdef HAVE_STOKHOS
-       //! Are their required SG responses in the out args? sg
-       bool required_basic_sg_g(const OutArgs & outArgs) const;
-
-       /** for evaluation and handling of Stochastic Galerkin quantities, x_sg, f_sg, W_sg, etc
-         *
-         * \note A precondition for this is that <code>sg_lof_</code> has been initialized
-         *       with a call to the appropriate constructor.
-         */
-       void evalModel_sg( const InArgs& inArgs, const OutArgs& outArgs ) const;
-
-       //! Are their required responses in the out args? g (and soon DgDx) 
-       bool required_sg_g(const OutArgs & outArgs) const;
-
-       /** handles evaluation of responses g, dgdx
-         *
-         * \note This method should (basically) be a no-op if <code>required_basic_g(outArgs)==false</code>.
-         *       However, for efficiency this is not checked.
-         */
-       void evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
-    #endif
-
     void copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::VectorBase<double> > &thyraVec) const;
     void copyThyraIntoEpetra(const Thyra::VectorBase<double>& thyraVec, Epetra_MultiVector& x) const;
 
@@ -353,12 +318,6 @@ namespace panzer {
     // basic specific linear object objects
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;
     mutable Teuchos::RCP<LinearObjContainer> ghostedContainer_;
-
-    #ifdef HAVE_STOKHOS
-       // sg specific linear object objects
-       Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
-       mutable Teuchos::RCP<LinearObjContainer> sg_ghostedContainer_;
-    #endif
 
     Teuchos::RCP<Teuchos::AbstractFactory<Epetra_Operator> > epetraOperatorFactory_;
 

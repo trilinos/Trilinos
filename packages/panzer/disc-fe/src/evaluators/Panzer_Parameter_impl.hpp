@@ -50,10 +50,6 @@
 #include <string>
 #include <vector>
 
-#ifdef HAVE_STOKHOS
-#include "Panzer_SGUtilities.hpp"
-#endif
-
 namespace panzer {
 
 //**********************************************************************
@@ -75,32 +71,6 @@ Parameter(const std::string parameter_name,
   std::string n = "Parameter Evaluator";
   this->setName(n);
 }
-
-//**********************************************************************
-#ifdef HAVE_STOKHOS
-
-template<typename EvalT, typename TRAITS>
-Parameter<EvalT, TRAITS>::
-Parameter(const std::string name,
-	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	  const std::vector<double> & in_initial_value,
-          const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,
-	  panzer::ParamLib& param_lib)
-{ 
-  // using expansion convert vector to a scalar value
-  sg_utils::vectorToValue(in_initial_value,expansion,initial_value); 
-
-  target_field = PHX::MDField<ScalarT, Cell, Point>(name, data_layout);
-  
-  this->addEvaluatedField(target_field);
- 
-  param = panzer::createAndRegisterScalarParameter<EvalT>(name,param_lib);
-
-  std::string n = "Parameter Evaluator";
-  this->setName(n);
-}
-
-#endif
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>

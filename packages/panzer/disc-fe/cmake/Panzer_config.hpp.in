@@ -9,7 +9,6 @@
 #cmakedefine PANZER_EXPLICIT_INSTANTIATION
 
 #cmakedefine PANZER_HAVE_FEI
-#cmakedefine HAVE_STOKHOS
 #cmakedefine Panzer_BUILD_PAPI_SUPPORT
 #cmakedefine PANZER_HAVE_CAMAL
 

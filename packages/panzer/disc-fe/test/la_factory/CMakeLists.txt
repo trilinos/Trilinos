@@ -52,15 +52,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-     tSGEpetraLinearObjFactory
-     SOURCES tSGEpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
-     COMM mpi
-     NUM_MPI_PROCS 2
-     )
-ENDIF()
-
 # The intention is that this INCLUDE only happens for tests below this point.
 # If this assumption is incorrect, or the build system is changed this might
 # have to be fixed!

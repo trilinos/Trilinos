@@ -531,10 +531,5 @@ template class IntegrationValues2<SCALAR>;
 
 INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::RealType)
 INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::FadType)
-#ifdef HAVE_STOKHOS
-  INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::SGType)
-  INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::SGFadType)
-#endif
-
 
 }

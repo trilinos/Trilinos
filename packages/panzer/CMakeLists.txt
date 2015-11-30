@@ -45,12 +45,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_impl.hpp")
 
-## One day hope to add enabling evaluation types from configure flag
-#ADD_OPTION(${PACKAGE_NAME}_EXPLICIT_INSTANTIATION_EVALUATION_TYPES
-#  "Set the explicit instantiation evaluation types."
-#  "panzer::Traits::Residual 2 panzer::Traits::Jacobian 1" )
-#FILE(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ${DEPS_XML} )
-
 TRIBITS_PROCESS_SUBPACKAGES()
 
 TRIBITS_PACKAGE_DEF()

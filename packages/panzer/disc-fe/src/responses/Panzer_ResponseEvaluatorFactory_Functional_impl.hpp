@@ -75,9 +75,6 @@ bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
   if(   PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Residual>() 
-#ifdef HAVE_STOKHOS
-     || PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::SGResidual>()
-#endif
     )
     return true;
 

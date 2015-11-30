@@ -782,9 +782,5 @@ template class BasisValues2<SCALAR>;
 
 BASIS_VALUES_INSTANTIATION(panzer::Traits::RealType)
 BASIS_VALUES_INSTANTIATION(panzer::Traits::FadType)
-#ifdef HAVE_STOKHOS
-  BASIS_VALUES_INSTANTIATION(panzer::Traits::SGType)
-  BASIS_VALUES_INSTANTIATION(panzer::Traits::SGFadType)
-#endif
 
 } // namespace panzer

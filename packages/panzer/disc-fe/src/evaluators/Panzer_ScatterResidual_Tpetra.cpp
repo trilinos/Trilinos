@@ -50,9 +50,6 @@
 #include "Panzer_ScatterResidual_Tpetra_decl.hpp"
 #include "Panzer_ScatterResidual_Tpetra_impl.hpp"
 
-#include "Panzer_ScatterResidual_TpetraSG_decl.hpp"
-#include "Panzer_ScatterResidual_TpetraSG_impl.hpp"
-
 // PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,int)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,panzer::Ordinal64)
 

@@ -2,22 +2,13 @@ TRIBITS_SUBPACKAGE(DiscFE)
 
 # Optional FEI package dependency
 #################################
-IF(${PARENT_PACKAGE_NAME}_ENABLE_FEI)
+IF(${PACKAGE_NAME}_ENABLE_FEI)
    GLOBAL_SET(PANZER_HAVE_FEI ON)
    MESSAGE("-- FEI On")
 ELSE()
    GLOBAL_SET(PANZER_HAVE_FEI OFF)
    MESSAGE("-- FEI Off")
 ENDIF()
-
-# Optional Stokhos package dependency
-#####################################
-# NOTE: Hard disabled for now!!!!
-#IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-#   GLOBAL_SET(HAVE_STOKHOS ON)
-#ELSE()
-   GLOBAL_SET(HAVE_STOKHOS OFF)
-#ENDIF()
 
 # Optional CAMAL TPL dependency
 ###############################
