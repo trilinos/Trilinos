@@ -77,12 +77,10 @@ namespace {
       "with the correct number of columns." << endl;
     Teuchos::OSTab tab0 (out);
 
-    bool needToFinalize = false;
     if (! execution_space::is_initialized ()) {
       // I don't care about setting the right parameters; I just want
       // to initialize a DualView and make subviews of it.
       execution_space::initialize ();
-      needToFinalize = true;
     }
 
     size_type newNumRows = 0;
@@ -186,9 +184,6 @@ namespace {
     TEST_EQUALITY_CONST( X_sub.h_view.dimension_1 (), newNumCols );
     out << endl;
 
-    if (needToFinalize) {
-      execution_space::finalize ();
-    }
   }
 
 //
