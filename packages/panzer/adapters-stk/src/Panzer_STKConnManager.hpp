@@ -148,9 +148,9 @@ public:
      *             of the points on exit.
      */
    virtual void getDofCoords(const std::string & blockId,
-                             const panzer::IntrepidFieldPattern & coordProvider,
+                             const panzer::Intrepid2FieldPattern & coordProvider,
                              std::vector<std::size_t> & localCellIds,
-                             Intrepid::FieldContainer<double> & points) const;
+                             Intrepid2::FieldContainer<double> & points) const;
 
     /** Get STK interface that this connection manager is built on.
       */

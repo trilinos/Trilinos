@@ -46,8 +46,8 @@
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 namespace panzer {
 
@@ -92,7 +92,7 @@ PHX_EVALUATE_FIELDS(Normals,workset)
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
-    Intrepid::CellTools<ScalarT>::getPhysicalSideNormals(normals,
+    Intrepid2::CellTools<ScalarT>::getPhysicalSideNormals(normals,
                                                          this->wda(workset).int_rules[quad_index]->jac,
                                                          side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       

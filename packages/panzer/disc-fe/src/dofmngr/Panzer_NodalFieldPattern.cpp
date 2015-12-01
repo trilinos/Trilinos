@@ -42,7 +42,7 @@
 
 #include "Panzer_NodalFieldPattern.hpp"
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace panzer {

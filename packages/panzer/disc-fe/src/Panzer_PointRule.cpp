@@ -45,7 +45,7 @@
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 

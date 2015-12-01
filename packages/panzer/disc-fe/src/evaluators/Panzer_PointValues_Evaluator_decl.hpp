@@ -59,7 +59,7 @@ PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
   // is anything other than ScalarT really needed here?
   PointValues2<ScalarT,PHX::MDField> pointValues;
  
-  Intrepid::FieldContainer<double> refPointArray;
+  Intrepid2::FieldContainer<double> refPointArray;
 
   bool useBasisValuesRefArray; // if true then basis is non-null
   Teuchos::RCP<const panzer::PureBasis> basis;
@@ -67,12 +67,12 @@ PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
 
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::Ptr<const Intrepid::FieldContainer<double> > & userArray,
+                  const Teuchos::Ptr<const Intrepid2::FieldContainer<double> > & userArray,
                   const Teuchos::RCP<const panzer::PureBasis> & pureBasis);
 
 public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Intrepid::FieldContainer<double> & userArray);
+                        const Intrepid2::FieldContainer<double> & userArray);
 
   //! This builds a point rule from the basis function reference points in the workset
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,

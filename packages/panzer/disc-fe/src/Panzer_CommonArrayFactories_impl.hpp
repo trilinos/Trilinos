@@ -54,29 +54,29 @@ namespace panzer {
 
 // Implementation for intrepid container factory
 template <typename Scalar,typename T0>
-Intrepid::FieldContainer<Scalar> IntrepidFieldContainerFactory::
+Intrepid2::FieldContainer<Scalar> Intrepid2FieldContainerFactory::
 buildArray(const std::string & str,int d0) const
-{ return Intrepid::FieldContainer<Scalar>(d0); }
+{ return Intrepid2::FieldContainer<Scalar>(d0); }
 
 template <typename Scalar,typename T0,typename T1>
-Intrepid::FieldContainer<Scalar> IntrepidFieldContainerFactory::
+Intrepid2::FieldContainer<Scalar> Intrepid2FieldContainerFactory::
 buildArray(const std::string & str,int d0,int d1) const
-{ return Intrepid::FieldContainer<Scalar>(d0,d1); }
+{ return Intrepid2::FieldContainer<Scalar>(d0,d1); }
 
 template <typename Scalar,typename T0,typename T1,typename T2>
-Intrepid::FieldContainer<Scalar> IntrepidFieldContainerFactory::
+Intrepid2::FieldContainer<Scalar> Intrepid2FieldContainerFactory::
 buildArray(const std::string & str,int d0,int d1,int d2) const
-{ return Intrepid::FieldContainer<Scalar>(d0,d1,d2); }
+{ return Intrepid2::FieldContainer<Scalar>(d0,d1,d2); }
 
 template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
-Intrepid::FieldContainer<Scalar> IntrepidFieldContainerFactory::
+Intrepid2::FieldContainer<Scalar> Intrepid2FieldContainerFactory::
 buildArray(const std::string & str,int d0,int d1,int d2,int d3) const
-{ return Intrepid::FieldContainer<Scalar>(d0,d1,d2,d3); }
+{ return Intrepid2::FieldContainer<Scalar>(d0,d1,d2,d3); }
 
 template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typename T4>
-Intrepid::FieldContainer<Scalar> IntrepidFieldContainerFactory::
+Intrepid2::FieldContainer<Scalar> Intrepid2FieldContainerFactory::
 buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const
-{ return Intrepid::FieldContainer<Scalar>(d0,d1,d2,d3,d4); }
+{ return Intrepid2::FieldContainer<Scalar>(d0,d1,d2,d3,d4); }
 
 // Implementation for MDField array factory
 template <typename Scalar,typename T0>

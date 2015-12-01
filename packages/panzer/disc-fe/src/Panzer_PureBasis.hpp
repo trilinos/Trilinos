@@ -48,8 +48,8 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
 namespace panzer {
@@ -101,13 +101,13 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
-    getIntrepidBasis() const;
+    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > 
+    getIntrepid2Basis() const;
 
     template <typename ScalarT,typename ArrayT>
-    Teuchos::RCP< Intrepid::Basis<ScalarT,ArrayT> > 
-    getIntrepidBasis() const
-    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(type(), order(), getCellTopology()); }
+    Teuchos::RCP< Intrepid2::Basis<ScalarT,ArrayT> > 
+    getIntrepid2Basis() const
+    { return panzer::createIntrepid2Basis<ScalarT,ArrayT>(type(), order(), getCellTopology()); }
 
     EElementSpace getElementSpace() const
     { return element_space_; }
@@ -158,7 +158,7 @@ namespace panzer {
   private:
 
     Teuchos::RCP<const shards::CellTopology> topology_;
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepid_basis_;
+    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > intrepid_basis_;
 
     std::string basis_type_;
     std::string basis_name_;

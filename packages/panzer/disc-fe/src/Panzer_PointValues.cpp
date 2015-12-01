@@ -53,12 +53,12 @@ namespace panzer {
 // do some explicit instantiation so things build faster.
 
 #define POINT_VALUES_INSTANTIATION(SCALAR) \
-template class PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >;\
+template class PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >;\
 template class PointValues<SCALAR,PHX::MDField<SCALAR> >;\
 template \
-void PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::setupArrays<IntrepidFieldContainerFactory>( \
+void PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >::setupArrays<Intrepid2FieldContainerFactory>( \
                    const Teuchos::RCP<const panzer::PointRule>& pr, \
-                   const IntrepidFieldContainerFactory & af); \
+                   const Intrepid2FieldContainerFactory & af); \
 template \
 void PointValues<SCALAR,PHX::MDField<SCALAR> >::setupArrays<MDFieldArrayFactory>( \
                    const Teuchos::RCP<const panzer::PointRule>& pr, \
@@ -66,14 +66,14 @@ void PointValues<SCALAR,PHX::MDField<SCALAR> >::setupArrays<MDFieldArrayFactory>
 
 #define POINT_VALUES_INSTANTIATION2(SCALAR,SCALAR2)\
 template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyNodeCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::copyNodeCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyNodeCoords<Intrepid::FieldContainer<SCALAR2> >(const Intrepid::FieldContainer<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::copyNodeCoords<Intrepid::FieldContainer<SCALAR2> >(const Intrepid::FieldContainer<SCALAR2> & in_node_coords); \
+template void PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >::copyNodeCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
+template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyNodeCoords<Intrepid2::FieldContainer<SCALAR2> >(const Intrepid2::FieldContainer<SCALAR2> & in_node_coords); \
+template void PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >::copyNodeCoords<Intrepid2::FieldContainer<SCALAR2> >(const Intrepid2::FieldContainer<SCALAR2> & in_node_coords); \
 \
 template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyPointCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::copyPointCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyPointCoords<Intrepid::FieldContainer<SCALAR2> >(const Intrepid::FieldContainer<SCALAR2> & in_node_coords); \
-template void PointValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::copyPointCoords<Intrepid::FieldContainer<SCALAR2> >(const Intrepid::FieldContainer<SCALAR2> & in_node_coords);
+template void PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >::copyPointCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
+template void PointValues<SCALAR,PHX::MDField<SCALAR> >::copyPointCoords<Intrepid2::FieldContainer<SCALAR2> >(const Intrepid2::FieldContainer<SCALAR2> & in_node_coords); \
+template void PointValues<SCALAR,Intrepid2::FieldContainer<SCALAR> >::copyPointCoords<Intrepid2::FieldContainer<SCALAR2> >(const Intrepid2::FieldContainer<SCALAR2> & in_node_coords);
 
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)

@@ -52,7 +52,7 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_PureBasis.hpp"
 
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_Basis.hpp"
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
@@ -134,8 +134,8 @@ private:
   PHX::MDField<ScalarT> dof_coeff;  // coefficient values   
   PHX::MDField<ScalarT> dof_field;  // evaluate field
 
-  Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis;
-  Intrepid::FieldContainer<double> intrpCoords, basisRef, basis;
+  Teuchos::RCP<Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > intrepidBasis;
+  Intrepid2::FieldContainer<double> intrpCoords, basisRef, basis;
 };
 
 }

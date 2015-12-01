@@ -110,7 +110,7 @@ namespace panzer_stk_classic {
       FieldContainer(const std::size_t dim0, const std::size_t dim1, double *buffer) 
         : _dim0(dim0), _dim1(dim1), _buffer(buffer) { }
 
-      // row-major indexing: Intrepid_FieldContainerDef.hpp
+      // row-major indexing: Intrepid2_FieldContainerDef.hpp
       double operator()(const std::size_t i, 
                         const std::size_t j) const { return _buffer[i*_dim1+j]; }
 

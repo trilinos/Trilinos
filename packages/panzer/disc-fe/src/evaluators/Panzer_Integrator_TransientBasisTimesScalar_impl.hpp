@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_TRANSIENT_BASISTIMESSCALAR_IMPL_HPP
 #define PANZER_EVALUATOR_TRANSIENT_BASISTIMESSCALAR_IMPL_HPP
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
@@ -110,7 +110,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
+  tmp = Intrepid2::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 }
 
 //**********************************************************************
@@ -133,10 +133,10 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     }
 
     if(workset.num_cells>0)
-      Intrepid::FunctionSpaceTools::
+      Intrepid2::FunctionSpaceTools::
         integrate<ScalarT>(residual, tmp, 
 			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			   Intrepid::COMP_BLAS);
+			   Intrepid2::COMP_BLAS);
   }
 }
 

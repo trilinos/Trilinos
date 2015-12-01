@@ -44,13 +44,13 @@
 
 #include "Shards_CellTopology.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_ArrayTools.hpp"
-#include "Intrepid_CubatureControlVolume.hpp"
-#include "Intrepid_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_ArrayTools.hpp"
+#include "Intrepid2_CubatureControlVolume.hpp"
+#include "Intrepid2_CubatureControlVolumeSide.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_Traits.hpp"
@@ -61,7 +61,7 @@
 
 namespace panzer {
   
-  // * Specialization for Intrepid::FieldContainer<double>
+  // * Specialization for Intrepid2::FieldContainer<double>
   template <typename Scalar>
   void IntegrationValues2<Scalar>::
   setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
@@ -138,14 +138,14 @@ namespace panzer {
        return;
     }
 
-    Intrepid::DefaultCubatureFactory<double,DblArrayDynamic>
+    Intrepid2::DefaultCubatureFactory<double,DblArrayDynamic>
       cubature_factory;
     
     if (ir->cv_type == "side")
-       intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolumeSide<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
+       intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
 
     else if (ir->cv_type == "volume")
-       intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolume<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
+       intrepid_cubature = Teuchos::rcp(new Intrepid2::CubatureControlVolume<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
 
     else if (ir->cv_type == "none" && ir->isSide())
        intrepid_cubature = cubature_factory.create(*(ir->side_topology),
@@ -230,7 +230,7 @@ namespace panzer {
        return; 
     }
     
-    Intrepid::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<Scalar> cell_tools;
     
     if (!int_rule->isSide())
       intrepid_cubature->getCubature(dyn_cub_points, dyn_cub_weights);
@@ -253,7 +253,7 @@ namespace panzer {
   void IntegrationValues2<Scalar>::
   evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
   {
-    Intrepid::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<Scalar> cell_tools;
 
     // copy the dynamic data structures into the static data structures
     {
@@ -297,15 +297,15 @@ namespace panzer {
     cell_tools.setJacobianDet(jac_det, jac);
     
     if (!int_rule->isSide()) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeCellMeasure<Scalar>(weighted_measure, jac_det, cub_weights);
     }
     else if(int_rule->spatial_dimension==3) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeFaceMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
     }
     else if(int_rule->spatial_dimension==2) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeEdgeMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
     }
     else TEUCHOS_ASSERT(false);
@@ -331,7 +331,7 @@ namespace panzer {
       }
     }
 
-    Intrepid::RealSpaceTools<Scalar>::inverse(contravarient, covarient);
+    Intrepid2::RealSpaceTools<Scalar>::inverse(contravarient, covarient);
 
     // norm of g_ij
     for (size_type cell = 0; cell < contravarient.dimension(0); ++cell) {
@@ -454,7 +454,7 @@ namespace panzer {
   evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
   {
   
-      Intrepid::CellTools<Scalar> cell_tools;
+      Intrepid2::CellTools<Scalar> cell_tools;
 
      {
       size_type num_cells = in_node_coordinates.dimension(0);

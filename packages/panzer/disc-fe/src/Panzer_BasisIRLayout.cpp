@@ -173,10 +173,10 @@ std::string panzer::BasisIRLayout::fieldNameD2() const
   return basis_data_->fieldNameD2();
 }    
 
-Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
-panzer::BasisIRLayout::getIntrepidBasis() const
+Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > 
+panzer::BasisIRLayout::getIntrepid2Basis() const
 {
-   return basis_data_->getIntrepidBasis();
+   return basis_data_->getIntrepid2Basis();
 }
 
 Teuchos::RCP< const panzer::PureBasis>

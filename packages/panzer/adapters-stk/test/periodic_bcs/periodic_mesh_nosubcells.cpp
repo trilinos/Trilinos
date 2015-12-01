@@ -65,13 +65,13 @@
 
 #include "Epetra_MpiComm.h"
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 
 #include <string>
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -79,12 +79,12 @@ using Teuchos::rcp;
 namespace panzer_stk_classic {
 
 
-  template <typename IntrepidType>
+  template <typename Intrepid2Type>
   RCP<const panzer::FieldPattern> buildFieldPattern()
   {
      // build a geometric pattern from a single basis
-     RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-     RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+     RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+     RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
      return pattern;
   }
 
@@ -134,7 +134,7 @@ namespace panzer_stk_classic {
     // connection manager
     /////////////////////////////////////////////
     RCP<const panzer::FieldPattern> fp
-         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
     Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > connMngr 
           = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));

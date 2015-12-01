@@ -48,7 +48,7 @@
 #include <vector>
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
@@ -127,10 +127,10 @@ PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::
+    Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(residual, normal_dot_flux_plus_pen, 
 			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid::COMP_BLAS);
+			 Intrepid2::COMP_BLAS);
   
 }
 

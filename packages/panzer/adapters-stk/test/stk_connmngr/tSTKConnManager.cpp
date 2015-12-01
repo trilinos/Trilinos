@@ -55,8 +55,8 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -67,7 +67,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 namespace panzer_stk_classic {
 
@@ -89,12 +89,12 @@ Teuchos::RCP<STK_Interface> build2DMesh(int xElements,int yElements,int xBlocks,
    return meshPtr;
 }
 
-template <typename IntrepidType>
+template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
 
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, single_block_2d)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -301,7 +301,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, four_block_2d)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    RCP<const panzer::FieldPattern> fp 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.buildConnectivity(*fp);
@@ -356,7 +356,7 @@ TEUCHOS_UNIT_TEST(tSTKConnManager, 2_blocks_interface)
    TEST_ASSERT( ! mesh.is_null());
 
    RCP<const panzer::FieldPattern>
-     fp = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+     fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
    STKConnManager<int> connMngr(mesh);
    connMngr.associateElementsInSideset("vertical_0");

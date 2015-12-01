@@ -2,8 +2,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
   #
   # New Intrepid2
-  Core                  core               PS      REQUIRED
-  Intrepid2             intrepid2          EX      OPTIONAL
+  Core                  core               PT      REQUIRED
+  Intrepid2             intrepid2          ST      OPTIONAL
   )
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Shards Sacado)
 SET(LIB_OPTIONAL_DEP_PACKAGES KokkosCore KokkosAlgorithms)

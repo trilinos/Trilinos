@@ -83,7 +83,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid::FieldContainer<double> FieldArray;
+typedef Intrepid2::FieldContainer<double> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)

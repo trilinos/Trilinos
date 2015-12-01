@@ -653,7 +653,7 @@ const shards::CellTopology panzer::PhysicsBlock::getBaseCellTopology() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(m_bases.size() == 0, std::runtime_error,
                    "Cannot return a basis since none exist in this physics block.");
-  return m_bases.begin()->second->getIntrepidBasis()->getBaseCellTopology();
+  return m_bases.begin()->second->getIntrepid2Basis()->getBaseCellTopology();
 }
 
 // *******************************************************************

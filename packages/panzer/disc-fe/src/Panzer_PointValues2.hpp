@@ -50,7 +50,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 namespace panzer {
 
@@ -104,7 +104,7 @@ namespace panzer {
     copyPointCoords(in_point_coords);
     copyNodeCoords(in_node_coords);
     
-    Intrepid::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<Scalar> cell_tools;
     
     cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
     cell_tools.setJacobianInv(jac_inv, jac);

@@ -414,7 +414,7 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
 
       int array0_sz = itr->second.num_cells;
       int array1_sz = basis.functional->dimension(1);
-      // IntrepidFieldContainerFactory fc_factory;
+      // Intrepid2FieldContainerFactory fc_factory;
       MDFieldArrayFactory fc_factory("",true);
       Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 

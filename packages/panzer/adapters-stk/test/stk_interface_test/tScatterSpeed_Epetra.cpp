@@ -11,11 +11,11 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include <Teuchos_oblackholestream.hpp>
 
-// Intrepid includes
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+// Intrepid2 includes
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
 // Panzer includes
 #include "Panzer_ConnManager.hpp"
@@ -45,7 +45,7 @@ using Teuchos::ArrayView;
 using Teuchos::TimeMonitor;
 using Teuchos::Time;
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 typedef Epetra_Map Map;
 typedef Epetra_CrsMatrix CrsMatrix;
 typedef Epetra_CrsGraph CrsGraph;
@@ -163,8 +163,8 @@ size_t setUp1(RCP<Map> &rowmap,
 
   conn = rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
-  RCP<Intrepid::Basis<double,FieldContainer> > basis1 = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-  RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis1));
+  RCP<Intrepid2::Basis<double,FieldContainer> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+  RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));
 
   my_dofM = Teuchos::rcp(new panzer::DOFManager<int,int>());
 

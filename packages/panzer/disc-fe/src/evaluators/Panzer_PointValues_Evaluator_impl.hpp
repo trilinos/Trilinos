@@ -57,8 +57,8 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 
   Teuchos::RCP<const panzer::PointRule> pointRule 
      = p.get< Teuchos::RCP<const panzer::PointRule> >("Point Rule");
-  Teuchos::RCP<const Intrepid::FieldContainer<double> > userArray
-     = p.get<Teuchos::RCP<const Intrepid::FieldContainer<double> > >("Point Array");
+  Teuchos::RCP<const Intrepid2::FieldContainer<double> > userArray
+     = p.get<Teuchos::RCP<const Intrepid2::FieldContainer<double> > >("Point Array");
 
   initialize(pointRule,userArray.ptr(),Teuchos::null);
 }
@@ -66,7 +66,7 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
 PointValues_Evaluator<EvalT,TRAITST>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                            const Intrepid::FieldContainer<double> & userArray)
+                                                            const Intrepid2::FieldContainer<double> & userArray)
 {
   basis_index = 0;
 
@@ -86,7 +86,7 @@ PointValues_Evaluator<EvalT,TRAITST>::PointValues_Evaluator(const Teuchos::RCP<c
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
 void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                      const Teuchos::Ptr<const Intrepid::FieldContainer<double> > & userArray,
+                                                      const Teuchos::Ptr<const Intrepid2::FieldContainer<double> > & userArray,
                                                       const Teuchos::RCP<const panzer::PureBasis> & pureBasis)
 {
   basis = pureBasis;
@@ -105,7 +105,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   // copy user array data
   if(userArray!=Teuchos::null) {
     TEUCHOS_ASSERT(userArray->rank()==2);
-    refPointArray = Intrepid::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
+    refPointArray = Intrepid2::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
     TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
     for(int i=0;i<userArray->size();i++)
        refPointArray[i] = (*userArray)[i]; 

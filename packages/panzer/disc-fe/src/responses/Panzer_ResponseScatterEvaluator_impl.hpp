@@ -43,7 +43,7 @@
 #ifndef __Panzer_ResponseScatterEvaluator_impl_hpp__
 #define __Panzer_ResponseScatterEvaluator_impl_hpp__
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Teuchos_ScalarTraits.hpp"

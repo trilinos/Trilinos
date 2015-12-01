@@ -10,8 +10,8 @@ Basis_Constant<Scalar,ArrayScalar>::Basis_Constant(const shards::CellTopology & 
     this -> basisCardinality_  = 1;
     this -> basisDegree_       = 0;    
     this -> basisCellTopology_ = ct;
-    this -> basisType_         = Intrepid::BASIS_FEM_DEFAULT;
-    this -> basisCoordinates_  = Intrepid::COORDINATES_CARTESIAN;
+    this -> basisType_         = Intrepid2::BASIS_FEM_DEFAULT;
+    this -> basisCoordinates_  = Intrepid2::COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
   
@@ -32,7 +32,7 @@ void Basis_Constant<Scalar, ArrayScalar>::initializeTags() {
   int tags[]  = { dim, 0, 0, 1 };
   
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
+  Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
                               tags,
                               this -> basisCardinality_,
@@ -47,11 +47,11 @@ void Basis_Constant<Scalar, ArrayScalar>::initializeTags() {
 template<class Scalar, class ArrayScalar> 
 void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                             const ArrayScalar &  inputPoints,
-                                                            const Intrepid::EOperator      operatorType) const {
+                                                            const Intrepid2::EOperator      operatorType) const {
   
   // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
-  Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
+  Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
                                                       inputPoints,
                                                       operatorType,
                                                       this -> getBaseCellTopology(),
@@ -63,28 +63,28 @@ void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputV
   
   switch (operatorType) {
     
-    case Intrepid::OPERATOR_VALUE:
+    case Intrepid2::OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
         outputValues(0, i0) = 1.0;
       }
       break;
 
-    case Intrepid::OPERATOR_GRAD:
-    case Intrepid::OPERATOR_D1:
-    case Intrepid::OPERATOR_CURL:
-    case Intrepid::OPERATOR_DIV:
-    case Intrepid::OPERATOR_D2:
-    case Intrepid::OPERATOR_D3:
-    case Intrepid::OPERATOR_D4:
-    case Intrepid::OPERATOR_D5:
-    case Intrepid::OPERATOR_D6:
-    case Intrepid::OPERATOR_D7:
-    case Intrepid::OPERATOR_D8:
-    case Intrepid::OPERATOR_D9:
-    case Intrepid::OPERATOR_D10:
+    case Intrepid2::OPERATOR_GRAD:
+    case Intrepid2::OPERATOR_D1:
+    case Intrepid2::OPERATOR_CURL:
+    case Intrepid2::OPERATOR_DIV:
+    case Intrepid2::OPERATOR_D2:
+    case Intrepid2::OPERATOR_D3:
+    case Intrepid2::OPERATOR_D4:
+    case Intrepid2::OPERATOR_D5:
+    case Intrepid2::OPERATOR_D6:
+    case Intrepid2::OPERATOR_D7:
+    case Intrepid2::OPERATOR_D8:
+    case Intrepid2::OPERATOR_D9:
+    case Intrepid2::OPERATOR_D10:
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_Constant): Invalid operator type");
   }
 }
@@ -95,7 +95,7 @@ template<class Scalar, class ArrayScalar>
 void Basis_Constant<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
                                                             const ArrayScalar &    inputPoints,
                                                             const ArrayScalar &    cellVertices,
-                                                            const Intrepid::EOperator        operatorType) const {
+                                                            const Intrepid2::EOperator        operatorType) const {
   TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_Constant): FEM Basis calling an FVD member function");
 }

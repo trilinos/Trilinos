@@ -45,7 +45,7 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_DOFManagerFEI.hpp"
 
@@ -56,11 +56,11 @@ namespace panzer_stk_classic {
 template <typename GlobalOrdinal>
 static void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
                             const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
-                            std::map<std::string,Intrepid::FieldContainer<double> > & fc);
+                            std::map<std::string,Intrepid2::FieldContainer<double> > & fc);
 
 #ifdef PANZER_HAVE_FEI
 void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
-                       const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
+                       const std::map<std::string,Intrepid2::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
                        Epetra_Vector & x);
 #endif
@@ -107,7 +107,7 @@ void write_solution_data<panzer::Ordinal64>(const panzer::UniqueGlobalIndexer<in
 template <typename GlobalOrdinal>
 void write_solution_data(const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,panzer_stk_classic::STK_Interface & mesh,const Epetra_Vector & x,const std::string & prefix,const std::string & postfix)
 {
-   typedef Intrepid::FieldContainer<double> FieldContainer;
+   typedef Intrepid2::FieldContainer<double> FieldContainer;
 
    // get local IDs
    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
@@ -146,7 +146,7 @@ void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const pan
 
 void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const panzer_stk_classic::STK_Interface & mesh,Epetra_Vector & x)
 {
-   typedef Intrepid::FieldContainer<double> FieldContainer;
+   typedef Intrepid2::FieldContainer<double> FieldContainer;
 
    // get local IDs
    std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
@@ -177,7 +177,7 @@ void read_solution_data(const panzer::DOFManagerFEI<int,int> & dofMngr,const pan
 template <typename GlobalOrdinal>
 void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalIndexer<int,GlobalOrdinal> & dofMngr,
                      const Epetra_Vector & x,const std::vector<std::size_t> & localCellIds,
-                     std::map<std::string,Intrepid::FieldContainer<double> > & fc)
+                     std::map<std::string,Intrepid2::FieldContainer<double> > & fc)
 {
    const std::vector<int> & fieldNums = dofMngr.getBlockFieldNumbers(blockId);
 
@@ -214,16 +214,16 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
 
 #ifdef PANZER_HAVE_FEI
 void scatter_to_vector(const std::string & blockId, const panzer::DOFManagerFEI<int,int> & dofMngr,
-                       const std::map<std::string,Intrepid::FieldContainer<double> > & fc,
+                       const std::map<std::string,Intrepid2::FieldContainer<double> > & fc,
                        const std::vector<std::size_t> & localCellIds,
                        Epetra_Vector & x)
 {
    
-   std::map<std::string,Intrepid::FieldContainer<double> >::const_iterator fieldItr;
+   std::map<std::string,Intrepid2::FieldContainer<double> >::const_iterator fieldItr;
    for(fieldItr=fc.begin();fieldItr!=fc.end();++fieldItr) {
       std::string fieldStr = fieldItr->first;
       int fieldNum = dofMngr.getFieldNum(fieldStr);
-      const Intrepid::FieldContainer<double> & data = fieldItr->second; 
+      const Intrepid2::FieldContainer<double> & data = fieldItr->second; 
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {

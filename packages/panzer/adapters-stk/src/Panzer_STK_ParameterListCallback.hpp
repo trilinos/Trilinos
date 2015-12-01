@@ -68,7 +68,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=panzer::T
 class ParameterListCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
   ParameterListCallback(const std::string & coordFieldName,
-                        const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fp,
+                        const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fp,
                         const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
@@ -108,7 +108,7 @@ private:
    void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
 
    std::string coordFieldName_;
-   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;
+   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
    Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
    bool coordinatesBuilt_;

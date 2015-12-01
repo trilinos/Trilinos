@@ -48,8 +48,8 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_Basis.hpp"
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"

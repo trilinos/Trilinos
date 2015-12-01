@@ -45,9 +45,9 @@
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_Basis.hpp"
 #include "Teuchos_Assert.hpp"
 
 namespace panzer {
@@ -74,27 +74,27 @@ DOF_BasisToBasis(const std::string & fieldName,
   // **************
   // Get coordinate points for reference cell on target basis 
   // **************
-  Teuchos::RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > > coords_interface = 
-    Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > >(targetBasis.getIntrepidBasis(),true);
+  Teuchos::RCP<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > > coords_interface = 
+    Teuchos::rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > >(targetBasis.getIntrepid2Basis(),true);
 
-  Intrepid::FieldContainer<double>intrpCoords =
-    Intrepid::FieldContainer<double>(targetBasis.cardinality(),targetBasis.dimension());
+  Intrepid2::FieldContainer<double>intrpCoords =
+    Intrepid2::FieldContainer<double>(targetBasis.cardinality(),targetBasis.dimension());
 
   coords_interface->getDofCoords(intrpCoords);
 
   // **************
   // Evaluate source basis values at target basis coordinates
   // **************
-  Intrepid::FieldContainer<double> basisRef = 
-    Intrepid::FieldContainer<double>(sourceBasis.cardinality(),targetBasis.cardinality());
+  Intrepid2::FieldContainer<double> basisRef = 
+    Intrepid2::FieldContainer<double>(sourceBasis.cardinality(),targetBasis.cardinality());
 
-  sourceBasis.getIntrepidBasis()->getValues(basisRef, intrpCoords, Intrepid::OPERATOR_VALUE);
+  sourceBasis.getIntrepid2Basis()->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
   
   // **************
   // Copy the reference basis values for all cells in workset
   // **************
-  basis = Intrepid::FieldContainer<double>(sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
-  Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(basis,basisRef);
+  basis = Intrepid2::FieldContainer<double>(sourceBasis.numCells(),sourceBasis.cardinality(),targetBasis.cardinality());
+  Intrepid2::FunctionSpaceTools::HGRADtransformVALUE<double>(basis,basisRef);
     
   std::string n = "DOF_BasisToBasis: " + dof_target_coeff.fieldTag().name();
   this->setName(n);
@@ -119,7 +119,7 @@ void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData 
   if(workset.num_cells>0) {
 
     // evaluate function at specified points
-    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_target_coeff,dof_source_coeff,basis);
+    Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(dof_target_coeff,dof_source_coeff,basis);
   }
 }
 

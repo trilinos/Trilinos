@@ -43,7 +43,7 @@
 #ifndef PANZER_POINT_VALUES2_IMPL_HPP
 #define PANZER_POINT_VALUES2_IMPL_HPP
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 // ***********************************************************
 // * Evaluation and SetupArrays are NOT specialized

@@ -52,7 +52,7 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_PureBasis.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
@@ -92,7 +92,7 @@ private:
   PHX::MDField<ScalarT> dof_target_coeff;
 
   //! Reference cell basis values at target points, replicated for each cell in workset
-  Intrepid::FieldContainer<double> basis;
+  Intrepid2::FieldContainer<double> basis;
 };
 
 }

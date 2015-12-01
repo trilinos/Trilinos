@@ -48,7 +48,7 @@
 #include <vector>
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
@@ -115,7 +115,7 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
     }
   }
 
-  // const Intrepid::FieldContainer<double> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
+  // const Intrepid2::FieldContainer<double> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
@@ -126,10 +126,10 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
   }
 
   if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::
+    Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(residual, normal_dot_flux, 
 			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid::COMP_BLAS);
+			 Intrepid2::COMP_BLAS);
 }
 
 //**********************************************************************

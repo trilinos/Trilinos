@@ -56,12 +56,12 @@
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
-// Intrepid
+// Intrepid2
 #include "Shards_CellTopology.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_Basis.hpp"
 
 template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> > 
@@ -274,7 +274,7 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
     Teuchos::rcp(new std::map<unsigned,panzer::Workset>);
 
   // All elements of boundary condition should go into one workset.
-  // However due to design of Intrepid (requires same basis for all
+  // However due to design of Intrepid2 (requires same basis for all
   // cells), we have to separate the workset based on the local side
   // index.  Each workset for a boundary condition is associated with
   // a local side for the element

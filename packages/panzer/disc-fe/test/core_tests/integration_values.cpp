@@ -51,12 +51,12 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues.hpp"
 #include "Panzer_ArrayTraits.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 using panzer::IntegrationRule;
-using Intrepid::FieldContainer;
+using Intrepid2::FieldContainer;
 
 namespace panzer {
 
@@ -75,7 +75,7 @@ namespace panzer {
     RCP<IntegrationRule> int_rule = 
       rcp(new IntegrationRule(cubature_degree, cell_data));
     
-    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > 
+    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > 
       int_values;
 
     int_values.setupArrays(int_rule);

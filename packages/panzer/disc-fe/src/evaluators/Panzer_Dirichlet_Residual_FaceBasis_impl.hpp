@@ -47,7 +47,7 @@
 #include <string>
 #include <vector>
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 
@@ -119,7 +119,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  faceNormal = Intrepid::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceNormal = Intrepid2::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -128,7 +128,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   if(workset.num_cells<=0)
     return;
   else {
-    Intrepid::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
+    Intrepid2::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
                                             pointValues.jac,
                                             this->wda(workset).subcell_index, 
                                            *basis->getCellTopology());
@@ -143,7 +143,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
   }
 /*
   if(workset.subcell_dim==1) {
-    Intrepid::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
+    Intrepid2::CellTools<ScalarT>::getPhysicalFaceNormals(faceNormal,
                                             pointValues.jac,
                                             this->wda(workset).subcell_index, 
                                            *basis->getCellTopology());
@@ -163,11 +163,11 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     int cellDim = parentCell.getDimension();
     int numFaces = dof.dimension(1);
 
-    refFaceNormal = Intrepid::FieldContainer<ScalarT>(numFaces,cellDim);
+    refFaceNormal = Intrepid2::FieldContainer<ScalarT>(numFaces,cellDim);
 
     for(int i=0;i<numFaces;i++) {
-      Intrepid::FieldContainer<double> refFaceNormal_local(cellDim);
-      Intrepid::CellTools<double>::getReferenceFaceNormal(refFaceNormal_local, i, parentCell);
+      Intrepid2::FieldContainer<double> refFaceNormal_local(cellDim);
+      Intrepid2::CellTools<double>::getReferenceFaceNormal(refFaceNormal_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 
         refFaceNormal(i,d) = refFaceNormal_local(d);

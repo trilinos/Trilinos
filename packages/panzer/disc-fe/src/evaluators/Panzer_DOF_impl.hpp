@@ -50,7 +50,7 @@
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_DOF_Functors.hpp"
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 
 namespace panzer {
 

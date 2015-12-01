@@ -112,7 +112,7 @@ namespace {
   void 
   fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
                       const std::string & fieldName,
-                      std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
+                      std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -122,7 +122,7 @@ namespace {
 
         if(globalIndexer.fieldInBlock(fieldName,blockId))
            fieldPatterns[blockId] =
-              Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
+              Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
      }
   }
 #endif
@@ -131,7 +131,7 @@ namespace {
   void 
   fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
                       const std::string & fieldName,
-                      std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
+                      std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -141,14 +141,14 @@ namespace {
 
         if(globalIndexer.fieldInBlock(fieldName,blockId))
            fieldPatterns[blockId] =
-              Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
+              Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
      }
   }
 
   void
   fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer,
                       const std::string & fieldName,
-                      std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
+                      std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fieldPatterns)
   {
     using Teuchos::Ptr;
     using Teuchos::ptrFromRef;
@@ -249,7 +249,7 @@ namespace {
 
        // add in the coordinate parameter list callback handler
        if(determineCoordinateField(*globalIndexer,fieldName)) {
-          std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+          std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
           fillFieldPatternMap(*globalIndexer,fieldName,fieldPatterns);
 
           Teuchos::RCP<panzer_stk_classic::ParameterListCallback<int,GO> > callback = Teuchos::rcp(new
@@ -366,7 +366,7 @@ namespace {
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofVec[i],fieldName));
 
-            std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+            std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
             fillFieldPatternMap(*dofVec[i],fieldName,fieldPatterns);
             panzer_stk_classic::ParameterListCallback<int,GO> plCall(fieldName,fieldPatterns,stkConn_manager,dofVec[i]);
             plCall.buildArrayToVector();

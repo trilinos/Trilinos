@@ -275,7 +275,7 @@ namespace panzer {
     const double double_tol = 10.0*std::numeric_limits<double>::epsilon();
 
     // NOTE: if the ordering of elements in STK changes or the
-    // ordering of integration points in Intrepid changes, this test
+    // ordering of integration points in Intrepid2 changes, this test
     // will break!  It assumes a fixed deterministic ordering.
     if (tcomm->getSize() == 1) {
       // eblock 1

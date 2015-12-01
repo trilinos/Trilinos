@@ -271,7 +271,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          block_r->getNonconstLocalData(ptrFromRef(local_r));
 
          if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::pair<std::vector<int>,std::vector<int> > & indicePair 
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
            const std::vector<int> & elmtOffset = indicePair.first;
@@ -296,7 +296,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              local_dc[lid] = 1.0;
            }
          } else {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
 
            // loop over basis functions
@@ -491,7 +491,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          block_r->getNonconstLocalData(ptrFromRef(local_r));
    
          if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::pair<std::vector<int>,std::vector<int> > & indicePair 
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
            const std::vector<int> & elmtOffset = indicePair.first;
@@ -516,7 +516,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              local_dc[lid] = 1.0;
            }
          } else {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
 
            // loop over basis functions
@@ -708,7 +708,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          RCP<SpmdVectorBase<double> > block_r = rcp_dynamic_cast<SpmdVectorBase<double> >(r->getNonconstVectorBlock(blockRowIndex));
          block_r->getNonconstLocalData(ptrFromRef(local_r));
    
-         // this call "should" get the right ordering according to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid2 basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;

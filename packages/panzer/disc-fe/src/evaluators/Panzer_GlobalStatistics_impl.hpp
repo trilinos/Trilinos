@@ -43,7 +43,7 @@
 #ifndef PANZER_GLOBAL_STATISTICS_IMPL_HPP
 #define PANZER_GLOBAL_STATISTICS_IMPL_HPP
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Workset_Utilities.hpp"
@@ -127,9 +127,9 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   if (workset.num_cells == 0)
     return;
 
-  Intrepid::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
+  Intrepid2::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
                                                        (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                       Intrepid::COMP_BLAS);
+                                                       Intrepid2::COMP_BLAS);
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
     total_volume += volumes(cell);
@@ -138,9 +138,9 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field,++field_index) {
     
-    Intrepid::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
+    Intrepid2::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
                                                          (this->wda(workset).int_rules[ir_index])->weighted_measure, 
-                                                         Intrepid::COMP_BLAS);
+                                                         Intrepid2::COMP_BLAS);
     
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
       averages[field_index] += tmp(cell);
