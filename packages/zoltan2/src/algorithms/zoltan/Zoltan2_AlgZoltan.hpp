@@ -157,14 +157,14 @@ private:
     // TODO:  If add parameter list to this function, can register 
     // TODO:  different callbacks depending on the hypergraph model to use
 
-    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMatrixAdapter<Adapter>,
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withMatrixAdapter<Adapter>,
                           (void *) &(*adp));
-    zz->Set_HG_CS_Fn(zoltanHGCSForMatrixAdapter<Adapter>,
+    zz->Set_HG_CS_Fn(zoltanHGCS_withMatrixAdapter<Adapter>,
                      (void *) &(*adp));
 
-    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
     //                             (void *) &(*adapter));
-    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMatrixAdapter<Adapter>,
     //                             (void *) &(*adapter));
   }
 
@@ -187,24 +187,22 @@ private:
                                                           HYPEREDGE_CENTRIC);
       model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
       
-      zz->Set_Num_Obj_Fn(zoltanHGModelNumObj<Adapter>, (void *) &(*mdl));
-      zz->Set_Obj_List_Fn(zoltanHGModelObjList<Adapter>, (void *) &(*mdl));
+      zz->Set_Num_Obj_Fn(zoltanHGNumObj_withModel<Adapter>, (void *) &(*mdl));
+      zz->Set_Obj_List_Fn(zoltanHGObjList_withModel<Adapter>, (void *) &(*mdl));
       
-      zz->Set_HG_Size_CS_Fn(zoltanHGModelSizeCSForMeshAdapter<Adapter>,
-                            (void *) &(*mdl));
-      zz->Set_HG_CS_Fn(zoltanHGModelCSForMeshAdapter<Adapter>,
-                       (void *) &(*mdl));
+      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withModel<Adapter>, (void *) &(*mdl));
+      zz->Set_HG_CS_Fn(zoltanHGCS_withModel<Adapter>, (void *) &(*mdl));
     }
     else {
       //If entities are unique we dont need the extra cost of the model
-      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
+      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withMeshAdapter<Adapter>,
                             (void *) &(*adp));
-      zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
+      zz->Set_HG_CS_Fn(zoltanHGCS_withMeshAdapter<Adapter>,
                        (void *) &(*adp));
     }
-    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMeshAdapter<Adapter>,
     //                               (void *) &(*adp));
-    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMeshAdapter<Adapter>,
     //                         (void *) &(*adp));
   }
   
@@ -374,10 +372,11 @@ void AlgZoltan<Adapter>::partition(
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   int numObjects=nObj;
-  //The number of objects may be larger than zoltan knows due to copies that were removed by the hypergraph model
+  // The number of objects may be larger than zoltan knows due to copies that 
+  // were removed by the hypergraph model
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
-      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
+      !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {
     numObjects=model->getLocalNumObjects();
   }
 
@@ -387,9 +386,11 @@ void AlgZoltan<Adapter>::partition(
   
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
-      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
-    //Setup the part ids for copied entities removed by ownership in hypergraph model.
-    const HyperGraphModel<Adapter>* mdl = static_cast<const HyperGraphModel<Adapter>* >(&(*model));
+      !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {
+    // Setup the part ids for copied entities removed by ownership in 
+    // hypergraph model.
+    const HyperGraphModel<Adapter>* mdl = 
+                    static_cast<const HyperGraphModel<Adapter>* >(&(*model));
     
     typedef typename HyperGraphModel<Adapter>::map_t map_t;
     Teuchos::RCP<const map_t> mapWithCopies;

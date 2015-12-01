@@ -168,7 +168,7 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCSForMatrixAdapter(
+static void zoltanHGSizeCS_withMatrixAdapter(
   void *data, int *nEdges, int *nPins,
   int *format, int *ierr
 ) 
@@ -180,7 +180,7 @@ static void zoltanHGSizeCSForMatrixAdapter(
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCSForMatrixAdapter(
+static void zoltanHGCS_withMatrixAdapter(
   void *data, int nGidEnt, int nEdges, int nPins,
   int format, ZOLTAN_ID_PTR edgeIds, 
   int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
@@ -195,131 +195,18 @@ static void zoltanHGCSForMatrixAdapter(
 
 
 /////////////////////////////////////////////////////////////////////////////
-// HYPERGRAPH MODEL CALLBACKS
-/////////////////////////////////////////////////////////////////////////////
-
-////////////////////
-// ZOLTAN_NUM_OBJ_FN
-template <typename Adapter>
-static int zoltanHGModelNumObj(void *data, int *ierr) {
-  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
-  *ierr = ZOLTAN_OK;
-  return int(mdl->getLocalNumOwnedVertices());
-}
-
-/////////////////////
-// ZOLTAN_OBJ_LIST_FN
-template <typename Adapter>
-static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt, 
-                          ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                          int wdim, float *wgts, int *ierr) 
-{
-  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
-  typedef typename Adapter::gno_t       gno_t;
-  typedef typename Adapter::lno_t       lno_t;
-  typedef typename Adapter::scalar_t    scalar_t;
-  typedef StridedData<lno_t, scalar_t>  input_t;
-
-  *ierr = ZOLTAN_OK;
-  ArrayView<const gno_t> Ids;
-  ArrayView<input_t> model_wgts;
-  size_t num_verts = mdl->getVertexList(Ids,model_wgts);
-  ArrayView<bool> isOwner;
-  mdl->getOwnedList(isOwner);
-  int j=0;
-  for (size_t i=0;i<num_verts;i++) {
-    if (isOwner[i]) {
-      lids[j] = i;
-      gids[j] = Ids[i];
-      j++;
-    }
-  }
-  if (wdim) {
-    int mywdim = mdl->getNumWeightsPerVertex();
-    for (int w = 0; w < wdim; w++) {
-      j=0;
-      if (w < mywdim) {
-        for (size_t i = 0; i < num_verts; i++)  {
-          if (isOwner[i]) {
-            wgts[j*wdim+w] = float(model_wgts[w][i]);
-            j++;
-          }
-        }
-      }
-      else {
-        // provide uniform weights
-        for (size_t i = 0; i < num_verts; i++) {
-          if (isOwner[i]) {
-            wgts[j*wdim+w] = 1.;
-            j++;
-          }
-        }
-      }
-    }
-  }
-}
-
-///////////////////////
-// ZOLTAN_HG_SIZE_CS_FN
-template <typename Adapter>
-static void zoltanHGModelSizeCSForMeshAdapter(
-  void *data, int *nEdges, int *nPins,
-  int *format, int *ierr
-) 
-{
-  *ierr = ZOLTAN_OK;
-  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
-  *nEdges = mdl->getLocalNumHyperEdges();
-  *nPins = mdl->getLocalNumPins();
-  if (mdl->getCentricView()==HYPEREDGE_CENTRIC)
-    *format = ZOLTAN_COMPRESSED_EDGE;
-  else
-    *format = ZOLTAN_COMPRESSED_VERTEX;
-}
-
-//////////////////
-// ZOLTAN_HG_CS_FN
-template <typename Adapter>
-static void zoltanHGModelCSForMeshAdapter(
-  void *data, int nGidEnt, int nEdges, int nPins,
-  int format, ZOLTAN_ID_PTR edgeIds, 
-  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
-)
-{
-  *ierr = ZOLTAN_OK;
-  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
-  typedef typename Adapter::gno_t       gno_t;
-  typedef typename Adapter::lno_t       lno_t;
-  typedef typename Adapter::scalar_t    scalar_t;
-  typedef StridedData<lno_t, scalar_t>  input_t;
-
-  ArrayView<const gno_t> Ids;
-  ArrayView<input_t> wgts;
-  mdl->getEdgeList(Ids,wgts);
-  ArrayView<const gno_t> pinIds_;
-  ArrayView<const lno_t> offsets;
-  ArrayView<input_t> pin_wgts;
-  mdl->getPinList(pinIds_,offsets,pin_wgts);
-  for (int i=0;i<nEdges;i++) {
-    edgeIds[i]=Ids[i];
-    edgeIdx[i]=offsets[i];
-  }
-  
-  for (int i=0;i<nPins;i++)
-    pinIds[i] = pinIds_[i];
-}
-
-/////////////////////////////////////////////////////////////////////////////
 // MESH ADAPTER CALLBACKS
 // Implement Boman/Chevalier's hypergraph mesh model
-// Return for each primary entity (vertex) the list of associated
-// adjacency entities (edges)
+// Skip explicit construction of a HypergraphModel
+// Return either (depending on available adjacencies):
+// +  for each primary entity (vtx), the list of assoc adjacency entities (edges)
+// +  for each adjacency entity (edge), the list of assoc primary entities (vtx)
 /////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCSForMeshAdapter(
+static void zoltanHGSizeCS_withMeshAdapter(
   void *data, int *nLists, int *nPins,
   int *format, int *ierr
 ) 
@@ -354,7 +241,7 @@ static void zoltanHGSizeCSForMeshAdapter(
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCSForMeshAdapter(
+static void zoltanHGCS_withMeshAdapter(
   void *data, int nGidEnt, int nLists, int nPins,
   int format, ZOLTAN_ID_PTR listIds, 
   int *listIdx, ZOLTAN_ID_PTR pinIds, int *ierr
@@ -411,6 +298,123 @@ static void zoltanHGCSForMeshAdapter(
     for (int i=0; i < nPins; i++)
       pinIds[i] = adjIds[i];
   }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// HYPERGRAPH CALLBACKS FROM A HYPERGRAPH MODEL
+/////////////////////////////////////////////////////////////////////////////
+
+////////////////////
+// ZOLTAN_NUM_OBJ_FN
+template <typename Adapter>
+static int zoltanHGNumObj_withModel(void *data, int *ierr) {
+  const HyperGraphModel<Adapter>* mdl = 
+                                  static_cast<HyperGraphModel<Adapter>* >(data);
+  *ierr = ZOLTAN_OK;
+  return int(mdl->getLocalNumOwnedVertices());
+}
+
+/////////////////////
+// ZOLTAN_OBJ_LIST_FN
+template <typename Adapter>
+static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt, 
+                                      ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                                      int wdim, float *wgts, int *ierr) 
+{
+  const HyperGraphModel<Adapter>* mdl = 
+                                  static_cast<HyperGraphModel<Adapter>* >(data);
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  *ierr = ZOLTAN_OK;
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> model_wgts;
+  size_t num_verts = mdl->getVertexList(Ids,model_wgts);
+  ArrayView<bool> isOwner;
+  mdl->getOwnedList(isOwner);
+  int j=0;
+  for (size_t i=0;i<num_verts;i++) {
+    if (isOwner[i]) {
+      lids[j] = i;
+      gids[j] = Ids[i];
+      j++;
+    }
+  }
+  if (wdim) {
+    int mywdim = mdl->getNumWeightsPerVertex();
+    for (int w = 0; w < wdim; w++) {
+      j=0;
+      if (w < mywdim) {
+        for (size_t i = 0; i < num_verts; i++)  {
+          if (isOwner[i]) {
+            wgts[j*wdim+w] = float(model_wgts[w][i]);
+            j++;
+          }
+        }
+      }
+      else {
+        // provide uniform weights
+        for (size_t i = 0; i < num_verts; i++) {
+          if (isOwner[i]) {
+            wgts[j*wdim+w] = 1.;
+            j++;
+          }
+        }
+      }
+    }
+  }
+}
+
+///////////////////////
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCS_withModel(void *data, int *nEdges, int *nPins,
+                                     int *format, int *ierr
+) 
+{
+  *ierr = ZOLTAN_OK;
+  const HyperGraphModel<Adapter>* mdl = 
+                                  static_cast<HyperGraphModel<Adapter>* >(data);
+  *nEdges = mdl->getLocalNumHyperEdges();
+  *nPins = mdl->getLocalNumPins();
+  if (mdl->getCentricView()==HYPEREDGE_CENTRIC)
+    *format = ZOLTAN_COMPRESSED_EDGE;
+  else
+    *format = ZOLTAN_COMPRESSED_VERTEX;
+}
+
+//////////////////
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
+                                 int format, ZOLTAN_ID_PTR edgeIds, 
+                                 int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  *ierr = ZOLTAN_OK;
+  const HyperGraphModel<Adapter>* mdl = 
+                                  static_cast<HyperGraphModel<Adapter>* >(data);
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> wgts;
+  mdl->getEdgeList(Ids,wgts);
+  ArrayView<const gno_t> pinIds_;
+  ArrayView<const lno_t> offsets;
+  ArrayView<input_t> pin_wgts;
+  mdl->getPinList(pinIds_,offsets,pin_wgts);
+  for (int i=0;i<nEdges;i++) {
+    edgeIds[i]=Ids[i];
+    edgeIdx[i]=offsets[i];
+  }
+  
+  for (int i=0;i<nPins;i++)
+    pinIds[i] = pinIds_[i];
 }
 
 }
