@@ -2,7 +2,7 @@
 #define BASKER_TREE_HPP
 
 //Basker includes
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 #include "basker_types.hpp"
 #include "basker_util.hpp"
 #include "basker_types.hpp"

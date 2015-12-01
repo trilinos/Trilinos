@@ -4,7 +4,7 @@
 #define BASKER_DEBUG_NFACTOR 
 
 /*Basker Includes*/
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 #include "basker_types.hpp"
 #include "basker_util.hpp"
 #include "basker_structs.hpp"

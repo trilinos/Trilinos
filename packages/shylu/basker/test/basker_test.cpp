@@ -3,8 +3,8 @@
 #include <string>
 #include <cstdlib>
 
-#include "basker_decl.hpp"
-#include "basker_def.hpp"
+#include "shylubasker_decl.hpp"
+#include "shylubasker_def.hpp"
  
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>

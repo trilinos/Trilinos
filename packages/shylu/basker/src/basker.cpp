@@ -1,8 +1,7 @@
 
 #include "basker_types.hpp"
-#include "basker_decl.hpp"
-#include "basker_def.hpp"
-
+#include "shylubasker_decl.hpp"
+#include "shylubasker_def.hpp"
 
 #include <Kokkos_Core.hpp>
 

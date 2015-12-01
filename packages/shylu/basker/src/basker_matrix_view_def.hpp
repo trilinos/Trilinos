@@ -4,7 +4,7 @@
 /*Basker Includes*/
 #include "basker_matrix_decl.hpp"
 #include "basker_types.hpp"
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 
 /*System Includes*/
 #include <iostream>

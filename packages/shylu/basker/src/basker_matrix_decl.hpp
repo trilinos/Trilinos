@@ -2,7 +2,7 @@
 #define BASKER_MATRIX_DECL_HPP
 
 /*Basker Includes*/
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 #include "basker_types.hpp"
 
 /*System Includes*/

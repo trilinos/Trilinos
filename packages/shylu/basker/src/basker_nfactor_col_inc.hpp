@@ -1,7 +1,7 @@
 #ifndef BASKER_NFACTOR_COL_INC_HPP
 #define BASKER_NFACTOR_COL_INC_HPP
 
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 #include "basker_matrix_decl.hpp"
 #include "basker_matrix_view_decl.hpp"
 #include "basker_matrix_view_def.hpp"

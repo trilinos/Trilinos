@@ -2,7 +2,7 @@
 #define BASKER_THREAD_HPP
 
 #include "basker_types.hpp"
-#include "basker_decl.hpp"
+//#include "basker_decl.hpp"
 
 namespace BaskerNS
 {
