@@ -241,9 +241,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_TransformLocalValues
+  CrsMatrix_TransformValues
   SOURCES
-    CrsMatrix_TransformLocalValues
+    CrsMatrix_TransformValues
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
