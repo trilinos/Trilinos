@@ -2061,18 +2061,20 @@ namespace Tpetra {
                        const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                        const Teuchos::ArrayView<const Scalar>& values) const
   {
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
-    typedef LocalOrdinal LO;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::View;
     typedef impl_scalar_type ST;
+    typedef GlobalOrdinal GO;
+    typedef device_type DD;
+    typedef typename View<GO*, DD>::HostMirror::device_type HD;
     // project2nd is a binary function that returns its second
     // argument.  This replaces entries in the given row with their
     // corresponding entry of values.
-    typedef Tpetra::project2nd<ST, ST> f_type;
+    typedef Tpetra::project2nd<ST, ST> BF;
 
     if (! isFillActive () || staticGraph_.is_null ()) {
       // Fill must be active and the "nonconst" graph must exist.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
+      return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
     }
 
     const RowInfo rowInfo =
@@ -2080,19 +2082,19 @@ namespace Tpetra {
     if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // The calling process does not own this row, so it is not
       // allowed to modify its values.
-      return static_cast<LO> (0);
+      return static_cast<LocalOrdinal> (0);
     }
-    ArrayView<ST> curVals = this->getViewNonConst (rowInfo);
-    ArrayView<const ST> valsIn = av_reinterpret_cast<const ST> (values);
+    auto curRowValsK = this->getRowViewNonConst (rowInfo);
+
+    const ST* rawInputVals = reinterpret_cast<const ST*> (values.getRawPtr ());
+    // 'indices' and 'values' come from the user, so they are host data.
+    View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals, values.size ());
+    View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (), indices.size ());
+
     // It doesn't make sense for replace to use atomic updates, since
     // the result of multiple threads replacing the same value
     // concurrently is undefined.
-    return staticGraph_->template transformGlobalValues<ST, f_type> (rowInfo,
-                                                                     curVals,
-                                                                     indices,
-                                                                     valsIn,
-                                                                     f_type (),
-                                                                     false);
+    return staticGraph_->template transformGlobalValues<ST, BF, HD, DD> (rowInfo, curRowValsK, inputIndsK, inputValsK, BF (), false);
   }
 
 
