@@ -71,7 +71,7 @@ namespace MueLuTests {
       ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-      H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+      H->GetLevel(0)->Set("A", A);
 
       mueluFactory.SetupHierarchy(*H);
 
