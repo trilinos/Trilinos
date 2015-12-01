@@ -2058,8 +2058,8 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceGlobalValues (const GlobalOrdinal globalRow,
-                       const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-                       const Teuchos::ArrayView<const Scalar>& values) const
+                       const Teuchos::ArrayView<const GlobalOrdinal>& inputInds,
+                       const Teuchos::ArrayView<const Scalar>& inputVals) const
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
@@ -2072,29 +2072,18 @@ namespace Tpetra {
     // corresponding entry of values.
     typedef Tpetra::project2nd<ST, ST> BF;
 
-    if (! isFillActive () || staticGraph_.is_null ()) {
-      // Fill must be active and the "nonconst" graph must exist.
-      return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-    }
-
-    const RowInfo rowInfo =
-      staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
-    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-      // The calling process does not own this row, so it is not
-      // allowed to modify its values.
-      return static_cast<LocalOrdinal> (0);
-    }
-    auto curRowValsK = this->getRowViewNonConst (rowInfo);
-
-    const ST* rawInputVals = reinterpret_cast<const ST*> (values.getRawPtr ());
+    const ST* const rawInputVals =
+      reinterpret_cast<const ST*> (inputVals.getRawPtr ());
     // 'indices' and 'values' come from the user, so they are host data.
-    View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals, values.size ());
-    View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (), indices.size ());
-
+    View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals,
+                                                     inputVals.size ());
+    View<const GO*, HD, MemoryUnmanaged> inputIndsK (inputInds.getRawPtr (),
+                                                     inputInds.size ());
     // It doesn't make sense for replace to use atomic updates, since
     // the result of multiple threads replacing the same value
     // concurrently is undefined.
-    return staticGraph_->template transformGlobalValues<ST, BF, HD, DD> (rowInfo, curRowValsK, inputIndsK, inputValsK, BF (), false);
+    return this->template transformGlobalValues<BF, HD> (globalRow, inputIndsK,
+                                                         inputValsK, BF (), false);
   }
 
 

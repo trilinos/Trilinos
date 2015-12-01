@@ -2906,39 +2906,94 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const Scalar>& values,
                          const Tpetra::CombineMode combineMode);
 
-    /// \brief Transform CrsMatrix entries, using global indices.
+    /// \brief Transform CrsMatrix entries in place, using global
+    ///   indices to select the entries in the row to transform.
     ///
     /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
-    /// the corresponding entry of the \c values array, then we apply
-    /// the binary function f to \f$A(i,j)\f$ as follows:
+    /// the corresponding entry of the \c inputVals array, then we
+    /// apply the binary function f to \f$A(i,j)\f$ as follows:
     /// \f[
     ///   A(i,j) := f(A(i,j), v_{ij}).
     /// \f]
-    /// For example, BinaryFunction = std::plus<Scalar> does the same
-    /// thing as sumIntoLocalValues(), and BinaryFunction =
-    /// project2nd<Scalar,Scalar> does the same thing as
-    /// replaceLocalValues().
+    /// For example, BinaryFunction = std::plus<impl_scalar_type> does
+    /// the same thing as sumIntoLocalValues, and BinaryFunction =
+    /// project2nd<impl_scalar_type,impl_scalar_type> does the same
+    /// thing as replaceLocalValues.  (It is generally more efficient
+    /// to call sumIntoLocalValues resp. replaceLocalValues than to do
+    /// this.)
     ///
-    /// \tparam BinaryFunction The type of binary function to apply.
-    ///   std::binary_function is a model for this.
+    /// \tparam BinaryFunction The type of the binary function f to
+    ///   use for updating the sparse matrix's value(s).  This should
+    ///   be convertible to
+    ///   std::function<impl_scalar_type (const impl_scalar_type&,
+    ///                                   const impl_scalar_type&)>.
+    /// \tparam InputMemorySpace Kokkos memory space / device in which
+    ///   the input data live.  This may differ from the memory space
+    ///   in which the current matrix's row's values live.
     ///
     /// \param globalRow [in] (Global) index of the row to modify.
-    ///   This row <i>must</t> be owned by the calling process.
-    ///
-    /// \param indices [in] (Global) indices in the row to modify.
-    ///   Indices not in the column Map (if the matrix already has a
-    ///   column Map) and their corresponding values will be ignored.
-    ///
-    /// \param values [in] Values to use for modification.
+    ///   This row <i>must</t> be owned by the calling process.  (This
+    ///   is a stricter requirement than for sumIntoGlobalValues.)
+    /// \param inputInds [in] (Global) indices in the row to modify.
+    ///   Indices not in the row on the calling process, and their
+    ///   corresponding values, will be ignored.
+    /// \param inputVals [in] Values to use for modification.
     ///
     /// This method works whether indices are local or global.
     /// However, it will cost more if indices are local, since it will
-    /// have to convert the local indices to global indices in that
-    /// case.
+    /// have to convert the input global indices to local indices in
+    /// that case.
+    template<class BinaryFunction, class InputMemorySpace>
+    LocalOrdinal
+    transformGlobalValues (const GlobalOrdinal globalRow,
+                           const Kokkos::View<const GlobalOrdinal*,
+                             InputMemorySpace,
+                             Kokkos::MemoryUnmanaged>& inputInds,
+                           const Kokkos::View<const impl_scalar_type*,
+                             InputMemorySpace,
+                             Kokkos::MemoryUnmanaged>& inputVals,
+                           BinaryFunction f,
+                           const bool atomic = useAtomicUpdatesByDefault) const
+    {
+      using Kokkos::MemoryUnmanaged;
+      using Kokkos::View;
+      typedef impl_scalar_type ST;
+      typedef BinaryFunction BF;
+      typedef device_type DD;
+      typedef InputMemorySpace ID;
+
+      if (! isFillActive () || staticGraph_.is_null ()) {
+        // Fill must be active and the "nonconst" graph must exist.
+        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      }
+
+      const RowInfo rowInfo =
+        staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The calling process does not own this row, so it is not
+        // allowed to modify its values.
+        return static_cast<LocalOrdinal> (0);
+      }
+      auto curRowVals = this->getRowViewNonConst (rowInfo);
+
+      return staticGraph_->template transformGlobalValues<ST, BF, ID, DD> (rowInfo,
+                                                                           curRowVals,
+                                                                           inputInds,
+                                                                           inputVals,
+                                                                           f, atomic);
+    }
+
+    /// \brief Transform CrsMatrix entries, using global indices;
+    ///   backwards compatibility version that takes
+    ///   Teuchos::ArrayView instead of Kokkos::View.
     ///
-    /// See discussion in the documentation of getGlobalRowCopy()
-    /// about why we use \c Scalar and not \c impl_scalar_type here
-    /// for the input array type.
+    /// See above overload of transformGlobalValues for full documentation.
+    ///
+    /// \tparam BinaryFunction The type of binary function to apply.
+    ///
+    /// \param globalRow [in] (Global) index of the row to modify.
+    /// \param indices [in] (Global) indices in the row to modify.
+    /// \param values [in] Values to use for modification.
     template<class BinaryFunction>
     LocalOrdinal
     transformGlobalValues (const GlobalOrdinal globalRow,
@@ -2955,31 +3010,18 @@ namespace Tpetra {
       typedef device_type DD;
       typedef typename View<GO*, DD>::HostMirror::device_type HD;
 
-      if (! isFillActive () || staticGraph_.is_null ()) {
-        // Fill must be active and the "nonconst" graph must exist.
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-      }
-
-      const RowInfo rowInfo =
-        staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
-      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        // The calling process does not own this row, so it is not
-        // allowed to modify its values.
-        return static_cast<LocalOrdinal> (0);
-      }
-      auto curRowValsK = this->getRowViewNonConst (rowInfo);
-
       // The 'indices' and 'values' arrays come from the user, so we
       // assume that they are host data, not device data.
       const ST* const rawInputVals =
         reinterpret_cast<const ST*> (values.getRawPtr ());
-      View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals, values.size ());
-      View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (), indices.size ());
-      return staticGraph_->template transformGlobalValues<ST, BF, HD, DD> (rowInfo,
-                                                                           curRowValsK,
-                                                                           inputIndsK,
-                                                                           inputValsK,
-                                                                           f, atomic);
+      View<const ST*, HD, MemoryUnmanaged> inputValsK (rawInputVals,
+                                                       values.size ());
+      View<const GO*, HD, MemoryUnmanaged> inputIndsK (indices.getRawPtr (),
+                                                       indices.size ());
+      return this->template transformGlobalValues<BF, HD> (globalRow,
+                                                           inputIndsK,
+                                                           inputValsK,
+                                                           f, atomic);
     }
 
   private:
