@@ -3,4 +3,3 @@ It is a package in the Trilinos software framework. See www.trilinos.org
 for details on how to build and use Trilinos and ShyLU.
 
 ShyLU has multiple packages for multithreaded direct factorizations, hybrid solvers and solves.
-
