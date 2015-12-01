@@ -311,50 +311,106 @@ static void zoltanHGModelCSForMeshAdapter(
 
 /////////////////////////////////////////////////////////////////////////////
 // MESH ADAPTER CALLBACKS
+// Implement Boman/Chevalier's hypergraph mesh model
+// Return for each primary entity (vertex) the list of associated
+// adjacency entities (edges)
 /////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
 static void zoltanHGSizeCSForMeshAdapter(
-  void *data, int *nEdges, int *nPins,
+  void *data, int *nLists, int *nPins,
   int *format, int *ierr
 ) 
 {
   *ierr = ZOLTAN_OK;  
   typedef typename Adapter::user_t user_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
-  *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
-  *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
-  *format = ZOLTAN_COMPRESSED_EDGE;
+  if (madp->availAdjs(madp->getPrimaryEntityType(),
+                      madp->getAdjacencyEntityType()))
+  {
+    *nLists = madp->getLocalNumOf(madp->getPrimaryEntityType());
+    *nPins = madp->getLocalNumAdjs(madp->getPrimaryEntityType(),
+                                   madp->getAdjacencyEntityType());
+    *format = ZOLTAN_COMPRESSED_VERTEX;
+  }
+  else if (madp->availAdjs(madp->getAdjacencyEntityType(),
+                           madp->getPrimaryEntityType())) 
+  {
+    *nLists = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+    *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),
+                                   madp->getPrimaryEntityType());
+    *format = ZOLTAN_COMPRESSED_EDGE;
+  }
+  else {
+    *nLists = 0;
+    *nPins = 0;
+    *format = -1*ZOLTAN_COMPRESSED_VERTEX;
+    *ierr = ZOLTAN_FATAL;
+  }
 }
 
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
 static void zoltanHGCSForMeshAdapter(
-  void *data, int nGidEnt, int nEdges, int nPins,
-  int format, ZOLTAN_ID_PTR edgeIds, 
-  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+  void *data, int nGidEnt, int nLists, int nPins,
+  int format, ZOLTAN_ID_PTR listIds, 
+  int *listIdx, ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
   *ierr = ZOLTAN_OK;
-  typedef typename Adapter::gno_t       gno_t;
-  typedef typename Adapter::lno_t       lno_t;  
-  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::lno_t lno_t;  
+  typedef typename Adapter::user_t user_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
-  const gno_t *Ids;
-  madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
-  const lno_t* offsets;
-  const gno_t* adjIds;
-  madp->getAdjsView(madp->getAdjacencyEntityType(), madp->getPrimaryEntityType(),
-                    offsets, adjIds);
-  for (int i=0;i<nEdges;i++) {
-    edgeIds[i]=Ids[i];
-    edgeIdx[i]=offsets[i];
+
+  // Select listType and pinType based on format specified in ZOLTAN_HG_CS_SIZE_FN
+  MeshEntityType listType, pinType;
+  if (format == ZOLTAN_COMPRESSED_VERTEX)
+  {
+    listType = madp->getPrimaryEntityType();
+    pinType = madp->getAdjacencyEntityType();
   }
-  for (int i=0;i<nPins;i++)
-    pinIds[i] = adjIds[i];
+  else if (format == ZOLTAN_COMPRESSED_EDGE)
+  {
+    listType = madp->getAdjacencyEntityType();
+    pinType = madp->getPrimaryEntityType();
+  }
+  else {
+    *ierr = ZOLTAN_FATAL;
+  }
+  
+  if (*ierr == ZOLTAN_OK) {
+
+    // get list IDs
+    const gno_t *Ids;
+    try {
+      madp->getIDsViewOf(listType,Ids);
+    }
+    catch (std::exception &e) {
+      *ierr = ZOLTAN_FATAL;
+    }
+
+    // get pins
+    const lno_t* offsets;
+    const gno_t* adjIds;
+    try {
+      madp->getAdjsView(listType, pinType, offsets, adjIds);
+    }
+    catch (std::exception &e) {
+      *ierr = ZOLTAN_FATAL;
+    }
+
+    // copy into Zoltan's memory
+    for (int i=0; i < nLists; i++) {
+      listIds[i] = Ids[i];
+      listIdx[i] = offsets[i];
+    }
+    for (int i=0; i < nPins; i++)
+      pinIds[i] = adjIds[i];
+  }
 }
 
 }
