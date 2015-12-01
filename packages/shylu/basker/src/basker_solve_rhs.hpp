@@ -34,6 +34,9 @@ namespace BaskerNS
     ENTRY_1DARRAY  x;
     ENTRY_1DARRAY  y;
 
+
+    printf("test_solve called \n");
+
     BASKER_ASSERT(gn > 0, "solve testsolve gn");
     MALLOC_ENTRY_1DARRAY(x_known, gn);
     init_value(x_known, gn , (Entry)1.0);
@@ -42,9 +45,11 @@ namespace BaskerNS
     //temp
     for(Int i = 0; i < gn; i++)
       {
-	x_known(i) = (Entry)(i+1);
+	//x_known(i) = (Entry)(i+1);
+        x_known(i) = (Entry) 1.0;
       }
-    permute(x_known, order_csym_array, gn);
+    //JDB: used for other test
+    //permute(x_known, order_csym_array, gn);
 
 
 
@@ -60,39 +65,42 @@ namespace BaskerNS
 	//printMTX("C_BEFORE_SOLVE.mtx", BTF_C);
       }
 
-    //spmv(A, x_known, y);
-    // spmv(BTF_C, x_known, y);
-
-    /*
-    if(btf_tabs_offset!=0)
-      {
-	//printf("spmv");
-	spmv(BTF_A,x_known,y);
-      }
-    */
     if(Options.btf == BASKER_TRUE)
       {
       
-	//printf("spmv btf\n");
+	printf("btf_tabs_offset: %d ", btf_tabs_offset);
+        printf("btf_nblks: %d \n", btf_nblks);
 	if(btf_tabs_offset != 0)
 	  {
+            printf("BTF_A spmv\n");
 	    spmv(BTF_A, x_known,y);
-	    spmv(BTF_B, x_known, y);
-	  }
-	spmv(BTF_C, x_known, y);
+            if(btf_nblks> 1)
+              {
+                printf("btf_B spmv \n");
+                spmv(BTF_B, x_known, y);
+              }
+          }
+        if(btf_nblks > 1)
+          {
+            
+            printf("btf_c spmv \n");
+            spmv(BTF_C, x_known, y);
+          }
 	//return -1;
       }
     else
       {
-	spmv(BTF_A, x_known,y);
+        //printf("other\n");
+	//spmv(BTF_A, x_known,y);
       }
     
+    //return -1;
 
-    //  printf("DEBUG\n");
+    printf("DEBUG\n");
     
-    //printf("\n Before Test Points \n");
-    //printf("i: %d x: %f %f \n", 0, x_known(0), x(0));
-    //printf("i: %d x: %f %f \n", 24, x_known(24), x(24));
+    printf("\n Before Test Points \n");
+    printf("i: %d x: %f y: %f \n", 0, x_known(0), y(0));
+    printf("i: %d x: %f y: %f \n", 24, x_known(24), y(24));
     
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("\n\n");
@@ -154,6 +162,7 @@ namespace BaskerNS
     #endif
 
 
+
     printf("\n Test Points \n");
     printf("i: %d x: %f %f \n", 0, x_known(0), x(0));
     printf("i: %d x: %f %f \n", 10, x_known(10), x(10));
@@ -161,6 +170,11 @@ namespace BaskerNS
     printf("\n");
     printf("TEST_SOLVE: ||x-x||/||x| = %e", diff);
     printf("\n");
+
+    if((diff > -1e-2) && (diff < 1e-2))
+      {
+        printf("TEST PASSED \n");
+      }  
 
     return 0;
   }//end test_solve
@@ -428,9 +442,10 @@ namespace BaskerNS
 
        
 	//-----Update
-	//if(b != (btf_nblks-btf_tabs_offset)-1)
+	//if(b > btf_tabs_offset)
 	  {
 	//x = BTF_C*y;
+            //printf("spmv tab: %d \n", b+btf_tabs_offset);
 	spmv_BTF(b+btf_tabs_offset,
 		 BTF_C, y, x);
 	  }
@@ -601,11 +616,11 @@ namespace BaskerNS
 					ENTRY_1DARRAY y)
   {
     //Add checks
-    #ifdef BASKER_DEBUG_SOLVE_RHS
+    //#ifdef BASKER_DEBUG_SOLVE_RHS
     printf("SPMV. scol: %d ncol: %d nnz: %d \n",
 	   M.scol, M.ncol, M.nnz);
     M.info();
-    #endif
+    //#endif
 
     const Int bcol = M.scol;
     const Int brow = M.srow;
@@ -799,10 +814,10 @@ namespace BaskerNS
    )
   {
     //Tab = block in    
-    const Int bcol = btf_tabs[tab]- M.scol;
+    const Int bcol = btf_tabs(tab)- M.scol;
     const Int brow = M.srow;
-    const Int ecol = btf_tabs[tab+1] - M.scol;
-    const Int erow = btf_tabs[tab-1];
+    const Int ecol = btf_tabs(tab+1) - M.scol;
+    const Int erow = btf_tabs(tab-1);
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("BTF_UPDATE, TAB: %d [%d %d] [%d %d] \n",

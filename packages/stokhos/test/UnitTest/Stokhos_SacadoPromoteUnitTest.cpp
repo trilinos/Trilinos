@@ -156,21 +156,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Promote, Promote, UQ )
 }
 
 //
-// Sacado::ETV::Vector
-//
-typedef Stokhos::StandardStorage<int,double> storage_type;
-typedef Sacado::ETV::Vector<double,storage_type> vector_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, vector_type )
-
-//
-// Sacado::ETV::Vector2
-//
-typedef Sacado::ETV::Vector2<double,storage_type> vector2_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, vector2_type )
-
-//
 // Sacado::PCE::OrthogPoly
 //
+typedef Stokhos::StandardStorage<int,double> storage_type;
 typedef Sacado::PCE::OrthogPoly<double,storage_type> orthog_poly_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Promote, orthog_poly_type )
 

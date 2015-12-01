@@ -364,7 +364,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       void copyForWrite() volatile {  }
 
-      //! Returns whether two ETV objects have the same values
+      //! Returns whether two MP objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       bool isEqualTo(const Expr<S>& xx) const {
@@ -377,7 +377,7 @@ namespace Sacado {
         return eq;
       }
 
-      //! Returns whether two ETV objects have the same values
+      //! Returns whether two MP objects have the same values
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       bool isEqualTo(const Expr<S>& xx) const volatile {

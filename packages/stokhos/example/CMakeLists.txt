@@ -436,8 +436,8 @@ IF(Stokhos_ENABLE_Sacado)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    sacado_vector_example
-    SOURCES sacado/sacado_vector_example.cpp
+    sacado_ensemble_example
+    SOURCES sacado/sacado_ensemble_example.cpp
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1

@@ -44,6 +44,9 @@ namespace BaskerNS
     workspace_flag = false;
     rhs_flag       = false;
     solve_flag     = false;
+    nd_flag        = false;
+    amd_flag       = false;
+
 
     //Default number of threads
     num_threads = 1;

@@ -85,6 +85,7 @@ namespace Sacado {
   template <typename S>
   struct Value< UQ::PCE<S> > {
     typedef typename ValueType< UQ::PCE<S> >::type value_type;
+    KOKKOS_INLINE_FUNCTION
     static const value_type& eval(const UQ::PCE<S>& x) {
       return x.val(); }
   };
@@ -94,6 +95,7 @@ namespace Sacado {
   struct ScalarValue< UQ::PCE<S> > {
     typedef typename ValueType< UQ::PCE<S> >::type value_type;
     typedef typename ScalarType< UQ::PCE<S> >::type scalar_type;
+    KOKKOS_INLINE_FUNCTION
     static const scalar_type& eval(const UQ::PCE<S>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
@@ -109,6 +111,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to PCE types
   template <typename S>
   struct IsEqual< UQ::PCE<S> > {
+    KOKKOS_INLINE_FUNCTION
     static bool eval(const UQ::PCE<S>& x,
                      const UQ::PCE<S>& y) {
       return x.isEqualTo(y);

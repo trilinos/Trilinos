@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2015-11-03 17:01:14 mhoemme"
+#+DATE: Time-stamp: "2015-11-30 17:29:27 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -11,6 +11,16 @@ following website: http://orgmode.org
 This file is best viewed and edited using Emacs (version >= 23), but
 you may view and edit it using any text editor.  Editors, please defer
 to the mark-up conventions already existing in this document.
+
+* Thread safety
+** Weak and strong thread safety
+
+Tpetra uses the term /thread safe/ in two different ways, which I will
+call "weak" and "strong."  A function or method has /weak thread
+safety/ when calling it concurrently by different threads does not
+corrupt state, as long as the concurrent updates do not write to the
+same data.  /Strong thread safety/ takes away the latter restriction,
+by using Kokkos' atomic updates to ensure safe concurrent writes.
 
 * What is the "Node" template parameter?  How does it relate to Kokkos?
 

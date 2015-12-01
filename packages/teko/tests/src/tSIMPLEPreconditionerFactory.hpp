@@ -74,7 +74,8 @@ public:
    bool test_isCompatable(int verbosity,std::ostream & os);
 
    // non-member tests
-  bool test_result(int verbosity,std::ostream & os,int use_blocking);
+   bool test_result(int verbosity,std::ostream & os,int use_blocking);
+   bool test_result_timings(int verbosity,std::ostream & os,int use_blocking);
    bool test_identity(int verbosity,std::ostream & os);
    bool test_diagonal(int verbosity,std::ostream & os,int use_blocking);
 

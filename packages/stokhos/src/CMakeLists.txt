@@ -448,15 +448,6 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
     sacado/Sacado_ETPCE_OrthogPolyOps.hpp
     sacado/Sacado_ETPCE_ExpressionTraits.hpp
-    sacado/Sacado_ETV_Vector.hpp
-    sacado/Sacado_ETV_VectorImp.hpp
-    sacado/Sacado_ETV_VectorOps.hpp
-    sacado/Sacado_ETV_ScalarTraitsImp.hpp
-    sacado/Sacado_ETV_VectorTraits.hpp
-    sacado/Sacado_ETV_ExpressionTraits.hpp
-    sacado/Sacado_ETV_Vector2.hpp
-    sacado/Sacado_ETV_Vector2Imp.hpp
-    sacado/Sacado_ETV_Vector2Traits.hpp
     )
   LIST(APPEND SACADO_SOURCES
     sacado/Sacado_PCE_OrthogPoly.cpp
@@ -486,6 +477,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
     sacado/kokkos/vector/Sacado_MP_Vector.hpp
     sacado/kokkos/vector/Sacado_MP_VectorTraits.hpp
+    sacado/kokkos/vector/Sacado_MP_ScalarTraitsImp.hpp
     sacado/kokkos/vector/Sacado_MP_Vector_ops.hpp
     sacado/kokkos/vector/Sacado_MP_ExpressionTraits.hpp
     sacado/kokkos/vector/Kokkos_View_MP_Vector.hpp

@@ -246,7 +246,7 @@ namespace Stokhos {
           }
           else {
             coeff_0_ = s.coeff_[0];
-            coeff_ = &coeff_0_;
+            coeff_ = const_cast<value_type*>(&coeff_0_);
             is_constant_ = true;
           }
           sz_ = s.sz_;
@@ -378,7 +378,7 @@ namespace Stokhos {
           coeff_0_ = coeff_[0];
           if (!is_constant_)
             ds::destroy_and_release(coeff_, sz_);
-          coeff_ = &coeff_0_;
+          coeff_ = const_cast<value_type*>(&coeff_0_);
           is_constant_ = true;
         }
         sz_ = sz;

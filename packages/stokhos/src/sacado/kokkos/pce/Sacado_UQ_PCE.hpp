@@ -166,7 +166,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       PCE(const volatile PCE& x) :
         cijk_(const_cast<const my_cijk_type&>(x.cijk_)),
-        s_(1,x.fastAccessCoeff(0)) {
+        s_(1,value_type(x.fastAccessCoeff(0))) {
         if (x.size() > 1 && !is_constant(x))
           s_ = x.s_;
       }

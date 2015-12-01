@@ -101,36 +101,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarValue, ad_type, scalar_type )
 }
 
 //
-// Sacado::ETV::Vector
-//
-typedef Stokhos::StandardStorage<int,double> storage_type;
-typedef Sacado::ETV::Vector<double,storage_type> vector_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, vector_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, vector_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, vector_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, vector_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, vector_type, double )
-
-typedef Sacado::ETV::Expr< Sacado::ETV::VectorImpl<double,storage_type> > vector_expr_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, vector_expr_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, vector_expr_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, vector_expr_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, vector_expr_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, vector_expr_type, double )
-
-//
-// Sacado::ETV::Vector2 -- no need to test Expr as it is the same as Vector
-//
-typedef Sacado::ETV::Vector2<double,storage_type> vector2_type;
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, vector2_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, vector2_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, vector2_type )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, vector2_type, double )
-TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, vector2_type, double )
-
-//
 // Sacado::ETPCE::OrthogPoly
 //
+typedef Stokhos::StandardStorage<int,double> storage_type;
 typedef Sacado::ETPCE::OrthogPoly<double,storage_type> pce_type;
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarType, pce_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, pce_type, double )
