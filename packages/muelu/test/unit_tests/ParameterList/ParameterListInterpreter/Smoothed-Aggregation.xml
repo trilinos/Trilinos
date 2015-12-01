@@ -16,7 +16,6 @@
         <ParameterList name="ParameterList">
           <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
           <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-          <Parameter name="relaxation: damping factor" type="double" value="1"/>
         </ParameterList>
       </ParameterList>
 
@@ -34,7 +33,6 @@
         <ParameterList name="ParameterList">
           <Parameter name="relaxation: type"           type="string" value="Symmetric Gauss-Seidel"/>
           <Parameter name="relaxation: sweeps"         type="int"    value="1"/>
-          <Parameter name="relaxation: damping factor" type="double" value="1"/>
         </ParameterList>
 
       </ParameterList>
