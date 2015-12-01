@@ -1493,142 +1493,33 @@ namespace Tpetra {
     ///   error other than one or more invalid column indices, this
     ///   method returns
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
-    template<class Scalar, class BinaryFunction>
+    template<class Scalar,
+             class BinaryFunction,
+             class InputMemorySpace,
+             class ValsMemorySpace>
     LocalOrdinal
     transformLocalValues (const RowInfo& rowInfo,
-                          const Teuchos::ArrayView<Scalar>& rowVals,
-                          const Teuchos::ArrayView<const LocalOrdinal>& inds,
-                          const Teuchos::ArrayView<const Scalar>& newVals,
-                          BinaryFunction f,
-                          const bool atomic = useAtomicUpdatesByDefault) const
-    {
-      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-      const size_type numElts = inds.size ();
-      size_t hint = 0; // Guess for the current index k into rowVals
-      LO numValid = 0; // number of valid input column indices
-
-      if (isLocallyIndexed ()) {
-        // Get a view of the column indices in the row.  This amortizes
-        // the cost of getting the view over all the entries of inds.
-        auto colInds = getLocalKokkosRowView (rowInfo);
-
-        for (size_type j = 0; j < numElts; ++j) {
-          const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
-          if (k != STINV) {
-            if (atomic) {
-              // NOTE (mfh 30 Nov 2015) The commented-out code is
-              // wrong because another thread may have changed
-              // rowVals[k] between those two lines of code.
-              //
-              //const Scalar newVal = f (rowVals[k], newVals[j]);
-              //Kokkos::atomic_assign (&rowVals[k], newVal);
-
-              volatile Scalar* const dest = &rowVals[k];
-              (void) atomic_binary_function_update (dest, newVals[j], f);
-            }
-            else {
-              rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
-            }
-            hint = k+1;
-            ++numValid;
-          }
-        }
-      }
-      else if (isGloballyIndexed ()) {
-        // NOTE (mfh 26 Nov 2015) Dereferencing an RCP or reading its
-        // pointer does NOT change its reference count.  Thus, this
-        // code is still thread safe.
-        if (colMap_.is_null ()) {
-          // NO input column indices are valid in this case.  Either
-          // the column Map hasn't been set yet (so local indices
-          // don't exist yet), or the calling process owns no graph
-          // entries.
-          return numValid;
-        }
-        const map_type& colMap = *colMap_;
-        const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
-
-        // Get a view of the column indices in the row.  This amortizes
-        // the cost of getting the view over all the entries of inds.
-        auto colInds = this->getGlobalKokkosRowView (rowInfo);
-
-        for (size_type j = 0; j < numElts; ++j) {
-          const GO gblColInd = colMap.getGlobalElement (inds[j]);
-          if (gblColInd != GINV) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
-              if (atomic) {
-                // NOTE (mfh 30 Nov 2015) The commented-out code is
-                // wrong because another thread may have changed
-                // rowVals[k] between those two lines of code.
-                //
-                //const Scalar newVal = f (rowVals[k], newVals[j]);
-                //Kokkos::atomic_assign (&rowVals[k], newVal);
-
-                volatile Scalar* const dest = &rowVals[k];
-                (void) atomic_binary_function_update (dest, newVals[j], f);
-              }
-              else {
-                rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
-              }
-              hint = k+1;
-              numValid++;
-            }
-          }
-        }
-      }
-      // If the graph is neither locally nor globally indexed on the
-      // calling process, that means the calling process has no graph
-      // entries.  Thus, none of the input column indices are valid.
-
-      return numValid;
-    }
-
-    /// \brief Transform the given values using local indices.
-    ///
-    /// \param rowInfo [in] Information about a given row of the graph.
-    /// \param rowVals [in/out] The values to be transformed.  They
-    ///   correspond to the row indicated by rowInfo.
-    /// \param inds [in] The (local) indices in the row, for which
-    ///   to transform the corresponding values in rowVals.
-    /// \param newVals [in] Values to use for transforming rowVals.
-    ///   It's probably OK for these to alias rowVals.
-    ///
-    /// \param f [in] A binary function used to transform rowVals.
-    ///
-    /// This method transforms the values using the expression
-    /// \code
-    /// newVals[k] = f( rowVals[k], newVals[j] );
-    /// \endcode
-    /// where k is the local index corresponding to <tt>inds[j]</tt>.
-    /// It ignores invalid local column indices, but they are counted
-    /// in the return value.
-    ///
-    /// \return The number of valid local column indices.  In case of
-    ///   error other than one or more invalid column indices, this
-    ///   method returns
-    ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
-    template<class Scalar, class BinaryFunction>
-    LocalOrdinal
-    transformLocalValues (const RowInfo& rowInfo,
-                          const Teuchos::ArrayView<Scalar>& rowVals,
+                          const Kokkos::View<Scalar*, ValsMemorySpace,
+                            Kokkos::MemoryUnmanaged>& rowVals,
                           const Kokkos::View<const LocalOrdinal*,
-                            device_type, Kokkos::MemoryUnmanaged>& inds,
+                            InputMemorySpace,
+                            Kokkos::MemoryUnmanaged>& inds,
                           const Kokkos::View<const Scalar*,
-                            device_type, Kokkos::MemoryUnmanaged>& newVals,
+                            InputMemorySpace,
+                            Kokkos::MemoryUnmanaged>& newVals,
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
+      if (newVals.dimension_0 () != inds.dimension_0 ()) {
+        // The sizes of the input arrays must match.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
       const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
-      size_t hint = 0; // Guess for the current index k into rowVals
       LO numValid = 0; // number of valid input column indices
+      size_t hint = 0; // Guess for the current index k into rowVals
 
       if (isLocallyIndexed ()) {
         // Get a view of the column indices in the row.  This amortizes
@@ -1636,21 +1527,22 @@ namespace Tpetra {
         auto colInds = this->getLocalKokkosRowView (rowInfo);
 
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = findLocalIndex (rowInfo, inds[j], colInds, hint);
+          const size_t k =
+            this->findLocalIndex (rowInfo, inds(j), colInds, hint);
           if (k != STINV) {
             if (atomic) {
               // NOTE (mfh 30 Nov 2015) The commented-out code is
               // wrong because another thread may have changed
-              // rowVals[k] between those two lines of code.
+              // rowVals(k) between those two lines of code.
               //
-              //const Scalar newVal = f (rowVals[k], newVals[j]);
-              //Kokkos::atomic_assign (&rowVals[k], newVal);
+              //const Scalar newVal = f (rowVals(k), newVals(j));
+              //Kokkos::atomic_assign (&rowVals(k), newVal);
 
-              volatile Scalar* const dest = &rowVals[k];
-              (void) atomic_binary_function_update (dest, newVals[j], f);
+              volatile Scalar* const dest = &rowVals(k);
+              (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
-              rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+              rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
             }
             hint = k+1;
             ++numValid;
@@ -1669,14 +1561,13 @@ namespace Tpetra {
           return numValid;
         }
         const map_type& colMap = *colMap_;
-        const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
-
         // Get a view of the column indices in the row.  This amortizes
         // the cost of getting the view over all the entries of inds.
         auto colInds = this->getGlobalKokkosRowView (rowInfo);
 
+        const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
         for (LO j = 0; j < numElts; ++j) {
-          const GO gblColInd = colMap.getGlobalElement (inds[j]);
+          const GO gblColInd = colMap.getGlobalElement (inds(j));
           if (gblColInd != GINV) {
             const size_t k =
               this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
@@ -1684,16 +1575,16 @@ namespace Tpetra {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
                 // wrong because another thread may have changed
-                // rowVals[k] between those two lines of code.
+                // rowVals(k) between those two lines of code.
                 //
-                //const Scalar newVal = f (rowVals[k], newVals[j]);
-                //Kokkos::atomic_assign (&rowVals[k], newVal);
+                //const Scalar newVal = f (rowVals(k), newVals(j));
+                //Kokkos::atomic_assign (&rowVals(k), newVal);
 
-                volatile Scalar* const dest = &rowVals[k];
-                (void) atomic_binary_function_update (dest, newVals[j], f);
+                volatile Scalar* const dest = &rowVals(k);
+                (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {
-                rowVals[k] = f (rowVals[k], newVals[j]); // use binary function f
+                rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
               }
               hint = k+1;
               numValid++;
@@ -2058,24 +1949,26 @@ namespace Tpetra {
              class ValsMemorySpace>
     LocalOrdinal
     transformGlobalValues (const RowInfo& rowInfo,
-                          const Kokkos::View<Scalar*, ValsMemorySpace,
-                            Kokkos::MemoryUnmanaged>& rowVals,
-                          const Kokkos::View<const GlobalOrdinal*, InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& inds,
-                          const Kokkos::View<const Scalar*, InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& newVals,
+                           const Kokkos::View<Scalar*, ValsMemorySpace,
+                             Kokkos::MemoryUnmanaged>& rowVals,
+                           const Kokkos::View<const GlobalOrdinal*,
+                             InputMemorySpace,
+                             Kokkos::MemoryUnmanaged>& inds,
+                           const Kokkos::View<const Scalar*,
+                             InputMemorySpace,
+                             Kokkos::MemoryUnmanaged>& newVals,
                            BinaryFunction f,
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-      size_t hint = 0; // guess at the index's relative offset in the row
-      LO numValid = 0; // number of valid input column indices
-
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
+      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const LO numElts = static_cast<LO> (inds.dimension_0 ());
+      LO numValid = 0; // number of valid input column indices
+      size_t hint = 0; // guess at the index's relative offset in the row
 
       if (isLocallyIndexed ()) {
         // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
@@ -2093,11 +1986,11 @@ namespace Tpetra {
         auto colInds = this->getLocalKokkosRowView (rowInfo);
 
         const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
-        const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = colMap.getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k = this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
+            const size_t k =
+              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
             if (k != STINV) {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
@@ -2124,7 +2017,6 @@ namespace Tpetra {
         // the cost of getting the view over all the entries of inds.
         auto colInds = this->getGlobalKokkosRowView (rowInfo);
 
-        const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
           const size_t k =
             this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
