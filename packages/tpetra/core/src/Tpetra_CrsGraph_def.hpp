@@ -2103,54 +2103,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   findLocalIndex (const RowInfo& rowinfo,
                   const LocalOrdinal ind,
-                  const Teuchos::ArrayView<const LocalOrdinal>& colInds,
-                  size_t hint) const
-  {
-    typedef typename Teuchos::ArrayView<const LocalOrdinal>::iterator IT;
-
-    // If the hint was correct, then the hint is the offset to return.
-    if (hint < rowinfo.numEntries && colInds[hint] == ind) {
-      return hint;
-    }
-
-    // The hint was wrong, so we must search for the given column
-    // index in the column indices for the given row.  How we do the
-    // search depends on whether the graph's column indices are
-    // sorted.
-    IT beg = colInds.begin ();
-    IT end = beg + rowinfo.numEntries;
-    IT ptr = beg + rowinfo.numEntries; // "null"
-    bool found = true;
-
-    if (isSorted ()) {
-      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
-      if (p.first == p.second) {
-        found = false;
-      } else {
-        ptr = p.first;
-      }
-    }
-    else {
-      ptr = std::find (beg, end, ind); // direct search
-      if (ptr == end) {
-        found = false;
-      }
-    }
-
-    if (found) {
-      return static_cast<size_t> (ptr - beg);
-    }
-    else {
-      return Teuchos::OrdinalTraits<size_t>::invalid ();
-    }
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  size_t
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (const RowInfo& rowinfo,
-                  const LocalOrdinal ind,
                   const Kokkos::View<const LocalOrdinal*, device_type,
                     Kokkos::MemoryUnmanaged>& colInds,
                   const size_t hint) const
