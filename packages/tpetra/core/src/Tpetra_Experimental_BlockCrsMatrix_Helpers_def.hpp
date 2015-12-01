@@ -227,7 +227,7 @@ namespace Experimental {
       const LO blockSize = A.getBlockSize();
       const size_t numLocalRows = A.getNodeNumRows();
       bool precisionChanged=false;
-      int oldPrecision;
+      int oldPrecision = 0; // avoid "unused variable" warning
       if (params.isParameter("precision")) {
         oldPrecision = os.precision(params.get<int>("precision"));
         precisionChanged=true;
