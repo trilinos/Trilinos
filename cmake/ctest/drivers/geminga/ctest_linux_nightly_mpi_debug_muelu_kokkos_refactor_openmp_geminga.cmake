@@ -93,7 +93,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_HWLOC:BOOL=ON"
 
   ### PACKAGES CONFIGURATION ###
-  "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
