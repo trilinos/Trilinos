@@ -124,10 +124,12 @@ namespace Kokkos {
       Kokkos::realloc(v,size);
     }
 
-    template <typename T, typename L, typename D, typename M>
-    Kokkos::View<T*,L,D,M>
+    template <class ViewType>
+    ViewType
     create_view (const std::string& label, size_t size) {
-      return Kokkos::View<T*,L,D,M> (label, size);
+      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::create_view() called with non-view argument.");
+      static_assert(ViewType::Rank==1,"Kokkos::Compat::create_view() called with non-rank-1 view argument.");
+      return ViewType (label, size);
     }
 
     // Custom deallocator for Teuchos::ArrayRCP.  It doesn't actually
@@ -197,75 +199,74 @@ namespace Kokkos {
                            deallocator(view), false);
     }
 
-    template <typename T, typename L, typename D, typename M, typename Ordinal>
-    Kokkos::View<T*,L,D,M>
-    subview_range (const Kokkos::View<T*,L,D,M>& view,
+    template <class ViewType, typename Ordinal>
+    ViewType
+    subview_range (const ViewType& view,
                    const Ordinal begin,
                    const Ordinal end)
     {
+      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::subview_range() called with non-view argument.");
+      static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_range() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (begin, end));
     }
 
-    template <typename T, typename L, typename D, typename M, typename Ordinal>
-    Kokkos::View<T*,L,D,M>
-    subview_offset (const Kokkos::View<T*,L,D,M>& view,
+    template <class ViewType, typename Ordinal>
+    ViewType
+    subview_offset (const ViewType& view,
                     const Ordinal offset,
                     const Ordinal size)
     {
+      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::subview_offset() called with non-view argument.");
+      static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_offset() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (offset, offset+size));
     }
 
-    template <typename DT, typename DL, typename DD, typename DM,
-              typename ST, typename SL, typename SD, typename SM,
+    template <class DstViewType, class SrcViewType,
               typename Ordinal>
     void
-    deep_copy_range (const Kokkos::View<DT*,DL,DD,DM>& dst,
-                     const Kokkos::View<ST*,SL,SD,SM>& src,
+    deep_copy_range (const DstViewType& dst,
+                     const SrcViewType& src,
                      const Ordinal dst_begin,
                      const Ordinal src_begin,
                      const Ordinal src_end)
     {
-      typedef Kokkos::View<DT*,DL,DD,DM> dst_view_type;
-      typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
+      static_assert(Kokkos::Impl::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
+      static_assert(Kokkos::Impl::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
+      static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_range() called with non-rank-1 view argument.");
       const Ordinal size = src_end - src_begin;
       const Ordinal dst_end = dst_begin + size;
-      dst_view_type dst_sub = Kokkos::subview(
+      DstViewType dst_sub = Kokkos::subview(
         dst, std::make_pair (dst_begin, dst_end));
-      src_view_type src_sub = Kokkos::subview(
+      SrcViewType src_sub = Kokkos::subview(
         src, std::make_pair (src_begin, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }
 
-    template <typename DT, typename DL, typename DD, typename DM,
-              typename ST, typename SL, typename SD, typename SM,
+    template <class DstViewType, class SrcViewType,
               typename Ordinal>
     void
-    deep_copy_offset (const Kokkos::View<DT*,DL,DD,DM>& dst,
-                      const Kokkos::View<ST*,SL,SD,SM>& src,
+    deep_copy_offset (const DstViewType& dst,
+                      const SrcViewType& src,
                       const Ordinal dst_offset,
                       const Ordinal src_offset,
                       const Ordinal size)
     {
-      typedef Kokkos::View<DT*,DL,DD,DM> dst_view_type;
-      typedef Kokkos::View<ST*,SL,SD,SM> src_view_type;
+      static_assert(Kokkos::Impl::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
+      static_assert(Kokkos::Impl::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
+      static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_offset() called with non-rank-1 view argument.");
       const Ordinal dst_end = dst_offset + size;
       const Ordinal src_end = src_offset + size;
-      dst_view_type dst_sub = Kokkos::subview(
+      DstViewType dst_sub = Kokkos::subview(
         dst, std::make_pair (dst_offset, dst_end));
-      src_view_type src_sub = Kokkos::subview(
+      SrcViewType src_sub = Kokkos::subview(
         src, std::make_pair (src_offset, src_end));
       Kokkos::deep_copy(dst_sub, src_sub);
     }
 
-    template <typename T, typename L, typename D, typename M>
-    Kokkos::View<const T*, L, D, M>
-    create_const_view(const Kokkos::View<T*,L,D,M>& view) {
-      return view;
-    }
-
-    template <typename T, typename L, typename D, typename M>
-    Kokkos::View<const T*, L, D, M>
-    create_const_view(const Kokkos::View<const T*,L,D,M>& view) {
+    template <class ViewType>
+    typename ViewType::const_type
+    create_const_view(const ViewType& view) {
+      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::create_const_view() called with non-view argument.");
       return view;
     }
 
