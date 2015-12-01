@@ -162,32 +162,101 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// MATRIX ADAPTER CALLBACKS
+// HYPERGRAPH CALLBACKS USING A MATRIX ADAPTER
+// Building the most straightforward hypergraph from a matrix and, thus,
+// avoiding use of HypergraphModel.
+// Assuming vertices are rows or columns, and pins are nonzeros.
 /////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS_withMatrixAdapter(
-  void *data, int *nEdges, int *nPins,
-  int *format, int *ierr
+static void zoltanHGSizeCS_withMatrixAdapter(void *data, int *nLists, int *nPins,
+                                             int *format, int *ierr
 ) 
 {
-  std::cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << std::endl;
-  *ierr = ZOLTAN_FATAL;
+  *ierr = ZOLTAN_OK;  
+  typedef typename Adapter::user_t user_t;
+  const MatrixAdapter<user_t>* madp = static_cast<MatrixAdapter<user_t>* >(data);
+
+  *nPins = madp->getLocalNumEntries();
+
+  MatrixEntityType etype = madp->getPrimaryEntityType();
+  if (etype == MATRIX_ROW && madp->CRSViewAvailable()) {
+    *nLists = madp->getLocalNumRows();
+    *format = ZOLTAN_COMPRESSED_VERTEX;
+  }
+  else if (etype == MATRIX_ROW && madp->CCSViewAvailable()) {
+    *nLists = madp->getLocalNumColumns();
+    *format = ZOLTAN_COMPRESSED_EDGE;
+  }
+  else if (etype == MATRIX_COLUMN && madp->CRSViewAvailable()) {
+    *nLists = madp->getLocalNumRows();
+    *format = ZOLTAN_COMPRESSED_EDGE;
+  }
+  else if (etype == MATRIX_COLUMN && madp->CCSViewAvailable()) {
+      *nLists = madp->getLocalNumColumns();
+      *format = ZOLTAN_COMPRESSED_VERTEX;
+  }
+  else {
+    // Need either CRSView or CCSView.
+    // Also, not yet implemented for matrix nonzeros; may need a hypergraph model.
+    *ierr = ZOLTAN_FATAL;
+  }
 }
 
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCS_withMatrixAdapter(
-  void *data, int nGidEnt, int nEdges, int nPins,
-  int format, ZOLTAN_ID_PTR edgeIds, 
-  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists, 
+                                         int nPins, int format, 
+                                         ZOLTAN_ID_PTR listIds, int *listIdx,
+                                         ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
-  std::cout << "HELLO FROM HGCS with MATRIX ADAPTER" << std::endl;
-  *ierr = ZOLTAN_FATAL;
+  *ierr = ZOLTAN_OK;  
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::lno_t lno_t;  
+  typedef typename Adapter::user_t user_t;
+  const MatrixAdapter<user_t>* madp = static_cast<MatrixAdapter<user_t>* >(data);
+
+  const gno_t *Ids;
+  const gno_t *pIds;
+  const lno_t *offsets;
+
+  // Get the pins and list IDs.
+  if (madp->CRSViewAvailable()) {
+    try {
+      madp->getRowIDsView(Ids);
+      madp->getCRSView(offsets, pIds);
+    }
+    catch (std::exception &e) {
+      *ierr = ZOLTAN_FATAL;
+    }
+  }
+  else if (madp->CCSViewAvailable()) {
+    try {
+      madp->getColumnIDsView(Ids);
+      madp->getCCSView(offsets, pIds);
+    }
+    catch (std::exception &e) {
+      *ierr = ZOLTAN_FATAL;
+    }
+  }
+  else {
+    // Need either CRSView or CCSView.
+    *ierr = ZOLTAN_FATAL;
+  }
+
+  if (*ierr == ZOLTAN_OK) {
+    // copy into Zoltan's memory
+    for (int i=0; i < nLists; i++) {
+      listIds[i] = Ids[i];
+      listIdx[i] = offsets[i];
+    }
+    for (int i=0; i < nPins; i++)
+      pinIds[i] = pIds[i];
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -195,7 +264,7 @@ static void zoltanHGCS_withMatrixAdapter(
 
 
 /////////////////////////////////////////////////////////////////////////////
-// MESH ADAPTER CALLBACKS
+// HYPERGRAPH CALLBACKS USING A MESH ADAPTER
 // Implement Boman/Chevalier's hypergraph mesh model
 // Skip explicit construction of a HypergraphModel
 // Return either (depending on available adjacencies):
@@ -206,9 +275,8 @@ static void zoltanHGCS_withMatrixAdapter(
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS_withMeshAdapter(
-  void *data, int *nLists, int *nPins,
-  int *format, int *ierr
+static void zoltanHGSizeCS_withMeshAdapter(void *data, int *nLists, int *nPins,
+                                           int *format, int *ierr
 ) 
 {
   *ierr = ZOLTAN_OK;  
