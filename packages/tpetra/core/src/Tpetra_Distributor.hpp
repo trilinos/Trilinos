@@ -607,12 +607,12 @@ namespace Tpetra {
     /// \param imports [out] On entry, buffer must be large enough to
     ///   accomodate the data exported (sent) to us.  On exit,
     ///   contains the values exported to us.
-    template <class Packet, class Layout, class Device, class Mem>
-    void
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doPostsAndWaits (
-      const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+      const ExpView &exports,
       size_t numPackets,
-      const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+      const ImpView &imports);
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -635,11 +635,11 @@ namespace Tpetra {
     ///
     /// \param numImportPacketsPerLID [in] The number of packets for
     ///   each import LID (i.e., each LID to be received).
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doPostsAndWaits (const ExpView &exports,
                      const ArrayView<size_t> &numExportPacketsPerLID,
-                     const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                     const ImpView &imports,
                      const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
@@ -666,11 +666,11 @@ namespace Tpetra {
     ///   this array until \c doWaits() has completed.  Upon
     ///   completion of \c doWaits(), this buffer contains the values
     ///   exported to us.
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doPosts (const ExpView &exports,
              size_t numPackets,
-             const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+             const ImpView &imports);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -690,53 +690,53 @@ namespace Tpetra {
     ///
     /// \param numImportPacketsPerLID [in] Same as in the
     ///   four-argument version of \c doPostsAndWaits().
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doPosts (const ExpView &exports,
              const ArrayView<size_t> &numExportPacketsPerLID,
-             const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+             const ImpView &imports,
              const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the three-argument
     /// version of \c doPostsAndWaits().
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doReversePostsAndWaits (const ExpView &exports,
                             size_t numPackets,
-                            const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+                            const ImpView &imports);
 
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the four-argument
     /// version of \c doPostsAndWaits().
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doReversePostsAndWaits (const ExpView &exports,
                             const ArrayView<size_t> &numExportPacketsPerLID,
-                            const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                            const ImpView &imports,
                             const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the three-argument
     /// version of \c doPosts().
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doReversePosts (const ExpView &exports,
                     size_t numPackets,
-                    const Kokkos::View<Packet*, Layout, Device, Mem> &imports);
+                    const ImpView &imports);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the four-argument
     /// version of \c doPosts().
-    template <class Packet, class Layout, class Device, class Mem>
-    void
-    doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+    template <class ExpView, class ImpView>
+    typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+    doReversePosts (const ExpView &exports,
                     const ArrayView<size_t> &numExportPacketsPerLID,
-                    const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                    const ImpView &imports,
                     const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Information on the last call to do/doReverse
@@ -1955,11 +1955,12 @@ namespace Tpetra {
                                   imports, numImportPacketsPerLID);
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doPostsAndWaits (const ExpView &exports,
                    size_t numPackets,
-                   const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+                   const ImpView &imports)
   {
     // If the MPI library doesn't support RDMA for communication
     // directly to or from the GPU's memory, we must transfer exports
@@ -1968,8 +1969,8 @@ namespace Tpetra {
     //
     // We need to do this here instead of doPosts() because the copy
     // back to the GPU must occur after the waits.
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    typedef ExpView exports_view;
+    typedef ImpView imports_view;
     const bool can_access_from_host =
       Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace,
       typename exports_view::memory_space >::value;
@@ -1996,11 +1997,12 @@ namespace Tpetra {
     doWaits ();
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doPostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doPostsAndWaits (const ExpView &exports,
                    const ArrayView<size_t> &numExportPacketsPerLID,
-                   const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                   const ImpView &imports,
                    const ArrayView<size_t> &numImportPacketsPerLID)
   {
     // If MPI library doesn't support RDMA for communication directly
@@ -2009,8 +2011,8 @@ namespace Tpetra {
     //
     // We need to do this here instead of doPosts() because the copy back
     // to the GPU must occur after the waits.
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    typedef ExpView exports_view;
+    typedef ImpView imports_view;
     if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
@@ -2036,11 +2038,12 @@ namespace Tpetra {
   }
 
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doPosts (const ExpView &exports,
            size_t numPackets,
-           const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+           const ImpView &imports)
   {
     using Teuchos::Array;
     using Teuchos::as;
@@ -2060,8 +2063,8 @@ namespace Tpetra {
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+    typedef ExpView exports_view_type;
+    typedef ImpView imports_view_type;
 
     Teuchos::OSTab tab (out_);
 
@@ -2315,8 +2318,11 @@ namespace Tpetra {
 
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
-      Kokkos::View<Packet*,Layout,Device,Mem> sendArray =
-        create_view<Packet,Layout,Device,Mem> ("sendArray",
+      typedef typename ExpView::non_const_value_type Packet;
+      typedef typename ExpView::array_layout Layout;
+      typedef typename ExpView::device_type Device;
+      typedef typename ExpView::memory_traits Mem;
+      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
                                                maxSendLength_ * numPackets);
 
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2338,7 +2344,7 @@ namespace Tpetra {
                              indicesTo_[j]*numPackets, numPackets);
             sendArrayOffset += numPackets;
           }
-          Kokkos::View<Packet*, Layout, Device, Mem> tmpSend =
+          ImpView tmpSend =
             subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
@@ -2399,11 +2405,12 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doPosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doPosts (const ExpView &exports,
            const ArrayView<size_t> &numExportPacketsPerLID,
-           const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+           const ImpView &imports,
            const ArrayView<size_t> &numImportPacketsPerLID)
   {
     using Teuchos::Array;
@@ -2423,8 +2430,8 @@ namespace Tpetra {
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
     typedef Array<size_t>::size_type size_type;
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view_type;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view_type;
+    typedef ExpView exports_view_type;
+    typedef ImpView imports_view_type;
 
     Teuchos::OSTab tab (out_);
 
@@ -2676,8 +2683,11 @@ namespace Tpetra {
       }
 
       // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
-      Kokkos::View<Packet*,Layout,Device,Mem> sendArray =
-        create_view<Packet,Layout,Device,Mem>("sendArray", maxNumPackets); // send buffer
+      typedef typename ExpView::non_const_value_type Packet;
+      typedef typename ExpView::array_layout Layout;
+      typedef typename ExpView::device_type Device;
+      typedef typename ExpView::memory_traits Mem;
+      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxNumPackets); // send buffer
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
@@ -2707,7 +2717,7 @@ namespace Tpetra {
             sendArrayOffset += numExportPacketsPerLID[j];
           }
           if (numPacketsTo_p > 0) {
-            Kokkos::View<Packet*, Layout, Device, Mem> tmpSend =
+            ImpView tmpSend =
               subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
             if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -2756,11 +2766,12 @@ namespace Tpetra {
     }
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePostsAndWaits (const ExpView &exports,
                           size_t numPackets,
-                          const Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+                          const ImpView &imports)
   {
     // If MPI library doesn't support RDMA for communication directly
     // to/from GPU, transfer exports to the host, do the communication, then
@@ -2768,8 +2779,8 @@ namespace Tpetra {
     //
     // We need to do this here instead of doPosts() because the copy back
     // to the GPU must occur after the waits.
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    typedef ExpView exports_view;
+    typedef ImpView imports_view;
     if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
@@ -2787,11 +2798,12 @@ namespace Tpetra {
     doReverseWaits ();
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doReversePostsAndWaits (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePostsAndWaits (const ExpView &exports,
                           const ArrayView<size_t> &numExportPacketsPerLID,
-                          const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                          const ImpView &imports,
                           const ArrayView<size_t> &numImportPacketsPerLID)
   {
     // If MPI library doesn't support RDMA for communication directly
@@ -2800,8 +2812,8 @@ namespace Tpetra {
     //
     // We need to do this here instead of doPosts() because the copy back
     // to the GPU must occur after the waits.
-    typedef Kokkos::View<const Packet*, Layout, Device, Mem> exports_view;
-    typedef Kokkos::View<Packet*, Layout, Device, Mem> imports_view;
+    typedef ExpView exports_view;
+    typedef ImpView imports_view;
     if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
       typename exports_view::HostMirror host_exports =
         Kokkos::create_mirror_view(exports);
@@ -2826,11 +2838,12 @@ namespace Tpetra {
     doReverseWaits ();
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePosts (const ExpView &exports,
                   size_t numPackets,
-                  const  Kokkos::View<Packet*, Layout, Device, Mem> &imports)
+                  const  ImpView &imports)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2843,11 +2856,12 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numPackets, imports);
   }
 
-  template <class Packet, class Layout, class Device, class Mem>
-  void Distributor::
-  doReversePosts (const Kokkos::View<const Packet*, Layout, Device, Mem> &exports,
+  template <class ExpView, class ImpView>
+  typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
+  Distributor::
+  doReversePosts (const ExpView &exports,
                   const ArrayView<size_t> &numExportPacketsPerLID,
-                  const Kokkos::View<Packet*, Layout, Device, Mem> &imports,
+                  const ImpView &imports,
                   const ArrayView<size_t> &numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
