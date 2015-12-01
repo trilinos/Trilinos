@@ -252,7 +252,6 @@ struct CoincidentElementDescription
 };
 typedef std::map<stk::mesh::impl::LocalId, std::vector<stk::mesh::GraphEdge>> SparseGraph;
 
-std::vector<stk::mesh::CoincidentElementConnection> get_exposed_coincident_sides(const stk::mesh::Graph &graph, int numSides, stk::mesh::impl::LocalId elemId);
 bool are_elements_coincident(const stk::mesh::Graph &graph, const CoincidentElementDescription &elemDesc);
 SparseGraph extract_coincident_sides(stk::mesh::Graph &graph, const std::vector<stk::topology> &topologies);
 bool is_local_element(stk::mesh::impl::LocalId elemId);

@@ -1996,13 +1996,6 @@ void ElemElemGraph::create_remote_sides1(stk::mesh::BulkData& bulk_data, const s
     }
 }
 
-void collect_exposed_coincident_sides(const stk::mesh::Graph &graph, int numElemSides, stk::mesh::impl::LocalId local_id, std::vector<stk::mesh::impl::ElementSidePair> &element_side_pairs)
-{
-    std::vector<stk::mesh::CoincidentElementConnection> coincidentSides = impl::get_exposed_coincident_sides(graph, numElemSides, local_id);
-    for(const stk::mesh::CoincidentElementConnection &coincidentSide : coincidentSides)
-        element_side_pairs.push_back(stk::mesh::impl::ElementSidePair(coincidentSide.elem1, coincidentSide.side1));
-}
-
 bool is_local_element_air_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &airSelector, stk::mesh::Entity otherElement)
 {
     return airSelector(bulkData.bucket(otherElement)) && impl::does_element_have_side(bulkData, otherElement);

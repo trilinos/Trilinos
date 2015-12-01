@@ -256,27 +256,6 @@ TEST_F(CoincidentHex8sWithAdjacentHexInParallel, SkinMeshWithAirSelectorOnCoinci
     }
 }
 
-void compare_exposed_sides(const std::vector<stk::mesh::CoincidentElementConnection> &goldExposedSides,
-                           const std::vector<stk::mesh::CoincidentElementConnection> &exposedCoincidentSides)
-{
-    ASSERT_EQ(goldExposedSides.size(), exposedCoincidentSides.size());
-    for(size_t i=0; i<exposedCoincidentSides.size();i++)
-    {
-        EXPECT_EQ(goldExposedSides[i], exposedCoincidentSides[i]);
-    }
-}
-
-void expect_all_sides_exposed(const stk::mesh::Graph &graph, size_t numSides, stk::mesh::impl::LocalId elem1, std::vector<stk::mesh::impl::LocalId> connectedElems)
-{
-    std::vector<stk::mesh::CoincidentElementConnection> goldCoincidentElementConnections;
-    for(size_t side=0; side < numSides; side++)
-        for(stk::mesh::impl::LocalId connectedElem : connectedElems)
-            goldCoincidentElementConnections.push_back(stk::mesh::CoincidentElementConnection(elem1, side, connectedElem, side));
-
-    std::vector<stk::mesh::CoincidentElementConnection> exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSides, elem1);
-    compare_exposed_sides(goldCoincidentElementConnections, exposedCoincidentSides);
-}
-
 void make_edges_for_coincident_elems(stk::mesh::Graph &graph, const stk::mesh::impl::CoincidentElementDescription &elemDesc)
 {
     for(int side=0; side < elemDesc.numSides; side++)
@@ -288,20 +267,6 @@ void make_graph_for_coincident_elements(stk::mesh::Graph &graph, size_t numLocal
     graph.set_num_local_elements(numLocalElems);
     for(const stk::mesh::impl::CoincidentElementDescription &elemDesc : elemDescs)
         make_edges_for_coincident_elems(graph, elemDesc);
-}
-
-void test_graph_for_coincident_elements(stk::mesh::Graph &graph, const std::vector<stk::mesh::impl::CoincidentElementDescription> &elemDescs)
-{
-    for(const stk::mesh::impl::CoincidentElementDescription &elemDesc : elemDescs)
-        expect_all_sides_exposed(graph, elemDesc.numSides, elemDesc.elem1, {elemDesc.elem2});
-}
-
-TEST(CoincidentElements, DetectCoincidentHex8s)
-{
-    stk::mesh::Graph graph;
-    std::vector<stk::mesh::impl::CoincidentElementDescription> elemDescs = {{6, 0, 1}, {6, 1, 0}};
-    make_graph_for_coincident_elements(graph, 2, elemDescs);
-    test_graph_for_coincident_elements(graph, elemDescs);
 }
 
 void add_symmetric_edges(stk::mesh::Graph &graph, const stk::mesh::GraphEdge &graphEdge)
@@ -322,52 +287,6 @@ void make_graph_of_coincident_hex8s_with_adjacent_hex(stk::mesh::Graph &graph, i
     std::vector<stk::mesh::impl::CoincidentElementDescription> elemDescs = {{6, 0, 1}, {6, 1, 0}};
     make_graph_for_coincident_elements(graph, 2, elemDescs);
     add_adjacent_hex_to_graph(graph, sideFromStacked, sideFromNew);
-}
-
-TEST(CoincidentElements, CoincidentHex8sWithAdjacentHex)
-{
-    stk::mesh::Graph graph;
-    int sideFromStacked = 4, sideFromNew = 3;
-    make_graph_of_coincident_hex8s_with_adjacent_hex(graph, sideFromStacked, sideFromNew);
-
-    size_t numSidesHex8 = 6;
-    std::vector<stk::mesh::CoincidentElementConnection> exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSidesHex8, 0);
-    ASSERT_EQ(5u, exposedCoincidentSides.size());
-    exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSidesHex8, 1);
-    ASSERT_EQ(5u, exposedCoincidentSides.size());
-    exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSidesHex8, 2);
-    ASSERT_EQ(0u, exposedCoincidentSides.size());
-}
-
-TEST(CoincidentElements, ThreeCoincidentShells)
-{
-    stk::mesh::Graph graph;
-    std::vector<stk::mesh::impl::CoincidentElementDescription> elemDescs = {{2, 0, 1}, {2, 0, 2}, {2, 1, 0}, {2, 1, 2}, {2, 2, 0}, {2, 2, 1}};
-    make_graph_for_coincident_elements(graph, 3, elemDescs);
-    expect_all_sides_exposed(graph, 2, 0, {1, 2});
-    expect_all_sides_exposed(graph, 2, 1, {0, 2});
-    expect_all_sides_exposed(graph, 2, 2, {0, 1});
-}
-
-void setup_graph_for_hex_next_to_shell(stk::mesh::Graph &graph, const stk::mesh::GraphEdge &graphEdge)
-{
-    graph.set_num_local_elements(2);
-    add_symmetric_edges(graph, graphEdge);
-}
-
-TEST(CoincidentElements, Hex8WithShellNeighbor)
-{
-    stk::mesh::Graph graph;
-    stk::mesh::GraphEdge edgeFromHexToShell(0, 1, 1, 0);
-    setup_graph_for_hex_next_to_shell(graph, edgeFromHexToShell);
-
-    size_t numSidesHex8 = 6;
-    std::vector<stk::mesh::CoincidentElementConnection> exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSidesHex8, edgeFromHexToShell.elem1);
-    ASSERT_EQ(0u, exposedCoincidentSides.size());
-
-    size_t numSidesShell = 2;
-    exposedCoincidentSides = stk::mesh::impl::get_exposed_coincident_sides(graph, numSidesShell, edgeFromHexToShell.elem2);
-    ASSERT_EQ(0u, exposedCoincidentSides.size());
 }
 
 void expect_num_edges_remaining_per_element(const stk::mesh::Graph &graph, const std::vector<size_t> &goldNumEdgesRemaining)
@@ -497,5 +416,4 @@ TEST(CoincidentElements, ExtractCoincidentHex8sWithAdjacentHexInParallel)
         }
     }
 }
-
 }
