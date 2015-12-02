@@ -3603,7 +3603,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValue (LocalOrdinal MyRow,
                      size_t VectorIndex,
-                     const impl_scalar_type& ScalarValue)
+                     const impl_scalar_type& ScalarValue) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
@@ -3633,7 +3633,7 @@ namespace Tpetra {
   sumIntoLocalValue (const LocalOrdinal localRow,
                      const size_t col,
                      const impl_scalar_type& value,
-                     const bool atomic)
+                     const bool atomic) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
@@ -3666,7 +3666,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceGlobalValue (GlobalOrdinal GlobalRow,
                       size_t VectorIndex,
-                      const impl_scalar_type& ScalarValue)
+                      const impl_scalar_type& ScalarValue) const
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
@@ -3683,7 +3683,7 @@ namespace Tpetra {
       "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
       << " of the multivector is invalid.");
 #endif // HAVE_TPETRA_DEBUG
-    replaceLocalValue (MyRow, VectorIndex, ScalarValue);
+    this->replaceLocalValue (MyRow, VectorIndex, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -3692,7 +3692,7 @@ namespace Tpetra {
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const size_t col,
                       const impl_scalar_type& value,
-                      const bool atomic)
+                      const bool atomic) const
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
@@ -3710,7 +3710,7 @@ namespace Tpetra {
       "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
       << " of the multivector is invalid.");
 #endif
-    sumIntoLocalValue (lclRow, col, value, atomic);
+    this->sumIntoLocalValue (lclRow, col, value, atomic);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
