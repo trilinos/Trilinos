@@ -260,7 +260,7 @@ std::map<int, std::vector<LocalId>> get_extracted_coincident_local_ids(const stk
                                                                        const stk::mesh::impl::SparseGraph &extractedCoincidentElements);
 void pack_extracted_coincident_element_ids(stk::CommSparse &commSparse,
                                            const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc);
-void unpack_extracted_coincident_element_ids(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph);
+void unpack_extracted_coincident_element_ids_and_delete_connecting_graph_edges(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph);
 void remove_edges_to_extracted_coincident_elements_on_other_procs(const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc,
                                                                   stk::mesh::Graph &graph,
                                                                   MPI_Comm comm);

@@ -769,7 +769,7 @@ void remove_edges_to_extracted_coincident_elements_on_other_procs(const std::map
     stk::unpack_communications(commSparse,
         [&commSparse,&graph](int procId)
         {
-            stk::mesh::impl::unpack_extracted_coincident_element_ids(commSparse, procId, graph);
+            stk::mesh::impl::unpack_extracted_coincident_element_ids_and_delete_connecting_graph_edges(commSparse, procId, graph);
         });
 }
 
@@ -787,35 +787,61 @@ void pack_extracted_coincident_element_ids(stk::CommSparse &commSparse, const st
     }
 }
 
-void unpack_extracted_coincident_element_ids(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph)
+void delete_graph_edges_connected_to_coincident_element(stk::mesh::Graph &graph, std::vector<stk::mesh::GraphEdge> graphEdgesToDelete)
+{
+    for(const stk::mesh::GraphEdge &graphEdge : graphEdgesToDelete)
+        graph.delete_edge(graphEdge);
+}
+
+size_t receive_number_of_coincident_elements(stk::CommSparse &commSparse, int procId)
 {
     size_t numCoincidentElems;
     commSparse.recv_buffer(procId).unpack<size_t>(numCoincidentElems);
+    return numCoincidentElems;
+}
+
+stk::mesh::EntityId unpack_next_coincident_element_id(stk::CommSparse &commSparse, int procId)
+{
+    stk::mesh::EntityId coincidentElem;
+    commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(coincidentElem);
+    return coincidentElem;
+}
+
+bool is_element_remote(stk::mesh::EntityId connectedElementId)
+{
+    return (!stk::mesh::impl::is_local_element(connectedElementId));
+}
+bool is_element_coincident(stk::mesh::EntityId coincidentElemId, stk::mesh::EntityId connectedElementId)
+{
+    return (static_cast<stk::mesh::EntityId>(-connectedElementId) == coincidentElemId);
+}
+bool is_connected_element_coincident_and_remote(stk::mesh::EntityId coincidentElemId, stk::mesh::EntityId connectedElementId)
+{
+    return (is_element_coincident(coincidentElemId, connectedElementId) && is_element_remote(connectedElementId));
+}
+
+void collect_remote_coincident_graph_edges(stk::mesh::EntityId coincidentElemId, const GraphEdgesForElement &graphEdgesOfConcern, std::vector<stk::mesh::GraphEdge> &graphEdgesToDelete)
+{
+    for(const stk::mesh::GraphEdge &graphEdge : graphEdgesOfConcern)
+        if(is_connected_element_coincident_and_remote(coincidentElemId, graphEdge.elem2))
+                graphEdgesToDelete.push_back(graphEdge);
+}
+
+void delete_graph_edges_connected_to_coincident_element(stk::mesh::Graph &graph, stk::mesh::EntityId coincidentElemId)
+{
+    std::vector<stk::mesh::GraphEdge> graphEdgesToDelete;
+    for(size_t i=0; i<graph.get_num_elements_in_graph(); i++)
+        collect_remote_coincident_graph_edges(coincidentElemId, graph.get_edges_for_element(i), graphEdgesToDelete);
+    delete_graph_edges_connected_to_coincident_element(graph, graphEdgesToDelete);
+}
+
+void unpack_extracted_coincident_element_ids_and_delete_connecting_graph_edges(stk::CommSparse &commSparse, int procId, stk::mesh::Graph &graph)
+{
+    size_t numCoincidentElems = receive_number_of_coincident_elements(commSparse, procId);
     for(size_t i=0; i<numCoincidentElems; i++)
     {
-        stk::mesh::EntityId coincidentElem;
-        commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(coincidentElem);
-
-        std::vector<stk::mesh::GraphEdge> graphEdgesToDelete;
-        size_t numElems = graph.get_num_elements_in_graph();
-        for(size_t i=0; i<numElems; i++)
-        {
-            for(const stk::mesh::GraphEdge &graphEdge : graph.get_edges_for_element(i))
-            {
-                if(!stk::mesh::impl::is_local_element(graphEdge.elem2))
-                {
-                    if(static_cast<stk::mesh::EntityId>(-graphEdge.elem2) == coincidentElem)
-                    {
-                        graphEdgesToDelete.push_back(graphEdge);
-                    }
-                }
-            }
-        }
-
-        for(const stk::mesh::GraphEdge &graphEdge : graphEdgesToDelete)
-        {
-            graph.delete_edge(graphEdge);
-        }
+        stk::mesh::EntityId coincidentElemId = unpack_next_coincident_element_id(commSparse, procId);
+        delete_graph_edges_connected_to_coincident_element(graph, coincidentElemId);
     }
 }
 
