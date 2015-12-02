@@ -60,6 +60,10 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Basker_decl.hpp"
 
+#ifdef SHYLUBASKER
+//#include "shylubasker_def.hpp"
+#endif
+
 namespace Amesos2 {
 
 

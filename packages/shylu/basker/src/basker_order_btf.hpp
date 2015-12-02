@@ -2,6 +2,7 @@
 #define BASKER_ORDER_BTF_HPP
 
 #include "basker_types.hpp"
+#include "basker_sswrapper.hpp"
 #include <assert.h>
 
 //Depends on SuiteSparse in Amesos
@@ -15,6 +16,8 @@ namespace BaskerNS
 {
 
   
+
+  /*
   template <class Int>
   BASKER_INLINE
   int my_strong_component
@@ -39,7 +42,7 @@ namespace BaskerNS
 
   template <>
   BASKER_INLINE
-  int my_strong_component <>
+  int my_strong_component <int>
   (
    //BASKER_MATRIX &M,
    int           &n,
@@ -67,11 +70,12 @@ namespace BaskerNS
     //l_Int work[M.nrow*4];
 
     //printf("before amesos call \n");
-    /*
-    nblks = amesos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
-				    &(M.row_idx[0]), 
-				    &(perm_in[0]), p, r, work);
-    */
+   
+    //nblks = amesos_btf_strongcomp(M.ncol,&(M.col_ptr[0]),
+    //&(M.row_idx[0]), 
+//				    &(perm_in[0]), p, r, work);
+  //
+  
     nblks = amesos_btf_strongcomp(n, col_ptr,
 				    row_idx, 
 				    perm_in, p, r, work);
@@ -115,7 +119,7 @@ namespace BaskerNS
   }
 
   template <>
-  int my_strong_component< >
+  int my_strong_component <long>
   (
    //BASKER_MATRIX &M,
    //long           &nblks,
@@ -141,11 +145,11 @@ namespace BaskerNS
     l_Int work[n*4];
 
     //printf("before amesos call \n");
-    /*
-    nblks = amesos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
-				    &(M.row_idx[0]), 
-				    &(perm_in[0]), p, r, work);
-    */
+    
+    //nblks = amesos_btf_l_strongcomp(M.ncol,&(M.col_ptr[0]),
+//				    &(M.row_idx[0]), 
+//				    &(perm_in[0]), p, r, work);
+    
      nblks = amesos_btf_l_strongcomp(n,
 				    col_ptr,
 				     row_idx, 
@@ -186,7 +190,7 @@ namespace BaskerNS
     return 0;
   }//strong_component<long int, Entry, Exe_Space>
 
-
+  */
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -957,7 +961,7 @@ namespace BaskerNS
       }
     //printf("SC one \n");
     //my_strong_component(M,nblks,perm,perm_in, CC);
-    my_strong_component(M.ncol,
+    BaskerSSWrapper<Int>::my_strong_component(M.ncol,
 			&(M.col_ptr(0)),
 			&(M.row_idx(0)),
 			nblks,
@@ -1070,8 +1074,6 @@ namespace BaskerNS
   }//strong_component<long int, Entry, Exe_Space>
   */
 #endif // End HAVE_AMESOS
-
-
 
 }//end namespace BaskerNS
 

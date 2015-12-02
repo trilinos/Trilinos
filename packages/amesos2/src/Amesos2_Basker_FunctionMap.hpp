@@ -64,8 +64,8 @@
 #include <shylubasker_decl.hpp>
 #include <shylubasker_def.hpp>
 #else
-#include <basker_decl.hpp>
-#include <basker_def.hpp>
+#include "basker_decl.hpp"
+#include "basker_def.hpp"
 #endif
 
 namespace Amesos2 {

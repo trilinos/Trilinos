@@ -566,7 +566,11 @@ namespace {
   /*
    * Instantiations
    */
-#ifdef HAVE_TEUCHOS_COMPLEX
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(SHYLUBASKER)
+  //#ifndef SHYLUBASKER
+#pragma message("T COMPLEX");
+
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, SCALAR)        \
   typedef std::complex<SCALAR>  Complex##SCALAR;                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Initialization, Complex##SCALAR, LO, GO ) \
@@ -580,19 +584,20 @@ namespace {
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, float)
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
-#  endif
+#  endif//end have complex_flox
 
 #  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)        \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, double)
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
-#  endif
-
+#  endif//end complex_double
+       //#endif //SHYLUBASKER
 #else  // !(defined HAVE_TEUCHOS_COMPLEX
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #endif
+  //#endif
 
 #ifdef HAVE_TPETRA_INST_FLOAT
 #  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )       \

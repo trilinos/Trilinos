@@ -57,10 +57,6 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Basker_FunctionMap.hpp"
 
-#ifdef SHYLUBASKER
-#include "basker_decl.hpp"
-#include "basker_def.hpp"
-#endif
 
 namespace Amesos2 {
 
