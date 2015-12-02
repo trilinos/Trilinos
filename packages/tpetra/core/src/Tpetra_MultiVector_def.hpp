@@ -1108,20 +1108,49 @@ namespace Tpetra {
       XMV Y = subview (Y_lcl, rowRng, Kokkos::ALL());
 
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        lclNumRows != 0 &&
-        (X.dimension_0 () != lclNumRows || X.dimension_1 () != numVecs),
-        std::logic_error, prefix << "X's dimensions are " << X.dimension_0 ()
-        << " x " << X.dimension_1 () << ", which differ from the local "
-        "dimensions " << lclNumRows << " x " << numVecs << ".  "
-        "Please report this bug to the Tpetra developers.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        lclNumRows != 0 &&
-        (Y.dimension_0 () != lclNumRows || Y.dimension_1 () != numVecs),
-        std::logic_error, prefix << "Y's dimensions are " << Y.dimension_0 ()
-        << " x " << Y.dimension_1 () << ", which differ from the local "
-        "dimensions " << lclNumRows << " x " << numVecs << ".  "
-        "Please report this bug to the Tpetra developers.");
+      if (lclNumRows != 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (X.dimension_0 () != lclNumRows, std::logic_error, prefix <<
+           "X.dimension_0() = " << X.dimension_0 () << " != lclNumRows "
+           "= " << lclNumRows << ".  "
+           "Please report this bug to the Tpetra developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (Y.dimension_0 () != lclNumRows, std::logic_error, prefix <<
+           "Y.dimension_0() = " << Y.dimension_0 () << " != lclNumRows "
+           "= " << lclNumRows << ".  "
+           "Please report this bug to the Tpetra developers.");
+        // If a MultiVector is constant stride, then numVecs should
+        // equal its View's number of columns.  Otherwise, numVecs
+        // should be less than its View's number of columns.
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (constantStrideX &&
+           (X.dimension_0 () != lclNumRows || X.dimension_1 () != numVecs),
+           std::logic_error, prefix << "X is " << X.dimension_0 () << " x " <<
+           X.dimension_1 () << " (constant stride), which differs from the "
+           "local dimensions " << lclNumRows << " x " << numVecs << ".  "
+           "Please report this bug to the Tpetra developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! constantStrideX &&
+           (X.dimension_0 () != lclNumRows || X.dimension_1 () < numVecs),
+           std::logic_error, prefix << "X is " << X.dimension_0 () << " x " <<
+           X.dimension_1 () << " (NOT constant stride), but the local "
+           "dimensions are " << lclNumRows << " x " << numVecs << ".  "
+           "Please report this bug to the Tpetra developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (constantStrideY &&
+           (Y.dimension_0 () != lclNumRows || Y.dimension_1 () != numVecs),
+           std::logic_error, prefix << "Y is " << Y.dimension_0 () << " x " <<
+           Y.dimension_1 () << " (constant stride), which differs from the "
+           "local dimensions " << lclNumRows << " x " << numVecs << ".  "
+           "Please report this bug to the Tpetra developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! constantStrideY &&
+           (Y.dimension_0 () != lclNumRows || Y.dimension_1 () < numVecs),
+           std::logic_error, prefix << "Y is " << Y.dimension_0 () << " x " <<
+           Y.dimension_1 () << " (NOT constant stride), but the local "
+           "dimensions are " << lclNumRows << " x " << numVecs << ".  "
+           "Please report this bug to the Tpetra developers.");
+      }
 #endif // HAVE_TPETRA_DEBUG
 
       if (lclNumRows == 0) {

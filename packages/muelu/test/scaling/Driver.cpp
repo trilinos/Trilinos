@@ -64,7 +64,9 @@
 #include <MueLu.hpp>
 
 #include <MueLu_BaseClass.hpp>
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #include <MueLu_ExplicitInstantiation.hpp>
+#endif
 #include <MueLu_Level.hpp>
 #include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
@@ -533,6 +535,7 @@ int main_(Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 
     } while (!stop);
   }
+  return EXIT_SUCCESS;
 }
 
 int main(int argc, char* argv[]) {
