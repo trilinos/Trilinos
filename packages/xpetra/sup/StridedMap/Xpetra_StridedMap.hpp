@@ -427,11 +427,11 @@ namespace Xpetra {
     LocalOrdinal getStridedBlockId() const                  { return stridedBlockId_; }
 
     /// returns true, if this is a strided map (i.e. more than 1 strided blocks)
-    bool isStrided()                                        { return stridingInfo_.size() > 1 ? true : false; }
+    bool isStrided() const                                  { return stridingInfo_.size() > 1 ? true : false; }
 
     /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
     /// either strided or just 1 block per node
-    bool isBlocked()                                        { return getFixedBlockSize() > 1 ? true : false; }
+    bool isBlocked() const                                  { return getFixedBlockSize() > 1 ? true : false; }
 
     GlobalOrdinal getOffset() const                         { return offset_; }
 
