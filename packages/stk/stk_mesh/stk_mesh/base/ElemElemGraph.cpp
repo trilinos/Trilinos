@@ -2081,7 +2081,6 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
             {
                 std::vector<unsigned> numConnectedElemsNotAir(numElemSides,0);
                 std::vector<unsigned> isRemoteSide(numElemSides,true);
-                impl::LocalId local_id = get_local_element_id(element);
                 for(const stk::mesh::GraphEdge &graphEdge : m_graph.get_edges_for_element(local_id))
                 {
                     if(impl::is_local_element(graphEdge.elem2))
