@@ -9,7 +9,6 @@ namespace Intrepid2{
 
 typedef int index_type;
 
-}
 
 /*template<typename T, typename = void>
 struct conditional_eSpace : Kokkos::Serial { };
@@ -23,13 +22,15 @@ struct Void {
   typedef void type;
 };
 
+}//namespace
+
 template<class T, class U = void>
 struct conditional_eSpace {
 	typedef Kokkos::Serial execution_space;
 };
 
 template<class T>
-struct conditional_eSpace<T, typename Void<typename T::execution_space>::type > {
+struct conditional_eSpace<T, typename Intrepid2::Void<typename T::execution_space>::type > {
 
 	typedef typename T::execution_space execution_space;
 };
