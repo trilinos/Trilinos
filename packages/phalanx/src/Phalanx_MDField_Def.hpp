@@ -53,11 +53,9 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Print_Utilities.hpp"
 
-#ifdef Phalanx_ENABLE_Intrepid
+#ifdef Phalanx_ENABLE_IntrepidIntrepid2
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "KokkosRank.hpp"
-#endif
 #endif
 
 //**********************************************************************
@@ -1135,8 +1133,7 @@ std::ostream& PHX::operator<<(std::ostream& os,
 
 //template<class A>
 //struct Rank{static const int value = -1;};
-#ifdef HAVE_INTREPID_KOKKOSCORE
-#ifdef Phalanx_ENABLE_Intrepid
+#ifdef Phalanx_ENABLE_IntrepidIntrepid2
 
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -1198,8 +1195,7 @@ struct Return_Type < PHX::MDField<DataT>, ScalarT> {
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type const_return_type;
  };
 
-#endif
-#endif
+#endif // Phalanx_ENABLE_IntrepidIntrepid2
 //********************************************************************************************
 
 
