@@ -49,8 +49,6 @@
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -82,76 +80,51 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-    // Define Status Test
-    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(*parlist));
-
     // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
-      *outStream << "\n\n" << ROL::ETestObjectivesToString(objFunc) << "\n\n";
+      *outStream << std::endl << std::endl << ROL::ETestObjectivesToString(objFunc) << std::endl << std::endl;
 
-      // Initial Guess Vector 
-      Teuchos::RCP<std::vector<RealT> > x0_rcp = Teuchos::rcp( new std::vector<RealT> );
-      ROL::StdVector<RealT> x0(x0_rcp);
-
-      // Exact Solution Vector
-      Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> );
-      ROL::StdVector<RealT> z(z_rcp);
-
-      // Get Objective Function
+      // Set Up Optimization Problem
+      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
       Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
       ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
+      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();
 
       // Get Dimension of Problem
-      int dim = 
-        Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
-
-      // Iteration Vector
-      Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> x(x_rcp);
-      x.set(x0);
+      int dim = x0->dimension();
+      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 5*dim);
 
       // Error Vector
-      Teuchos::RCP<std::vector<RealT> > e_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> e(e_rcp);
-      e.zero();
+      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
+      e->zero();
 
       for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
         *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
         parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ETrustRegionToString(tr));
-        if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
-          parlist->sublist("General").sublist("Secant").set("Secant Hessian-Times-A-Vector", true);
-        } 
-        else {
-          parlist->sublist("General").sublist("Secant").set("Secant Hessian-Times-A-Vector", false);
-        }
-
-        // Define Step
-        Teuchos::RCP<ROL::TrustRegionStep<RealT> > step = Teuchos::rcp(new ROL::TrustRegionStep<RealT>(*parlist));
 
         // Define Algorithm
-        ROL::Algorithm<RealT> algo(step,status,false);
+        ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
 
         // Run Algorithm
-        x.set(x0);
-        algo.run(x, *obj, true, *outStream);
+        x->set(*x0);
+        algo.run(*x, *obj, true, *outStream);
 
         // Compute Error 
-        e.set(x);
-        e.axpy(-1.0,z);
-        *outStream << "\nNorm of Error: " << e.norm() << "\n";
+        e->set(*x);
+        e->axpy(-1.0,*z);
+        *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
       }
     }
   }
   catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
+    *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try
 
   if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED" << std::endl;
   else
-    std::cout << "End Result: TEST PASSED\n";
+    std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
 

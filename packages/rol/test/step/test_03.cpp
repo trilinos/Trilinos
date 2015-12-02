@@ -49,8 +49,6 @@
 
 #include "ROL_TestObjectives.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -86,76 +84,55 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
-    // Define Status Test
-    Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(*parlist));
-
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
 
-      // Initial Guess Vector 
-      Teuchos::RCP<std::vector<RealT> > x0_rcp = Teuchos::rcp( new std::vector<RealT> );
-      ROL::StdVector<RealT> x0(x0_rcp);
-
-      // Exact Solution Vector
-      Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> );
-      ROL::StdVector<RealT> z(z_rcp);
-
       // Get Objective Function
-      Teuchos::RCP<ROL::Objective<RealT> >       obj = Teuchos::null;
-      Teuchos::RCP<ROL::BoundConstraint<RealT> > con = Teuchos::null;
+      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
+      Teuchos::RCP<ROL::Objective<RealT> > obj;
+      Teuchos::RCP<ROL::BoundConstraint<RealT> > con;
       ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
+      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();
 
       // Get Dimension of Problem
-      int dim = 
-        Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
+      int dim = x0->dimension(); 
       parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Check Derivatives
-      Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
-      ROL::StdVector<RealT> d(d_rcp);
-      obj->checkGradient(x0,d);
-      obj->checkHessVec(x0,d);
-
-      // Iteration Vector
-      Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> x(x_rcp);
-      x.set(x0);
+      obj->checkGradient(*x0,*z);
+      obj->checkHessVec(*x0,*z);
 
       // Error Vector
-      Teuchos::RCP<std::vector<RealT> > e_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> e(e_rcp);
-      e.zero();
+      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
+      e->zero();
 
       //ROL::EDescent desc = ROL::DESCENT_STEEPEST; 
       ROL::EDescent desc = ROL::DESCENT_NEWTONKRYLOV; 
       parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(desc));
-      *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
-
-      // Define Step
-      Teuchos::RCP<ROL::LineSearchStep<RealT> > step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
+      *outStream << std::endl << std::endl << ROL::EDescentToString(desc) << std::endl << std::endl;
       
       // Define Algorithm
-      ROL::Algorithm<RealT> algo(step,status,false);
+      ROL::Algorithm<RealT> algo("Line Search",*parlist,false);
 
       // Run Algorithm
-      x.set(x0);
-      algo.run(x, *obj, *con, true, *outStream);
+      x->set(*x0);
+      algo.run(*x, *obj, *con, true, *outStream);
 
       // Compute Error
-      e.set(x);
-      e.axpy(-1.0,z);
-      *outStream << "\nNorm of Error: " << e.norm() << "\n";
+      e->set(*x);
+      e->axpy(-1.0,*z);
+      *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
     }
   }
   catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
+    *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try
 
   if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED" << std::endl;
   else
-    std::cout << "End Result: TEST PASSED\n";
+    std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
 

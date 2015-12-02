@@ -324,6 +324,12 @@ public:
     // Secant Object
     useSecantPrecond_ = parlist.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false);
+    if ( secant_ == Teuchos::null ) {
+      Teuchos::ParameterList Slist;
+      Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
+      Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
+      secant_ = SecantFactory<Real>(Slist);
+    }
     // Changing Objective Functions
     softUp_ = parlist.sublist("General").get("Variable Objective Function",false);
     // Scale for epsilon active sets
@@ -356,10 +362,7 @@ public:
       xnew_ = x.clone();
       xold_ = x.clone();
     }
- 
-    if ( con.isActivated() || secant_ != Teuchos::null ) {
-      gp_ = g.clone();
-    }
+    gp_ = g.clone();
 
     // Update approximate gradient and approximate objective function.
     obj.update(x,true,algo_state.iter);    
@@ -367,6 +370,19 @@ public:
     algo_state.snorm = 1.e10;
     algo_state.value = obj.value(x,ftol); 
     algo_state.nfval++;
+
+    // Try to apply inverse Hessian
+    if ( !useSecantHessVec_ &&
+        (etr_ == TRUSTREGION_DOGLEG || etr_ == TRUSTREGION_DOUBLEDOGLEG) ) {
+      try {
+        Teuchos::RCP<Vector<Real> > v  = g.clone();
+        Teuchos::RCP<Vector<Real> > hv = x.clone();
+        obj.invHessVec(*hv,*v,x,htol);
+      }
+      catch (std::exception &e) {
+        useSecantHessVec_ = true;
+      }
+    }
 
     // Evaluate Objective Function at Cauchy Point
     if ( step_state->searchSize <= 0.0 ) {
@@ -555,7 +571,7 @@ public:
       }
 
       // Store previous gradient for secant update
-      if ( secant_ != Teuchos::null ) {
+      if ( useSecantHessVec_ || useSecantPrecond_ ) {
         gp_->set(*(state->gradientVec));
       }
 
@@ -563,7 +579,7 @@ public:
       updateGradient(x,obj,con,algo_state);
 
       // Update secant information
-      if ( secant_ != Teuchos::null ) {
+      if ( useSecantHessVec_ || useSecantPrecond_ ) {
         if ( con.isActivated() ) { // Compute new constrained step
           xnew_->set(x);
           xnew_->axpy(-1.0,*xold_);

@@ -107,14 +107,15 @@ public:
     : ftol_old_(ROL_OVERFLOW), cnt_(0), verbosity_(0) {
     // Unravel Parameter List
     // Trust-Region Parameters
-    delmax_ = parlist.sublist("Step").sublist("Trust Region").get("Maximum Radius",5000.0);
-    eta0_   = parlist.sublist("Step").sublist("Trust Region").get("Step Acceptance Threshold",0.05);
-    eta1_   = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Threshold",0.05);
-    eta2_   = parlist.sublist("Step").sublist("Trust Region").get("Radius Growing Threshold",0.9);
-    gamma0_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Negative rho)",0.0625);
-    gamma1_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Shrinking Rate (Positive rho)",0.25);
-    gamma2_ = parlist.sublist("Step").sublist("Trust Region").get("Radius Growing Rate",2.5);
-    TRsafe_ = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
+    Teuchos::ParameterList list = parlist.sublist("Step").sublist("Trust Region");
+    delmax_ = list.get("Maximum Radius",5000.0);
+    eta0_   = list.get("Step Acceptance Threshold",0.05);
+    eta1_   = list.get("Radius Shrinking Threshold",0.05);
+    eta2_   = list.get("Radius Growing Threshold",0.9);
+    gamma0_ = list.get("Radius Shrinking Rate (Negative rho)",0.0625);
+    gamma1_ = list.get("Radius Shrinking Rate (Positive rho)",0.25);
+    gamma2_ = list.get("Radius Growing Rate",2.5);
+    TRsafe_ = list.get("Safeguard Size",100.0);
     eps_    = TRsafe_*ROL_EPSILON;
 
     // Inexactness Information
@@ -122,11 +123,11 @@ public:
     useInexact_.push_back(parlist.sublist("General").get("Inexact Objective Function", false));
     useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
     useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
-    scale_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Tolerance Scaling",1.e-1);
-    omega_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Exponent",0.9);
-    force_       = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Initial Value",1.0);
-    updateIter_  = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",10);
-    forceFactor_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",0.1);
+    scale_       = list.sublist("Inexact").sublist("Value").get("Tolerance Scaling",1.e-1);
+    omega_       = list.sublist("Inexact").sublist("Value").get("Exponent",0.9);
+    force_       = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Initial Value",1.0);
+    updateIter_  = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",10);
+    forceFactor_ = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",0.1);
 
     // Changing Objective Functions
     softUp_ = parlist.sublist("General").get("Variable Objective Function",false);  
@@ -137,11 +138,18 @@ public:
     Hs_      = g.clone();
   }
 
-  virtual void update( Vector<Real> &x, Real &fnew, Real &del, 
-                       int &nfval, int &ngrad, int &flagTR,
-                       const Vector<Real> &s, const Real snorm, 
-                       const Real fold, const Vector<Real> &g, 
-                       int iter, ProjectedObjective<Real> &pObj ) { 
+  virtual void update( Vector<Real> &x,
+                       Real         &fnew,
+                       Real         &del, 
+                       int          &nfval,
+                       int          &ngrad,
+                       int          &flagTR,
+                 const Vector<Real> &s,
+                 const Real          snorm, 
+                 const Real          fold,
+                 const Vector<Real> &g, 
+                       int           iter,
+                       ProjectedObjective<Real> &pObj ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
     // Compute updated iterate vector
@@ -172,7 +180,7 @@ public:
     fnew = pObj.value(*xupdate_,ftol);
     pObj.update(x);
 
-    nfval = 1;   
+    nfval = 1;
     Real aRed = fold1 - fnew;
     /***************************************************************************************************/
     // FINISH OBJECTIVE FUNCTION COMPUTATION
@@ -209,6 +217,10 @@ public:
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
       rho = 1.0; 
       flagTR = 0;
+    }
+    else if ( std::isnan(aRed) || std::isnan(pRed_) ) {
+      rho = -1.0;
+      flagTR = 5;
     }
     else {
       rho = aRed/pRed_;

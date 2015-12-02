@@ -246,15 +246,15 @@ public:
     else {
       if (edesc_ == DESCENT_STEEPEST || edesc_ == DESCENT_NONLINEARCG) {
         Real tol = std::sqrt(ROL_EPSILON);
-        Real alpha = 1.0;
         // Evaluate objective at x + s
-        updateIterate(*d_,x,s,alpha,con);
+        updateIterate(*d_,x,s,1.0,con);
         obj.update(*d_);
         Real fnew = obj.value(*d_,tol);
         ls_neval++;
         // Minimize quadratic interpolate to compute new alpha
-        alpha = -gs/(2.0*(fnew-fval-gs));
-        val = ((std::abs(alpha) > std::sqrt(ROL_EPSILON)) ? std::abs(alpha) : 1.0);
+        Real denom = (fnew - fval - gs);
+        Real alpha = ((denom > ROL_EPSILON) ? -0.5*gs/denom : 1.0);
+        val = ((alpha > 1.e-1) ? alpha : 1.0);
 
         alpha0_ = val;
         useralpha_ = true;

@@ -72,41 +72,62 @@ template <class Real>
 class BoundConstraint {
 private:
   int dim_;
-  Teuchos::RCP<Vector<Real> > x_lo_;
-  Teuchos::RCP<Vector<Real> > x_up_;
-  Real scale_;  
+
+  const Teuchos::RCP<Vector<Real> > x_lo_;
+  const Teuchos::RCP<Vector<Real> > x_up_;
+  const Real scale_;  
+
+  Teuchos::RCP<Vector<Real> > mask_;
+
   bool activated_; ///< Flag that determines whether or not the constraints are being used.
   Real min_diff_;
 
   Elementwise::ReductionMin<Real> minimum_;
 
-  // Add a constant to every element in a vector
-  class Shift : public Elementwise::UnaryFunction<Real> {
+  class Active : public Elementwise::BinaryFunction<Real> {
     public:
-      Shift(Real offset) : offset_(offset) {}
-      Real apply( const Real &x ) const { return offset_ + x; }
+    Active(Real offset) : offset_(offset) {}
+    Real apply( const Real &x, const Real &y ) const {
+      return ((y <= offset_) ? 0 : x);
+    }
     private:
-      Real offset_;
+    Real offset_;
   };
 
-  class LogicalOr : public Elementwise::BinaryFunction<Real> {
+  class UpperBinding : public Elementwise::BinaryFunction<Real> {
+    public:
+    UpperBinding(Real offset) : offset_(offset) {}
+    Real apply( const Real &x, const Real &y ) const {
+      return ((y < 0 && x <= offset_) ? 0 : 1);
+    }
+    private:
+    Real offset_;
+  };
+
+  class LowerBinding : public Elementwise::BinaryFunction<Real> {
+    public:
+    LowerBinding(Real offset) : offset_(offset) {}
+    Real apply( const Real &x, const Real &y ) const {
+      return ((y > 0 && x <= offset_) ? 0 : 1);
+    }
+    private:
+    Real offset_;
+  };
+
+  class PruneBinding : public Elementwise::BinaryFunction<Real> {
     public:
       Real apply( const Real &x, const Real &y ) const {
-        return (x==0.0 && y==0.0) ? 0.0 : 1.0;
+        return ((y == 1) ? x : 0);
       }
-  };
-
-  class Product : public Elementwise::BinaryFunction<Real> {
-    public:
-      Real apply( const Real &x, const Real &y ) const { return x*y; }
-  } product;
-
+  } prune_;
 
 public:
 
   virtual ~BoundConstraint() {}
 
-  BoundConstraint(void) : activated_(true) {}
+  BoundConstraint(void)
+    : x_lo_(Teuchos::null), x_up_(Teuchos::null), scale_(1.0),
+      mask_(Teuchos::null), activated_(false), min_diff_(0.0) {}
 
   /** \brief Default constructor.
 
@@ -114,16 +135,16 @@ public:
   */
   BoundConstraint(const Teuchos::RCP<Vector<Real> > &x_lo,
                   const Teuchos::RCP<Vector<Real> > &x_up,
-                  Real scale = 1.0) :
-                    x_lo_(x_lo), x_up_(x_up),scale_(scale),activated_(true) {
+                  const Real scale = 1.0)
+    : x_lo_(x_lo), x_up_(x_up), scale_(scale), activated_(true) {
+    mask_ = x_lo_->clone();
 
     // Compute difference between upper and lower bounds
-    Teuchos::RCP<Vector<Real> > diff = x_up_->clone();
-    diff->set(*x_up_);
-    diff->axpy(-1.0,*x_lo_);
+    mask_->set(*x_up_);
+    mask_->axpy(-1.0,*x_lo_);
 
     // Compute minimum difference
-    min_diff_ = diff->reduce(minimum_);
+    min_diff_ = mask_->reduce(minimum_);
     min_diff_ *= 0.5;
 
   }
@@ -156,7 +177,7 @@ public:
     } greater;
 
     x.applyBinary(lesser, *x_up_); // Set x to the elementwise minimum of x and x_up_
-    x.applyBinary(greater,*x_lo_); // Set x to the elementwise minimum of x and x_lo_
+    x.applyBinary(greater,*x_lo_); // Set x to the elementwise maximum of x and x_lo_
 
   }
 
@@ -173,26 +194,14 @@ public:
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
 
-    Real epsn = std::min(scale_*eps,this->min_diff_);
+    Real epsn = std::min(scale_*eps,min_diff_);
 
-    // Find the indices where x - u + epsn >= 0
+    mask_->set(*x_up_);
+    mask_->axpy(-1.0,x);
 
-    Shift shift(epsn);
+    Active op(epsn);
+    v.applyBinary(op,*mask_);
 
-    Teuchos::RCP<Vector<Real> > mask = x.clone();
-    mask->set(x);
-    mask->axpy(-1.0,*x_up_);
-    mask->applyUnary(shift); 
-
-    struct Condition : public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc>=0 ? 0.0 : 1.0;
-      }
-    } condition;
-
-    mask->applyUnary(condition); // mask = 0 anywhere x - u + epsn >= 0
-
-    v.applyBinary(product, *mask); // zeros elements of v where mask=0
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
@@ -210,41 +219,15 @@ public:
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
 
-    Real epsn = std::min(scale_*eps,this->min_diff_);
+    Real epsn = std::min(scale_*eps,min_diff_);
 
-    // Find the indices where x - u + epsn >= 0
+    mask_->set(*x_up_);
+    mask_->axpy(-1.0,x);
+    
+    UpperBinding op(epsn);
+    mask_->applyBinary(op,g);
 
-    Shift shift(epsn);
-
-    Teuchos::RCP<Vector<Real> > mask1 = x.clone();
-    mask1->set(x);
-    mask1->axpy(-1.0,*x_up_);
-    mask1->applyUnary(shift);
-
-    struct Condition1 : public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc>=0 ? 0.0 : 1.0;
-      }
-    } condition1;
-
-    mask1->applyUnary(condition1);
-
-    struct Condition2 : public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc < 0.0 ? 0.0 : 1.0;
-      }
-    } condition2;
-
-    Teuchos::RCP<Vector<Real> > mask2 = g.clone();
-    mask2->set(g);
-
-    mask2->applyUnary(condition2);
-
-    LogicalOr logicalOr;
-
-    mask1->applyBinary(logicalOr,*mask2);
-
-    v.applyBinary(product,*mask1);
+    v.applyBinary(prune_,*mask_);
 
   }
 
@@ -261,26 +244,13 @@ public:
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
 
-    Real epsn = std::min(scale_*eps,this->min_diff_);
+    Real epsn = std::min(scale_*eps,min_diff_);
 
-    // Find the indices where -x + l + epsn >= 0
+    mask_->set(x);
+    mask_->axpy(-1.0,*x_lo_);
 
-    Shift shift(epsn);
-
-    Teuchos::RCP<Vector<Real> > mask = x_lo_->clone();
-    mask->set(*x_lo_);
-    mask->axpy(-1.0,x);
-    mask->applyUnary(shift);
-
-    struct Condition: public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc>=0 ? 0.0 : 1.0;
-      }
-    } condition;
-
-    mask->applyUnary(condition); // mask = 0 anywhere -x + l + epsn >= 0
-
-    v.applyBinary(product, *mask); // zeros elements of v where mask=0
+    Active op(epsn);
+    v.applyBinary(op,*mask_);
 
   }
 
@@ -299,41 +269,15 @@ public:
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
 
-    Real epsn = std::min(scale_*eps,this->min_diff_);
+    Real epsn = std::min(scale_*eps,min_diff_);
 
-    // Find the indices where -x + l + epsn >= 0
+    mask_->set(x);
+    mask_->axpy(-1.0,*x_lo_);
 
-    Shift shift(epsn);
+    LowerBinding op(epsn);
+    mask_->applyBinary(op,g);
 
-    Teuchos::RCP<Vector<Real> > mask1 = x_lo_->clone();
-    mask1->set(*x_lo_);
-    mask1->axpy(-1.0,x);
-    mask1->applyUnary(shift);
-
-    struct Condition1: public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc>=0 ? 0.0 : 1.0;
-      }
-    } condition1;
-
-    mask1->applyUnary(condition1); // mask = 0 anywhere -x + l + epsn >= 0
-
-    struct Condition2 : public Elementwise::UnaryFunction<Real> {
-      Real apply(const Real &xc) const {
-        return xc > 0.0 ? 0.0 : 1.0;
-      }
-    } condition2;
-
-    Teuchos::RCP<Vector<Real> > mask2 = g.clone();
-    mask2->set(g);
-
-    mask2->applyUnary(condition2);
-
-    LogicalOr logicalOr;
-
-    mask1->applyBinary(logicalOr,*mask2);
-
-    v.applyBinary(product,*mask1);
+    v.applyBinary(prune_,*mask_);
 
   }
 
@@ -367,8 +311,8 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    this->pruneUpperActive(v,x,eps);
-    this->pruneLowerActive(v,x,eps);
+    pruneUpperActive(v,x,eps);
+    pruneLowerActive(v,x,eps);
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
@@ -384,8 +328,8 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    this->pruneUpperActive(v,g,x,eps);
-    this->pruneLowerActive(v,g,x,eps);
+    pruneUpperActive(v,g,x,eps);
+    pruneLowerActive(v,g,x,eps);
   }
 
   /** \brief Check if the vector, v, is feasible.
@@ -394,49 +338,38 @@ public:
       @param[in]    v   is the vector to be checked.
   */
   virtual bool isFeasible( const Vector<Real> &v ) { 
-    if ( this->activated_ ) {
-      Teuchos::RCP<Vector<Real> > s = v.clone();
-      s->set(*x_up_);
+    bool flag = true;
+    if ( activated_ ) {
+      mask_->set(*x_up_);
+      mask_->axpy(-1.0,v);
+      Real uminusv = mask_->reduce(minimum_);
 
-      s->axpy(-1.0,v); // u-v
+      mask_->set(v);
+      mask_->axpy(-1.0,*x_lo_);
+      Real vminusl = mask_->reduce(minimum_);
 
-      Real uminusv = s->reduce(minimum_);
-
-      s->set(v);
-      s->axpy(-1.0,*x_lo_);
-
-      Real vminusl = s->reduce(minimum_);
-
-      if( (uminusv<0) || (vminusl<0) ) {
-        return false;
-      } 
-      else {
-        return true;
-      }
-
+      flag = (((uminusv < 0) || (vminusl<0)) ? false : true);
     }
-    else {
-      return true; 
-    }
+    return flag;
   }
 
   /** \brief Turn on bounds.
    
       This function turns the bounds on. 
   */
-  void activate(void)    { this->activated_ = true;  }
+  void activate(void)    { activated_ = true;  }
 
   /** \brief Turn off bounds.
 
       This function turns the bounds off.
   */
-  void deactivate(void)  { this->activated_ = false; }
+  void deactivate(void)  { activated_ = false; }
 
   /** \brief Check if bounds are on.
 
       This function returns true if the bounds are turned on.
   */
-  bool isActivated(void) { return this->activated_;  }
+  bool isActivated(void) { return activated_;  }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -448,19 +381,19 @@ public:
   void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneActive(*tmp,x,eps);
+    pruneActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
   }
   void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneLowerActive(*tmp,x,eps);
+    pruneLowerActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
   }
   void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneUpperActive(*tmp,x,eps);
+    pruneUpperActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
   }
 
@@ -476,19 +409,19 @@ public:
   void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneActive(*tmp,g,x,eps);
+    pruneActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
   void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneLowerActive(*tmp,g,x,eps);
+    pruneLowerActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
   void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
-    this->pruneUpperActive(*tmp,g,x,eps);
+    pruneUpperActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
  
@@ -501,7 +434,7 @@ public:
   void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
     Teuchos::RCP<Vector<Real> > tmp = g.clone();
     tmp->set(g);
-    this->pruneActive(g,*tmp,x);
+    pruneActive(g,*tmp,x);
   }
  
   /** \brief Compute projected step.
@@ -512,7 +445,7 @@ public:
   */
   void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
     v.plus(x);
-    this->project(v);
+    project(v);
     v.axpy(-1.0,x);
   }
 

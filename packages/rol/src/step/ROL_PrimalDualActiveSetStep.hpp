@@ -324,11 +324,11 @@ public:
       /********************************************************************/
       As_->zero();                               // As   = 0
    
-      con.setVectorToUpperBound(*xbnd_);         // xbnd = u        
-      xbnd_->axpy(-1.0,x);                       // xbnd = u - x    
-      xtmp_->set(*xbnd_);                        // tmp  = u - x    
-      con.pruneUpperActive(*xtmp_,*xlam_,neps_); // tmp  = I(u - x) 
-      xbnd_->axpy(-1.0,*xtmp_);                  // xbnd = A(u - x)  
+      con.setVectorToUpperBound(*xbnd_);         // xbnd = u
+      xbnd_->axpy(-1.0,x);                       // xbnd = u - x
+      xtmp_->set(*xbnd_);                        // tmp  = u - x
+      con.pruneUpperActive(*xtmp_,*xlam_,neps_); // tmp  = I(u - x)
+      xbnd_->axpy(-1.0,*xtmp_);                  // xbnd = A(u - x)
       As_->plus(*xbnd_);                         // As  += A(u - x)
 
       con.setVectorToLowerBound(*xbnd_);         // xbnd = l
@@ -338,7 +338,7 @@ public:
       xbnd_->axpy(-1.0,*xtmp_);                  // xbnd = A(l - x)
       As_->plus(*xbnd_);                         // As  += A(l - x)
       /********************************************************************/
-      // APPLY HESSIAN TO ACTIVE COMPONENTS OF s AND REMOVE INACTIVE 
+      // APPLY HESSIAN TO ACTIVE COMPONENTS OF s AND REMOVE INACTIVE
       /********************************************************************/
       itol_ = std::sqrt(ROL_EPSILON);
       if ( useSecantHessVec_ && secant_ != Teuchos::null ) {        // IHAs = H*As

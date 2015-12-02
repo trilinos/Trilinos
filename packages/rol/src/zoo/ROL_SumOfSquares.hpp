@@ -59,64 +59,51 @@
 namespace ROL {
 namespace ZOO {
 
-  /** \brief Sum of squares function. 
-   */
-  template<class Real>
-  class Objective_SumOfSquares : public Objective<Real> {
-  public:
-    Real value( const Vector<Real> &x, Real &tol ) {
-
-      return x.dot(x);
-    }
-
-    void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      g.set(x);
-      g.scale(2.0);
-    }
-#if USE_HESSVEC
-    void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      hv.set(v);
-      hv.scale(2.0);
-    }
-#endif
-    void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-
-      hv.set(v);
-      hv.scale(0.5);
-    }
-  };
-
-  template<class Real>
-  void getSumOfSquares( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
-
-    typedef std::vector<Real> vector;
-    typedef StdVector<Real>   SV;
-
-    typedef typename vector::size_type uint; 
-
-    using Teuchos::RCP;
-    using Teuchos::dyn_cast;    
- 
-    // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
-    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
-
-    uint n = xp->size();
-    // Resize Vectors
-    n = 100;
-    x0p->resize(n);
-    xp->resize(n);
-    // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_SumOfSquares<Real> );
-    // Get Initial Guess
-    for ( uint i=0; i<n; i++) {
-      (*x0p)[i] = 1.0;
-    }
-    // Get Solution
-    for( uint i=0; i<n; i++ ) {
-      (*xp)[i] = 0.0;
-    }
+/** \brief Sum of squares function. 
+ */
+template<class Real>
+class Objective_SumOfSquares : public Objective<Real> {
+public:
+  Real value( const Vector<Real> &x, Real &tol ) {
+    return x.dot(x);
   }
+
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    g.set(x);
+    g.scale(2.0);
+  }
+
+#if USE_HESSVEC
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    hv.set(v);
+    hv.scale(2.0);
+  }
+#endif
+
+  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    hv.set(v);
+    hv.scale(0.5);
+  }
+};
+
+template<class Real>
+void getSumOfSquares( Teuchos::RCP<Objective<Real> > &obj,
+                      Teuchos::RCP<Vector<Real> >    &x0,
+                      Teuchos::RCP<Vector<Real> >    &x ) {
+  // Problem dimension
+  int n = 100;
+
+  // Get Initial Guess
+  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,1.0));
+  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+
+  // Get Solution
+  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  x = Teuchos::rcp(new StdVector<Real>(xp));
+
+  // Instantiate Objective Function
+  obj = Teuchos::rcp(new Objective_SumOfSquares<Real>);
+}
 
 } // End ZOO Namespace
 } // End ROL Namespace

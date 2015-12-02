@@ -100,7 +100,7 @@ public:
     }
   }
 
-  Real dot( const Vector<Real> &x ) const {
+  virtual Real dot( const Vector<Real> &x ) const {
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
@@ -117,7 +117,7 @@ public:
     return val;
   }
 
-  Teuchos::RCP<Vector<Real> > clone() const {
+  virtual Teuchos::RCP<Vector<Real> > clone() const {
     return Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())) ));
   }
 

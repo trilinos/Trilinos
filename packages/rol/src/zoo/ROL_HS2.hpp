@@ -136,54 +136,39 @@ namespace ZOO {
     }
   };
 
-  template<class Real>
-  void getHS2( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<BoundConstraint<Real> > &con, 
-                Vector<Real> &x0, Vector<Real> &x ) {
+template<class Real>
+void getHS2( Teuchos::RCP<Objective<Real> >       &obj,
+             Teuchos::RCP<BoundConstraint<Real> > &con, 
+             Teuchos::RCP<Vector<Real> >          &x0,
+             Teuchos::RCP<Vector<Real> >          &x ) {
+  // Problem dimension
+  int n = 2;
 
-    typedef std::vector<Real> vector;
-    typedef Vector<Real>      V;
-    typedef StdVector<Real>   SV;
+  // Get Initial Guess
+  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  (*x0p)[0] = -2.0; (*x0p)[1] = 1.0;
+  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::dyn_cast;
- 
-    // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
-    RCP<vector> xp = dyn_cast<SV>(x).getVector();
+  // Get Solution
+  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  Real a = std::sqrt(598.0/1200.0);
+  Real b = 400.0 * std::pow(a,3.0);
+  (*xp)[0] = 2.0*a*std::cos(1.0/3.0 * std::acos(1.0/b));
+  (*xp)[1] = 1.5;
+  x = Teuchos::rcp(new StdVector<Real>(xp));
 
-    int n = xp->size();
-    // Resize Vectors
-    n = 2;
-    x0p->resize(n);
-    xp->resize(n);
-    // Instantiate Objective Function
-    obj = rcp( new Objective_HS2<Real> );
+  // Instantiate Objective Function
+  obj = Teuchos::rcp(new Objective_HS2<Real>);
 
-    // Instantiate BoundConstraint
-    RCP<vector> l_rcp = rcp( new vector(n,0.0) );      
-    RCP<vector> u_rcp = rcp( new vector(n,0.0) );
-
-    (*l_rcp)[0] = -0.1*ROL_OVERFLOW;
-    (*l_rcp)[1] =  1.5;
-    (*u_rcp)[0] =  0.1*ROL_OVERFLOW;
-    (*u_rcp)[1] =  0.1*ROL_OVERFLOW; 
-
-    RCP<V> l = rcp( new SV(l_rcp) );
-    RCP<V> u = rcp( new SV(u_rcp) );
-
-    con = rcp( new BoundConstraint<Real>(l,u) );
-
-    // Get Initial Guess
-    (*x0p)[0] =  -2.0;
-    (*x0p)[1] =  1.0;
-    // Get Solution
-    Real a = std::sqrt(598.0/1200.0);
-    Real b = 400.0 * std::pow(a,3.0);
-    (*xp)[0] = 2.0*a*std::cos(1.0/3.0 * std::acos(1.0/b));
-    (*xp)[1] = 1.5;
-  }
-
+  // Instantiate BoundConstraint
+  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  (*lp)[0] = ROL_NINF; (*lp)[1] = 1.5;
+  Teuchos::RCP<Vector<Real> > l = Teuchos::rcp( new StdVector<Real>(lp) );
+  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  (*up)[0] = ROL_INF; (*up)[1] = ROL_INF; 
+  Teuchos::RCP<Vector<Real> > u = Teuchos::rcp( new StdVector<Real>(up) );
+  con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
+}
 
 } // End ZOO Namespace
 } // End ROL Namespace

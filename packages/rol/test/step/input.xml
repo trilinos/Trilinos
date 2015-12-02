@@ -42,7 +42,7 @@
       <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
       <ParameterList name="Descent Method">
         <Parameter name="Type"              type="string" value="Newton-Krylov"    /> 
-        <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
+        <Parameter name="Nonlinear CG Type" type="string" value="Oren-Luenberger"  />
       </ParameterList>
 
       <!-- ===========  CURVATURE CONDITION SPECIFICATION  =========== -->

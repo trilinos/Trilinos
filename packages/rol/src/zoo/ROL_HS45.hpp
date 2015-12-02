@@ -87,7 +87,7 @@ namespace ZOO {
     }
 
   public:
-    Objective_HS45(uint dim = 5) : dim_(dim) {
+    Objective_HS45(int dim = 5) : dim_((uint)dim) {
       fact_ = 1.0;
       for ( uint i = 0; i < dim_; i++ ) {
         fact_ *= (Real)(i+1);
@@ -147,58 +147,43 @@ namespace ZOO {
 #endif
   };
 
-  template<class Real>
-  void getHS45( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<BoundConstraint<Real> > &con, 
-                Vector<Real> &x0, Vector<Real> &x ) {
+template<class Real>
+void getHS45( Teuchos::RCP<Objective<Real> >       &obj,
+              Teuchos::RCP<BoundConstraint<Real> > &con, 
+              Teuchos::RCP<Vector<Real> >          &x0,
+              Teuchos::RCP<Vector<Real> >          &x ) {
+  // Problem dimension
+  int n = 5;
 
-    typedef std::vector<Real> vector;
-    typedef Vector<Real>      V;
-    typedef StdVector<Real>   SV;
-
-    typedef typename vector::size_type uint;
-
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::dyn_cast;
-    
-    // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
-    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
-
-    uint n = xp->size();
-
-    // Resize Vectors
-    n = 5;
-    x0p->resize(n);
-    xp->resize(n);
-
-    // Instantiate Objective Function
-    obj = rcp( new Objective_HS45<Real>(n) );
-
-    // Instantiate BoundConstraint
-    RCP<vector> l_rcp = rcp( new vector(n,0.0) );
-    RCP<vector> u_rcp = rcp( new vector(n,0.0) );
-
-    for ( uint i = 0; i < n; i++ ) { 
-      (*l_rcp)[i] = 0.0;
-      (*u_rcp)[i] = static_cast<Real>(i+1);
-    }
-
-    RCP<V> l = rcp( new SV(l_rcp) );
-    RCP<V> u = rcp( new SV(u_rcp) );
- 
-    con = rcp( new BoundConstraint<Real>(l,u) );
-
-    // Get Initial Guess
-    for ( uint i = 0; i < n; i++ ) {
-      (*x0p)[i] =  2.0;
-    }
-    con->project(x0);
-    // Get Solution
-    for ( uint i = 0; i < n; i++ ) {
-      (*xp)[i] = (Real)(i+1);
-    }
+  // Get Initial Guess
+  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  for ( int i = 0; i < n; i++ ) {
+    (*x0p)[i] = 2.0;
   }
+  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+
+  // Get Solution
+  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  for ( int i = 0; i < n; i++ ) {
+    (*xp)[i] = (Real)(i+1);
+  }
+  x = Teuchos::rcp(new StdVector<Real>(xp));
+
+  // Instantiate Objective Function
+  obj = Teuchos::rcp(new Objective_HS45<Real>(n));
+
+  // Instantiate BoundConstraint
+  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  for ( int i = 0; i < n; i++ ) { 
+    (*lp)[i] = 0.0;
+    (*up)[i] = static_cast<Real>(i+1);
+  }
+  Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(lp));
+  Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(up));
+  con = Teuchos::rcp(new BoundConstraint<Real>(l,u));
+  con->project(*x0);
+}
 
 
 } // End ZOO Namespace

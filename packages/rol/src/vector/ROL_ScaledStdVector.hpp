@@ -44,10 +44,7 @@
 #ifndef ROL_SCALEDSTDVECTOR_H
 #define ROL_SCALEDSTDVECTOR_H
 
-#include <algorithm>
-#include <cstdlib>
-
-#include "ROL_Vector.hpp"
+#include "ROL_StdVector.hpp"
 
 /** \class ROL::PrimalScaledStdVector
     \brief Provides the std::vector implementation of the ROL::Vector interface
@@ -68,13 +65,12 @@ template <class Real, class Element=Real>
 class DualScaledStdVector;
 
 template <class Real, class Element>
-class PrimalScaledStdVector : public Vector<Real> {
+class PrimalScaledStdVector : public StdVector<Real> {
 
   typedef typename std::vector<Element>::size_type uint;
 
 private:
 
-  Teuchos::RCP<std::vector<Element> >               std_vec_;
   Teuchos::RCP<std::vector<Element> >               scaling_vec_;
   mutable Teuchos::RCP<DualScaledStdVector<Real> >  dual_vec_;
 
@@ -82,120 +78,36 @@ public:
 
   PrimalScaledStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec,
                         const Teuchos::RCP<std::vector<Element> > & scaling_vec) :
-    std_vec_(std_vec), scaling_vec_(scaling_vec) {}
-
-  void set( const Vector<Real> &x ) {
-    const PrimalScaledStdVector &ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
-  }
-
-  void plus( const Vector<Real> &x ) {
-    const PrimalScaledStdVector &ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] += xval[i];
-    }
-  }
-
-  void axpy( const Real alpha, const Vector<Real> &x ) {
-    const PrimalScaledStdVector &ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] += alpha*xval[i];
-    }
-  }
-
-  void scale( const Real alpha ) {
-    uint dimension = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] *= alpha;
-    }
-  }
+    StdVector<Real>(std_vec), scaling_vec_(scaling_vec) {}
 
   Real dot( const Vector<Real> &x ) const {
     const PrimalScaledStdVector & ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
+    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+    uint dimension = yval.size();
     Real val = 0;
     for (uint i=0; i<dimension; i++) {
-      val += (*std_vec_)[i]*xval[i]*(*scaling_vec_)[i];
+      val += yval[i]*xval[i]*(*scaling_vec_)[i];
     }
-    return val;
-  }
-
-  Real norm() const {
-    Real val = 0;
-    val = std::sqrt( dot(*this) );
     return val;
   }
 
   Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new PrimalScaledStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())), scaling_vec_ ));
-  }
-
-  Teuchos::RCP<const std::vector<Element> > getVector() const {
-    return std_vec_;
-  }
-
-  Teuchos::RCP<std::vector<Element> > getVector() {
-    return std_vec_;
+    uint dimension = (StdVector<Real>::getVector())->size();
+    return Teuchos::rcp( new PrimalScaledStdVector(
+           Teuchos::rcp(new std::vector<Element>(dimension)), scaling_vec_ ) );
   }
 
   const ROL::Vector<Real> & dual() const {
-    uint dimension = std_vec_->size();
-    std::vector<Element> tmp_vec(*std_vec_);
-    for (uint i = 0; i < dimension; i++) { 
+    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+    uint dimension = yval.size();
+    std::vector<Element> tmp_vec(yval);
+    for (uint i = 0; i < dimension; i++) {
       tmp_vec[i] *= (*scaling_vec_)[i];
     }
-    dual_vec_ = Teuchos::rcp( new DualScaledStdVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
+    dual_vec_ = Teuchos::rcp( new DualScaledStdVector<Real>(
+                Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
     return *dual_vec_;
-  }
-
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<PrimalScaledStdVector> e = Teuchos::rcp( new PrimalScaledStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)), scaling_vec_ ));
-    (*e->getVector())[i] = 1.0;
-    return e;
-  }
-
-  int dimension() const {
-    return std_vec_->size();
-  }
-
-  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i]);
-    }
-
-  }
-
-  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    Teuchos::RCP<const std::vector<Element> > xval = Teuchos::null;
-    try {
-      const PrimalScaledStdVector & ex = Teuchos::dyn_cast<const PrimalScaledStdVector>(x);
-      xval = ex.getVector();
-    }
-    catch (std::exception &e) {
-      const DualScaledStdVector<Real> & ex = Teuchos::dyn_cast<const DualScaledStdVector<Real> >(x);
-      xval = ex.getVector();
-    }
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xval)[i]);
-    }
-
-  }
-
-  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-    Real result = r.initialValue();
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      r.reduce((*std_vec_)[i],result);
-    }
-    return result;
   }
 
 }; // class PrimalScaledStdVector
@@ -203,138 +115,52 @@ public:
 
 
 template <class Real, class Element>
-class DualScaledStdVector : public Vector<Real> {
+class DualScaledStdVector : public StdVector<Real> {
 
   typedef typename std::vector<Element>::size_type uint;
 
 private:
 
-  Teuchos::RCP<std::vector<Element> >                 std_vec_;
   Teuchos::RCP<std::vector<Element> >                 scaling_vec_;
-  mutable Teuchos::RCP<PrimalScaledStdVector<Real> >  dual_vec_;
+  mutable Teuchos::RCP<PrimalScaledStdVector<Real> >  primal_vec_;
 
 public:
 
   DualScaledStdVector(const Teuchos::RCP<std::vector<Element> > & std_vec,
                       const Teuchos::RCP<std::vector<Element> > & scaling_vec) :
-    std_vec_(std_vec), scaling_vec_(scaling_vec) {}
-
-  void set( const Vector<Real> &x ) {
-    const DualScaledStdVector &ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
-  }
-
-  void plus( const Vector<Real> &x ) {
-    const DualScaledStdVector &ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] += xval[i];
-    }
-  }
-
-  void axpy( const Real alpha, const Vector<Real> &x ) {
-    const DualScaledStdVector &ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
-    const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] += alpha*xval[i];
-    }
-  }
-
-  void scale( const Real alpha ) {
-    uint dimension = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] *= alpha;
-    }
-  }
+    StdVector<Real>(std_vec), scaling_vec_(scaling_vec) {}
 
   Real dot( const Vector<Real> &x ) const {
     const DualScaledStdVector & ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
-    uint dimension  = std_vec_->size();
+    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+    uint dimension = yval.size();
     Real val = 0;
     for (uint i=0; i<dimension; i++) {
-      val += (*std_vec_)[i]*xval[i]/(*scaling_vec_)[i];
+      val += yval[i]*xval[i]/(*scaling_vec_)[i];
     }
-    return val;
-  }
-
-  Real norm() const {
-    Real val = 0;
-    val = std::sqrt( dot(*this) );
     return val;
   }
 
   Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new DualScaledStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size())), scaling_vec_ ));
-  }
-
-  Teuchos::RCP<const std::vector<Element> > getVector() const {
-    return std_vec_;
-  }
-
-  Teuchos::RCP<std::vector<Element> > getVector() {
-    return std_vec_;
+    uint dimension = (StdVector<Real>::getVector())->size();
+    return Teuchos::rcp( new DualScaledStdVector(
+           Teuchos::rcp(new std::vector<Element>(dimension)), scaling_vec_ ) );
   }
 
   const ROL::Vector<Real> & dual() const {
-    uint dimension = std_vec_->size();
-    std::vector<Element> tmp_vec(*std_vec_);
-    for (uint i = 0; i < dimension; i++) { 
+    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+    uint dimension = yval.size();
+    std::vector<Element> tmp_vec(yval);
+    for (uint i = 0; i < dimension; i++) {
       tmp_vec[i] /= (*scaling_vec_)[i];
     }
-    dual_vec_ = Teuchos::rcp( new PrimalScaledStdVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
-    return *dual_vec_;
-  }
-
-  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
-    Teuchos::RCP<DualScaledStdVector> e = Teuchos::rcp( new DualScaledStdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)), scaling_vec_ ));
-    (*e->getVector())[i] = 1.0;
-    return e;
-  }
-
-  int dimension() const {
-    return std_vec_->size();
-  }
-
-  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i]);
-    }
-
-  }
-
-  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    Teuchos::RCP<const std::vector<Element> > xval = Teuchos::null;
-    try {
-      const DualScaledStdVector & ex = Teuchos::dyn_cast<const DualScaledStdVector>(x);
-      xval = ex.getVector();
-    }
-    catch (std::exception &e) {
-      const PrimalScaledStdVector<Real> & ex = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x);
-      xval = ex.getVector();
-    }
-    uint dimension  = std_vec_->size();
-    for (uint i=0; i<dimension; i++) {
-      (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xval)[i]);
-    }
-
-  }
-
-  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-    Real result = r.initialValue();
-    uint dimension  = std_vec_->size();
-    for(uint i=0; i<dimension; ++i) {
-      r.reduce((*std_vec_)[i],result);
-    }
-    return result;
+    primal_vec_ = Teuchos::rcp( new PrimalScaledStdVector<Real>(
+                  Teuchos::rcp(new std::vector<Element>(tmp_vec)), scaling_vec_ ) );
+    return *primal_vec_;
   }
 
 }; // class DualScaledStdVector
-
 
 } // namespace ROL
 

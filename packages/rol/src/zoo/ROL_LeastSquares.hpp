@@ -59,162 +59,135 @@
 namespace ROL {
 namespace ZOO {
 
-  /** \brief Least squares function.
-   */
-  template<class Real>
-  class Objective_LeastSquares : public Objective<Real> {
+/** \brief Least squares function.
+ */
+template<class Real>
+class Objective_LeastSquares : public Objective<Real> {
+  typedef typename std::vector<Real>::size_type uint; 
 
-    typedef std::vector<Real>  vector;
-    typedef Vector<Real>       V;
-    typedef StdVector<Real>    SV;     
+public:
 
-    typedef typename vector::size_type uint; 
+  Real value( const Vector<Real> &x, Real &tol ) {
+    Teuchos::RCP<const std::vector<Real> > ex
+      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
 
-  private:
-
-    Teuchos::RCP<const vector> getVector( const V& x ) {
-      using Teuchos::dyn_cast;
-      return dyn_cast<const SV>(x).getVector();
-    }
-
-    Teuchos::RCP<vector> getVector( V& x ) {
-      using Teuchos::dyn_cast;
-      return dyn_cast<SV>(x).getVector();
-    }
-
-  public:
-
-    Real value( const Vector<Real> &x, Real &tol ) {
-      using Teuchos::RCP;
-      RCP<const vector> xp = getVector(x);
-
-      uint n    = xp->size();
-      Real h   = 1.0/((Real)n+1.0);
-      Real val = 0.0;
-      Real res = 0.0;
-      for (uint i=0; i<n; i++) {
-        if ( i == 0 ) {
-          res = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
-        }
-        else if ( i == n-1 ) {
-          res = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]);
-        }
-        else {
-          res = 2.0*h + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]+(*xp)[i+1]);
-        }
-        val += 0.5*res*res;
-      }
-
-      return val;
-   }
-
-    void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-
-      using Teuchos::RCP;
-      RCP<const vector> xp = getVector(x);
-      RCP<vector> gp = getVector(g);
-
-      uint n  = xp->size();
-      Real h = 1.0/((Real)n+1.0);
-      vector res(n,0.0);
-      for (uint i=0; i<n; i++) {
-        if ( i == 0 ) {
-          res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i+1]-2.0*(*xp)[i]);
-        }
-        else if ( i == n-1 ) {
-          res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]);
-        }
-        else {
-          res[i] = 2.0*h + 1.0/h*((*xp)[i-1]-2.0*(*xp)[i]+(*xp)[i+1]);
-        }
-      }
-
-      for (uint i=0; i<n; i++) {
-        if ( i == 0 ) {
-          (*gp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
-        }
-        else if ( i == n-1 ) {
-          (*gp)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
-        }
-        else {
-          (*gp)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);
-        }
-      }
-    }
-#if USE_HESSVEC
-    void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
- 
-      using Teuchos::RCP;
-      RCP<const vector> xp = getVector(x);
-      RCP<const vector> vp = getVector(v);
-      RCP<vector> hvp = getVector(hv);
-
-      uint n  = xp->size();
-      Real h = 1.0/((Real)n+1.0);
-      vector res(n,0.0);
-      for (uint i=0; i<n; i++) {
-        if ( i == 0 ) {
-          res[i] = 1.0/h*((*vp)[i+1]-2.0*(*vp)[i]);
-        }
-        else if ( i == n-1 ) {
-          res[i] = 1.0/h*((*vp)[i-1]-2.0*(*vp)[i]);
-        }
-        else {
-          res[i] = 1.0/h*((*vp)[i-1]-2.0*(*vp)[i]+(*vp)[i+1]);
-        }
-      }
-
-      for (uint i=0; i<n; i++) {
-        if ( i == 0 ) {
-          (*hvp)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
-        }
-        else if ( i == n-1 ) {
-          (*hvp)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
-        }
-        else {
-          (*hvp)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);
-        }
-      }
-    }
-#endif
-  };
-
-  template<class Real>
-  void getLeastSquares( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
-
-    typedef std::vector<Real> vector;
-    typedef StdVector<Real>   SV;
-
-    typedef typename vector::size_type uint;
- 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::dyn_cast;
-
-    // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
-    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
-
-    uint n = xp->size();
-
-    // Resize Vectors
-    n = 32;
-    x0p->resize(n);
-    xp->resize(n);
-    // Instantiate Objective Function
-    obj = rcp( new Objective_LeastSquares<Real> );
-    // Get Initial Guess
+    uint n    = ex->size();
+    Real h   = 1.0/((Real)n+1.0);
+    Real val = 0.0;
+    Real res = 0.0;
     for (uint i=0; i<n; i++) {
-      (*x0p)[i] = 0.0;
+      if ( i == 0 ) {
+        res = 2.0*h*(5.0/6.0) + 1.0/h*((*ex)[i+1]-2.0*(*ex)[i]);
+      }
+      else if ( i == n-1 ) {
+        res = 2.0*h*(5.0/6.0) + 1.0/h*((*ex)[i-1]-2.0*(*ex)[i]);
+      }
+      else {
+        res = 2.0*h + 1.0/h*((*ex)[i-1]-2.0*(*ex)[i]+(*ex)[i+1]);
+      }
+      val += 0.5*res*res;
     }
-    // Get Solution
-    Real h  = 1.0/((Real)n+1.0);
-    Real pt = 0.0;
-    for( uint i=0; i<n; i++ ) {
-      pt = (Real)(i+1)*h;
-      (*xp)[i] = pt*(1.0-pt);
+    return val;
+  }
+
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    Teuchos::RCP<std::vector<Real> > eg
+      = Teuchos::dyn_cast<StdVector<Real> >(g).getVector();
+    Teuchos::RCP<const std::vector<Real> > ex
+      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+
+    uint n  = ex->size();
+    Real h = 1.0/((Real)n+1.0);
+    std::vector<Real> res(n,0.0);
+    for (uint i=0; i<n; i++) {
+      if ( i == 0 ) {
+        res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*ex)[i+1]-2.0*(*ex)[i]);
+      }
+      else if ( i == n-1 ) {
+        res[i] = 2.0*h*(5.0/6.0) + 1.0/h*((*ex)[i-1]-2.0*(*ex)[i]);
+      }
+      else {
+        res[i] = 2.0*h + 1.0/h*((*ex)[i-1]-2.0*(*ex)[i]+(*ex)[i+1]);
+      }
+    }
+
+    for (uint i=0; i<n; i++) {
+      if ( i == 0 ) {
+        (*eg)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
+      }
+      else if ( i == n-1 ) {
+        (*eg)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
+      }
+      else {
+        (*eg)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);
+      }
     }
   }
+#if USE_HESSVEC
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    Teuchos::RCP<std::vector<Real> > ehv
+      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
+    Teuchos::RCP<const std::vector<Real> > ev
+      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
+    Teuchos::RCP<const std::vector<Real> > ex
+      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+
+    uint n  = ex->size();
+    Real h = 1.0/((Real)n+1.0);
+    std::vector<Real> res(n,0.0);
+    for (uint i=0; i<n; i++) {
+      if ( i == 0 ) {
+        res[i] = 1.0/h*((*ev)[i+1]-2.0*(*ev)[i]);
+      }
+      else if ( i == n-1 ) {
+        res[i] = 1.0/h*((*ev)[i-1]-2.0*(*ev)[i]);
+      }
+      else {
+        res[i] = 1.0/h*((*ev)[i-1]-2.0*(*ev)[i]+(*ev)[i+1]);
+      }
+    }
+
+    for (uint i=0; i<n; i++) {
+      if ( i == 0 ) {
+        (*ehv)[i] = 1.0/h*(res[i+1]-2.0*res[i]);
+      }
+      else if ( i == n-1 ) {
+        (*ehv)[i] = 1.0/h*(res[i-1]-2.0*res[i]);
+      }
+      else {
+        (*ehv)[i] = 1.0/h*(res[i-1]-2.0*res[i]+res[i+1]);
+      }
+    }
+  }
+#endif
+};
+
+template<class Real>
+void getLeastSquares( Teuchos::RCP<Objective<Real> > &obj,
+                      Teuchos::RCP<Vector<Real> >    &x0,
+                      Teuchos::RCP<Vector<Real> >    &x ) {
+  // Problem dimension
+  int n = 32;
+
+  // Get Initial Guess
+  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  for ( int i = 0; i < n; i++ ) {
+    (*x0p)[i] = 0.0;
+  }
+  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+
+  // Get Solution
+  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  Real h = 1.0/((Real)n+1.0), pt = 0.0;
+  for( int i = 0; i < n; i++ ) {
+    pt = (Real)(i+1)*h;
+    (*xp)[i] = pt*(1.0-pt);
+  }
+  x = Teuchos::rcp(new StdVector<Real>(xp));
+
+  // Instantiate Objective Function
+  obj = Teuchos::rcp(new Objective_LeastSquares<Real>);
+}
 
 } // End ZOO Namespace
 } // End ROL Namespace

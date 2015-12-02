@@ -90,116 +90,103 @@
 namespace ROL {
 namespace ZOO {
 
-  /** \brief Zakharov function.
-   */
-  template<class Real>
-  class Objective_Zakharov : public Objective<Real> {
-  private:
-      Teuchos::RCP<Vector<Real> > k_;  
+/** \brief Zakharov function.
+ */
+template<class Real>
+class Objective_Zakharov : public Objective<Real> {
+private:
+    Teuchos::RCP<Vector<Real> > k_;  
 
-  public:
-    
-    // Create using a ROL::Vector containing 1,2,3,...,n
-    Objective_Zakharov(const Teuchos::RCP<Vector<Real> > k) : k_(k) {}
+public:
+  
+  // Create using a ROL::Vector containing 1,2,3,...,n
+  Objective_Zakharov(const Teuchos::RCP<Vector<Real> > k) : k_(k) {}
 
-    Real value( const Vector<Real> &x, Real &tol ) {
+  Real value( const Vector<Real> &x, Real &tol ) {
 
-        Real xdotx = x.dot(x); 
-        Real kdotx = x.dot(*k_); 
+      Real xdotx = x.dot(x); 
+      Real kdotx = x.dot(*k_); 
 
-        Real val = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
+      Real val = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
 
-        return val;
-    }
+      return val;
+  }
 
-    void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-        Real kdotx = x.dot(*k_);
-        Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
+      Real kdotx = x.dot(*k_);
+      Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
 
-        g.set(x);
-        g.scale(2.0);
-        g.axpy(coeff,*k_);
-    }
+      g.set(x);
+      g.scale(2.0);
+      g.axpy(coeff,*k_);
+  }
 
-    Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
+  Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
 
-        Real kdotd = d.dot(*k_);
-        Real kdotx = x.dot(*k_);
-        Real xdotd = x.dot(d);
-        
-        Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
+      Real kdotd = d.dot(*k_);
+      Real kdotx = x.dot(*k_);
+      Real xdotd = x.dot(d);
+      
+      Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
 
-        Real deriv = 2*xdotd + coeff*kdotd;
- 
-        return deriv;
+      Real deriv = 2*xdotd + coeff*kdotd;
 
-    }
+      return deriv;
+
+  }
 
 #if USE_HESSVEC
-    void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
-        Real kdotx = x.dot(*k_);
-        Real kdotv = v.dot(*k_);
-        Real coeff = 0.25*(2.0+3.0*pow(kdotx,2.0))*kdotv;
+      Real kdotx = x.dot(*k_);
+      Real kdotv = v.dot(*k_);
+      Real coeff = 0.25*(2.0+3.0*pow(kdotx,2.0))*kdotv;
 
-        hv.set(v);
-        hv.scale(2.0);
-        hv.axpy(coeff,*k_);
-    }
+      hv.set(v);
+      hv.scale(2.0);
+      hv.axpy(coeff,*k_);
+  }
 #endif
-    void invHessVec( Vector<Real> &ihv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    
-        Real kdotv = v.dot(*k_);
-        Real kdotx = x.dot(*k_);
-        Real kdotk = (*k_).dot(*k_);
-        Real coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*pow(kdotx,2.0)));
-        
-        ihv.set(v);
-        ihv.scale(0.5);
-        ihv.axpy(coeff,*k_); 
-    }
+  void invHessVec( Vector<Real> &ihv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+  
+      Real kdotv = v.dot(*k_);
+      Real kdotx = x.dot(*k_);
+      Real kdotk = (*k_).dot(*k_);
+      Real coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*pow(kdotx,2.0)));
+      
+      ihv.set(v);
+      ihv.scale(0.5);
+      ihv.axpy(coeff,*k_); 
+  }
 };
 
 
 
 template<class Real>
-void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
-  
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::dyn_cast; 
+void getZakharov( Teuchos::RCP<Objective<Real> > &obj,
+                  Teuchos::RCP<Vector<Real> >    &x0,
+                  Teuchos::RCP<Vector<Real> >    &x ) {
 
-    typedef std::vector<Real> vector;
-    typedef Vector<Real>      V;
-    typedef StdVector<Real>   SV;  
- 
-    typedef typename vector::size_type uint;
+  // Problem dimension
+  int n = 10;
 
-    // Cast Initial Guess and Solution Vectors
-    RCP<vector> x0p = dyn_cast<SV>(x0).getVector();
-    RCP<vector> xp  = dyn_cast<SV>(x).getVector();
+  // Get Initial Guess
+  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,3.0));
+  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
 
-    uint n = xp->size();
-    // Resize Vectors
-    n = 10;
+  // Get Solution
+  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  x = Teuchos::rcp(new StdVector<Real>(xp));
 
-    RCP<vector> k_rcp = rcp(new vector(n,0));
-    for(uint i=0;i<n;++i) {
-        (*k_rcp)[i] = i+1.0;    
-    }    
-    RCP<V> k = rcp(new SV(k_rcp));
-    x0p->resize(n);
-    xp->resize(n);
-    // Instantiate Objective Function
-    obj = rcp( new Objective_Zakharov<Real>(k) );
-    // Get Initial Guess
-    (*x0p)[0] =  3.0;
-    (*x0p)[1] =  3.0;
-    // Get Solution
-    (*xp)[0] = 0.0;
-    (*xp)[1] = 0.0;
+  // Instantiate Objective Function
+  Teuchos::RCP<std::vector<Real> > k_rcp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  for ( int i = 0; i < n; i++ ) {
+    (*k_rcp)[i] = i+1.0;
   }
+  Teuchos::RCP<Vector<Real> > k = Teuchos::rcp(new StdVector<Real>(k_rcp));
+  obj = Teuchos::rcp(new Objective_Zakharov<Real>(k));
+}
 
 
 }// End ZOO Namespace

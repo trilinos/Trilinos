@@ -54,7 +54,7 @@
 #include "ROL_HelperFunctions.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-namespace ROL { 
+namespace ROL {
 
 template<class Real>
 class CauchyPoint : public TrustRegion<Real> {
@@ -73,7 +73,7 @@ private:
 public:
 
   // Constructor
-  CauchyPoint( Teuchos::ParameterList &parlist ) 
+  CauchyPoint( Teuchos::ParameterList &parlist )
     : TrustRegion<Real>(parlist), pRed_(0.0), alpha_(-1.0), useCGTCP_(false) {
     // Unravel Parameter List
     Real TRsafe = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
@@ -90,11 +90,11 @@ public:
   }
 
   void run( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
-            const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) { 
+            const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
     if ( pObj.isConActivated() ) {
       if ( useCGTCP_ ) {
         cauchypoint_CGT( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
-      } 
+      }
       else {
         cauchypoint_M( s, snorm, del, iflag, iter, x, grad, gnorm, pObj );
       }
@@ -106,22 +106,30 @@ public:
   }
 
 private:
-  void cauchypoint_unc( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
-                        const Vector<Real> &grad, const Real &gnorm, ProjectedObjective<Real> &pObj ) {
-    Real tol = std::sqrt(ROL_EPSILON);
+  void cauchypoint_unc( Vector<Real> &s,
+                        Real         &snorm,
+                        Real         &del,
+                        int          &iflag,
+                        int          &iter,
+                  const Vector<Real> &x,
+                  const Vector<Real> &grad,
+                  const Real         &gnorm,
+                        ProjectedObjective<Real> &pObj ) {
+    Real tol   = std::sqrt(ROL_EPSILON);
     pObj.hessVec(*Hp_,grad.dual(),x,tol);
-    Real gBg = Hp_->dot(grad);
-    Real tau = 1.0;
-    if ( gBg > 0.0 ) {
-      tau = std::min(1.0, gnorm*gnorm*gnorm/gBg);
+    Real gBg   = Hp_->dot(grad);
+    Real gg    = gnorm*gnorm;
+    Real alpha = del/gnorm;
+    if ( gBg > ROL_EPSILON ) {
+      alpha = std::min(gg/gBg, del/gnorm);
     }
 
     s.set(grad.dual());
-    s.scale(-tau*del/gnorm);
-    snorm = tau*del;
+    s.scale(-alpha);
+    snorm = alpha*gnorm;
     iflag = 0;
     iter  = 0;
-    pRed_ = tau*del/gnorm * pow(gnorm,2.0) - 0.5*pow(tau*del/gnorm,2.0)*gBg;
+    pRed_ = alpha*(gg - 0.5*alpha*gBg);
   }
 
   void cauchypoint_M( Vector<Real> &s, Real &snorm, Real &del, int &iflag, int &iter, const Vector<Real> &x,
