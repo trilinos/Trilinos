@@ -254,6 +254,7 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
       listIds[i] = Ids[i];
       listIdx[i] = offsets[i];
     }
+    listIdx[nLists] = offsets[nLists];
     for (int i=0; i < nPins; i++)
       pinIds[i] = pIds[i];
   }
@@ -363,6 +364,7 @@ static void zoltanHGCS_withMeshAdapter(
       listIds[i] = Ids[i];
       listIdx[i] = offsets[i];
     }
+    listIdx[nLists] = offsets[nLists];
     for (int i=0; i < nPins; i++)
       pinIds[i] = adjIds[i];
   }
