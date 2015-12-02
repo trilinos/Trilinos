@@ -1987,39 +1987,6 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceLocalValues (const LocalOrdinal localRow,
-                      const Kokkos::View<const LocalOrdinal*, device_type,
-                        Kokkos::MemoryUnmanaged>& cols,
-                      const Kokkos::View<const impl_scalar_type*, device_type,
-                        Kokkos::MemoryUnmanaged>& vals) const
-  {
-    typedef impl_scalar_type ST;
-    typedef LocalOrdinal LO;
-    typedef device_type DD;
-
-    if (! isFillActive () || staticGraph_.is_null ()) {
-      // Fill must be active and the graph must exist.
-      return Teuchos::OrdinalTraits<LO>::invalid ();
-    }
-
-    const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
-    if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-      // The input local row is invalid on the calling process,
-      // which means that the calling process summed 0 entries.
-      return static_cast<LO> (0);
-    }
-
-    auto curVals = this->getRowViewNonConst (rowInfo);
-    return staticGraph_->template replaceLocalValues<ST, DD, DD> (rowInfo,
-                                                                  curVals,
-                                                                  cols,
-                                                                  vals);
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  LocalOrdinal
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceLocalValues (const LocalOrdinal localRow,
                       const Teuchos::ArrayView<const LocalOrdinal> &indices,
                       const Teuchos::ArrayView<const Scalar>& values) const
   {
@@ -2029,6 +1996,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DD;
     typedef typename View<LO*, DD>::HostMirror::device_type HD;
+    typedef View<const ST*, HD, MemoryUnmanaged> ISVT;
+    typedef View<const LO*, HD, MemoryUnmanaged> LIVT;
 
     if (! isFillActive () || staticGraph_.is_null ()) {
       // Fill must be active and the graph must exist.
@@ -2043,14 +2012,14 @@ namespace Tpetra {
     }
 
     auto curVals = this->getRowViewNonConst (rowInfo);
+    typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
     const ST* valsRaw = reinterpret_cast<const ST*> (values.getRawPtr ());
-    View<const ST*, HD, MemoryUnmanaged> valsIn (valsRaw, values.size ());
-    View<const LO*, HD, MemoryUnmanaged> indsIn (indices.getRawPtr (),
-                                                 indices.size ());
-    return staticGraph_->template replaceLocalValues<ST, HD, DD> (rowInfo,
-                                                                  curVals,
-                                                                  indsIn,
-                                                                  valsIn);
+    ISVT valsIn (valsRaw, values.size ());
+    LIVT indsIn (indices.getRawPtr (), indices.size ());
+    return staticGraph_->template replaceLocalValues<OSVT, LIVT, ISVT> (rowInfo,
+                                                                        curVals,
+                                                                        indsIn,
+                                                                        valsIn);
   }
 
 
