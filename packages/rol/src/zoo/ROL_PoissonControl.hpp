@@ -291,7 +291,7 @@ void getPoissonControl( Teuchos::RCP<Objective<Real> > &obj,
 
   // Get Initial Guess
   Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  for (uint i=0; i<n; i++) {
+  for (int i=0; i<n; i++) {
     (*x0p)[i] = 0.0;
   }
   x0 = Teuchos::rcp(new StdVector<Real>(x0p));
