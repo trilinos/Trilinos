@@ -126,7 +126,6 @@ public:
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-#if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -359,7 +358,6 @@ public:
       iType index4,
       iType index5,
       iType index6);
-#endif
 
 KOKKOS_INLINE_FUNCTION
   void

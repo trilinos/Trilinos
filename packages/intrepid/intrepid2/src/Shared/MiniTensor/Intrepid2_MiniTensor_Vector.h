@@ -46,9 +46,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 #include<Kokkos_Core.hpp>
-#endif
 #include "Intrepid2_MiniTensor_TensorBase.h"
 
 namespace Intrepid2 {

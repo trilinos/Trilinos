@@ -74,6 +74,9 @@ namespace MueLu {
       This constructor uses the variable with the variable nspName on the finest level
       as null space for the finest multigrid level.
 
+      Currently, the only accepted names for the null space vectors are "Nullspace" (default) or,
+      in case of multiphysics problems, "Nullspace1" and "Nullspace2"
+
      @ingroup MueLuTransferClasses
 
     ## Input/output of NullspaceFactory ##

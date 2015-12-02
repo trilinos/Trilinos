@@ -162,7 +162,6 @@ namespace MueLu {
       // Use plain range map to determine the DOF ids
       ArrayView<const GO> nodeRangeMap = subBlockPRangeMaps[i]->getNodeElementList();
       fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
-      sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
       // Append strided col map (= domain map) to list of range maps.
       subBlockPDomainMaps[i] = subBlockP[i]->getColMap("stridedMaps");
@@ -170,7 +169,21 @@ namespace MueLu {
       // Use plain domain map to determine the DOF ids
       ArrayView<const GO> nodeDomainMap = subBlockPDomainMaps[i]->getNodeElementList();
       fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
+      //sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
+      //fullDomainMapVector.erase(std::unique(fullDomainMapVector.begin(), fullDomainMapVector.end()), fullDomainMapVector.end());
+    }
+
+    // check if sub block map is strided
+    // if it is a strided partial sub map then we have to sort all the GIDs of the full range map
+    RCP<const StridedMap>   stridedSubBlockPRangeMap = rcp_dynamic_cast<const StridedMap>(subBlockPRangeMaps[0]);
+    if(stridedSubBlockPRangeMap != Teuchos::null && stridedSubBlockPRangeMap->isStrided() == true) {
+      sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
+      fullRangeMapVector.erase(std::unique(fullRangeMapVector.begin(), fullRangeMapVector.end()), fullRangeMapVector.end());
+    }
+    RCP<const StridedMap>   stridedSubBlockPDomainMap = rcp_dynamic_cast<const StridedMap>(subBlockPDomainMaps[0]);
+    if(stridedSubBlockPDomainMap != Teuchos::null && stridedSubBlockPDomainMap->isStrided() == true) {
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
+      fullDomainMapVector.erase(std::unique(fullDomainMapVector.begin(), fullDomainMapVector.end()), fullDomainMapVector.end());
     }
 
     // extract map index base from maps of blocked A
@@ -242,10 +255,26 @@ namespace MueLu {
                             A->getDomainMap()->getComm());
     }
 
+    // check whether we are in Thyra or Xpetra mode numbering of GIDs
+    // we must not sort the GID entries!!!
+    /*bool bRangeUseThyraStyleNumbering = false;
+    size_t numAllElements = 0;
+    for (int k = 0; k < numFactManagers; k++) {
+      numAllElements += subBlockPRangeMaps[k]->getGlobalNumElements();
+    }
+    if (fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
+    bool bDomainUseThyraStyleNumbering = false;
+    numAllElements = 0;
+    for (int k = 0; k < numFactManagers; k++) {
+      numAllElements += subBlockPDomainMaps[k]->getGlobalNumElements();
+    }
+    if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;*/
+    bool bRangeUseThyraStyleNumbering  = !this->areGidsUnique(fullRangeMapVector);
+    bool bDomainUseThyraStyleNumbering = !this->areGidsUnique(fullDomainMapVector);
 
     // Build map extractors
-    RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps);
-    RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps);
+    RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps, bRangeUseThyraStyleNumbering);
+    RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps, bDomainUseThyraStyleNumbering);
 
     RCP<BlockedCrsMatrix> P = rcp(new BlockedCrsMatrix(rangeMapExtractor, domainMapExtractor, 10));
     for (size_t i = 0; i < subBlockPRangeMaps.size(); i++)
