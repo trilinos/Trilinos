@@ -242,7 +242,7 @@ namespace ZOO {
     val[17] = -0.1*1.0702;
     val[18] = -0.1*0.7858;
     val[19] = -0.1*0.4323;
-    for ( uint i = 0; i < n; i++ ) { 
+    for ( int i = 0; i < n; i++ ) { 
       if ( i%2 == 0 ) {  
         lp->push_back(std::max(-0.2*(Real)(n),val[i]+0.1));
         up->push_back(std::min( 0.2*(Real)(n),val[i]+1.1));
