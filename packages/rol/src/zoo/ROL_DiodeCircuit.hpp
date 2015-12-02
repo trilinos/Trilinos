@@ -78,7 +78,7 @@ public:
                          Real true_Is, Real true_Rs,
                          bool lambertw, Real noise,
                          bool use_adjoint, int use_hessvec)
-    : Vth_(Vth), lambertw_(lambertw), use_adjoint_(use_adjoint), use_hessvec_(use_hessvec_) {
+    : Vth_(Vth), lambertw_(lambertw), use_adjoint_(use_adjoint), use_hessvec_(use_hessvec) {
     int n  = (Vsrc_max-Vsrc_min)/Vsrc_step + 1;
     Vsrc_  = Teuchos::rcp(new std::vector<Real>(n,0.0));
     Imeas_ = Teuchos::rcp(new std::vector<Real>(n,0.0));
@@ -127,7 +127,7 @@ public:
   Objective_DiodeCircuit(Real Vth, std::ifstream& input_file,
                          bool lambertw, Real noise,
                          bool use_adjoint, int use_hessvec)
-    : Vth_(Vth), lambertw_(lambertw), use_adjoint_(use_adjoint), use_hessvec_(use_hessvec_) {
+    : Vth_(Vth), lambertw_(lambertw), use_adjoint_(use_adjoint), use_hessvec_(use_hessvec) {
     std::string line;
     int dim = 0;
     for( int k = 0; std::getline(input_file,line); ++k ) {
