@@ -26,7 +26,7 @@ ENDIF()
 #this dir only had "EXTRA_DIST" files in it
 #ADD_SUBDIRECTORY(src-fem)  
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+IF (${PACKAGE_NAME}_ENABLE_Xpetra)
   ADD_SUBDIRECTORY(src-xpetra)
 ENDIF()
 
