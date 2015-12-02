@@ -98,6 +98,19 @@ namespace Tpetra {
 
   namespace { // (anonymous)
 
+    template<class ViewType>
+    struct UnmanagedView {
+      static_assert (Kokkos::is_view<ViewType>::value,
+                     "ViewType must be a Kokkos::View specialization.");
+      // FIXME (mfh 02 Dec 2015) Right now, this strips away other
+      // memory traits.  Christian will add an "AllTraits" enum which is
+      // the enum value of MemoryTraits<T>, that will help us fix this.
+      typedef Kokkos::View<typename ViewType::data_type,
+                           typename ViewType::array_layout,
+                           typename ViewType::device_type,
+                           Kokkos::MemoryUnmanaged> type;
+    };
+
     template<class T, class BinaryFunction>
     T atomic_binary_function_update (volatile T* const dest, const T& inputVal, BinaryFunction f)
     {
@@ -1601,14 +1614,15 @@ namespace Tpetra {
 
     /// \brief Implementation detail of CrsMatrix::sumIntoLocalValues.
     ///
-    /// \tparam Scalar The type of each entry in the sparse matrix.
-    /// \tparam InputMemorySpace Kokkos memory space / device in which
-    ///   the input data live.  This may differ from the memory space
-    ///   in which the current matrix values (rowVals) live.
-    /// \tparam ValsMemorySpace Kokkos memory space / device in which
-    ///   the matrix's current values live.  This may differ from the
-    ///   memory space in which the input data (inds and newVals)
-    ///   live.
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
+    /// \tparam OutputScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of the type of values in the sparse matrix (that
+    ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam InputScalarViewType Kokkos::View specialization that
+    ///   is a 1-D array of the type of values in the sparse matrix,
+    ///   but with a possibly different memory space than how the
+    ///   matrix stores its values.
     ///
     /// \param rowInfo [in] Result of getRowInfo on the index of the
     ///   local row of the matrix to modify.
@@ -1617,15 +1631,21 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, increment the value in rowVals
     ///   corresponding to local column index inds[k] by newVals[k].
-    template<class Scalar, class InputMemorySpace, class ValsMemorySpace>
-    LocalOrdinal
+    template<class OutputScalarViewType,
+             class LocalIndicesViewType,
+             class InputScalarViewType>
+    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
+                            Kokkos::is_view<LocalIndicesViewType>::value &&
+                            Kokkos::is_view<InputScalarViewType>::value &&
+                            std::is_same<typename OutputScalarViewType::non_const_value_type,
+                                         typename InputScalarViewType::non_const_value_type>::value &&
+                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
+                                         local_ordinal_type>::value,
+                            LocalOrdinal>::type
     sumIntoLocalValues (const RowInfo& rowInfo,
-                        const Kokkos::View<Scalar*, ValsMemorySpace,
-                          Kokkos::MemoryUnmanaged>& rowVals,
-                        const Kokkos::View<const LocalOrdinal*, InputMemorySpace,
-                          Kokkos::MemoryUnmanaged>& inds,
-                        const Kokkos::View<const Scalar*, InputMemorySpace,
-                          Kokkos::MemoryUnmanaged>& newVals,
+                        const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+                        const typename UnmanagedView<LocalIndicesViewType>::type& inds,
+                        const typename UnmanagedView<InputScalarViewType>::type& newVals,
                         const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;

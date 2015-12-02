@@ -68,6 +68,7 @@
 // the interfaces to the corresponding local computational kernels.
 #include "Kokkos_Sparse_impl_sor.hpp"
 
+
 namespace Tpetra {
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
@@ -1008,6 +1009,13 @@ namespace Tpetra {
     /// values as Kokkos::View.  See below for an overload that takes
     /// Teuchos::ArrayView instead.
     ///
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
+    /// \tparam ImplScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of impl_scalar_type (usually the same as Scalar,
+    ///   unless Scalar is std::complex<T> for some T, in which case
+    ///   it is Kokkos::complex<T>).
+    ///
     /// \param localRow [in] Local index of a row.  This row
     ///   <i>must</i> be owned by the calling process.
     /// \param cols [in] Local indices of the columns whose entries we
@@ -1021,13 +1029,43 @@ namespace Tpetra {
     ///
     /// This method has the same preconditions and return value
     /// meaning as replaceLocalValues() (which see).
-    LocalOrdinal
+    template<class LocalIndicesViewType,
+             class ImplScalarViewType>
+    typename std::enable_if<Kokkos::is_view<LocalIndicesViewType>::value &&
+                            Kokkos::is_view<ImplScalarViewType>::value &&
+                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
+                                         local_ordinal_type>::value &&
+                            std::is_same<typename ImplScalarViewType::non_const_value_type,
+                                         impl_scalar_type>::value, LocalOrdinal>::type
     sumIntoLocalValues (const LocalOrdinal localRow,
-                        const Kokkos::View<const LocalOrdinal*, device_type,
-                          Kokkos::MemoryUnmanaged>& cols,
-                        const Kokkos::View<const impl_scalar_type*, device_type,
-                          Kokkos::MemoryUnmanaged>& vals,
-                        const bool atomic = useAtomicUpdatesByDefault) const;
+                        const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
+                        const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
+                        const bool atomic = useAtomicUpdatesByDefault) const
+    {
+      typedef LocalOrdinal LO;
+
+      if (! this->isFillActive () || this->staticGraph_.is_null ()) {
+        // Fill must be active and the graph must exist.
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+
+      const RowInfo rowInfo = this->staticGraph_->getRowInfo (localRow);
+      if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        // The input local row is invalid on the calling process,
+        // which means that the calling process summed 0 entries.
+        return static_cast<LO> (0);
+      }
+
+      auto curVals = this->getRowViewNonConst (rowInfo);
+      typedef typename std::remove_const<typename std::remove_reference<decltype (curVals)>::type>::type OSVT;
+      typedef typename UnmanagedView<LocalIndicesViewType>::type LIVT;
+      typedef typename UnmanagedView<ImplScalarViewType>::type ISVT;
+      return staticGraph_->template sumIntoLocalValues<OSVT, LIVT, ISVT> (rowInfo,
+                                                                          curVals,
+                                                                          inputInds,
+                                                                          inputVals,
+                                                                          atomic);
+    }
 
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
