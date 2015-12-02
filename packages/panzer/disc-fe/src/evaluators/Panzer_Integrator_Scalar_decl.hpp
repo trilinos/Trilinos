@@ -47,7 +47,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -80,7 +80,7 @@ PANZER_EVALUATOR_CLASS(Integrator_Scalar)
 
   double multiplier;
 
-  Intrepid::FieldContainer<ScalarT> tmp;
+  Intrepid2::FieldContainer<ScalarT> tmp;
 
 public:
   // for testing purposes

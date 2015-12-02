@@ -44,7 +44,7 @@
 #ifndef PANZER_ARRAY_TRAITS_HPP
 #define PANZER_ARRAY_TRAITS_HPP
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace panzer {
@@ -54,14 +54,14 @@ namespace panzer {
     typedef typename Array::size_type size_type;
   };
 
-  // Specialization for Intrepid::FieldContainer
+  // Specialization for Intrepid2::FieldContainer
   template<typename Scalar>
-  struct ArrayTraits<Scalar,Intrepid::FieldContainer<Scalar> >
+  struct ArrayTraits<Scalar,Intrepid2::FieldContainer<Scalar> >
   {
     typedef int size_type;
 
     // template <typename SubType>
-    // struct mod_scalar { typedef Intrepid::FieldContainer<SubType> array_type; };
+    // struct mod_scalar { typedef Intrepid2::FieldContainer<SubType> array_type; };
     
   };
 

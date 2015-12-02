@@ -47,7 +47,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -74,7 +74,7 @@ PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
   std::string basis_name;
   std::size_t basis_index;
 
-  // Intrepid::FieldContainer<ScalarT> tmp;
+  // Intrepid2::FieldContainer<ScalarT> tmp;
   PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
 
 private:

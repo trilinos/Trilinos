@@ -1918,7 +1918,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    double totalError;
+    Scalar totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)
@@ -2045,7 +2045,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    double totalError;
+    Scalar totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)

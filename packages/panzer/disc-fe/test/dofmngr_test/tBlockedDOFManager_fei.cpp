@@ -61,9 +61,9 @@
 
 // include some intrepid basis functions
 // 2D basis 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
@@ -73,16 +73,16 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 namespace panzer {
 
-template <typename IntrepidType>
+template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-   Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+   Teuchos::RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
 
@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
 
@@ -295,7 +295,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -409,7 +409,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);

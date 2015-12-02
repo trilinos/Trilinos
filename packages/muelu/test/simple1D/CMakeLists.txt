@@ -9,13 +9,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos
+  ${PACKAGE_NAME}_ENABLE_Ifpack
   )
 
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Galeri)
+IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Epetra)
 
   # TRIBITS_ADD_EXECUTABLE_AND_TEST(
   #     amesos2

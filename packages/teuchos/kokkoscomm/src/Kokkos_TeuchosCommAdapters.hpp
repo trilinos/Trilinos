@@ -60,9 +60,9 @@
 namespace Teuchos {
 
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
-void
-send (const Kokkos::View<T,L,D,M,S>& sendBuffer,
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+send (const ViewType& sendBuffer,
       const Ordinal count,
       const int destRank,
       const int tag,
@@ -72,9 +72,9 @@ send (const Kokkos::View<T,L,D,M,S>& sendBuffer,
 }
 
 //! Variant of ssend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
-void
-ssend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+ssend (const ViewType& sendBuffer,
        const Ordinal count,
        const int destRank,
        const int tag,
@@ -84,9 +84,9 @@ ssend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
 }
 
 //! Variant of readySend() that accepts a message tag.
-template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
-void
-readySend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+readySend (const ViewType& sendBuffer,
            const Ordinal count,
            const int destRank,
            const int tag,
@@ -96,9 +96,9 @@ readySend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
 }
 
 //! Variant of isend() that takes a tag (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
-RCP<CommRequest<Ordinal> >
-isend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+isend (const ViewType& sendBuffer,
        const int destRank,
        const int tag,
        const Comm<Ordinal>& comm)
@@ -108,9 +108,9 @@ isend (const Kokkos::View<T,L,D,M,S>& sendBuffer,
 }
 
 //! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
-template<typename Ordinal, typename T, typename L, typename D, typename M, typename S>
-RCP<CommRequest<Ordinal> >
-ireceive (const Kokkos::View<T,L,D,M,S>& recvBuffer,
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+ireceive (const ViewType& recvBuffer,
           const int sourceRank,
           const int tag,
           const Comm<Ordinal>& comm)
@@ -121,7 +121,7 @@ ireceive (const Kokkos::View<T,L,D,M,S>& recvBuffer,
 
 
 template<typename Ordinal, typename SendViewType, typename RecvViewType>
-void
+typename std::enable_if<(Kokkos::Impl::is_view<SendViewType>::value && Kokkos::Impl::is_view<RecvViewType>::value)>::type
 reduceAll (const SendViewType& sendBuf,
            const RecvViewType& recvBuf,
            const EReductionType reductionType,
@@ -165,22 +165,20 @@ reduceAll (const SendViewType& sendBuf,
 }
 
 template<typename Ordinal, typename Serializer,
-         typename ST, typename SL, typename SD, typename SM, typename SS,
-         typename RT, typename RL, typename RD, typename RM, typename RS>
-void
+         class SendViewType,
+         class RecvViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<SendViewType>::value && Kokkos::Impl::is_view<RecvViewType>::value)>::type
 reduceAll(const Comm<Ordinal>& comm,
           const Serializer& serializer,
           const EReductionType reductType,
           const Ordinal count,
-          const Kokkos::View<ST,SL,SD,SM,SS>& sendBuffer,
-          const Kokkos::View<RT,RL,RD,RM,RS>& recvBuffer)
+          const SendViewType& sendBuffer,
+          const RecvViewType& recvBuffer)
 {
   // We can't use the array of intrinsic scalar type
   // ((non_)const_array_intrinsic_type) here, because we're doing a
   // reduction.  That means we need to compute with the actual value
   // type.
-  typedef Kokkos::View<ST,SL,SD,SM,SS> SendViewType;
-  typedef Kokkos::View<RT,RL,RD,RM,RS> RecvViewType;
   typedef typename SendViewType::value_type send_value_type;
   typedef typename RecvViewType::value_type recv_value_type;
 
@@ -209,23 +207,25 @@ reduceAll(const Comm<Ordinal>& comm,
 }
 
 template<typename Ordinal,
-         typename T, typename L, typename D, typename M, typename S>
-void broadcast(const Comm<Ordinal>& comm,
+         class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+broadcast(const Comm<Ordinal>& comm,
                const int rootRank,
                const Ordinal count,
-               const Kokkos::View<T,L,D,M,S>& buffer)
+               const ViewType& buffer)
 {
   broadcast( comm, rootRank, count, buffer.ptr_on_device() );
 }
 
 template<typename Ordinal,
-         typename T, typename L, typename D, typename M, typename S,
+         class ViewType,
          typename Serializer>
-void broadcast(const Comm<Ordinal>& comm,
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+broadcast(const Comm<Ordinal>& comm,
                const Serializer& serializer,
                const int rootRank,
                const Ordinal count,
-               const Kokkos::View<T,L,D,M,S>& buffer)
+               const ViewType& buffer)
 {
   broadcast( comm, serializer, rootRank, count, buffer.ptr_on_device() );
 }

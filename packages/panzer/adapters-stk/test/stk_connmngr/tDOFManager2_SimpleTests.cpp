@@ -62,12 +62,12 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
 
-// Intrepid includes
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid_HCURL_TET_I1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
+// Intrepid2 includes
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HCURL_TET_I1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 
 // Panzer includes
 #include "Panzer_ConnManager.hpp"
@@ -98,7 +98,7 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::rcp;
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 namespace {
 
@@ -118,9 +118,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -172,9 +172,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -325,9 +325,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
@@ -374,9 +374,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -426,9 +426,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -503,11 +503,11 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
+    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -553,11 +553,11 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
+    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -608,11 +608,11 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
-    RCP<Intrepid::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
-    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(secbasis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
+    RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");
@@ -683,9 +683,9 @@ namespace {
     TEST_EQUALITY(my_DOFManager->getComm(),Teuchos::null);
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
-    RCP<Intrepid::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+    RCP<Intrepid2::Basis<double,FieldContainer> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
      
-    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::IntrepidFieldPattern(basis));
+    RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
     names.push_back("Velocity");

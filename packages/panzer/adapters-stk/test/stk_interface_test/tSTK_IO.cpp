@@ -52,14 +52,14 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #ifdef HAVE_IOSS
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 namespace panzer_stk_classic {
 

@@ -241,14 +241,14 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::unordered_map<std::size_t,Intrepid::FieldContainer<double> > normals;
+    std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> > normals;
     
     panzer_stk_classic::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (std::unordered_map<std::size_t,Intrepid::FieldContainer<double> >::const_iterator element = normals.begin();
+    for (std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> >::const_iterator element = normals.begin();
 	 element != normals.end(); ++element) {
 
-      const Intrepid::FieldContainer<double>& values = element->second;
+      const Intrepid2::FieldContainer<double>& values = element->second;
 
       *pout << "local element id = " << element->first << std::endl;
       TEST_EQUALITY(values.size(),24);

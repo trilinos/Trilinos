@@ -50,10 +50,10 @@
 
 #include "Panzer_PointRule.hpp"
 
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_CubatureControlVolume.hpp"
-#include "Intrepid_CubatureControlVolumeSide.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CubatureControlVolume.hpp"
+#include "Intrepid2_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 namespace panzer {
 
@@ -87,7 +87,7 @@ namespace panzer {
     virtual void print(std::ostream & os);
 
     //! Construct an array containing the reference coordinates 
-    void referenceCoordinates(Intrepid::FieldContainer<double> & container);
+    void referenceCoordinates(Intrepid2::FieldContainer<double> & container);
   
   private:
 

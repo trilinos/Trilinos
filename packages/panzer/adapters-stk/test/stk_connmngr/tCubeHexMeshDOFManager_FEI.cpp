@@ -56,8 +56,8 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -65,7 +65,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -92,12 +92,12 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::Paral
    return mesh;
 }
 
-template <typename IntrepidType>
+template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
 
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 
    // build a geometric pattern from a single basis
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildQuadMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 

@@ -57,14 +57,14 @@
 
 // include some intrepid basis functions
 // 2D basis 
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
 // 3D basis 
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;

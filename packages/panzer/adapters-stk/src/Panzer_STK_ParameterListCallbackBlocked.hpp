@@ -96,13 +96,13 @@ private:
 
   // Access the field pattern associated with this field (this will not work if the field pattern
   // and element blocks are different
-  Teuchos::RCP<const panzer::IntrepidFieldPattern> getFieldPattern(const std::string & fieldName) const;
+  Teuchos::RCP<const panzer::Intrepid2FieldPattern> getFieldPattern(const std::string & fieldName) const;
 
   // Generally used members
   Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > connManager_;
   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > blocked_ugi_;
 
-  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;
+  std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
 
   // look up by field name (field name to coordinates
   

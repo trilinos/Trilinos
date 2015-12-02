@@ -54,7 +54,7 @@
 #include "Phalanx_Print_Utilities.hpp"
 
 #ifdef Phalanx_ENABLE_Intrepid
-#include "Intrepid_config.h" // for HAVE_INTREPID_KOKKOSCORE define
+#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "KokkosRank.hpp"
 #endif

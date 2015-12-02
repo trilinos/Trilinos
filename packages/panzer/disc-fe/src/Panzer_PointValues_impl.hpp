@@ -43,7 +43,7 @@
 #ifndef PANZER_POINT_VALUES_IMPL_HPP
 #define PANZER_POINT_VALUES_IMPL_HPP
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_Dimension.hpp"
 

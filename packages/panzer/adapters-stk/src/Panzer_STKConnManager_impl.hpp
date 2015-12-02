@@ -47,7 +47,7 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
@@ -350,15 +350,15 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
   */
 template <typename GO>
 void STKConnManager<GO>::getDofCoords(const std::string & blockId,
-                                  const panzer::IntrepidFieldPattern & coordProvider,
+                                  const panzer::Intrepid2FieldPattern & coordProvider,
                                   std::vector<std::size_t> & localCellIds,
-                                  Intrepid::FieldContainer<double> & points) const
+                                  Intrepid2::FieldContainer<double> & points) const
 {
    int dim = coordProvider.getDimension();
    int numIds = coordProvider.numberIds();
 
    // grab element vertices
-   Intrepid::FieldContainer<double> vertices;
+   Intrepid2::FieldContainer<double> vertices;
    workset_utils::getIdsAndVertices(*stkMeshDB_,blockId,localCellIds,vertices);
 
    // setup output array

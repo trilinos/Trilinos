@@ -46,7 +46,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -61,7 +61,7 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
                                                 const Teuchos::RCP<PHX::DataLayout> & quadLayout,
                                                 const std::string & postfixFieldName)
 {
-  intrepidBasis = fieldBasis.getIntrepidBasis();
+  intrepidBasis = fieldBasis.getIntrepid2Basis();
 
   int cellCount = fieldBasis.functional->dimension(0);
   int coeffCount = fieldBasis.functional->dimension(1);
@@ -79,9 +79,9 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
   this->addEvaluatedField(dof_field);
 
   // build data storage for temporary conversion
-  basisRef    = Intrepid::FieldContainer<double>(coeffCount,pointCount);
-  basis       = Intrepid::FieldContainer<double>(cellCount,coeffCount,pointCount);
-  intrpCoords = Intrepid::FieldContainer<double>(pointCount,dimCount);
+  basisRef    = Intrepid2::FieldContainer<double>(coeffCount,pointCount);
+  basis       = Intrepid2::FieldContainer<double>(cellCount,coeffCount,pointCount);
+  intrpCoords = Intrepid2::FieldContainer<double>(pointCount,dimCount);
   
   std::string n = "DOF_PointField: " + dof_field.fieldTag().name();
   this->setName(n);
@@ -111,15 +111,15 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
 
   if(workset.num_cells>0) {
     // evaluate at reference points
-    intrepidBasis->getValues(basisRef, intrpCoords, Intrepid::OPERATOR_VALUE);
+    intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 
     // transfer reference basis values to physical frame values
-    Intrepid::FunctionSpaceTools::
+    Intrepid2::FunctionSpaceTools::
       HGRADtransformVALUE<double>(basis,
 				  basisRef);
 
     // evaluate function at specified points
-    Intrepid::FunctionSpaceTools::
+    Intrepid2::FunctionSpaceTools::
       evaluate<ScalarT>(dof_field,dof_coeff,basis);
   }
 }

@@ -47,11 +47,11 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include <iostream>
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 void getNodeIds(const stk_classic::mesh::Entity * element,stk_classic::mesh::EntityRank nodeRank,std::vector<stk_classic::mesh::EntityId> & nodeIds);
 

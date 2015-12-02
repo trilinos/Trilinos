@@ -152,9 +152,9 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArray
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field)
 {
-   std::map<std::string,Intrepid::FieldContainer<double> > data;
+   std::map<std::string,Intrepid2::FieldContainer<double> > data;
 
-   Teuchos::RCP<const panzer::IntrepidFieldPattern> fieldPattern = getFieldPattern(field);
+   Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field);
 
    std::vector<std::string> elementBlocks;
    blocked_ugi_->getElementBlockIds(elementBlocks);
@@ -163,7 +163,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid::FieldContainer<double> & fieldData = data[blockId];
+      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
       fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
@@ -173,7 +173,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       else {
          Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
          out.setOutputToRootOnly(-1);
-         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid::FieldPattern in "
+         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid2::FieldPattern in "
              << "block \"" << blockId << "\" does not support interpolatory coordinates. "
              << "This may be fine if coordinates are not actually needed. However if they are then bad things "
              << "will happen. Enjoy!" << std::endl;
@@ -235,7 +235,7 @@ getCoordinateByField(int dim,const std::string & field) const
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const panzer::IntrepidFieldPattern> ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>
+Teuchos::RCP<const panzer::Intrepid2FieldPattern> ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>
 ::getFieldPattern(const std::string & fieldName) const
 {
   std::vector<std::string> elementBlocks;
@@ -245,7 +245,7 @@ Teuchos::RCP<const panzer::IntrepidFieldPattern> ParameterListCallbackBlocked<Lo
     std::string blockId = elementBlocks[e];
 
     if(blocked_ugi_->fieldInBlock(fieldName,blockId))
-      return Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(blocked_ugi_->getFieldPattern(blockId,fieldName),true);
+      return Teuchos::rcp_dynamic_cast<const panzer::Intrepid2FieldPattern>(blocked_ugi_->getFieldPattern(blockId,fieldName),true);
   }
 
   return Teuchos::null;

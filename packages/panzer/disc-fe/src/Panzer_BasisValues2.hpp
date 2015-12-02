@@ -45,7 +45,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_Basis.hpp"
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_ArrayTraits.hpp"
@@ -146,7 +146,7 @@ namespace panzer {
 
     Teuchos::RCP<const panzer::BasisIRLayout> basis_layout;
     
-    Teuchos::RCP<Intrepid::Basis<Scalar,ArrayDynamic> > intrepid_basis;
+    Teuchos::RCP<Intrepid2::Basis<Scalar,ArrayDynamic> > intrepid_basis;
 
     bool compute_derivatives;
     bool build_weighted;

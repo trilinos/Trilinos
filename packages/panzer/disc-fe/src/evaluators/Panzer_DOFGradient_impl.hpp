@@ -46,7 +46,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 
 namespace panzer {
 
@@ -119,7 +119,7 @@ PHX_EVALUATE_FIELDS(DOFGradient,workset)
   dof_gradient.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(this->wda(workset).bases[basis_index])->grad_basis);
+    Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(this->wda(workset).bases[basis_index])->grad_basis);
 */
   evaluateGrad_withSens(workset.num_cells,dof_gradient,dof_value,this->wda(workset).bases[basis_index]->grad_basis);
 }

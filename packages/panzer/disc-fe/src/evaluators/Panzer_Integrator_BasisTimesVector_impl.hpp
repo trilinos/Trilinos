@@ -43,7 +43,7 @@
 #ifndef __Panzer_Integerator_BasisTimesVector_impl_hpp__
 #define __Panzer_Integerator_BasisTimesVector_impl_hpp__
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
@@ -117,7 +117,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  // tmp = Intrepid:FieldContainer<ScalarT>(vectorField.dimension(0), num_qp, num_dim);
+  // tmp = Intrepid2:FieldContainer<ScalarT>(vectorField.dimension(0), num_qp, num_dim);
   MDFieldArrayFactory af("",fm.template getKokkosExtendedDataTypeDimensions<EvalT>(),true);
   scratch = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",vectorField.dimension(0),num_qp,num_dim);
 }

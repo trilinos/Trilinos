@@ -72,7 +72,7 @@ namespace panzer {
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
-    Teuchos::RCP< Intrepid::Cubature<Scalar,Array> > intrepid_cubature;
+    Teuchos::RCP< Intrepid2::Cubature<Scalar,Array> > intrepid_cubature;
 
     // for Shakib stabilization <Cell,IP,Dim,Dim>
     Array covarient; 

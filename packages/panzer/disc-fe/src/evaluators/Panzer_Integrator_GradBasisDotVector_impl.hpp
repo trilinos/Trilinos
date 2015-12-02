@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_GRADBASISDOTVECTOR_IMPL_HPP
 #define PANZER_EVALUATOR_GRADBASISDOTVECTOR_IMPL_HPP
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
@@ -112,7 +112,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
+  tmp = Intrepid2::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
 }
 
 //**********************************************************************
@@ -147,7 +147,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     }
   } 
 
-  // const Intrepid::FieldContainer<double> & weighted_grad_basis = this->wda(workset).bases[basis_index]->weighted_grad_basis;
+  // const Intrepid2::FieldContainer<double> & weighted_grad_basis = this->wda(workset).bases[basis_index]->weighted_grad_basis;
   const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
   // perform integration and vector dot product (at the same time! whoah!)
@@ -182,10 +182,10 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
   }
   
   if(workset.num_cells>0)
-     Intrepid::FunctionSpaceTools::
+     Intrepid2::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
    		       (this->wda(workset).bases[basis_index])->weighted_grad_basis, 
-		       Intrepid::COMP_BLAS);
+		       Intrepid2::COMP_BLAS);
 #endif
 }
 

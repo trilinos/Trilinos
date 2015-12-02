@@ -45,7 +45,7 @@
 
 #include <limits>
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"

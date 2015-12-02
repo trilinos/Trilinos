@@ -58,7 +58,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 using panzer::IntegrationRule;
-using Intrepid::FieldContainer;
+using Intrepid2::FieldContainer;
 
 namespace panzer {
 

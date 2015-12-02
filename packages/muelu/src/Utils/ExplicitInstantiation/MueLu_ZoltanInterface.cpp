@@ -57,12 +57,12 @@
 #ifdef HAVE_MUELU_TPETRA
   #include "TpetraCore_ETIHelperMacros.h"
 
-  #define MUELU_LOCAL_INSTANT(LO,GO,N) \
-          template class MueLu::ZoltanInterface<LO,GO,N>;
+  #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+          template class MueLu::ZoltanInterface<S,LO,GO,N>;
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 #endif
 
 #ifdef HAVE_MUELU_EPETRA
@@ -72,16 +72,16 @@
         // in case of Cuda being the default Node we need the default node type on the host
         typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
         typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
-        template class MueLu::ZoltanInterface<int,int, default_node_type >;
+        template class MueLu::ZoltanInterface<double,int,int, default_node_type >;
       #elif HAVE_TPETRA_INST_OPENMP_DEFAULT
-        template class MueLu::ZoltanInterface<int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
+        template class MueLu::ZoltanInterface<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
       #elif HAVE_TPETRA_INST_SERIAL_DEFAULT
-        template class MueLu::ZoltanInterface<int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+        template class MueLu::ZoltanInterface<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
       #elif HAVE_TPETRA_INST_PTHREAD_DEFAULT
-        template class MueLu::ZoltanInterface<int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
+        template class MueLu::ZoltanInterface<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
       #else
         // TODO: there should be at least one default node active!! maybe we have to tweak MueLu CMakeLists.txt?
-        template class MueLu::ZoltanInterface<int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
+        template class MueLu::ZoltanInterface<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
       #endif
     #endif
   #else
@@ -95,7 +95,7 @@
         typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
       #endif // KOKKOS_HAVE_SERIAL
       typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
-      template class MueLu::ZoltanInterface<int, int, default_node_type>;
+      template class MueLu::ZoltanInterface<double, int, int, default_node_type>;
     #endif
   #endif // HAVE_MUELU_TPETRA
 #endif // end ifdef HAVE_MUELU_EPETRA

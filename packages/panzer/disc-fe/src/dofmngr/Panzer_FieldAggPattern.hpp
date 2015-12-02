@@ -133,7 +133,7 @@ public:
      *
      * \returns offsets Offsets into global IDs vector. The order of this vector 
      *                  is defined by the underlying FieldPattern defining the requested
-     *                  field. For the IntrepidFieldPattern this will correspond to the 
+     *                  field. For the Intrepid2FieldPattern this will correspond to the 
      *                  required order of the basis functions
      */
    const std::vector<int> & localOffsets(int fieldId) const;

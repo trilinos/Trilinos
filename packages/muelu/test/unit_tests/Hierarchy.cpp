@@ -138,6 +138,7 @@ namespace MueLuTests {
     FactoryManager M;
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", Teuchos::null);
+    M.SetFactory("CoarseSolver", Teuchos::null);
 
     H.GetLevel(0)->Keep("Aggregates", CoupledAggFact.get());
     H.Setup(M, 0, 2);
@@ -506,8 +507,11 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TESTING_SET_OSTREAM;
 
-#   if !defined(HAVE_MUELU_IFPACK2)
-    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Ifpack2");
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -763,6 +767,7 @@ namespace MueLuTests {
     H.SetMaxCoarseSize(29);
     FactoryManager M;
     M.SetFactory("Smoother", Teuchos::null);
+    M.SetFactory("CoarseSolver", Teuchos::null);
     H.Setup(M, 0, 2);
 
     TEST_THROW( H.Write(1,0), MueLu::Exceptions::RuntimeError );    //start level is greater than end level

@@ -83,7 +83,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid::FieldContainer<double> FieldArray;
+typedef Intrepid2::FieldContainer<double> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
 
   {
-    Intrepid::FieldContainer<double> coords;
+    Intrepid2::FieldContainer<double> coords;
     coords.resize(numCells,numVerts,dim);
 
     coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
@@ -219,8 +219,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
     coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
     coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
 
-    Teuchos::RCP<panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > > quadValues1 
-        = Teuchos::rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
+    Teuchos::RCP<panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > > quadValues1 
+        = Teuchos::rcp(new panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> >);
     quadValues1->setupArrays(quadRule);
     quadValues1->evaluateValues(coords);
   }

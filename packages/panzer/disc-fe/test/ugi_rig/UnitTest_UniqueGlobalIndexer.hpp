@@ -57,7 +57,7 @@
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 namespace panzer {
 namespace unit_test {
@@ -168,7 +168,7 @@ public:
      */
    virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(int localElementId,Intrepid::FieldContainer<double> & points);
+   void getCoordinates(int localElementId,Intrepid2::FieldContainer<double> & points);
 
    void buildGlobalUnknowns()
    { buildLocalIds(); }

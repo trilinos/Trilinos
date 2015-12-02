@@ -50,7 +50,7 @@ namespace panzer_stk_classic {
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(
                                              const std::string & coordFieldName,
-                                             const std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fps,
+                                             const std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > & fps,
                                              const Teuchos::RCP<const panzer_stk_classic::STKConnManager<GlobalOrdinalT> > & connManager, 
                                              const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
    : coordFieldName_(coordFieldName), fieldPatterns_(fps), connManager_(connManager), ugi_(ugi), coordinatesBuilt_(false)
@@ -123,16 +123,16 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
 {
    TEUCHOS_ASSERT(fieldPatterns_.size()>0); // must be at least one field pattern
 
-   std::map<std::string,Intrepid::FieldContainer<double> > data;
+   std::map<std::string,Intrepid2::FieldContainer<double> > data;
 
-   std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> >::const_iterator itr; 
+   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> >::const_iterator itr; 
    for(itr=fieldPatterns_.begin();itr!=fieldPatterns_.end();++itr) {
       std::string blockId = itr->first;
-      Teuchos::RCP<const panzer::IntrepidFieldPattern> fieldPattern = itr->second;
+      Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = itr->second;
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid::FieldContainer<double> & fieldData = data[blockId];
+      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
       fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
@@ -142,7 +142,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       else {
          Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
          out.setOutputToRootOnly(-1);
-         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid::FieldPattern in "
+         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid2::FieldPattern in "
              << "block \"" << blockId << "\" does not support interpolatory coordinates. "
              << "This may be fine if coordinates are not actually needed. However if they are then bad things "
              << "will happen. Enjoy!" << std::endl;

@@ -46,8 +46,8 @@
 #include "Panzer_FieldPattern.hpp"
 
 // Trilinos includes
-#include "Intrepid_Basis.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -56,9 +56,9 @@ namespace panzer {
 /** This is a derived class that specializes based
   * on a single intrepid basis function.
   */
-class IntrepidFieldPattern : public FieldPattern {
+class Intrepid2FieldPattern : public FieldPattern {
 public:
-   IntrepidFieldPattern(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & intrepidBasis)
+   Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > & intrepidBasis)
       : intrepidBasis_(intrepidBasis) {}
 
    virtual int getSubcellCount(int dim) const;
@@ -123,18 +123,18 @@ public:
      *
      * \param[in,out] coords   Coordinates associated with this field type.
      */
-   void getInterpolatoryCoordinates(Intrepid::FieldContainer<double> & coords) const;
+   void getInterpolatoryCoordinates(Intrepid2::FieldContainer<double> & coords) const;
 
    /** Get the local coordinates for this field.
      *
      * \param[in] cellVertices   Coordinates associated with this field type.
      * \param[in,out] coords   Coordinates associated with this field type.
      */
-   void getInterpolatoryCoordinates(const Intrepid::FieldContainer<double> & cellVertices,
-                                    Intrepid::FieldContainer<double> & coords) const;
+   void getInterpolatoryCoordinates(const Intrepid2::FieldContainer<double> & cellVertices,
+                                    Intrepid2::FieldContainer<double> & coords) const;
 
 protected:
-   Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
+   Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
       intrepidBasis_;
    std::vector<int> empty_;
 };

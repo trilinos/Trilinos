@@ -145,7 +145,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  galeri
+  galeri-epetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

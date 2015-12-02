@@ -1,9 +1,8 @@
-
 // @HEADER
-// ************************************************************************
+// ***********************************************************************
 //
-//           Galeri: Finite Element and Matrix Generation Package
-//                 Copyright (2006) ETHZ/Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -35,76 +34,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions about Galeri? Contact Marzio Sala (marzio.sala _AT_ gmail.com)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
-// ************************************************************************
+// ***********************************************************************
 // @HEADER
 
-#ifndef GALERI_CONFIGDEFS_H
-#define GALERI_CONFIGDEFS_H
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
-#ifndef __cplusplus
-#define __cplusplus
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
+
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Stokhos_MueLu_UQ_PCE.hpp"
+
+#include "MueLu_CoordinatesTransferFactory_kokkos_def.hpp"
+
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::CoordinatesTransferFactory_kokkos<S, LO, GO, N>;
+
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+INSTANTIATE_TPETRA_UQ_PCE_OPENMP(MUELU_INST_N)
+
 #endif
 
-/*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
- * be undef'd here to avoid warnings when this file is included from another package.
- * KL 11/25/02
- */
-#ifdef PACKAGE
-#undef PACKAGE
 #endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#include <Galeri_config.h>
-
-#ifdef HAVE_MPI
-#ifndef EPETRA_MPI
-#define EPETRA_MPI
-#endif
-#endif
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <string>
-#include <iostream>
-
-/* Every line that begins with 'using' should eventually be dependent
-   on some check within the configure script */
-
-#include <cmath>
-
-#include <iomanip>
-
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-
-#endif /* GALERI_CONFIGDEFS_H */

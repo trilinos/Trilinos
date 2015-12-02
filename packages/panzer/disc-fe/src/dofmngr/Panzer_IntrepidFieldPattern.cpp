@@ -42,18 +42,18 @@
 
 #include "Panzer_IntrepidFieldPattern.hpp"
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 #include "Shards_CellTopology.hpp"
 
 namespace panzer {
 
-int IntrepidFieldPattern::getSubcellCount(int dim) const
+int Intrepid2FieldPattern::getSubcellCount(int dim) const
 {
    const shards::CellTopology ct = intrepidBasis_->getBaseCellTopology();
    return ct.getSubcellCount(dim);
 }
 
-const std::vector<int> & IntrepidFieldPattern::getSubcellIndices(int dim,int cellIndex) const
+const std::vector<int> & Intrepid2FieldPattern::getSubcellIndices(int dim,int cellIndex) const
 {
    const std::vector<std::vector<std::vector<int> > > & ordData = intrepidBasis_->getDofOrdinalData();
 
@@ -74,7 +74,7 @@ const std::vector<int> & IntrepidFieldPattern::getSubcellIndices(int dim,int cel
    return empty_;
 }
 
-void IntrepidFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+void Intrepid2FieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
 {
    // recursive base case
    if(dim==0) {
@@ -87,7 +87,7 @@ void IntrepidFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::v
    // use topology to build closure of sub cell
    const shards::CellTopology ct = intrepidBasis_->getBaseCellTopology();
    std::set<std::pair<unsigned,unsigned> > closure;
-   IntrepidFieldPattern::buildSubcellClosure(ct,dim,cellIndex,closure);
+   Intrepid2FieldPattern::buildSubcellClosure(ct,dim,cellIndex,closure);
 
    // grab basis indices on the closure of the sub cell
    std::set<std::pair<unsigned,unsigned> >::const_iterator itr;
@@ -100,18 +100,18 @@ void IntrepidFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::v
    }
 }
 
-int IntrepidFieldPattern::getDimension() const
+int Intrepid2FieldPattern::getDimension() const
 {
    const shards::CellTopology ct = intrepidBasis_->getBaseCellTopology();
    return ct.getDimension();
 }
 
-shards::CellTopology IntrepidFieldPattern::getCellTopology() const
+shards::CellTopology Intrepid2FieldPattern::getCellTopology() const
 {
    return intrepidBasis_->getBaseCellTopology();
 }
 
-void IntrepidFieldPattern::getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
+void Intrepid2FieldPattern::getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                            std::vector<unsigned> & nodes)
 {
    if(dim==0) {
@@ -128,7 +128,7 @@ void IntrepidFieldPattern::getSubcellNodes(const shards::CellTopology & cellTopo
    std::sort(nodes.begin(),nodes.end());
 }
 
-void IntrepidFieldPattern::findContainedSubcells(const shards::CellTopology & cellTopo,unsigned dim,
+void Intrepid2FieldPattern::findContainedSubcells(const shards::CellTopology & cellTopo,unsigned dim,
                                                  const std::vector<unsigned> & nodes,
                                                  std::set<std::pair<unsigned,unsigned> > & subCells)
 {
@@ -154,7 +154,7 @@ void IntrepidFieldPattern::findContainedSubcells(const shards::CellTopology & ce
    findContainedSubcells(cellTopo,dim-1,nodes,subCells);
 }
 
-void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
+void Intrepid2FieldPattern::buildSubcellClosure(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                                std::set<std::pair<unsigned,unsigned> > & closure)
 {
    switch(dim) {
@@ -182,9 +182,9 @@ void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cell
    };
 }
 
-bool IntrepidFieldPattern::supportsInterpolatoryCoordinates() const
+bool Intrepid2FieldPattern::supportsInterpolatoryCoordinates() const
 {
-   typedef Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > CoordsInterface;
+   typedef Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > CoordsInterface;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -202,9 +202,9 @@ bool IntrepidFieldPattern::supportsInterpolatoryCoordinates() const
   *
   * \param[in,out] coords   Coordinates associated with this field type.
   */
-void IntrepidFieldPattern::getInterpolatoryCoordinates(Intrepid::FieldContainer<double> & coords) const
+void Intrepid2FieldPattern::getInterpolatoryCoordinates(Intrepid2::FieldContainer<double> & coords) const
 {
-   typedef Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > CoordsInterface;
+   typedef Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > CoordsInterface;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -225,15 +225,15 @@ void IntrepidFieldPattern::getInterpolatoryCoordinates(Intrepid::FieldContainer<
   *
   * \param[in,out] coords   Coordinates associated with this field type.
   */
-void IntrepidFieldPattern::getInterpolatoryCoordinates(const Intrepid::FieldContainer<double> & cellVertices,
-                                                       Intrepid::FieldContainer<double> & coords) const
+void Intrepid2FieldPattern::getInterpolatoryCoordinates(const Intrepid2::FieldContainer<double> & cellVertices,
+                                                       Intrepid2::FieldContainer<double> & coords) const
 {
    TEUCHOS_ASSERT(cellVertices.rank()==3);
 
    int numCells = cellVertices.dimension(0);
 
    // grab the local coordinates
-   Intrepid::FieldContainer<double> localCoords;
+   Intrepid2::FieldContainer<double> localCoords;
    getInterpolatoryCoordinates(localCoords);
 
    // resize the coordinates field container
@@ -241,7 +241,7 @@ void IntrepidFieldPattern::getInterpolatoryCoordinates(const Intrepid::FieldCont
 
    if(numCells>0) {
       // map to phsyical coordinates
-      Intrepid::CellTools<double> cellTools;
+      Intrepid2::CellTools<double> cellTools;
       cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
    }
 }

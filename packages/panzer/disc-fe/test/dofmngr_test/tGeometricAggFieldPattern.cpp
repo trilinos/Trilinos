@@ -55,13 +55,13 @@
 
 // include some intrepid basis functions
 // 2D basis 
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
-#include "Intrepid_HDIV_TRI_I1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
 
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
-#include "Intrepid_HDIV_HEX_I1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 
 #include "TestFieldPattern.hpp"
 
@@ -76,7 +76,7 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
@@ -90,13 +90,13 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
-   RCP<Intrepid::Basis<double,FieldContainer> > basisB = rcp(new Intrepid::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
-   RCP<Intrepid::Basis<double,FieldContainer> > basisC = rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
 
-   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
-   RCP<const FieldPattern> patternB = rcp(new IntrepidFieldPattern(basisB));
-   RCP<const FieldPattern> patternC = rcp(new IntrepidFieldPattern(basisB));
+   RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
+   RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
+   RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisB));
 
    std::vector<RCP<const FieldPattern> > patterns;
    std::vector<int> indices;
@@ -143,8 +143,8 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    }
 
    {
-      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
-      patternB = rcp(new IntrepidFieldPattern(basis));
+      RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
+      patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();
       patterns.push_back(patternA);
@@ -183,13 +183,13 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
-   RCP<Intrepid::Basis<double,FieldContainer> > basisB = rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
-   RCP<Intrepid::Basis<double,FieldContainer> > basisC = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+   RCP<Intrepid2::Basis<double,FieldContainer> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
 
-   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
-   RCP<const FieldPattern> patternB = rcp(new IntrepidFieldPattern(basisB));
-   RCP<const FieldPattern> patternC = rcp(new IntrepidFieldPattern(basisB));
+   RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
+   RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
+   RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisB));
 
    std::vector<RCP<const FieldPattern> > patterns;
    std::vector<int> indices;
@@ -231,8 +231,8 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
    }
 
    {
-      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HDIV_HEX_I1_FEM<double,FieldContainer>);
-      patternB = rcp(new IntrepidFieldPattern(basis));
+      RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer>);
+      patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();
       patterns.push_back(patternA);

@@ -43,7 +43,7 @@
 #ifndef PANZER_COMMON_ARRAY_FACTORIES_HPP
 #define PANZER_COMMON_ARRAY_FACTORIES_HPP
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 #include "Phalanx_MDField.hpp"
 
 #include <string>
@@ -65,18 +65,18 @@ namespace panzer {
     * IntegrationValues objects. Notice in this case the string
     * argument is not used.
     */
-  class IntrepidFieldContainerFactory {
+  class Intrepid2FieldContainerFactory {
   public:
      template <typename Scalar,typename T0>
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0) const;
+     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0) const;
      template <typename Scalar,typename T0,typename T1>
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1) const;
+     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1) const;
      template <typename Scalar,typename T0,typename T1,typename T2>
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
+     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
      template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
+     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
      template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typename T4>
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
+     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
   };
 
   /** Implementation for MDField array factory. This

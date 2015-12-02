@@ -134,7 +134,7 @@ namespace panzer {
     for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); ++i) {
 
       std::vector<std::size_t> local_cell_ids;
-      Intrepid::FieldContainer<double> cell_vertex_coordinates;
+      Intrepid2::FieldContainer<double> cell_vertex_coordinates;
 
       panzer_stk_classic::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
 				cell_vertex_coordinates);
@@ -239,7 +239,7 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Intrepid::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
+      Intrepid2::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
       mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
       mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
 
@@ -371,7 +371,7 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Intrepid::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
+      Intrepid2::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
       mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
       mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
 
@@ -491,7 +491,7 @@ namespace panzer {
       panzer_stk_classic::workset_utils::getSideElements(*mesh, bc->elementBlockID(),
 		      sideEntities,local_side_ids,elements);
 
-      Intrepid::FieldContainer<double> vertices;
+      Intrepid2::FieldContainer<double> vertices;
       vertices.resize(elements.size(),4,dim);  
       
       // loop over elements of this block

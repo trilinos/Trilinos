@@ -54,7 +54,7 @@
 #include "Panzer_PointRule.hpp"
 #include "Panzer_PointValues.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -75,8 +75,8 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Intrepid::FieldContainer<ScalarT> edgeTan; // edge tangents
-  Intrepid::FieldContainer<ScalarT> refEdgeTan; // reference edge tangents
+  Intrepid2::FieldContainer<ScalarT> edgeTan; // edge tangents
+  Intrepid2::FieldContainer<ScalarT> refEdgeTan; // reference edge tangents
 
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
 

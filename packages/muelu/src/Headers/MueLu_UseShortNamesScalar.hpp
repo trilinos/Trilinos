@@ -287,6 +287,9 @@ typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmooth
 #ifdef MUELU_VISUALIZATIONHELPERS_SHORT
 typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> VisualizationHelpers;
 #endif
+#ifdef MUELU_ZOLTANINTERFACE_SHORT
+typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;
+#endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
 #endif

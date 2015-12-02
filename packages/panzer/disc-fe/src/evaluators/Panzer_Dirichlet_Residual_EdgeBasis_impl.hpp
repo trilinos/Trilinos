@@ -47,7 +47,7 @@
 #include <string>
 #include <vector>
 
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 
@@ -119,7 +119,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Intrepid::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  edgeTan = Intrepid2::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -131,7 +131,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   residual.deep_copy(ScalarT(0.0));
 
   if(workset.subcell_dim==1) {
-    Intrepid::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
+    Intrepid2::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
                                             pointValues.jac,
                                             this->wda(workset).subcell_index, 
                                            *basis->getCellTopology());
@@ -150,11 +150,11 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     int cellDim = parentCell.getDimension();
     int numEdges = dof.dimension(1);
 
-    refEdgeTan = Intrepid::FieldContainer<ScalarT>(numEdges,cellDim);
+    refEdgeTan = Intrepid2::FieldContainer<ScalarT>(numEdges,cellDim);
 
     for(int i=0;i<numEdges;i++) {
-      Intrepid::FieldContainer<double> refEdgeTan_local(cellDim);
-      Intrepid::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
+      Intrepid2::FieldContainer<double> refEdgeTan_local(cellDim);
+      Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 
         refEdgeTan(i,d) = refEdgeTan_local(d);

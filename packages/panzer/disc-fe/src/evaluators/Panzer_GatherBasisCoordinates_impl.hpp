@@ -91,7 +91,7 @@ template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // const Intrepid::FieldContainer<double> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
+  // const Intrepid2::FieldContainer<double> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
 
   // just copy the array

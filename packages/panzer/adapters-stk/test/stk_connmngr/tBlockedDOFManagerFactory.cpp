@@ -54,7 +54,7 @@
 #include "Panzer_DOFManagerFEI.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -77,12 +77,12 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::Paral
    return meshFact.buildMesh(comm);
 }
 
-template <typename IntrepidType>
+template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
 

@@ -209,7 +209,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          int fieldNum = fieldIds_[fieldIndex];
 
          if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::pair<std::vector<int>,std::vector<int> > & indicePair 
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
            const std::vector<int> & elmtOffset = indicePair.first;
@@ -234,7 +234,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              dc_array[lid] = 1.0;
            }
          } else {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
    
            // loop over basis functions
@@ -408,7 +408,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          int fieldNum = fieldIds_[fieldIndex];
 
          if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::pair<std::vector<int>,std::vector<int> > & indicePair 
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
            const std::vector<int> & elmtOffset = indicePair.first;
@@ -433,7 +433,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              dc_array[lid] = 1.0;
            }
          } else {
-           // this call "should" get the right ordering according to the Intrepid basis
+           // this call "should" get the right ordering according to the Intrepid2 basis
            const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
            
            // loop over basis functions
@@ -591,7 +591,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
    
-         // this call "should" get the right ordering according to the Intrepid basis
+         // this call "should" get the right ordering according to the Intrepid2 basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;

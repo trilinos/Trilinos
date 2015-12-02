@@ -2282,14 +2282,6 @@ namespace Tpetra {
                       Kokkos::MemoryUnmanaged>& colInds,
                     const size_t hint) const;
 
-    /// \brief Legacy version of the 4-argument findLocalIndex above,
-    ///   that takes a Teuchos::ArrayView instead of a Kokkos::View.
-    size_t
-    findLocalIndex (const RowInfo& rowinfo,
-                    const LocalOrdinal ind,
-                    const Teuchos::ArrayView<const LocalOrdinal>& colInds,
-                    const size_t hint = 0) const;
-
     /// \brief Find the column offset corresponding to the given
     ///   (global) column index.
     ///

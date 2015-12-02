@@ -2058,6 +2058,30 @@ namespace Tpetra {
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   replaceGlobalValues (const GlobalOrdinal globalRow,
+                       const Kokkos::View<const GlobalOrdinal*, device_type,
+                         Kokkos::MemoryUnmanaged>& inputInds,
+                       const Kokkos::View<const impl_scalar_type*, device_type,
+                         Kokkos::MemoryUnmanaged>& inputVals) const
+  {
+    typedef impl_scalar_type ST;
+    typedef device_type DD;
+    // project2nd is a binary function that returns its second
+    // argument.  This replaces entries in the given row with their
+    // corresponding entry of values.
+    typedef Tpetra::project2nd<ST, ST> BF;
+
+    // It doesn't make sense for replace to use atomic updates, since
+    // the result of multiple threads replacing the same value
+    // concurrently is undefined.
+    return this->template transformGlobalValues<BF, DD> (globalRow, inputInds,
+                                                         inputVals, BF (), false);
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  replaceGlobalValues (const GlobalOrdinal globalRow,
                        const Teuchos::ArrayView<const GlobalOrdinal>& inputInds,
                        const Teuchos::ArrayView<const Scalar>& inputVals) const
   {

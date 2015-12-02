@@ -44,10 +44,10 @@
 #define PANZER_INTEGRATION_VALUES_IMPL_HPP
 
 #include "Shards_CellTopology.hpp"
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 #include "Panzer_ArrayTraits.hpp"
 
 // ***********************************************************
@@ -56,10 +56,10 @@
 
 namespace panzer {
   
-  // * Specialization for Intrepid::FieldContainer<double>
+  // * Specialization for Intrepid2::FieldContainer<double>
   template<>
   inline
-  void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
+  void panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> >::
   setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
   {
     int num_nodes = ir->topology->getNodeCount();
@@ -67,50 +67,50 @@ namespace panzer {
     int num_space_dim = ir->topology->getDimension();
 
     int num_ip = 1;
-    cub_points = Intrepid::FieldContainer<double>(num_ip, num_space_dim);
+    cub_points = Intrepid2::FieldContainer<double>(num_ip, num_space_dim);
 
     if (ir->isSide())
       side_cub_points = 
-	Intrepid::FieldContainer<double>(num_ip, 
+	Intrepid2::FieldContainer<double>(num_ip, 
 					 ir->side_topology->getDimension());
     
-    cub_weights = Intrepid::FieldContainer<double>(num_ip);
+    cub_weights = Intrepid2::FieldContainer<double>(num_ip);
     
     node_coordinates = 
-      Intrepid::FieldContainer<double>(num_cells, num_nodes, num_space_dim);
+      Intrepid2::FieldContainer<double>(num_cells, num_nodes, num_space_dim);
     
-    jac = Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim,
+    jac = Intrepid2::FieldContainer<double>(num_cells, num_ip, num_space_dim,
 					   num_space_dim);
     
-    jac_inv = Intrepid::FieldContainer<double>(num_cells, num_ip, 
+    jac_inv = Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 					       num_space_dim,
 					       num_space_dim);
     
-    jac_det = Intrepid::FieldContainer<double>(num_cells, num_ip);
+    jac_det = Intrepid2::FieldContainer<double>(num_cells, num_ip);
     
     weighted_measure = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip);
     
     covarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 				       num_space_dim,
 				       num_space_dim);
 
     contravarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 				       num_space_dim,
 				       num_space_dim);
 
     norm_contravarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip);
 
     ip_coordinates = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, num_space_dim);
   }
   
   template<>
   inline
-  void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
+  void panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> >::
   setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
   {
     int_rule = ir;
@@ -125,7 +125,7 @@ namespace panzer {
        return;
     }
 
-    Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > 
+    Intrepid2::DefaultCubatureFactory<double,Intrepid2::FieldContainer<double> > 
       cubature_factory;
     
     if (ir->isSide())
@@ -137,45 +137,45 @@ namespace panzer {
 
     int num_ip = intrepid_cubature->getNumPoints();
 
-    cub_points = Intrepid::FieldContainer<double>(num_ip, num_space_dim);
+    cub_points = Intrepid2::FieldContainer<double>(num_ip, num_space_dim);
 
     if (ir->isSide())
       side_cub_points = 
-	Intrepid::FieldContainer<double>(num_ip, 
+	Intrepid2::FieldContainer<double>(num_ip, 
 					 ir->side_topology->getDimension());
     
-    cub_weights = Intrepid::FieldContainer<double>(num_ip);
+    cub_weights = Intrepid2::FieldContainer<double>(num_ip);
     
     node_coordinates = 
-      Intrepid::FieldContainer<double>(num_cells, num_nodes, num_space_dim);
+      Intrepid2::FieldContainer<double>(num_cells, num_nodes, num_space_dim);
     
-    jac = Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim,
+    jac = Intrepid2::FieldContainer<double>(num_cells, num_ip, num_space_dim,
 					   num_space_dim);
     
-    jac_inv = Intrepid::FieldContainer<double>(num_cells, num_ip, 
+    jac_inv = Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 					       num_space_dim,
 					       num_space_dim);
     
-    jac_det = Intrepid::FieldContainer<double>(num_cells, num_ip);
+    jac_det = Intrepid2::FieldContainer<double>(num_cells, num_ip);
     
     weighted_measure = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip);
     
     covarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 				       num_space_dim,
 				       num_space_dim);
 
     contravarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, 
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, 
 				       num_space_dim,
 				       num_space_dim);
 
     norm_contravarient = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip);
 
     ip_coordinates = 
-      Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim);
+      Intrepid2::FieldContainer<double>(num_cells, num_ip, num_space_dim);
       
   }
 
@@ -196,7 +196,7 @@ namespace panzer {
        return; 
     }
     
-    Intrepid::CellTools<Scalar> cell_tools;
+    Intrepid2::CellTools<Scalar> cell_tools;
     
     if (!int_rule->isSide())
       intrepid_cubature->getCubature(cub_points, cub_weights);
@@ -237,15 +237,15 @@ namespace panzer {
     cell_tools.setJacobianDet(jac_det, jac);
     
     if (!int_rule->isSide()) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeCellMeasure<Scalar>(weighted_measure, jac_det, cub_weights);
     }
     else if(int_rule->spatial_dimension==3) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeFaceMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
     }
     else if(int_rule->spatial_dimension==2) {
-       Intrepid::FunctionSpaceTools::
+       Intrepid2::FunctionSpaceTools::
          computeEdgeMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
     }
     else TEUCHOS_ASSERT(false);
@@ -276,7 +276,7 @@ namespace panzer {
       }
     }
 
-    Intrepid::RealSpaceTools<Scalar>::inverse(contravarient, covarient);
+    Intrepid2::RealSpaceTools<Scalar>::inverse(contravarient, covarient);
 
     /*
     for (std::size_t cell = 0; cell < contravarient.dimension(0); ++cell) {

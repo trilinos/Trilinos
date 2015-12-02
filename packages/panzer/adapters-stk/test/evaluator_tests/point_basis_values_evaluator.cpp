@@ -126,9 +126,9 @@ namespace panzer {
     RCP<const panzer::PointRule> point_rule = rcp(new panzer::PointRule("RandomPoints",num_points, cell_data));
     RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule("BasisPoints",basis_q1->cardinality(), cell_data));
 
-    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray 
-       = Teuchos::rcp(new Intrepid::FieldContainer<double>(num_points,2));
-    Intrepid::FieldContainer<double> & point_coordinates = *userArray;
+    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray 
+       = Teuchos::rcp(new Intrepid2::FieldContainer<double>(num_points,2));
+    Intrepid2::FieldContainer<double> & point_coordinates = *userArray;
     point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
     point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
     point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
@@ -210,7 +210,7 @@ namespace panzer {
        point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
-    typedef panzer::ArrayTraits<double,Intrepid::FieldContainer<double> >::size_type size_type;
+    typedef panzer::ArrayTraits<double,Intrepid2::FieldContainer<double> >::size_type size_type;
 
     for(size_type c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
@@ -279,11 +279,11 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 
@@ -375,11 +375,11 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_edge,*point_rule));
 
@@ -503,11 +503,11 @@ namespace panzer {
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
-    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    panzer::IntegrationValues<double,Intrepid2::FieldContainer<double> > int_values;
     int_values.setupArrays(point_rule);
     int_values.evaluateValues(workset.cell_vertex_coordinates);
 
-    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+    Teuchos::RCP<Intrepid2::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
 
     Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
 

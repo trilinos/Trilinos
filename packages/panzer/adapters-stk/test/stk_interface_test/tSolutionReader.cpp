@@ -62,8 +62,8 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
@@ -75,7 +75,7 @@ using Teuchos::rcp_dynamic_cast;
 #ifdef PANZER_HAVE_FEI
 Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
 
-typedef Intrepid::FieldContainer<double> FieldContainer;
+typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 const double tolerance = 1.0e-14;
 
@@ -94,8 +94,8 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
    RCP<panzer::DOFManagerFEI<int,int> > dofManager 
          = rcp(new panzer::DOFManagerFEI<int,int>(connManager,MPI_COMM_WORLD));
 
-   RCP<const panzer::FieldPattern> linPattern = rcp(new panzer::IntrepidFieldPattern(
-        rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>)));
+   RCP<const panzer::FieldPattern> linPattern = rcp(new panzer::Intrepid2FieldPattern(
+        rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>)));
    dofManager->addField("eblock-0_0","cat",linPattern);
    dofManager->addField("dog",linPattern);
    dofManager->buildGlobalUnknowns();

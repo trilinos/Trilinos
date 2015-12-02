@@ -45,9 +45,9 @@
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_CubatureControlVolume.hpp"
-#include "Intrepid_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_CubatureControlVolume.hpp"
+#include "Intrepid2_CubatureControlVolumeSide.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -74,7 +74,7 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   std::stringstream ss;
   ss << "CubaturePoints (Degree=" << cubature_degree;
   
-  // Intrepid does not support a quadrature on a 0-dimensional object
+  // Intrepid2 does not support a quadrature on a 0-dimensional object
   // (which doesn't make much sense anyway) to work around this we
   // will adjust the integration rule manually
   if(cell_data.isSide() && spatialDimension==1) {
@@ -87,8 +87,8 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   Teuchos::RCP<const shards::CellTopology> topo = cell_data.getCellTopology();
   Teuchos::RCP<shards::CellTopology> sideTopo = getSideTopology(cell_data);
 
-  Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > cubature_factory;
-  Teuchos::RCP<Intrepid::Cubature<double,Intrepid::FieldContainer<double>  > > intrepid_cubature;
+  Intrepid2::DefaultCubatureFactory<double,Intrepid2::FieldContainer<double> > cubature_factory;
+  Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > intrepid_cubature;
 
   // get side topology
   if (Teuchos::is_null(sideTopo)) {
@@ -122,17 +122,17 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   Teuchos::RCP<const shards::CellTopology> topo = cell_data.getCellTopology();
 
-  Teuchos::RCP<Intrepid::Cubature<double,Intrepid::FieldContainer<double>  > > intrepid_cubature;
+  Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > intrepid_cubature;
 
   int num_points;
   if (cv_type == "volume") {
     ss << ",volume)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid::CubatureControlVolume<double,Intrepid::FieldContainer<double>,Intrepid::FieldContainer<double> >(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(topo));
     num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "side") {
     ss << ",side)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid::CubatureControlVolumeSide<double,Intrepid::FieldContainer<double>,Intrepid::FieldContainer<double> >(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(topo));
     num_points = intrepid_cubature->getNumPoints();
   }
 
@@ -154,11 +154,11 @@ void panzer::IntegrationRule::print(std::ostream & os)
       << " )";
 }
 
-void panzer::IntegrationRule::referenceCoordinates(Intrepid::FieldContainer<double> & cub_points)
+void panzer::IntegrationRule::referenceCoordinates(Intrepid2::FieldContainer<double> & cub_points)
 {
     // build an interpid cubature rule
-    Teuchos::RCP< Intrepid::Cubature<double,Intrepid::FieldContainer<double> > > intrepid_cubature;
-    Intrepid::DefaultCubatureFactory<double,Intrepid::FieldContainer<double> > cubature_factory;
+    Teuchos::RCP< Intrepid2::Cubature<double,Intrepid2::FieldContainer<double> > > intrepid_cubature;
+    Intrepid2::DefaultCubatureFactory<double,Intrepid2::FieldContainer<double> > cubature_factory;
     
     if (!isSide())
       intrepid_cubature = cubature_factory.create(*(topology),cubature_degree);
@@ -166,15 +166,15 @@ void panzer::IntegrationRule::referenceCoordinates(Intrepid::FieldContainer<doub
       intrepid_cubature = cubature_factory.create(*(side_topology),cubature_degree);
 
     int num_ip = intrepid_cubature->getNumPoints();
-    Intrepid::FieldContainer<double> cub_weights(num_ip);
+    Intrepid2::FieldContainer<double> cub_weights(num_ip);
 
     // now compute weights (and throw them out) as well as reference points
     if (!isSide()) {
-      cub_points = Intrepid::FieldContainer<double>(num_ip, topology->getDimension());
+      cub_points = Intrepid2::FieldContainer<double>(num_ip, topology->getDimension());
       intrepid_cubature->getCubature(cub_points, cub_weights);
     }
     else {
-      cub_points = Intrepid::FieldContainer<double>(num_ip, side_topology->getDimension());
+      cub_points = Intrepid2::FieldContainer<double>(num_ip, side_topology->getDimension());
       intrepid_cubature->getCubature(cub_points, cub_weights);
     }
 }

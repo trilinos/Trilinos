@@ -54,7 +54,7 @@
 #include "Panzer_PointRule.hpp"
 #include "Panzer_PointValues.hpp"
 
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FieldContainer.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -75,8 +75,8 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_FaceBasis)
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Intrepid::FieldContainer<ScalarT> faceNormal; // face normals
-  Intrepid::FieldContainer<ScalarT> refFaceNormal; // reference face normals
+  Intrepid2::FieldContainer<ScalarT> faceNormal; // face normals
+  Intrepid2::FieldContainer<ScalarT> refFaceNormal; // reference face normals
 
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
 

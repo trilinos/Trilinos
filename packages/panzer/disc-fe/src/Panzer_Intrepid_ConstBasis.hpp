@@ -1,12 +1,12 @@
 #ifndef __Panzer_Intrepid_ConstBasis_hpp__
 #define __Panzer_Intrepid_ConstBasis_hpp__
 
-#include "Intrepid_Basis.hpp"
+#include "Intrepid2_Basis.hpp"
 
 namespace panzer {
   
 template<class Scalar, class ArrayScalar> 
-class Basis_Constant: public Intrepid::Basis<Scalar, ArrayScalar> {
+class Basis_Constant: public Intrepid2::Basis<Scalar, ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -32,7 +32,7 @@ public:
    */
   void getValues(ArrayScalar &          outputValues,
                  const ArrayScalar &    inputPoints,
-                 const Intrepid::EOperator        operatorType) const;
+                 const Intrepid2::EOperator        operatorType) const;
   
   
   /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
@@ -40,7 +40,7 @@ public:
   void getValues(ArrayScalar &          outputValues,
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
-                 const Intrepid::EOperator        operatorType = Intrepid::OPERATOR_VALUE) const;
+                 const Intrepid2::EOperator        operatorType = Intrepid2::OPERATOR_VALUE) const;
 
 };
 

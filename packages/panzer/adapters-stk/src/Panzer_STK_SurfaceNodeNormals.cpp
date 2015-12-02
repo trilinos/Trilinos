@@ -57,8 +57,8 @@
 #include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 
 #include "Shards_CellTopology.hpp"
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 #include "Teuchos_Assert.hpp"
 
 namespace panzer_stk_classic {
@@ -107,7 +107,7 @@ namespace panzer_stk_classic {
     TEUCHOS_ASSERT(localSideTopoIDs.size() == parentElements.size());
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
-    Intrepid::DefaultCubatureFactory<double> cubFactory;
+    Intrepid2::DefaultCubatureFactory<double> cubFactory;
     int cubDegree = 1;
 
     std::vector<stk_classic::mesh::Entity*>::const_iterator side = sides.begin();
@@ -117,17 +117,17 @@ namespace panzer_stk_classic {
     
       std::vector<stk_classic::mesh::Entity*> elementEntities;
       elementEntities.push_back(*parentElement);
-      Intrepid::FieldContainer<double> vertices;
+      Intrepid2::FieldContainer<double> vertices;
       mesh->getElementVertices(elementEntities,elementBlockName,vertices);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology);
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
-      panzer::IntegrationValues<double, Intrepid::FieldContainer<double> > iv;
+      panzer::IntegrationValues<double, Intrepid2::FieldContainer<double> > iv;
       iv.setupArrays(ir);
       iv.evaluateValues(vertices);
       
-      Intrepid::FieldContainer<double> normal(1,ir->num_points,parentTopology->getDimension());
-      Intrepid::CellTools<double>::getPhysicalSideNormals(normal, iv.jac, *sideID, *(ir->topology));
+      Intrepid2::FieldContainer<double> normal(1,ir->num_points,parentTopology->getDimension());
+      Intrepid2::CellTools<double>::getPhysicalSideNormals(normal, iv.jac, *sideID, *(ir->topology));
 
       if (pout != NULL) {
       *pout << "element normals: "
@@ -208,7 +208,7 @@ namespace panzer_stk_classic {
     
   }
 
-  void computeSidesetNodeNormals(std::unordered_map<std::size_t,Intrepid::FieldContainer<double> >& normals,
+  void computeSidesetNodeNormals(std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> >& normals,
 				 const Teuchos::RCP<const panzer_stk_classic::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,

@@ -852,12 +852,12 @@ namespace Tpetra {
     ///   replace the entries.
     /// \param vals [in] Values to use for replacing the entries.
     ///
-    /// For all k in 0, ..., <tt>cols.size()-1</tt>, replace the value
-    /// at entry <tt>(globalRow, cols[k])</tt> of the matrix with
-    /// <tt>vals[k]</tt>.  That entry must exist in the matrix
+    /// For all k in 0, ..., <tt>cols.dimension_0()-1</tt>, replace
+    /// the value at entry <tt>(globalRow, cols(k))</tt> of the matrix
+    /// with <tt>vals(k)</tt>.  That entry must exist in the matrix
     /// already.
     ///
-    /// If <tt>(globalRow, cols[k])</tt> corresponds to an entry that
+    /// If <tt>(globalRow, cols(k))</tt> corresponds to an entry that
     /// is duplicated in this matrix row (likely because it was
     /// inserted more than once and fillComplete() has not been called
     /// in the interim), the behavior of this method is not defined.
@@ -867,16 +867,25 @@ namespace Tpetra {
     ///
     /// If the returned value N satisfies
     ///
-    /// <tt>0 <= N < cols.size()</tt>,
+    /// <tt>0 <= N < cols.dimension_0()</tt>,
     ///
-    /// then <tt>cols.size() - N</tt> of the entries of <tt>cols</tt>
+    /// then <tt>cols.dimension_0() - N</tt> of the entries of <tt>cols</tt>
     /// are not valid global column indices.  If the returned value is
     /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), then at least
     /// one of the following is true:
     ///   <ul>
     ///   <li> <tt>! isFillActive ()</tt> </li>
-    ///   <li> <tt> cols.size () != vals.size ()</tt> </li>
+    ///   <li> <tt> cols.dimension_0 () != vals.dimension_0 ()</tt> </li>
     ///   </ul>
+    LocalOrdinal
+    replaceGlobalValues (const GlobalOrdinal globalRow,
+                         const Kokkos::View<const GlobalOrdinal*, device_type,
+                           Kokkos::MemoryUnmanaged>& cols,
+                         const Kokkos::View<const impl_scalar_type*, device_type,
+                           Kokkos::MemoryUnmanaged>& vals) const;
+
+    /// \brief Backwards compatibility version of replaceGlobalValues,
+    ///   that takes Teuchos::ArrayView instead of Kokkos::View.
     LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& cols,

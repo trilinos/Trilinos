@@ -60,8 +60,8 @@
 
 namespace MueLu {
 
- template <class LocalOrdinal, class GlobalOrdinal, class Node>
- RCP<const ParameterList> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ RCP<const ParameterList> ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Factory of the matrix A");
@@ -71,20 +71,21 @@ namespace MueLu {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
     RCP<const Map>   rowMap   = A->getRowMap();
 
-    RCP<MultiVector> Coords   = Get< RCP<MultiVector> >(level, "Coordinates");
+    typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    RCP<double_multivector_type> Coords   = Get< RCP<double_multivector_type> >(level, "Coordinates");
     size_t           dim      = Coords->getNumVectors();
 
     GO               numParts = level.Get<GO>("number of partitions");
@@ -184,8 +185,8 @@ namespace MueLu {
   // GetLocalNumberOfRows
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::GetLocalNumberOfRows(void *data, int *ierr) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLocalNumberOfRows(void *data, int *ierr) {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return -1;
@@ -203,8 +204,8 @@ namespace MueLu {
   // GetLocalNumberOfNonzeros
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
                            ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr) {
     if (data == NULL || NumGidEntries < 1) {
@@ -248,8 +249,8 @@ namespace MueLu {
   // GetProblemDimension
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  int ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  int ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetProblemDimension(void *data, int *ierr)
   {
     int dim = *((int*)data);
@@ -262,8 +263,8 @@ namespace MueLu {
   // GetProblemGeometry
   //-------------------------------------------------------------------------------------------------------------
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs,
                      ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
   {
@@ -272,7 +273,8 @@ namespace MueLu {
       return;
     }
 
-    MultiVector *Coords = (MultiVector*) data;
+    typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    double_multivector_type *Coords = (double_multivector_type*) data;
 
     if (dim != Teuchos::as<int>(Coords->getNumVectors())) {
       //FIXME I'm assuming dim should be 1, 2, or 3 coming in?!
@@ -282,7 +284,7 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != Teuchos::as<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
 
-    ArrayRCP<ArrayRCP<const SC> > CoordsData(dim);
+    ArrayRCP<ArrayRCP<const double> > CoordsData(dim);
     for (int j = 0; j < dim; ++j)
       CoordsData[j] = Coords->getData(j);
 

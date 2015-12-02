@@ -80,8 +80,8 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
-      intrepid_basis = basis.getIntrepidBasis();
+    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
+      intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
@@ -128,8 +128,8 @@ namespace panzer {
     TEST_EQUALITY(basis.fieldNameD1(), "Grad Basis: HGrad:2");
     TEST_EQUALITY(basis.fieldNameD2(), "D2 Basis: HGrad:2");
 
-    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
-      intrepid_basis = basis.getIntrepidBasis();
+    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
+      intrepid_basis = basis.getIntrepid2Basis();
 
     TEST_ASSERT(!Teuchos::is_null(intrepid_basis));
 
@@ -167,7 +167,7 @@ namespace panzer {
     TEST_EQUALITY(basis->numCells(),num_cells);
     TEST_EQUALITY(basis->dimension(),base_cell_dimension);
     TEST_EQUALITY(basis->name(),"HCurl:1");
-    TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
+    TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
     PHX::FinalizeKokkosDevice();
@@ -192,7 +192,7 @@ namespace panzer {
     TEST_EQUALITY(basis->numCells(),num_cells);
     TEST_EQUALITY(basis->dimension(),base_cell_dimension);
     TEST_EQUALITY(basis->name(),"HCurl:1");
-    TEST_ASSERT(basis->getIntrepidBasis()!=Teuchos::null);
+    TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
     PHX::FinalizeKokkosDevice();

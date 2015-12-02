@@ -807,7 +807,7 @@ namespace Tpetra {
     void
     replaceGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
-                        const impl_scalar_type& value);
+                        const impl_scalar_type& value) const;
 
     /// \brief Like the above replaceGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -830,7 +830,7 @@ namespace Tpetra {
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     replaceGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
-                        const T& value)
+                        const T& value) const
     {
       replaceGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
     }
@@ -861,7 +861,7 @@ namespace Tpetra {
     sumIntoGlobalValue (const GlobalOrdinal globalRow,
                         const size_t col,
                         const impl_scalar_type& value,
-                        const bool atomic = useAtomicUpdatesByDefault);
+                        const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Like the above sumIntoGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -894,7 +894,7 @@ namespace Tpetra {
     sumIntoGlobalValue (const GlobalOrdinal globalRow,
                         const size_t col,
                         const T& value,
-                        const bool atomic = useAtomicUpdatesByDefault)
+                        const bool atomic = useAtomicUpdatesByDefault) const
     {
       sumIntoGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value), atomic);
     }
@@ -918,7 +918,7 @@ namespace Tpetra {
     void
     replaceLocalValue (LocalOrdinal localRow,
                        size_t col,
-                       const impl_scalar_type& value);
+                       const impl_scalar_type& value) const;
 
     /// \brief Like the above replaceLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -941,7 +941,7 @@ namespace Tpetra {
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     replaceLocalValue (LocalOrdinal localRow,
                        size_t col,
-                       const T& value)
+                       const T& value) const
     {
       replaceLocalValue (localRow, col, static_cast<impl_scalar_type> (value));
     }
@@ -970,7 +970,7 @@ namespace Tpetra {
     sumIntoLocalValue (const LocalOrdinal localRow,
                        const size_t col,
                        const impl_scalar_type& value,
-                       const bool atomic = useAtomicUpdatesByDefault);
+                       const bool atomic = useAtomicUpdatesByDefault) const;
 
     /// \brief Like the above sumIntoLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -1001,7 +1001,7 @@ namespace Tpetra {
     sumIntoLocalValue (LocalOrdinal localRow,
                        size_t col,
                        const T& value,
-                       const bool atomic = useAtomicUpdatesByDefault)
+                       const bool atomic = useAtomicUpdatesByDefault) const
     {
       sumIntoLocalValue (localRow, col, static_cast<impl_scalar_type> (value), atomic);
     }

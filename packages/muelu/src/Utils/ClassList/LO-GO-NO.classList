@@ -31,4 +31,3 @@ RepartitionInterface
 UncoupledAggregationFactory
 UncoupledAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 UserAggregationFactory
-ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)

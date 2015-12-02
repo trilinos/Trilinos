@@ -61,9 +61,9 @@
 namespace MueLuTests {
 
 
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRAEXT)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     out << "version: " << MueLu::Version() << std::endl;
@@ -121,9 +121,11 @@ namespace MueLuTests {
     TEST_FLOATING_EQUALITY(normEpetra[0], normTpetra[0], 1e-12);
     out << "Epetra ||A*(A*x)|| = " << normCheck1[0] << std::endl;
     out << "Tpetra ||A*(A*x)|| = " << normCheck2[0] << std::endl;
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, EpetraExt)." << std::endl;
+#   endif
 
   } //EpetraVersusTpetra
-#endif
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,DetectDirichletRows,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {

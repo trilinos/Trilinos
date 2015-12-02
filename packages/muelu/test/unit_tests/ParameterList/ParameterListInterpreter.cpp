@@ -47,37 +47,19 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include "MueLu_TestHelpers.hpp"
+#include <MueLu_TestHelpers.hpp>
 
-#include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_Exceptions.hpp"
-
-#include "MueLu_UseDefaultTypes.hpp"
+#include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_Exceptions.hpp>
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap; // TODO: remove
-  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
-
-  TEUCHOS_UNIT_TEST(ParameterListInterpreter, SetParameterList)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-
-    //TODO: this test can be done at compilation time
-#if !defined(HAVE_MUELU_EPETRA) or !defined(HAVE_MUELU_IFPACK)  or !defined(HAVE_MUELU_AMESOS)
-    if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-      out << "Test skipped (dependencies not available)" << std::endl;
-      return;
-    }
-#endif
-
-#if !defined(HAVE_MUELU_TPETRA) or !defined(HAVE_MUELU_IFPACK2) or !defined(HAVE_MUELU_AMESOS2)
-    if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
-      out << "Test skipped (dependencies not available)" << std::endl;
-      return;
-    }
-#endif
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS) && defined(HAVE_MUELU_AMESOS2)
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -89,14 +71,21 @@ namespace MueLuTests {
       ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i],*comm);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-      H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
+      H->GetLevel(0)->Set("A", A);
 
       mueluFactory.SetupHierarchy(*H);
 
       //TODO: check no unused parameters
       //TODO: check results of Iterate()
     }
+
+#   else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2, Amesos, Amesos2)." << std::endl;
+#   endif
   }
+#define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
 

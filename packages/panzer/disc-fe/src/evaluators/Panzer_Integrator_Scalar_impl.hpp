@@ -43,7 +43,7 @@
 #ifndef PANZER_EVALUATOR_SCALAR_IMPL_HPP
 #define PANZER_EVALUATOR_SCALAR_IMPL_HPP
 
-#include "Intrepid_FunctionSpaceTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -102,7 +102,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   num_qp = scalar.dimension(1);
 
-  tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
+  tmp = Intrepid2::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
@@ -127,20 +127,20 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   // Switch to Kokkos means we can no longer use intrepid.  There is a
   // hard coded call to blas that grab a reference to the first
   // element. You can't grab refrerences to memory anymore with
-  // kokkos.  When Intrepid is fixed, we can switch this back.
+  // kokkos.  When Intrepid2 is fixed, we can switch this back.
   /*
   if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::
+    Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(integral, tmp, 
 			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
-			 Intrepid::COMP_BLAS);
+			 Intrepid2::COMP_BLAS);
   */
   
   // NOTE: this is not portable to GPUs.  Need to remove all uses of
   // intrepid field container for MDFields.  This is rather involved
   // since we need to change the Worksets.
 
-  // const Intrepid::FieldContainer<double>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
+  // const Intrepid2::FieldContainer<double>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
   int numPoints       = tmp.dimension(1);

@@ -66,7 +66,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid::FieldContainer<int> & data)
+                        Intrepid2::FieldContainer<int> & data)
 {
    data.resize(1,4);
 
@@ -161,7 +161,7 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid::FieldContainer<int> & data,std::size_t cols)
+                        Intrepid2::FieldContainer<int> & data,std::size_t cols)
 {
    data.resize(1,4,cols);
 
@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 {
    PHX::KokkosDeviceSession session;
 
-   typedef Intrepid::FieldContainer<int> IntFieldContainer;
+   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
    PHX::KokkosDeviceSession session;
 
-   typedef Intrepid::FieldContainer<int> IntFieldContainer;
+   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -344,7 +344,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 {
    PHX::KokkosDeviceSession session;
 
-   typedef Intrepid::FieldContainer<int> IntFieldContainer;
+   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -413,7 +413,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
    PHX::KokkosDeviceSession session;
 
-   typedef Intrepid::FieldContainer<int> IntFieldContainer;
+   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

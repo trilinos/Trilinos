@@ -267,7 +267,7 @@ const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getB
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
 {
    vertices.resize(1,4,2);
    switch(procRank_) {
@@ -488,7 +488,7 @@ const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
 {
    vertices.resize(1,1,2);
    switch(procRank_) {
