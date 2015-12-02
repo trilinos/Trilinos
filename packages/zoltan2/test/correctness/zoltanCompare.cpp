@@ -73,9 +73,10 @@ enum testFields {
 };
 
 
-#define NUMTESTS 24
+#define NUMTESTS 30
 static string testArgs[] = {
 // Filename  LB_Method   ObjWeightDim   NumProcs
+"simple",       "phg",          "0",      "2",
 "simple",       "rcb",          "0",      "2",
 "vwgt2",        "rcb",          "2",      "2",
 
@@ -84,6 +85,7 @@ static string testArgs[] = {
 "onedbug",      "rcb",          "0",      "3",
 "simple",       "rcb",          "0",      "3",
 "vwgt",         "rcb",          "1",      "3",
+"vwgt",         "phg",          "1",      "3",
 "vwgt2",        "rcb",          "2",      "3",
 
 "simple",       "default",      "0",      "4",
@@ -92,9 +94,12 @@ static string testArgs[] = {
 "grid20x19",    "hsfc",         "0",      "4",
 "grid20x19",    "hsfc",         "0",      "4",
 "nograph",      "rib",          "0",      "4",
+"nograph",      "phg",          "0",      "4",
 "simple",       "rib",          "0",      "4",
 "simple",       "rib",          "0",      "4",
 "vwgt2",        "rib",          "2",      "4",
+"simple",       "rib",          "0",      "4",
+"simple",       "phg",          "0",      "4",
 
 "brack2_3",     "rcb",          "3",      "5",
 
@@ -104,9 +109,11 @@ static string testArgs[] = {
 "degenerate",   "rcb",          "0",      "6",
 
 "hammond",      "rcb",          "0",      "8",
+"hammond",      "phg",          "0",      "8",
 "vwgt2",        "rcb",          "2",      "8"
 };
 
+typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tGraph_t;
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> vectorAdapter_t;
@@ -161,6 +168,35 @@ static void zgeom(void *data, int ngid, int nlid, int nobj,
   }
 }
 
+static void zhgsize(void *data, int *nLists, int *nPins, int *format, int *ierr)
+{
+  tMatrix_t *matrix = (tMatrix_t *) data;
+  *nLists = matrix->getNodeNumRows();
+  *nPins = matrix->getNodeNumEntries();
+  *format = ZOLTAN_COMPRESSED_VERTEX;
+  *ierr = ZOLTAN_OK;
+}
+
+static void zhg(void *data, int ngid, int nLists, int nPins, int format,
+                ZOLTAN_ID_PTR listGids, int *offsets, ZOLTAN_ID_PTR pinGids, 
+                int *ierr)
+{
+  tMatrix_t *matrix = (tMatrix_t *) data;
+  RCP<const tGraph_t> graph = matrix->getCrsGraph();
+  zlno_t nrows = graph->getNodeNumRows();
+  
+  offsets[0] = 0;
+  for (zlno_t i = 0; i < nrows; i++) {
+    size_t nEntries = graph->getNumEntriesInLocalRow(i);
+    listGids[i] = graph->getRowMap()->getGlobalElement(i);
+    offsets[i+1] = offsets[i] + nEntries;
+    Teuchos::ArrayView<const zlno_t> colind;
+    graph->getLocalRowView(i, colind);
+    for (size_t j = 0; j < nEntries; j++)
+      pinGids[offsets[i]+j] = graph->getColMap()->getGlobalElement(colind[j]);
+  }
+  *ierr = ZOLTAN_OK;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function to compute both Zoltan2 and Zoltan partitions and print metrics
@@ -274,6 +310,8 @@ int run(
   zz.Set_Param("IMBALANCE_TOL", tmp);
   zz.Set_Param("RETURN_LISTS", "PART");
   zz.Set_Param("FINAL_OUTPUT", "1");
+  zz.Set_Param("SEED", "1111");
+  zz.Set_Param("LB_APPROACH", "PARTITION");
 
   zz.Set_Num_Obj_Fn(znumobj, (void *) coords.getRawPtr());
   if (nWeights)
@@ -282,6 +320,8 @@ int run(
     zz.Set_Obj_List_Fn(zobjlist, (void *) coords.getRawPtr());
   zz.Set_Num_Geom_Fn(znumgeom, (void *) coords.getRawPtr());
   zz.Set_Geom_Multi_Fn(zgeom, (void *) coords.getRawPtr());
+  zz.Set_HG_Size_CS_Fn(zhgsize, (void *) &(*matrix));
+  zz.Set_HG_CS_Fn(zhg, (void *) &(*matrix));
 
   int changes, ngid, nlid;
   int numd, nump;
@@ -342,6 +382,8 @@ int run(
     // "default" tests case of no Zoltan parameter sublist
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD",thisTest[TESTMETHODOFFSET]);
+    zparams.set("LB_APPROACH", "PARTITION");
+    zparams.set("SEED", "1111");
   }
 
   Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
