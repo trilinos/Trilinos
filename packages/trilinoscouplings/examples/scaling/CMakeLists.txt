@@ -1,7 +1,7 @@
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_IntrepidCore AND Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_Pamgen)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_NoFE
@@ -49,7 +49,7 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_IntrepidCore AND Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
@@ -90,7 +90,7 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_IntrepidCore AND Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STKClassic)
   TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_STKclassic
@@ -106,7 +106,7 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_IntrepidCore AND Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_SEACAS AND Trilinos_ENABLE_STK
    AND Trilinos_ENABLE_STKIO AND Trilinos_ENABLE_STKMesh)
   TRIBITS_ADD_EXECUTABLE(
@@ -129,7 +129,7 @@ ENDIF()
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
 IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_IntrepidCore AND
    Trilinos_ENABLE_Pamgen AND
    Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
@@ -149,7 +149,7 @@ ENDIF()
 IF(Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Epetra AND
    Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_IntrepidCore AND
    Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_Pamgen)
   TRIBITS_ADD_EXECUTABLE(
@@ -169,7 +169,7 @@ ENDIF()
 # Belos and Tpetra also both have required dependencies on Teuchos.
 # The executable may use MueLu only if the MueLu package is enabled.
 IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_IntrepidCore AND
    Trilinos_ENABLE_Pamgen AND
    Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
@@ -191,7 +191,7 @@ ENDIF()
 # so we don't have to name those packages explicitly here.
 # Belos both also have required dependencies on Teuchos.
 IF(Trilinos_ENABLE_Belos AND
-   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_IntrepidCore AND
    Trilinos_ENABLE_Pamgen AND
    Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE(
@@ -206,7 +206,7 @@ IF(Trilinos_ENABLE_Belos AND
 ENDIF()
 
 IF(Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_IntrepidCore AND
    Trilinos_ENABLE_Pamgen AND
    Trilinos_ENABLE_Epetra AND
    Trilinos_ENABLE_ML AND
