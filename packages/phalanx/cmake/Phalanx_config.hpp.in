@@ -22,7 +22,7 @@
 #cmakedefine PHX_INDEX_SIZE_TYPE_LONGINT
 #cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
 
-#cmakedefine Phalanx_ENABLE_Intrepid
+#cmakedefine Phalanx_ENABLE_IntrepidIntrepid2
 
 @PHALANX_DEPRECATED_DECLARATIONS@
 
