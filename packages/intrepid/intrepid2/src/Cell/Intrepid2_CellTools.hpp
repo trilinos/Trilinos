@@ -86,9 +86,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include <KokkosRank.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Kokkos_Core.hpp"
-#endif
 namespace Intrepid2 {
   
 //nn  
@@ -349,7 +347,6 @@ public:
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
 /*
- #ifdef HAVE_INTREPID_KOKKOSCORE
 
     
 template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
@@ -363,7 +360,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
                             
- #endif */                          
+ */                          
     template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
 	struct setJacobianTempSpec;
 	
@@ -509,7 +506,7 @@ template<class ArrayJac, class ArrayPoint, class ArrayCell, bool typecheck>
                                    
      /** \brief  Computes \e F, the reference-to-physical frame map.
                                    
-     /** \brief  Computes \e F, the reference-to-physical frame map.
+     // \brief  Computes \e F, the reference-to-physical frame map.
       
                 There are 3 use cases:
         \li     Applies \f$ F_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a cell 

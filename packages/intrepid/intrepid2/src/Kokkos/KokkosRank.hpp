@@ -1,9 +1,8 @@
 #ifndef INTREPID2_KOKKOS_RANK_HPP
 #define INTREPID2_KOKKOS_RANK_HPP
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#include "Intrepid2_config.h"
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
-#endif
 
 namespace Intrepid2{
 
@@ -40,7 +39,6 @@ struct CheckType{static const bool value = false; };
 
 template<class A>
 struct Rank{static const int value = -1;};
-#ifdef HAVE_INTREPID_KOKKOSCORE
 template<class arg1, class arg2, class arg3, class arg4, class arg5>
 struct Rank<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
 static const int value=Kokkos::View<arg1,arg2,arg3,arg4, arg5>::Rank;
@@ -55,7 +53,6 @@ template<class arg1, class arg2, class arg3, class arg4, class arg5>
 struct CheckType<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
 static const bool value = true;
 };
-#endif
 
 template<class A,class Scalar>
 struct Return_Type{
@@ -63,7 +60,6 @@ struct Return_Type{
     typedef Scalar const_return_type;
     };
 
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 
 template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
 struct Return_Type<const Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
@@ -95,7 +91,6 @@ struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,Kokkos::Impl::ViewSpecializ
       typedef typename ViewType::fad_view_type const_return_type;
 };
 */
-#endif
 
 template<class DataT,int leftrank>
 struct RankSpec{};
@@ -190,9 +185,7 @@ struct ArrayWrapper<Scalar, ArrayType,-1, false> {
                 ArrayWrapper<Scalar,ArrayType,4,false>runtimewrapper4;
                 ArrayWrapper<Scalar,ArrayType,5,false>runtimewrapper5;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):
      view(view_),
      runtimewrapper1(view_),
@@ -201,43 +194,31 @@ struct ArrayWrapper<Scalar, ArrayType,-1, false> {
      runtimewrapper4(view_),
      runtimewrapper5(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
     int rank()const{
          return view.rank();
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0) const{
         return view(i0);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1) const{
         return view(i0,i1);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2) const{
         return view(i0,i1,i2);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2,
                           const int i3) const{
         return view(i0,i1,i2,i3);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2,
                           const int i3, const int i4) const{
         return view(i0,i1,i2,i3,i4);
@@ -251,23 +232,17 @@ struct ArrayWrapper<Scalar,ArrayType,1,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 1;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1 = 0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)  const{
@@ -281,23 +256,17 @@ struct ArrayWrapper<Scalar,ArrayType,2,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 2;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)  const{
@@ -311,23 +280,17 @@ struct ArrayWrapper<Scalar, ArrayType,3,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 3;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const{
@@ -340,23 +303,17 @@ struct ArrayWrapper<Scalar,ArrayType,4,false> {
 
    typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 4;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)const {
@@ -369,23 +326,17 @@ struct ArrayWrapper<Scalar,ArrayType,5,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 5;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
@@ -398,23 +349,17 @@ struct ArrayWrapper<Scalar,ArrayType,6,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 6;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)  const{
@@ -427,23 +372,17 @@ struct ArrayWrapper<Scalar,ArrayType,7,false> {
 
   typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper( ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 7;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)  const{
@@ -456,23 +395,17 @@ struct ArrayWrapper<Scalar,ArrayType,8,false> {
 
    typedef typename Return_Type<ArrayType, Scalar>::return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 8;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const{
@@ -490,9 +423,7 @@ struct ArrayWrapper<Scalar, ArrayType,-1, true> {
                 ArrayWrapper<Scalar,ArrayType,4,true>runtimewrapper4;
                 ArrayWrapper<Scalar,ArrayType,5,true>runtimewrapper5;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):
      view(view_),
      runtimewrapper1(view_),
@@ -501,43 +432,31 @@ struct ArrayWrapper<Scalar, ArrayType,-1, true> {
      runtimewrapper4(view_),
      runtimewrapper5(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return view.rank();
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0) const{
         return view(i0);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1) const{
         return view(i0,i1);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2) const{
         return view(i0,i1,i2);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2,
                           const int i3 ) const{
         return view(i0,i1,i2,i3);
 }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
    rtype operator() (const int i0, const int i1, const int i2,
                           const int i3, const int i4) const{
         return view(i0,i1,i2,i3,i4);
@@ -552,23 +471,17 @@ struct ArrayWrapper<Scalar,ArrayType,1,true> {
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 1;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1 = 0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
@@ -582,23 +495,17 @@ struct ArrayWrapper<Scalar,ArrayType,2,true> {
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 2;
   }
- #ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
 
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
@@ -613,23 +520,17 @@ struct ArrayWrapper<Scalar, ArrayType,3,true> {
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 3;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
 
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
@@ -643,22 +544,16 @@ struct ArrayWrapper<Scalar,ArrayType,4,true> {
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 4;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
@@ -670,22 +565,16 @@ struct ArrayWrapper<Scalar,ArrayType,5,true> {
   const ArrayType& view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 5;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0)  const{
@@ -697,22 +586,16 @@ struct ArrayWrapper<Scalar,ArrayType,6,true> {
   const ArrayType& view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 6;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
@@ -724,13 +607,9 @@ struct ArrayWrapper<Scalar,ArrayType,7,true> {
   const ArrayType& view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
@@ -738,9 +617,7 @@ struct ArrayWrapper<Scalar,ArrayType,7,true> {
          return 7;
   }
 
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
@@ -754,22 +631,16 @@ struct ArrayWrapper<Scalar,ArrayType,8,true> {
    const ArrayType& view;
 
   typedef typename Return_Type<ArrayType, Scalar>::const_return_type rtype;
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   ArrayWrapper(const ArrayType& view_):view(view_) {};
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   int dimension(int i)const{
          return view.dimension(i);
   }
   int rank()const{
          return 8;
   }
-#ifdef HAVE_INTREPID_KOKKOSCORE
   KOKKOS_INLINE_FUNCTION
-#endif
   rtype operator() (const int i0, const int i1=0, const int i2 = 0,
                           const int i3 = 0, const int i4 = 0, const int i5 = 0,
                           const int i6 = 0, const int i7 = 0) const {
