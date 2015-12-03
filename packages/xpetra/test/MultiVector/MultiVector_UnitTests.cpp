@@ -482,7 +482,38 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructors, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructorsEpetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+
+
+    // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    EXTRACT_LIB(comm,M) // returns mylib
+
+    // create a Map
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
+        Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
+
+#ifdef HAVE_XPETRA_EPETRA
+    if(mylib==Xpetra::UseEpetra) {
+      RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
+      RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
+      RCP<Epetra_Vector>      vec  = Teuchos::rcp(new Epetra_Vector(emap->getEpetra_Map()));
+      RCP<MV> xmv = Teuchos::rcp_dynamic_cast<MV>(Xpetra::toXpetra<GlobalOrdinal,Node>(mvec));
+      RCP<V>  xv  = Teuchos::rcp_dynamic_cast<V >(Xpetra::toXpetra<GlobalOrdinal,Node>(vec)); // there is no toXpetra for Vectors!
+      TEST_EQUALITY(xmv->getNumVectors(), numVecs);
+      TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
+    }
+#endif
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, NonMemberConstructorsTpetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
     RCP<Node> node = getNode<Node>();
 
@@ -512,19 +543,6 @@ namespace {
       TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
     }
 #endif
-
-#ifdef HAVE_XPETRA_EPETRA
-    if(mylib==Xpetra::UseEpetra) {
-      RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
-      RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
-      RCP<Epetra_Vector>      vec  = Teuchos::rcp(new Epetra_Vector(emap->getEpetra_Map()));
-      RCP<MV> xmv = Teuchos::rcp_dynamic_cast<MV>(Xpetra::toXpetra<GlobalOrdinal,Node>(mvec));
-      //RCP<V>  xv  = Teuchos::rcp_dynamic_cast<V >(Xpetra::toXpetra<GlobalOrdinal,Node>(vec)); // there is no toXpetra for Vectors!
-      TEST_EQUALITY(xmv->getNumVectors(), numVecs);
-      //TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
-    }
-#endif
-
   }
 
   ////
@@ -2550,26 +2568,31 @@ namespace {
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstLDA         , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Describable         , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, ElementWiseMultiply , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyConst           , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, CopyConst           , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, Indexing            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OrthoDot            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDot            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDotNonTrivLDA  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNorm1          , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNormInf        , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Norm2               , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyView            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OffsetView          , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, ZeroScaleUpdate     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, ZeroScaleUpdate     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadMultiply         , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, SingleVecNormalize  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Multiply            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadCombinations     , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstLDA                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Describable                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, ElementWiseMultiply        , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyConst                  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, CopyConst                  , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, Indexing                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OrthoDot                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDot                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountDotNonTrivLDA         , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNorm1                 , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CountNormInf               , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Norm2                      , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, CopyView                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, OffsetView                 , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, ZeroScaleUpdate            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(      Vector, ZeroScaleUpdate            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadMultiply                , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, SingleVecNormalize         , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, Multiply                   , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, BadCombinations            , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsTpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
+// List of tests which run only with Tpetra
+#define XP_EPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsEpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
 // list of all tests which run both with Epetra and Tpetra
 // TODO: move more lists from the upper list to this list
@@ -2581,7 +2604,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadConstAA           , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Typedefs             , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, basic                , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructors, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+
+
 
   //TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, BadDot               , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
   //TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MultiVector, NonContigView       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
@@ -2611,6 +2635,7 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
+XP_EPETRA_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 #endif // HAVE_TPETRA_SERIAL
 
 #endif
