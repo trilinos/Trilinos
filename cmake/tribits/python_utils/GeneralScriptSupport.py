@@ -260,11 +260,18 @@ class SysCmndInterceptor:
       if tag == "FT":
         self.__fallThroughCmndRegexList.append(entry.strip())
       elif tag == "IT":
-        (cmndRegex, cmndReturn, cmndOutput) = entry.split(';')
+        entryArray = entry.split(';')
+        if len(entryArray) < 3:
+          raise Exception("Error, invalid line {"+line+"}")
+        cmndRegex = entryArray[0]
+        cmndReturn = entryArray[1]
+        cmndOutput = ""
+        for cmndOutputEntry in entryArray[2:]:
+          #print "cmndOutputEntry = {"+cmndOutputEntry+"}"
+          cmndOutput += cmndOutputEntry.strip()[1:-1]+"\n"
         #print "(cmndRegex, cmndReturn, cmndOutput) =", (cmndRegex, cmndReturn, cmndOutput)
         self.__interceptedCmndStructList.append(
-          InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn),
-            cmndOutput.strip()[1:-1] )
+          InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn), cmndOutput)
           )
       else:
         raise Exception("Error, invalid tag = '"+tag+"'!")

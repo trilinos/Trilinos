@@ -1814,16 +1814,27 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepo):
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
     inOptions.git+" log --pretty=format:'%h' "\
-      +gitRepo.gitRepoStats.branch+"^ ^"+gitRepo.gitRepoStats.trackingBranch,
+      +gitRepo.gitRepoStats.branch+" ^"+gitRepo.gitRepoStats.trackingBranch,
     True,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
-  if rawLocalCommitsStr:
-    return ("Other local commits for this build/test group: "
-      + (", ".join(rawLocalCommitsStr.splitlines()))) + "\n"
+  rawLocalCommitsArray = rawLocalCommitsStr.splitlines()
 
+  if len(rawLocalCommitsArray) > 1:
+    return ("Other local commits for this build/test group: "
+      + (", ".join(rawLocalCommitsArray[1:]))) + "\n"
   return ""
+
+  # NOTE: Above, you have to use:
+  #
+  #  git log --pretty='%h' <currentbranch> ^<trackingbranch>
+  #
+  # and pop off the top commit as shown above instead of: 
+  #
+  #  git log --pretty='%h' <currentbranch>^ ^<trackingbranch>
+  #
+  # The latter returns nothing when the top commit is a merge commit.
 
 
 def getLocalCommitsExist(inOptions, gitRepo):
