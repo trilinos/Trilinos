@@ -83,8 +83,8 @@ namespace BaskerNS
 	gn = A.ncol;
 	gm = A.nrow;
 	A = BTF_A; 
-	printf("\n\n Switching A, newsize: %d \n",
-	       A.ncol);
+	//printf("\n\n Switching A, newsize: %d \n",
+        //     A.ncol);
       }
    
 

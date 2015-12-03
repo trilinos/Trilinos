@@ -456,118 +456,97 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::t_init_workspace(Int kid)
   {
 
-    //printf("t_init_workspace called \n");
+    printf("t_init_workspace called \n");
 
 
-    Int max_sep_size = 0;
+     Int max_sep_size = 0;
 
+    if(btf_tabs_offset != 0)
+      {
 
+       
     #ifdef BASKER_2DL
-    Int            b  = S[0][kid];
-    //INT_1DARRAY    ws = LL[b][0].iws;
-    //ENTRY_1DARRAY  X  = LL[b][0].ews;
-    //Int      iws_size = LL[b][0].iws_size;
-    //Int      ews_size = LL[b][0].ews_size;
-    //Int      iws_mult = LL[b][0].iws_mult;
-    //Int      ews_mult = LL[b][0].ews_mult;
+        Int            b  = S[0][kid];
+        //INT_1DARRAY    ws = LL[b][0].iws;
+        //ENTRY_1DARRAY  X  = LL[b][0].ews;
+        //Int      iws_size = LL[b][0].iws_size;
+        //Int      ews_size = LL[b][0].ews_size;
+        //Int      iws_mult = LL[b][0].iws_mult;
+        //Int      ews_mult = LL[b][0].ews_mult;
     #else
-    INT_1DARRAY  &ws = thread_array[kid].iws;
-    ENTRY_1DARRAY &X = thread_array[kid].ews;
-    Int iws_size     = thread_array[kid].iws_size;
-    Int iws_mult     = thread_array[kid].iws_mult;
-    Int ews_size     = thread_array[kid].ews_size;
-    Int ews_mult     = thread_array[kid].ews_mult;
+        INT_1DARRAY  &ws = thread_array[kid].iws;
+        ENTRY_1DARRAY &X = thread_array[kid].ews;
+        Int iws_size     = thread_array[kid].iws_size;
+        Int iws_mult     = thread_array[kid].iws_mult;
+        Int ews_size     = thread_array[kid].ews_size;
+        Int ews_mult     = thread_array[kid].ews_mult;
     #endif
     //Note: need to add a size array for all these
 
     #ifdef BASKER_2DL
-    for(Int l = 0; l < LL_size[b]; l++)
-      {
-	//defining here
-	LL[b][l].iws_size = LL[b][l].nrow;
-	//This can be made smaller, see notes in Sfactor_old
-	LL[b][l].iws_mult = 5;
-	LL[b][l].ews_size = LL[b][l].nrow;
-	//This can be made smaller, see notes in sfactor_old
-	LL[b][l].ews_mult = 2;
+        for(Int l = 0; l < LL_size[b]; l++)
+          {
+            //defining here
+            LL[b][l].iws_size = LL[b][l].nrow;
+            //This can be made smaller, see notes in Sfactor_old
+            LL[b][l].iws_mult = 5;
+            LL[b][l].ews_size = LL[b][l].nrow;
+            //This can be made smaller, see notes in sfactor_old
+            LL[b][l].ews_mult = 2;
 
-	Int iws_size = LL[b][l].iws_size;
-	Int iws_mult = LL[b][l].iws_mult;
-	Int ews_size = LL[b][l].ews_size;
-	Int ews_mult = LL[b][l].ews_mult;
+            Int iws_size = LL[b][l].iws_size;
+            Int iws_mult = LL[b][l].iws_mult;
+            Int ews_size = LL[b][l].ews_size;
+            Int ews_mult = LL[b][l].ews_mult;
 
 
+            
+            if(iws_size > max_sep_size)
+              {
+                max_sep_size = iws_size;
+              }
 
-	if(iws_size > max_sep_size)
-	  {
-	    max_sep_size = iws_size;
-	  }
-
-	//printf("init_workspace 2d, kid: %d blk: %d %d size: %d %d %d %d \n",
+            //printf("init_workspace 2d, kid: %d blk: %d %d size: %d %d %d %d \n",
 	//     kid, b, l, iws_mult, iws_size, ews_mult, ews_size);
 
-	if(iws_size == 0)
-	  {
-	    iws_size  = 1;
-	  }
-	BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
-	MALLOC_INT_1DARRAY(LL[b][l].iws, iws_size*iws_mult);
-	if(ews_size == 0)
-	  {
-	    ews_size = 1;
-	  }
-	BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
-	MALLOC_ENTRY_1DARRAY(LL[b][l].ews, ews_size*ews_mult);
+            if(iws_size == 0)
+              {
+                iws_size  = 1;
+              }
+            BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
+            MALLOC_INT_1DARRAY(LL[b][l].iws, iws_size*iws_mult);
+            if(ews_size == 0)
+              {
+                ews_size = 1;
+              }
+            BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
+            MALLOC_ENTRY_1DARRAY(LL[b][l].ews, ews_size*ews_mult);
+            
+            for(Int i=0; i<iws_mult*iws_size; i++)
+              {
+                LL[b][l].iws[i] = 0;
+              }
+            for(Int i=0; i<ews_mult*ews_size; i++)
+              {
+                LL[b][l].ews[i] = 0;
+              }
+            LL[b][l].fill();
 
-	for(Int i=0; i<iws_mult*iws_size; i++)
-	  {
-	    LL[b][l].iws[i] = 0;
-	  }
-	for(Int i=0; i<ews_mult*ews_size; i++)
-	  {
-	    LL[b][l].ews[i] = 0;
-	  }
-	LL[b][l].fill();
-
-
-	if(l==0)
-	  {
-	    //Also workspace matrix 
-	    //This could be made smaller
-	    //printf("C: size: %d kid: %d \n",
-	    //	   iws_size, kid);
-
-	    //thread_array[kid].C.init_matrix("cwork", 
-	    //			     0, iws_size,
-	    //			     0, 2, 
-	    //			     iws_size*2);
-	  }
-	if(btf_nblks > 1)
-	  {
-	if(Options.btf == BASKER_TRUE)
-	  {
-	    
-	    Int iws_mult = thread_array[kid].iws_mult;
-	    Int iws_size = thread_array[kid].iws_size;
-	    Int ews_mult = thread_array[kid].ews_mult;
-	    Int ews_size = thread_array[kid].ews_size;
-
-	    for(Int i=0; i < iws_mult*iws_size; i++)
-	      {
-		thread_array[kid].iws[i] = 0;
-	      }
-	    
-	    for(Int i = 0; i < ews_mult*ews_size; i++)
-	      {
-		thread_array[kid].ews[i] = 0.0;
-	      }
-	    
-	  }
-	  }
-      
-      }//end for over all levels
-
-     //Also workspace matrix 
+            
+            if(l==0)
+              {
+                //Also workspace matrix 
+                //This could be made smaller
+                //printf("C: size: %d kid: %d \n",
+                //	   iws_size, kid);
+                
+                //thread_array[kid].C.init_matrix("cwork", 
+                //			     0, iws_size,
+                //			     0, 2, 
+                //			     iws_size*2);
+              }
+          }
+          //Also workspace matrix 
     //This could be made smaller
     printf("C: size: %d kid: %d \n",
     	   max_sep_size, kid);
@@ -578,6 +557,38 @@ namespace BaskerNS
 				    max_sep_size*2);
 
 
+      }
+    else
+      {
+        //printf("======================TEST ZERO=======================\n");
+	if(btf_nblks > 1)
+	  {
+            //printf("----------------------TEST ONE -------------------\n");
+            if(Options.btf == BASKER_TRUE)
+              {
+                
+                //printf("---------------------TEST TWO--------------------\n");
+                Int iws_mult = thread_array[kid].iws_mult;
+                Int iws_size = thread_array[kid].iws_size;
+                Int ews_mult = thread_array[kid].ews_mult;
+                Int ews_size = thread_array[kid].ews_size;
+                
+                for(Int i=0; i < iws_mult*iws_size; i++)
+                  {
+                    thread_array[kid].iws[i] = 0;
+                  }
+	    
+                for(Int i = 0; i < ews_mult*ews_size; i++)
+                  {
+                    thread_array[kid].ews[i] = 0.0;
+                  }
+                
+              }
+	  }
+      
+      }//else
+
+   
     #else //ifdef basker_2dl
     printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
 	   kid, iws_mult, iws_size, ews_mult, ews_size);

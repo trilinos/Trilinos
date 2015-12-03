@@ -311,6 +311,10 @@ namespace BaskerNS
       {
 	return BASKER_ERROR;
       }
+
+    
+    DEBUG_PRINT();
+
     return 0;
 
   }//end Factor()

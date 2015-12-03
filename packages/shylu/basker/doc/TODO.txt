@@ -1,0 +1,151 @@
+BASKER TODO
+
+* Things to do
+** Full btf
+   ** Fix double BTF structure
+   ** Fix btf balance (not hard coded)
+** Threaded solve
+   ** Multivector
+** Pivot update
+** AMD on small blks
+** Zero entry matches
+** Kokkos Realloc segfaulting ??
+   -Issue with kokkos, will be fixed in kokkos refactor
+
+
+***FIX converting error
+
+* Done
+** Subtree SFactor (Finish code) - Done
+** Fixed dense row in basker_tree.cpp
+** Added symmetric option
+** Added no pivot option
+** Added Incomplete factor based on lvl (only in nfactor not sfactor)
+** New check BASKER_MAX_IDX
+** Updated with own basker thread barrier
+** Using multiple threads to update upper-offdiag
+** Using multiple threads to update lower-offdiag
+** Local idx
+** Symmetric pruning
+
+* Bugs
+** Scotch segfault on large problem ??
+   - This is do to not handeling scotch from the top-down
+   - Need to make a bottle up
+** Kokkos Realloc segfaulting ??
+   -Issue with kokkos, will be fixed in kokkos refactor
+** Kokkos does not like a Malloc of size 0
+   - Will segfault when trying to clean up
+   - Need to go back through all code and fix up
+
+
+* Nice to have
+** Redo matrix data structure
+** Fix A+A' options of etree
+
+* For IPDPS Paper
+** Remove last p2p communication (Done)
+** Three blk diag BTF A B C, sym only B (Done, but need to add to normal BTF interface)
+
+* Simple ---TODO--- 
+** Dense BLAS for Root
+** Panels for Sep Columns (multiple column factorization at a time)
+** In tree init, use BASKER types directly
+** Adjust elbow-room in nnz for sfactor = nfactor
+** Add "guess" nnz interface (open question on best way to do this for 2D layout)k
+** C - chucks 
+** Change return types
+** Remove extra variable warnings
+** arrange struct variable from large to small
+
+* Testing  ---TODO---
+** Mic numbers 
+** Need more testing with unsymmetric, depending on BTF
+
+* TestSuite
+**SPD
+   - G2_circuit
+   - G3_circuit
+   - Parabolic_fem
+   - ecology2
+   - thermal2
+   - apache2
+   - pwtk
+   - audikw_1 x--to large
+   - bmwcra_1
+   - model_400
+**Non SPD
+   - xenon2
+   - Need to make more
+**BTF Circuit problems
+   - XyceTest1_Matrix1
+   - XyceTest1_Matrix2
+   - XyceTest1_Matrix3
+   - XyceTest1_Matrix4
+   - XyceTest7_Matrix1
+   - XyceTest8_Matrix1
+   - XyceTest8_Matrix2
+   - XyceTest8_Matrix3
+   - XyceTest8_Matrix4
+   - max30a_x30_Matrix10
+   - max30a_x40_Matrix10
+   - max30a_x50_Matrix10
+
+
+============Code Review (July 10 2015) Updates=============
+
+Done:
+** Rerun KLU and explain difference
+  -Result, reran KLU and now the number are better.  
+  -I am wondering if there was some process interfering with it before.  
+  -However, now we are worse than KLU and this grows with the problem size!!!!
+** Remove some of the extra "right matrix" check
+O   -Removed, did not see any improvment in code.  
+   -However, all ththese check still need to check against if not perm.  There might be a faster way to do this.  Online suggests some macro constant as calling a class variable may not be optimized even if static
+** Run against Pardiso MKL
+   - Pardiso serial time kills both us
+   - In many cases, we scale better from 1 to 2 and sometime even 4.  This at least gives me hope that our alg idea is good, even if the implementation might not be.
+** Removed "good", A-Is 2D from nfactor
+**  Our own barrier, (4 threads, and spin on upper levels == number of teams)
+** Moved where U.fill is called
+
+
+ToDo:
+**  X_copy, multiple threads doing the update
+**  X_copy_matrix, test pattern and dense are similar.  If dense use multi-thread
+
+
+=================Scaling Observations=====================
+** Upper is not scaling well (load imbalance)
+** Lower is bad -- period 
+** reduction is not costing much
+** sync may hurt but why
+
+
+Possible changes
+(done) * || off_diag in upper -- will help the scaling in upper level
+  -Problem, need barrier for other threads to wait (P2P)
+  -Need a way to know which threads P2P-leader
+
+(done) * || off_diag in lower -- will only help scaling in lower levels
+
+
+* || reduce -- May help over all by small amount
+  -Need away for leader to know partner
+
+(done) * own sync/barrier, 
+
+* panels, for load imbalance in subcolumns
+
+* can we schedule ontehr things during the serial U factor?
+  - look at dag for a set prune
+  - possible tasking
+
+
+
+**Warning**
+BTF-WORKSPACE
+Right now we are going to use the thread workspace, 
+We might want to change this ad some point to reduce memory
+
+

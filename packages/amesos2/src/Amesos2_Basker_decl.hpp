@@ -176,11 +176,11 @@ private:
 #ifdef SHYLUBASKER
 
 #ifdef HAVE_AMESOS2_KOKKOS
-#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
   typedef Kokkos::OpenMP Exe_Space;
   mutable ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space> basker;
 #else
-#pragma message("HAVE SHYLUBASKER AND NOT KOKKOS")
+     #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
 #endif
 
 #else

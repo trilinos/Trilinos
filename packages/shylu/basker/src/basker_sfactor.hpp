@@ -171,7 +171,7 @@ namespace BaskerNS
        }
 
 
-     if(btf_tabs_offset != 0)
+     //if(btf_tabs_offset != 0)
        {
      //Allocate workspace
      #ifdef BASKER_KOKKOS
