@@ -6,7 +6,7 @@
 
 namespace Intrepid2{
 
-typedef int index_type;
+typedef unsigned int index_type;
 
 
 /*template<typename T, typename = void>
