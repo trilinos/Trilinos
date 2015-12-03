@@ -637,11 +637,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     psq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
-    ArrayRCP<const input_t> vWeights = Teuchos::null;
 
     try{
-      quality = new psq_t(this->envConst_, problemCommConst_,
-                          this->inputAdapter_, solutionConst, vWeights);
+      quality = new psq_t(this->envConst_, problemCommConst_, this->inputAdapter_, solutionConst);
     }
     Z2_FORWARD_EXCEPTIONS
 
