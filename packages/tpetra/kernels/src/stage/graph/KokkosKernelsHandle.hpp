@@ -1,11 +1,14 @@
 #include <GraphColoringHandle.hpp>
 #include <GaussSeidelHandle.hpp>
+#include <SPGEMMHandle.hpp>
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
+namespace KokkosKernels{
+
 namespace Experimental{
 
-namespace KokkosKernels{
+
 
 template <class idx_array_type_, class idx_edge_array_type_, class value_array_type_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
@@ -48,9 +51,14 @@ public:
   typedef typename Graph::GaussSeidelHandle
       <idx_array_type, idx_edge_array_type, value_array_type, ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GaussSeidelHandleType;
 
+  typedef typename Graph::SPGEMMHandle
+      <idx_array_type, idx_edge_array_type, value_array_type, ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
+
+
 private:
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
+  SPGEMMHandleType *spgemmHandle;
   //idx_array_type row_map;
   //idx_edge_array_type entries;
   //value_array_type values;
@@ -59,17 +67,33 @@ public:
 
 
 
-  KokkosKernelsHandle():gcHandle(NULL), gsHandle(NULL){}
+  KokkosKernelsHandle():gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL){}
   ~KokkosKernelsHandle(){
 
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
+    this->destroy_spgemm_handle();
+  }
+
+  SPGEMMHandleType *get_spgemm_handle(){
+    return this->spgemmHandle;
+  }
+
+  void create_spgemm_handle(Graph::SPGEMMAlgorithm spgemm_algo = Graph::SPGEMM_DEFAULT){
+    this->spgemmHandle = new SPGEMMHandleType(spgemm_algo);
+
+  }
+  void destroy_spgemm_handle(){
+    if (this->spgemmHandle != NULL){
+      delete this->spgemmHandle;
+      this->spgemmHandle = NULL;
+    }
   }
 
   GraphColoringHandleType *get_graph_coloring_handle(){
     return this->gcHandle;
   }
-  void create_graph_coloring_handle(Experimental::KokkosKernels::Graph::ColoringAlgorithm coloring_type = Graph::COLORING_DEFAULT){
+  void create_graph_coloring_handle(Graph::ColoringAlgorithm coloring_type = Graph::COLORING_DEFAULT){
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
   }
@@ -85,7 +109,7 @@ public:
     return this->gsHandle;
   }
   void create_gs_handle(
-      Experimental::KokkosKernels::Graph::GSAlgorithm gs_algorithm = Graph::GS_DEFAULT){
+      Graph::GSAlgorithm gs_algorithm = Graph::GS_DEFAULT){
     this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
   }
   void destroy_gs_handle(){

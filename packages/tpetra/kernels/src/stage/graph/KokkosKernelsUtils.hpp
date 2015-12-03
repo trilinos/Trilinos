@@ -7,9 +7,10 @@
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP
 
+namespace KokkosKernels{
 
 namespace Experimental{
-namespace KokkosKernels{
+
 namespace Util{
 
 template <typename forward_map_type, typename reverse_map_type>
@@ -121,10 +122,13 @@ void create_reverse_map(
   reverse_array_type tmp_color_xadj (Kokkos::ViewAllocateWithoutInitializing("TMP_REVERSE_XADJ"), num_reverse_elements + 1);
 
   Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
+
   Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , rmi);
   inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(num_reverse_elements + 1, reverse_map_xadj);
   //Kokkos::parallel_scan (my_exec_space (0, num_reverse_elements + 1) , rmi);
+  MyExecSpace::fence();
   Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
+  MyExecSpace::fence();
   Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
   Kokkos::parallel_for (my_exec_space (0, num_forward_elements) , frm);
 }

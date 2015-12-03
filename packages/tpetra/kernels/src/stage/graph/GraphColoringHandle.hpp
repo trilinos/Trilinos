@@ -5,9 +5,11 @@
 #ifndef _GRAPHCOLORHANDLE_HPP
 #define _GRAPHCOLORHANDLE_HPP
 //#define VERBOSE
+namespace KokkosKernels{
+
 namespace Experimental{
 
-namespace KokkosKernels{
+
 namespace Graph{
 
 enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB};

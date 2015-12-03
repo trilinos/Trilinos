@@ -1,16 +1,20 @@
-//#define CUDA
-#define OPENMP
+#define CUDACONFIG
+//#define OPENMP
 
 
-#ifdef CUDA
+#ifdef CUDACONFIG
 #define REPEAT 5
 typedef Kokkos::Cuda MyExecSpace;
 typedef Kokkos::Cuda MyMemorySpace;
+typedef Kokkos::Cuda MyEdgeMemorySpace;
+
+typedef Kokkos::Cuda TemporaryWorkSpace;
+typedef Kokkos::Cuda PersistentWorkSpace;
 
 #ifdef CUDAPINNEDSPACE
   typedef Kokkos::CudaHostPinnedSpace MyEdgeMemorySpace;
 #else
-  typedef Kokkos::Cuda MyEdgeMemorySpace;
+
 #endif
 
 #endif
@@ -27,7 +31,7 @@ typedef Kokkos::OpenMP PersistentWorkSpace;
 
 
 
-typedef unsigned int idx;
+typedef int idx;
 typedef double wt;
 typedef unsigned int color_type;
 typedef unsigned long long int color_type_eb;

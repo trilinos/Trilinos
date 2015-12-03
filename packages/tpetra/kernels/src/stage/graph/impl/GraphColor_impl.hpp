@@ -12,9 +12,10 @@
 
 
 #define EBCOLORING_HIGHER_QUALITY        //suggested
+namespace KokkosKernels{
 
 namespace Experimental{
-namespace KokkosKernels{
+
 namespace Graph{
 
 
@@ -436,13 +437,13 @@ public:
     _max_num_iterations(coloring_handle->get_max_number_of_iterations())
     {
       switch (coloring_handle->get_coloring_type()){
-      case Experimental::KokkosKernels::Graph::COLORING_VB:
+      case COLORING_VB:
         this->_use_color_set = 0;
         break;
-      case Experimental::KokkosKernels::Graph::COLORING_VBBIT:
+      case COLORING_VBBIT:
         this->_use_color_set = 2;
         break;
-      case Experimental::KokkosKernels::Graph::COLORING_VBCS:
+      case COLORING_VBCS:
         this->_use_color_set = 1;
         break;
       default: //cannnot get in here.
@@ -452,13 +453,13 @@ public:
       }
 
       switch (coloring_handle->get_conflict_list_type()){
-      case Experimental::KokkosKernels::Graph::COLORING_NOCONFLICT:
+      case COLORING_NOCONFLICT:
         this->_conflictlist = 0;
         break;
-      case Experimental::KokkosKernels::Graph::COLORING_ATOMIC:
+      case COLORING_ATOMIC:
         this->_conflictlist = 1;
         break;
-      case Experimental::KokkosKernels::Graph::COLORING_PPS:
+      case COLORING_PPS:
         this->_conflictlist = 2;
         break;
       }
@@ -1947,12 +1948,12 @@ public:
     color_type numInitialColors = this->cp->get_eb_num_initial_colors();
     double pps_cutoff = this->cp->get_min_reduction_for_conflictlist();
     idx ps_min = this->cp->get_min_elements_for_conflictlist();
-    bool use_pps = (this->cp->get_conflict_list_type() == Experimental::KokkosKernels::Graph::COLORING_PPS);
+    bool use_pps = (this->cp->get_conflict_list_type() == COLORING_PPS);
 
 
 
     bool tictoc = this->cp->get_tictoc();
-    Kokkos::Impl::Timer *timer;
+    Kokkos::Impl::Timer *timer = NULL;
 
     if (tictoc){
       timer = new Kokkos::Impl::Timer();
