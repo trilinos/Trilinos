@@ -2879,7 +2879,7 @@ namespace Tpetra {
 
     // Find the diagonal entries and put them in lclVecHost1d.
     const size_t myNumRows = getNodeNumRows ();
-    for (size_t i = 0; i < myNumRows; ++i) {
+    Kokkos::parallel_for ( Kokkos::RangePolicy<host_execution_space>( 0, myNumRows), [&] (const size_t& i) {
       lclVecHost1d(i) = STS::zero (); // default value if no diag entry
       if (offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
         ArrayView<const LocalOrdinal> ind;
@@ -2890,7 +2890,7 @@ namespace Tpetra {
         this->getLocalRowView (i, ind, val);
         lclVecHost1d(i) = static_cast<impl_scalar_type> (val[offsets[i]]);
       }
-    }
+    });
     lclVec.template sync<execution_space> (); // sync changes back to device
   }
 
