@@ -248,8 +248,8 @@ template <typename Adapter>
   } 
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, vWeights,
-			   numGlobalParts_, numNonEmpty_, metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, numGlobalParts_,
+			   numNonEmpty_, metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
