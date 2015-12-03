@@ -134,7 +134,6 @@ typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_s
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cl) const {
-  index_type numCells       = outputFields.dimension(0);
   index_type numFields      = outputFields.dimension(1);
   index_type numPoints      = outputFields.dimension(2);
   index_type dim1Tens       = 0;
@@ -184,7 +183,6 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
 
   // get sizes
   size_t invalRank      = getrank(inputFields);
-  size_t outvalRank     = getrank(outputFields);
   int numCells       = outputFields.dimension(0);
 
 

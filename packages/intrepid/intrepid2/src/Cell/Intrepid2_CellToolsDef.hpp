@@ -983,8 +983,8 @@ typedef typename conditional_eSpace<ArrayJac>::execution_space execution_space;
 
 template <class Scalar,class ArrayPointWrap,class ArrayPoint>
 struct copyTempPoints {
-  ArrayPointWrap points;
   FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints;
+  ArrayPointWrap points;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
