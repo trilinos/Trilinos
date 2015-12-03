@@ -1484,6 +1484,21 @@ namespace Tpetra {
 
     /// \brief Transform the given values using local indices.
     ///
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
+    /// \tparam OutputScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of the type of values in the sparse matrix (that
+    ///   type is CrsMatrix::impl_scalar_type).
+    /// \tparam InputScalarViewType Kokkos::View specialization that
+    ///   is a 1-D array of the type of values in the sparse matrix,
+    ///   but with a possibly different memory space than how the
+    ///   matrix stores its values.
+    /// \tparam BinaryFunction The type of the binary function f to
+    ///   use for updating the output value(s).  This should be
+    ///   convertible to
+    ///   std::function<impl_scalar_type (const impl_scalar_type&,
+    ///                                   const impl_scalar_type&)>.
+    ///
     /// \param rowInfo [in] Information about a given row of the graph.
     /// \param rowVals [in/out] The values to be transformed.  They
     ///   correspond to the row indicated by rowInfo.
@@ -1491,7 +1506,6 @@ namespace Tpetra {
     ///   to transform the corresponding values in rowVals.
     /// \param newVals [in] Values to use for transforming rowVals.
     ///   It's probably OK for these to alias rowVals.
-    ///
     /// \param f [in] A binary function used to transform rowVals.
     ///
     /// This method transforms the values using the expression
@@ -1506,25 +1520,29 @@ namespace Tpetra {
     ///   error other than one or more invalid column indices, this
     ///   method returns
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
-    template<class Scalar,
-             class BinaryFunction,
-             class InputMemorySpace,
-             class ValsMemorySpace>
-    LocalOrdinal
+    template<class OutputScalarViewType,
+             class LocalIndicesViewType,
+             class InputScalarViewType,
+             class BinaryFunction>
+    typename std::enable_if<Kokkos::is_view<OutputScalarViewType>::value &&
+                            Kokkos::is_view<LocalIndicesViewType>::value &&
+                            Kokkos::is_view<InputScalarViewType>::value &&
+                            std::is_same<typename OutputScalarViewType::non_const_value_type,
+                                         typename InputScalarViewType::non_const_value_type>::value &&
+                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
+                                         local_ordinal_type>::value,
+                            LocalOrdinal>::type
     transformLocalValues (const RowInfo& rowInfo,
-                          const Kokkos::View<Scalar*, ValsMemorySpace,
-                            Kokkos::MemoryUnmanaged>& rowVals,
-                          const Kokkos::View<const LocalOrdinal*,
-                            InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& inds,
-                          const Kokkos::View<const Scalar*,
-                            InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& newVals,
+                          const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+                          const typename UnmanagedView<LocalIndicesViewType>::type& inds,
+                          const typename UnmanagedView<InputScalarViewType>::type& newVals,
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
+      typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
+
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
@@ -1548,10 +1566,10 @@ namespace Tpetra {
               // wrong because another thread may have changed
               // rowVals(k) between those two lines of code.
               //
-              //const Scalar newVal = f (rowVals(k), newVals(j));
+              //const ST newVal = f (rowVals(k), newVals(j));
               //Kokkos::atomic_assign (&rowVals(k), newVal);
 
-              volatile Scalar* const dest = &rowVals(k);
+              volatile ST* const dest = &rowVals(k);
               (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
@@ -1590,10 +1608,10 @@ namespace Tpetra {
                 // wrong because another thread may have changed
                 // rowVals(k) between those two lines of code.
                 //
-                //const Scalar newVal = f (rowVals(k), newVals(j));
+                //const ST newVal = f (rowVals(k), newVals(j));
                 //Kokkos::atomic_assign (&rowVals(k), newVal);
 
-                volatile Scalar* const dest = &rowVals(k);
+                volatile ST* const dest = &rowVals(k);
                 (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {

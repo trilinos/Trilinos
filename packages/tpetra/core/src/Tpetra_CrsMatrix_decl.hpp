@@ -1147,14 +1147,21 @@ namespace Tpetra {
     /// to call sumIntoLocalValues resp. replaceLocalValues than to do
     /// this.)
     ///
+    /// This overload of the method takes the column indices and
+    /// values as Kokkos::View.  See below for an overload that takes
+    /// Teuchos::ArrayView instead.
+    ///
+    /// \tparam LocalIndicesViewType Kokkos::View specialization that
+    ///   is a 1-D array of LocalOrdinal.
+    /// \tparam ImplScalarViewType Kokkos::View specialization that is
+    ///   a 1-D array of impl_scalar_type (usually the same as Scalar,
+    ///   unless Scalar is std::complex<T> for some T, in which case
+    ///   it is Kokkos::complex<T>).
     /// \tparam BinaryFunction The type of the binary function f to
     ///   use for updating the sparse matrix's value(s).  This should
     ///   be convertible to
     ///   std::function<impl_scalar_type (const impl_scalar_type&,
     ///                                   const impl_scalar_type&)>.
-    /// \tparam InputMemorySpace Kokkos memory space / device in which
-    ///   the input data live.  This may differ from the memory space
-    ///   in which the current matrix's row's values live.
     ///
     /// \param localRow [in] (Local) index of the row to modify.
     ///   This row <i>must</t> be owned by the calling process.  (This
@@ -1163,43 +1170,49 @@ namespace Tpetra {
     ///   Indices not in the row on the calling process, and their
     ///   corresponding values, will be ignored.
     /// \param inputVals [in] Values to use for modification.
-    template<class BinaryFunction, class InputMemorySpace>
-    LocalOrdinal
+    /// \param f [in] The binary function to use for updating the
+    ///   sparse matrix's value.  It takes two \c impl_scalar_type
+    ///   values and returns \c impl_scalar_type.
+    /// \pparam atomic [in] Whether to use atomic updates.
+    template<class LocalIndicesViewType,
+             class ImplScalarViewType,
+             class BinaryFunction>
+    typename std::enable_if<Kokkos::is_view<LocalIndicesViewType>::value &&
+                            Kokkos::is_view<ImplScalarViewType>::value &&
+                            std::is_same<typename LocalIndicesViewType::non_const_value_type,
+                                         local_ordinal_type>::value &&
+                            std::is_same<typename ImplScalarViewType::non_const_value_type,
+                                         impl_scalar_type>::value, LocalOrdinal>::type
     transformLocalValues (const LocalOrdinal localRow,
-                          const Kokkos::View<const LocalOrdinal*,
-                            InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& inputInds,
-                          const Kokkos::View<const impl_scalar_type*,
-                            InputMemorySpace,
-                            Kokkos::MemoryUnmanaged>& inputVals,
+                          const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
+                          const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
                           BinaryFunction f,
                           const bool atomic = useAtomicUpdatesByDefault) const
     {
-      using Kokkos::MemoryUnmanaged;
-      using Kokkos::View;
-      typedef impl_scalar_type ST;
+      typedef LocalOrdinal LO;
       typedef BinaryFunction BF;
-      typedef device_type DD;
-      typedef InputMemorySpace ID;
 
       if (! isFillActive () || staticGraph_.is_null ()) {
         // Fill must be active and the "nonconst" graph must exist.
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+        return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
       const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
       if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
         // The calling process does not own this row, so it is not
         // allowed to modify its values.
-        return static_cast<LocalOrdinal> (0);
+        return static_cast<LO> (0);
       }
 
       auto curRowVals = this->getRowViewNonConst (rowInfo);
-      return staticGraph_->template transformLocalValues<ST, BF, ID, DD> (rowInfo,
-                                                                          curRowVals,
-                                                                          inputInds,
-                                                                          inputVals,
-                                                                          f, atomic);
+      typedef typename std::remove_const<typename std::remove_reference<decltype (curRowVals)>::type>::type OSVT;
+      typedef typename UnmanagedView<LocalIndicesViewType>::type LIVT;
+      typedef typename UnmanagedView<ImplScalarViewType>::type ISVT;
+      return staticGraph_->template transformLocalValues<OSVT, LIVT, ISVT, BF> (rowInfo,
+                                                                                curRowVals,
+                                                                                inputInds,
+                                                                                inputVals,
+                                                                                f, atomic);
     }
 
     /// \brief Transform CrsMatrix entries in place, using global

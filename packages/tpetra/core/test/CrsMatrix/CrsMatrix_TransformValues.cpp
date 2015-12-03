@@ -122,7 +122,7 @@ namespace { // (anonymous)
         lclInds(0) = lclCol;
         vals(0) = FIVE;
         const LO numChanged =
-          matrix.template transformLocalValues<std::plus<ST>, HD> (lclRow, lclInds, vals, std::plus<ST> ());
+          matrix.template transformLocalValues<Kokkos::View<LO*, HD>, Kokkos::View<ST*, HD>, std::plus<ST> > (lclRow, lclInds, vals, std::plus<ST> ());
         TEST_EQUALITY( numChanged, static_cast<LO> (1) );
       }
     }
@@ -162,7 +162,7 @@ namespace { // (anonymous)
         lclInds(0) = lclCol;
         vals(0) = FIVE;
         const LO numChanged =
-          matrix.template transformLocalValues<std::minus<ST>, HD> (lclRow, lclInds, vals, std::minus<ST> ());
+          matrix.template transformLocalValues<Kokkos::View<LO*, HD>, Kokkos::View<ST*, HD>, std::minus<ST> > (lclRow, lclInds, vals, std::minus<ST> ());
         TEST_EQUALITY( numChanged, static_cast<LO> (1) );
       }
     }
