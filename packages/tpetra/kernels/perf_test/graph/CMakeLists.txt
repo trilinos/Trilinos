@@ -15,7 +15,10 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES write_binary_graph.cpp experiment_space.hpp KokkosKernelsGraphHelpers.hpp
   )
 
-
+TRIBITS_ADD_EXECUTABLE(
+  spemm_cusparse
+  SOURCES SPMM.cpp KokkosKernelsGraphHelpers.hpp 
+  )
 #
 # Make a trivial change here if you add a file either to this
 # directory, or to the impl/ subdirectory.  Keep making changes

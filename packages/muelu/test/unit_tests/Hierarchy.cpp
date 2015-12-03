@@ -810,7 +810,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
 

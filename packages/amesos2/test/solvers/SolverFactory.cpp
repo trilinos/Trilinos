@@ -278,6 +278,10 @@ namespace {
 
     RCP<MV> X = rcp (new MV (X_exact->getMap (), numVecs));
 
+    //X_exact->describe(out, Teuchos::VERB_EXTREME);
+    //B->describe(out, Teuchos::VERB_EXTREME);
+
+
     const int numSolvers = 9;
     const char* solverNames[9] = {"basker", "klu2", "superlu_dist",
                                   "superlu_mt", "superlu", "pardiso_mkl",

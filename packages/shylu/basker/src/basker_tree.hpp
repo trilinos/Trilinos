@@ -1198,6 +1198,8 @@ namespace BaskerNS
 	//       order_match_array(0),
 	//      order_match_array(1));
 
+        
+        printf("match_flag\n");
 	permute_row(A,order_match_array);
 	sort_matrix(A);
       }
@@ -1207,6 +1209,8 @@ namespace BaskerNS
 	//printf("Test order_btf_array(0): %d %d: \n",
 	//       order_btf_array(0),
 	//       order_btf_array(1));
+
+        //printf("btf_flag\n");
 	permute_col(A,order_btf_array);
 	permute_row(A,order_btf_array);
 	break_into_parts(A, btf_nblks, btf_tabs);
@@ -1214,6 +1218,8 @@ namespace BaskerNS
     //ND order
     if(nd_flag == BASKER_TRUE)
       {
+
+        //printf("nd_flag \n");
 
 	if(btf_tabs_offset != 0)
 	  {
@@ -1245,6 +1251,8 @@ namespace BaskerNS
     if(amd_flag == BASKER_TRUE)
       {
 	
+        //printf("amd flag \n");
+
 	if(btf_tabs_offset != 0)
 	  {
 
@@ -1298,13 +1306,13 @@ namespace BaskerNS
       {
     sort_matrix(BTF_C);
 
-    printMTX("C_RELOAD.mtx", BTF_C);
+    //printMTX("C_RELOAD.mtx", BTF_C);
 
       }
 
 
     //test
-    printMTX("A_BTF.mtx", BTF_A);
+    //printMTX("A_BTF.mtx", BTF_A);
 
     return 0;
   }//sfactor_copy()

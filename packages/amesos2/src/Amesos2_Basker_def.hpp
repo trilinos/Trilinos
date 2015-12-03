@@ -43,7 +43,7 @@
 
 /**
    \file   Amesos2_Basker_def.hpp
-   \author Joshua Dennis Booth <jdbooth21@sandia.gov>
+   \author Joshua Dennis Booth <jdbooth@sandia.gov>
            Siva Rajamanickam <srajama@sandia.gov>
 
    \brief  Definitions for the Amesos2 Basker solver interface
@@ -84,7 +84,7 @@ Basker<Matrix,Vector>::Basker(
   // TODO: use data_ here to init
 
 #ifdef SHYLUBASKER
-  
+
   basker.Options.no_pivot  = true;
   basker.Options.symmetric = false;
   basker.Options.realloc   = false;
@@ -123,11 +123,13 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
 
 #ifdef SHYLUBASKER
-  std::cout << "shylubasker sfactor" << std::endl;
+  //std::cout << "shylubasker sfactor" << std::endl;
   if(this->root_)
     {
 
       basker.SetThreads(num_threads);
+
+      //std::cout << "Set Threads Done" << std::endl;
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Basker:: Before symbolic factorization" << std::endl;
@@ -143,6 +145,8 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                             colptr_.getRawPtr(), 
                             rowind_.getRawPtr(), 
                             nzvals_.getRawPtr());
+   
+      //std::cout << "Symbolic Factorization Done" << std::endl; 
       
     }
 
@@ -173,14 +177,14 @@ Basker<Matrix,Vector>::numericFactorization_impl()
 #endif
 
 #ifdef SHYLUBASKER
-      std::cout << "SHYLUBASKER FACTOR " << std::endl;
+      //std::cout << "SHYLUBASKER FACTOR " << std::endl;
       
-      info =basker.Factor(this->globalNumRows_,
-                          this->globalNumCols_, 
-                          this->globalNumNonZeros_, 
-                          colptr_.getRawPtr(), 
-                          rowind_.getRawPtr(), 
-                          nzvals_.getRawPtr());
+      info = basker.Factor(this->globalNumRows_,
+                           this->globalNumCols_, 
+                           this->globalNumNonZeros_, 
+                           colptr_.getRawPtr(), 
+                           rowind_.getRawPtr(), 
+                           nzvals_.getRawPtr());
       
 #else
       info =basker.factor(this->globalNumRows_, this->globalNumCols_, this->globalNumNonZeros_, colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr());
@@ -247,8 +251,8 @@ Basker<Matrix,Vector>::solve_impl(
 #endif
 
 #ifdef SHYLUBASKER
-      std::cout << "SHYLUBASKER solve" << std::endl;
-      //ierr = basker.Solve(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
+      std::cout << "SHYLUBASKER Only handles 1 solve right now" << std::endl;
+      ierr = basker.Solve(bvals_.getRawPtr(), xvals_.getRawPtr());
 #else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
 #endif

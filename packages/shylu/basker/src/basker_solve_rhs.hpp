@@ -68,22 +68,22 @@ namespace BaskerNS
     if(Options.btf == BASKER_TRUE)
       {
       
-	printf("btf_tabs_offset: %d ", btf_tabs_offset);
-        printf("btf_nblks: %d \n", btf_nblks);
+	//printf("btf_tabs_offset: %d ", btf_tabs_offset);
+        //printf("btf_nblks: %d \n", btf_nblks);
 	if(btf_tabs_offset != 0)
 	  {
-            printf("BTF_A spmv\n");
+            //printf("BTF_A spmv\n");
 	    spmv(BTF_A, x_known,y);
             if(btf_nblks> 1)
               {
-                printf("btf_B spmv \n");
+                //printf("btf_B spmv \n");
                 spmv(BTF_B, x_known, y);
               }
           }
         if(btf_nblks > 1)
           {
             
-            printf("btf_c spmv \n");
+            //printf("btf_c spmv \n");
             spmv(BTF_C, x_known, y);
           }
 	//return -1;
@@ -94,14 +94,17 @@ namespace BaskerNS
 	//spmv(BTF_A, x_known,y);
       }
     
-    //return -1;
+    
 
-    printf("DEBUG\n");
     
-    printf("\n Before Test Points \n");
-    printf("i: %d x: %f y: %f \n", 0, x_known(0), y(0));
-    printf("i: %d x: %f y: %f \n", 24, x_known(24), y(24));
     
+    //printf("\n Before Test Points \n");
+    //printf("i: %d x: %f y: %f \n", 0, x_known(0), y(0));
+    //if(gn > 24)
+    //  {
+    //   printf("i: %d x: %f y: %f \n", 24, x_known(24), y(24));
+    //  }
+
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("\n\n");
     printf("Known Solution: \n");
@@ -121,6 +124,8 @@ namespace BaskerNS
 
     if(Options.btf == BASKER_FALSE)
       {
+        
+        //printf("before serial solve\n");
 	if(btf_tabs_offset != 0)
 	  {
 	    serial_solve(y,x);
@@ -133,11 +138,12 @@ namespace BaskerNS
       {
 	//A\y -> y
 	//serial_btf_solve(y,x);
+        //printf("before btf serial solve\n");
 	serial_btf_solve(y,x);
 
-	//printf("After btf solve\n");
-	//  printf("i: %d x: %f y: %f \n", 0, x(0), y(0));
-	//  printf("i: %d x: %f y: %f \n", 24, x(24), y(24));
+	printf("After btf solve\n");
+	printf("i: %d x: %f y: %f \n", 0, x(0), y(0));
+	//printf("i: %d x: %f y: %f \n", 24, x(24), y(24));
       }
 
 
@@ -165,8 +171,11 @@ namespace BaskerNS
 
     printf("\n Test Points \n");
     printf("i: %d x: %f %f \n", 0, x_known(0), x(0));
-    printf("i: %d x: %f %f \n", 10, x_known(10), x(10));
-    printf("i: %d x: %f %f \n", 24, x_known(24), x(24));
+    if(gn > 24)
+      {
+        printf("i: %d x: %f %f \n", 10, x_known(10), x(10));
+        printf("i: %d x: %f %f \n", 24, x_known(24), x(24));
+      }
     printf("\n");
     printf("TEST_SOLVE: ||x-x||/||x| = %e", diff);
     printf("\n");
@@ -201,6 +210,11 @@ namespace BaskerNS
 	x(i) = (Entry) 0;
 	y(i) = (Entry) _y[i];
       }
+    
+    //printf("RHS: \n");
+    //printVec(y, gn);
+    //printf("\n");
+
 
     //===== Permute
     //printf("Permute RHS\n");
@@ -242,12 +256,7 @@ namespace BaskerNS
     solve_interface(x,y);
 
     //Inverse perm
-    if(match_flag == BASKER_TRUE)
-      {
-	//printf("match order\n");
-	//printVec(order_match_array, gn);
-	permute(x,order_match_array, gn);
-      }
+    //Note: don't need to inverse a row only perm
     if(btf_flag == BASKER_TRUE)
       {
 	//printf("btf order\n");
@@ -293,6 +302,11 @@ namespace BaskerNS
       }
     printf("\n\n");
     #endif
+
+    for(Int i = 0; i < gn; i++)
+      {
+        _x[i] = x(i);
+      } 
 
 
     return 0;
@@ -430,6 +444,8 @@ namespace BaskerNS
     for(Int b = (btf_nblks-btf_tabs_offset)-1;
 	b>= 0; b--)
       {
+        
+        //printf("\n\n btf b: %d \n", b);
 
 	//---Lower solve
 	BASKER_MATRIX &LC = LBTF(b);
@@ -440,15 +456,30 @@ namespace BaskerNS
 	//U\x -> y
 	upper_tri_solve(UC,x,y);
 
+
+        //printf("Before spmv\n");
+        //printf("Inner Vector y print\n");
+        //printVec(y, gn);
+        //printf("Inner Vector x print\n");
+        //printVec(x, gn);
+        //printf("\n");
+
        
 	//-----Update
 	//if(b > btf_tabs_offset)
 	  {
 	//x = BTF_C*y;
             //printf("spmv tab: %d \n", b+btf_tabs_offset);
-	spmv_BTF(b+btf_tabs_offset,
+         spmv_BTF(b+btf_tabs_offset,
 		 BTF_C, y, x);
 	  }
+          
+          //     printf("After spmv\n");
+          //printf("Inner Vector y print\n");
+          //printVec(y, gn);
+          //printf("Inner Vector x print\n");
+          //printVec(x, gn);
+        
 
 	//BASKER_MATRIX &UC = UBTF[b];
 	//U\x -> y
@@ -467,11 +498,12 @@ namespace BaskerNS
     printf("\n\n");
     #endif
 
+    
     //Update B
     //BTF_B*y -> x
     if(btf_tabs_offset !=  0)
       {
-    neg_spmv(BTF_B,y,x);
+        neg_spmv(BTF_B,y,x);
       }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -616,11 +648,11 @@ namespace BaskerNS
 					ENTRY_1DARRAY y)
   {
     //Add checks
-    //#ifdef BASKER_DEBUG_SOLVE_RHS
+    #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("SPMV. scol: %d ncol: %d nnz: %d \n",
 	   M.scol, M.ncol, M.nnz);
     M.info();
-    //#endif
+    #endif
 
     const Int bcol = M.scol;
     const Int brow = M.srow;
@@ -817,7 +849,15 @@ namespace BaskerNS
     const Int bcol = btf_tabs(tab)- M.scol;
     const Int brow = M.srow;
     const Int ecol = btf_tabs(tab+1) - M.scol;
-    const Int erow = btf_tabs(tab-1);
+    Int erow = 0;
+    if(tab > 0)
+      {
+        erow = btf_tabs(tab);
+      }
+    else
+      {
+        erow = brow-1;
+      }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("BTF_UPDATE, TAB: %d [%d %d] [%d %d] \n",
@@ -828,10 +868,12 @@ namespace BaskerNS
     for(Int k = bcol; k < ecol; ++k)
       {
 	//for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++)
+        //printf("k: %d col_ptr: %d \n", k, M.col_ptr(k));
 	for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
 	  {
 	    //Int j = M.row_idx[i];
 	    const Int j = M.row_idx(i);
+            //printf("j: %d \n", j);
 	    if(j > erow)
 	      {
 		#ifdef BASKER_DEBUG_SOLVE_RHS
@@ -852,6 +894,7 @@ namespace BaskerNS
 	    y(j+brow) -= M.val(i)*x(k+M.scol);
 	  }//over all nnz in row
       }
+    //printf("done\n");
     return 0;
   }//end spmv_BTF();
 

@@ -9,8 +9,10 @@
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
 
-namespace Experimental{
 namespace KokkosKernels{
+
+namespace Experimental{
+
 namespace Graph{
 
 
@@ -53,13 +55,13 @@ public:
   typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
 
 
-  typedef typename Kokkos::View<idx *, MyTempMemorySpace> idx_temp_work_array_type;
-  typedef typename Kokkos::View<idx *, MyPersistentMemorySpace> idx_persistent_work_array_type;
+  typedef Kokkos::View<idx *, MyTempMemorySpace> idx_temp_work_array_type;
+  typedef Kokkos::View<idx *, MyPersistentMemorySpace> idx_persistent_work_array_type;
   typedef typename idx_persistent_work_array_type::HostMirror host_idx_persistent_view_type; //Host view type
 
 
-  typedef typename Kokkos::View<value_type *, MyTempMemorySpace> value_temp_work_array_type;
-  typedef typename Kokkos::View<value_type *, MyPersistentMemorySpace> value_persistent_work_array_type;
+  typedef Kokkos::View<value_type *, MyTempMemorySpace> value_temp_work_array_type;
+  typedef Kokkos::View<value_type *, MyPersistentMemorySpace> value_persistent_work_array_type;
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   typedef idx color_type;
@@ -187,9 +189,6 @@ public:
    * \brief constructor
    */
 
-  GaussSeidel(HandleType *handle_):
-              handle(handle_), row_map(), entries(), values(){}
-
   GaussSeidel(HandleType *handle_,
       idx_array_type row_map,
       idx_edge_array_type entries,
@@ -226,24 +225,27 @@ public:
     idx nnz = adj.dimension_0();
 
 
-    Experimental::KokkosKernels::Graph::graph_color_symbolic
+    graph_color_symbolic
         <HandleType> (this->handle, xadj , adj);
 
 
     idx numColors = gchandle->get_num_colors();
+
     typename HandleType::GraphColoringHandleType::color_array_type colors =  gchandle->get_vertex_colors();
 
-    idx_array_type color_xadj;
+    idx_persistent_work_array_type color_xadj;
 
     idx_persistent_work_array_type color_adj;
 
 
 
-    Experimental::KokkosKernels::Util::create_reverse_map
-      <typename HandleType::GraphColoringHandleType::color_array_type, idx_array_type, MyExecSpace>
+    KokkosKernels::Experimental::Util::create_reverse_map
+      <typename HandleType::GraphColoringHandleType::color_array_type, idx_persistent_work_array_type, MyExecSpace>
           (nr, numColors, colors, color_xadj, color_adj);
+    MyExecSpace::fence();
 
-    host_idx_persistent_view_type h_color_xadj = Kokkos::create_mirror_view (color_xadj);
+
+    host_idx_persistent_view_type  h_color_xadj = Kokkos::create_mirror_view (color_xadj);
     Kokkos::deep_copy (h_color_xadj , color_xadj);
 
     //TODO: Change this to 1 sort for all matrix.
@@ -259,7 +261,6 @@ public:
     idx_persistent_work_array_type permuted_xadj ("new xadj", nr + 1);
     idx_persistent_work_array_type old_to_new_map ("old_to_new_index_", nr );
     idx_persistent_work_array_type permuted_adj ("newadj_", nnz );
-
     Kokkos::parallel_for( my_exec_space(0,nr),
         create_permuted_xadj(
             color_adj,
@@ -267,7 +268,8 @@ public:
             permuted_xadj,
             old_to_new_map));
 
-    Experimental::KokkosKernels::Util::inclusive_parallel_prefix_sum
+
+    KokkosKernels::Experimental::Util::inclusive_parallel_prefix_sum
         <idx_array_type, MyExecSpace>(nr + 1, permuted_xadj);
 
     //value_persistent_work_array_type newvals_ ("newvals_", nnz );
@@ -388,7 +390,9 @@ public:
   void initialize_numeric(){
 
     if (this->handle->get_gs_handle()->is_symbolic_called() == false){
+
       this->initialize_symbolic();
+
     }
     //else
     {
@@ -452,26 +456,26 @@ public:
 
 
     //Kokkos::parallel_for( my_exec_space(0,nr), PermuteVector(y_rhs_input_vec, Permuted_Yvector, old_to_new_map));
-    Experimental::KokkosKernels::Util::permute_vector
+    KokkosKernels::Experimental::Util::permute_vector
       <value_persistent_work_array_type, idx_persistent_work_array_type, MyExecSpace>(
         nr,
         old_to_new_map,
         y_rhs_input_vec,
         Permuted_Yvector
         );
-
+    MyExecSpace::fence();
     if(init_zero_x_vector){
-      Experimental::KokkosKernels::Util::zero_vector<value_persistent_work_array_type, MyExecSpace>(nr, Permuted_Xvector);
+      KokkosKernels::Experimental::Util::zero_vector<value_persistent_work_array_type, MyExecSpace>(nr, Permuted_Xvector);
     }
     else{
-      Experimental::KokkosKernels::Util::permute_vector<value_persistent_work_array_type, idx_persistent_work_array_type, MyExecSpace>(
+      KokkosKernels::Experimental::Util::permute_vector<value_persistent_work_array_type, idx_persistent_work_array_type, MyExecSpace>(
           nr,
           old_to_new_map,
           x_lhs_output_vec,
           Permuted_Xvector
           );
     }
-
+    MyExecSpace::fence();
 
     idx_persistent_work_array_type permuted_xadj = gsHandler->get_new_xadj();
     idx_persistent_work_array_type permuted_adj = gsHandler->get_new_adj();
@@ -480,7 +484,7 @@ public:
 
     host_idx_persistent_view_type h_color_xadj = gsHandler->get_color_xadj();
 
-    if (gsHandler->get_algorithm_type()== Experimental::KokkosKernels::Graph::GS_PERMUTED){
+    if (gsHandler->get_algorithm_type()== GS_PERMUTED){
       PSGS gs(permuted_xadj, permuted_adj, permuted_adj_vals,
           Permuted_Xvector, Permuted_Yvector, color_adj);
 
@@ -505,12 +509,13 @@ public:
     //Kokkos::parallel_for( my_exec_space(0,nr), PermuteVector(x_lhs_output_vec, Permuted_Xvector, color_adj));
 
 
-    Experimental::KokkosKernels::Util::permute_vector<value_persistent_work_array_type, idx_persistent_work_array_type, MyExecSpace>(
+    KokkosKernels::Experimental::Util::permute_vector<value_persistent_work_array_type, idx_persistent_work_array_type, MyExecSpace>(
         nr,
         color_adj,
         Permuted_Xvector,
         x_lhs_output_vec
         );
+    MyExecSpace::fence();
 
   }
   void IterativePSGS(
@@ -528,8 +533,17 @@ public:
     int teamSizeMax = 0;
     int vector_size = 0;
     int max_allowed_team_size = team_policy::team_size_max(gs);
-    this->handle->get_gs_handle()->vector_team_size(max_allowed_team_size, vector_size, teamSizeMax);
-    //std::cout << "max_allowed_team_size"  << max_allowed_team_size  << " vector_size:" << vector_size << " teamSizeMax:" << teamSizeMax << std::endl;
+
+    idx nr = this->row_map.dimension_0() - 1;
+    idx nnz = this->entries.dimension_0();
+
+
+    this->handle->get_gs_handle()->vector_team_size(max_allowed_team_size, vector_size, teamSizeMax, nr, nnz);
+    /*std::cout
+        << "max_allowed_team_size"  << max_allowed_team_size
+        << " vector_size:" << vector_size
+        << " teamSizeMax:" << teamSizeMax << std::endl;
+    */
     for (idx i = 0; i < numColors; ++i){
       idx color_index_begin = h_color_xadj(i);
       idx color_index_end = h_color_xadj(i + 1);

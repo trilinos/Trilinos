@@ -207,6 +207,7 @@ namespace BaskerNS
     unnz = 0;
     lnnz = 0;
     
+    //printf("c: %d kid: %d ws_size: %d \n", c, kid, ws_size);
 
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
@@ -220,6 +221,10 @@ namespace BaskerNS
 	      {
 		printf("x(i) error: %d \n", i);
 	      }
+            if(ws[i] != 0)
+              {
+                printf("ws(i) error: %d \n", i);
+              }
 	    BASKER_ASSERT(X[i] == 0, "X!=0");
 	    BASKER_ASSERT(ws[i] == 0, "ws!=0");
 	  }
@@ -240,11 +245,11 @@ namespace BaskerNS
 	    j = M.row_idx(i);
 	    j = j - brow2;
 	    
-	    /*
-	     printf("(One) In put j: %d %d \n", 
-		   M.row_idx(i), j);
+	    
+            //printf("(One) In put j: %d %d \n", 
+            //	   M.row_idx(i), j);
 
-	    */
+	    
 	     if(j < 0)
 	      {
 		continue;
@@ -254,10 +259,10 @@ namespace BaskerNS
 	    //X[j-brow] = M.val[i];
 	    X(j) = M.val(i);
 	    
-	    /*
-	    printf("In put j: %d %d \n", 
-		   M.row_idx(i), j);
-	    */
+	   
+	    //printf("In put j: %d %d \n", 
+            //	   M.row_idx(i), j);
+	    
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
 	    printf("i: %d row: %d  val: %g  top: %d \n", 
                      i, j ,M.val[i], top);

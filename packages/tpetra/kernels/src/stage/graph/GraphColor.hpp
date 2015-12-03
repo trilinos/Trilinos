@@ -3,9 +3,11 @@
 
 #include "GraphColor_impl.hpp"
 #include "GraphColoringHandle.hpp"
+namespace KokkosKernels{
+
 namespace Experimental{
 
-namespace KokkosKernels{
+
 namespace Graph{
 
 template <class KernelHandle>
@@ -21,42 +23,42 @@ void graph_color_symbolic(
 
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
-  Experimental::KokkosKernels::Graph::ColoringAlgorithm algorithm = gch->get_coloring_type();
+  ColoringAlgorithm algorithm = gch->get_coloring_type();
 
   typedef typename KernelHandle::GraphColoringHandleType::color_array_type color_view_type;
   color_view_type colors_out = color_view_type("Graph Colors", row_map.dimension_0() - 1);
 
-  typedef typename Experimental::KokkosKernels::Graph::Impl::GraphColor
+  typedef typename Impl::GraphColor
       <typename KernelHandle::GraphColoringHandleType> BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
 
 
 
   switch (algorithm){
-  case Experimental::KokkosKernels::Graph::COLORING_SERIAL:
+  case COLORING_SERIAL:
 
     gc = new BaseGraphColoring(
         row_map.dimension_0() - 1, entries.dimension_0(),
         row_map, entries, gch);
     break;
-  case Experimental::KokkosKernels::Graph::COLORING_VB:
-  case Experimental::KokkosKernels::Graph::COLORING_VBBIT:
-  case Experimental::KokkosKernels::Graph::COLORING_VBCS:
+  case COLORING_VB:
+  case COLORING_VBBIT:
+  case COLORING_VBCS:
 
-    typedef typename Experimental::KokkosKernels::Graph::Impl::GraphColor_VB
+    typedef typename Impl::GraphColor_VB
         <typename KernelHandle::GraphColoringHandleType> VBGraphColoring;
     gc = new VBGraphColoring(
         row_map.dimension_0() - 1, entries.dimension_0(),
         row_map, entries, gch);
     break;
-  case Experimental::KokkosKernels::Graph::COLORING_EB:
+  case COLORING_EB:
 
-    typedef typename Experimental::KokkosKernels::Graph::Impl::GraphColor_EB
+    typedef typename Impl::GraphColor_EB
         <typename KernelHandle::GraphColoringHandleType> EBGraphColoring;
 
     gc = new EBGraphColoring(row_map.dimension_0() - 1, entries.dimension_0(),row_map, entries, gch);
     break;
-  case Experimental::KokkosKernels::Graph::COLORING_DEFAULT:
+  case COLORING_DEFAULT:
     break;
 
   }

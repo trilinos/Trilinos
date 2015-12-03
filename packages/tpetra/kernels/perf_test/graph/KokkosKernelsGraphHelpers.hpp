@@ -14,9 +14,15 @@
 #ifndef _KOKKOSKERNELSGRAPHUTILS_HPP
 #define _KOKKOSKERNELSGRAPHUTILS_HPP
 
-namespace Experimental{
+
+
 namespace KokkosKernels{
+namespace Experimental{
+
+
+
 namespace Graph{
+
 namespace Utils{
 
 

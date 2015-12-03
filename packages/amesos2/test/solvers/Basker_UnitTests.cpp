@@ -65,13 +65,9 @@
 //#include "Amesos2_Basker_decl.hpp"
 //#include "Amesos2_Basker_def.hpp"
 
-
-
-#ifdef SHYLUBASKER
-
-#pragma message("FLAG EXISTS")
-
-#endif
+//#ifdef SHYLUBASKER
+//#pragma message("FLAG EXISTS")
+//#endif
 
 
 namespace {
@@ -312,6 +308,8 @@ namespace {
 
     Xhat->randomize();
     Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
 
     // Solve A*Xhat = B for Xhat using the Bakser solver
@@ -617,12 +615,24 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
   //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
 
+#ifdef SHYLUBASKER
+
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO )
+
+
+
+
+#else
+
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, Solve, SCALAR, LO, GO )
 
+#endif
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )

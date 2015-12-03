@@ -63,8 +63,10 @@
 
 
 //#define PRINTRES
-namespace Experimental{
 namespace KokkosKernels {
+
+namespace Experimental{
+
 namespace Example {
 
 template< typename ValueType ,typename Idx_Type, class Space >
@@ -227,8 +229,8 @@ struct InitZeroView{
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Experimental{
 namespace KokkosKernels {
+namespace Experimental{
 namespace Example {
 
 
@@ -312,20 +314,24 @@ void pcgsolve( //const ImportType & import,
   bool owner_handle = false;
   if (use_sgs){
     if (kh.get_gs_handle() == NULL){
-      std::cout << "Creating GS HANDLE" << std::endl;
+
       owner_handle = true;
       kh.create_gs_handle();
     }
     //gsHandler = kh.get_gs_handle();
     timer.reset();
-    Experimental::KokkosKernels::Graph::gauss_seidel_numeric<KernelHandle>(&kh, A.graph.row_map, A.graph.entries, A.coeff);
+
+    KokkosKernels::Experimental::Graph::gauss_seidel_numeric<KernelHandle>(&kh, A.graph.row_map, A.graph.entries, A.coeff);
+
     Space::fence();
     precond_init_time += timer.seconds();
 
     z = VectorType( "pcg::z" , count_owned );
     Space::fence();
     timer.reset();
-    Experimental::KokkosKernels::Graph::gauss_seidel_apply<KernelHandle> (&kh, z, r, true, apply_count);
+
+    KokkosKernels::Experimental::Graph::gauss_seidel_apply<KernelHandle> (&kh, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
+
     Space::fence();
     precond_time += timer.seconds();
     //double precond_old_rdot = Kokkos::Example::all_reduce( dot( count_owned , r , z ) , import.comm );
@@ -381,7 +387,7 @@ void pcgsolve( //const ImportType & import,
     if (use_sgs){
       Space::fence();
       timer.reset();
-      Experimental::KokkosKernels::Graph::gauss_seidel_apply<KernelHandle> (&kh, z, r, true, apply_count);
+      KokkosKernels::Experimental::Graph::gauss_seidel_apply<KernelHandle> (&kh,  A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
 
       Space::fence();
       precond_time += timer.seconds();
@@ -442,7 +448,7 @@ void pcgsolve( //const ImportType & import,
   }
 
   if (use_sgs & owner_handle ){
-    std::cout << "Destroying" << std::endl;
+
     kh.destroy_gs_handle();
   }
 }

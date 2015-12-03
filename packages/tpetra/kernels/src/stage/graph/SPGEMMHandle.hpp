@@ -1,9 +1,15 @@
 
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_Core.hpp>
+#include <iostream>
 
-#ifndef _GAUSSSEIDELHANDLE_HPP
-#define _GAUSSSEIDELHANDLE_HPP
+//#define KERNELS_HAVE_CUSPARSE
+
+#ifdef KERNELS_HAVE_CUSPARSE
+#include "cusparse.h"
+#endif
+#ifndef _SPGEMMHANDLE_HPP
+#define _SPGEMMHANDLE_HPP
 //#define VERBOSE
 
 namespace KokkosKernels{
@@ -12,7 +18,7 @@ namespace Experimental{
 
 namespace Graph{
 
-enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM};
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP};
 
 template <class idx_array_type_,
           class idx_edge_array_type_,
@@ -20,7 +26,7 @@ template <class idx_array_type_,
           class ExecutionSpace,
           class TemporaryMemorySpace,
           class PersistentMemorySpace>
-class GaussSeidelHandle{
+class SPGEMMHandle{
 public:
   typedef ExecutionSpace HandleExecSpace;
   typedef TemporaryMemorySpace HandleTempMemorySpace;
@@ -57,170 +63,185 @@ public:
   typedef typename Kokkos::View<value_type *, HandleTempMemorySpace> value_temp_work_array_type;
   typedef typename Kokkos::View<value_type *, HandlePersistentMemorySpace> value_persistent_work_array_type;
 
+#ifdef KERNELS_HAVE_CUSPARSE
+  struct cuSparseHandleType{
+    cusparseHandle_t handle;
+    cusparseOperation_t transA;
+    cusparseOperation_t transB;
+    cusparseMatDescr_t a_descr;
+    cusparseMatDescr_t b_descr;
+    cusparseMatDescr_t c_descr;
+    cuSparseHandleType(bool transposeA, bool transposeB){
+      cusparseStatus_t status;
+      status= cusparseCreate(&handle);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        std::cerr << ("cusparseCreate ERROR") << std::endl;
+        return;
+      }
+      cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST);
+
+      if (transposeA){
+        transA = CUSPARSE_OPERATION_TRANSPOSE;
+      }
+      else {
+        transA  = CUSPARSE_OPERATION_NON_TRANSPOSE;
+      }
+      if (transposeB){
+        transB = CUSPARSE_OPERATION_TRANSPOSE;
+      }
+      else {
+        transB  = CUSPARSE_OPERATION_NON_TRANSPOSE;
+      }
+
+
+      status = cusparseCreateMatDescr(&a_descr);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        std::cerr << "cusparseCreateMatDescr a_descr ERROR" << std::endl;
+        return;
+      }
+      cusparseSetMatType(a_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+      cusparseSetMatIndexBase(a_descr,CUSPARSE_INDEX_BASE_ZERO);
+
+      status = cusparseCreateMatDescr(&b_descr);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        std::cerr << ("cusparseCreateMatDescr b_descr ERROR") << std::endl;
+        return;
+      }
+      cusparseSetMatType(b_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+      cusparseSetMatIndexBase(b_descr,CUSPARSE_INDEX_BASE_ZERO);
+
+      status = cusparseCreateMatDescr(&c_descr);
+      if (status != CUSPARSE_STATUS_SUCCESS) {
+        std::cerr << ("cusparseCreateMatDescr  c_descr ERROR") << std::endl;
+        return;
+      }
+      cusparseSetMatType(c_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+      cusparseSetMatIndexBase(c_descr,CUSPARSE_INDEX_BASE_ZERO);
+    }
+    ~cuSparseHandleType(){
+      cusparseDestroyMatDescr(a_descr);
+      cusparseDestroyMatDescr(b_descr);
+      cusparseDestroyMatDescr(c_descr);
+      cusparseDestroy(handle);
+    }
+  };
+
+  typedef cuSparseHandleType SPGEMMcuSparseHandleType;
+#endif
 private:
-  bool owner_of_coloring;
-  GSAlgorithm algorithm_type;
-
-  host_idx_persistent_view_type color_set_xadj;
-  idx_persistent_work_array_type color_sets;
-  idx numColors;
-
-  idx_persistent_work_array_type permuted_xadj;
-  idx_persistent_work_array_type permuted_adj;
-  value_persistent_work_array_type permuted_adj_vals;
-  idx_persistent_work_array_type old_to_new_map;
+  SPGEMMAlgorithm algorithm_type;
 
   bool called_symbolic;
   bool called_numeric;
 
-
-  value_persistent_work_array_type permuted_y_vector;
-  value_persistent_work_array_type permuted_x_vector;
-
   int suggested_vector_size;
   int suggested_team_size;
-  public:
 
+#ifdef KERNELS_HAVE_CUSPARSE
+  SPGEMMcuSparseHandleType *cuSPARSEHandle;
+#endif
+  public:
   /**
    * \brief Default constructor.
    */
-  GaussSeidelHandle(GSAlgorithm gs = GS_DEFAULT):
-    owner_of_coloring(false),
+  SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
     algorithm_type(gs),
-    color_set_xadj(), color_sets(), numColors(0),
-    permuted_xadj(),  permuted_adj(), permuted_adj_vals(), old_to_new_map(),
-    called_symbolic(false), called_numeric(false), permuted_y_vector(), permuted_x_vector(),
+    called_symbolic(false), called_numeric(false),
     suggested_vector_size(0), suggested_team_size(0)
-    {
-    if (gs == GS_DEFAULT){
+#ifdef KERNELS_HAVE_CUSPARSE
+  ,cuSPARSEHandle(NULL)
+#endif
+  {
+    if (gs == SPGEMM_DEFAULT){
       this->choose_default_algorithm();
     }
-
-
   }
 
+
+  virtual ~SPGEMMHandle(){
+
+#ifdef KERNELS_HAVE_CUSPARSE
+    this->destroy_cuSPARSE_Handle();
+#endif
+  };
+
+#ifdef KERNELS_HAVE_CUSPARSE
+  void create_cuSPARSE_Handle(bool transA, bool transB){
+    this->destroy_cuSPARSE_Handle();
+    this->cuSPARSEHandle = new cuSparseHandleType(transA, transB);
+  }
+  void destroy_cuSPARSE_Handle(){
+    if (this->cuSPARSEHandle != NULL){
+      delete this->cuSPARSEHandle;
+      this->cuSPARSEHandle = NULL;
+    }
+  }
+
+  SPGEMMcuSparseHandleType *get_cuSparseHandle(){
+    return this->cuSPARSEHandle;
+  }
+#endif
     /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
    */
   void choose_default_algorithm(){
 #if defined( KOKKOS_HAVE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
-      this->algorithm_type = GS_PERMUTED;
+      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "Serial Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
+      std::cout << "Serial Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_PTHREAD )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
-      this->algorithm_type = GS_PERMUTED;
+      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "PTHREAD Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
+      std::cout << "PTHREAD Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-      this->algorithm_type = GS_PERMUTED;
+      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "OpenMP Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
+      std::cout << "OpenMP Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-      this->algorithm_type = GS_TEAM;
+      this->algorithm_type = SPGEMM_CUSPARSE;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: GS_TEAM" << std::endl;
+      std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE" << std::endl;
 #endif
     }
 #endif
 
 #if defined( KOKKOS_HAVE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-      this->algorithm_type = GS_PERMUTED;
+      this->algorithm_type = SPGEMM_SERIAL;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
+      std::cout << "Qthread Execution Space, Default Algorithm: SPGEMM_SERIAL" << std::endl;
 #endif
     }
 #endif
   }
 
-  virtual ~GaussSeidelHandle(){};
 
   //getters
-  GSAlgorithm get_algorithm_type() const {return this->algorithm_type;}
-  bool is_owner_of_coloring() const {return this->owner_of_coloring;}
-
-  host_idx_persistent_view_type get_color_xadj() {
-    return this->color_set_xadj;
-  }
-  idx_persistent_work_array_type get_color_adj() {
-    return this->color_sets;
-  }
-  idx get_num_colors() {
-    return this->numColors;
-  }
-
-  idx_persistent_work_array_type get_new_xadj() {
-    return this->permuted_xadj;
-  }
-  idx_persistent_work_array_type get_new_adj() {
-    return this->permuted_adj;
-  }
-  value_persistent_work_array_type get_new_adj_val() {
-    return this->permuted_adj_vals;
-  }
-  idx_persistent_work_array_type get_old_to_new_map() {
-    return this->old_to_new_map;
-  }
+  SPGEMMAlgorithm get_algorithm_type() const {return this->algorithm_type;}
 
   bool is_symbolic_called(){return this->called_symbolic;}
   bool is_numeric_called(){return this->called_numeric;}
 
   //setters
-  void set_algorithm_type(const GSAlgorithm &sgs_algo){this->algorithm_type = sgs_algo;}
-  void set_owner_of_coloring(bool owner = true){this->owner_of_coloring = owner;}
-
+  void set_algorithm_type(const SPGEMMAlgorithm &sgs_algo){this->algorithm_type = sgs_algo;}
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
   void set_call_numeric(bool call = true){this->called_numeric = call;}
 
-  void set_color_set_xadj(const host_idx_persistent_view_type &color_set_xadj_) {
-    this->color_set_xadj = color_set_xadj_;
-  }
-  void set_color_set_adj(const idx_persistent_work_array_type &color_sets_) {
-    this->color_sets = color_sets_;
-  }
-  void set_num_colors(const idx &numColors_) {
-    this->numColors = numColors_;
-  }
-
-  void set_new_xadj(const idx_persistent_work_array_type &xadj_) {
-    this->permuted_xadj = xadj_;
-  }
-  void set_new_adj(const idx_persistent_work_array_type &adj_) {
-    this->permuted_adj = adj_;
-  }
-  void set_new_adj_val(const value_persistent_work_array_type &adj_vals_) {
-    this->permuted_adj_vals = adj_vals_;
-  }
-  void set_old_to_new_map(const idx_persistent_work_array_type &old_to_new_map_) {
-    this->old_to_new_map = old_to_new_map_;
-  }
-
-  void allocate_x_y_vectors(){
-    if(permuted_y_vector.dimension_0() != permuted_xadj.dimension_0() - 1){
-      permuted_y_vector = value_persistent_work_array_type("PERMUTED Y VECTOR", permuted_xadj.dimension_0() - 1);
-    }
-    if(permuted_x_vector.dimension_0() != permuted_xadj.dimension_0() - 1){
-      permuted_x_vector = value_persistent_work_array_type("PERMUTED X VECTOR", permuted_xadj.dimension_0() - 1);
-    }
-  }
-
-  value_persistent_work_array_type get_permuted_y_vector (){return this->permuted_y_vector;}
-  value_persistent_work_array_type get_permuted_x_vector (){return this->permuted_x_vector;}
   void vector_team_size(
       int max_allowed_team_size,
       int &suggested_vector_size_,

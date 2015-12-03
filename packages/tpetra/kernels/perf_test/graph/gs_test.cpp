@@ -87,7 +87,7 @@ void run_experiment(
       kok_mtx_vals,
       kok_x_original);
 
-  Experimental::KokkosKernels::Example::CrsMatrix<wt, idx, MyExecSpace> A(nv ,ne, kok_xadj, kok_adj, kok_mtx_vals);
+  KokkosKernels::Experimental::Example::CrsMatrix<wt, idx, MyExecSpace> A(nv ,ne, kok_xadj, kok_adj, kok_mtx_vals);
 
 
   //create X vector
@@ -98,8 +98,8 @@ void run_experiment(
   const unsigned cg_iteration_limit = 100000;
   const double   cg_iteration_tolerance     = 1e-7 ;
 
-  Experimental::KokkosKernels::Example::CGSolveResult cg_result ;
-  typedef Experimental::KokkosKernels::KokkosKernelsHandle
+  KokkosKernels::Experimental::Example::CGSolveResult cg_result ;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle
         <idx_array_type,idx_edge_array_type, value_array_type,
         MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > KernelHandle;
 
@@ -108,8 +108,9 @@ void run_experiment(
   //kh.set_entries(A.graph.entries);
   //kh.set_values(A.coeff);
 
+
   Kokkos::Impl::Timer timer1;
-  Experimental::KokkosKernels::Example::pcgsolve(
+  KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , A
       , kok_b_vector
@@ -120,6 +121,7 @@ void run_experiment(
       , true
   );
   Kokkos::fence();
+
   gs_time = timer1.seconds();
 
 
@@ -135,12 +137,12 @@ void run_experiment(
 
 
 
-  kh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_VB);
-  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
+  kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_VB);
+  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
-  Experimental::KokkosKernels::Example::pcgsolve(
+  KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , A
       , kok_b_vector
@@ -165,12 +167,12 @@ void run_experiment(
       << std::endl ;
 
   kh.destroy_graph_coloring_handle();
-  kh.create_graph_coloring_handle(Experimental::KokkosKernels::Graph::COLORING_EB);
-  Experimental::KokkosKernels::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
+  kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_EB);
+  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
-  Experimental::KokkosKernels::Example::pcgsolve(
+  KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , A
       , kok_b_vector
@@ -196,12 +198,12 @@ void run_experiment(
 
   kh.destroy_graph_coloring_handle();
   kh.destroy_gs_handle();
-  kh.create_gs_handle(Experimental::KokkosKernels::Graph::GS_PERMUTED);
+  kh.create_gs_handle(KokkosKernels::Experimental::Graph::GS_PERMUTED);
 
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
-  Experimental::KokkosKernels::Example::pcgsolve(
+  KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , A
       , kok_b_vector
@@ -227,11 +229,11 @@ void run_experiment(
 
   kh.destroy_graph_coloring_handle();
   kh.destroy_gs_handle();
-  kh.create_gs_handle(Experimental::KokkosKernels::Graph::GS_TEAM);
+  kh.create_gs_handle(KokkosKernels::Experimental::Graph::GS_TEAM);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
-  Experimental::KokkosKernels::Example::pcgsolve(
+  KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , A
       , kok_b_vector
@@ -273,22 +275,16 @@ int main (int argc, char ** argv){
   Kokkos::initialize(argc, argv);
   MyExecSpace::print_configuration(std::cout);
   idx nv = 0, ne = 0;
-  idx *xadj, *adj, *half_srcs, *half_dsts;
+  idx *xadj, *adj;
   wt *ew;
 
-  Experimental::KokkosKernels::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, argv[1]);
+  KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, argv[1]);
 
-  Experimental::KokkosKernels::Graph::Utils::md_malloc<idx>(&half_srcs, ne/2);
-  Experimental::KokkosKernels::Graph::Utils::md_malloc<idx>(&half_dsts, ne/2);
-  Experimental::KokkosKernels::Graph::Utils::convert_crs_to_lower_triangle_edge_list<idx>(nv, xadj, adj, half_srcs, half_dsts);
-
-  std::cout << "nv:" << nv << " ne:" << ne << std::endl;
+    std::cout << "nv:" << nv << " ne:" << ne << std::endl;
 
   um_array_type _xadj (xadj, nv + 1);
   um_edge_array_type _adj (adj, ne);
 
-  um_edge_array_type _half_srcs (half_srcs, ne/2);
-  um_edge_array_type _half_dests (half_dsts, ne/2);
 
 
 
@@ -298,19 +294,12 @@ int main (int argc, char ** argv){
   Kokkos::deep_copy (kok_xadj, _xadj);
   Kokkos::deep_copy (kok_adj, _adj);
 
-  idx_edge_array_type kok_half_srcs("adj", ne/2), kok_half_dsts("adj", ne/2);
-  Kokkos::deep_copy (kok_half_srcs, _half_srcs);
-  Kokkos::deep_copy (kok_half_dsts, _half_dests);
-
-
   wt_um_edge_array_type _mtx_vals (ew, ne);
   value_array_type kok_mtx_vals ("MTX_VALS", ne);
   Kokkos::deep_copy (kok_mtx_vals, _mtx_vals);
 
   delete [] xadj;
   delete [] adj;
-  delete [] half_srcs;
-  delete [] half_dsts;
   delete [] ew;
 
   //fill_experiments(nv, ne, kok_xadj, kok_adj, kok_half_srcs, kok_half_dsts);

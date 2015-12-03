@@ -119,6 +119,10 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::btf_order()
   {
 
+    printMTX("odd_matrix.mtx", A);
+
+
+
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
@@ -140,6 +144,8 @@ namespace BaskerNS
 
     if(btf_tabs_offset != 0)
       {
+
+        //  printf("A/B block stuff called\n");
     //3. ND on BTF_A
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
@@ -236,6 +242,8 @@ namespace BaskerNS
     //A and B done.  Forget C for now.  
     //Comback if really hurt performance
 
+
+    //printf("Done with ordering\n");
     
     return 0;
   }//end btf_order

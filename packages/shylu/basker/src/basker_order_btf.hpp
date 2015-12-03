@@ -200,9 +200,6 @@ namespace BaskerNS
     //INT_1DARRAY  btf_perm = order_btf_array;
     //INT_1DARRAY  btf_tabs;
 
-    
-    
-
     //printf("before strong comp \n");
     strong_component(M,nblks,order_btf_array,btf_tabs);
     //strong_component(M,nblks,btf_perm,btf_tabs);
@@ -437,14 +434,14 @@ namespace BaskerNS
 
     
     
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Set Shape BTF_B: %d %d %d %d \n",
 	   BTF_B.srow, BTF_B.nrow,
 	   BTF_B.scol, BTF_B.ncol);
     printf("Set Shape BTF_C: %d %d %d %d \n",
 	   BTF_C.srow, BTF_C.nrow,
 	   BTF_C.scol, BTF_C.nrow);
-    //#endif
+    #endif
     
     //Scan and find nnz
     //We can do this much better!!!!
@@ -954,7 +951,7 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_in, M.ncol);
     MALLOC_INT_1DARRAY(perm, M.ncol);
     //JDB:Note, this needs to be changed just fixed for int/long
-    MALLOC_INT_1DARRAY(CC, M.ncol);
+    MALLOC_INT_1DARRAY(CC, M.ncol+1);
     for(l_int i = 0; i < M.ncol; i++)
       {
 	perm_in(i) = i;
@@ -968,6 +965,15 @@ namespace BaskerNS
 			&(perm(0)),
 			&(perm_in(0)), 
 			&(CC(0)));
+
+    FILE *fp;
+    fp = fopen("btf.txt", "w");
+    for(Int i = 0; i < M.ncol; i++)
+      {
+        fprintf(fp, "%d \n", perm(i));
+      }
+    fclose(fp);
+
     
     printf("FOUND NBLKS: %d \n", nblks);
 
