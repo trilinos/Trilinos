@@ -403,17 +403,20 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
 
 
 def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir="", \
-  getStdErr=False \
+  getStdErr=False, rtnCode=False \
   ):
   """Run a shell command and return its output"""
-  (data, err) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir,
+  (data, errCode) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir,
     getStdErr=getStdErr)
-  if err:
+  if errCode != 0:
     if throwOnError:
       raise RuntimeError, '%s failed w/ exit code %d:\n\n%s' % (cmnd, err, data)
+  dataToReturn = data
   if stripTrailingSpaces:
-    return data.rstrip()
-  return data
+    dataToReturn = data.rstrip()
+  if rtnCode:
+    return (dataToReturn, errCode)
+  return dataToReturn
 
 
 def pidStillRunning(pid):

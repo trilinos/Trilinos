@@ -77,20 +77,19 @@ recommended that one uses this script to push since it will amend the last
 commit message with a (minimal) summary of the builds and tests run with
 results and/or send out a summary email about the builds/tests performed.
 
-
-Quickstart:
+QUICKSTART
 -----------
 
 In order to do a safe push, perform the following recommended workflow
-(different variations on this workflow are described below):
+(different variations on this workflow are described in the COMMON USE CASES
+section below):
 
 1) Commit changes in the local repo:
 
-  # 1.a) See what files are changed, newly added, etc. that need to be committed
-  # or stashed.
+  # 1.a) See what files are changed, newly added, etc.
   $ git status
 
-  # 1.b) Stage the files you want to commit (optional)
+  # 1.b) Stage the files you want to commit
   $ git stage <files you want to commit>
 
   # 1.c) Create your local commits
@@ -98,31 +97,39 @@ In order to do a safe push, perform the following recommended workflow
   $ git commit -- SOMETHING_ELSE
   ...
 
-  # 1.d) Stash whatever changes are left you don't want to test/push (optional)
+  # 1.d) Stash whatever changes are left you don't want to test/push
   $ git stash
 
   NOTE: You can group your commits any way that you would like (see the basic
   git documentation).
 
-  NOTE: When multiple repos are involved, use gitdist instead.  It is provided
-  at tribits/python_utils/gitdist.  See gitdist --help for details.
+  NOTE: When multiple repos are involved, use the 'gitdist' command instead of
+  'git'.  This script is provided at tribits/python_utils/gitdist.  See
+  gitdist --help for details.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
   $ cd $PROJECT_HOME
-  $ git local-stat                  # Look at the full status of local repo
-  $ git diff --name-status origin   # [Optional] Look at the files that have changed
+  $ git local-stat | less               # Look at the full status of local repo
+  $ git diff --name-status HEAD ^@{u}   # [Optional] Look at the files that have changed
 
   NOTE: The command 'local-stat' is a git alias that can be installed with the
-  script tribits/common_tools/git/git-config-alias.sh.  It is highly
-  recommended over just a raw 'git status' or 'git log' to review commits before
-  attempting to test/push commits.
+  script tribits/python_utils/git-config-alias.sh.  This command is
+  recommended over just a raw 'git status' or 'git log' to review commits
+  before attempting to test/push commits.  If you have not installed these
+  alias, then run the following commands instead:
+
+    $ git status
+    $ git log --oneline --name-status HEAD ^@{u}
 
   NOTE: If you see any files/directories that are listed as 'unknown' returned
   from 'git local-stat', then you will need to do an 'git add' to track them or
   add them to an ignore list *before* you run the checkin-test.py script.
   The git script will not allow you to push if there are new 'unknown' files or
   uncommitted changes to tracked files.
+
+  NOTE: When multiple repos are involved, use 'gitdist-mod-status' to see the
+  state of your repos before pushing.  See gitdist --help for details.
 
 3) Set up the checkin base build directory (first time only):
 
@@ -131,11 +138,12 @@ In order to do a safe push, perform the following recommended workflow
   $ mkdir CHECKIN
   $ cd CHECKIN
 
-  NOTE: You may need to set up some configuration files if CMake can not find
+  NOTE: You may need to set up some configuration files if CMake cannot find
   the right compilers, MPI, and TPLs by default (see detailed documentation
   below).
 
-  NOTE: You might want to set up a simple shell driver script.
+  NOTE: You might want to set up a simple shell driver script for your common
+  use cases.
 
   NOTE: You can set up a CHECKIN directory of any name in any location
   you want.  If you create one outside of the main source dir, then
@@ -147,28 +155,30 @@ In order to do a safe push, perform the following recommended workflow
   $ cd CHECKIN
   $ ../checkin-test.py -j4 --do-all --push
 
-  NOTE: The above will: a) pull updates from the global repo(s), b)
-  automatically enable the correct packages, c) configure and build the right
-  packages, d) run the tests, e) send you emails about what happened, f) do a
-  final pull from the global repo, g) optionally amend the last local commit
-  with the test results, and h) finally push local commits to the global
-  repo(s) if everything passes.
+  NOTE: The above will: a) pull updates from the tracking branch, b)
+  automatically enable the correct packages based on changed files, c)
+  configure and build the changed and downstream packages, d) run the tests,
+  e) send you emails about what happened, f) do a final pull from the global
+  repo, g) optionally amend the last local commit with the test results, and
+  h) finally push local commits to the tracking branch if everything passes.
 
-  NOTE: The current branch will be used to pull and push to.  A raw 'git pull'
-  is performed which will get all of the branches from 'origin'.  This means
-  that your current branch must be a tracking branch so that it will get
-  updated correctly.  The branch 'master' is the most common branch but
-  release tracking branches are also common.
+  NOTE: The repo must be on a branch (not a detached head state) with a
+  tracking branch '<remoterepo>/<remotebranch>' so that a raw 'git pull' can
+  be performed to get updates and to push changes.  Also, the push is done
+  explicitly to the tracking branch using:
 
-  NOTE: You must not have any uncommitted changes or the 'git pull && git rebase
-  --against origin' command will fail on the final pull/rebase before the push
-  and therefore the whole script will fail.  To run the script, you will may
-  need to first use 'git stash' to stash away your unstaged/uncommitted changes
-  *before* running this script.
+    git push <remoterepo> <remotebranch>
+
+  NOTE: You must not have any uncommitted changes or the script will stop
+  right away.  To run the script, you will may need to first use 'git stash'
+  to stash away your unstagged/uncommitted changes *before* running this
+  script.
 
   NOTE: You need to have SSH public/private keys set up to the remote repo
   machines for the git commands invoked in the script to work without you
-  having to type a password.
+  having to type a password.  If the 'git pull' fails, the detailed output is
+  generally in a pull*.out file (see the checkin-test.out log file for
+  details).
 
   NOTE: You can do the final push in a second invocation of the script with a
   follow-up run with --push and removing --do-all (it will remember the
@@ -184,15 +194,12 @@ In order to do a safe push, perform the following recommended workflow
 
 For more details on using this script, see the detailed documentation below.
 
-
-Detailed Documentation:
+DETAILED DOCUMENTATION
 -----------------------
 
 The following approximate steps are performed by this script:
 
-
 ----------------------------------------------------------------------------
-
 
 1) Check to see if the local repo(s) are clean:
 
@@ -202,7 +209,7 @@ The following approximate steps are performed by this script:
   aborted.  The local repo(s) working directory must be clean and ready to
   push *everything* that is not stashed away.
 
-2) Do a 'git pull' to update the code (done if --pull or --do-all is set):
+2) Do a 'git pull' to update the repo (done if --pull or --do-all is set):
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
@@ -211,11 +218,11 @@ package directories where there are changed files (or from a list of packages
 passed in by the user).
 
   NOTE: The automatic enable behavior can be overridden or modified using the
-  options --enable-all-packages, --enable-packages, --disable-packages, and/or
-  --no-enable-fwd-packages.
+  options --enable-all-packages=on/off, --enable-packages=<p0>,<p1>,... ,
+  --disable-packages=<p0>,<p1>,... , and/or --no-enable-fwd-packages.
 
 4) For each build/test case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE,
-extra builds specified with --extra-builds):
+extra builds specified with --st-extra-builds and --extra-builds):
 
   4.a) Configure a build directory <BUILD_NAME> in a standard way for all of
   the packages that have changed and all of the packages that depend on these
@@ -229,29 +236,26 @@ extra builds specified with --extra-builds):
   4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
   or --local-do-all is set.)
 
-  4.d) Analyze the results of the update, configure, build, and tests and send
-  email about results.  (emails only sent out if --send-emails-to != "")
+  4.d) Analyze the results of the pull, configure, build, and tests and send
+  email about results.  (emails only sent out if --send-emails-to!="")
 
 5) Do final pull and rebase, append test results to last commit message, and
-push (done if --push is set)
+push (done if --push or --do-all is set)
 
   5.a) Do a final 'git pull' (done if --pull or --do-all is set)
 
-  5.b) Do 'git rebase --against origin/<current_branch>' (done if --pull or
-  --do-all is set and --rebase is set)
-
-    NOTE: The final 'git rebase --against origin/<current_branch>' is
-    required to avoid trivial merge commits that the global get repo
-    will reject on the push.
+  5.b) Do 'git rebase <remoterepo>/<remotebranch>' (done if --rebase is set)
   
   5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
   
   5.d) Push the local commits to the global repo (done if --push is set)
 
+6) Send out final on actions (i.e. 'DID PUSH' email if a push occurred).
+(done if --send-email-to!="" is set and --send-email-only-on-failure is *not*
+set)
 
 ----------------------------------------------------------------------------
-
 
 The recommended way to use this script is to create a new base CHECKIN test
 directory apart from your standard build directories such as with:
@@ -265,10 +269,10 @@ The most basic way to do pre-push testing is with:
   $ cd CHECKIN
   $ ../checkin-test.py --do-all [other options]
 
-If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
-LAPACK) can be found automatically, then this is all you will need to do.
-However, if the setup cannot be determined automatically, then you can add a
-set of CMake variables that will get read in the files:
+If your MPI installation, other compilers, and standard TPLs can be found
+automatically, then this is all you will need to do.  However, if the setup
+cannot be determined automatically, then you can add a set of CMake variables
+that will get read in the files:
 
   COMMON.config
   MPI_DEBUG.config
@@ -307,7 +311,7 @@ to create extra builds with the --extra-builds and/or
 --st-extra-builds options (see below).
 
 NOTE: Before running this script, you should first do an 'git status' and 'git
-diff --name-status origin..' and examine what files are changed to make sure
+diff --name-status HEAD ^@{u}' and examine what files are changed to make sure
 you want to push what you have in your local working directory.  Also, please
 look out for unknown files that you may need to add to the git repository with
 'git add' or add to your ignores list.  There cannot be any uncommitted
@@ -322,7 +326,7 @@ NOTE: To see detailed debug-level information, set
 TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON in the env before running this script.
 
 
-Common Use Cases (examples):
+COMMON USE CASES (EXAMPLES):
 ----------------------------
 
 (*) Basic full testing with integrating with global repo(s) without push:
@@ -339,7 +343,7 @@ Common Use Cases (examples):
 
   ../checkin-test.py --do-all --push
 
-  NOTE: By default this will rebase your local commits and ammend the last
+  NOTE: By default this will rebase your local commits and amend the last
   commit with a short summary of test results.  This is appropriate for
   pushing commits that only exist in your local repo and are not shared with
   any remote repo.
@@ -422,11 +426,25 @@ Common Use Cases (examples):
   uncommitted changes and still run configure, build, test without having to
   commit or having to stash changes.
 
-  NOTE: This is not a sufficient level of testing in order to push the changes
-  to the global repo because you have not fully integrated your changes yet
-  with other developers.  However, this would be a sufficient level of testing
-  in order to do a commit on the local machine and then pull to a remote
-  machine for further testing and a push (see below).
+  NOTE: This will determine what packages to enable and test based on changes
+  w.r.t. to the tracking branch.  If not on a tracking branch, or in a
+  detached head state, see below.
+
+  NOTE: This is typically not a sufficient level of testing in order to push
+  the changes to a shared branch because you have not fully integrated your
+  changes yet with other developers.  However, this would be a sufficient
+  level of testing in order to do a commit on the local machine and then pull
+  to a remote machine for further testing and a push (see below).
+
+(*) Local test of repo version on a detached head or with no tracking branch:
+
+  ../checkin-test.py --enable-all-packages=[on|off] \
+    --enable-packages=<P0>,... --local-do-all
+
+  By specifying what packages are enabled and not doing a pull or push, the
+  script allows the repo(s) to be in a detached head state or on a branch that
+  does not have a tracking branch.  This allows the checkin-test.py script to
+  be used, for example, to test versions using 'git bisect'.
 
 (*) Adding extra build/test cases:
 
@@ -535,15 +553,14 @@ Common Use Cases (examples):
 
   ../checkin-test.py
 
-  NOTE: This will examine results for the last testing process and send out an
-  email stating if the a push is ready to perform or not.
+  This will examine results for the last testing process and send out an email
+  stating if the a push is ready to perform or not.
 
 (*) See the default option values without doing anything:
 
   ../checkin-test.py --show-defaults
 
-  NOTE: This is the easiest way to figure out what all of the default options
-  are.
+  This is the easiest way to figure out what all of the default options are.
 
 Hopefully the above documentation, the example use cases, the documentation of
 the command-line arguments below, and some experimentation will be enough to
@@ -552,7 +569,7 @@ If that is not sufficient, send email to your development support team to ask
 for help.
 
 
-Handling of PT, ST, and EX Code in built-in and extra builds:
+HANDLING OF PT, ST, AND EX CODE IN BUILT-IN AND EXTRA BUILDS:
 -------------------------------------------------------------
 
 This script will only process PT (Primary Tested) packages in the
@@ -633,7 +650,7 @@ enabled packages.  This logic given above must be understood in order to
 understand the output given in the script.
 
 
-Conventions for Command-Line Arguments:
+CONVENTIONS FOR COMMAND-LINE ARGUMENTS:
 ---------------------------------------
 
 The command-line arguments are segregated into three broad categories: a)
@@ -652,19 +669,20 @@ c) Other arguments are those that are not marked with [ACTION] or [AGGR
 ACTION] tend to either pass in data and turn control flags on or off.
 
 
-Exit Code:
+EXIT CODE:
 ---------
 
 This script returns 0 if the actions requested are successful.  This does not
-necessarily imply that it is okay to do a push.  For example, if only --pull
-is passed in and is successful, then 0 will be returned but that does *not*
-mean that it is okay to do a push.  A 0 return value is a necessary but not
-sufficient condition for readiness to push.
+necessarily imply that it is okay to do a push or that a push was done.  For
+example, if only --pull is passed in and is successful, then 0 will be
+returned but that does *not* mean that it is okay to do a push.  Therefore, a
+return value of is a necessary but not sufficient condition for readiness to
+push, it depends on the requested actions.
 
 """        
 
-# ToDo: Break up the above huge documention block into different "topics" and
-# then display those topics with --help-topic=<topic>.  Also provide a
+# ToDo: Break up the above huge documentation block into different "topics"
+# and then display those topics with --help-topic=<topic>.  Also provide a
 # --help-all that will combine all of the --help-topic documentation with the
 # standard documentation to produce where is there now.
 
@@ -940,18 +958,18 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--rebase", dest="rebase", action="store_true",
-    help="Rebase the local commits on top of origin/master before amending" \
+    help="Rebase the local commits on top of <remoterepo>/<remotebranch> before amending" \
     +" the last commit and pushing.  Rebasing keeps a nice linear commit" \
     +" history like with CVS or SVN and will work perfectly for the basic" \
     +" workflow of adding commits to the 'master' branch and then syncing" \
-    +" up with origin/master before the final push. [default]" )
+    +" up with <remoterepo>/<remotebranch> before the final push. [default]" )
   clp.add_option(
     "--no-rebase", dest="rebase", action="store_false",
-    help="Do not rebase the local commits on top of origin/master before" \
+    help="Do *not* rebase the local commits on top of <remoterepo>/<remotebranch> before" \
     +" amending the final commit and pushing.  This allows for some more " \
     +" complex workflows involving local branches with multiple merges." \
     +"  However, this will result in non-linear history and will allow for" \
-    +" trivial merge commits with origin/master to get pushed.  This mode" \
+    +" trivial merge commits with <remoterepo>/<remotebranch> to get pushed.  This mode" \
     +" should only be used in cases where the rebase mode will not work or " \
     +" when it is desired to use a merge commit to integrate changes on a" \
     +" branch that you wish be able to easily back out.  For sophisticated" \
@@ -978,11 +996,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     "--extra-pull-from", dest="extraPullFrom", type="string", default="",
     help="Optional extra git pull '<repository>:<branch>' to merge in changes from after" \
-    +" pulling in changes from 'origin'.  This option uses a colon with no spaces in between" \
+    +" pulling in changes from <remoterepo>.  This option uses a colon with no spaces in between" \
     +" <repository>:<branch>' to avoid issues with passing arguments with spaces." \
-    +"  For example --extra-pull-from=machine:/base/dir/repo:master." \
+    +"  For example --extra-pull-from=some_other_repo:master." \
     +"  This extra pull is only done if --pull is also specified.  NOTE: when using" \
-    +" --extra-repo=REPO1,REPO2,... the <repository> must be a named repository that is" \
+    +" --extra-repos=<repo0>,<repo1>,... the <repository> must be a named repository that is" \
     +" present in all of the git repos or it will be an error." )
 
   clp.add_option(
@@ -1003,8 +1021,8 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--pull", dest="doPull", action="store_true", default=False,
-    help="[ACTION] Do the pull from the default (origin) repository and optionally also" \
-      +" merge in changes from the repo pointed to by --extra-pull-from." )
+    help="[ACTION] Do the pull from the tracking branch and optionally also" \
+      +" merge in changes from the repo pointed to by --extra-pull-from.")
 
   clp.add_option(
     "--configure", dest="doConfigure", action="store_true", default=False,
@@ -1032,11 +1050,8 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--push", dest="doPush", action="store_true", default=False,
-    help="[ACTION] Push the committed changes in the local repo into to global repo" \
-      +" 'origin' for the current branch.  Note: If you have uncommitted changes this" \
-      +" command will fail.  Note: You must have SSH public/private keys set up with" \
-      +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
-      +" having to type your password." )
+    help="[ACTION] Push the committed changes in the local repo into to remote repo" \
+      +" pointed to by the tracking branch." )
 
   clp.add_option(
     "--execute-on-ready-to-push", dest="executeOnReadyToPush", type="string", default="",
@@ -1220,7 +1235,7 @@ def getConfigurationSearchPaths():
   result = []
 
   # Always look for the configuration file assuming the checkin-test.py script
-  # is run out of the standared snapshotted tribits directory
+  # is run out of the standard snapshotted tribits directory
   # <project-root>/cmake/tribits/.
   result.append(os.path.join(thisFileRealAbsBasePath, '..', '..'))
 
