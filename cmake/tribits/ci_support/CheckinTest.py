@@ -298,9 +298,9 @@ def assertRepoHasBranchAndTrackingBranch(inOptions, gitRepo):
     raise Exception("Error, the "+repoNameEntry+" is not on a tracking branch which" \
       " is not allowed in this case!")
 
-def splitTrackingBranch(trackingBranch):
-  (repo, branch) = trackingBranch.split("/")
-  return repo+" "+branch
+def pushToTrackingBranchArgs(gitRepo):
+  (repo, trackingbranch) = gitRepo.gitRepoStats.trackingBranch.split("/")
+  return repo+" "+gitRepo.gitRepoStats.branch+":"+trackingbranch
 
 
 def didSinglePullBringChanges(pullOutFileFullPath):
@@ -2627,8 +2627,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
-                inOptions.git+" push "\
-                  +splitTrackingBranch(gitRepo.gitRepoStats.trackingBranch),
+                inOptions.git+" push "+pushToTrackingBranchArgs(gitRepo),
                 workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
