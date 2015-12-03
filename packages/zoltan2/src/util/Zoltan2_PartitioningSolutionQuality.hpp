@@ -95,8 +95,7 @@ public:
   PartitioningSolutionQuality(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const Adapter> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln,
-    const ArrayRCP<const input_t> vWeights = Teuchos::null);
+    const RCP<const PartitioningSolution<Adapter> > &soln);
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -221,8 +220,7 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const Adapter> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln,
-  const ArrayRCP<const input_t> vWeights):
+  const RCP<const PartitioningSolution<Adapter> > &soln):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
