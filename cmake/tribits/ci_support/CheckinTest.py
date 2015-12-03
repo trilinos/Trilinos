@@ -2441,7 +2441,6 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
     amendFinalCommitPassed = True
     pushPassed = True
     didPush = False
-    allLocalCommitSummariesStr = ""
     
     if not inOptions.doPush:
   
@@ -2579,6 +2578,27 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
       if not amendFinalCommitPassed: okayToPush = False
 
+    # End final pull and amend commit message block
+
+    # Jump out if the above if block and get the list of local commits.  You
+    # have to get this list after a final rebase and after the top commit is
+    # amended so that you get the right SHA1s.  But you have to do this
+    # *before* the push or there will not be any local commits!
+    allLocalCommitSummariesStr = ""
+    if inOptions.doPushReadinessCheck:
+      repoIdx = 0
+      for gitRepo in tribitsGitRepos.gitRepoList():
+        localCommitSummariesStr = \
+          getLocalCommitsSummariesStr(inOptions, gitRepo)
+        if allLocalCommitSummariesStr:
+          allLocalCommitSummariesStr += ("\n" + localCommitSummariesStr)
+        else:
+          allLocalCommitSummariesStr = localCommitSummariesStr
+        repoIdx += 1
+
+    # Jump back into the push block and do the actual push
+    if inOptions.doPush:
+
       #
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
       #
@@ -2640,6 +2660,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
       if not pushPassed: okayToPush = False
 
+    # End push block
   
     print "\n***"
     print "*** 8) Set up to run execute extra command on ready to push  ..."
@@ -2744,18 +2765,6 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       #
       print "\n9.b) Create and send out push (or readiness status) notification email ..."
       #
-
-      # Get the updated SHA1 after the commit has been (or has not been)
-      # amended but before the push!
-      repoIdx = 0
-      for gitRepo in tribitsGitRepos.gitRepoList():
-        localCommitSummariesStr = \
-          getLocalCommitsSummariesStr(inOptions, gitRepo)
-        if allLocalCommitSummariesStr:
-          allLocalCommitSummariesStr += ("\n" + localCommitSummariesStr)
-        else:
-          allLocalCommitSummariesStr = localCommitSummariesStr
-        repoIdx += 1
 
       subjectLine += ": %s: %s" % (inOptions.projectName, getHostname())
     
