@@ -298,9 +298,9 @@ def assertRepoHasBranchAndTrackingBranch(inOptions, gitRepo):
     raise Exception("Error, the "+repoNameEntry+" is not on a tracking branch which" \
       " is not allowed in this case!")
 
-def splitTrackingBranch(trackingBranch):
-  (repo, branch) = trackingBranch.split("/")
-  return repo+" "+branch
+def pushToTrackingBranchArgs(gitRepo):
+  (repo, trackingbranch) = gitRepo.gitRepoStats.trackingBranch.split("/")
+  return repo+" "+gitRepo.gitRepoStats.branch+":"+trackingbranch
 
 
 def didSinglePullBringChanges(pullOutFileFullPath):
@@ -1814,16 +1814,27 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepo):
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
     inOptions.git+" log --pretty=format:'%h' "\
-      +gitRepo.gitRepoStats.branch+"^ ^"+gitRepo.gitRepoStats.trackingBranch,
+      +gitRepo.gitRepoStats.branch+" ^"+gitRepo.gitRepoStats.trackingBranch,
     True,
     workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir)
     )
 
-  if rawLocalCommitsStr:
-    return ("Other local commits for this build/test group: "
-      + (", ".join(rawLocalCommitsStr.splitlines()))) + "\n"
+  rawLocalCommitsArray = rawLocalCommitsStr.splitlines()
 
+  if len(rawLocalCommitsArray) > 1:
+    return ("Other local commits for this build/test group: "
+      + (", ".join(rawLocalCommitsArray[1:]))) + "\n"
   return ""
+
+  # NOTE: Above, you have to use:
+  #
+  #  git log --pretty='%h' <currentbranch> ^<trackingbranch>
+  #
+  # and pop off the top commit as shown above instead of: 
+  #
+  #  git log --pretty='%h' <currentbranch>^ ^<trackingbranch>
+  #
+  # The latter returns nothing when the top commit is a merge commit.
 
 
 def getLocalCommitsExist(inOptions, gitRepo):
@@ -2627,8 +2638,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
-                inOptions.git+" push "\
-                  +splitTrackingBranch(gitRepo.gitRepoStats.trackingBranch),
+                inOptions.git+" push "+pushToTrackingBranchArgs(gitRepo),
                 workingDir=getGitRepoDir(inOptions.srcDir, gitRepo.repoDir),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
