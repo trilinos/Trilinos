@@ -43,7 +43,7 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_PartitioningSolutionQuality.hpp
+/*! \file Zoltan2_EvaluatePartition.hpp
  *  \brief Defines the PartitioningSolutionQuality class.
  */
 
