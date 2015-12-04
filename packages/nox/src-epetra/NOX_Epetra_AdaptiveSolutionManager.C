@@ -76,6 +76,7 @@ void NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays(
 
   // Initialize solution vector and time deriv
   initial_xdot = rcp(new Epetra_Vector(*map));
+  initial_xdotdot = rcp(new Epetra_Vector(*map));
 
 }
 

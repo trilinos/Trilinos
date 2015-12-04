@@ -40,35 +40,61 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_EPETRA_FACTORY_H
-#define PIRO_EPETRA_FACTORY_H
+#ifndef PIRO_TRANSIENTDECORATOR_H
+#define PIRO_TRANSIENTDECORATOR_H
 
-#include "Teuchos_RCP.hpp"
+#include <iostream>
+
+#include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "EpetraExt_ModelEvaluator.h"
+#include "Teuchos_RCP.hpp"
 
 namespace Piro {
-namespace Epetra {
 
-//! Factory for creating Piro::Epetra solvers
-//! \deprecated Use Piro::Epetra::SolverFactory instead.
-class Factory {
-public:
+template <typename Scalar>
+class TransientDecorator
+    : public Thyra::ModelEvaluatorDefaultBase<Scalar> {
 
-  //! Constructor
-  Factory() {}
+  public:
 
-  //! Destructor
-  ~Factory() {}
+  /** \name Constructors/initializers */
+  //@{
 
-  //! Create solver
-  static Teuchos::RCP<EpetraExt::ModelEvaluator> 
-  createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
-	       Teuchos::RCP<EpetraExt::ModelEvaluator> model);
-	       
+  TransientDecorator(){}
+
+  //@}
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > get_x_dotdot() const { return xDotDot; }
+
+  void set_x_dotdot(const Teuchos::RCP<Thyra::VectorBase<Scalar> > &xdd) const {  xDotDot = xdd; }
+  void set_x_dotdot_data(const Teuchos::RCP<Thyra::VectorBase<Scalar> > &xdd) const {  assign(xDotDot.ptr(), *xdd); }
+
+  Scalar get_omega() const { return omega; };
+
+  void set_omega(const Scalar oo) const {omega = oo; }
+
+  void printVec(const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &vec) const {
+       std::cout << "GAH Vector is: " << std::endl;
+       for(int ii=0; ii < vec->space()->dim(); ii++)
+          std::cout << get_ele(*vec, ii) << std::endl;
+  }
+
+  Thyra::ModelEvaluatorBase::Derivative<Scalar> get_DgDx_dotdot(int j) const { return DgDx_dotdot_[j]; }
+
+  /** \brief Precondition: <tt>supports(OUT_ARG_DgDx_dot,j)==true</tt>.  */
+  void set_DgDx_dotdot(int j, const Thyra::ModelEvaluatorBase::Derivative<Scalar> &DgDx_dotdot_j){
+          DgDx_dotdot_[j] = DgDx_dotdot_j;
+       }
+
+  private:
+
+   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot;
+   mutable Scalar omega; 
+   mutable Teuchos::Array<Thyra::ModelEvaluatorBase::Derivative<Scalar> > DgDx_dotdot_;
+
 };
 
-}
+
 }
 
 #endif

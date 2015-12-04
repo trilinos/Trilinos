@@ -67,6 +67,8 @@ public:
    *  - Piro::NOXSolver (<tt>"NOX"</tt>)
    *  - Piro::LOCASolver (<tt>"LOCA"</tt>)
    *  - Piro::RythmosSolver (<tt>"Rythmos"</tt>)
+   *  - Piro::VelocityVerletSolver (<tt>"Velocity Verlet"</tt>)
+   *  - Piro::Epetra::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
    *
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
