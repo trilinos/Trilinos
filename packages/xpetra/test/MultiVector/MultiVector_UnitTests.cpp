@@ -499,7 +499,7 @@ namespace {
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map =
         Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(mylib, INVALID,numLocal,comm,node);
 
-#ifdef HAVE_XPETRA_EPETRA
+/*#ifdef HAVE_XPETRA_EPETRA
     if(mylib==Xpetra::UseEpetra) {
       RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       RCP<Epetra_MultiVector> mvec = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(),numVecs));
@@ -509,7 +509,7 @@ namespace {
       TEST_EQUALITY(xmv->getNumVectors(), numVecs);
       //TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
     }
-#endif
+#endif*/
   }
 
   ////
