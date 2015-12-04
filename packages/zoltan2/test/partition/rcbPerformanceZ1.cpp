@@ -65,7 +65,7 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <GeometricGenerator.hpp>
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 using namespace std;
 using std::vector;
 using std::cout;

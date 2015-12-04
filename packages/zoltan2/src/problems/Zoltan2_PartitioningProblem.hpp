@@ -53,7 +53,7 @@
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>

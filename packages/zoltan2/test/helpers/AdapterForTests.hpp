@@ -55,7 +55,7 @@
 #include <UserInputForTests.hpp>
 
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>

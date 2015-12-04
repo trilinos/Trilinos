@@ -49,7 +49,7 @@
 //         Metric related namespace methods
 
 
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <stdlib.h>

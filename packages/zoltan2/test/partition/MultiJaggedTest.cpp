@@ -56,7 +56,7 @@
 #include <GeometricGenerator.hpp>
 #include <vector>
 
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+#include <Zoltan2_EvaluatePartition.hpp>
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
