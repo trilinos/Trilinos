@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
     // Second solve
     //
 
-    cout << "Status of the preconditioner between runs:" << std::endl;
-    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
+    std::cout << "Status of the preconditioner between runs:" << std::endl;
+    H.print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
 
     // Change the problem
     RCP<Level> finestLevel = H.GetLevel(0);
@@ -232,8 +232,8 @@ int main(int argc, char *argv[]) {
       H.Delete("AP Pattern", M.GetFactory("A").get());
     }
 
-    cout << "Status of the preconditioner at the end:" << std::endl;
-    H.print(*getFancyOStream(Teuchos::rcpFromRef(cout)), MueLu::High);
+    std::cout << "Status of the preconditioner at the end:" << std::endl;
+    H.print(*getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::High);
 
     success = true;
   }
