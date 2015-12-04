@@ -624,6 +624,12 @@ namespace Sacado {
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+#include "KokkosExp_View_Fad.hpp"
+
+#else
+
 #include "Kokkos_TeuchosCommAdapters.hpp"
 #include "Kokkos_View_Fad.hpp"
 
@@ -770,6 +776,8 @@ void broadcast(const Comm<Ordinal>& comm,
 }
 
 }
+
+#endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
 
 #endif
 
