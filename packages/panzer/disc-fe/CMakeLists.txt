@@ -1,15 +1,5 @@
 TRIBITS_SUBPACKAGE(DiscFE)
 
-# Optional FEI package dependency
-#################################
-IF(${PACKAGE_NAME}_ENABLE_FEI)
-   GLOBAL_SET(PANZER_HAVE_FEI ON)
-   MESSAGE("-- FEI On")
-ELSE()
-   GLOBAL_SET(PANZER_HAVE_FEI OFF)
-   MESSAGE("-- FEI Off")
-ENDIF()
-
 # Optional CAMAL TPL dependency
 ###############################
 SET(PANZER_HAVE_CAMAL ${${PARENT_PACKAGE_NAME}_ENABLE_CAMAL} )

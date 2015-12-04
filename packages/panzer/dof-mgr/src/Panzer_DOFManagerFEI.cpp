@@ -40,45 +40,61 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __TestFieldPattern_hpp__
-#define __TestFieldPattern_hpp__
+#include "PanzerDofMgr_config.hpp"
 
-#include "Panzer_FieldPattern.hpp"
+#ifdef PANZER_HAVE_FEI
 
-#include "Teuchos_RCP.hpp"
+#include "Panzer_Traits.hpp"
 
+#include "Panzer_DOFManagerFEI_decl.hpp"
+#include "Panzer_DOFManagerFEI_impl.hpp"
+
+// FEI includes
+#include "fei_Factory_Trilinos.hpp"
+
+
+using Teuchos::RCP;
+
+// needed for faster implementation
+///////////////////////////////////////////////
 namespace panzer {
 
-class TestFieldPattern : public FieldPattern {
-public:
-   TestFieldPattern() {}
+// Function is "helpers" for DOFManagerFEI::getOwnedIndices
+///////////////////////////////////////////////////////////////////////////
 
-   /* This function has no functionality in this case.
-    * If called it will throw an assertion failure
-    */
-   virtual void getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
-   { TEUCHOS_ASSERT(false); }
+template < >
+void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+{
+   int numIndices, ni;
+   numIndices = vs->getNumIndices_Owned();
+   indices.resize(numIndices);
 
-   virtual int getSubcellCount(int dim) const
-   {  return subcellIndices[dim].size(); }
+   // directly write to int indices
+   vs->getIndices_Owned(numIndices,&indices[0],ni);
+}
 
-   virtual const std::vector<int> & getSubcellIndices(int dim,int cellIndex) const
-   {  return subcellIndices[dim][cellIndex]; }
+///////////////////////////////////////////////////////////////////////////
 
-   virtual int getDimension() const
-   { return subcellIndices.size()-1; }
+// Function is "helper" for DOFManagerFEI::getOwnedAndSharedIndices
+///////////////////////////////////////////////////////////////////////////
 
-   std::vector<std::vector<int> > & operator[](int v)
-   { return subcellIndices[v]; } 
+template < >
+void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+{
+   // get the global indices
+   vs->getIndices_SharedAndOwned(indices);
+}
 
-   virtual shards::CellTopology getCellTopology() const
-   { return cellTopo; }
-
-public:
-   std::vector<std::vector<std::vector<int> > > subcellIndices;
-   shards::CellTopology cellTopo;
-};
+///////////////////////////////////////////////////////////////////////////
 
 }
+
+template class panzer::DOFManagerFEI<int,int>;
+template class panzer::DOFManagerFEI<short,int>;
+
+#ifndef PANZER_ORDINAL64_IS_INT
+template class panzer::DOFManagerFEI<char,panzer::Ordinal64>;
+template class panzer::DOFManagerFEI<int,panzer::Ordinal64>;
+#endif
 
 #endif

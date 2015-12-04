@@ -40,14 +40,33 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_Traits.hpp"
+#ifndef __Panzer_DOFManager_Functors_hpp__
+#define __Panzer_DOFManager_Functors_hpp__
 
-#include "Panzer_DOFManager_decl.hpp"
-#include "Panzer_DOFManager_impl.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
-template class panzer::DOFManager<int,int>;
+namespace panzer {
+namespace dof_functors {
 
-#ifndef PANZER_ORDINAL64_IS_INT
-template class panzer::DOFManager<int,panzer::Ordinal64>;
+//! Sums all entries of a Rank 2 Kokkos View 
+template<typename GO, typename ArrayType>
+struct SumRank2 {
+  typedef GO value_type;
+  typedef typename PHX::Device execution_space;
+  
+  ArrayType a_;
+
+  SumRank2(ArrayType a) : a_(a) {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const unsigned int i, GO& lsum) const {
+    for (unsigned int j=0; j < a_.dimension_1(); ++j)
+      lsum += a_(i,j);
+  }
+};
+
+}
+}
+
 #endif

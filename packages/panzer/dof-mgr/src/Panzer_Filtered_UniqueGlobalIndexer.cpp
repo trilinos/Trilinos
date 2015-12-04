@@ -40,14 +40,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_Traits.hpp"
+#include "PanzerDofMgr_config.hpp"
 
-#include "Panzer_DOFManagerFactory_decl.hpp"
-#include "Panzer_DOFManagerFactory_impl.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer_impl.hpp"
 
-template class panzer::DOFManagerFactory<int,int>;
+template class panzer::Filtered_UniqueGlobalIndexer<int,int>;
 
 #ifndef PANZER_ORDINAL64_IS_INT
-template class panzer::DOFManagerFactory<int,panzer::Ordinal64>;
+template class panzer::Filtered_UniqueGlobalIndexer<int,panzer::Ordinal64>;
 #endif
