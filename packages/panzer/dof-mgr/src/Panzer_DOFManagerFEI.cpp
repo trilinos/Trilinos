@@ -44,8 +44,6 @@
 
 #ifdef PANZER_HAVE_FEI
 
-#include "Panzer_Traits.hpp"
-
 #include "Panzer_DOFManagerFEI_decl.hpp"
 #include "Panzer_DOFManagerFEI_impl.hpp"
 
