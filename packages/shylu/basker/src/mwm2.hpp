@@ -22,12 +22,12 @@
 // MQM_Q.empty
 // MQM_Q.getMax()
 //Queue structure based on Robert Sedgewick Algorith in C++ outline,
-//Modified to to use top faster (Derigs and Metz (1986)
+//Modified to to use top faster (Derigs and Metz (1986))
 
 //Comeback and change
-//#include <float.h>
-#define INF      2000
-//#define INF      DBL_MAX
+#include <float.h>
+//#define INF      2000
+#define INF      DBL_MAX
 
 namespace mwm_order
 {
@@ -509,7 +509,7 @@ namespace mwm_order
    Int *col_ptr, Int *row_idx,
    Entry  *val,
    Int *pr, Int *L,
-    Entry *d, 
+   Entry *d, 
    Int *iperm, Int *jperm, 
    Int &num, Entry &bv
    )
@@ -517,10 +517,12 @@ namespace mwm_order
     Int i,ii,i0,j,jj, k, k1, k2;
     Int kk, kk1, kk2;
     Entry a0, ai, av;
-    //bv = (Entry) INF; //bn value, b0 = min(maxr,maxc)
-    bv  = (Entry) 0;
+    //bn value, b0 = min(maxr,maxc)
+    //bv  = (Entry) 0;
+    bv = (Entry) INF;
     //printf("bv: %f \n", bv);
 
+    //Init used values
     num = 0;
     for(k = 0; k < n; k++)
       {
@@ -530,46 +532,32 @@ namespace mwm_order
 	d[k]     = (Entry) 0;
       }
     
+
+    //Scan over column nodes
     for(j=0; j<n; j++)
       {
 	a0 = (Entry) -1.0;
 	//printf("col: %d \n", j);
+        //For each column node, 
 	for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
 	  {
 	    i  = row_idx[k];
 	    ai = abs(val[k]);
-	    //printf("row: %d %f \n", i, ai);
-	    /*
-	    if(ai == (Entry) 0)
-	      {
-		printf("zero... continue\n");
-		continue;
-	      }
-	    */
+            // printf("row: %d %f \n", i, ai);
+	   
 	    if(ai > d[i])
 	      {
-		//printf("snag 1\n");
 		d[i] = ai;
 	      }
 	    if(jperm[j] != -1)
 	      {
-		//printf("snag 2\n");
 		continue;
 	      }
-	    /*
-	    if(ai == (Entry) 0)
-	      {
-		printf("zero... continue\n");
-		continue;
-	      }
-	    */
 	    if(ai >= bv)
 	      {
-		//printf("snag 3 \n");
 		a0 = bv;
 		if(iperm[i] != -1)
 		  {
-		    //printf("snag 4\n");
 		    continue;
 		  }
 		jperm[j] = i;
@@ -577,12 +565,12 @@ namespace mwm_order
 		
 		//printf("assign1 iperm: %d %d \n",
 		//i, iperm[i]);
-
-		if(iperm[i] <= -1)
-		  {
-		    printf("Error iperm: %d %d \n", 
-			   i, iperm[i]);
-		  }
+                //We should not need this check anymore
+		//if(iperm[i] <= -1)
+		//  {
+		//    printf("Error iperm: %d %d \n", 
+                //		   i, iperm[i]);
+                // }
 		num++;
 	      }
 	    else
@@ -594,10 +582,12 @@ namespace mwm_order
 		a0 = ai;
 		i0 = i;
 	      }
-	  }//for-k
+	  }//for-k, row nodes
 	if((a0 != ((Entry)(-1.0))) && 
 	   (a0 < bv))
 	  {
+            //Does this ever get called?
+            //printf("question called\n");
 	    bv = a0;
 	    if(iperm[i0] != -1)
 	      {
@@ -607,13 +597,14 @@ namespace mwm_order
 	    jperm[j]  = i0;
 	    
 	    //printf("assign2 iperm: %d %d \n",
-	    //i0, iperm[i0]);
-
-	    if(iperm[i0] <=-1)
-	      {
+	    //i0, iperm[i0])
+            
+            //Do we need this anymore
+	    //if(iperm[i0] <=-1)
+	    //  {
 		//printf("Error 2: iperm: %d %d \n",
 		//i0, iperm[i0]);
-	      }
+            //}
 
 	    num++;
 	  }
@@ -626,11 +617,11 @@ namespace mwm_order
       }
 
 
-  printf("first init: %d iperm: %d bv : %f\n", num, iperm[1], bv);
+    //printf("first init: %d iperm: %d bv : %f\n", num, iperm[1], bv);
     //Check if good
     if(num == n)
       {
-	printf("returning without shifting \n");
+	//printf("returning without shifting \n");
 	return 0;
       }
 
@@ -659,11 +650,11 @@ namespace mwm_order
 		iperm[i] = j;
 		pr[j]    = k+1;
 
-		if(iperm[j] <= -1)
-		  {
-		    //printf("E3 iperm: %d %d \n",
-		    //j, i);
-		  }
+		//if(iperm[j] <= -1)
+		//  {
+                //printf("E3 iperm: %d %d \n",
+                //j, i);
+                // }
 
 	
 		break;
@@ -696,11 +687,11 @@ namespace mwm_order
 		    iperm[i] = j;
 		    pr[j] = k+1;
 		    
-		    if(iperm[i] <=-1)
-		      {
+		    //if(iperm[i] <=-1)
+		    //  {
 			//printf("E4 iperm: %d %d \n",
 			//     i, iperm[i]);
-		      }
+                    // }
 
 		    //no nice way in C to do 
 		    //double break
@@ -1050,8 +1041,6 @@ namespace mwm_order
    )
   {
 
-
-
     Entry *d          = new Entry[n];
     Int   *jperm      = new Int[n];
     Int   *iperm      = new Int[n];
@@ -1068,11 +1057,11 @@ namespace mwm_order
 		num, bv);
 
 
-    //#ifdef MATCH_DEBUG
+    #ifdef MATCH_DEBUG
     printf("\n");
     printf("Bottleneck init done.  num: %d n: %d \n", num, n);
     printf("\n");
-    //#endif
+    #endif
 
 
     for(Int i = 0; i < n; i++)
@@ -1080,7 +1069,7 @@ namespace mwm_order
 	    perm[i] = iperm[i];
 	  }
 
-    //#ifdef MATCH_DEBUG
+    #ifdef MATCH_DEBUG
     FILE *fp;
     fp = fopen("bn_init.txt", "w");
     printf("BN init perm: \n");
@@ -1091,7 +1080,7 @@ namespace mwm_order
       }
     fclose(fp);
     printf("\n");
-    //#endif
+    #endif
 
 
     if(num == n)

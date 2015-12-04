@@ -288,24 +288,19 @@ namespace BaskerNS
 	        Int nnz, Int *col_ptr, Int *row_idx, Entry *val) 
   {
     
-    //printf("first in factor \n");
-    //ALM(0)(0).info();
-
     int err = A.copy_values(nrow, ncol, nnz, col_ptr, row_idx, val);
-
-    //ALM(0)(0).info();
 
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;
       }
     err = sfactor_copy();
-    printf("Done with sfactor_copy: %d \n", err);
+    //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;
       }
-    printf("before notoken\n");
+    //printf("before notoken\n");
     err = factor_notoken(0);
     if(err == BASKER_ERROR)
       {
@@ -313,7 +308,7 @@ namespace BaskerNS
       }
 
     
-    DEBUG_PRINT();
+    //DEBUG_PRINT();
 
     return 0;
 

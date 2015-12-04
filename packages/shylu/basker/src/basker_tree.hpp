@@ -1199,7 +1199,7 @@ namespace BaskerNS
 	//      order_match_array(1));
 
         
-        printf("match_flag\n");
+        //printf("match_flag\n");
 	permute_row(A,order_match_array);
 	sort_matrix(A);
       }

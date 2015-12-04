@@ -456,7 +456,7 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::t_init_workspace(Int kid)
   {
 
-    printf("t_init_workspace called \n");
+    //printf("t_init_workspace called \n");
 
 
      Int max_sep_size = 0;

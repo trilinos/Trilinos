@@ -183,14 +183,14 @@ namespace BaskerNS
     amd_flag = BASKER_TRUE;
 
     //Debug,
-    //#ifdef BASKER_DEBUG_ORDER_AMD
+    #ifdef BASKER_DEBUG_ORDER_AMD
     printf("cmember: \n");
     for(Int i = 0; i < M.ncol; ++i)
       {
 	printf("(%d, %d), ", i, cmember(i));
       }
     printf("\n"); 
-    //#endif
+    #endif
 
 
 

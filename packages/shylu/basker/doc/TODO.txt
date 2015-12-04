@@ -1,6 +1,9 @@
 BASKER TODO
 
 * Things to do
+** Complex numbers
+   ** factor
+   ** numerical orderings
 ** Full btf
    ** Fix double BTF structure
    ** Fix btf balance (not hard coded)
@@ -8,7 +11,6 @@ BASKER TODO
    ** Multivector
 ** Pivot update
 ** AMD on small blks
-** Zero entry matches
 ** Kokkos Realloc segfaulting ??
    -Issue with kokkos, will be fixed in kokkos refactor
 

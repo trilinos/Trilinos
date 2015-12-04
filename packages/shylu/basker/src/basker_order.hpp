@@ -270,7 +270,7 @@ namespace BaskerNS
   {
 
 
-    printf("match_order called\n");
+    //printf("match_order called\n");
 
     /* ---- Tests --------
 

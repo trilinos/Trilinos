@@ -69,7 +69,7 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::factor_notoken(Int option)
   {
 
-    printf("factor no token called \n");
+    //printf("factor no token called \n");
 
     gn = A.ncol;
     gm = A.nrow;

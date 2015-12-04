@@ -278,10 +278,10 @@ namespace BaskerNS
    )
   {
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("break_into_parts called \n");
     printf("nblks: %d \n", nblks);
-    //#endif
+    #endif
     
     Options.btf = BASKER_TRUE;
 
