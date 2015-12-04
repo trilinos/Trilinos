@@ -399,8 +399,8 @@ private:
   // Did the user request metrics?
 
   bool metricsRequested_;
-  RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
-  RCP<const GraphPartitioningSolutionQuality<Adapter> > graphMetrics_;
+  RCP<const EvaluatePartition<Adapter> > metrics_;
+  RCP<const EvaluateGraphPartition<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -632,7 +632,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   if (metricsRequested_){
     typedef PartitioningSolution<Adapter> ps_t;
-    typedef PartitioningSolutionQuality<Adapter> psq_t;
+    typedef EvaluatePartition<Adapter> psq_t;
     typedef StridedData<lno_t, scalar_t> input_t;
 
     psq_t *quality = NULL;
@@ -648,7 +648,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     if (inputType_ == GraphAdapterType ||
 	inputType_ == MatrixAdapterType ||
 	inputType_ == MeshAdapterType){
-      typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
+      typedef EvaluateGraphPartition<Adapter> gpsq_t;
 
       gpsq_t *graphQuality = NULL;
 

@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file Zoltan2_EvaluatePartition.hpp
- *  \brief Defines the PartitioningSolutionQuality class.
+ *  \brief Defines the EvaluatePartition class.
  */
 
 #ifndef ZOLTAN2_SOLUTIONQUALITY_HPP
@@ -63,7 +63,7 @@ namespace Zoltan2{
  */
 
 template <typename Adapter>
-  class PartitioningSolutionQuality {
+  class EvaluatePartition {
 
 private:
 
@@ -92,7 +92,7 @@ public:
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-  PartitioningSolutionQuality(const RCP<const Environment> &env,
+  EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const Adapter> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
@@ -151,7 +151,7 @@ public:
 };
 
 template <typename Adapter>
-  class GraphPartitioningSolutionQuality {
+  class EvaluateGraphPartition {
 
 private:
 
@@ -178,7 +178,7 @@ public:
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-  GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
+  EvaluateGraphPartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln);
@@ -216,7 +216,7 @@ public:
 };
 
 template <typename Adapter>
-  PartitioningSolutionQuality<Adapter>::PartitioningSolutionQuality(
+  EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const Adapter> &ia, 
@@ -225,7 +225,7 @@ template <typename Adapter>
     metrics_(),  metricsConst_()
 {
 
-  env->debug(DETAILED_STATUS, std::string("Entering PartitioningSolutionQuality"));
+  env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");
 
   // When we add parameters for which weights to use, we
@@ -254,11 +254,11 @@ template <typename Adapter>
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
-  env->debug(DETAILED_STATUS, std::string("Exiting PartitioningSolutionQuality"));
+  env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));
 }
 
 template <typename Adapter>
-  GraphPartitioningSolutionQuality<Adapter>::GraphPartitioningSolutionQuality(
+  EvaluateGraphPartition<Adapter>::EvaluateGraphPartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
@@ -268,7 +268,7 @@ template <typename Adapter>
 {
 
   env->debug(DETAILED_STATUS,
-	     std::string("Entering GraphPartitioningSolutionQuality"));
+	     std::string("Entering EvaluateGraphPartition"));
   env->timerStart(MACRO_TIMERS, "Computing graph metrics");
   // When we add parameters for which weights to use, we
   // should check those here.  For now we compute graph metrics
@@ -307,7 +307,7 @@ template <typename Adapter>
 
   env->timerStop(MACRO_TIMERS, "Computing graph metrics");
   env->debug(DETAILED_STATUS,
-	     std::string("Exiting GraphPartitioningSolutionQuality"));
+	     std::string("Exiting EvaluateGraphPartition"));
 }
 
 }   // namespace Zoltan2
