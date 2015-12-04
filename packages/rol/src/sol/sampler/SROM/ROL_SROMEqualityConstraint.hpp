@@ -64,10 +64,11 @@ public:
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
     Teuchos::RCP<std::vector<Real> > ec =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(c)).getVector());
-    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
+    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     Real psum = 0.0, sum = 0.0;
-    for (size_t i = 0; i < ex.getNumSamples(); i++) {
-      psum += ex.getWeight(i);
+    for (size_t i = 0; i < prob.dimension(); i++) {
+      psum += prob.getProbability(i);
     }
     bman_->sumAll(&psum,&sum,1);
     (*ec)[0] = sum - 1.0;
@@ -76,23 +77,24 @@ public:
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
     Teuchos::RCP<std::vector<Real> > ejv =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(jv)).getVector());
-    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
+    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
+    const ProbabilityVector<Real> &prob = *(ev.getProbabilityVector());
     Real psum = 0.0, sum = 0.0;
-    for (size_t i = 0; i < ev.getNumSamples(); i++) {
-      psum += ev.getWeight(i);
+    for (size_t i = 0; i < prob.dimension(); i++) {
+      psum += prob.getProbability(i);
     }
     bman_->sumAll(&psum,&sum,1);
     (*ejv)[0] = sum;
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    DualSROMVector<Real> &eajv = Teuchos::dyn_cast<DualSROMVector<Real> >(ajv);
+    ajv.zero();
+    SROMVector<Real> &eajv = Teuchos::dyn_cast<SROMVector<Real> >(ajv);
+    ProbabilityVector<Real> &prob = *(eajv.getProbabilityVector());
     Teuchos::RCP<const std::vector<Real> > ev =
       (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-    const std::vector<Real> pt(eajv.getDimension(),0.0);
-    for (size_t i = 0; i < eajv.getNumSamples(); i++) {
-      eajv.setPoint(i,pt);
-      eajv.setWeight(i,(*ev)[0]);
+    for (size_t i = 0; i < prob.dimension(); i++) {
+      prob.setProbability(i,(*ev)[0]);
     }
   }
 

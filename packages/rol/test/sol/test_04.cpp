@@ -53,6 +53,8 @@
 #include "ROL_SROMGenerator.hpp"
 #include "ROL_DistributionFactory.hpp"
 
+#include <ctime>
+
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -104,10 +106,14 @@ int main(int argc, char* argv[]) {
     Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
+    std::clock_t timer = std::clock();
     Teuchos::RCP<ROL::BatchManager<double> > bman =
       Teuchos::rcp(new ROL::TeuchosBatchManager<double,int>(commptr));
     Teuchos::RCP<ROL::SampleGenerator<double> > sampler =
       Teuchos::rcp(new ROL::SROMGenerator<double>(*parlist,bman,distVec));
+    *outStream << std::endl << "Sample Time: "
+               << (std::clock()-timer)/(double)CLOCKS_PER_SEC << " seconds"
+               << std::endl;
 
     double val = 0., error = 0., data = 0., sum = 0.;
     *outStream << std::endl;
