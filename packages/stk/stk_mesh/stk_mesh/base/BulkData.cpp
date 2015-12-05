@@ -2747,8 +2747,10 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
       }
     }
 
+#ifndef NDEBUG
     all_reduce( p_comm , ReduceSum<1>( & error_count ) );
     ThrowErrorMsgIf( error_count, error_msg.str() );
+#endif
 
     // Any entity that I sent and is not in an owned closure is deleted.
     // The owned closure will be effected by received entities, so can
