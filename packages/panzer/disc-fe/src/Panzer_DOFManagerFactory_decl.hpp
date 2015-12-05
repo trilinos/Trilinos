@@ -43,7 +43,7 @@
 #ifndef __Panzer_DOFManagerFactory_decl_hpp__
 #define __Panzer_DOFManagerFactory_decl_hpp__
 
-#include "PanzerDofMgr_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_UniqueGlobalIndexerFactory.hpp"
 
