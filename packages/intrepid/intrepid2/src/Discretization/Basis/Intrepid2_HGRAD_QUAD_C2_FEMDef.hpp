@@ -421,10 +421,10 @@ void Basis_HGRAD_QUAD_C2_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & Do
   TEUCHOS_TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) rank = 2 required for DofCoords array");
   // Verify 0th dimension of output array.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<index_type>(DofCoords.dimension(0)) == static_cast<index_type>(this -> basisCardinality_) ), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
   // Verify 1st dimension of output array.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<index_type>(DofCoords.dimension(1)) == static_cast<index_type>(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
 #endif
 

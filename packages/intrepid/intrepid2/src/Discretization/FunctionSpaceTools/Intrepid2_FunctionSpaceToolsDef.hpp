@@ -1350,7 +1350,7 @@ typedef typename conditional_eSpace<ArrayOut>::execution_space execution_space;
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cell) const {
    if (inDet(cell,0) < 0.0) {
-      for (index_type point=0; point<outVals.dimension(1); point++) {
+      for (index_type point=0; point<static_cast<index_type>(outVals.dimension(1)); point++) {
         outVals(cell, point) *= -1.0;
       }
     }
