@@ -54,6 +54,12 @@
 
 namespace Xpetra {
 
+  // TODO move this typedef to another place
+  // Node which is used for Epetra. This can be either the
+  // Serial node or OpenMP node (but not both)
+  // TODO add some logic to decide which is the right EpetraNode
+  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+
   enum UnderlyingLib {
     UseEpetra,
     UseTpetra,
