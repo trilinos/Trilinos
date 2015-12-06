@@ -1135,6 +1135,9 @@ std::ostream& PHX::operator<<(std::ostream& os,
 //struct Rank{static const int value = -1;};
 #ifdef Phalanx_ENABLE_IntrepidIntrepid2
 
+#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
+#include "KokkosRank.hpp"
+
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
