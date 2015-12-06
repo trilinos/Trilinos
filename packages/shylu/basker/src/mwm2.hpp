@@ -125,7 +125,9 @@ namespace mwm_order
     const Int k = 2;
     
     pos = L[i];
-    if(pos > -1)
+    //printf("L i: %d pos: %d \n",
+    //	   i, pos);
+    if(pos > 0)
       {
 	di = d[i];
 	
@@ -133,6 +135,9 @@ namespace mwm_order
 	  {
 	    posk = pos/k;
 	    qk   = Q[posk];
+	    //printf("test posk: %d qk: %d \n", 
+	    //	   posk, qk);
+
 	    if(di <= d[qk])
 	      {
 		break;
@@ -751,7 +756,24 @@ namespace mwm_order
     Entry MINONE = (Entry) -1.0;
 
     Int *Q = new Int[n+1];
+   
+    //Debug
+    #ifdef MWM_DEBUG
+    printf("iperm:\n");
+    for(Int jj = 0; jj < n; jj++)
+      {
+	printf("%d, ", iperm[jj]);
+      }
+    printf("\n");
+    printf("jperm: \n");
+    for(Int jj = 0; jj < n; jj++)
+      {
+	printf("%d, ", jperm[jj]);
+      }
+    printf("\n");
+    #endif
     
+ 
     //prep
     for(i = 0; i < n; i++)
       {
@@ -779,12 +801,16 @@ namespace mwm_order
 	  {
 	    i    = row_idx[k];
 	    dnew = abs(val[k]);
+	    //printf("col: %d row: %d val: %f \n", 
+	    //	   j, i, dnew);
 	    if(csp >= dnew)
 	      {
+		//printf("continued \n");
 		continue;
 	      }
 	    if(iperm[i] == -1)
 	      {
+		//printf("add \n");
 		csp = dnew;
 		isp = i;
 		jsp = j;
@@ -797,14 +823,18 @@ namespace mwm_order
 	      }
 	    else
 	      {
+		//printf("fix up \n");
 		d[i] = dnew;
 		if(dnew >= bv)
 		  {
+		    //printf("add low q[%d]=%d \n",
+		    //	   low-1, i);
 		    low--;
 		    Q[low] = i;
 		  }
 		else
 		  {
+		    //printf("push down\n");
 		    L[i] = qlen;
 		    qlen++;
 		    mwm_heap_down2(i,n,Q,d,L);
@@ -812,15 +842,18 @@ namespace mwm_order
 		jj = iperm[i];
 		pr[jj] = j;
 	      }//
+	    //printf("???\n");
 	  }//for-k
 	
 
 	for(jdum = 0; jdum < num; jdum++)
 	  {
+	    //printf("second \n");
 	    bool d_break = false;
 
 	    if(low == up)
 	      {
+		//printf("low == up \n");
 		if(qlen == 0)
 		  {
 		    goto L160;
@@ -853,16 +886,21 @@ namespace mwm_order
 		  }//for-idum
 	      }//if-low==up
 
+	   
 	    up--;
 	    q0   = Q[up];
 	    dq0  = d[q0];
 	    L[q0] = up;
+	    //printf("assing start  L[%d] = %d \n",
+	    //	   q0, up);
 
+	    
 	    j = iperm[q0];
 	    for(k = col_ptr[j]; k < col_ptr[j+1]; k++)
 	      {
 		i = row_idx[k];
-		
+		//printf("consider col: %d row: %d \n",
+		//     j, i);
 		if(L[i] >= up)
 		  {
 		    continue;
@@ -887,6 +925,7 @@ namespace mwm_order
 		  }
 		else
 		  {
+		    //printf("HERE1\n");
 		    di = d[i];
 		    if((di >= bv) || (di>=dnew))
 		      {
@@ -895,6 +934,7 @@ namespace mwm_order
 		    d[i] = dnew;
 		    if(dnew >= bv)
 		      {
+			//printf("HERE2\n");
 			if(di != MINONE)
 			  {
 			    lpos = L[i];
@@ -908,11 +948,15 @@ namespace mwm_order
 		      }
 		    else
 		      {
+			//printf("HERE3\n");
 			if(di == MINONE)
 			  {
+			    //printf("L[%d] = %d \n",
+			    //i, qlen);
 			    L[i] = qlen;
 			    qlen++;
 			  }
+
 			mwm_heap_down2(i,n,Q,d,L);
 		      }//if-else
 		    
