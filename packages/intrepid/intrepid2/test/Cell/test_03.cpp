@@ -86,78 +86,78 @@ void testSubcellParametrizations(int&                               errorFlag,
 
 //IKT, 10/8/15: The following is a helper function that takes in a shards::CellTopology
 //and returns a pointer to the Intrepid::Basis associated with this topology. 
-Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
+Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> > >
 getIntrepidBasis(const shards::CellTopology &cellTopo)
 {
-  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> > >
+  Teuchos::RCP< Basis< double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> > >
   HGRAD_Basis;
   // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
   switch( cellTopo.getKey() ){
       
     // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Triangle<3>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Quadrilateral<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<4>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<8>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<6>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<5>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     // Standard Extended topologies
     case shards::Triangle<6>::key:    
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Quadrilateral<9>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Tetrahedron<10>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Tetrahedron<11>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Hexahedron<20>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Hexahedron<27>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Wedge<15>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
         
     case shards::Wedge<18>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
 
     case shards::Pyramid<13>::key:
-    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, void, Kokkos::LayoutRight, Kokkos::Serial> >() );
+    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<double, FieldContainer_Kokkos<double, Kokkos::LayoutRight, Kokkos::Serial> >() );
     break;
        
     // These extended topologies are not used for mapping purposes

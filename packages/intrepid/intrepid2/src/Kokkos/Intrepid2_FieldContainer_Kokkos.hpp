@@ -2,9 +2,11 @@
 #ifndef INTREPID2_FIELDCONTAINER_KOKKOS_HPP
 #define INTREPID2_FIELDCONTAINER_KOKKOS_HPP
 
+//#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 #include <impl/Kokkos_Timer.hpp>
+//#endif
 
 #include <random>
 #include <time.h>
@@ -16,9 +18,9 @@
 namespace Intrepid2{
 class none{};
 class FieldContainer_Kokkos_Ptr;
-template <class Scalar,class ScalarPointer=void,class MemoryLayout=void,class ExecutionSpace=void>
+template <class Scalar,class MemoryLayout=Kokkos::LayoutRight,class ExecutionSpace=Kokkos::DefaultExecutionSpace>
 class FieldContainer_Kokkos;
-template <class Scalar>
+/*template <class Scalar>
 class FieldContainer_Kokkos<Scalar,void,void,void>{
 size_t dim0=0;
 size_t dim1=0;
@@ -44,6 +46,125 @@ FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7);
+
+void resize(size_t dim_0){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=0;
+dim2=dim[2]=0;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=1;
+sizeValue=dim_0;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+
+}
+void resize(size_t dim_0,size_t dim_1){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=0;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=2;
+sizeValue=dim_0*dim_1;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=3;
+sizeValue=dim_0*dim_1*dim_2;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=4;
+sizeValue=dim_0*dim_1*dim_2*dim_3;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2; 
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=5;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2; 
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=6;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=dim_6;
+dim7=dim[7]=0;
+rankValue=7;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7){
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=dim_6;
+dim7=dim[7]=dim_7;
+rankValue=8;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;;
+delete[] containerMemory;
+containerMemory=new Scalar[sizeValue];
+
+}
+
 FieldContainer_Kokkos(FieldContainer_Kokkos& inContainer);
 FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
@@ -343,7 +464,7 @@ inline Scalar& FieldContainer_Kokkos<Scalar>::operator() (const size_t i0,const 
 return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6)*dim7+i7];
 }
 
-
+*/
 }
 
 template<class Scalar>

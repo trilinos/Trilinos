@@ -983,15 +983,15 @@ typedef typename conditional_eSpace<ArrayJac>::execution_space execution_space;
 
 template <class Scalar,class ArrayPointWrap,class ArrayPoint>
 struct copyTempPoints {
-  FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints;
   ArrayPointWrap points;
+  FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  copyTempPoints (FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints_, ArrayPointWrap points_) :
+  copyTempPoints (FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints_, ArrayPointWrap points_) :
      tempPoints(tempPoints_),points(points_)
   {}
 
@@ -1009,7 +1009,7 @@ template <class Scalar,class ArrayJacWrap, class ArrayCellWrap,class ArrayPoint>
 struct setJacref2WhichNeg1 {
   ArrayJacWrap jacobian;
   ArrayCellWrap cellWorkset;
-  FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
+  FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
 int spaceDim;
 size_t numPoints;
 int basisCardinality;
@@ -1019,7 +1019,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2WhichNeg1 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref2WhichNeg1 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_)
  {}
 
@@ -1048,7 +1048,7 @@ template <class Scalar,class ArrayJacWrap, class ArrayCellWrap,class ArrayPoint>
 struct setJacref2Which {
   ArrayJacWrap jacobian;
   ArrayCellWrap cellWorkset;
-  FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
+  FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
   int spaceDim;
   size_t numPoints;
   int basisCardinality;
@@ -1059,7 +1059,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2Which (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_,int whichCell_) :
+  setJacref2Which (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_,int whichCell_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_), whichCell(whichCell_)
  {}
 
@@ -1092,14 +1092,14 @@ struct setJacref3 {
 int spaceDim;
 size_t numPoints;
 int basisCardinality;
-Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis;
+Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref3 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref3 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),points(points_),spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_),HGRAD_Basis(HGRAD_Basis_)
  {}
 
@@ -1107,8 +1107,8 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cellOrd) const {
-FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
-FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
+FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
             for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
               for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
                 tempPoints(pt, dm) = points(cellOrd, pt, dm);
@@ -1153,7 +1153,7 @@ FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSp
   
     // Temp (F,P,D) array for the values of basis functions gradients at the reference points
     int basisCardinality = HGRAD_Basis -> getCardinality();
-    FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
+    FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
     
     
 if(getrank(jacobian)==4){
@@ -1171,7 +1171,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
       case 2:
         {
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
-          FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
 Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
@@ -1228,74 +1228,74 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
     size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
     
     // Jacobian is computed using gradients of an appropriate H(grad) basis function: define RCP to the base class
-    Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis;
+    Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis;
     
     // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
     switch( cellTopo.getKey() ){
       
       // Standard Base topologies (number of cellWorkset = number of vertices)
       case shards::Line<2>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Triangle<3>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Quadrilateral<4>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Tetrahedron<4>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Hexahedron<8>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Wedge<6>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
 
       case shards::Pyramid<5>::key:
-	    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+	    HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_C1_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
 	    break;
         
       // Standard Extended topologies
       case shards::Triangle<6>::key:    
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
       case shards::Quadrilateral<9>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Tetrahedron<10>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
 
       case shards::Tetrahedron<11>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_COMP12_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
 
       case shards::Hexahedron<20>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Hexahedron<27>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
 
       case shards::Wedge<15>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
         
       case shards::Wedge<18>::key:
-        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+        HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
         break;
 
       case shards::Pyramid<13>::key:
-	HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
+	HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_PYR_I2_FEM<Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> >() );
 	break;
         
         // These extended topologies are not used for mapping purposes
@@ -1325,7 +1325,7 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
     
     // Temp (F,P,D) array for the values of basis functions gradients at the reference points
     int basisCardinality = HGRAD_Basis -> getCardinality();
-    FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
+    FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
     
     
 if(getrank(jacobian)==4){
@@ -1343,7 +1343,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
       case 2:
         {
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
-          FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
 Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
@@ -1426,6 +1426,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
+//#define HAVE_INTREPID_KOKKOSCORE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1639,6 +1640,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
+//#define HAVE_INTREPID_KOKKOSCORE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1916,7 +1918,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    Scalar totalError;
+    double totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)
@@ -2043,7 +2045,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    Scalar totalError;
+    double totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)

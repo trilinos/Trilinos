@@ -1,7 +1,7 @@
 #ifdef KOKKOS_HAVE_CUDA
 namespace Intrepid2{
-template <class Scalar,class ScalarPointer>
-class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>{
+template <class Scalar>
+class FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>{
 size_t dim0=0;
 size_t dim1=0;
 size_t dim2=0;
@@ -11,14 +11,64 @@ size_t dim5=0;
 size_t dim6=0;
 size_t dim7=0;
 size_t dim[8]={0};
-bool intrepidManaged=false;
+bool intrepidManaged=true;
 Scalar* containerMemory;
 unsigned int count_=1;
 size_t rankValue=0;
 size_t sizeValue=0;
 public:
 FieldContainer_Kokkos()=delete;
-FieldContainer_Kokkos(Kokkos::View<ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>& InContainer);
+template <class ScalarPointer>
+FieldContainer_Kokkos(Kokkos::View<ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>& InContainer){
+dim0=dim[0]=InContainer.dimension(0);
+dim1=dim[1]=InContainer.dimension(1);
+dim2=dim[2]=InContainer.dimension(2);
+dim3=dim[3]=InContainer.dimension(3);
+dim4=dim[4]=InContainer.dimension(4);
+dim5=dim[5]=InContainer.dimension(5);
+dim6=dim[6]=InContainer.dimension(6);
+dim7=dim[7]=InContainer.dimension(7);
+rankValue=Kokkos::View<ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::Rank;
+intrepidManaged=false;
+switch(rankValue){
+case 1:
+sizeValue=dim0;
+break;
+
+case 2:
+sizeValue=dim0*dim1;
+break;
+
+case 3:
+sizeValue=dim0*dim1*dim2;
+break;
+
+case 4:
+sizeValue=dim0*dim1*dim2*dim3;
+break;
+
+case 5:
+sizeValue=dim0*dim1*dim2*dim3*dim4;
+break;
+
+case 6:
+sizeValue=dim0*dim1*dim2*dim3*dim4*dim5;
+break;
+
+case 7:
+sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6;
+break;
+
+case 8:
+sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6*dim7;
+break;
+
+}
+
+containerMemory=InContainer.ptr_on_device();
+}
+
+
 FieldContainer_Kokkos(size_t dim_0);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2);
@@ -27,6 +77,174 @@ FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6);
 FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7);
+
+
+void resize(size_t dim_0){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=0;
+dim2=dim[2]=0;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=1;
+sizeValue=dim_0;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+void resize(size_t dim_0,size_t dim_1){
+
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=0;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=2;
+sizeValue=dim_0*dim_1;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2){
+
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=3;
+sizeValue=dim_0*dim_1*dim_2;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=4;
+sizeValue=dim_0*dim_1*dim_2*dim_3;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=5;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=6;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=dim_6;
+dim7=dim[7]=0;
+rankValue=7;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+
+}
+void resize(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7){
+if(!intrepidManaged){
+std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+}
+
+
+dim0=dim[0]=dim_0;
+dim1=dim[1]=dim_1;
+dim2=dim[2]=dim_2;
+dim3=dim[3]=dim_3;
+dim4=dim[4]=dim_4;
+dim5=dim[5]=dim_5;
+dim6=dim[6]=dim_6;
+dim7=dim[7]=dim_7;
+rankValue=8;
+sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;;
+cudaFree(&containerMemory);
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+
+}
+
+
+
 FieldContainer_Kokkos(FieldContainer_Kokkos& inContainer);
 FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
@@ -110,14 +328,14 @@ Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMe
 
 };
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::~FieldContainer_Kokkos(){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::~FieldContainer_Kokkos(){
 count_=count_-1;
 if(count_==0 && intrepidManaged){cudaFree(containerMemory);}
 }
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0){
 count_=1;
 dim0=dim[0]=dim_0;
 rankValue=1;
@@ -126,8 +344,8 @@ sizeValue=dim_0;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -136,8 +354,8 @@ intrepidManaged=true;
 sizeValue=dim_0*dim_1;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -148,8 +366,8 @@ sizeValue=dim_0*dim_1*dim_2;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -162,8 +380,8 @@ cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 
 }
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -176,8 +394,8 @@ sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -190,8 +408,8 @@ intrepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -207,8 +425,8 @@ cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7){
+template <class Scalar>
+FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(size_t dim_0,size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4,size_t dim_5,size_t dim_6,size_t dim_7){
 count_=1;
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -226,127 +444,79 @@ cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 
 
 
-template <class Scalar,class ScalarPointer>
-FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::FieldContainer_Kokkos(Kokkos::View<ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>& InContainer){
-dim0=dim[0]=InContainer.dimension(0);
-dim1=dim[1]=InContainer.dimension(1);
-dim2=dim[2]=InContainer.dimension(2);
-dim3=dim[3]=InContainer.dimension(3);
-dim4=dim[4]=InContainer.dimension(4);
-dim5=dim[5]=InContainer.dimension(5);
-dim6=dim[6]=InContainer.dimension(6);
-dim7=dim[7]=InContainer.dimension(7);
-rankValue=Kokkos::View<ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::Rank;
-switch(rankValue){
-case 1:
-sizeValue=dim0;
-break;
 
-case 2:
-sizeValue=dim0*dim1;
-break;
-
-case 3:
-sizeValue=dim0*dim1*dim2;
-break;
-
-case 4:
-sizeValue=dim0*dim1*dim2*dim3;
-break;
-
-case 5:
-sizeValue=dim0*dim1*dim2*dim3*dim4;
-break;
-
-case 6:
-sizeValue=dim0*dim1*dim2*dim3*dim4*dim5;
-break;
-
-case 7: 
-sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6;
-break;
-
-case 8: 
-sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6*dim7;
-break;
-
-}
-
-containerMemory=InContainer.ptr_on_device();
-}
-
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0){
 return containerMemory[i0];
 }
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1){
 return containerMemory[dim0*i1+i0];
 }
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2){
 return containerMemory[(dim1*i2+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3){
 return containerMemory[((dim2*i3+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4){
 return containerMemory[(((dim3*i4+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5){
 return containerMemory[((((dim4*i5+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6){
 return containerMemory[(((((dim5*i6+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6,const size_t i7){
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6,const size_t i7){
 return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0)const{
 return containerMemory[i0];
 }
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1)const{
 return containerMemory[dim0*i1+i0];
 }
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2)const{
 return containerMemory[(dim1*i2+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3)const{
 return containerMemory[((dim2*i3+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4)const{
 return containerMemory[(((dim3*i4+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5)const{
 return containerMemory[((((dim4*i5+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6)const{
 return containerMemory[(((((dim5*i6+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
-template <class Scalar,class ScalarPointer>
-inline Scalar& FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6,const size_t i7)const{
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const size_t i0,const size_t i1,const size_t i2,const size_t i3,const size_t i4,const size_t i5,const size_t i6,const size_t i7)const{
 return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
