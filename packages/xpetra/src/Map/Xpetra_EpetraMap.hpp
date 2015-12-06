@@ -75,12 +75,11 @@ namespace Xpetra {
   //
 
   // stub implementation for EpetraMapT
-  template<class EpetraGlobalOrdinal, class Node>
+  template<class GlobalOrdinal, class Node>
   class EpetraMapT
-    : public virtual Map<int, EpetraGlobalOrdinal, Node>
+    : public virtual Map<int, GlobalOrdinal, Node>
   {
     typedef int LocalOrdinal;
-    typedef EpetraGlobalOrdinal GlobalOrdinal;
 
   public:
     typedef int local_ordinal_type;
@@ -200,10 +199,8 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
-      //typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
-      //return default_node_type;
     }
 
     //@}
@@ -530,7 +527,7 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>(); // TODO fix this
     }
 
@@ -963,7 +960,7 @@ namespace Xpetra {
 
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
-      XPETRA_MONITOR("EpetraMapT<EpetraGlobalOrdinal>::getNode");
+      XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return KokkosClassic::Details::getNode<Node>();
     }
 
