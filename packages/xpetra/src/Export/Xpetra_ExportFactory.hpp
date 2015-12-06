@@ -87,15 +87,14 @@ namespace Xpetra {
 
   };
 
-  // Specialization on Serial Node (mainly used for Epetra)
-#ifdef HAVE_XPETRA_SERIAL
-
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
   template <>
-  class ExportFactory<int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class ExportFactory<int, int, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -109,11 +108,9 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
       if (source->lib() == UseTpetra)
         return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("ExportFactory<int,int>", "TpetraExport<int,int>", "int");
 #endif
 #endif
 
@@ -128,14 +125,16 @@ namespace Xpetra {
     }
 
   };
+#endif
 
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
   template <>
-  class ExportFactory<int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class ExportFactory<int, long long, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -149,8 +148,10 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (source->lib() == UseTpetra)
         return rcp( new TpetraExport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -164,8 +165,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
-#endif // HAVE_XPETRA_SERIAL
+#endif
 
 }
 
