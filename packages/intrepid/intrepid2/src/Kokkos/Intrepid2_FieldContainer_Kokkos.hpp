@@ -2,11 +2,9 @@
 #ifndef INTREPID2_FIELDCONTAINER_KOKKOS_HPP
 #define INTREPID2_FIELDCONTAINER_KOKKOS_HPP
 
-//#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Kokkos_Core.hpp"
 #include "Sacado.hpp"
 #include <impl/Kokkos_Timer.hpp>
-//#endif
 
 #include <random>
 #include <time.h>
