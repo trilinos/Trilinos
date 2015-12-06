@@ -148,7 +148,7 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
   TEUCHOS_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::getValues_HGRAD_Args): dim 0 (number of points) > 0 required for inputPoints array");
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
 
   
@@ -273,7 +273,7 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
   TEUCHOS_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::getValues_HCURL_Args): dim 0 (number of points) > 0 required for inputPoints array");
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HCURL_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
   
   // Verify that all inputPoints are in the reference cell
@@ -351,7 +351,7 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
   TEUCHOS_TEST_FOR_EXCEPTION(  (inputPoints.dimension(0) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::getValues_HDIV_Args): dim 0 (number of points) > 0 required for inputPoints array");
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inputPoints.dimension(1)) == static_cast<index_type>(spaceDim)), std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
   
   // Verify that all inputPoints are in the reference cell

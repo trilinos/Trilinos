@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDofMgr_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 
 #include "Panzer_BlockedDOFManagerFactory_decl.hpp"
 #include "Panzer_BlockedDOFManagerFactory_impl.hpp"
