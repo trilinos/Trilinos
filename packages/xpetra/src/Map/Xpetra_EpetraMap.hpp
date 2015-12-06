@@ -74,7 +74,7 @@ namespace Xpetra {
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
   //
 
-  // common definition of EpetraMapT
+  // stub implementation for EpetraMapT
   template<class EpetraGlobalOrdinal, class Node>
   class EpetraMapT
     : public virtual Map<int, EpetraGlobalOrdinal, Node>
@@ -260,18 +260,15 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
   }; // EpetraMapT class
 
-// Specializations for Epetra (and Tpetra) using the Serial Node
-#ifdef HAVE_XPETRA_SERIAL
-
   // specialization on GO=int and Node=Serial
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
-  class EpetraMapT<int, Kokkos::Compat::KokkosSerialWrapperNode>
-    : public virtual Map<int, int, Kokkos::Compat::KokkosSerialWrapperNode>
+  class EpetraMapT<int, EpetraNode>
+    : public virtual Map<int, int, EpetraNode>
   {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   public:
     typedef LocalOrdinal local_ordinal_type;
@@ -699,12 +696,12 @@ namespace Xpetra {
 // specialization on GO=long long and Node=Serial
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
-  class EpetraMapT<long long, Kokkos::Compat::KokkosSerialWrapperNode>
-    : public virtual Map<int, long long, Kokkos::Compat::KokkosSerialWrapperNode>
+  class EpetraMapT<long long, EpetraNode>
+    : public virtual Map<int, long long, EpetraNode>
   {
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   public:
     typedef LocalOrdinal local_ordinal_type;
@@ -1128,7 +1125,7 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-#endif // HAVE_XPETRA_SERIAL
+//#endif // HAVE_XPETRA_SERIAL
 
 } // Xpetra namespace
 
