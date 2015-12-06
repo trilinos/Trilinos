@@ -161,14 +161,18 @@ namespace Xpetra {
 
   }; // TpetraExport class
 
-#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
-  template <class Node>
-  class TpetraExport<int, int, Node> : public Export<int, int, Node>
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+
+  // stub implementation for GO=int and NO=EpetraNode
+  template <>
+  class TpetraExport<int, int, EpetraNode> : public Export<int, int, EpetraNode>
   {
 
   public:
       typedef int LocalOrdinal;
       typedef int GlobalOrdinal;
+      typedef EpetraNode Node;
 
       //! The specialization of Map used by this class.
       typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
@@ -254,6 +258,105 @@ namespace Xpetra {
 
   }; // TpetraExport class (specialization for LO=GO=int)
 #endif // #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+
+  // stub implementation for GO=long long and NO=EpetraNode
+  template <>
+  class TpetraExport<int, long long, EpetraNode> : public Export<int, long long, EpetraNode>
+  {
+
+  public:
+      typedef int LocalOrdinal;
+      typedef long long GlobalOrdinal;
+      typedef EpetraNode Node;
+
+      //! The specialization of Map used by this class.
+      typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Construct a Export object from the source and target Map.
+    TpetraExport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraExport<int,int>", "TpetraExport<int,int>", "int");
+    }
+
+    //! Constructor (with list of parameters).
+    TpetraExport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraExport<int,int>", "TpetraExport<int,int>", "int");
+    }
+
+    //! Copy constructor.
+    TpetraExport(const Export< LocalOrdinal, GlobalOrdinal, Node > &rhs) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraExport<int,int>", "TpetraExport<int,int>", "int");
+    }
+
+    //! Destructor.
+    ~TpetraExport() {  }
+
+    //@}
+
+    //! @name Export Attribute Methods
+    //@{
+
+    //! Number of initial identical IDs.
+    size_t getNumSameIDs() const { return 0; }
+
+    //! Number of IDs to permute but not to communicate.
+    size_t getNumPermuteIDs() const { return 0; }
+
+    //! List of local IDs in the source Map that are permuted.
+    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>(); }
+
+    //! List of local IDs in the target Map that are permuted.
+    ArrayView< const LocalOrdinal > getPermuteToLIDs() const { return Teuchos::ArrayView< const LocalOrdinal>(); }
+
+    //! Number of entries not on the calling process.
+    size_t getNumRemoteIDs() const { return 0; }
+
+    //! List of entries in the target Map to receive from other processes.
+    ArrayView< const LocalOrdinal > getRemoteLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>(); }
+
+    //! Number of entries that must be sent by the calling process to other processes.
+    size_t getNumExportIDs() const { return 0; }
+
+    //! List of entries in the source Map that will be sent to other processes.
+    ArrayView< const LocalOrdinal > getExportLIDs() const { return Teuchos::ArrayView<const LocalOrdinal>(); }
+
+    //! List of processes to which entries will be sent.
+    ArrayView< const int > getExportPIDs() const { return Teuchos::ArrayView< const int >(); }
+
+    //! The source Map used to construct this Export.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { return Teuchos::null; }
+
+    //! The target Map used to construct this Export.
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { return Teuchos::null; }
+
+    //@}
+
+    //! @name I/O Methods
+    //@{
+
+    //! Print the Export's data to the given output stream.
+    void print(std::ostream &os) const { /* noop */ }
+
+    //@}
+
+    //! @name Xpetra specific
+    //@{
+
+    //! TpetraExport constructor to wrap a Tpetra::Export object
+    TpetraExport(const RCP<const Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node > > &exp)  {  }
+
+    RCP< const Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Export() const { return Teuchos::null; }
+
+    //@}
+
+  }; // TpetraExport class (specialization for GO=long long, NO=EpetraNode)
+#endif
+
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
