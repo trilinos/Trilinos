@@ -1426,7 +1426,6 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#define HAVE_INTREPID_KOKKOSCORE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1640,7 +1639,6 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
   int basisCardinality = HGRAD_Basis -> getCardinality();
   FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
 
-//#define HAVE_INTREPID_KOKKOSCORE 
   // Initialize physPoints
   if(getrank(physPoints)==3){
 for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
@@ -1918,7 +1916,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    double totalError;
+    Scalar totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)
@@ -2045,7 +2043,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    double totalError;
+    Scalar totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)

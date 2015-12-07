@@ -13,6 +13,9 @@ BASKER TODO
 ** AMD on small blks
 ** Kokkos Realloc segfaulting ??
    -Issue with kokkos, will be fixed in kokkos refactor
+** Thread working array size (without ND)
+** Sfactor pivot option
+** Sfactor for large btf serial blocks
 
 
 ***FIX converting error

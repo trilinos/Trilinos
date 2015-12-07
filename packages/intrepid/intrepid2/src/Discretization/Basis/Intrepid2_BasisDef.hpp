@@ -214,7 +214,7 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
         TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
         
-        TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
+        TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(2)) == static_cast<index_type>(spaceDim) ),
                             std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cell dimension when operator = GRAD, CURL (in 2D), or D1.");
         break;
@@ -230,7 +230,7 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
         TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
         
-        TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == Intrepid2::getDkCardinality(operatorType, spaceDim) ),
+        TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(2)) == static_cast<index_type>(Intrepid2::getDkCardinality(operatorType, spaceDim)) ),
                             std::invalid_argument,
                             ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
         break;
@@ -245,7 +245,7 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
                       std::invalid_argument, 
                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(outputValues.dimension(0)) == static_cast<index_type>(basisCard) ),
                       std::invalid_argument,
                       ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
 }

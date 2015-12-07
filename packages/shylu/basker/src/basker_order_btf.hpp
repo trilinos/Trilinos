@@ -966,6 +966,7 @@ namespace BaskerNS
 			&(perm_in(0)), 
 			&(CC(0)));
 
+    #ifdef BASKER_DEBUG_ORDER_BTF
     FILE *fp;
     fp = fopen("btf.txt", "w");
     for(Int i = 0; i < M.ncol; i++)
@@ -973,6 +974,7 @@ namespace BaskerNS
         fprintf(fp, "%d \n", perm(i));
       }
     fclose(fp);
+    #endif
 
     
     printf("FOUND NBLKS: %d \n", nblks);
