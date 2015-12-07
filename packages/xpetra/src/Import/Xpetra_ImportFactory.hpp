@@ -88,17 +88,17 @@ namespace Xpetra {
 
   };
 
-  // Specialization on Serial Node (mainly used for Epetra)
-#ifdef HAVE_XPETRA_SERIAL
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
 
   // Specialization on LO=GO=int with serial node.
   // Used for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class ImportFactory<int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class ImportFactory<int, int, EpetraNode> {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -111,11 +111,9 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("ImportFactory<int,int>", "TpetraImport<int,int>", "int");
 #endif
 #endif
 
@@ -130,17 +128,16 @@ namespace Xpetra {
     }
 
   };
+#endif
 
-  // Specialization on LO=int, GO=long long with serial node.
-  // Used for Epetra and Tpetra
-  // For any other node definition the general default implementation is used which allows Tpetra only
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
   template <>
-  class ImportFactory<int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class ImportFactory<int, long long, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -153,8 +150,10 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -168,8 +167,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
-#endif // HAVE_XPETRA_SERIAL
+#endif
 }
 
 #define XPETRA_IMPORTFACTORY_SHORT

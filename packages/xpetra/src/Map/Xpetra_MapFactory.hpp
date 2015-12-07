@@ -248,7 +248,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra)
-        return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
+        return rcp(new Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm)));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
@@ -275,11 +275,18 @@ namespace Xpetra {
     }
   };
 
-  template <class Node>
-  class MapFactory<int, int, Node> {
+  // TODO fix the guards (if Epetra and Tpetra enabled, ETI on etc...)
+//#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (!defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
+
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+  template <>
+  class MapFactory<int, int, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -308,11 +315,10 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+      // TODO adapt to EpetraNode
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -335,13 +341,12 @@ namespace Xpetra {
            const Teuchos::RCP<Node>& node = defaultArgNode())
     {
       XPETRA_MONITOR("MapFactory::Build");
-
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+      // adapt to node EpetraNode
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -357,13 +362,11 @@ namespace Xpetra {
 
     static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node>& node = defaultArgNode ()) {
       XPETRA_MONITOR("MapFactory::Build");
-
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -389,11 +392,10 @@ namespace Xpetra {
           newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -412,11 +414,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -442,11 +443,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -476,11 +476,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -506,11 +505,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -538,11 +536,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,GlobalOrdinal>(numElements, localNumElements, comm)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -562,11 +559,11 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
+
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MapFactory<int,int>", "TpetraMap<int,int>", "int");
 #endif
 #endif
 
@@ -588,13 +585,16 @@ namespace Xpetra {
     }
 
   };
+#endif
 
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-  template <class Node>
-  class MapFactory<int, long long, Node> {
+  // we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+  template <>
+  class MapFactory<int, long long, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -623,8 +623,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
+  // specialization for Tpetra Map on EpetraNode and GO=int
+
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -648,8 +652,10 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -666,8 +672,10 @@ namespace Xpetra {
       XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -692,8 +700,10 @@ namespace Xpetra {
           newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (map->getGlobalNumElements()*numDofPerNode, newElements, map->getIndexBase(), map->getComm(), map->getNode()) );
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -711,8 +721,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -731,8 +743,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int, GlobalOrdinal, Node> (numElements, comm, node)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -760,8 +774,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp (new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,GlobalOrdinal,Node> (numElements, comm, node)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -786,8 +802,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal, Node>(numElements, comm)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -806,8 +824,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,GlobalOrdinal>(numElements, localNumElements, comm)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -826,8 +846,10 @@ namespace Xpetra {
        XPETRA_MONITOR("MapFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (lib == UseTpetra)
         return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -848,7 +870,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
+#endif
 
 }
 
