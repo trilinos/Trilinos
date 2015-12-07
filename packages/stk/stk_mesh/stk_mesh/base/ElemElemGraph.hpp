@@ -209,6 +209,8 @@ private:
     void create_remote_sides1(stk::mesh::BulkData& bulk_data, const std::vector<RemoteEdge>& remote_edges, stk::mesh::EntityVector& skinned_elements, const stk::mesh::PartVector& skin_parts,
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
+    bool is_connected_element_in_body_to_be_skinned(const stk::mesh::GraphEdge &graphEdge);
+    bool is_element_selected_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &selector, stk::mesh::Entity otherElement);
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity, const stk::mesh::GraphEdge &graphEdge, stk::mesh::EntityVector skinned_elements);
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
@@ -227,6 +229,7 @@ private:
                                              impl::ElementSidePair skinnedElemSidePair,
                                              stk::mesh::EntityVector &skinned_elements);
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
+    std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
     std::map<int, stk::mesh::EntityIdVector> convert_local_ids_to_entity_ids(
             const std::map<int, std::vector<stk::mesh::impl::LocalId>> &extractedIdsByProc);
     std::map<int, stk::mesh::EntityIdVector> get_extracted_coincident_entity_ids();
@@ -248,6 +251,9 @@ private:
                                                                                         int side_id);
 
     size_t pack_shared_side_nodes_of_elements(stk::CommSparse &comm, impl::ElemSideToProcAndFaceId& elements_to_communicate);
+    std::vector<int> get_sides_for_skinning(const stk::mesh::Bucket& bucket,
+                                            stk::mesh::Entity element,
+                                            stk::mesh::impl::LocalId localId);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
