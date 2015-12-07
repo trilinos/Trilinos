@@ -136,6 +136,8 @@ public:
                            Objective<Real> &obj, EqualityConstraint<Real> &con, 
                            AlgorithmState<Real> &algo_state ) {
 
+//    std::cout << "InteriorPointStep::initialize()" << std::endl;
+
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
@@ -179,9 +181,11 @@ public:
 
   /** \brief Compute step (equality constraints).
   */
-  void compute( Vector<Real> &s, const Vector<Real> &x, 
+  void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 AlgorithmState<Real> &algo_state ) {
+
+//    std::cout << "InteriorPointStep::compute()" << std::endl;
 
     // Reset the status test
     status_ = Teuchos::rcp( new ConstraintStatusTest<Real>(gtol_,ctol_,stol_,maxit_) );
@@ -204,8 +208,11 @@ public:
 
   /** \brief Update step, if successful (equality constraints).
   */
-  void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
+  void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s, Objective<Real> &obj, 
                EqualityConstraint<Real> &con,  AlgorithmState<Real> &algo_state ) {
+
+
+//    std::cout << "InteriorPointStep::update()" << std::endl;
 
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
  
@@ -213,7 +220,7 @@ public:
     x.plus(s);
 
     algo_state.iterateVec->set(x);
-    state->descentVect->set(s);
+    state->descentVec->set(s);
     algo_state.snorm = s.norm();
     algo_state.iter++;
 
@@ -221,13 +228,20 @@ public:
     IPOBJ &ipobj = Teuchos::dyn_cast<IPOBJ>(obj);
     IPCON &ipcon = Teuchos::dyn_cast<IPCON>(con);
 
-    algo_state.value = ipobj.getObjectiveValue(x);
-//    algo_state.gnorm = 
+    Real zerotol = 0.0;
+
+
+    algo_state.value = obj.value(x,zerotol);
+    obj.gradient(*g_,x,zerotol);
+    con.value(*c_,x,zerotol);
+
+    algo_state.gnorm = g_->norm();
+    algo_state.cnorm = c_->norm();
+    algo_state.snorm = s.norm();
 
     algo_state.nfval += ipobj.getNumberFunctionEvaluations();
-    algo_state.ngval += ipobj.getNumberGradientEvaluations();
+    algo_state.ngrad += ipobj.getNumberGradientEvaluations();
     algo_state.ncval += ipcon.getNumberConstraintEvaluations();
-
 
     // If we can reduce the barrier parameter, do so
     if(mu_ > eps_) {
@@ -237,10 +251,16 @@ public:
     
   }
 
+  /** \brief Compute step for bound constraints; here only to satisfy the
+             interface requirements, does nothing, needs refactoring.
+  */
   virtual void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 
                         BoundConstraint<Real> &con, 
                         AlgorithmState<Real> &algo_state ) {}
 
+  /** \brief Update step, for bound constraints; here only to satisfy the
+             interface requirements, does nothing, needs refactoring.
+  */
   virtual void update( Vector<Real> &x, const Vector<Real> &s, Objective<Real> &obj, 
                        BoundConstraint<Real> &con,
                        AlgorithmState<Real> &algo_state ) {}
@@ -250,16 +270,17 @@ public:
   std::string printHeader( void ) const {
     std::stringstream hist;
     hist << "  ";
-    hist << std::setw(6)  << std::left << "iter";
-    hist << std::setw(15) << std::left << "fval";
-    hist << std::setw(15) << std::left << "cnorm";
-    hist << std::setw(15) << std::left << "gnorm";
-    hist << std::setw(15) << std::left << "snorm";
-    hist << std::setw(15) << std::left << "penalty";
-    hist << std::setw(8) << std::left << "#fval";
-    hist << std::setw(8) << std::left << "#grad";
-    hist << std::setw(8) << std::left << "#cval";
-    hist << std::setw(8) << std::left << "subIter";
+    hist << std::setw(9)  << std::left  << "IPiter";
+    hist << std::setw(9)  << std::left  << "CSiter";
+    hist << std::setw(15) << std::left  << "penalty";
+    hist << std::setw(15) << std::left  << "fval";
+    hist << std::setw(15) << std::left  << "cnorm";
+    hist << std::setw(15) << std::left  << "gLnorm";
+    hist << std::setw(15) << std::left  << "snorm";
+    hist << std::setw(8)  << std::left  << "#fval";
+    hist << std::setw(8)  << std::left  << "#grad";
+    hist << std::setw(8)  << std::left  << "#cval";
+
     hist << "\n";
     return hist.str();
   }
@@ -268,7 +289,7 @@ public:
   */
   std::string printName( void ) const {
     std::stringstream hist;
-    hist << "\n" << " Interior Point solver\n";
+    hist << "\n" << "Composite Step Interior Point Solver\n";
     return hist.str();
   }
 
@@ -278,22 +299,37 @@ public:
     std::stringstream hist;
     hist << std::scientific << std::setprecision(6);
     if ( algo_state.iter == 0 ) {
-      hist << "  ";
-      hist << std::setw(6)  << std::left << algo_state.iter;
-      hist << std::setw(15) << std::left << algo_state.value;
-      hist << std::setw(15) << std::left << algo_state.cnorm;
-      hist << std::setw(15) << std::left << algo_state.gnorm;     
-      hist << std::setw(15) << std::left << algo_state.snorm;     
-      hist << std::setw(15) << std::left << mu_;     
-      hist << std::setw(8)  << std::left << algo_state.nfval;
-      hist << std::setw(8)  << std::left << algo_state.ngrad;
-      hist << std::setw(8)  << std::left << algo_state.ncval;
-      hist << std::setw(8)  << std::left << subproblemIter_;
-      hist << "\n";
+      hist << printName();
     }
     if ( pHeader ) {
       hist << printHeader();
     }
+    if ( algo_state.iter == 0 ) {
+      hist << "  ";
+      hist << std::setw(9)  << std::left << algo_state.iter;
+      hist << std::setw(9)  << std::left << subproblemIter_;
+      hist << std::setw(15) << std::left << mu_;
+      hist << std::setw(15) << std::left << algo_state.value;
+      hist << std::setw(15) << std::left << algo_state.cnorm;
+      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << "\n";
+    }
+    else {
+      hist << "  ";
+      hist << std::setw(9)  << std::left << algo_state.iter;
+      hist << std::setw(9)  << std::left << subproblemIter_;
+      hist << std::setw(15) << std::left << mu_;
+      hist << std::setw(15) << std::left << algo_state.value;
+      hist << std::setw(15) << std::left << algo_state.cnorm;
+      hist << std::setw(15) << std::left << algo_state.gnorm;
+      hist << std::setw(15) << std::left << algo_state.snorm;
+//      hist << std::scientific << std::setprecision(6);
+      hist << std::setw(8) << std::left << algo_state.nfval;
+      hist << std::setw(8) << std::left << algo_state.ngrad;
+      hist << std::setw(8) << std::left << algo_state.ncval;
+      hist << "\n";
+    }
+
     return hist.str(); 
   }
 
