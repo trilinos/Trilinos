@@ -471,6 +471,7 @@ CFunctionMap::CFunctionMap()
 
   (*this).insert(std::make_pair("acos",            new CFunction1(std::acos)));
   (*this).insert(std::make_pair("asin",            new CFunction1(std::asin)));
+  (*this).insert(std::make_pair("asinh",           new CFunction1(std::asinh)));
   (*this).insert(std::make_pair("atan",            new CFunction1(std::atan)));
   (*this).insert(std::make_pair("atan2",           new CFunction2(std::atan2)));
   (*this).insert(std::make_pair("ceil",            new CFunction1(std::ceil)));
