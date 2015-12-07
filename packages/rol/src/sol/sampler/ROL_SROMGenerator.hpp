@@ -48,7 +48,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_AffineHyperplaneEqualityConstraint.hpp"
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint.hpp"
@@ -56,7 +56,6 @@
 #include "ROL_MomentObjective.hpp"
 #include "ROL_CDFObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
-#include "ROL_SROMEqualityConstraint.hpp"
 #include "ROL_SROMVector.hpp"
 
 #include "ROL_StdVector.hpp"
@@ -115,10 +114,10 @@ public:
     size_t rem     = numSamples_ % nProc;
     numMySamples_  = frac + ((rank < rem) ? 1 : 0);
     // Initialize vectors
-    Teuchos::RCP<ProbabilityVector<Real> > prob, prob_lo, prob_hi;
-    Teuchos::RCP<AtomVector<Real> > atom, atom_lo, atom_hi;
-    Teuchos::RCP<Vector<Real> > x, x_lo, x_hi;
-    initialize_vectors(prob,prob_lo,prob_hi,atom,atom_lo,atom_hi,x,x_lo,x_hi,bman);
+    Teuchos::RCP<ProbabilityVector<Real> > prob, prob_lo, prob_hi, prob_eq;
+    Teuchos::RCP<AtomVector<Real> > atom, atom_lo, atom_hi, atom_eq;
+    Teuchos::RCP<Vector<Real> > x, x_lo, x_hi, x_eq;
+    initialize_vectors(prob,prob_lo,prob_hi,prob_eq,atom,atom_lo,atom_hi,atom_eq,x,x_lo,x_hi,x_eq,bman);
     StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
     bool optProb = false, optAtom = true;
     for ( int i = 0; i < 2; i++ ) {
@@ -132,7 +131,7 @@ public:
       Teuchos::RCP<BoundConstraint<Real> > bnd
         = Teuchos::rcp(new BoundConstraint<Real>(x_lo,x_hi));
       Teuchos::RCP<EqualityConstraint<Real> > con
-        = Teuchos::rcp(new SROMEqualityConstraint<Real>(bman));
+        = Teuchos::rcp(new AffineHyperplaneEqualityConstraint<Real>(x_eq,1.0));
       // Test objective and constraints
       if ( print_ ) { std::cout << "\nCheck derivatives of CDFObjective\n"; }
       check_objective(*x,obj_vec[0],bman,optProb,optAtom);
@@ -140,6 +139,8 @@ public:
       check_objective(*x,obj_vec[1],bman,optProb,optAtom);
       if ( print_ ) { std::cout << "\nCheck derivatives of LinearCombinationObjective\n"; }
       check_objective(*x,obj,bman,optProb,optAtom);
+      if ( print_ && optProb ) { std::cout << "\nCheck AffineHyperplaneEqualityConstraint\n"; }
+      check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
       bool useAugLag = true;
       Teuchos::RCP<Algorithm<Real> > algo;
@@ -177,12 +178,15 @@ private:
   void initialize_vectors(Teuchos::RCP<ProbabilityVector<Real> >  &prob,
                           Teuchos::RCP<ProbabilityVector<Real> >  &prob_lo,
                           Teuchos::RCP<ProbabilityVector<Real> >  &prob_hi,
+                          Teuchos::RCP<ProbabilityVector<Real> >  &prob_eq,
                           Teuchos::RCP<AtomVector<Real> >         &atom,
                           Teuchos::RCP<AtomVector<Real> >         &atom_lo,
                           Teuchos::RCP<AtomVector<Real> >         &atom_hi,
+                          Teuchos::RCP<AtomVector<Real> >         &atom_eq,
                           Teuchos::RCP<Vector<Real> >             &vec,
                           Teuchos::RCP<Vector<Real> >             &vec_lo,
                           Teuchos::RCP<Vector<Real> >             &vec_hi,
+                          Teuchos::RCP<Vector<Real> >             &vec_eq,
                           const Teuchos::RCP<BatchManager<Real> > &bman) const {
     // Compute scaling for probability and atom vectors
     std::vector<Real> typx, typw;
@@ -191,6 +195,7 @@ private:
     std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,1./(Real)numSamples_);
     std::vector<Real> pt_lo(dimension_*numMySamples_,0.), pt_hi(dimension_*numMySamples_,0.);
     std::vector<Real> wt_lo(numMySamples_,0.), wt_hi(numMySamples_,1.);
+    std::vector<Real> pt_eq(dimension_*numMySamples_,0.), wt_eq(numMySamples_,1.);
     Real lo = 0., hi = 0.;
     for ( size_t j = 0; j < dimension_; j++) {
       lo = dist_[j]->lowerBound();
@@ -227,6 +232,14 @@ private:
     // Lower and upper bounds on SROM Vector
     vec_lo = Teuchos::rcp(new SROMVector<Real>(prob_lo,atom_lo));
     vec_hi = Teuchos::rcp(new SROMVector<Real>(prob_hi,atom_hi));
+    // Equality constraint vectors
+    prob_eq = Teuchos::rcp(new DualProbabilityVector<Real>(
+              Teuchos::rcp(new std::vector<Real>(wt_eq)),
+              Teuchos::rcp(new std::vector<Real>(typw)), bman));
+    atom_eq = Teuchos::rcp(new DualAtomVector<Real>(
+              Teuchos::rcp(new std::vector<Real>(pt_eq)),numMySamples_,dimension_,
+              Teuchos::rcp(new std::vector<Real>(typx)), bman));
+    vec_eq  = Teuchos::rcp(new SROMVector<Real>(prob_eq,atom_eq));
   }
 
   void initialize_objective(std::vector<Teuchos::RCP<Objective<Real> > > &obj_vec,
@@ -299,6 +312,38 @@ private:
     // Check derivatives
     obj->checkGradient(x,d,print_);
     obj->checkHessVec(x,d,print_);
+  }
+
+  void check_constraint(const Vector<Real>                            &x,
+                        const Teuchos::RCP<EqualityConstraint<Real> > &con,
+                        const Teuchos::RCP<BatchManager<Real> >       &bman,
+                        const bool optProb) {
+    if ( optProb ) {
+      StdVector<Real> c(Teuchos::rcp(new std::vector<Real>(1,(Real)rand()/(Real)RAND_MAX)));
+      // Get scaling for probability and atom vectors
+      std::vector<Real> typx, typw;
+      get_scaling_vectors(typw,typx);
+      // Set random direction
+      std::vector<Real> pt(dimension_*numMySamples_,0.), wt(numMySamples_,0.);
+      for (size_t i = 0; i < numMySamples_; i++) {
+        wt[i] = (Real)rand()/(Real)RAND_MAX;
+        for ( size_t j = 0; j < dimension_; j++) {
+          pt[i*dimension_ + j] = dist_[j]->invertCDF((Real)rand()/(Real)RAND_MAX);
+        }
+      }
+      Teuchos::RCP<ProbabilityVector<Real> > dprob
+        = Teuchos::rcp(new PrimalProbabilityVector<Real>(
+          Teuchos::rcp(new std::vector<Real>(wt)),
+          Teuchos::rcp(new std::vector<Real>(typw)),bman));
+      Teuchos::RCP<AtomVector<Real> > datom
+        = Teuchos::rcp(new PrimalAtomVector<Real>(
+          Teuchos::rcp(new std::vector<Real>(pt)),numMySamples_,dimension_,
+          Teuchos::rcp(new std::vector<Real>(typx)),bman));
+      SROMVector<Real> d = SROMVector<Real>(dprob,datom);
+      // Check derivatives
+      con->checkApplyJacobian(x,d,c,print_);
+      con->checkAdjointConsistencyJacobian(c,d,x,print_);
+    }
   }
 };
 

@@ -66,9 +66,9 @@ private:
   Real momentValue(const size_t dim, const Real power, const Real moment,
                    const ProbabilityVector<Real> &prob,
                    const AtomVector<Real>        &atom) const {
-    const size_t numSamples = prob.dimension();
+    const int numSamples = prob.getNumMyAtoms();
     Real val = 0., xpt = 0., xwt = 0., sum = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
       val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
     }
@@ -80,11 +80,11 @@ private:
                 const size_t dim, const Real power, const Real moment,
                 const ProbabilityVector<Real> &prob,
                 const AtomVector<Real>        &atom) const {
-    const size_t numSamples = prob.dimension();
+    const int numSamples = prob.getNumMyAtoms();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     scale = 0.;
     Real xpt = 0., xwt = 0., xpow = 0., psum = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
       xpow = ((power==1) ? 1. : ((power==2) ? xpt : std::pow(xpt,power-1)));
       psum += xwt * xpow * xpt;
@@ -104,7 +104,7 @@ private:
                const AtomVector<Real>        &atom,
                const ProbabilityVector<Real> &vprob,
                const AtomVector<Real>        &vatom) const {
-    const size_t numSamples = prob.dimension();
+    const int numSamples = prob.getNumMyAtoms();
     hvx1.resize(numSamples,0.); hvx2.resize(numSamples,0.); hvx3.resize(numSamples,0.);
     hvp1.resize(numSamples,0.); hvp2.resize(numSamples,0.);
     scale1 = 0.; scale2 = 0.; scale3 = 0.;
@@ -112,7 +112,7 @@ private:
     Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
     Real xpow0 = 0., xpow1 = 0., xpow2 = 0.;
     const Real moment2 = std::pow(moment,2);
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
       vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
       xpow2 = ((power==1) ? 0. : ((power==2) ? 1. : ((power==3) ?  xpt :
@@ -181,7 +181,7 @@ public:
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
-    size_t numSamples = prob.dimension();
+    int numSamples = prob.getNumMyAtoms();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
     Real scale = 0.;
     std::vector<std::pair<size_t, Real> > data;
@@ -191,7 +191,7 @@ public:
       data = moments_[d];
       for (size_t m = 0; m < numMoments_; m++) {
         momentGradient(gradx,gradp,scale,d,(Real)data[m].first,data[m].second,prob,atom);
-        for (size_t k = 0; k < numSamples; k++) {
+        for (int k = 0; k < numSamples; k++) {
           (val_pt[k])[d] += scale*gradx[k];
           val_wt[k]      += scale*gradp[k];
         }
@@ -200,7 +200,7 @@ public:
     SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
     ProbabilityVector<Real> &gprob = *(eg.getProbabilityVector());
     AtomVector<Real> &gatom = *(eg.getAtomVector());
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       if ( optProb_ ) {
         gprob.setProbability(k,val_wt[k]);
       }
@@ -218,7 +218,7 @@ public:
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
-    const size_t numSamples = prob.dimension();
+    const int numSamples = prob.getNumMyAtoms();
     std::vector<Real> hvx1(numSamples,0.), hvx2(numSamples,0.), hvx3(numSamples,0.);
     std::vector<Real> hvp1(numSamples,0.), hvp2(numSamples,0.);
     Real scale1 = 0., scale2 = 0., scale3 = 0.;
@@ -230,7 +230,7 @@ public:
       for (size_t m = 0; m < numMoments_; m++) {
         momentHessVec(hvx1,hvx2,hvx3,hvp1,hvp2,scale1,scale2,scale3,
                       d,(Real)data[m].first,data[m].second,prob,atom,vprob,vatom);
-        for (size_t k = 0; k < numSamples; k++) {
+        for (int k = 0; k < numSamples; k++) {
           (val_pt[k])[d] += (scale1+scale3)*hvx1[k] + scale2*(hvx2[k]+hvx3[k]);
           val_wt[k]      += (scale1+scale3)*hvp1[k] + scale2*hvp2[k];
         }
@@ -239,7 +239,7 @@ public:
     SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
     ProbabilityVector<Real> &hprob = *(ehv.getProbabilityVector());
     AtomVector<Real> &hatom = *(ehv.getAtomVector());
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       if ( optProb_ ) {
         hprob.setProbability(k,val_wt[k]);
       }

@@ -82,7 +82,7 @@ public:
     return 0;
   }
 
-  void setProbability(const size_t i, const Real wt) {
+  void setProbability(const int i, const Real wt) {
     if ( i >= 0 && i < (int)numMySamples_ ) {
       std::vector<Real> &yval = *(StdVector<Real>::getVector());
       yval[i] = wt;
@@ -91,6 +91,10 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> ERROR (ROL::ProbabilityVector): index out of bounds in setProbability!");
     }
+  }
+
+  int getNumMyAtoms(void) const {
+    return StdVector<Real>::dimension();
   }
 };
 
@@ -139,6 +143,13 @@ public:
     dual_vec_ = Teuchos::rcp(new DualProbabilityVector<Real>(
                 Teuchos::rcp(new std::vector<Real>(tmp)),scale_,bman_));
     return *dual_vec_;
+  }
+
+  int dimension(void) const {
+    Real dim = (Real)StdVector<Real>::dimension();
+    Real sum = 0.;
+    bman_->sumAll(&dim,&sum,1);
+    return (int)sum;
   }
 
   Real reduce(const Elementwise::ReductionOp<Real> &r) const {
@@ -199,6 +210,13 @@ public:
     dual_vec_ = Teuchos::rcp(new PrimalProbabilityVector<Real>(
                 Teuchos::rcp(new std::vector<Real>(tmp)),scale_,bman_));
     return *dual_vec_;
+  }
+
+  int dimension(void) const {
+    Real dim = (Real)StdVector<Real>::dimension();
+    Real sum = 0.;
+    bman_->sumAll(&dim,&sum,1);
+    return (int)sum;
   }
 
   Real reduce(const Elementwise::ReductionOp<Real> &r) const {

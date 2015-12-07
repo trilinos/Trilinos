@@ -99,6 +99,14 @@ public:
         ">>> ERROR (ROL::AtomVector): index out of bounds in setAtom!");
     }
   }
+
+  int getNumMyAtoms(void) const {
+    return (int)numMySamples_;
+  }
+
+  int getDimension(void) const {
+    return (int)dimension_;
+  }
 };
 
 template<class Real>
@@ -160,6 +168,13 @@ public:
                 Teuchos::rcp(new std::vector<Real>(tmp)),
                              numMySamples_,dimension_,scale_,bman_));
     return *dual_vec_;
+  }
+
+  int dimension(void) const {
+    Real dim = (Real)StdVector<Real>::dimension();
+    Real sum = 0.;
+    bman_->sumAll(&dim,&sum,1);
+    return (int)sum;
   }
 
   Real reduce(const Elementwise::ReductionOp<Real> &r) const {
@@ -238,6 +253,13 @@ public:
                 Teuchos::rcp(new std::vector<Real>(tmp)),
                              numMySamples_,dimension_,scale_,bman_));
     return *dual_vec_;
+  }
+
+  int dimension(void) const {
+    Real dim = (Real)StdVector<Real>::dimension();
+    Real sum = 0.;
+    bman_->sumAll(&dim,&sum,1);
+    return (int)sum;
   }
 
   Real reduce(const Elementwise::ReductionOp<Real> &r) const {

@@ -128,6 +128,10 @@ public:
     return *dual_vec_;
   }
 
+  int dimension(void) const {
+    return avec_->dimension() + pvec_->dimension();
+  }
+
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     pvec_->applyUnary(f);
     avec_->applyUnary(f);
