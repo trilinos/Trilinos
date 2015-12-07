@@ -319,7 +319,7 @@ private:
                         const Teuchos::RCP<BatchManager<Real> >       &bman,
                         const bool optProb) {
     if ( optProb ) {
-      StdVector<Real> c(Teuchos::rcp(new std::vector<Real>(1,(Real)rand()/(Real)RAND_MAX)));
+      StdVector<Real> c(Teuchos::rcp(new std::vector<Real>(1,1.0)));
       // Get scaling for probability and atom vectors
       std::vector<Real> typx, typw;
       get_scaling_vectors(typw,typx);
