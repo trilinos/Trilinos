@@ -5,9 +5,6 @@
 
 namespace Intrepid2{
 
-typedef int index_type;
-
-
 
 /*template<typename T, typename = void>
 struct conditional_eSpace : Kokkos::Serial { };
@@ -20,6 +17,9 @@ template<class T>
 struct Void {
   typedef void type;
 };
+}
+
+typedef int index_type;
 
 template<class T, class U = void>
 struct conditional_eSpace {
@@ -27,7 +27,7 @@ struct conditional_eSpace {
 };
 
 template<class T>
-struct conditional_eSpace<T, typename Void<typename T::execution_space>::type > {
+struct conditional_eSpace<T, typename Intrepid2::Void<typename T::execution_space>::type > {
 
 	typedef typename T::execution_space execution_space;
 };
@@ -645,6 +645,5 @@ struct ArrayWrapper<Scalar,ArrayType,8,true> {
     return view(i0,i1,i2,i3,i4,i5,i6,i7);
   }
 };
-}
 #endif
 
