@@ -49,10 +49,10 @@
 #include "ROL_EqualityConstraint.hpp"
 
 /** @ingroup func_group
-    \class ROL::AffineHyperplaneEqualityConstraint
-    \brief Defines a single linear equality constraint.
+    \class ROL::ScalarLinearEqualityConstraint
+    \brief This equality constraint defines an affine hyperplane.
 
-    ROL's affine hyperplane equality constraint interface implements
+    ROL's scalar linear equality constraint interface implements
     \f[
        c(x) := \langle a, x\rangle_{\mathcal{X}^*,\mathcal{X}} - b = 0
     \f]
@@ -77,13 +77,13 @@
 namespace ROL {
 
 template <class Real>
-class AffineHyperplaneEqualityConstraint : public EqualityConstraint<Real> {
+class ScalarLinearEqualityConstraint : public EqualityConstraint<Real> {
 private:
   const Teuchos::RCP<Vector<Real> > a_; ///< Dual vector defining hyperplane
   const Real b_;                        ///< Affine shift
 
 public:
-  AffineHyperplaneEqualityConstraint(const Teuchos::RCP<Vector<Real> > &a,
+  ScalarLinearEqualityConstraint(const Teuchos::RCP<Vector<Real> > &a,
                                      const Real b)
     : a_(a), b_(b) {}
 
@@ -130,7 +130,7 @@ public:
     return out;
   }
 
-}; // class AffineHyperplaneEqualityConstraint
+}; // class ScalarLinearEqualityConstraint
 
 } // namespace ROL
 

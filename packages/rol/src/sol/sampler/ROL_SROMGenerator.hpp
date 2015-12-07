@@ -48,7 +48,7 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_AffineHyperplaneEqualityConstraint.hpp"
+#include "ROL_ScalarLinearEqualityConstraint.hpp"
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BoundConstraint.hpp"
@@ -131,7 +131,7 @@ public:
       Teuchos::RCP<BoundConstraint<Real> > bnd
         = Teuchos::rcp(new BoundConstraint<Real>(x_lo,x_hi));
       Teuchos::RCP<EqualityConstraint<Real> > con
-        = Teuchos::rcp(new AffineHyperplaneEqualityConstraint<Real>(x_eq,1.0));
+        = Teuchos::rcp(new ScalarLinearEqualityConstraint<Real>(x_eq,1.0));
       // Test objective and constraints
       if ( print_ ) { std::cout << "\nCheck derivatives of CDFObjective\n"; }
       check_objective(*x,obj_vec[0],bman,optProb,optAtom);
@@ -139,7 +139,7 @@ public:
       check_objective(*x,obj_vec[1],bman,optProb,optAtom);
       if ( print_ ) { std::cout << "\nCheck derivatives of LinearCombinationObjective\n"; }
       check_objective(*x,obj,bman,optProb,optAtom);
-      if ( print_ && optProb ) { std::cout << "\nCheck AffineHyperplaneEqualityConstraint\n"; }
+      if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearEqualityConstraint\n"; }
       check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
       bool useAugLag = true;
