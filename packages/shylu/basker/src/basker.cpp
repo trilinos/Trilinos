@@ -7,6 +7,9 @@
 
 namespace BaskerNS{
 
+
+  template class Basker<int, float, Kokkos::OpenMP>;
+  template class Basker<long int, float, Kokkos::OpenMP>;
   template class Basker<long int, double, Kokkos::OpenMP>;
   template class Basker<int, double, Kokkos::OpenMP>;
 
