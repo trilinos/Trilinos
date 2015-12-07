@@ -118,6 +118,12 @@ private:
     adapter->getPartsView(myparts);
     if (myparts != NULL)
       zz->Set_Part_Multi_Fn(zoltanParts<Adapter>, (void *) &(*adapter));
+
+    char tmp[4];
+    sprintf(tmp, "%d", TPL_Traits<ZOLTAN_ID_PTR, gno_t>::NUM_ID);
+    zz->Set_Param("NUM_GID_ENTRIES", tmp);
+    sprintf(tmp, "%d", TPL_Traits<ZOLTAN_ID_PTR, lno_t>::NUM_ID);
+    zz->Set_Param("NUM_LID_ENTRIES", tmp);
   }
 
   template <typename AdapterWithCoords>
