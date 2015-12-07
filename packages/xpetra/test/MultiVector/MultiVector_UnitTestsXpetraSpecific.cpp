@@ -135,7 +135,7 @@ namespace {
     XpetraSpecific_GetVector(Xpetra::UseTpetra, out, success);
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-    XpetraSpecific_GetVector(Xpetra::UseEpetra, out, success);
+    //XpetraSpecific_GetVector(Xpetra::UseEpetra, out, success);
 #endif
   }
 
@@ -228,7 +228,7 @@ namespace {
     XpetraSpecific_GetHostLocalView(Xpetra::UseTpetra, out, success);
 #endif
 #ifdef HAVE_XPETRA_EPETRA
-    XpetraSpecific_GetHostLocalView(Xpetra::UseEpetra, out, success);
+    //XpetraSpecific_GetHostLocalView(Xpetra::UseEpetra, out, success);
 #endif
   }
 #endif // HAVE_XPETRA_KOKKOS_REFACTOR
