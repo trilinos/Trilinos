@@ -235,8 +235,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, size_t numElemSides, const stk::mesh::Graph& graph,
-        std::vector<ElementSidePair>& element_side_pairs);
+void add_exposed_sides(LocalId elementId, size_t numElemSides, const stk::mesh::Graph& graph, std::vector<int> &element_side_pairs);
 
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData);
 stk::mesh::Part* get_sides_created_during_death_part(const stk::mesh::MetaData &metaData);

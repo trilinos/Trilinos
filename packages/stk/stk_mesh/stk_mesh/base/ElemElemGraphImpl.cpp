@@ -631,29 +631,22 @@ bool are_elements_coincident(const stk::mesh::Graph &graph,
     return (numSharedSides == elemDesc.numSides);
 }
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId,
-                                             size_t numElemSides,
-                                             const stk::mesh::Graph& graph,
-                                             std::vector<ElementSidePair>& element_side_pairs)
+void add_exposed_sides(LocalId elementId, size_t numElemSides,
+                      const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
     if (graph.get_num_edges_for_element(elementId) < numElemSides)
     {
         std::vector<int> elemSides(numElemSides, -1);
-        for(size_t j=0; j<graph.get_num_edges_for_element(elementId); ++j)
+        for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
         {
             const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
             int sideId = graphEdge.side1;
             elemSides[sideId] = sideId;
         }
 
-        for(size_t j=0; j<numElemSides; ++j)
-        {
-            if (elemSides[j] == -1)
-            {
-                int sideId = j;
-                element_side_pairs.push_back(std::make_pair(elementId, sideId));
-            }
-        }
+        for(size_t sideId = 0; sideId < numElemSides; ++sideId)
+            if (elemSides[sideId] == -1)
+                element_side_pairs.push_back(sideId);
     }
 }
 
@@ -824,7 +817,7 @@ void collect_remote_coincident_graph_edges(stk::mesh::EntityId coincidentElemId,
 {
     for(const stk::mesh::GraphEdge &graphEdge : graphEdgesOfConcern)
         if(is_connected_element_coincident_and_remote(coincidentElemId, graphEdge.elem2))
-                graphEdgesToDelete.push_back(graphEdge);
+            graphEdgesToDelete.push_back(graphEdge);
 }
 
 void delete_graph_edges_connected_to_coincident_element(stk::mesh::Graph &graph, stk::mesh::EntityId coincidentElemId)

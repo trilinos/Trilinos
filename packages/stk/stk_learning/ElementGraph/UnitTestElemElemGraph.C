@@ -1129,15 +1129,12 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
             }
         }
 
-        std::vector<ElementSidePair> element_side_pairs;
-        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i].num_sides(), elemElemGraph.get_graph(), element_side_pairs);
-
-        for(size_t j = 0; j < element_side_pairs.size(); j++)
+        std::vector<int> exposedSides;
+        stk::mesh::impl::add_exposed_sides(i, element_topologies[i].num_sides(), elemElemGraph.get_graph(), exposedSides);
+        for(size_t j = 0; j < exposedSides.size(); j++)
         {
-            stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + element_side_pairs[j].second;
-            stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, element_side_pairs[j].second,
-                    face_global_id, stk::mesh::PartVector(1,&part));
-
+            stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + exposedSides[j];
+            stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, exposedSides[j], face_global_id, stk::mesh::PartVector(1,&part));
         }
     }
 

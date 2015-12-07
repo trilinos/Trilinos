@@ -210,7 +210,7 @@ private:
             const std::vector<unsigned>& side_counts, std::vector<stk::mesh::sharing_info>& shared_modified);
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity, const stk::mesh::GraphEdge &graphEdge, stk::mesh::EntityVector skinned_elements);
-    void create_side_entities(const std::vector<stk::mesh::impl::ElementSidePair> &element_side_pairs,
+    void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified,
@@ -226,8 +226,7 @@ private:
     void connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
                                              impl::ElementSidePair skinnedElemSidePair,
                                              stk::mesh::EntityVector &skinned_elements);
-    void add_element_side_pais_due_to_air_selector(impl::LocalId local_id,
-                                                   std::vector<stk::mesh::impl::ElementSidePair> &elemSidePairs);
+    void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::map<int, stk::mesh::EntityIdVector> convert_local_ids_to_entity_ids(
             const std::map<int, std::vector<stk::mesh::impl::LocalId>> &extractedIdsByProc);
     std::map<int, stk::mesh::EntityIdVector> get_extracted_coincident_entity_ids();
