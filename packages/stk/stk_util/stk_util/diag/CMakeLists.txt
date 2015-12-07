@@ -69,7 +69,7 @@ LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Exception.hpp")
 
 TRIBITS_ADD_LIBRARY(
   stk_util_diag
-  DEPLIBS stk_util_parallel stk_util_env
+  DEPLIBS
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
