@@ -62,11 +62,11 @@
 
 namespace Xpetra {
 
-  template <class LocalOrdinal = CrsGraph<>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename CrsGraph<LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class LocalOrdinal/* = CrsGraph<>::local_ordinal_type*/,
+            class GlobalOrdinal/* =
+              typename CrsGraph<LocalOrdinal>::global_ordinal_type*/,
+            class Node/* =
+              typename CrsGraph<LocalOrdinal, GlobalOrdinal>::node_type*/>
   class CrsGraphFactory {
   private:
     //! Private constructor. This is a static class.
@@ -89,12 +89,15 @@ namespace Xpetra {
     }
   };
 
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+
   template <>
-  class CrsGraphFactory<int, int, typename CrsGraph<int, int>::node_type> {
+  class CrsGraphFactory<int, int, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef CrsGraph<int, int>::node_type Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -107,11 +110,9 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_INT)))
       if (map->lib() == UseTpetra)
         return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, pftype) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("CrsGraphFactory<int,int>", "TpetraCrsGraph<int,int>", "int");
 #endif
 #endif
 
@@ -127,14 +128,17 @@ namespace Xpetra {
     }
 
   };
+#endif
 
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-  template <class Node>
-  class CrsGraphFactory<int, long long, Node> {
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+
+  template <>
+  class CrsGraphFactory<int, long long, EpetraNode> {
 
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    //typedef CrsGraph<int, GlobalOrdinal>::node_type Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -147,8 +151,10 @@ namespace Xpetra {
       XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
+#if ((defined(HAVE_TPETRA_INST_SERIAL)) && (defined(HAVE_TPETRA_INST_INT_LONG_LONG)))
       if (map->lib() == UseTpetra)
         return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, pftype) );
+#endif
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -163,7 +169,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
+#endif
 }
 
 #define XPETRA_CRSGRAPHFACTORY_SHORT
