@@ -2072,6 +2072,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
         for(size_t j=0;j<bucket.size();++j)
         {
             stk::mesh::Entity element = bucket[j];
+
             stk::mesh::impl::LocalId localId = get_local_element_id(element);
             std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
             stk::util::sort_and_unique(exposedSides);
