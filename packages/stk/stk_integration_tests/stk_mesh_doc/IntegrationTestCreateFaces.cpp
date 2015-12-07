@@ -94,7 +94,10 @@ void read_file_dump_mesh(std::string filename, bool create_faces) {
 
 TEST(StkIo, confirm_face_connectivity_AeA)
 {
-    stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(communicator) != 1) { return; }
+
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
     stkMeshIoBroker.set_sideset_face_creation_behavior(stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT);
     stkMeshIoBroker.add_mesh_database("AeA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
