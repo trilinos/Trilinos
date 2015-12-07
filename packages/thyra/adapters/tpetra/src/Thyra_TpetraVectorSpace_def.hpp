@@ -120,10 +120,10 @@ bool TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasInCoreView(
   const Range1D rng = full_range(rng_in,0,this->dim()-1);
   const Ordinal l_localOffset = this->localOffset();
 
-  const Ordinal localSubDim = tpetraMap_.is_null () ?
+  const Ordinal myLocalSubDim = tpetraMap_.is_null () ?
     static_cast<Ordinal> (0) : tpetraMap_->getNodeNumElements ();
 
-  return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+localSubDim );
+  return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+myLocalSubDim );
 }
 
 
