@@ -734,7 +734,7 @@ std::map<int, std::vector<LocalId>> get_extracted_coincident_local_ids(const stk
         std::vector<LocalId> extractedIds;
         for(const stk::mesh::GraphEdge &graphEdge : extractedElementGraphEdges.second)
         {
-            if(!graph.is_valid(graphEdge.elem2))
+            if(is_local_element(graphEdge.elem2) && !graph.is_valid(graphEdge.elem2))
             {
                 extractedIds.push_back(graphEdge.elem2);
             }
