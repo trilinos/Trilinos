@@ -46,6 +46,9 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <tokenize.h>
 #include <algorithm>
 #include <cctype>
@@ -305,11 +308,21 @@ namespace Iofx {
           exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
                                     &cpu_word_size, &dbRealWordSize);
           if (exodusFilePtr < 0) {
-            dbState = Ioss::STATE_INVALID;
-            // NOTE: Code will not continue past this call...
-            std::ostringstream errmsg;
-            errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
-            IOSS_ERROR(errmsg);
+            if (myProcessor == 0){
+              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename.c_str());
+              Ioss::Utils::create_path(path.pathname());
+            }
+            if (dbUsage != Ioss::WRITE_HISTORY) {
+              MPI_Barrier(util().communicator());
+            }
+            exodusFilePtr = ex_create(decoded_filename.c_str(), mode, &cpu_word_size, &dbRealWordSize);
+            if (exodusFilePtr < 0) {
+              dbState = Ioss::STATE_INVALID;
+              // NOTE: Code will not continue past this call...
+              std::ostringstream errmsg;
+              errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
+              IOSS_ERROR(errmsg);
+            }
           }
         }
       }

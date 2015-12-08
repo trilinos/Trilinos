@@ -34,11 +34,13 @@
 #include <assert.h>
 #include <stddef.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <stdint.h>
@@ -644,5 +646,39 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
     eb->put_field_data("connectivity", connect, 1*sizeof(int));
 
     region->end_mode(Ioss::STATE_MODEL);
+  }
+}
+
+void Ioss::Utils::create_path(const std::string& path)
+{
+  const int mode = 0777;  // Users umask will be applied to this.
+
+  std::string::const_iterator iter = path.begin();
+  while (iter != path.end()) {
+    iter = std::find(iter, path.end(), '/');
+    std::string path_root = std::string(path.begin(), iter);
+
+    if (iter != path.end())
+      ++iter; // Skip past the '/'
+
+    if (path_root.empty()) { // Path started with '/'
+      continue;
+    }
+
+    struct stat st;
+    if (stat(path_root.c_str(), &st) != 0) {
+      if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
+  std::ostringstream errmsg;
+  errmsg << "Cannot create directory '" << path_root
+         << "' : " << strerror(errno) << std::endl;
+  IOSS_ERROR(errmsg);
+      }
+    }
+    else if (!S_ISDIR(st.st_mode)) {
+      errno = ENOTDIR;
+      std::ostringstream errmsg;
+      errmsg << "Path '" << path_root << "' is not a directory.\n";
+      IOSS_ERROR(errmsg);
+    }
   }
 }
