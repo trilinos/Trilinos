@@ -11,6 +11,10 @@ int main(int argc, char* argv[]) {
         cout << "Usage: ./a.out <in> <out>" << endl;
         return 1;
     }
+    if (std::ifstream(argv[2])) {
+      std::cerr << "target file already exists" << std::endl;
+      return 1;
+    }
     ifstream ifs(argv[1]);
     ofstream ofs(argv[2], std::ios::binary);
 

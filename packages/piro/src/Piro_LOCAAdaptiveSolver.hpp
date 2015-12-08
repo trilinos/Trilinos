@@ -98,12 +98,12 @@ private:
   const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> solMgr_;
   Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTests_;
   Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests_;
+  NOX::Utils utils_;
 
   Teuchos::RCP<LOCA::AdaptiveStepper> stepper_;
 
   //! Holds the final solution
   Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > finalPoint_;
-
 };
 
 

@@ -54,15 +54,15 @@ namespace Details {
 template<class GraphType>
 OverlappingRowGraph<GraphType>::
 OverlappingRowGraph (const Teuchos::RCP<const row_graph_type>& nonoverlappingGraph,
-		     const Teuchos::RCP<const row_graph_type>& overlappingGraph,
-		     const Teuchos::RCP<const map_type>& rowMap,
-		     const Teuchos::RCP<const map_type>& colMap,
-		     const Tpetra::global_size_t numGlobalRows,
-		     const Tpetra::global_size_t numGlobalCols,
-		     const Tpetra::global_size_t numGlobalNonzeros,
-		     const size_t maxNumEntries,
-		     const Teuchos::RCP<const import_type>& nonoverlappingImporter,
-		     const Teuchos::RCP<const import_type>& overlappingImporter) :
+                     const Teuchos::RCP<const row_graph_type>& overlappingGraph,
+                     const Teuchos::RCP<const map_type>& rowMap,
+                     const Teuchos::RCP<const map_type>& colMap,
+                     const Tpetra::global_size_t numGlobalRows,
+                     const Tpetra::global_size_t numGlobalCols,
+                     const Tpetra::global_size_t numGlobalNonzeros,
+                     const size_t maxNumEntries,
+                     const Teuchos::RCP<const import_type>& nonoverlappingImporter,
+                     const Teuchos::RCP<const import_type>& overlappingImporter) :
   nonoverlappingGraph_ (nonoverlappingGraph),
   overlappingGraph_ (overlappingGraph),
   rowMap_ (rowMap),
@@ -299,8 +299,8 @@ template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::
 getGlobalRowCopy (global_ordinal_type globalRow,
-		  const Teuchos::ArrayView<global_ordinal_type>& indices,
-		  size_t& numIndices) const
+                  const Teuchos::ArrayView<global_ordinal_type>& indices,
+                  size_t& numIndices) const
 {
   const local_ordinal_type localRow = rowMap_->getLocalElement (globalRow);
   if (localRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid ()) {
@@ -319,8 +319,8 @@ template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::
 getLocalRowCopy (local_ordinal_type localRow, 
-		 const Teuchos::ArrayView<local_ordinal_type>& indices, 
-		 size_t& numIndices) const
+                 const Teuchos::ArrayView<local_ordinal_type>& indices, 
+                 size_t& numIndices) const
 {
   using Teuchos::as;
   const size_t numMyRowsA = nonoverlappingGraph_->getNodeNumRows ();

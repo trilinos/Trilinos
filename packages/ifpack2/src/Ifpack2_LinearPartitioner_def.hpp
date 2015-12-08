@@ -78,7 +78,7 @@ void LinearPartitioner<GraphType>::computePartitions()
   // below.  We also use as() because in a debug build, it checks for
   // overflow.
   const int mod = as<int> (this->Graph_->getNodeNumRows () / 
-			   this->NumLocalParts_);
+                           this->NumLocalParts_);
   for (size_t i = 0; i < this->Graph_->getNodeNumRows (); ++i) {
     this->Partition_[i] = as<local_ordinal_type> (i / mod);
     if (this->Partition_[i] >= as<local_ordinal_type> (this->NumLocalParts_)) {

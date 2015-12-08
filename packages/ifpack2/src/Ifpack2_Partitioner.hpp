@@ -209,7 +209,7 @@ public:
   //! Copy into List the rows in the (overlapping) partition Part.
   virtual void 
   rowsInPart (const LocalOrdinal Part, 
-	      Teuchos::ArrayRCP<LocalOrdinal>& List) const = 0;
+              Teuchos::ArrayRCP<LocalOrdinal>& List) const = 0;
   
   //! The nonoverlapping partition indices of each local row.
   virtual Teuchos::ArrayView<const LocalOrdinal>
@@ -233,7 +233,7 @@ public:
 template <class GraphType>
 inline std::ostream& 
 operator<< (std::ostream& os, 
-	    const Ifpack2::Partitioner<GraphType>& obj)
+            const Ifpack2::Partitioner<GraphType>& obj)
 {
   return obj.print (os);
 }

@@ -180,6 +180,8 @@ public:
       <li> "partitioner: local parts" (local ordinal)
       <li> "partitioner: overlap" (int)
      </ul>
+
+     \see Ifpack2::Details::UserPartitioner.
   */
   void setParameters(const Teuchos::ParameterList& params);
 
