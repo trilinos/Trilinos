@@ -273,13 +273,19 @@ class GitdistOptions:
     self.useGit = useGit
 
 
+# Create a matching version of gitdist.getCmndOutout
+def getCmndOutputForGitDist(cmnd, rtnCode=False):
+  return getCmndOutput(cmnd, rtnCode=rtnCode, throwOnError=False)
+
+
 def getRepoStats(inOptions, gitRepo_inout):
   gitRepoDir = getGitRepoDir(inOptions.srcDir, gitRepo_inout.repoDir)
   gitdistOptions = GitdistOptions(inOptions.git)
   pwd = os.getcwd()
   try:
     os.chdir(gitRepoDir)
-    gitRepo_inout.gitRepoStats = gitdist.getRepoStats(gitdistOptions, getCmndOutput)
+    gitRepo_inout.gitRepoStats = \
+      gitdist.getRepoStats(gitdistOptions, getCmndOutputForGitDist)
   finally:
     os.chdir(pwd)
 
@@ -1767,6 +1773,12 @@ def getLastCommitMessageStr(inOptions, gitRepo):
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
 
 
+def trimLineToLen(lineIn, numChars):
+  if len(lineIn) > numChars:
+    return lineIn[:numChars]+".."
+  return lineIn
+
+
 def getLocalCommitsSummariesStr(inOptions, gitRepo):
 
   # Get the list of local commits other than this one
@@ -1804,7 +1816,8 @@ def getLocalCommitsSummariesStr(inOptions, gitRepo):
   localCommitsStr = \
     "*** Commits for repo "+repoName+":"
   if localCommitsExist:
-    localCommitsStr += ("\n"+rawLocalCommitsStr)
+    for localCommitLine in rawLocalCommitsStr.splitlines():
+      localCommitsStr += ("\n  "+trimLineToLen(localCommitLine, 90))
 
   return localCommitsStr
 
