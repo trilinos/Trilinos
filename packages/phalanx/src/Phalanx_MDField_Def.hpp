@@ -1039,46 +1039,52 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 V_Multiply(const MDFieldType& source)
 {
   if (m_tag.dataLayout().rank() == 1){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       m_field_data1(ind1) = m_field_data1(ind1)*source(ind1);
+    });
   }
   else if (m_tag.dataLayout().rank() == 2){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
         m_field_data2(ind1,ind2) = m_field_data2(ind1,ind2)*source(ind1,ind2);
+    });
   }
   else if (m_tag.dataLayout().rank() == 3){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
          for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
             m_field_data3(ind1,ind2,ind3) = m_field_data3(ind1,ind2,ind3)*source(ind1,ind2,ind3);
+    });
   }
   else if (m_tag.dataLayout().rank() == 4){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
          for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
             for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
                 m_field_data4(ind1,ind2,ind3,ind4) = m_field_data4(ind1,ind2,ind3,ind4)*source(ind1,ind2,ind3,ind4);
+    });
   }
   else if (m_tag.dataLayout().rank() == 5){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
          for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
             for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
                 for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
                    m_field_data5(ind1,ind2,ind3,ind4,ind5) = m_field_data5(ind1,ind2,ind3,ind4,ind5)*source(ind1,ind2,ind3,ind4,ind5);
+    });
   }
   else if (m_tag.dataLayout().rank() == 6){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
          for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
             for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
                 for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
                    for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
                       m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6)*source(ind1,ind2,ind3,ind4,ind5,ind6);
+    });
   }
   else if (m_tag.dataLayout().rank() == 7){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
       for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
          for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
             for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
@@ -1086,6 +1092,7 @@ V_Multiply(const MDFieldType& source)
                    for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
                       for (int ind7=0; ind7<m_tag.dataLayout().dimension(6); ind7++)
                           m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
+    });
   }
 }
 
