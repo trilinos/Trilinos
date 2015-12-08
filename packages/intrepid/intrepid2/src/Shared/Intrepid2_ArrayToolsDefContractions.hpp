@@ -85,7 +85,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -95,10 +95,10 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -108,7 +108,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldScalar
 
@@ -153,7 +153,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -165,10 +165,10 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -180,7 +180,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldVector
 
@@ -227,7 +227,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
   int dim2Tensor      = leftFields.dimension(4);
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -241,10 +241,10 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
@@ -258,7 +258,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
               outputFields(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldTensor
     
@@ -300,7 +300,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
@@ -308,10 +308,10 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
               } // P-loop
               outputFields(cl, lbf) += tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
@@ -319,12 +319,12 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
               } // P-loop
               outputFields(cl, lbf) += tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
@@ -332,10 +332,10 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
               } // P-loop
               outputFields(cl, lbf) = tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
@@ -343,7 +343,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
               } // P-loop
               outputFields(cl, lbf) = tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
     
@@ -389,7 +389,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -399,10 +399,10 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 } // P-loop
                 outputFields(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -412,12 +412,12 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 } // P-loop
                 outputFields(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -427,10 +427,10 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 } // P-loop
                 outputFields(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -440,7 +440,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 } // P-loop
                 outputFields(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
  } // end contractDataFieldVector
@@ -488,7 +488,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -500,10 +500,10 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 } // P-loop
                 outputFields(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -515,12 +515,12 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 } // P-loop
                 outputFields(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -532,10 +532,10 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 } // P-loop
                 outputFields(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
@@ -547,7 +547,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 } // P-loop
                 outputFields(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
 } // end contractDataFieldTensor
@@ -581,22 +581,22 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
   int numPoints     = inputDataLeft.dimension(1);
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
           } // P-loop
           outputData(cl) += tmpVal;
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
           } // P-loop
           outputData(cl) = tmpVal;
-        } // C-loop
+        }); // C-loop
       }
     
 
@@ -637,7 +637,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
@@ -645,10 +645,10 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
             } // D-loop
           } // P-loop
           outputData(cl) += tmpVal;
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
@@ -656,7 +656,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
             } // D-loop
           } // P-loop
           outputData(cl) = tmpVal;
-        } // C-loop
+        }); // C-loop
       }
  } // end contractDataDataVector
 
@@ -698,7 +698,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
 
 
       if (sumInto) { 
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
@@ -708,10 +708,10 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
             } // D1-loop
           } // P-loop
           outputData(cl) += tmpVal;
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( numCells, KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
@@ -721,7 +721,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
             } // D1-loop
           } // P-loop
           outputData(cl) = tmpVal;
-        } // C-loop
+        }); // C-loop
       }
 
  } // end contractDataDataTensor  
