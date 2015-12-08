@@ -85,6 +85,8 @@ Basker<Matrix,Vector>::Basker(
 
 #ifdef SHYLUBASKER
 
+  printf("Constructor Called \n");
+
   basker.Options.no_pivot  = true;
   basker.Options.symmetric = false;
   basker.Options.realloc   = false;
@@ -100,6 +102,7 @@ Basker<Matrix,Vector>::Basker(
 template <class Matrix, class Vector>
 Basker<Matrix,Vector>::~Basker( )
 {
+  printf("Destructor Call \n");
   /* Basker will cleanup its own internal memory*/
 }
 
