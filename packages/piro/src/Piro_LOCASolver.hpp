@@ -89,6 +89,7 @@ private:
   Teuchos::RCP<LOCA::Thyra::Group> group_;
   Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTests_;
   Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests_;
+  NOX::Utils utils_;
 
   Teuchos::RCP<LOCA::Stepper> stepper_;
   mutable bool first_;
