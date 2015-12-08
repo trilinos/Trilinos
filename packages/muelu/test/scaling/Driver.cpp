@@ -127,6 +127,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
   std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone)");
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
+  bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
   std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
   std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
@@ -241,8 +242,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     if (!mapFile.empty())
       map = Xpetra::IO<SC,LO,GO,Node>::ReadMap(mapFile, lib, comm);
     comm->barrier();
-
-    const bool binaryFormat = false;
 
     if (!binaryFormat && !map.is_null()) {
       RCP<const Map> colMap    = (!colMapFile.empty()    ? Xpetra::IO<SC,LO,GO,Node>::ReadMap(colMapFile,    lib, comm) : Teuchos::null);

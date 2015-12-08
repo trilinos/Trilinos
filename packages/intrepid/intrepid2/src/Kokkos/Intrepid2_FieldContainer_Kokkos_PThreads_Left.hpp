@@ -1,4 +1,4 @@
-#ifdef KOKKOS_HAVE_PTHREADS
+#ifdef KOKKOS_HAVE_PTHREAD
 namespace Intrepid2{
 template <class Scalar>
 class FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Threads>{
@@ -542,4 +542,5 @@ inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Threads>:
 return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
 }
 
+}
 #endif

@@ -134,7 +134,7 @@ template<class GraphType>
 void
 OverlappingPartitioner<GraphType>::
 rowsInPart (const local_ordinal_type Part,
-	    Teuchos::ArrayRCP<local_ordinal_type>& List) const
+            Teuchos::ArrayRCP<local_ordinal_type>& List) const
 {
   // Let numRowsInPart do the sanity checking...
   const size_t numRows = numRowsInPart (Part); 
@@ -202,11 +202,11 @@ void OverlappingPartitioner<GraphType>::compute()
 
   if (verbose_ && (Graph_->getComm()->getRank() == 0)) {
     cout << printMsg << "Number of local parts          = " 
-	 << NumLocalParts_ << endl;
+         << NumLocalParts_ << endl;
     cout << printMsg << "Approx. Number of global parts = " 
-	 << NumLocalParts_ * Graph_->getComm ()->getSize () << endl;
+         << NumLocalParts_ * Graph_->getComm ()->getSize () << endl;
     cout << printMsg << "Amount of overlap              = " 
-	 << OverlappingLevel_ << endl;
+         << OverlappingLevel_ << endl;
   }
 
   // 1.- allocate memory 
@@ -305,29 +305,29 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 
     for (int part = 0; part < NumLocalParts_ ; ++part) {
       for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {  
-	const local_ordinal_type LRID = Parts_[part][i];
+        const local_ordinal_type LRID = Parts_[part][i];
         
-	size_t NumIndices;
-	Graph_->getLocalRowCopy (LRID, Indices (), NumIndices);
+        size_t NumIndices;
+        Graph_->getLocalRowCopy (LRID, Indices (), NumIndices);
 
-	for (size_t j = 0; j < NumIndices; ++j) {
-	  // use *local* indices only
-	  const local_ordinal_type col = Indices[j];
+        for (size_t j = 0; j < NumIndices; ++j) {
+          // use *local* indices only
+          const local_ordinal_type col = Indices[j];
           if (Teuchos::as<size_t> (col) >= Graph_->getNodeNumRows ()) {
             continue;
-	  }
+          }
 
-	  // has this column already been inserted?
-	  std::vector<size_t>::iterator where = 
-	    std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
+          // has this column already been inserted?
+          std::vector<size_t>::iterator where = 
+            std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
 
-	  if (where == tmp[part].end()) {
-	    tmp[part].push_back (col);
-	  }
-	}
+          if (where == tmp[part].end()) {
+            tmp[part].push_back (col);
+          }
+        }
 
         // has this column already been inserted?
-	std::vector<size_t>::iterator where =
+        std::vector<size_t>::iterator where =
           std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (LRID));
         
         // This happens here b/c Vanka on Stokes with Stabilized elements will have
@@ -346,7 +346,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     for (int i = 0; i < NumLocalParts_; ++i) {
       Parts_[i].resize (tmp[i].size ());
       for (size_t j = 0; j < tmp[i].size (); ++j) {
-	Parts_[i][j] = tmp[i][j];
+        Parts_[i][j] = tmp[i][j];
       }
     }
   }

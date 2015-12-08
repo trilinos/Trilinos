@@ -23,7 +23,7 @@ typedef int index_type;
 
 template<class T, class U = void>
 struct conditional_eSpace {
-	typedef Kokkos::Serial execution_space;
+	typedef Kokkos::HostSpace::execution_space execution_space;
 };
 
 template<class T>
