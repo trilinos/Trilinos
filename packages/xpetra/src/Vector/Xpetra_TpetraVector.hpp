@@ -217,15 +217,18 @@ namespace Xpetra {
 
   }; // TpetraVector class
 
-#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
-  // specialization of TpetraVector for GO=LO=int
-  template <class Scalar, class Node>
-  class TpetraVector<Scalar, int, int, Node>
-    : public virtual Vector<Scalar,int,int,Node>,
-      public TpetraMultiVector<Scalar,int,int,Node>
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+
+  // specialization of TpetraVector for GO=int and NO=SerialNode
+  template <class Scalar>
+  class TpetraVector<Scalar, int, int, EpetraNode>
+    : public virtual Vector<Scalar,int,int,EpetraNode>,
+      public TpetraMultiVector<Scalar,int,int,EpetraNode>
   {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
+    typedef EpetraNode Node;
 
 #undef XPETRA_TPETRAMULTIVECTOR_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -367,8 +370,163 @@ namespace Xpetra {
 
     //@}
 
-  }; // TpetraVector class (specialization LO=GO=int)
-#endif // #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+  }; // TpetraVector class (specialization on GO=int, NO=EpetraNode)
+#endif
+
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+
+  // specialization of TpetraVector for GO=int and NO=SerialNode
+  template <class Scalar>
+  class TpetraVector<Scalar, int, long long, EpetraNode>
+    : public virtual Vector<Scalar,int,long long,EpetraNode>,
+      public TpetraMultiVector<Scalar,int,long long,EpetraNode>
+  {
+    typedef int LocalOrdinal;
+    typedef long long GlobalOrdinal;
+    typedef EpetraNode Node;
+
+#undef XPETRA_TPETRAMULTIVECTOR_SHORT
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot;                   // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;                 // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;                 // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;               // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue;             // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue;    // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue;    // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue;     // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue;     // overloading, not hiding
+
+    //! @name Constructor/Destructor Methods
+    //@{
+
+    //! Sets all vector entries to zero.
+    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,long long,EpetraNode>", "TpetraVector<int,long long,EpetraNode>", "long long");
+    }
+
+    //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
+    TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1) {
+      XPETRA_TPETRA_ETI_EXCEPTION("TpetraVector<int,long long,EpetraNode>", "TpetraVector<int,long long,EpetraNode>", "long long");
+    }
+
+    //! Destructor.
+    virtual ~TpetraVector() { }
+
+    //@}
+
+    //! @name Post-construction modification routines
+    //@{
+
+    //! Replace current value at the specified location with specified value.
+    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { }
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { }
+
+    //! Replace current value at the specified location with specified values.
+    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { }
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { }
+
+    //@}
+
+    //! @name Mathematical methods
+    //@{
+
+    //! Return 1-norm of this Vector.
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+
+    //! Compute 2-norm of this Vector.
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+
+    //! Compute Inf-norm of this Vector.
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+
+    //! Compute mean (average) value of this Vector.
+    Scalar meanValue() const { return Teuchos::ScalarTraits< Scalar >::zero(); }
+
+    //@}
+
+    //! @name Overridden from Teuchos::Describable
+    //@{
+
+    //! Return a simple one-line description of this object.
+    std::string description() const { return std::string(""); }
+
+    //! Print the object with some verbosity level to an FancyOStream object.
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { }
+
+    //@}
+
+    //! Computes dot product of this Vector against input Vector x.
+    Scalar dot(const Vector &a) const { return Teuchos::ScalarTraits< Scalar >::zero(); }
+
+    //! Compute Weighted 2-norm (RMS Norm) of this Vector.
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector &weights) const { return Teuchos::ScalarTraits< Scalar >::magnitude(Teuchos::ScalarTraits< Scalar >::zero()); }
+
+
+    //! @name Xpetra specific
+    //@{
+
+    //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) { }
+
+    //! Get the underlying Tpetra multivector
+    RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const { return Teuchos::null; }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+    typename dual_view_type::t_host_um getHostLocalView () const {
+      typename dual_view_type::t_host_um ret;
+      return ret;
+    }
+
+    typename dual_view_type::t_dev_um getDeviceLocalView() const {
+      typename dual_view_type::t_dev_um ret;
+      return ret;
+    }
+
+    /// \brief Return an unmanaged non-const view of the local data on a specific device.
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
+    ///
+    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
+    ///          with the Xpetra::TpetraVector object. To write a code which is independent
+    ///          from the underlying linear algebra package you should always use the abstract class,
+    ///          i.e. Xpetra::Vector!
+    ///
+    /// \warning Be aware that the view on the vector data is non-persisting, i.e.
+    ///          only valid as long as the vector does not run of scope!
+    template<class TargetDeviceType>
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<
+        typename dual_view_type::t_dev_um::execution_space::memory_space,
+        typename TargetDeviceType::memory_space>::value,
+        typename dual_view_type::t_dev_um,
+        typename dual_view_type::t_host_um>::type
+    getLocalView () const {
+      typename Kokkos::Impl::if_c<
+        Kokkos::Impl::is_same<
+          typename dual_view_type::t_dev_um::execution_space::memory_space,
+          typename TargetDeviceType::memory_space>::value,
+          typename dual_view_type::t_dev_um,
+          typename dual_view_type::t_host_um>::type ret;
+      return ret;
+    }
+#endif
+    //@}
+
+  }; // TpetraVector class (specialization on GO=long long, NO=EpetraNode)
+#endif
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
