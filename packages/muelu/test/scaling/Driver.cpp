@@ -535,7 +535,6 @@ int main_(Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 
     } while (!stop);
   }
-  return EXIT_SUCCESS;
 }
 
 int main(int argc, char* argv[]) {
