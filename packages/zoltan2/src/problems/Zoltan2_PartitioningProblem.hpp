@@ -252,7 +252,7 @@ public:
     if (graphMetrics_.is_null())
       os << "No metrics available." << std::endl;
     else
-      graphMetrics_->printMetrics(os);
+      graphMetrics_->printGraphMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the parts that Zoltan2 will create.
@@ -400,7 +400,7 @@ private:
 
   bool metricsRequested_;
   RCP<const EvaluatePartition<Adapter> > metrics_;
-  RCP<const EvaluateGraphPartition<Adapter> > graphMetrics_;
+  RCP<const EvaluatePartition<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -648,12 +648,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     if (inputType_ == GraphAdapterType ||
 	inputType_ == MatrixAdapterType ||
 	inputType_ == MeshAdapterType){
-      typedef EvaluateGraphPartition<Adapter> gpsq_t;
 
-      gpsq_t *graphQuality = NULL;
+      psq_t *graphQuality = NULL;
 
       try{
-	graphQuality = new gpsq_t(this->envConst_, problemCommConst_,
+	graphQuality = new psq_t(this->envConst_, problemCommConst_,
 			     this->baseInputAdapter_, solutionConst);
       }
       Z2_FORWARD_EXCEPTIONS
