@@ -373,7 +373,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
           RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-          RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utilities::MV2NonConstTpetraMV(coordinates));
+          RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH;
+          if (!coordinates.is_null())
+            tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utilities::MV2NonConstTpetraMV(coordinates));
+          else
+            tH = MueLu::CreateTpetraPreconditioner(tA, mueluList);
 
           if (useAMGX) {
 #ifdef HAVE_MUELU_AMGX
@@ -387,7 +391,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         } else {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
           RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
-          RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
+          RCP<MueLu::EpetraOperator> eH;
+          if (!coordinates.is_null())
+            eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
+          else
+            eH = MueLu::CreateEpetraPreconditioner(eA, mueluList);
           RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > myH = eH->GetHierarchy();
           H = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC, LO, GO, NO> >(myH);
           TEUCHOS_TEST_FOR_EXCEPTION(H == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: ScalingDriver: Dynamic cast to Hierarchy failed. Epetra needs SC=double, LO=GO=int and Node=Serial.");
