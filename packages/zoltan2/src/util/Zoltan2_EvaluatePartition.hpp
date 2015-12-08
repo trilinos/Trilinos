@@ -47,8 +47,8 @@
  *  \brief Defines the EvaluatePartition class.
  */
 
-#ifndef ZOLTAN2_SOLUTIONQUALITY_HPP
-#define ZOLTAN2_SOLUTIONQUALITY_HPP
+#ifndef ZOLTAN2_EVALUATEPARTITION_HPP
+#define ZOLTAN2_EVALUATEPARTITION_HPP
 
 #include <Zoltan2_Metric.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
