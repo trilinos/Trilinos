@@ -53,28 +53,6 @@
 #include "ROL_OptimizationProblem.hpp"
 
 
-template<class Real> 
-void print_vector(const ROL::Vector<Real> &x) {
-  typedef ROL::StdVector<Real> SV;
-  using Teuchos::dyn_cast;
-  const SV &xs = dyn_cast<const SV>(x);
-  Teuchos::RCP<const std::vector<Real> > x_rcp = xs.getVector();
-   
-  for(int i=0;i<xs.dimension();++i) {
-    std::cout << (*x_rcp)[i] << std::endl; 
-  }
-}
-
-template<class Real> 
-void print_subvector(const ROL::Vector<Real> &x, const int i){
-  typedef ROL::PartitionedVector<Real> PV;
-  typedef typename PV::size_type size_type;
-  size_type n = static_cast<size_type>(i);
-  using Teuchos::dyn_cast;
-  const PV &xp = dyn_cast<const PV>(x);
-  print_vector(*(xp.get(n)));
-}
-
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -107,10 +85,15 @@ int main(int argc, char *argv[]) {
     int ce_dim = 1;    // Dimension of equality constraint
     int ci_dim = 4;    // Dimension of inequality constraint
 
+
+    RCP<vec> x_exact_rcp = rcp( new vec(xopt_dim,0.0) );
+    (*x_exact_rcp)[xopt_dim-1] = 1.0;
+
     RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,0.0) );
     RCP<vec> dopt_rcp = rcp( new vec(xopt_dim,0.0) );
     RCP<vec> vopt_rcp = rcp( new vec(xopt_dim,0.0) );
    
+
     RCP<vec> vec_rcp  = rcp( new vec(ce_dim,1.0) );
     RCP<vec> vel_rcp  = rcp( new vec(ce_dim,1.0) );
    
@@ -179,7 +162,7 @@ int main(int argc, char *argv[]) {
     std::string stepname = "Interior Point";
 
     RealT mu = 0.1;            // Initial penalty parameter
-    RealT factor = 0.2;        // Penalty reduction factor
+    RealT factor = 0.1;        // Penalty reduction factor
 
     parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
     parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
@@ -192,93 +175,25 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
     parlist->sublist("Step").sublist("Composite Step").set("Output Level",0);
 
-    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-8);
+
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-8);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-8);
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     ROL::OptimizationProblem<RealT> problem( obj_hs32, xopt, eqcon_hs32, vel, incon_hs32, vil, parlist);  
 
-/*
-    *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
-
-    *outStream << "\nObjective\n" << std::endl;
-    obj_hs32.checkGradient(*xopt,*dopt,true,*outStream);
-    obj_hs32.checkHessVec(*xopt,*vopt,true,*outStream);
-
-    
-    *outStream << "\nEquality Constraint\n" << std::endl;
-    eqcon_hs32.checkApplyJacobian(*xopt,*vopt,*vec,true,*outStream); 
-    eqcon_hs32.checkApplyAdjointJacobian(*xopt,*vel,*vec,*xopt,true,*outStream); 
-
-    *outStream << "\nInequality Constraint\n" << std::endl;
-    incon_hs32.checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
-    incon_hs32.checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
-    incon_hs32.checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);
-
-
-    *outStream << "\nCheck Interior Point objective\n" << std::endl;
-    ipobj->checkGradient(*x,*d,true,*outStream);
-    ipobj->checkHessVec(*x,*v,true,*outStream);
-
-    *outStream << "\nCheck Interior Point constraints\n" << std::endl;
-    ipcon->checkApplyJacobian(*x,*v,*vc,true,*outStream);
-    ipcon->checkApplyAdjointJacobian(*x,*vl,*vc,*x,true,*outStream);
-    ipcon->checkApplyAdjointHessian(*x,*vl,*d,*x,true,*outStream);    
-*/
     // Define algorithm.
 
     RCP<ROL::Algorithm<RealT> > algo;    
     algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
 
     algo->run(problem,true,*outStream);   
-
-/*
-    for(int iter = 0; iter<8; ++iter) {
-      mu *= factor;
-      parlist.sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
-      ipobj->updatePenalty(mu);     
-
-      algo = rcp( new ROL::Algorithm<RealT>(stepname,parlist) );
-
-      algo->run(*x,*g,*vl,*vc,*ipobj,*ipcon,true,*outStream);   
-
-
+  
+    *outStream << std::endl << std::setw(20) << "Computed Minimizer" << std::setw(20) << "Exact Minimizer" << std::endl;
+    for( int i=0;i<xopt_dim;++i ) {   
+      *outStream << std::setw(20) << (*xopt_rcp)[i] << std::setw(20) << (*x_exact_rcp)[i] << std::endl;
     }
-
-    RealT tol = 0.0; 
-
-    ipobj->gradient(*g,*x,tol);
-    ipcon->value(*vc,*x,tol);
-
-    *outStream << "------------" << std::endl;
-    *outStream << "c_I(x)" << std::endl;
-    print_subvector(*vc,0);
-    *outStream << "------------" << std::endl;
-
-    *outStream << "c_E(x)" << std::endl;
-    print_subvector(*vc,1);
-    *outStream << "------------" << std::endl;
-
-    *outStream << "x_opt" << std::endl;
-    print_subvector(*x,0);
-    *outStream << "-----------" << std::endl;
-
-    *outStream << "x_slack" << std::endl;
-    print_subvector(*x,1);
-    *outStream << "------------" << std::endl;
-
-    *outStream << "g_opt" << std::endl;
-    print_subvector(*g,0);
-    *outStream << "-----------" << std::endl;
-
-    *outStream << "g_slack" << std::endl;
-    print_subvector(*g,1);
-    *outStream << "------------" << std::endl;
-
-    *outStream << g->norm() << std::endl;
-*/
-
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
