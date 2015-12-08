@@ -57,6 +57,9 @@ Piro::extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroP
     } else if (piroParams->isSublist("Rythmos Solver")) {
       result = Teuchos::sublist(Teuchos::sublist(piroParams, "Rythmos Solver"), "Stratimikos");
     }
+  } else if (solverToken == "Trapezoid Rule") {
+    result = Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(
+                piroParams, "NOX"), "Direction"), "Newton"), "Stratimikos Linear Solver"), "Stratimikos");
   }
 
   return result;

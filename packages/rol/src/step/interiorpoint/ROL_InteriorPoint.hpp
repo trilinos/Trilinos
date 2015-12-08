@@ -43,8 +43,7 @@
 
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint.hpp"
-#include "ROL_BoundConstraint.hpp"
+#include "ROL_InequalityConstraint.hpp"
 
 namespace ROL {
 
@@ -67,71 +66,26 @@ private:
 
   Teuchos::RCP<Objective<Real> > obj_;
   Teuchos::RCP<Objective<Real> > barrier_;
-  Teuchos::RCP<V> go_;
-  Teuchos::RCP<V> gs_;
-
+  Teuchos::RCP<Vector<Real> >    x_;
+  Teuchos::RCP<Vector<Real> >    g_;
 
   Real mu_;
-  Real fval_;     // Stored raw objective value
-  Real pval_;     // Stored penalty objective value
   int nfval_;
   int ngval_;
-
-  bool isValueComputed_;
-  bool isGradientComputed_;
+  Real fval_; 
+  Real gnorm_;
 
 public:
 
-  PenalizedObjective( Objective<Real> &obj, 
-                      Objective<Real> &barrier, 
+  PenalizedObjective( Teuchos::RCP<Objective<Real> > &obj, 
+                      Teuchos::RCP<Objective<Real> > &barrier, 
                       const Vector<Real> &x,
                       Real mu ) :
-    obj_(Teuchos::rcp(&obj,false)),
-    barrier_(Teuchos::rcp(&barrier,false)), 
-    go_(Teuchos::null), gs_(Teuchos::null),
-    mu_(mu), fval_(0.0), pval_(0.0), nfval_(0), ngval_(0),
-    isValueComputed_(false), isGradientComputed_(false) {
-
-    using Teuchos::RCP;  using Teuchos::dyn_cast;
-
-    RCP<V> g = x.dual().clone();
- 
-    PV &gpv = dyn_cast<PV>(*g);
-
-    go_ = gpv.get(OPT);
-    gs_ = gpv.get(SLACK);
-
-  }
+    obj_(obj), barrier_(barrier), 
+    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0)  {  }
  
   void updatePenalty( Real mu ) {
     mu_ = mu;
-  }
-
-  Real getObjectiveValue( const Vector<Real> &x ) {
-    Real tol = std::sqrt(ROL_EPSILON);
-    if( !isValueComputed_ ) {
-      // Evaluate (unpenalized) objective function value
-      const PV &xpv = Teuchos::dyn_cast<const PV>(x);
-      Teuchos::RCP<const Vector<Real> > xo = xpv.get(OPT);
-      fval_ = obj_->value(*xo,tol);
-      ++nfval_;
-      isValueComputed_ = true;
-    } 
-    return fval_;
-  }
-
-  void getObjectiveGradient( Vector<Real> &g, const Vector<Real> &x ) {
-    Real tol = std::sqrt(ROL_EPSILON);
-    if( !isGradientComputed_ ) {
-      // Evaluate (unpenalize) objective function gradient
-      const PV &xpv = Teuchos::dyn_cast<const PV>(x);
-      PV &gpv = Teuchos::dyn_cast<PV>(g);
-      Teuchos::RCP<const Vector<Real> > xo = xpv.get(OPT);
-      Teuchos::RCP<Vector<Real> > go = gpv.get(OPT);
-      obj_->gradient(*go,*xo,tol);
-      ++ngval_;
-      isGradientComputed_ = true;
-    }
   }
 
   int getNumberFunctionEvaluations(void) {
@@ -164,10 +118,6 @@ public:
     obj_->update(*xo,flag,iter);
     barrier_->update(*xs,flag,iter);
 
-    if ( flag ) {
-      isValueComputed_    = false;
-      isGradientComputed_ = false;
-    }     
   }
 
   /** \brief Compute value.
@@ -183,20 +133,21 @@ public:
     Teuchos::RCP<const V> xo = xpv.get(OPT);    
     Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
-    if ( !isValueComputed_ ) {
-      // Compute objective function value
-      fval_ = obj_->value(*xo,tol);  
-      pval_ = barrier_->value(*xs,tol);
+    // Compute objective function value
+    Real fval = obj_->value(*xo,tol);  
+    Real pval = barrier_->value(*xs,tol);
 
-      ++nfval_;
-      isValueComputed_ = true;
-    }
+    ++nfval_;
 
-    Real val = fval_ + mu_*pval_; 
+    Real fval_ = fval + mu_*pval; 
 
-    return val; 
+    return fval_; 
   }
 
+  Real getObjectiveValue() {
+    return fval_;
+  }
+  
 
   /** \brief Compute gradient.
 
@@ -207,26 +158,29 @@ public:
   */
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
-    if ( !isGradientComputed_ ) {
-
       // Compute objective function gradient
       const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+      PV &gpv = Teuchos::dyn_cast<PV>(g); 
         
       Teuchos::RCP<const V> xo = xpv.get(OPT);    
       Teuchos::RCP<const V> xs = xpv.get(SLACK);    
+ 
+      Teuchos::RCP<V> go = gpv.get(OPT);
+      Teuchos::RCP<V> gs = gpv.get(SLACK); 
+ 
+      obj_->gradient(*go,*xo,tol);
+      barrier_->gradient(*gs,*xs,tol);
+      gs->scale(mu_);
+      
+      gnorm_ = g.norm();
 
-      obj_->gradient(*go_,*xo,tol);
-      barrier_->gradient(*gs_,*xs,tol);
       ++ngval_;
-      isGradientComputed_ = true;
-    }
-
-    PV &gpv = Teuchos::dyn_cast<PV>(g); 
-
-    gpv.set(OPT,*go_); 
-    gpv.set(SLACK,*gs_);
 
   } 
+
+  Real getGradientNorm() {
+    return gnorm_;
+  }
 
   /** \brief Apply Hessian approximation to vector.
 
@@ -285,48 +239,26 @@ private:
   const static size_type INEQ  = 0;
   const static size_type EQUAL = 1;
 
-  Teuchos::RCP<EqualityConstraint<Real> > incon_;
-  Teuchos::RCP<EqualityConstraint<Real> > eqcon_;
+  Teuchos::RCP<InequalityConstraint<Real> > incon_;
+  Teuchos::RCP<EqualityConstraint<Real> >   eqcon_;
    
-  Teuchos::RCP<V> ci_;
-  Teuchos::RCP<V> ce_;
-
   bool hasEquality_;         // True if an equality constraint is present
   int  ncval_;               // Number of constraint evaluations
-
-  bool isConstraintComputed_;
 
 
 public:
 
   // Constructor with inequality and equality constraints
-  CompositeConstraint( EqualityConstraint<Real> &incon, 
-                       EqualityConstraint<Real> &eqcon,
-                       const Vector<Real> &c ) :
-                       incon_(Teuchos::rcp(&incon,false)), 
-                       eqcon_(Teuchos::rcp(&eqcon,false)), 
-                       ci_(Teuchos::null), ce_(Teuchos::null), 
-                       hasEquality_(true), ncval_(0), 
-                       isConstraintComputed_(false) {
-
-    const PV &cpv = Teuchos::dyn_cast<const PV>(c);
-
-    ci_ = cpv.get(INEQ)->clone(); 
-    ce_ = cpv.get(EQUAL)->clone();
-  }
+  CompositeConstraint( Teuchos::RCP<InequalityConstraint<Real> > &incon, 
+                       Teuchos::RCP<EqualityConstraint<Real> > &eqcon ) :
+                       incon_(incon), eqcon_(eqcon), 
+                       hasEquality_(true), ncval_(0) { }
 
   // Constructor with inequality constraint only
-  CompositeConstraint( EqualityConstraint<Real> &incon,
-                       const Vector<Real> &c ) :
-                       incon_(Teuchos::rcp(&incon,false)), 
-                       eqcon_(Teuchos::null),
-                       ci_(Teuchos::null), hasEquality_(false), 
-                       ncval_(0), isConstraintComputed_(false) {
-
-    const PV &cpv = Teuchos::dyn_cast<const PV>(c);
-
-    ci_ = cpv.get(INEQ)->clone(); 
-  }
+  CompositeConstraint( Teuchos::RCP<InequalityConstraint<Real> > &incon ) :
+                       incon_(incon), eqcon_(Teuchos::null),
+                       hasEquality_(false), ncval_(0) { }
+  
  
   int getNumberConstraintEvaluations(void) {
     return ncval_;
@@ -345,42 +277,29 @@ public:
       eqcon_->update(*xo,flag,iter);
     }
 
-    if( flag ) {
-      isConstraintComputed_ = false;
-    }
- 
   }
 
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
     PV &cpv = Teuchos::dyn_cast<PV>(c); 
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
 
-    if( !isConstraintComputed_ ) {
-      
-      // Compute constraint contributions
-      const PV &xpv = Teuchos::dyn_cast<const PV>(x);
-        
+    Teuchos::RCP<const V> xo = xpv.get(OPT);    
+    Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
-      Teuchos::RCP<const V> xo = xpv.get(OPT);    
-      Teuchos::RCP<const V> xs = xpv.get(SLACK);
- 
-      incon_->value(*ci_, *xo, tol);
-      ci_->axpy(-1.0,*xs);
+    Teuchos::RCP<V> ci = cpv.get(INEQ);
+    Teuchos::RCP<V> ce = cpv.get(EQUAL);
+
+    incon_->value(*ci, *xo, tol);
+    ci->axpy(-1.0,*xs);
        
-      if(hasEquality_) {
-        Teuchos::RCP<V> ce = cpv.get(EQUAL);
-        eqcon_->value(*ce, *xo, tol);
-      }
-
-      ++ncval_;
-      isConstraintComputed_ = true; 
-    }
-
-    cpv.set(INEQ,*ci_);
-  
     if(hasEquality_) {
-      cpv.set(EQUAL,*ce_);
+            
+      eqcon_->value(*ce, *xo, tol);
     }
+
+    ++ncval_;
+
   }
 
   void applyJacobian( Vector<Real> &jv,

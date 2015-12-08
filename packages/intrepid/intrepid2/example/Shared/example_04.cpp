@@ -1,10 +1,8 @@
 #include "Intrepid2_ArrayTools.hpp"
 #include <iostream>
-#ifdef HAVE_INTREPID_KOKKOSCORE
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <impl/Kokkos_Timer.hpp>
-#endif
 #include "Intrepid2_FieldContainer.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #ifdef KOKKOS_HAVE_CUDA
@@ -47,7 +45,6 @@ template<typename Scalar>
 	}
 	
 };
-#ifdef HAVE_INTREPID_KOKKOSCORE	
 
 template<typename Scalar>
 	struct MultiGemm<Scalar,Kokkos::DefaultExecutionSpace,Kokkos::LayoutLeft,2>{
@@ -255,11 +252,9 @@ template<typename Scalar>
 	}
 	
 };
-#endif
 
 // The Following stuff doesn't compile at all with Cuda. And it can't for example Scalar is not defined because its explicit specialisations.
 #if false
-#ifdef KOKKOS_HAVE_CUDA
 	
 	struct MultiGemm<double,Kokkos::Cuda,Kokkos::LayoutLeft,2>{
 		static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
@@ -385,7 +380,6 @@ cublasSgemmBatched(transA,  transB,
 	
 };
 #endif
-#endif
 
 }
 
@@ -394,7 +388,6 @@ cublasSgemmBatched(transA,  transB,
 
 
 int main(){
-#ifdef HAVE_INTREPID_KOKKOSCORE
 
    Kokkos::initialize();
   //initialize viewsto random values
@@ -691,7 +684,6 @@ for(int i=0;i<2;i++){
 
    Kokkos::finalize();
   
-#endif 
   
 	
 	return 0;

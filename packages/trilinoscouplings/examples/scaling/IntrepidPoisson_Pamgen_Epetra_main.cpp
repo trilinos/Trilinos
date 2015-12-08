@@ -1,4 +1,4 @@
-/** \file  IntrepidPoisson_Pamgen_Tpetra_main.cpp
+/** \file  IntrepidPoisson_Pamgen_Epetra_main.cpp
     \brief Example: Discretize Poisson's equation with Dirichlet
            boundary conditions on a hexahedral mesh using nodal
            (Hgrad) elements.  The system is assembled into Epetra data

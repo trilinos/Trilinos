@@ -50,10 +50,10 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "dofmngr/Panzer_FieldAggPattern.hpp"
-#include "dofmngr/Panzer_IntrepidFieldPattern.hpp"
-#include "dofmngr/Panzer_GeometricAggFieldPattern.hpp"
-#include "dofmngr/Panzer_NodalFieldPattern.hpp"
+#include "Panzer_FieldAggPattern.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_GeometricAggFieldPattern.hpp"
+#include "Panzer_NodalFieldPattern.hpp"
 
 // include some intrepid basis functions
 // 2D basis 

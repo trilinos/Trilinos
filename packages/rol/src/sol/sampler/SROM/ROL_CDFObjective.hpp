@@ -56,16 +56,26 @@ namespace ROL {
 template <class Real>
 class CDFObjective : public Objective<Real> {
 private:
-  std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  // Batch manager for parallel computation
   Teuchos::RCP<BatchManager<Real> > bman_;
-  const std::vector<Real> lowerBound_;
-  const std::vector<Real> upperBound_;
+
+  // Distribution information
+  std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
+  std::vector<Real> lowerBound_;
+  std::vector<Real> upperBound_;
+  size_t dimension_;
+
   const Real scale_;
   const Real sqrt2_;
   const Real sqrtpi_;
 
+  const bool optProb_;
+  const bool optAtom_;
+
   std::vector<Real> pts_;
   std::vector<Real> wts_;
+
+  // Number of quadrature points
   size_t numPoints_;
 
   void initializeQuadrature(void) {
@@ -99,11 +109,12 @@ private:
   }
 
   Real valueCDF(const size_t dim, const Real loc,
-                const PrimalSROMVector<Real> &x) const {
-    const size_t numSamples = x.getNumSamples();
+                const ProbabilityVector<Real> &prob,
+                const AtomVector<Real>        &atom) const {
+    const int numSamples = prob.getNumMyAtoms();
     Real val = 0., hs = 0., xpt = 0., xwt = 0., sum = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
-      xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
+    for (int k = 0; k < numSamples; k++) {
+      xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
     }
@@ -113,12 +124,13 @@ private:
 
   Real gradientCDF(std::vector<Real> &gradx, std::vector<Real> &gradp,
              const size_t dim, const Real loc,
-             const PrimalSROMVector<Real> &x) const {
-    const size_t numSamples = x.getNumSamples();
+             const ProbabilityVector<Real> &prob,
+             const AtomVector<Real>        &atom) const {
+    const int numSamples = prob.getNumMyAtoms();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     Real val = 0., hs = 0., xpt = 0., xwt = 0., sum = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
-      xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
+    for (int k = 0; k < numSamples; k++) {
+      xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
       gradx[k] = -(xwt/(sqrt2_*sqrtpi_*scale_))
@@ -133,17 +145,20 @@ private:
                   std::vector<Real> &gradx, std::vector<Real> &gradp,
                   Real &sumx, Real &sump,
             const size_t dim, const Real loc,
-            const PrimalSROMVector<Real> &x, const PrimalSROMVector<Real> &v) const {
-    const size_t numSamples = x.getNumSamples();
+             const ProbabilityVector<Real> &prob,
+             const AtomVector<Real>        &atom,
+             const ProbabilityVector<Real> &vprob,
+             const AtomVector<Real>        &vatom) const {
+    const int numSamples = prob.getNumMyAtoms();
     hvxx.resize(numSamples,0.); hvxp.resize(numSamples,0.); hvpx.resize(numSamples,0.);
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     sumx = 0.; sump = 0.;
     std::vector<Real> psum(3,0.0), out(3,0.0);
     Real val = 0., hs = 0., dval = 0., scale3 = std::pow(scale_,3);
     Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
-      xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
-      vpt = (*v.getPoint(k))[dim]; vwt = v.getWeight(k);
+    for (int k = 0; k < numSamples; k++) {
+      xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
+      vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       psum[0] += xwt * hs;
       dval = std::exp(-std::pow((loc-xpt)/(sqrt2_*scale_),2));
@@ -162,25 +177,33 @@ private:
 
 public:
   CDFObjective(const std::vector<Teuchos::RCP<Distribution<Real> > > &dist,
-               const std::vector<Real> &lo, const std::vector<Real> &up,
-                     Teuchos::RCP<BatchManager<Real> > &bman,
-               const Real scale = 1.e-2)
-    : Objective<Real>(), dist_(dist), bman_(bman), lowerBound_(lo), upperBound_(up),
-      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(M_PI)) {
+               const Teuchos::RCP<BatchManager<Real> > &bman,
+               const Real scale = 1.e-2,
+               const bool optProb = true, const bool optAtom = true)
+    : Objective<Real>(), bman_(bman), dist_(dist), dimension_(dist.size()),
+      scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(M_PI)),
+      optProb_(optProb), optAtom_(optAtom) {
+    lowerBound_.resize(dimension_,0.0);
+    upperBound_.resize(dimension_,0.0);
+    for ( size_t i = 0; i < dimension_; i++ ) {
+      lowerBound_[i] = dist[i]->lowerBound();
+      upperBound_[i] = dist[i]->upperBound();
+    }
     initializeQuadrature();
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
-    const size_t dimension  = ex.getDimension();
+    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
+    const AtomVector<Real> &atom = *(ex.getAtomVector());
     Real val = 0., diff = 0., pt = 0., wt = 0., meas = 0., lb = 0.;
-    for (size_t d = 0; d < dimension; d++) {
+    for (size_t d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
       for (size_t k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
-        diff = (valueCDF(d,pt,ex)-dist_[d]->evaluateCDF(pt));
+        diff = (valueCDF(d,pt,prob,atom)-dist_[d]->evaluateCDF(pt));
         val += wt*std::pow(diff,2);
       }
     }
@@ -188,21 +211,22 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    DualSROMVector<Real> &eg = Teuchos::dyn_cast<DualSROMVector<Real> >(g);
-    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
-    const size_t dimension  = ex.getDimension();
-    const size_t numSamples = ex.getNumSamples();
+    g.zero();
+    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
+    const AtomVector<Real> &atom = *(ex.getAtomVector());
+    const int numSamples = prob.getNumMyAtoms();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
     Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0.;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension,0.);
+    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension; d++) {
+    for (size_t d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
       for (size_t k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
-        val = gradientCDF(gradx,gradp,d,pt,ex);
+        val = gradientCDF(gradx,gradp,d,pt,prob,atom);
         diff = (val-dist_[d]->evaluateCDF(pt));
         for (size_t j = 0; j < numSamples; j++) {
           (val_pt[j])[d] += wt * diff * gradx[j];
@@ -210,30 +234,40 @@ public:
         }
       }
     }
-    for (size_t k = 0; k < numSamples; k++) {
-      eg.setPoint(k,val_pt[k]);
-      eg.setWeight(k,val_wt[k]);
+    SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
+    ProbabilityVector<Real> &gprob = *(eg.getProbabilityVector());
+    AtomVector<Real> &gatom = *(eg.getAtomVector());
+    for (int k = 0; k < numSamples; k++) {
+      if ( optProb_ ) {
+        gprob.setProbability(k,val_wt[k]);
+      }
+      if ( optAtom_ ) {
+        gatom.setAtom(k,val_pt[k]);
+      }
     }
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    DualSROMVector<Real> &ehv = Teuchos::dyn_cast<DualSROMVector<Real> >(hv);
-    const PrimalSROMVector<Real> &ev = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(v);
-    const PrimalSROMVector<Real> &ex = Teuchos::dyn_cast<const PrimalSROMVector<Real> >(x);
-    const size_t dimension  = ex.getDimension();
-    const size_t numSamples = ex.getNumSamples();
+    hv.zero();
+    const SROMVector<Real> &ev = Teuchos::dyn_cast<const SROMVector<Real> >(v);
+    const ProbabilityVector<Real> &vprob = *(ev.getProbabilityVector());
+    const AtomVector<Real> &vatom = *(ev.getAtomVector());
+    const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
+    const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
+    const AtomVector<Real> &atom = *(ex.getAtomVector());
+    const int numSamples = prob.getNumMyAtoms();
     std::vector<Real> hvxx(numSamples,0.), hvxp(numSamples,0.), hvpx(numSamples,0.);
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
     Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0., sumx = 0., sump = 0.;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension,0.);
+    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension; d++) {
+    for (size_t d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
       for (size_t k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
-        val = hessVecCDF(hvxx,hvxp,hvpx,gradx,gradp,sumx,sump,d,pt,ex,ev);
+        val = hessVecCDF(hvxx,hvxp,hvpx,gradx,gradp,sumx,sump,d,pt,prob,atom,vprob,vatom);
         diff = (val-dist_[d]->evaluateCDF(pt));
         for (size_t j = 0; j < numSamples; j++) {
           (val_pt[j])[d] += wt * ( (sump + sumx) * gradx[j] + diff * (hvxx[j] + hvxp[j]) );
@@ -241,9 +275,16 @@ public:
         }
       }
     }
-    for (size_t k = 0; k < numSamples; k++) {
-      ehv.setPoint(k,val_pt[k]);
-      ehv.setWeight(k,val_wt[k]);
+    SROMVector<Real> &ehv = Teuchos::dyn_cast<SROMVector<Real> >(hv);
+    ProbabilityVector<Real> &hprob = *(ehv.getProbabilityVector());
+    AtomVector<Real> &hatom = *(ehv.getAtomVector());
+    for (int k = 0; k < numSamples; k++) {
+      if ( optProb_ ) {
+        hprob.setProbability(k,val_wt[k]);
+      }
+      if ( optAtom_ ) {
+        hatom.setAtom(k,val_pt[k]);
+      }
     }
   }
 }; // class LinearCombinationObjective

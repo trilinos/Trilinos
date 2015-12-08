@@ -125,10 +125,13 @@ private:
   // Private data members
 
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tpetraMap_;
+  // The only reason Thyra needs this comm_ object is because Thyra
+  // uses Ordinal as the Comm template parameter, while Tpetra uses
+  // int.  Ordinal is some 64-bit type, which doesn't make any sense,
+  // given that MPI implementations currently only allow 32-bit
+  // process ranks.  This is why Thyra does not just use the Map's
+  // stored communicator.
   RCP<const Teuchos::Comm<Ordinal> > comm_;
-  Ordinal localSubDim_;
-  int numProc_;
-  int procRank_;
   RCP<this_t> weakSelfPtr_;
 
   // /////////////////////////////////////

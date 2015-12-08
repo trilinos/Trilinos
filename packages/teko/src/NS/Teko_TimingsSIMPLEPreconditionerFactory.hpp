@@ -124,8 +124,10 @@ protected:
 
    mutable Teuchos::Time constrTotal_;
    mutable Teuchos::Time subTotal_;
+   mutable int constrCount_;
 
    mutable Teuchos::RCP<DiagnosticLinearOp> timed_HBt_;
+   mutable Teuchos::RCP<DiagnosticLinearOp> timed_B_;
    mutable Teuchos::RCP<DiagnosticLinearOp> timed_invF_;
    mutable Teuchos::RCP<DiagnosticLinearOp> timed_invS_;
    mutable Teuchos::RCP<DiagnosticLinearOp> timed_iU_t_iL_;

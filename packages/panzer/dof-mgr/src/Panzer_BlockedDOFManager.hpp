@@ -49,7 +49,7 @@
    #include "mpi.h"
 #endif
 
-#include "PanzerDiscFE_config.hpp"
+#include "PanzerDofMgr_config.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"

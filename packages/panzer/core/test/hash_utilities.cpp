@@ -1,12 +1,13 @@
 // @HEADER
-// ************************************************************************
-// 
-//        Piro: Strategy package for embedded analysis capabilitites
-//                  Copyright (2010) Sandia Corporation
-// 
+// ***********************************************************************
+//
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,41 +35,26 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
-// National Laboratories.
-// 
-// ************************************************************************
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
 // @HEADER
 
-#ifndef PIRO_EPETRA_FACTORY_H
-#define PIRO_EPETRA_FACTORY_H
+#include <Teuchos_UnitTestHarness.hpp>
+#include "Panzer_HashUtils.hpp"
+#include <unordered_map>
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "EpetraExt_ModelEvaluator.h"
+namespace panzer {
 
-namespace Piro {
-namespace Epetra {
+  TEUCHOS_UNIT_TEST(hash_utilities, pair_hash)
+  {
+    std::unordered_map<std::pair<int,int>,int,panzer::pair_hash> my_map;
 
-//! Factory for creating Piro::Epetra solvers
-//! \deprecated Use Piro::Epetra::SolverFactory instead.
-class Factory {
-public:
+    std::pair<int,int> p = std::make_pair(5,10);
 
-  //! Constructor
-  Factory() {}
+    my_map[p] = 3;
 
-  //! Destructor
-  ~Factory() {}
-
-  //! Create solver
-  static Teuchos::RCP<EpetraExt::ModelEvaluator> 
-  createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
-	       Teuchos::RCP<EpetraExt::ModelEvaluator> model);
-	       
-};
+    TEST_EQUALITY(my_map[p], 3);
+  }
 
 }
-}
-
-#endif

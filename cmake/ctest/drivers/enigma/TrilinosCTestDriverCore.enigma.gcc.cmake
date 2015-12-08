@@ -96,6 +96,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTPL_ENABLE_SuperLU:BOOL=ON"
     "-DAmesos2_ENABLE_KLU2:BOOL=OFF"
 
+    "-DMueLu_ENABLE_BROKEN_TESTS:BOOL=ON"
+    "-DXpetra_ENABLE_BROKEN_TESTS:BOOL=ON"
+
     "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
     "-DTPL_SuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"
     "-DTPL_SuperLU_LIBRARIES=/home/tawiesn/software/SuperLU_4.3/lib/libsuperlu_4.3.a"

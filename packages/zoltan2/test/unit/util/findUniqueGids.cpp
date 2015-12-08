@@ -508,7 +508,6 @@ int main(int argc, char *argv[])
   if (comm->getRank() == 0) 
     std::cout << "Skipping int tests because Tpetra is not build with "
               << "GO == int" << std::endl;
-              << std::endl;
 #endif
 
 #ifdef HAVE_TPETRA_INT_LONG_LONG

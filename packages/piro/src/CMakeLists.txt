@@ -30,7 +30,6 @@ APPEND_SET(HEADERS
   Piro_ProviderBase.hpp
   Piro_ProviderHelpers.hpp
   Piro_SolutionObserverBase.hpp
-  Piro_Epetra_Factory.hpp
   Piro_Epetra_SolverFactory.hpp
   Piro_SolverFactory.hpp
   Piro_SolverFactory_Def.hpp
@@ -43,7 +42,6 @@ APPEND_SET(SOURCES
   Piro_ValidPiroParameters.cpp
   Piro_Epetra_MatrixFreeDecorator.cpp
   Piro_Epetra_InvertMassMatrixDecorator.cpp
-  Piro_Epetra_Factory.cpp
   Piro_Epetra_SolverFactory.cpp
   Piro_StratimikosUtils.cpp
   Piro_Version.cpp
@@ -76,8 +74,13 @@ IF (Piro_ENABLE_NOX)
     Piro_Epetra_AdaptiveSolutionManager.hpp
     Piro_NullSpaceUtils.hpp
     Piro_Epetra_VelocityVerletSolver.hpp
+    Piro_VelocityVerletSolver.hpp
+    Piro_VelocityVerletSolver_Def.hpp
     Piro_Epetra_NewmarkSolver.hpp
     Piro_Epetra_TrapezoidRuleSolver.hpp
+    Piro_TrapezoidRuleSolver.hpp
+    Piro_TrapezoidRuleSolver_Def.hpp
+    Piro_TransientDecorator.hpp
     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES
     Piro_Epetra_NOXSolver.cpp

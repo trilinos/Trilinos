@@ -47,14 +47,14 @@
 
 #include "mpi.h"
 
-#include "PanzerDiscFE_config.hpp"
+#include "PanzerDofMgr_config.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
-#include "Panzer_DOF_Functors.hpp"
+#include "Panzer_DOFManager_Functors.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 

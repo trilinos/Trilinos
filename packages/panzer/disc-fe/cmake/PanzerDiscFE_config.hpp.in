@@ -2,8 +2,8 @@
 #define PANZER_DISC_FE_CONFIG_HPP
 
 #include "PanzerCore_config.hpp"
+#include "PanzerDofMgr_config.hpp"
 
-#cmakedefine PANZER_HAVE_FEI
 #cmakedefine Panzer_BUILD_PAPI_SUPPORT
 #cmakedefine PANZER_HAVE_CAMAL
 

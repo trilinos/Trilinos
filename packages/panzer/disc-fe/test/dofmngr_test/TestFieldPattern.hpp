@@ -43,7 +43,7 @@
 #ifndef __TestFieldPattern_hpp__
 #define __TestFieldPattern_hpp__
 
-#include "dofmngr/Panzer_FieldPattern.hpp"
+#include "Panzer_FieldPattern.hpp"
 
 #include "Teuchos_RCP.hpp"
 

@@ -36,7 +36,6 @@ int main(int argc, char* argv[])
   //Int numthreads = atoi(argv[3]);
 
   std::string fname = "matrix1.mtx";
-  //std::string fname = "matrix1.b.mtx";
   
   Int numthreads = atoi(argv[1]);
 

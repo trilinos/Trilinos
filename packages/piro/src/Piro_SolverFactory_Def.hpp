@@ -45,6 +45,8 @@
 #ifdef Piro_ENABLE_NOX
 #include "Piro_NOXSolver.hpp"
 #include "Piro_LOCASolver.hpp"
+#include "Piro_VelocityVerletSolver.hpp"
+#include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
@@ -71,6 +73,12 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #ifdef Piro_ENABLE_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
+  } else
+  if (solverType == "Velocity Verlet") {
+    result = Teuchos::rcp(new VelocityVerletSolver<Scalar>(piroParams, model, observer));
+  } else
+  if (solverType == "Trapezoid Rule") {
+    result = Teuchos::rcp(new TrapezoidRuleSolver<Scalar>(piroParams, model, observer));
   } else
   if (solverType == "LOCA") {
     result = observedLocaSolver(piroParams, model, observer);

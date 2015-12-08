@@ -47,7 +47,8 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "ROL_Vector.hpp"
+#include "ROL_ProbabilityVector.hpp"
+#include "ROL_AtomVector.hpp"
 
 /** \class ROL::SROMVector
     \brief Provides the std::vector implementation of the ROL::Vector interface.
@@ -56,98 +57,54 @@
 
 namespace ROL {
 
-template <class Real, class Element>
+template <class Real>
 class SROMVector : public Vector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
+  const Teuchos::RCP<ProbabilityVector<Real> > pvec_;
+  const Teuchos::RCP<AtomVector<Real> > avec_;
 
-  Teuchos::RCP<BatchManager<Element> > bman_;
-
-  Teuchos::RCP<std::vector<Element> >  pts_vec_;
-  Teuchos::RCP<std::vector<Element> >  wts_vec_;
-
-  uint dimension_;
-  uint numSamples_;
-
-  std::vector<Real> scale_wts_; // 1/pow(typw,2)
-  std::vector<Real> scale_pts_; // 1/pow(typx,2)
+  mutable Teuchos::RCP<Vector<Real> > dual_pvec_;
+  mutable Teuchos::RCP<Vector<Real> > dual_avec_;
+  mutable Teuchos::RCP<SROMVector<Real> > dual_vec_;
 
 public:
 
-  SROMVector(const Teuchos::RCP<std::vector<Element> >  &pts_vec,
-             const Teuchos::RCP<std::vector<Element> >  &wts_vec,
-             const Teuchos::RCP<BatchManager<Element> > &bman,
-             const std::vector<Real> &scale_pts,
-             const std::vector<Real> &scale_wts)
-    : bman_(bman), pts_vec_(pts_vec), wts_vec_(wts_vec) {
-    numSamples_ = wts_vec_->size();
-    dimension_  = 0;
-    if (numSamples_ > 0) { 
-      dimension_  = pts_vec_->size()/numSamples_;
-    }
-
-    Real wi = 1., xij = 1.;
-    scale_wts_.clear(); scale_wts_.resize(numSamples_,1.);
-    scale_pts_.clear(); scale_pts_.resize(numSamples_*dimension_,1.);
-    for (uint i = 0; i < numSamples_; i++) {
-      wi = std::abs(scale_wts[i]);
-      if ( wi > ROL_EPSILON ) {
-        scale_wts_[i] = wi;
-      }
-      for (uint j = 0; j < dimension_; j++) {
-        xij = std::abs(scale_pts[i*dimension_ + j]);
-        if ( xij > ROL_EPSILON ) {
-          scale_pts_[i*dimension_ + j] = xij;
-        }
-      }
-    }
+  SROMVector(const Teuchos::RCP<ProbabilityVector<Real> >  &pvec,
+             const Teuchos::RCP<AtomVector<Real> >         &avec)
+    : pvec_(pvec), avec_(avec) {
+    dual_pvec_ = (pvec_->dual()).clone();
+    dual_avec_ = (avec_->dual()).clone();
   }
 
   void set( const Vector<Real> &x ) {
     const SROMVector &ex = Teuchos::dyn_cast<const SROMVector>(x);
-    for (uint i = 0; i < numSamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        (*pts_vec_)[i*dimension_ + j] = (*ex.getPoint(i))[j];
-      }
-      (*wts_vec_)[i] = (ex.getWeight(i)); 
-    }
+    pvec_->set(*(ex.getProbabilityVector()));
+    avec_->set(*(ex.getAtomVector()));
   }
 
   void plus( const Vector<Real> &x ) {
     const SROMVector &ex = Teuchos::dyn_cast<const SROMVector>(x);
-    for (uint i = 0; i < numSamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        (*pts_vec_)[i*dimension_ + j] += (*ex.getPoint(i))[j];
-      }
-      (*wts_vec_)[i] += (ex.getWeight(i)); 
-    }
+    pvec_->plus(*(ex.getProbabilityVector()));
+    avec_->plus(*(ex.getAtomVector()));
   }
 
   void scale( const Real alpha ) {
-    for (uint i = 0; i < numSamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        (*pts_vec_)[i*dimension_ + j] *= alpha;
-      }
-      (*wts_vec_)[i] *= alpha;
-    }
+    pvec_->scale(alpha);
+    avec_->scale(alpha);
+  }
+
+  void axpy( const Real alpha, const Vector<Real> &x ) {
+    const SROMVector &ex = Teuchos::dyn_cast<const SROMVector>(x);
+    pvec_->axpy(alpha,*(ex.getProbabilityVector()));
+    avec_->axpy(alpha,*(ex.getAtomVector()));
   }
 
   Real dot( const Vector<Real> &x ) const {
     const SROMVector & ex = Teuchos::dyn_cast<const SROMVector>(x);
-    Real pt_val = 0, wt_val = 0;
-    for (uint i = 0; i < numSamples_; i++) {
-      for (uint j = 0; j < dimension_; j++) {
-        pt_val += (*pts_vec_)[i*dimension_ + j]
-                  * scale_pts_[i*dimension_ + j]
-                  * (*ex.getPoint(i))[j];
-      }
-      wt_val += (*wts_vec_)[i] * scale_wts_[i] * (ex.getWeight(i)); 
-    }
-    // Global sum
-    Real sum_pt_val = 0, sum_wt_val = 0;
-    bman_->sumAll(&pt_val,&sum_pt_val,1);
-    bman_->sumAll(&wt_val,&sum_wt_val,1);
-    return sum_pt_val + sum_wt_val;
+    Real pval = pvec_->dot(*(ex.getProbabilityVector()));
+    Real aval = avec_->dot(*(ex.getAtomVector()));
+    return pval + aval;
   }
 
   Real norm() const {
@@ -156,204 +113,68 @@ public:
     return val;
   }
 
-  Teuchos::RCP<const std::vector<Element> > getPoint(const size_t i) const {
-    std::vector<Element> pt(dimension_,0.);
-    for (uint j = 0; j < dimension_; j++) {
-      pt[j] = (*pts_vec_)[i*dimension_ + j];
-    }
-    return Teuchos::rcp(new std::vector<Element>(pt));
+  Teuchos::RCP<Vector<Real> > clone(void) const {
+    return Teuchos::rcp( new SROMVector(
+           Teuchos::rcp_static_cast<ProbabilityVector<Real> >(pvec_->clone()),
+           Teuchos::rcp_static_cast<AtomVector<Real> >(avec_->clone())) );
   }
 
-  void setPoint(const size_t i, const std::vector<Element> &pt) {
-    for (uint j = 0; j < dimension_; j++) {
-      (*pts_vec_)[i*dimension_ + j] = pt[j];
-    }
+  const Vector<Real> & dual(void) const {
+    dual_pvec_->set(pvec_->dual());
+    dual_avec_->set(avec_->dual());
+    dual_vec_ = Teuchos::rcp(new SROMVector(
+                  Teuchos::rcp_static_cast<ProbabilityVector<Real> >(dual_pvec_),
+                  Teuchos::rcp_static_cast<AtomVector<Real> >(dual_avec_)));
+    return *dual_vec_;
   }
 
-  const Element getWeight(const size_t i) const {
-    return (*wts_vec_)[i];
-  }
-
-  void setWeight(const size_t i, const Element wt) {
-    (*wts_vec_)[i] = wt;
-  }
-
-  const size_t getDimension(void) const {
-    return static_cast<size_t>(dimension_);
-  }
-
-  const size_t getNumSamples(void) const {
-    return static_cast<size_t>(numSamples_);
+  int dimension(void) const {
+    return avec_->dimension() + pvec_->dimension();
   }
 
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    for (uint i = 0; i < numSamples_; i++) {
-      (*wts_vec_)[i] = f.apply((*wts_vec_)[i]);
-      for (uint j = 0; j < dimension_; j++) {
-        (*pts_vec_)[i*dimension_ + j] = f.apply((*pts_vec_)[i*dimension_ + j]);
-      }
-    }
+    pvec_->applyUnary(f);
+    avec_->applyUnary(f);
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
     const SROMVector & ex = Teuchos::dyn_cast<const SROMVector>(x);
-    for (uint i = 0; i < numSamples_; i++) {
-      (*wts_vec_)[i] = f.apply((*wts_vec_)[i],ex.getWeight(i));
-      for (uint j = 0; j < dimension_; j++) {
-        (*pts_vec_)[i*dimension_ + j] = f.apply((*pts_vec_)[i*dimension_ + j],(*ex.getPoint(i))[j]);
-      }
-    }
+    pvec_->applyBinary(f,*(ex.getProbabilityVector()));
+    avec_->applyBinary(f,*(ex.getAtomVector()));
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     Real result = r.initialValue();
-    for (uint i = 0; i < numSamples_; i++) {
-      r.reduce((*wts_vec_)[i],result);
-      for (uint j = 0; j < dimension_; j++) {
-        r.reduce((*pts_vec_)[i*dimension_ + j],result);
-      }
-    }
-    // Global sum
-    Real sum = 0.;
-    bman_->reduceAll(&result,&sum,r);
-//    bman_->sumAll(&result,&sum,1);
-    return sum;
+    Real pval = pvec_->reduce(r);
+    Real aval = avec_->reduce(r);
+    r.reduce(pval,result);
+    r.reduce(aval,result);
+    return result;
   }
 
-protected:
-
-  const std::vector<Element> & getPoints(void) const {
-    return *pts_vec_;
-  }
-
-  const std::vector<Element> & getWeights(void) const {
-    return *wts_vec_;
-  }
-
-  const std::vector<Element> & getPointScalingVector(void) const {
-    return scale_pts_;
-  }
-
-  const std::vector<Element> & getWeightScalingVector(void) const {
-    return scale_wts_;
-  }
-
-  const Teuchos::RCP<BatchManager<Real> > & getBatchManager(void) const {
-    return bman_;
+  const Teuchos::RCP<const AtomVector<Real> > getAtomVector(void) const {
+    return avec_;
   }
   
-}; // class PrimalSROMVector
-
-template <class Real, class Element=Real>
-class PrimalSROMVector;
-
-template <class Real, class Element=Real>
-class DualSROMVector;
-
-template <class Real, class Element>
-class PrimalSROMVector : public SROMVector<Real,Element> {
-  typedef typename std::vector<Real>::size_type uint;
-private:
-
-  mutable Teuchos::RCP<DualSROMVector<Real,Element> > dual_vec_;
-
-public:
-
-  PrimalSROMVector(const Teuchos::RCP<std::vector<Element> >  &pts_vec,
-                   const Teuchos::RCP<std::vector<Element> >  &wts_vec,
-                   const Teuchos::RCP<BatchManager<Element> > &bman,
-                   const std::vector<Real> &scale_pts,
-                   const std::vector<Real> &scale_wts)
-    : SROMVector<Real,Element>(pts_vec,wts_vec,bman,scale_pts,scale_wts) {}
-
-  Teuchos::RCP<Vector<Real> > clone() const {
-    uint dimension = SROMVector<Real,Element>::getDimension();
-    uint numSamples = SROMVector<Real,Element>::getNumSamples();
-
-    return Teuchos::rcp( new PrimalSROMVector( Teuchos::rcp(new std::vector<Element>(dimension*numSamples)),
-                                               Teuchos::rcp(new std::vector<Element>(numSamples)),
-                                               SROMVector<Real,Element>::getBatchManager(),
-                                               SROMVector<Real,Element>::getPointScalingVector(),
-                                               SROMVector<Real,Element>::getWeightScalingVector() ) );
+  const Teuchos::RCP<const ProbabilityVector<Real> > getProbabilityVector(void) const {
+    return pvec_;
   }
 
-  const Vector<Real> & dual() const {
-    uint dimension = SROMVector<Real,Element>::getDimension();
-    uint numSamples = SROMVector<Real,Element>::getNumSamples();
-
-    std::vector<Element> tmp_pts_vec(SROMVector<Real,Element>::getPoints());
-    std::vector<Element> tmp_wts_vec(SROMVector<Real,Element>::getWeights());
-
-    std::vector<Element> scale_pts(SROMVector<Real,Element>::getPointScalingVector());
-    std::vector<Element> scale_wts(SROMVector<Real,Element>::getWeightScalingVector());
-    for (uint i = 0; i < numSamples; i++) {
-      tmp_wts_vec[i] *= scale_wts[i];
-      scale_wts[i] = 1./scale_wts[i];
-      for (uint j = 0; j < dimension; j++) {
-        tmp_pts_vec[i*dimension + j] *= scale_pts[i*dimension + j];
-        scale_pts[i*dimension + j] = 1./scale_pts[i*dimension + j];
-      }
-    }
-    dual_vec_ = Teuchos::rcp( new DualSROMVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_pts_vec)),
-                                                        Teuchos::rcp(new std::vector<Element>(tmp_wts_vec)),
-                                                        SROMVector<Real,Element>::getBatchManager(),
-                                                        scale_pts, scale_wts ) );
-    return *dual_vec_;
+  Teuchos::RCP<AtomVector<Real> > getAtomVector(void) {
+    return avec_;
   }
   
-}; // class PrimalSROMVector
-
-template <class Real, class Element>
-class DualSROMVector : public SROMVector<Real,Element> {
-  typedef typename std::vector<Real>::size_type uint;
-private:
-
-  mutable Teuchos::RCP<PrimalSROMVector<Real> > dual_vec_;
-
-public:
-
-  DualSROMVector(const Teuchos::RCP<std::vector<Element> > &pts_vec,
-                 const Teuchos::RCP<std::vector<Element> > &wts_vec,
-                 const Teuchos::RCP<BatchManager<Element> > &bman,
-                 const std::vector<Real> &scale_pts,
-                 const std::vector<Real> &scale_wts)
-    : SROMVector<Real,Element>(pts_vec,wts_vec,bman,scale_pts,scale_wts) {}
-
-  Teuchos::RCP<Vector<Real> > clone() const {
-    uint dimension = SROMVector<Real,Element>::getDimension();
-    uint numSamples = SROMVector<Real,Element>::getNumSamples();
-
-    return Teuchos::rcp( new DualSROMVector( Teuchos::rcp(new std::vector<Element>(dimension*numSamples)),
-                                             Teuchos::rcp(new std::vector<Element>(numSamples)),
-                                             SROMVector<Real,Element>::getBatchManager(),
-                                             SROMVector<Real,Element>::getPointScalingVector(),
-                                             SROMVector<Real,Element>::getWeightScalingVector() ) );
+  Teuchos::RCP<ProbabilityVector<Real> > getProbabilityVector(void) {
+    return pvec_;
   }
 
-  const Vector<Real> & dual() const {
-    uint dimension = SROMVector<Real,Element>::getDimension();
-    uint numSamples = SROMVector<Real,Element>::getNumSamples();
-
-    std::vector<Element> tmp_pts_vec(SROMVector<Real,Element>::getPoints());
-    std::vector<Element> tmp_wts_vec(SROMVector<Real,Element>::getWeights());
-
-    std::vector<Element> scale_pts(SROMVector<Real,Element>::getPointScalingVector());
-    std::vector<Element> scale_wts(SROMVector<Real,Element>::getWeightScalingVector());
-    for (uint i = 0; i < numSamples; i++) {
-      tmp_wts_vec[i] *= scale_wts[i];
-      scale_wts[i] = 1./scale_wts[i];
-      for (uint j = 0; j < dimension; j++) {
-        tmp_pts_vec[i*dimension + j] *= scale_pts[i*dimension + j];
-        scale_pts[i*dimension + j] = 1./scale_pts[i*dimension + j];
-      }
-    }
-    dual_vec_ = Teuchos::rcp( new PrimalSROMVector<Real>( Teuchos::rcp(new std::vector<Element>(tmp_pts_vec)),
-                                                          Teuchos::rcp(new std::vector<Element>(tmp_wts_vec)),
-                                                          SROMVector<Real,Element>::getBatchManager(),
-                                                          scale_pts, scale_wts ) );
-    return *dual_vec_;
+  void setAtomVector(const AtomVector<Real> &vec) {
+    avec_->set(vec);
   }
-  
+
+  void setProbabilityVector(const ProbabilityVector<Real> &vec) {
+    pvec_->set(vec);
+  }
   
 }; // class SROMVector
 

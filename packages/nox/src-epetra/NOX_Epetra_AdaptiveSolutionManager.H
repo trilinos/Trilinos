@@ -104,6 +104,10 @@ public:
 
   virtual Teuchos::RCP<Epetra_Vector>& get_initial_xdot(){return initial_xdot;}
 
+  virtual Teuchos::RCP<const Epetra_Vector> getInitialSolutionDotDot() const { return initial_xdotdot; }
+
+  virtual Teuchos::RCP<Epetra_Vector>& get_initial_xdotdot(){return initial_xdotdot;}
+
   virtual Teuchos::RCP<Epetra_Vector>& get_overlapped_x(){return overlapped_x;}
 
   virtual Teuchos::RCP<Epetra_Vector>& get_overlapped_xdot(){return overlapped_xdot;}
@@ -126,6 +130,9 @@ protected:
 
       //! Initial solution vector
       Teuchos::RCP<Epetra_Vector> initial_xdot;
+
+      //! Initial solution vector
+      Teuchos::RCP<Epetra_Vector> initial_xdotdot;
 
       //! Importer for overlapped data
       Teuchos::RCP<Epetra_Import> importer;

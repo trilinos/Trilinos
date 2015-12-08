@@ -40,41 +40,33 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STRING_UTILITIES_HPP
-#define PANZER_STRING_UTILITIES_HPP
+#ifndef __Panzer_DOFManager_Functors_hpp__
+#define __Panzer_DOFManager_Functors_hpp__
 
-#include <vector>
-#include <string>
-
-#include "PanzerDiscFE_config.hpp"
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
+namespace dof_functors {
 
-  //! Removes whitespace at beginning and end of string
-  void trim(std::string& str);
+//! Sums all entries of a Rank 2 Kokkos View 
+template<typename GO, typename ArrayType>
+struct SumRank2 {
+  typedef GO value_type;
+  typedef typename PHX::Device execution_space;
   
-  //! Tokenize a string, put tokens in a vector
-  void StringTokenizer(std::vector<std::string>& tokens,
-		       const std::string& str,
-		       const std::string delimiter = ",",bool trim=false);
+  ArrayType a_;
 
-  //! Turn a vector of tokens into a vector of doubles
-  void TokensToDoubles(std::vector<double> & values,const std::vector<std::string> & tokens);
-
-  //! Turn a vector of tokens into a vector of ints
-  void TokensToInts(std::vector<int> & values,const std::vector<std::string> & tokens);
-
-  /** Read in a parameter field and return the correct scalar field. This parses
-    * scalar type data
-    */
-  template <typename ScalarT>
-  ScalarT getScalarParameter(const std::string & field,const Teuchos::ParameterList & plist)
-  {
-      return plist.get<double>(field);
+  SumRank2(ArrayType a) : a_(a) {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const unsigned int i, GO& lsum) const {
+    for (unsigned int j=0; j < a_.dimension_1(); ++j)
+      lsum += a_(i,j);
   }
+};
+
+}
 }
 
 #endif

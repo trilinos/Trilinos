@@ -178,10 +178,11 @@
 
     <ParameterList name="Sample Generator">
       <ParameterList name="SROM">
-        <Parameter name="Number of Samples"       type="int"    value="5"                 /> 
+        <Parameter name="Number of Samples"       type="int"    value="15"                /> 
         <Parameter name="Moments"                 type="string" value="{ 1, 2, 3, 4, 5 }" />
         <Parameter name="CDF Smoothing Parameter" type="double" value="1.e-2"             />
         <Parameter name="Coefficients"            type="string" value="{ 1, 1 }"          />
+        <Parameter name="Output to Screen"        type="bool"   value="true"              />
       </ParameterList>
     </ParameterList>
 

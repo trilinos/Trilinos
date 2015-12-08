@@ -82,6 +82,13 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
     "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
     "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+
+    ### PACKAGE CONFIGURATION ###
+        "-DMueLu_ENABLE_BROKEN_TESTS:BOOL=ON"
+        "-DXpetra_ENABLE_BROKEN_TESTS:BOOL=ON"
+
+    ### MISC ###
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-5.2.0")

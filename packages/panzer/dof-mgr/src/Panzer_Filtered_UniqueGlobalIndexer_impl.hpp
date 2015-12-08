@@ -45,7 +45,7 @@
 
 #include <unordered_set>
 
-#include "PanzerDiscFE_config.hpp"
+#include "PanzerDofMgr_config.hpp"
 #include "Panzer_NodeType.hpp"
 
 #include "Tpetra_Map.hpp"

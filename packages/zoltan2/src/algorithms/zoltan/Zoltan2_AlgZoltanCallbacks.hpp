@@ -85,15 +85,19 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
                           int wdim, float *wgts, int *ierr) 
 {
   const Adapter *adp = static_cast<Adapter *>(data);
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::lno_t lno_t;
   *ierr = ZOLTAN_OK;
 
   size_t mynObj = adp->getLocalNumIDs();
    
-  const typename Adapter::gno_t *myids = NULL;
+  const gno_t *myids = NULL;
   adp->getIDsView(myids);
   for (size_t i = 0; i < mynObj; i++) {
-    gids[i] = ZOLTAN_ID_TYPE(myids[i]); // TODO TRAITS CONVERSION MAY BE NEEDED
-    lids[i] = ZOLTAN_ID_TYPE(i);      // TODO TRAITS CONVERSION MAY BE NEEDED
+    ZOLTAN_ID_PTR idPtr = &(gids[i*nGidEnt]);
+    TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, myids[i]);
+    idPtr = &(lids[i*nLidEnt]);
+    TPL_Traits<ZOLTAN_ID_PTR,lno_t>::ASSIGN_TPL_T(idPtr, lno_t(i));
   }
 
   if (wdim) {
@@ -251,12 +255,15 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
   if (*ierr == ZOLTAN_OK) {
     // copy into Zoltan's memory
     for (int i=0; i < nLists; i++) {
-      listIds[i] = Ids[i];
-      listIdx[i] = offsets[i];
+      ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      listIdx[i] = Teuchos::as<int>(offsets[i]);
     }
-    listIdx[nLists] = offsets[nLists];
-    for (int i=0; i < nPins; i++)
-      pinIds[i] = pIds[i];
+    listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
+    for (int i=0; i < nPins; i++) {
+      ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, pIds[i]);
+    }
   }
 }
 
@@ -361,12 +368,15 @@ static void zoltanHGCS_withMeshAdapter(
 
     // copy into Zoltan's memory
     for (int i=0; i < nLists; i++) {
-      listIds[i] = Ids[i];
-      listIdx[i] = offsets[i];
+      ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, Ids[i]);
+      listIdx[i] = Teuchos::as<int>(offsets[i]);
     }
-    listIdx[nLists] = offsets[nLists];
-    for (int i=0; i < nPins; i++)
-      pinIds[i] = adjIds[i];
+    listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
+    for (int i=0; i < nPins; i++) {
+      ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN_TPL_T(idPtr, adjIds[i]);
+    }
   }
 }
 

@@ -67,6 +67,7 @@ namespace ROL {
         case STEP_AUGMENTEDLAGRANGIAN: return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
         case STEP_COMPOSITESTEP:       return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
         case STEP_MOREAUYOSIDAPENALTY: return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
+        case STEP_INTERIORPOINT:       return Teuchos::rcp( new ConstraintStatusTest<Real>(parlist) );
         case STEP_LINESEARCH:          return Teuchos::rcp( new StatusTest<Real>(parlist) );
         case STEP_PRIMALDUALACTIVESET: return Teuchos::rcp( new StatusTest<Real>(parlist) );
         case STEP_TRUSTREGION:         return Teuchos::rcp( new StatusTest<Real>(parlist) );

@@ -71,7 +71,7 @@ TimingsSIMPLEPreconditionerFactory
    ::TimingsSIMPLEPreconditionerFactory(const RCP<InverseFactory> & inverse,
                                  double alpha)
    : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha), fInverseType_(Diagonal), useMass_(false)
-   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs")
+   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs"), constrCount_(0)
 { }
 
 TimingsSIMPLEPreconditionerFactory
@@ -79,12 +79,12 @@ TimingsSIMPLEPreconditionerFactory
                                  const RCP<InverseFactory> & invPFact,
                                  double alpha)
    : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha), fInverseType_(Diagonal), useMass_(false)
-   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs")
+   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs"), constrCount_(0)
 { }
 
 TimingsSIMPLEPreconditionerFactory::TimingsSIMPLEPreconditionerFactory()
    : alpha_(1.0), fInverseType_(Diagonal), useMass_(false)
-   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs")
+   , constrTotal_("SIMPLE Constr: Total"), subTotal_("SIMPLE Constr: Subs"), constrCount_(0)
 { }
 
 TimingsSIMPLEPreconditionerFactory::~TimingsSIMPLEPreconditionerFactory()
@@ -95,6 +95,7 @@ TimingsSIMPLEPreconditionerFactory::~TimingsSIMPLEPreconditionerFactory()
 
     out << "===========================================================================" << std::endl;
     out << std::endl;
+    out << "SIMPLE Construction Count   = " << constrCount_ << std::endl;
     out << "SIMPLE Construction Total   = " << constrTotal_.totalElapsedTime() << std::endl;
     out << "SIMPLE Sub Components Total = " << subTotal_.totalElapsedTime() << std::endl;
     out << std::endl;
@@ -214,6 +215,14 @@ LinearOp TimingsSIMPLEPreconditionerFactory
       timed_HBt_->setLinearOp(HBt);
    }
 
+   // time the application of B 
+   if(timed_B_==Teuchos::null) {
+      timed_B_ = Teuchos::rcp(new DiagnosticLinearOp(getOutputStream(),B,"B"));
+   }
+   else {
+      timed_B_->setLinearOp(B);
+   }
+
    // build the inverse for F 
    ModifiableLinearOp & invF = state.getModifiableOp("invF");
    subTotal_.start();
@@ -229,7 +238,7 @@ LinearOp TimingsSIMPLEPreconditionerFactory
    }
    subTotal_.stop();
 
-   // build the approximate Schur complement: This is inefficient! FIXME
+   // build the approximate Schur complement
    ModifiableLinearOp & invS = state.getModifiableOp("invS");
    subTotal_.start();
    if(invS==Teuchos::null) {
@@ -248,7 +257,7 @@ LinearOp TimingsSIMPLEPreconditionerFactory
 
    // build lower triangular inverse matrix
    BlockedLinearOp L = zeroBlockedOp(blockOp);
-   setBlock(1,0,L,B);
+   setBlock(1,0,L,timed_B_);
    endBlockFill(L);
 
    invDiag[0] = timed_invF_;
@@ -272,6 +281,8 @@ LinearOp TimingsSIMPLEPreconditionerFactory
      timed_iU_t_iL_ = Teuchos::rcp(new DiagnosticLinearOp(getOutputStream(),iU_t_iL,"iU_t_iL"));
    else
       timed_iU_t_iL_->setLinearOp(iU_t_iL);
+
+   constrCount_++;
 
    constrTotal_.stop();
 

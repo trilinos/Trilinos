@@ -48,43 +48,150 @@
 #include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_InteriorPoint.hpp"
+#include "ROL_LogBarrierObjective.hpp"
 
 namespace ROL {
 
 template<class Real>
 class OptimizationProblem {
 private:
-  Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<Vector<Real> > sol_;
-  Teuchos::RCP<BoundConstraint<Real> > bnd_;
-  Teuchos::RCP<EqualityConstraint<Real> > con_;
-  Teuchos::RCP<Vector<Real> > mul_;
+  Teuchos::RCP<Objective<Real> >            obj_;
+  Teuchos::RCP<Vector<Real> >               sol_;
+  Teuchos::RCP<BoundConstraint<Real> >      bnd_;
+  Teuchos::RCP<EqualityConstraint<Real> >   con_;
+  Teuchos::RCP<Vector<Real> >               mul_; 
+  Teuchos::RCP<Teuchos::ParameterList>      parlist_;
+
+  
+
+
 
 public:
   virtual ~OptimizationProblem(void) {}
 
   OptimizationProblem(void)
     : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(Teuchos::null),
-      con_(Teuchos::null), mul_(Teuchos::null) {}
+      con_(Teuchos::null), mul_(Teuchos::null), 
+      parlist_(Teuchos::null) {}
 
   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
                       Teuchos::RCP<Vector<Real> > &sol,
                       Teuchos::RCP<BoundConstraint<Real> > &bnd = Teuchos::null)
-    : obj_(obj), sol_(sol), bnd_(bnd), con_(Teuchos::null), mul_(Teuchos::null) {}
+    : obj_(obj), sol_(sol), bnd_(bnd), 
+      con_(Teuchos::null), mul_(Teuchos::null),
+      parlist_(Teuchos::null) {}
 
   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
                       Teuchos::RCP<Vector<Real> > &sol,
                       Teuchos::RCP<EqualityConstraint<Real> > &con,
                       Teuchos::RCP<Vector<Real> > &mul)
-    : obj_(obj), sol_(sol), bnd_(Teuchos::null), con_(con), mul_(mul) {}
+    : obj_(obj), sol_(sol), bnd_(Teuchos::null), 
+      con_(con), mul_(mul), 
+      parlist_(Teuchos::null) {}
 
   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
                       Teuchos::RCP<Vector<Real> > &sol,
                       Teuchos::RCP<BoundConstraint<Real> > &bnd,
                       Teuchos::RCP<EqualityConstraint<Real> > &con,
                       Teuchos::RCP<Vector<Real> > &mul)
-    : obj_(obj), sol_(sol), bnd_(bnd), con_(con), mul_(mul) {}
+    : obj_(obj), sol_(sol), bnd_(bnd), 
+      con_(con), mul_(mul), 
+      parlist_(Teuchos::null) {}
+
+
+
+   // For interior points without equality constraint
+   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
+                       Teuchos::RCP<Vector<Real> > &sol,
+                       Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       Teuchos::RCP<Vector<Real> > &inmul,
+                       Teuchos::RCP<Teuchos::ParameterList> &parlist )
+     : obj_(Teuchos::null), sol_(Teuchos::null), 
+       con_(Teuchos::null), mul_(Teuchos::null), 
+       parlist_(Teuchos::null) {
+
+      using InteriorPoint::PenalizedObjective;
+      using InteriorPoint::CompositeConstraint;
+      using Elementwise::Fill;
+
+      using Teuchos::RCP;  using Teuchos::rcp;
+
+      Teuchos::ParameterList &iplist = parlist->sublist("Interior Point");
+
+      Real mu         = iplist.get("Initial Barrier Penalty",1.0);
+      Real slack_ival = iplist.get("Initial Slack Variable Value",1.0);
+
+      con_ = rcp( new CompositeConstraint<Real>(incon) );
+
+      // Create slack variables - fill with parlist value
+      RCP<Vector<Real> > slack = inmul->dual().clone();
+
+      Fill<Real> fill(slack_ival);
+ 
+      slack->applyUnary(fill);
+
+      // Form vector of optimization and slack variables 
+      sol_ = CreatePartitionedVector(sol,slack);
+
+      // Form partitioned Lagrange multiplier
+      mul_ = CreatePartitionedVector(inmul);
+
+      // Create penalty 
+      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+ 
+      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+
+   }
+
+
+   // For interior points without equality constraint
+   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
+                       Teuchos::RCP<Vector<Real> > &sol,
+                       Teuchos::RCP<EqualityConstraint<Real> > &eqcon, 
+                       Teuchos::RCP<Vector<Real> > &eqmul,
+                       Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       Teuchos::RCP<Vector<Real> > &inmul,
+                       Teuchos::RCP<Teuchos::ParameterList> &parlist )
+     : obj_(Teuchos::null), sol_(Teuchos::null), 
+       con_(Teuchos::null), mul_(Teuchos::null), 
+       parlist_(parlist) {
+
+      using InteriorPoint::PenalizedObjective;
+      using InteriorPoint::CompositeConstraint;
+      using Elementwise::Fill;
+
+      using Teuchos::RCP;  using Teuchos::rcp;
+
+      Teuchos::ParameterList &iplist = parlist->sublist("Interior Point");
+
+      Real mu         = iplist.get("Initial Barrier Penalty",1.0);
+      Real slack_ival = iplist.get("Initial Slack Variable Value",1.0);
+
+      con_ = rcp( new CompositeConstraint<Real>(incon,eqcon) );
+
+      // Create slack variables - fill with parlist value
+      RCP<Vector<Real> > slack = inmul->dual().clone();
+
+      Fill<Real> fill(slack_ival);
+ 
+      slack->applyUnary(fill);
+
+      // Form vector of optimization and slack variables 
+      sol_ = CreatePartitionedVector(sol,slack);
+
+      // Form partitioned Lagrange multiplier
+      mul_ = CreatePartitionedVector(inmul,eqmul);
+
+      // Create penalty 
+      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+ 
+      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+
+         
+
+  }
+
 
   Teuchos::RCP<Objective<Real> > getObjective(void) {
     return obj_;
@@ -124,6 +231,14 @@ public:
 
   void setMultiplierVector(Teuchos::RCP<Vector<Real> > &mul) {
     mul_ = mul;
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList(void) {
+    return parlist_;
+  }
+
+  void setParameterList( Teuchos::RCP<Teuchos::ParameterList> &parlist ) {
+    parlist_ = parlist; 
   }
 
   std::vector<std::vector<Real> > checkObjectiveGradient( const Vector<Real> &d,

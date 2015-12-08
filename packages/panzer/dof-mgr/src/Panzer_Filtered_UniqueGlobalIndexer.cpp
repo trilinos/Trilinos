@@ -40,61 +40,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDiscFE_config.hpp"
+#include "PanzerDofMgr_config.hpp"
 
-#ifdef PANZER_HAVE_FEI
+#include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
+#include "Panzer_Filtered_UniqueGlobalIndexer_impl.hpp"
 
-#include "Panzer_Traits.hpp"
-
-#include "Panzer_DOFManagerFEI_decl.hpp"
-#include "Panzer_DOFManagerFEI_impl.hpp"
-
-// FEI includes
-#include "fei_Factory_Trilinos.hpp"
-
-
-using Teuchos::RCP;
-
-// needed for faster implementation
-///////////////////////////////////////////////
-namespace panzer {
-
-// Function is "helpers" for DOFManagerFEI::getOwnedIndices
-///////////////////////////////////////////////////////////////////////////
-
-template < >
-void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
-{
-   int numIndices, ni;
-   numIndices = vs->getNumIndices_Owned();
-   indices.resize(numIndices);
-
-   // directly write to int indices
-   vs->getIndices_Owned(numIndices,&indices[0],ni);
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-// Function is "helper" for DOFManagerFEI::getOwnedAndSharedIndices
-///////////////////////////////////////////////////////////////////////////
-
-template < >
-void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
-{
-   // get the global indices
-   vs->getIndices_SharedAndOwned(indices);
-}
-
-///////////////////////////////////////////////////////////////////////////
-
-}
-
-template class panzer::DOFManagerFEI<int,int>;
-template class panzer::DOFManagerFEI<short,int>;
+template class panzer::Filtered_UniqueGlobalIndexer<int,int>;
 
 #ifndef PANZER_ORDINAL64_IS_INT
-template class panzer::DOFManagerFEI<char,panzer::Ordinal64>;
-template class panzer::DOFManagerFEI<int,panzer::Ordinal64>;
-#endif
-
+template class panzer::Filtered_UniqueGlobalIndexer<int,panzer::Ordinal64>;
 #endif

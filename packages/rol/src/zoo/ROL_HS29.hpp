@@ -51,7 +51,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_EqualityConstraint.hpp"
+#include "ROL_InequalityConstraint.hpp"
 
 
 namespace ROL {
@@ -116,7 +116,7 @@ public:
 
 
 template<class Real>
-class InequalityConstraint_HS29 : public EqualityConstraint<Real> {
+class InequalityConstraint_HS29 : public InequalityConstraint<Real> {
   
   typedef std::vector<Real> vector;
   typedef Vector<Real>      V;
