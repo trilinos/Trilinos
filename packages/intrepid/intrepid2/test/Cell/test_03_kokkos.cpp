@@ -58,7 +58,6 @@
 using namespace std;
 using namespace Intrepid2;
 
-#ifndef KOKKOS_HAVE_PTHREAD
 
 /** \brief  Maps the vertices of the subcell parametrization domain to that subcell. 
             
@@ -769,23 +768,5 @@ void testSubcellParametrizations(int&                               errorFlag,
   }// for subcOrd
   
 }
-
-
-
-
-#else
- int main(int argc, char *argv[]) {
-
-  int errorFlag =0;
-  if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
-  else
-    std::cout << "End Result: TEST PASSED\n";
-
-
-  return 0;
-}
-
-#endif
 
 

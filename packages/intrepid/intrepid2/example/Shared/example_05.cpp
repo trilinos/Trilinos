@@ -1846,7 +1846,7 @@ return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim
 }
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREADS
+#ifdef KOKKOS_HAVE_PTHREAD
 
 template <class Scalar,class ScalarPointer>
 class FieldContainer_Kokkos<Scalar,ScalarPointer,Kokkos::LayoutRight,Kokkos::Threads>{
@@ -3742,7 +3742,7 @@ std::cout <<"Field Container Time: "<<FieldContainerKForTimer.seconds()<<std::en
 
 }//Test 5 End Scope
 #endif
-#ifdef KOKKOS_HAVE_PTHREADS
+#ifdef KOKKOS_HAVE_PTHREAD
 {//Test 6 Begin Scope - Kokkos Views Threads vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop
 std::cout <<"Test 6 Begin Scope - Kokkos Views Threads vs FieldContainer Kokkos - Intrepid Managed - Kokkos loop"<<std::endl;
 Kokkos::Impl::Timer InitializeViewsTimer;
