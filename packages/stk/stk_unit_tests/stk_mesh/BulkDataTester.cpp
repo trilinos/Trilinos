@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include "BulkDataTester.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
@@ -379,5 +380,6 @@ void BulkDataElemGraphFaceSharingTester::markEntitiesForResolvingSharingInfoUsin
     else
         BulkData::markEntitiesForResolvingSharingInfoUsingNodes(entityRank, shared_entities);
 }
+
 
 } } } // namespace stk mesh unit_test

@@ -435,6 +435,8 @@ protected:
     void mark_entities_as_shared(const std::vector<shared_entity_type>& entities);
 };
 
+
+
 } } } // namespace stk mesh unit_test
 
 #endif
