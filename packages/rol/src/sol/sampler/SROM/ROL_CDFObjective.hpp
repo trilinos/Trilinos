@@ -228,7 +228,7 @@ public:
         wt = wts_[k]/meas;
         val = gradientCDF(gradx,gradp,d,pt,prob,atom);
         diff = (val-dist_[d]->evaluateCDF(pt));
-        for (size_t j = 0; j < numSamples; j++) {
+        for (int j = 0; j < numSamples; j++) {
           (val_pt[j])[d] += wt * diff * gradx[j];
           val_wt[j]      += wt * diff * gradp[j];
         }
@@ -269,7 +269,7 @@ public:
         wt = wts_[k]/meas;
         val = hessVecCDF(hvxx,hvxp,hvpx,gradx,gradp,sumx,sump,d,pt,prob,atom,vprob,vatom);
         diff = (val-dist_[d]->evaluateCDF(pt));
-        for (size_t j = 0; j < numSamples; j++) {
+        for (int j = 0; j < numSamples; j++) {
           (val_pt[j])[d] += wt * ( (sump + sumx) * gradx[j] + diff * (hvxx[j] + hvxp[j]) );
           val_wt[j]      += wt * ( (sump + sumx) * gradp[j] + diff * hvpx[j] );
         }
