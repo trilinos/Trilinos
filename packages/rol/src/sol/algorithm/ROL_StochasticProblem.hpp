@@ -259,6 +259,18 @@ public:
     OptimizationProblem<Real>::setSolutionVector(vec_);
   }
 
+  void setSolutionStatistic(Teuchos::ParameterList &parlist,
+                            Real stat) {
+    // Determine Stochastic Optimization Type
+    std::string type = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
+    if ( type == "Risk Averse" || type == "BPOE" ) {
+      RiskVector<Real> &x = Teuchos::dyn_cast<RiskVector<Real> >(*vec_);
+      x.setStatistic(stat);
+    }
+    // Set OptimizationProblem data
+    OptimizationProblem<Real>::setSolutionVector(vec_);
+  }
+
   void setBoundConstraint(Teuchos::ParameterList &parlist,
                           Teuchos::RCP<BoundConstraint<Real> > &con) {
     // Determine Stochastic Optimization Type
