@@ -638,16 +638,15 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     psq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
 
-    try{
-      quality = new psq_t(this->envConst_, problemCommConst_, this->inputAdapter_, solutionConst);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    metrics_ = rcp(quality);
-
     if (inputType_ == GraphAdapterType ||
 	inputType_ == MatrixAdapterType ||
 	inputType_ == MeshAdapterType){
+
+      try{
+	quality = new psq_t(this->envConst_, problemCommConst_,
+			    this->inputAdapter_,solutionConst,GraphModelType);
+      }
+      Z2_FORWARD_EXCEPTIONS
 
       psq_t *graphQuality = NULL;
 
@@ -658,7 +657,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       Z2_FORWARD_EXCEPTIONS
 
       graphMetrics_ = rcp(graphQuality);
+    } else {
+
+      try{
+	quality = new psq_t(this->envConst_, problemCommConst_,
+			    this->inputAdapter_, solutionConst,
+			    IdentifierModelType);
+      }
+      Z2_FORWARD_EXCEPTIONS
     }
+
+    metrics_ = rcp(quality);
   }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
