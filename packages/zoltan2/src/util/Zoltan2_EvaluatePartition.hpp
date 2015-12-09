@@ -272,16 +272,24 @@ template <typename Adapter>
 
   // Parts to which objects are assigned.
 
-  const part_t *parts = soln->getPartListView();
-  env->localInputAssertion(__FILE__, __LINE__, "parts not set",
-			   ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
+  const part_t *parts;
+  if (soln != Teuchos::null) {
+    parts = soln->getPartListView();
+    env->localInputAssertion(__FILE__, __LINE__, "parts not set",
+      ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
+  } else {
+    part_t *procs = new part_t [numLocalObjects];
+    for (size_t i=0; i<numLocalObjects; i++) procs[i] = problemComm->getRank();
+    parts = procs;
+  }
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   ArrayRCP<scalar_t> globalSums;
 
   try{
     globalWeightedCutsByPart<Adapter>(env,
-      problemComm, graph, partArray, numGlobalParts_, graphMetrics_, globalSums);
+      problemComm, graph, partArray, numGlobalParts_, graphMetrics_,
+				      globalSums);
   }
   Z2_FORWARD_EXCEPTIONS;
 
