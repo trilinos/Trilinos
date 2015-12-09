@@ -86,7 +86,7 @@ Basker<Matrix,Vector>::Basker(
 #ifdef SHYLUBASKER
 
   printf("Constructor Called \n");
-
+  
   basker.Options.no_pivot  = true;
   basker.Options.symmetric = false;
   basker.Options.realloc   = false;
@@ -94,6 +94,7 @@ Basker<Matrix,Vector>::Basker(
   basker.Options.btf       = true;
   
   num_threads = 1;
+  
 #endif
 
 }

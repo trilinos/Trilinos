@@ -289,6 +289,9 @@ namespace BaskerNS
 }//end namespace Basker
 
 
+
+#ifndef KOKKOS_USING_EXPERIMENTAL_VIEW
+
 namespace Kokkos
 {
 namespace Impl
@@ -322,5 +325,6 @@ namespace Impl
 }//end namespace imp
 }//end namepace kokkos
 
+#endif //end ifndef Kokkos_Using_Experimental_View
 
 #endif //end of ifndef basker_matrix_view_def
