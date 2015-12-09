@@ -113,7 +113,9 @@ public:
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
     const RCP<const typename Adapter::base_adapter_t> &ia, 
-    const RCP<const PartitioningSolution<Adapter> > &soln);
+    const RCP<const PartitioningSolution<Adapter> > &soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null);
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -248,7 +250,8 @@ template <typename Adapter>
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
   const RCP<const typename Adapter::base_adapter_t> &ia, 
-  const RCP<const PartitioningSolution<Adapter> > &soln):
+  const RCP<const PartitioningSolution<Adapter> > &soln,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0),
     graphMetrics_(),  graphMetricsConst_()
 {
