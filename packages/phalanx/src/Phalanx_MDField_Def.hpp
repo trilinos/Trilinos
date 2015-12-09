@@ -1145,6 +1145,7 @@ std::ostream& PHX::operator<<(std::ostream& os,
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "KokkosRank.hpp"
 
+namespace Intrepid2 {
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
@@ -1204,6 +1205,7 @@ struct Return_Type < PHX::MDField<DataT>, ScalarT> {
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type return_type;
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type const_return_type;
  };
+}
 
 #endif // Phalanx_ENABLE_IntrepidIntrepid2
 //********************************************************************************************
