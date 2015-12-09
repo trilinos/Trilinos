@@ -96,8 +96,7 @@ public:
 
     Real arg = std::exp(x);
     Real reg = 1.0/(1.0-prob_) * (pf_->evaluate(arg-1.0,deriv) *
-                 ((deriv == 0) ? 1.0 : 
-                 ((deriv == 1) ? arg : arg*arg))
+                 ((deriv == 0) ? 1.0 : ((deriv == 1) ? arg : arg*arg))
                + ((deriv == 2) ? pf_->evaluate(arg-1.0,deriv-1)*arg : 0.0));
     return reg;
   }
