@@ -98,7 +98,8 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const RCP<const Adapter> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln,
-		    enum ModelType modelType);
+    enum ModelType modelType = MAX_NUM_MODEL_TYPES,
+    const RCP<const Model<Adapter> > &model = Teuchos::null);
 
   /*! \brief Constructor
       \param env   the problem environment
@@ -204,7 +205,8 @@ template <typename Adapter>
   const RCP<const Comm<int> > &problemComm,
   const RCP<const Adapter> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln,
-  enum ModelType modelType):
+  enum ModelType modelType,
+  const RCP<const Model<Adapter> > &model):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
