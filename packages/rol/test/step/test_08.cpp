@@ -46,10 +46,8 @@
     \brief Interior Point test using Hock & Schittkowski problem 29.
 */
 
-#include "Teuchos_getConst.hpp"
 #include "ROL_HS29.hpp"
-#include "ROL_LogBarrierObjective.hpp"
-#include "ROL_InteriorPoint.hpp"
+#include "ROL_Algorithm.hpp"
 
 typedef double RealT;
 
@@ -80,84 +78,59 @@ int main(int argc, char *argv[]) {
     int ci_dim    = 1; // Dimension of inequality constraint
 
     RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,1.0) ); // Feasible initial guess
-    RCP<vec> dopt_rcp = rcp( new vec(xopt_dim,0.0) );
-    RCP<vec> vopt_rcp = rcp( new vec(xopt_dim,0.0) );
 
-    RCP<vec> vic_rcp  = rcp( new vec(ci_dim,0.0) );
-    RCP<vec> vil_rcp  = rcp( new vec(ci_dim,0.0) );
-
-    // Slack variables
-    RCP<vec> xs_rcp = rcp( new vec(ci_dim,1.0) );    
-    RCP<vec> vs_rcp = rcp( new vec(ci_dim,0.0) );
-    RCP<vec> ds_rcp = rcp( new vec(ci_dim,0.0) );
-
-    RealT left = -1e0, right = 1e0;
-    for (int i=0; i<xopt_dim; i++) {
-      (*dopt_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vopt_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }    
-
-    for (int i=0; i<ci_dim; i++) {
-      (*vic_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vil_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vs_rcp)[i]  = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*ds_rcp)[i]  = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }   
+    RCP<vec> li_rcp  = rcp( new vec(ci_dim,0.0) );
 
     RCPV xopt = rcp( new SV(xopt_rcp) );
-    RCPV dopt = rcp( new SV(dopt_rcp) );
-    RCPV vopt = rcp( new SV(vopt_rcp) );
-    RCPV vic  = rcp( new SV(vic_rcp) );
-    RCPV vil  = rcp( new SV(vil_rcp) );
-    RCPV xs   = rcp( new SV(xs_rcp) );
-    RCPV vs   = rcp( new SV(vs_rcp) );
-    RCPV ds   = rcp( new SV(ds_rcp) );
-
-    // Partitioned vectors of optimization and slack variables
-    RCPV x  = CreatePartitionedVector(xopt,xs);
-    RCPV v  = CreatePartitionedVector(vopt,vs);
-    RCPV d  = CreatePartitionedVector(dopt,ds);
-    RCPV vc = CreatePartitionedVector(vic);
-    RCPV vl = CreatePartitionedVector(vil);
+    RCPV li   = rcp( new SV(li_rcp) );
 
     // Original obective
-    ROL::ZOO::Objective_HS29<RealT> obj_hs29;
+    using ROL::ZOO::Objective_HS29;
+    using ROL::ZOO::InequalityConstraint_HS29;
+    
+    RCP<ROL::Objective<RealT> >             obj_hs29 = rcp( new Objective_HS29<RealT> );
+    RCP<ROL::InequalityConstraint<RealT> >  incon_hs29 = rcp( new InequalityConstraint_HS29<RealT> );
 
-    // Barrier objective
-    ROL::LogBarrierObjective<RealT> barrier;
+    RCP<Teuchos::ParameterList> parlist = rcp(new Teuchos::ParameterList);
+    std::string stepname = "Interior Point"; 
 
-    using ROL::InteriorPoint::PenalizedObjective;
+    RealT mu = 0.1;            // Initial penalty parameter
+    RealT factor = 0.1;        // Penalty reduction factor
 
-    // Interior Point objective
-    RCP<ROL::Objective<RealT> > ipobj = 
-      rcp( new PenalizedObjective<RealT>(obj_hs29,barrier,*x,1.0) );
+    // Set solver parameters
+    parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
+    parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
+    parlist->sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",factor);
+    parlist->sublist("Step").sublist("Interior Point").set("Subproblem Iteration Limit",30);
 
-    ROL::ZOO::InequalityConstraint_HS29<RealT> incon_hs29;
+    parlist->sublist("Step").sublist("Composite Step").sublist("Optimality System Solver").set("Nominal Relative Tolerance",1.e-4);
+    parlist->sublist("Step").sublist("Composite Step").sublist("Optimality System Solver").set("Fix Tolerance",true);
+    parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Iteration Limit",20);
+    parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
+    parlist->sublist("Step").sublist("Composite Step").set("Output Level",0);
 
-    using ROL::InteriorPoint::CompositeConstraint;  
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-8);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-8);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
 
-    // Interior point constraint
-    RCP<ROL::EqualityConstraint<RealT> > ipcon = rcp( new CompositeConstraint<RealT>(incon_hs29, *vc) );
+    ROL::OptimizationProblem<RealT> problem( obj_hs29, xopt, incon_hs29, li, parlist);  
+    
+    // Define algorithm.
+    RCP<ROL::Algorithm<RealT> > algo;    
+    algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
 
-    *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
+    algo->run(problem,true,*outStream);   
 
-    *outStream << "\nObjective\n" << std::endl;
-    obj_hs29.checkGradient(*xopt,*dopt,true,*outStream);
-    obj_hs29.checkHessVec(*xopt,*vopt,true,*outStream);
 
-    *outStream << "\nInequality Constraint\n" << std::endl;
-    incon_hs29.checkApplyJacobian(*xopt,*vopt,*vic,true,*outStream); 
-    incon_hs29.checkApplyAdjointJacobian(*xopt,*vil,*vic,*xopt,true,*outStream); 
-    incon_hs29.checkApplyAdjointHessian(*xopt,*vil,*dopt,*xopt,true,*outStream);     
 
-    *outStream << "\nCheck Interior Point objective\n" << std::endl;
-    ipobj->checkGradient(*x,*d,true,*outStream);
-    ipobj->checkHessVec(*x,*v,true,*outStream);
+    *outStream << std::endl << std::setw(20) << "Computed Minimizer" << std::endl;
+    for( int i=0;i<xopt_dim;++i ) {   
+      *outStream << std::setw(20) << (*xopt_rcp)[i] << std::endl;
+    }
 
-    *outStream << "\nCheck Interior Point constraints\n" << std::endl;
-    ipcon->checkApplyJacobian(*x,*v,*vc,true,*outStream);
-    ipcon->checkApplyAdjointJacobian(*x,*vl,*vc,*x,true,*outStream);
-    ipcon->checkApplyAdjointHessian(*x,*vl,*d,*x,true,*outStream);    
+    *outStream << "Exact minimizers: x* = (a,b,c), (a,-b,-c), (-a,b,-c), (-a,-b,c)" << std::endl;
+    *outStream << "Where a=4, b=" << 2*std::sqrt(2) << ", and c=2" << std::endl;
 
   }
   catch (std::logic_error err) {
