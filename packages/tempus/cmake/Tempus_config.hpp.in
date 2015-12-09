@@ -1,0 +1,9 @@
+#ifndef TEMPUS_CONFIG_HPP
+#define TEMPUS_CONFIG_HPP
+
+#cmakedefine Tempus_DEBUG
+#cmakedefine Tempus_TEUCHOS_TIME_MONITOR
+
+@PHALANX_DEPRECATED_DECLARATIONS@
+
+#endif

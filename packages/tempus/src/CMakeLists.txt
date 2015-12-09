@@ -1,0 +1,22 @@
+INCLUDE(TribitsLibraryMacros)
+INCLUDE(TrilinosCreateClientTemplateHeaders)
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+#TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+
+# Must glob the binary dir last to get all of the auto-generated headers
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+TRIBITS_ADD_LIBRARY(
+  tempus
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )
