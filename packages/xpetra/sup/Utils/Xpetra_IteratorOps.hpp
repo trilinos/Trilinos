@@ -61,376 +61,197 @@
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
-
-
 namespace Xpetra {
 
+  // General implementation
+  // Epetra variant throws
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Jacobi(
+              Scalar omega,
+              const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+              const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+              const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+              Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+              bool call_FillComplete_on_result = true,
+              bool doOptimizeStorage = true,
+              const std::string & label = std::string()) {
+    typedef Scalar        SC;
+    typedef LocalOrdinal  LO;
+    typedef GlobalOrdinal GO;
+    typedef Node          NO;
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Jacobi(
-    Scalar omega,
-    const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
-    const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-    const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
-    Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-    bool call_FillComplete_on_result = true,
-    bool doOptimizeStorage = true,
-    const std::string & label = std::string()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, Exceptions::RuntimeError,
+                               "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
+    TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, Exceptions::RuntimeError,
+                               "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
-  if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
-  else if(C.getRowMap()->isSameAs(*B.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
+    bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
-  if (!A.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
-  if (!B.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
-
-  bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
-
-  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
+    if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
 #else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
 #endif
-  } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
+    } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpA = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+            Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
+      const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
+      Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
-  }
-
-  if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",doOptimizeStorage);
-    C.fillComplete(B.getDomainMap(),B.getRangeMap(),params);
-  }
-
-  // transfer striding information
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(A));
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::rcpFromRef(B));
-  C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
-} // end Jacobi
-
-
-template <class GlobalOrdinal, class Node>
-inline void JacobiT(
-    double omega,
-    const Xpetra::Vector<double,int,GlobalOrdinal,Node> & Dinv,
-    const Xpetra::Matrix<double,int,GlobalOrdinal,Node> & A,
-    const Xpetra::Matrix<double,int,GlobalOrdinal,Node> & B,
-    Xpetra::Matrix<double,int,GlobalOrdinal,Node> &C,
-    bool call_FillComplete_on_result,
-    bool doOptimizeStorage,
-    const std::string & label) {
-
-  if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
-  else if(C.getRowMap()->isSameAs(*B.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
-
-  if (!A.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
-  if (!B.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
-
-  bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
-
-  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#       ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
-#else
-    Epetra_CrsMatrix & epA = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(A);
-    Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(B);
-    Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(C);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GlobalOrdinal COMMA Node>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
-
-    int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
-    if (i != 0) {
-      std::ostringstream buf;
-      buf << i;
-      std::string msg = "EpetraExt::MatrixMatrix::Jacobi return value of " + buf.str();
-      throw(Exceptions::RuntimeError(msg));
     }
-#endif
-  } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
-    const Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node> & tpA = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node> & tpB = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<double,int,GlobalOrdinal,Node>       & tpC = Xpetra::Helpers<double,int,GlobalOrdinal,Node>::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<double, int, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
-  }
 
-  if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",doOptimizeStorage);
-    C.fillComplete(B.getDomainMap(),B.getRangeMap(),params);
-  }
-
-  // transfer striding information
-  RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Node> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<double,int,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(A));
-  RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Node> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<double,int,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(B));
-  C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
-} // end Jacobi
-
-#ifdef HAVE_XPETRA_SERIAL
-inline void JacobiInt(
-    double omega,
-    const Xpetra::Vector<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
-    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & A,
-    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & B,
-    Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> &C,
-    bool call_FillComplete_on_result,
-    bool doOptimizeStorage,
-    const std::string & label) {
-
-  //typedef Xpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>::node_type NO;
-
-  if(C.getRowMap()->isSameAs(*A.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
-  else if(C.getRowMap()->isSameAs(*B.getRowMap()) == false) {
-    std::string msg = "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B";
-    throw(Xpetra::Exceptions::RuntimeError(msg));
-  }
-
-  if (!A.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("A is not fill-completed"));
-  if (!B.isFillComplete())
-    throw(Xpetra::Exceptions::RuntimeError("B is not fill-completed"));
-
-  bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
-
-  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#       ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
-#else
-    Epetra_CrsMatrix & epA = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(A);
-    Epetra_CrsMatrix & epB = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(B);
-    Epetra_CrsMatrix & epC = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstEpetraCrs(C);
-    //    const Epetra_Vector & epD = toEpetra(Dinv);
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<int COMMA typename Xpetra::Map<int COMMA Kokkos::Compat::KokkosSerialWrapperNode>::node_type>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
-
-    int i = EpetraExt::MatrixMatrix::Jacobi(omega,*epD.getEpetra_Vector(),epA,epB,epC,haveMultiplyDoFillComplete);
-    if (i != 0) {
-      std::ostringstream buf;
-      buf << i;
-      std::string msg = "EpetraExt::MatrixMatrix::Jacobi return value of " + buf.str();
-      throw(Exceptions::RuntimeError(msg));
+    if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+      params->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
     }
+
+    // transfer striding information
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(A));
+    RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(B));
+    C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
+  } // end Jacobi
+
+#ifdef HAVE_XPETRA_EPETRA
+  template<class GlobalOrdinal>
+  inline void JacobiGO(
+                        double omega,
+                        const Xpetra::Vector<double,int,GlobalOrdinal,EpetraNode>& Dinv,
+                        const Xpetra::Matrix<double,int,GlobalOrdinal,EpetraNode>& A,
+                        const Xpetra::Matrix<double,int,GlobalOrdinal,EpetraNode>& B,
+                              Xpetra::Matrix<double,int,GlobalOrdinal,EpetraNode>& C,
+                        bool call_FillComplete_on_result,
+                        bool doOptimizeStorage,
+                        const std::string & label) {
+
+    typedef double        SC;
+    typedef int           LO;
+    typedef GlobalOrdinal GO;
+    typedef EpetraNode    NO;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, Exceptions::RuntimeError,
+                               "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
+    TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, Exceptions::RuntimeError,
+                               "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
+
+    bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
+    if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
+#ifndef HAVE_XPETRA_EPETRAEXT
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
+#else
+      Epetra_CrsMatrix& epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
+      Epetra_CrsMatrix& epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
+      Epetra_CrsMatrix& epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
+      // FIXME
+      XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+
+      int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
+      if (i != 0) {
+        std::ostringstream buf;
+        buf << i;
+        std::string msg = "EpetraExt::MatrixMatrix::Jacobi return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
 #endif
-  } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
+    } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-    const Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> & tpA = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2TpetraCrs(A);
-    const Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> & tpB = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2TpetraCrs(B);
-    Tpetra::CrsMatrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>       & tpC = Xpetra::Helpers<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>::Op2NonConstTpetraCrs(C);
-    const RCP<Tpetra::Vector<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode>  >          & tpD = toTpetra(Dinv);
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
+# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Teptra GO=int enabled."));
+# else
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+      const Tpetra::CrsMatrix<SC,LO,GO,NO>    & tpB = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(B);
+      Tpetra::CrsMatrix<SC,LO,GO,NO>          & tpC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(C);
+      const RCP<Tpetra::Vector<SC,LO,GO,NO> > & tpD = toTpetra(Dinv);
+      Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label);
+# endif
 #else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Teptra GO=int enabled."));
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
+    }
+
+    if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
+      RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
+      params->set("Optimize Storage", doOptimizeStorage);
+      C.fillComplete(B.getDomainMap(), B.getRangeMap(), params);
+    }
+
+    // transfer striding information
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(A));
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC,LO,GO,NO> >(Teuchos::rcpFromRef(B));
+    C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
+  } // end Jacobi
+
+
+#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+  template<>
+  void Jacobi<double,int,int,EpetraNode>(double omega,
+                                         const Xpetra::Vector<double,int,int,EpetraNode> & Dinv,
+                                         const Xpetra::Matrix<double,int,int,EpetraNode> & A,
+                                         const Xpetra::Matrix<double,int,int,EpetraNode> & B,
+                                         Xpetra::Matrix<double,int,int,EpetraNode> &C,
+                                         bool call_FillComplete_on_result,
+                                         bool doOptimizeStorage,
+                                         const std::string & label) {
+    JacobiGO(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
   }
-
-  if(call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
-    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
-    params->set("Optimize Storage",doOptimizeStorage);
-    C.fillComplete(B.getDomainMap(),B.getRangeMap(),params);
-  }
-
-  // transfer striding information
-  Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(Teuchos::rcpFromRef(A));
-  Teuchos::RCP<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >(Teuchos::rcpFromRef(B));
-  C.CreateView("stridedMaps", rcpA, false, rcpB, false); // TODO use references instead of RCPs
-} // end Jacobi
-
-
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-inline void Jacobi(
-    double omega,
-    const Xpetra::Vector<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
-    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & A,
-    const Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> & B,
-    Xpetra::Matrix<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> &C,
-    bool call_FillComplete_on_result,
-    bool doOptimizeStorage,
-    const std::string & label) {
-  JacobiInt(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
-}
 #endif
 
-#ifdef HAVE_XPETRA_INT_LONG_LONG
-inline void Jacobi(
-    double omega,
-    const Xpetra::Vector<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & Dinv,
-    const Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & A,
-    const Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> & B,
-    Xpetra::Matrix<double,int,long long,Kokkos::Compat::KokkosSerialWrapperNode> &C,
-    bool call_FillComplete_on_result,
-    bool doOptimizeStorage,
-    const std::string & label) {
-  JacobiT(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
-}
-#endif // HAVE_XPETRA_INT_LONG_LONG
+#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+  template<>
+  void Jacobi<double,int,long long,EpetraNode>(double omega,
+                                               const Xpetra::Vector<double,int,long long,EpetraNode> & Dinv,
+                                               const Xpetra::Matrix<double,int,long long,EpetraNode> & A,
+                                               const Xpetra::Matrix<double,int,long long,EpetraNode> & B,
+                                               Xpetra::Matrix<double,int,long long,EpetraNode> &C,
+                                               bool call_FillComplete_on_result,
+                                               bool doOptimizeStorage,
+                                               const std::string & label) {
+    JacobiGO(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
+  }
+#endif
 
-#endif // HAVE_XPETRA_SERIAL
+#endif // HAVE_XPETRA_EPETRA
 
-/*!
+  /*!
     @class IteratorOps
     @brief Xpetra utility class containing iteration operators.
 
     Currently it only contains routines to generate the Jacobi iteration operator
 
- */
-template <class Scalar,
-class LocalOrdinal  /*= int*/,
-class GlobalOrdinal /*= LocalOrdinal*/,
-class Node          /*= KokkosClassic::DefaultNode::DefaultNodeType*/>
-class IteratorOps {
-
-private:
+*/
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class IteratorOps {
 #undef XPETRA_ITERATOROPS_SHORT
 #include "Xpetra_UseShortNames.hpp"
+  public:
 
-public:
+    static RCP<Matrix>
+    Jacobi(Scalar omega, const Vector& Dinv, const Matrix& A, const Matrix& B, RCP<Matrix> C_in, Teuchos::FancyOStream &fos, const std::string & label) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+      TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
-  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Jacobi(Scalar omega,
-      const Vector& Dinv,
-      const Matrix& A,
-      const Matrix& B,
-      RCP<Matrix> C_in,
-      Teuchos::FancyOStream &fos,
-      const std::string & label) {
-    // Sanity checks
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
+      RCP<Matrix> C = C_in;
+      if (C == Teuchos::null)
+        C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
-    // Default case: Xpetra Jacobi
-    RCP<Matrix> C = C_in;
-    if (C == Teuchos::null)
-      C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
+      Xpetra::Jacobi<SC,LO,GO,NO>(omega, Dinv, A, B, *C, true, true,label);
+      C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
 
-    Xpetra::Jacobi<Scalar, LocalOrdinal, GlobalOrdinal, Node>(omega, Dinv, A, B, *C, true,true,label);
-    C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
-    return C;
-  } //Jacobi
+      return C;
+    }
 
-
-};
-
-/*!
-    @class IteratorOps
-    @brief Xpetra utility class containing iteration operators.
-
-    Currently it only contains routines to generate the Jacobi iteration operator
-
-    Specialization for SC=double and LO=int
- */
-template <class GlobalOrdinal, class Node>
-class IteratorOps<double,int,GlobalOrdinal,Node> {
-public:
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-
-  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Jacobi(Scalar omega,
-      const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Dinv,
-      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
-      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C_in,
-      Teuchos::FancyOStream &fos,
-      const std::string & label) {
-    // Sanity checks
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
-
-    // Default case: Xpetra Jacobi
-    RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C = C_in;
-    if (C == Teuchos::null)
-      C = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(B.getRowMap(),Teuchos::OrdinalTraits<LocalOrdinal>::zero());
-
-    JacobiT<GlobalOrdinal>(omega, Dinv, A, B, *C, true,true,label);
-    C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
-    return C;
-  } //Jacobi
-};
-
-/*!
-    @class IteratorOps
-    @brief Xpetra utility class containing iteration operators.
-
-    Currently it only contains routines to generate the Jacobi iteration operator
-
-    Specialization for LO=GO=int and SC=double
- */
-#ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
-template <class Node>
-class IteratorOps<double,int,int,Node> {
-public:
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef double Scalar;
-
-  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  Jacobi(Scalar omega,
-      const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Dinv,
-      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-      const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B,
-      RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C_in,
-      Teuchos::FancyOStream &fos,
-      const std::string & label) {
-    // Sanity checks
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
-
-    // Default case: Xpetra Jacobi
-    RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C = C_in;
-    if (C == Teuchos::null)
-      C = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(B.getRowMap(),Teuchos::OrdinalTraits<LocalOrdinal>::zero());
-
-#ifdef HAVE_XPETRA_SERIAL
-    Xpetra::JacobiInt(omega, Dinv, A, B, *C, true,true,label);
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Serial Node (either with Epetra or Tpetra enabled on the serial node)."));
-#endif
-    C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
-    return C;
-  } //Jacobi
-};
-#endif
-
-
-
+  };
 
 } // end namespace Xpetra
 
