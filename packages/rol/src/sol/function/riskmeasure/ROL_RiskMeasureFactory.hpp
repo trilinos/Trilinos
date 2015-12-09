@@ -59,6 +59,7 @@
 
 // Risk Quadrangle Risk Measure Implementations
 #include "ROL_LogExponentialQuadrangle.hpp"
+#include "ROL_LogQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
 
@@ -73,6 +74,7 @@ namespace ROL {
     RISKMEASURE_MEANVARIANCEFROMTARGET,
     RISKMEASURE_MEANVARIANCE,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
+    RISKMEASURE_LOGQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_LAST
@@ -89,6 +91,7 @@ namespace ROL {
       case RISKMEASURE_MEANVARIANCEFROMTARGET:   retString = "Mean Plus Variance From Target";  break;
       case RISKMEASURE_MEANVARIANCE:             retString = "Mean Plus Variance";              break;
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE: retString = "Log-Exponential Quadrangle";      break;
+      case RISKMEASURE_LOGQUANTILEQUADRANGLE:    retString = "Log-Quantile Quadrangle";         break;
       case RISKMEASURE_QUANTILEQUADRANGLE:       retString = "Quantile-Based Quadrangle";       break;
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:  retString = "Truncated Mean Quadrangle";       break;
       case RISKMEASURE_LAST:                     retString = "Last Type (Dummy)";               break;
@@ -105,6 +108,7 @@ namespace ROL {
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
             (ed == RISKMEASURE_MEANVARIANCE) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
+            (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) );
   }
@@ -152,6 +156,7 @@ namespace ROL {
       case RISKMEASURE_MEANVARIANCEFROMTARGET:   return Teuchos::rcp(new MeanVarianceFromTarget<Real>(parlist));
       case RISKMEASURE_MEANVARIANCE:             return Teuchos::rcp(new MeanVariance<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE: return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
+      case RISKMEASURE_LOGQUANTILEQUADRANGLE:    return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:       return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:  return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
       default:
