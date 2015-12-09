@@ -52,6 +52,10 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
+#ifdef HAVE_XPETRA_EPETRA
+#include "Epetra_config.h"
+#endif
+
 namespace Xpetra {
 
   // TODO move this typedef to another place

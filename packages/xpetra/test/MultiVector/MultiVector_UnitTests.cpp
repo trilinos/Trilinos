@@ -2592,7 +2592,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsTpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(      Vector, AssignmentDeepCopies       , M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
-// List of tests which run only with Tpetra
+// List of tests which run only with Epetra
 #define XP_EPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsEpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
 
@@ -2630,10 +2630,8 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 
 #if defined(HAVE_XPETRA_EPETRA)
 
-// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
-// build Serial, then the code inside the #ifdef ... #endif causes
-// linker errors.
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 XP_EPETRA_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
