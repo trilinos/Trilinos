@@ -166,7 +166,7 @@ public:
     // Initialize storage for updated iterate
     y_ = x.clone();
     // Initialize storage for aggregate subgradients
-    aggSubGradNew_ = g.clone();
+    aggSubGradNew_     = g.clone();
     aggSubGradOldNorm_ = algo_state.gnorm;
   }
 

@@ -232,7 +232,7 @@ public:
     if ( flag ) {
       // Serious step taken: Update linearlization errors and distance measures
       for (unsigned i = 0; i < size_; i++) {
-        linearizationErrors_[i] += linErr - subgradients_[i]->dot(s);
+        linearizationErrors_[i] += linErr - subgradients_[i]->dot(s.dual());
         distanceMeasures_[i]    += distMeas;
       }
       linearizationErrors_[size_] = 0.0;
