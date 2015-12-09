@@ -1350,6 +1350,7 @@ private: // data
 //  stk::ModificationSummary m_modSummary;
 };
 
+void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
 
 } // namespace mesh
 } // namespace stk

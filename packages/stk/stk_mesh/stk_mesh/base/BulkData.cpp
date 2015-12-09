@@ -1676,6 +1676,25 @@ void BulkData::dump_all_mesh_info(std::ostream& out) const
     }
 }
 
+void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev)
+{
+    for (Entity entity : ev) {
+        if (mesh.is_valid(entity))
+        {
+            EntityKey key = mesh.entity_key(entity);
+            MeshIndex meshIndex = mesh.mesh_index(entity);
+            out << "Entity:  " << key << std::endl;
+            print_bucket_parts(mesh, meshIndex.bucket, out);
+            print_entity_offset_and_state(mesh, meshIndex, out);
+            print_entity_connectivity(mesh, meshIndex, out);
+            print_comm_data_for_entity(mesh, key, out);
+       //     print_field_data_for_entity(mesh, meshIndex, out);
+        }
+        else {
+            out << "Entity with local offset = " << entity.local_offset() << " is not valid" << std::endl;
+        }
+    }
+}
 
 namespace {
 
@@ -6189,7 +6208,8 @@ void printConnectivityOfRank(BulkData& M, Entity entity, stk::topology::rank_t c
     const Entity* connectedEntities = M.begin(entity, connectedRank);
     unsigned numConnected = M.num_connectivity(entity, connectedRank);
     for(unsigned i=0; i<numConnected; ++i) {
-      error_log<<M.identifier(connectedEntities[i])<<" ";
+      error_log<<"{"<<M.identifier(connectedEntities[i])<<",topo="<<M.bucket(connectedEntities[i]).topology()
+              <<",owned="<<M.bucket(connectedEntities[i]).owned()<<",shared="<<M.bucket(connectedEntities[i]).shared()<<",in_aura="<<M.bucket(connectedEntities[i]).in_aura()<<"}";
     }
     error_log<<"), ";
 }
