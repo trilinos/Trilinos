@@ -47,10 +47,7 @@
 */
 
 #include "ROL_HS32.hpp"
-#include "ROL_LogBarrierObjective.hpp"
-#include "ROL_InteriorPoint.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_OptimizationProblem.hpp"
 
 
 typedef double RealT;
@@ -85,70 +82,24 @@ int main(int argc, char *argv[]) {
     int ce_dim = 1;    // Dimension of equality constraint
     int ci_dim = 4;    // Dimension of inequality constraint
 
-
+    // Exact solution
     RCP<vec> x_exact_rcp = rcp( new vec(xopt_dim,0.0) );
     (*x_exact_rcp)[xopt_dim-1] = 1.0;
 
-    RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,0.0) );
-    RCP<vec> dopt_rcp = rcp( new vec(xopt_dim,0.0) );
-    RCP<vec> vopt_rcp = rcp( new vec(xopt_dim,0.0) );
-   
+    RCP<vec> xopt_rcp = rcp( new vec(xopt_dim,0.0) ); // Optimization variables
 
-    RCP<vec> vec_rcp  = rcp( new vec(ce_dim,1.0) );
-    RCP<vec> vel_rcp  = rcp( new vec(ce_dim,1.0) );
-   
-    RCP<vec> vic_rcp  = rcp( new vec(ci_dim,0.0) );
-    RCP<vec> vil_rcp  = rcp( new vec(ci_dim,0.0) );
+    RCP<vec> le_rcp  = rcp( new vec(ce_dim,0.0) );    // Equality multiplier
+    RCP<vec> li_rcp  = rcp( new vec(ci_dim,0.0) );    // Inequality multiplier
      
-    // Slack variables
-    RCP<vec> xs_rcp = rcp( new vec(ci_dim,1.0) );    
-    RCP<vec> vs_rcp = rcp( new vec(ci_dim,0.0) );
-    RCP<vec> ds_rcp = rcp( new vec(ci_dim,0.0) );
-
     // Feasible initial guess
     (*xopt_rcp)[0] = 0.1;
     (*xopt_rcp)[1] = 0.7;
     (*xopt_rcp)[2] = 0.2;
 
-    RealT left = -1e0, right = 1e0;
-    for (int i=0; i<xopt_dim; i++) {
-      (*dopt_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vopt_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }    
-
-    for (int i=0; i<ci_dim; i++) {
-      (*vic_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vil_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*vs_rcp)[i]  = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*ds_rcp)[i]  = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }    
-
     RCPV xopt = rcp( new SV(xopt_rcp) );
-    RCPV dopt = rcp( new SV(dopt_rcp) );
-    RCPV vopt = rcp( new SV(vopt_rcp) );
-    RCPV vec  = rcp( new SV(vec_rcp) );
-    RCPV vel  = rcp( new SV(vel_rcp) );
-    RCPV vic  = rcp( new SV(vic_rcp) );
-    RCPV vil  = rcp( new SV(vil_rcp) );
-    RCPV xs   = rcp( new SV(xs_rcp) );
-    RCPV vs   = rcp( new SV(vs_rcp) );
-    RCPV ds   = rcp( new SV(ds_rcp) );
+    RCPV le  = rcp( new SV(le_rcp) );
+    RCPV li  = rcp( new SV(li_rcp) );
 
-    RCPV gopt = xopt->dual().clone();
-    RCPV gs   = xs->dual().clone();
-
-   
-
-    // Partitioned vectors of optimization and slack variables
-    RCPV x = CreatePartitionedVector(xopt,xs);
-    RCPV v = CreatePartitionedVector(vopt,vs);
-    RCPV d = CreatePartitionedVector(dopt,ds);
-    RCPV vc = CreatePartitionedVector(vic,vec);
-    RCPV vl = CreatePartitionedVector(vil,vel);
-
-    RCPV g = CreatePartitionedVector(gopt,gs);
-
-    // Original obective
     using ROL::ZOO::Objective_HS32;
     using ROL::ZOO::EqualityConstraint_HS32;
     using ROL::ZOO::InequalityConstraint_HS32;    
@@ -157,13 +108,13 @@ int main(int argc, char *argv[]) {
     RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = rcp( new EqualityConstraint_HS32<RealT> );
     RCP<ROL::InequalityConstraint<RealT> > incon_hs32 = rcp( new  InequalityConstraint_HS32<RealT> );
     
-
     RCP<Teuchos::ParameterList> parlist = rcp(new Teuchos::ParameterList);
     std::string stepname = "Interior Point";
 
     RealT mu = 0.1;            // Initial penalty parameter
     RealT factor = 0.1;        // Penalty reduction factor
 
+    // Set solver parameters
     parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
     parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
     parlist->sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",factor);
@@ -175,16 +126,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").sublist("Composite Step").sublist("Tangential Subproblem Solver").set("Relative Tolerance",1e-2);
     parlist->sublist("Step").sublist("Composite Step").set("Output Level",0);
 
-
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-8);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-8);
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
-    ROL::OptimizationProblem<RealT> problem( obj_hs32, xopt, eqcon_hs32, vel, incon_hs32, vil, parlist);  
+    ROL::OptimizationProblem<RealT> problem( obj_hs32, xopt, eqcon_hs32, le, incon_hs32, li, parlist);  
 
     // Define algorithm.
-
     RCP<ROL::Algorithm<RealT> > algo;    
     algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
 

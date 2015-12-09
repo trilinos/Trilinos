@@ -68,6 +68,7 @@ public:
     std::string type = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     if ( type == "CVaR" || type == "HMCR" ||
          type == "Log-Exponential Quadrangle" ||
+         type == "Log-Quantile Quadrangle" ||
          type == "Quantile-Based Quadrangle" ||
          type == "Truncated Mean Quadrangle" ) {
       augmented_ = true;

@@ -299,13 +299,13 @@ public:
     Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
     Teuchos::RCP<V> ci = cpv.get(INEQ);
-    Teuchos::RCP<V> ce = cpv.get(EQUAL);
+    Teuchos::RCP<V> ce;
 
     incon_->value(*ci, *xo, tol);
     ci->axpy(-1.0,*xs);
        
     if(hasEquality_) {
-            
+      ce = cpv.get(EQUAL);      
       eqcon_->value(*ce, *xo, tol);
     }
 
