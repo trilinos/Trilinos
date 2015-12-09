@@ -655,6 +655,8 @@ namespace BaskerNS
 
 
 
+#ifndef KOKKOS_USING_EXPERIMENTAL_VIEW
+
 namespace Kokkos
 {
 namespace Impl
@@ -685,5 +687,7 @@ namespace Impl
 
 }//end namespace imp
 }//end namepace kokkos
+
+#endif //ifndef Kokkos_using_experimental_view
 
 #endif //end ifdef basker_structs.hpp

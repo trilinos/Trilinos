@@ -173,10 +173,10 @@ void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData d)
 {
   sum.deep_copy(ScalarT(0.0));
-  
-  for (std::size_t d = 0; d < values.size(); ++d)
-    for (std::size_t i = 0; i < sum.dimension_0(); ++i)
+  Kokkos::parallel_for( sum.dimension(0), KOKKOS_LAMBDA (const int i){
+    for (std::size_t d = 0; d < values.size(); ++d)
       sum(i) += (values[d])(i);
+  });
 }
 
 //**********************************************************************

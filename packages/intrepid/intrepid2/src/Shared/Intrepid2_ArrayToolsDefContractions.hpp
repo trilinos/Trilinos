@@ -45,7 +45,9 @@
     \brief  Definition file for contraction (integration) operations of the array tools class.
     \author Created by P. Bochev and D. Ridzal.
 */
-
+struct foo {
+  typedef Kokkos::DefaultExecutionSpace execution_space ;
+};
 namespace Intrepid2 {
 template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
 void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFields,
@@ -54,6 +56,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
                                           const ECompEngine           compEngine,                                          
                                           const bool                  sumInto) {
 
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 3 ), std::invalid_argument,
@@ -76,7 +79,9 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
   TEUCHOS_TEST_FOR_EXCEPTION( ( compEngine!=COMP_CPP && compEngine!=COMP_BLAS  ), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 #endif
-
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
   // get sizes
   int numCells        = leftFields.dimension(0);
   int numLeftFields   = leftFields.dimension(1);
@@ -85,30 +90,30 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
               } // P-loop
-              outputFields(cl, lbf, rbf) += tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
               } // P-loop
-              outputFields(cl, lbf, rbf) = tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldScalar
 
@@ -119,6 +124,8 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
                                           const ArrayInFieldsRight &  rightFields,
                                           const ECompEngine           compEngine,
                                           const bool                  sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 4 ), std::invalid_argument,
@@ -143,6 +150,9 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
   int numCells        = leftFields.dimension(0);
@@ -153,34 +163,34 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
                 } //D-loop
               } // P-loop
-              outputFields(cl, lbf, rbf) += tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
                 } //D-loop
               } // P-loop
-              outputFields(cl, lbf, rbf) = tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldVector
 
@@ -191,6 +201,8 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
                                           const ArrayInFieldsRight &  rightFields,
                                           const ECompEngine           compEngine,
                                           const bool                  sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 5 ), std::invalid_argument,
@@ -217,6 +229,9 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
   int numCells        = leftFields.dimension(0);
@@ -227,38 +242,38 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
   int dim2Tensor      = leftFields.dimension(4);
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
                   for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
-              outputFields(cl, lbf, rbf) += tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           for (int lbf = 0; lbf < numLeftFields; lbf++) {
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
                   for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
-              outputFields(cl, lbf, rbf) = tmpVal;
+              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
             } // R-loop
           } // L-loop
-        } // C-loop
+        }); // C-loop
       }
 } // end contractFieldFieldTensor
     
@@ -270,6 +285,8 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
                                          const ECompEngine           compEngine,
                                          const bool             sumInto) {
 
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 3 ), std::invalid_argument,
@@ -290,6 +307,9 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -300,50 +320,50 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
               } // P-loop
-              outputFields(cl, lbf) += tmpVal;
+              outputFieldsWrap(cl, lbf) += tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
               } // P-loop
-              outputFields(cl, lbf) += tmpVal;
+              outputFieldsWrap(cl, lbf) += tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
               } // P-loop
-              outputFields(cl, lbf) = tmpVal;
+              outputFieldsWrap(cl, lbf) = tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
               } // P-loop
-              outputFields(cl, lbf) = tmpVal;
+              outputFieldsWrap(cl, lbf) = tmpVal;
             } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
     
@@ -356,6 +376,8 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                                          const ArrayInFields &  inputFields,
                                          const ECompEngine      compEngine,
                                          const bool             sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 4 ), std::invalid_argument,
@@ -379,6 +401,9 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
 
 
 #endif
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -389,58 +414,58 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
                   } // D-loop
                 } // P-loop
-                outputFields(cl, lbf) += tmpVal;
+                outputFieldsWrap(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
                   } //D-loop
                 } // P-loop
-                outputFields(cl, lbf) += tmpVal;
+                outputFieldsWrap(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
                   } // D-loop
                 } // P-loop
-                outputFields(cl, lbf) = tmpVal;
+                outputFieldsWrap(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
                   } //D-loop
                 } // P-loop
-                outputFields(cl, lbf) = tmpVal;
+                outputFieldsWrap(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
  } // end contractDataFieldVector
@@ -452,6 +477,8 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                                          const ArrayInFields &  inputFields,
                                          const ECompEngine           compEngine,
                                          const bool             sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 5 ), std::invalid_argument,
@@ -476,6 +503,9 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
+  ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -488,66 +518,66 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
-                outputFields(cl, lbf) += tmpVal;
+                outputFieldsWrap(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
-                outputFields(cl, lbf) += tmpVal;
+                outputFieldsWrap(cl, lbf) += tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
-                outputFields(cl, lbf) = tmpVal;
+                outputFieldsWrap(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         }
         else { // constant data
-          for (int cl = 0; cl < numCells; cl++) {
+          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
               for (int lbf = 0; lbf < numFields; lbf++) {
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
-                outputFields(cl, lbf) = tmpVal;
+                outputFieldsWrap(cl, lbf) = tmpVal;
               } // F-loop
-          } // C-loop
+          }); // C-loop
         } // numDataPoints
       }
 } // end contractDataFieldTensor
@@ -559,6 +589,9 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
                                         const ArrayInDataRight &  inputDataRight,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
+
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 2 ), std::invalid_argument,
 			      ">>> ERROR (ArrayTools::contractDataDataScalar): Rank of the left input argument must equal 2!");
@@ -576,27 +609,30 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
                               ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 
 #endif
-  // get sizes
+  ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
+ // get sizes
   int numCells      = inputDataLeft.dimension(0);
   int numPoints     = inputDataLeft.dimension(1);
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
           } // P-loop
-          outputData(cl) += tmpVal;
-        } // C-loop
+          outputDataWrap(cl) += tmpVal;
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
           } // P-loop
-          outputData(cl) = tmpVal;
-        } // C-loop
+          outputDataWrap(cl) = tmpVal;
+        }); // C-loop
       }
     
 
@@ -609,6 +645,8 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
                                         const ArrayInDataRight &  inputDataRight,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 3 ), std::invalid_argument,
@@ -630,6 +668,10 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
 
 #endif
 
+  ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
+
   // get sizes
   int numCells        = inputDataLeft.dimension(0);
   int numPoints       = inputDataLeft.dimension(1);
@@ -637,26 +679,26 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
 
 
       if (sumInto) {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
             } // D-loop
           } // P-loop
-          outputData(cl) += tmpVal;
-        } // C-loop
+          outputDataWrap(cl) += tmpVal;
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
             } // D-loop
           } // P-loop
-          outputData(cl) = tmpVal;
-        } // C-loop
+          outputDataWrap(cl) = tmpVal;
+        }); // C-loop
       }
  } // end contractDataDataVector
 
@@ -667,6 +709,8 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
                                         const ArrayInDataRight &  inputDataRight,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
+
+  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 4 ), std::invalid_argument,
@@ -690,6 +734,10 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
 
 #endif
 
+  ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
+
   // get sizes
   int numCells        = inputDataLeft.dimension(0);
   int numPoints       = inputDataLeft.dimension(1);
@@ -698,30 +746,30 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
 
 
       if (sumInto) { 
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
               for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
               } // D2-loop
             } // D1-loop
           } // P-loop
-          outputData(cl) += tmpVal;
-        } // C-loop
+          outputDataWrap(cl) += tmpVal;
+        }); // C-loop
       }
       else {
-        for (int cl = 0; cl < numCells; cl++) {
+        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
               for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
               } // D2-loop
             } // D1-loop
           } // P-loop
-          outputData(cl) = tmpVal;
-        } // C-loop
+          outputDataWrap(cl) = tmpVal;
+        }); // C-loop
       }
 
  } // end contractDataDataTensor  

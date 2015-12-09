@@ -56,14 +56,16 @@ private:
   Teuchos::RCP<PlusFunction<Real> > pf_;
 
   Real prob_;
+  Real scale_;
   Real eps_;
 
 public:
 
-  LogQuantileQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
+  LogQuantileQuadrangle(Real prob, Real scale, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
     : ExpectationQuad<Real>(), pf_(pf) {
-    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
-    eps_  = ((eps > 0.0) ? eps : 1.0);
+    prob_  = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    scale_ = ((scale >= 1.0) ? scale : 1.0);
+    eps_   = ((eps > 0.0) ? eps : 1.0);
   }
 
   LogQuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
@@ -71,7 +73,9 @@ public:
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Quantile Quadrangle");
     // Check CVaR inputs
     Real prob = list.get("Confidence Level",0.5);
-    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    prob_  = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    Real scale = list.get("Growth Constant",1.0);
+    scale_ = ((scale >= 1.0) ? scale : 1.0);
     // Build plus function
     pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
     Real eps = list.get("Smoothing Parameter",1.);
@@ -94,10 +98,11 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv less than 0!");
 
-    Real arg = std::exp(x);
-    Real reg = 1.0/(1.0-prob_) * (pf_->evaluate(arg-1.0,deriv) *
-                 ((deriv == 0) ? 1.0 : ((deriv == 1) ? arg : arg*arg))
-               + ((deriv == 2) ? pf_->evaluate(arg-1.0,deriv-1)*arg : 0.0));
+    Real arg  = std::exp(scale_*x);
+    Real sarg = scale_*arg;
+    Real reg  = 1.0/(1.0-prob_) * (pf_->evaluate(arg-1.0,deriv) *
+                  ((deriv == 0) ? 1.0 : ((deriv == 1) ? sarg : sarg*sarg))
+                + ((deriv == 2) ? pf_->evaluate(arg-1.0,deriv-1)*scale_*sarg : 0.0));
     return reg;
   }
 

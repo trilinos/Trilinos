@@ -185,6 +185,8 @@ int main(int argc, char* argv[])
   fprhs.close();
   */
 
+  //Before Init
+  {
   int result = 0;
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
@@ -206,8 +208,12 @@ int main(int argc, char* argv[])
   //mybasker.Solve(y,x);
   cout << "--------------Done Solve----------------------"<<endl;
 
-  #ifdef BASKER_KOKKOS
+
+  }//After
+  //Kokkos::fence();
+
+  //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
-  #endif
+  //#endif
 
 }

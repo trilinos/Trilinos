@@ -73,7 +73,7 @@ private:
   Teuchos::RCP<Teuchos::ParameterList>  parlist_;
 
   // Storage
-  Teuchos::RCP<Vector<Real> > x_;
+  Teuchos::RCP<PV> x_;
   Teuchos::RCP<Vector<Real> > g_;
   Teuchos::RCP<Vector<Real> > l_;
   Teuchos::RCP<Vector<Real> > c_;
@@ -141,7 +141,7 @@ public:
     state->constraintVec = c.clone();
 
     // Initialize storage
-    x_ = x.clone();
+    x_ = Teuchos::rcp_static_cast<PV>(x.clone());
     g_ = g.clone();
     l_ = l.clone();
     c_ = c.clone();
@@ -239,7 +239,7 @@ public:
 
     PartitionedVector<Real> &xpv = Teuchos::dyn_cast<PartitionedVector<Real> >(*x_);
 
-    Teuchos::RCP<Vector<Real> > slack = xpv.get(SLACK);
+    Teuchos::RCP<Vector<Real> > slack = x_->get(SLACK);
    
     slack->applyUnary(threshold);
 

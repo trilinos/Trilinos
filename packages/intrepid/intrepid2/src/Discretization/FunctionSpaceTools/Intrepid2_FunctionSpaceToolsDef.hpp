@@ -1217,19 +1217,19 @@ void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
                                    const ArrayInRight  & rightValues,
                                    const ECompEngine           compEngine,
                                    const bool            sumInto) {
-	 ArrayWrapper<Scalar,ArrayOut, Rank<ArrayOut >::value, false>outputValuesWrap(outputValues);
-     ArrayWrapper<Scalar,ArrayInLeft, Rank<ArrayInLeft >::value, true>leftValuesWrap(leftValues);
-	 ArrayWrapper<Scalar,ArrayInRight, Rank<ArrayInRight >::value, true>rightValuesWrap(rightValues);
-	 int outRank = getrank(outputValues);
+  //ArrayWrapper<Scalar,ArrayOut, Rank<ArrayOut >::value, false>outputValuesWrap(outputValues);
+  //ArrayWrapper<Scalar,ArrayInLeft, Rank<ArrayInLeft >::value, true>leftValuesWrap(leftValues);
+  //ArrayWrapper<Scalar,ArrayInRight, Rank<ArrayInRight >::value, true>rightValuesWrap(rightValues);
+  int outRank = getrank(outputValues);
   switch (outRank) {
     case 1: 
-      dataIntegral<Scalar>(outputValuesWrap, leftValuesWrap, rightValuesWrap, compEngine, sumInto);
+      dataIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;  
     case 2: 
-      functionalIntegral<Scalar>(outputValuesWrap, leftValuesWrap, rightValuesWrap, compEngine, sumInto);
+      functionalIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;  
     case 3: 
-      operatorIntegral<Scalar>(outputValuesWrap, leftValuesWrap, rightValuesWrap, compEngine, sumInto);
+      operatorIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;
   default:
 #ifdef HAVE_INTREPID_DEBUG

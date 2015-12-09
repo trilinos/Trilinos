@@ -17,7 +17,7 @@ template<class T>
 struct Void {
   typedef void type;
 };
-}
+
 
 typedef int index_type;
 
@@ -645,5 +645,7 @@ struct ArrayWrapper<Scalar,ArrayType,8,true> {
     return view(i0,i1,i2,i3,i4,i5,i6,i7);
   }
 };
+
+}
 #endif
 
