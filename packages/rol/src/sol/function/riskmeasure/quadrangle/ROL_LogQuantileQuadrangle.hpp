@@ -79,10 +79,10 @@ public:
   }
 
   Real error(Real x, int deriv = 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (error > 2), std::invalid_argument,
-      ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv greater than 2!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (error < 0), std::invalid_argument,
-      ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv less than 0!");
+    TEUCHOS_TEST_FOR_EXCEPTION( (deriv > 2), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle::error): deriv greater than 2!");
+    TEUCHOS_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle::error): deriv less than 0!");
 
     Real X = ((deriv == 0) ? x : ((deriv == 1) ? 1.0 : 0.0));
     return regret(x,deriv) - X;
