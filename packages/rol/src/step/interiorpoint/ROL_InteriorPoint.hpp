@@ -66,8 +66,8 @@ private:
 
   Teuchos::RCP<Objective<Real> > obj_;
   Teuchos::RCP<Objective<Real> > barrier_;
-  Teuchos::RCP<Vector<Real> >    x_;
-  Teuchos::RCP<Vector<Real> >    g_;
+  Teuchos::RCP<PV>    x_;
+  Teuchos::RCP<PV>    g_;
 
   Real mu_;
   int nfval_;
@@ -81,8 +81,14 @@ public:
                       Teuchos::RCP<Objective<Real> > &barrier, 
                       const Vector<Real> &x,
                       Real mu ) :
-    obj_(obj), barrier_(barrier), 
-    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0)  {  }
+    obj_(obj), barrier_(barrier),x_(Teuchos::null), g_(Teuchos::null), 
+    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0)  { 
+
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    
+    x_ = Teuchos::rcp_static_cast<PV>(xpv.clone());
+    g_ = Teuchos::rcp_static_cast<PV>(xpv.dual().clone());
+  }
  
   void updatePenalty( Real mu ) {
     mu_ = mu;
@@ -134,14 +140,12 @@ public:
     Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
     // Compute objective function value
-    Real fval = obj_->value(*xo,tol);  
+    fval_ = obj_->value(*xo,tol);  
     Real pval = barrier_->value(*xs,tol);
 
     ++nfval_;
 
-    Real fval_ = fval + mu_*pval; 
-
-    return fval_; 
+    return fval_+mu_*pval; 
   }
 
   Real getObjectiveValue() {
@@ -172,11 +176,18 @@ public:
       barrier_->gradient(*gs,*xs,tol);
       gs->scale(mu_);
       
+      g_->set(g);
+      g_->zero(SLACK);      
+
       gnorm_ = g.norm();
 
       ++ngval_;
 
   } 
+
+  void getObjectiveGradient( Vector<Real> &g ) {
+
+  }
 
   Real getGradientNorm() {
     return gnorm_;

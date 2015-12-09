@@ -268,6 +268,7 @@ int main(int narg, char** arg)
   // Permutation
   checkLength = soln->getPermutationSize();
   checkPerm = soln->getPermutation();
+  checkInvPerm = soln->getInversePermutation(); // MNYI
 
   // Separators. 
   // The following methods needs to be supported:
@@ -279,7 +280,18 @@ int main(int narg, char** arg)
     z2TestLO NumBlocks = soln->getCBlkPtr(); // NYI
     z2TestLO * RangTab = soln->getRangTab(); // NYI
     z2TestLO * TreeTab = soln->getTreeTab(); // NYI
+    // TODO Use accessor names that make more sense to users
+    // getNumSeparatorBlocks()
+    // getVertexSeparator(NumBlocks, RangeTab, TreeTab)
+    // 
+    // RangTab is size NumBlocks+1; offsets into inverse permutation array giving vertices
+    // belonging to a block
+    // TreeTab is size NumBlocks; gives parent blocks of a block
   }
+  else {
+    // TODO FAIL with error
+  }
+
 
   if (outputFile != "") {
     ofstream permFile;
@@ -300,6 +312,12 @@ int main(int narg, char** arg)
   cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
+  // TODO How do we validate the separator?
+  //      E.g., RangeTab monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
+  //      TreeTab root has -1, other values < NumBlocks
+  //      NumBlocks appropriate for nLevels
+  // TODO How do we validate the inverse permutation?
+  //      InversePerm[Perm[i]] == i?
 
   cout << "Going to compute the bandwidth" << endl;
   // Compute original bandwidth

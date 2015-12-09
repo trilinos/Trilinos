@@ -93,6 +93,24 @@ public:
   }
 }; // class UniformlyRandom
 
+template<class Real>
+class ThresholdUpper : public UnaryFunction<Real> {
+
+private:
+  const Real threshold_;
+
+public:
+  ThresholdUpper( const Real threshold ) : 
+    threshold_(threshold) {}
+
+  Real apply( const Real &x ) const {
+    return std::max(threshold_,x);
+  }
+
+
+}; 
+
+
 
 } // namespace Elementwise
 } // namespace ROL

@@ -417,7 +417,7 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
     getStdErr=getStdErr)
   if errCode != 0:
     if throwOnError:
-      raise RuntimeError, '%s failed w/ exit code %d:\n\n%s' % (cmnd, err, data)
+      raise RuntimeError, '%s failed w/ exit code %d:\n\n%s' % (cmnd, errCode, data)
   dataToReturn = data
   if stripTrailingSpaces:
     dataToReturn = data.rstrip()
