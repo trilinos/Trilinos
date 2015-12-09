@@ -80,7 +80,8 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
 			      ">>> ERROR (ArrayTools::contractFieldFieldScalar): Computational engine not defined!");
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
-
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
   // get sizes
   int numCells        = leftFields.dimension(0);
   int numLeftFields   = leftFields.dimension(1);
@@ -94,7 +95,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
               } // P-loop
               outputFieldsWrap(cl, lbf, rbf) += tmpVal;
             } // R-loop
@@ -107,7 +108,7 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
             for (int rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
               } // P-loop
               outputFieldsWrap(cl, lbf, rbf) = tmpVal;
             } // R-loop
@@ -150,6 +151,8 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
 
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
   int numCells        = leftFields.dimension(0);
@@ -166,7 +169,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
                 } //D-loop
               } // P-loop
               outputFieldsWrap(cl, lbf, rbf) += tmpVal;
@@ -181,7 +184,7 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
                 } //D-loop
               } // P-loop
               outputFieldsWrap(cl, lbf, rbf) = tmpVal;
@@ -227,6 +230,8 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
 
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
+  ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
   int numCells        = leftFields.dimension(0);
@@ -244,7 +249,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
                   for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -261,7 +266,7 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
               for (int qp = 0; qp < numPoints; qp++) {
                 for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
                   for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
                   } // D2-loop
                 } // D1-loop
               } // P-loop
@@ -303,6 +308,8 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
 
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -317,7 +324,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
               } // P-loop
               outputFieldsWrap(cl, lbf) += tmpVal;
             } // F-loop
@@ -328,7 +335,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
               } // P-loop
               outputFieldsWrap(cl, lbf) += tmpVal;
             } // F-loop
@@ -341,7 +348,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
               } // P-loop
               outputFieldsWrap(cl, lbf) = tmpVal;
             } // F-loop
@@ -352,7 +359,7 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
             for (int lbf = 0; lbf < numFields; lbf++) {
               Scalar tmpVal(0);
               for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
               } // P-loop
               outputFieldsWrap(cl, lbf) = tmpVal;
             } // F-loop
@@ -395,6 +402,8 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
 
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -410,7 +419,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
                   } // D-loop
                 } // P-loop
                 outputFieldsWrap(cl, lbf) += tmpVal;
@@ -423,7 +432,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
                   } //D-loop
                 } // P-loop
                 outputFieldsWrap(cl, lbf) += tmpVal;
@@ -438,7 +447,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
                   } // D-loop
                 } // P-loop
                 outputFieldsWrap(cl, lbf) = tmpVal;
@@ -451,7 +460,7 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                 Scalar tmpVal(0);
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
                   } //D-loop
                 } // P-loop
                 outputFieldsWrap(cl, lbf) = tmpVal;
@@ -495,6 +504,8 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
 
 #endif
   ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields>::value, false>outputFieldsWrap(outputFields);
+  ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>inputDataWrap(inputData);
+  ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
   int numCells       = inputFields.dimension(0);
@@ -513,7 +524,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
@@ -528,7 +539,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
@@ -545,7 +556,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
@@ -560,7 +571,7 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                 for (int qp = 0; qp < numPoints; qp++) {
                   for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
                     for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
                     } // D2-loop
                   } // D1-loop
                 } // P-loop
@@ -599,6 +610,8 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
 
 #endif
   ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
  // get sizes
   int numCells      = inputDataLeft.dimension(0);
   int numPoints     = inputDataLeft.dimension(1);
@@ -607,7 +620,7 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
         Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
           } // P-loop
           outputDataWrap(cl) += tmpVal;
         }); // C-loop
@@ -616,7 +629,7 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
         Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
           } // P-loop
           outputDataWrap(cl) = tmpVal;
         }); // C-loop
@@ -656,6 +669,8 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
 #endif
 
   ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
 
   // get sizes
   int numCells        = inputDataLeft.dimension(0);
@@ -668,7 +683,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
             } // D-loop
           } // P-loop
           outputDataWrap(cl) += tmpVal;
@@ -679,7 +694,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
           Scalar tmpVal(0);
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
             } // D-loop
           } // P-loop
           outputDataWrap(cl) = tmpVal;
@@ -720,6 +735,8 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
 #endif
 
   ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>outputDataWrap(outputData);
+  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
+  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
 
   // get sizes
   int numCells        = inputDataLeft.dimension(0);
@@ -734,7 +751,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
               for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
               } // D2-loop
             } // D1-loop
           } // P-loop
@@ -747,7 +764,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
           for (int qp = 0; qp < numPoints; qp++) {
             for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
               for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
               } // D2-loop
             } // D1-loop
           } // P-loop
