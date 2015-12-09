@@ -166,7 +166,7 @@ public:
     // Initialize storage for updated iterate
     y_ = x.clone();
     // Initialize storage for aggregate subgradients
-    aggSubGradNew_ = x.clone();
+    aggSubGradNew_ = g.clone();
     aggSubGradOldNorm_ = algo_state.gnorm;
   }
 
@@ -188,8 +188,8 @@ public:
       /******** Construct Cutting Plane Solution *******************/
       /*************************************************************/
       v = -state->searchSize*std::pow(algo_state.aggregateGradientNorm,2.0)-aggLinErrNew_; // CP objective value
-      s.set(*aggSubGradNew_); s.scale(-state->searchSize);                        // CP solution
-      algo_state.snorm = state->searchSize*algo_state.aggregateGradientNorm;      // Step norm
+      s.set(aggSubGradNew_->dual()); s.scale(-state->searchSize);            // CP solution
+      algo_state.snorm = state->searchSize*algo_state.aggregateGradientNorm; // Step norm
       /*************************************************************/
       /******** Decide Whether Step is Serious or Null *************/
       /*************************************************************/
@@ -210,7 +210,7 @@ public:
         obj.gradient(*(state->gradientVec),*y_,ftol_); // Compute objective (sub)gradient at y
         algo_state.ngrad++;
         // Compute new linearization error and distance measure
-        gd = s.dot(*(state->gradientVec));
+        gd = s.dot(state->gradientVec->dual());
         linErrNew_ = algo_state.value - (valueNew_ - gd); // Linearization error
         // Determine whether to take a serious or null step
         bool SS1  = (valueNew_-algo_state.value <  m1_*v);
