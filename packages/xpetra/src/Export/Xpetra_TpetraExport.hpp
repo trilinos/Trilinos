@@ -257,7 +257,7 @@ namespace Xpetra {
     //@}
 
   }; // TpetraExport class (specialization for LO=GO=int)
-#endif // #ifndef HAVE_XPETRA_TPETRA_INST_INT_INT
+#endif
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
