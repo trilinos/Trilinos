@@ -1087,7 +1087,11 @@ template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInver
 struct inverse2_3 {
   ArrayInverseWrap inverseMats;
   ArrayInWrap inMats;
-typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#if !defined(KOKKOS_HAVE_CUDA) and !defined(KOKKOS_HAVE_OPENMP)
+  typedef typename Kokkos::Serial execution_space; 
+#else
+  typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#endif 
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
@@ -1177,7 +1181,11 @@ template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInver
 struct inverse2_2 {
   ArrayInverseWrap inverseMats;
   ArrayInWrap inMats;
-typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#if !defined(KOKKOS_HAVE_CUDA) and !defined(KOKKOS_HAVE_OPENMP)
+  typedef typename Kokkos::Serial execution_space;
+#else
+  typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#endif
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
@@ -1216,7 +1224,11 @@ template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInver
 struct inverse2_1 {
   ArrayInverseWrap inverseMats;
   ArrayInWrap inMats;
-typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#if !defined(KOKKOS_HAVE_CUDA) and !defined(KOKKOS_HAVE_OPENMP)
+  typedef typename Kokkos::Serial execution_space;
+#else
+  typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+#endif
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View
