@@ -44,7 +44,7 @@
 // #include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
 //#include "Teuchos_Assert.hpp"
-#include "KokkosRank.hpp"
+#include "Intrepid_KokkosRank.hpp"
 /*template<class arg1, class arg2, class arg3, class arg4,class arg5 ,class arg6, class arg7, class arg8,class arg9, class arg10>
 struct Rank<const shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10> >{
 static const int value=shards::ArrayVector<arg1, arg2, arg3, arg4,arg5,arg6,arg7,arg8,arg9 ,arg10>::Rank;

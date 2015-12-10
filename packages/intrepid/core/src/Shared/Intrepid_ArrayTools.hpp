@@ -54,7 +54,7 @@
 #include "Intrepid_Types.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_Assert.hpp"
-#include <KokkosRank.hpp>
+#include <Intrepid_KokkosRank.hpp>
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Kokkos_Core.hpp"
 #include <impl/Kokkos_Timer.hpp>

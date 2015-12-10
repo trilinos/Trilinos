@@ -55,7 +55,7 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include <KokkosRank.hpp>
+#include <Intrepid_KokkosRank.hpp>
 
 
 namespace Intrepid {

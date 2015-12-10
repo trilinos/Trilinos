@@ -85,7 +85,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include <KokkosRank.hpp>
+#include <Intrepid2_KokkosRank.hpp>
 #include "Kokkos_Core.hpp"
 namespace Intrepid2 {
   

@@ -49,8 +49,8 @@
 
 #include "Phalanx_MDField_Utilities.hpp"
 
-#define PANZER_USE_FAST_SUM 1
-// #define PANZER_USE_FAST_SUM 0
+//#define PANZER_USE_FAST_SUM 1
+#define PANZER_USE_FAST_SUM 0
 
 namespace panzer {
 
@@ -115,12 +115,14 @@ PHX_EVALUATE_FIELDS(Sum,workset)
       *sum_it += scalars[j]*(*values_it);
   }
 #else
-  std::size_t length = workset.num_cells * cell_data_size;
-  for (std::size_t i = 0; i < length; ++i) {
-    sum[i] = 0.0;
+  sum.deep_copy(ScalarT(0.0));
+  std::size_t length = 1;
+  for (std::size_t i=0; i<sum.rank(); ++i)
+    length *= sum.dimension(i);
+  Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
     for (std::size_t j = 0; j < values.size(); ++j)
       sum[i] += scalars[j]*(values[j][i]);
-  }
+  });
 #endif
 }
 

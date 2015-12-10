@@ -54,7 +54,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "KokkosRank.hpp"
+#include "Intrepid2_KokkosRank.hpp"
 namespace Intrepid2 {
 
 /***************************************************************************************************

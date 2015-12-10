@@ -12,7 +12,6 @@
 #define HAVE_AMESOS           //Use Amesos orderings
 #define BASKER_SCOTCH         //Use Scotch
 
-
 //MACRO TYPE
 #define BASKER_INT            Int
 #define BASKER_ENTRY          Entry
@@ -33,11 +32,10 @@
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG
-//#define ASSERT(a)             BASKER_NO_OP
 #define ASSERT(a)             assert(a)
 #else
-//#define ASSERT(a)             BASKER_NO_OP
-#define   ASSERT(a)           assert(a)
+#define ASSERT(a)             BASKER_NO_OP
+//#define   ASSERT(a)           assert(a)
 #endif
 
 #define BASKER_ASSERT(a,s)       \
@@ -173,6 +171,66 @@
 
 #define FREE(a)                        BASKER_NO_OP
 
+#define FREE_INT_1DARRAY(a)      \
+  { \
+    a = INT_1DARRAY(); \
+  }
+
+#define FREE_INT_2DARRAY(a,n)                    \
+  { \
+    a = INT_2DARRAY(); \
+  }
+
+#define FREE_ENTRY_1DARRAY(a)    \
+  { \
+    a = ENTRY_1DRRAY(); \
+  }
+
+#define FREE_ENTRY_2DARRAY(a,n)                  \
+  { \
+    a = ENTRY_2DARRAY(); \
+  }
+
+#define FREE_BOOL_1DARRAY(a)    \
+  { \
+    a = BOOL_1DARRAY(); \
+  }
+
+#define FREE_BOOL_2DARRAY(a,n)                   \
+  { \
+    a = BOOL_2DARRAY(); \
+  }
+
+#define FREE_MATRIX_1DARRAY(a)  \
+  { \
+    a = MATRIX_1DARRAY(); \
+  }
+
+#define FREE_MATRIX_2DARRAY(a,n)                 \
+  { \
+    a = MATRIX_2DARRAY(); \
+  }
+
+#define FREE_MATRIX_VIEW_1DARRAY(a) \
+  { \
+    a = MATRIX_VIEW_1DARRAY(); \
+  }
+
+#define FREE_MATRIX_VIEW_2DARRAY(a,n)            \
+  { \
+    a = MATRIX_VIEW_2DARRAY(); \
+  }
+
+#define FREE_THREAD_1DARRAY(a) \
+  { \
+    a = THREAD_1DARRAY(); \
+  }
+
+#define FREE_THREAD_2DARRAY(a,n)                 \
+  { \
+    a = TRHEAD_2DARRAY(); \
+  }
+
 #else
 //Execution Space
 #define BASKER_EXE_SPACE     void*
@@ -229,16 +287,85 @@
 #define SET_ENTRY_1DARRAY(a,b,s)         a = b  
 #define FREE(a)                    delete [] a
 
+#define FREE_INT_1DARRAY(a)      \
+  { \
+    FREE(a); \
+  }
+
+#define FREE_INT_2DARRAY(a,s)                    \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+      FREE(a[MACRO_I]); \
+    FREE(a); \
+  }
+
+#define FREE_ENTRY_1DARRAY(a)    \
+  { \
+    FREE(a); \
+  }
+
+#define FREE_ENTRY_2DARRAY(a,s)                  \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+        FREE(a[MACRO_I]); \
+    FREE(a); \
+  }
+
+#define FREE_BOOL_1DARRAY(a)    \
+  { \
+    FREE(a); \
+  }
+
+#define FREE_BOOL_2DARRAY(a,n)    \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+      FREE(a[MACRO_I]); \
+    FREE(a); \
+  }
+
+#define FREE_MATRIX_1DARRAY(a)  \
+  { \
+    FREE(a); \
+  }
+
+#define FREE_MATRIX_2DARRAY(a,s)  \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+      FREE(a[MARCO_I]); \
+    FREE(a); \
+  }
+
+#define FREE_MATRIX_VIEW_1DARRAY(a) \
+  { \
+    FREE(a); \
+  }
+
+#define FREE_MATRIX_VIEW_2DARRAY(a,s)            \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+      FREE(a[MACRO_I]); \
+    FREE(a); \
+  }
+
+#define FREE_THREAD_1DARRAY(a) \
+  { \
+    FREE(a);  \
+  }
+
+#define FREE_THREAD_2DARRAY(a,n)                 \
+  { \
+    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
+      FREE(a[MACRO_I]); \
+    FREE(a); \
+  }
+
 #endif //end ifdef BASKER_KOKKOS
 
 //Inline command
 #ifdef BASKER_KOKKOS
 #define BASKER_INLINE   KOKKOS_INLINE_FUNCTION
 #else
-#define BASKER_INLINE    
-//#define BASKER_INLINE   _forceinline
-//#define BASKER_INLINE inline
-//#dfinee BASKER_INLINE #pragma forceinline
+#define BASKER_INLINE    inline
 #endif
 
 #define BASKER_FINLINE  inline
