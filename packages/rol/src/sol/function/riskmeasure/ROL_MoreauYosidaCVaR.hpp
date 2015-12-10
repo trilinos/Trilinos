@@ -41,15 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_MOREAUYOSIDAQUANTILEQUAD_HPP
-#define ROL_MOREAUYOSIDAQUANTILEQUAD_HPP
+#ifndef ROL_MOREAUYOSIDACVAR_HPP
+#define ROL_MOREAUYOSIDACVAR_HPP
 
 #include "ROL_ExpectationQuad.hpp"
 
 namespace ROL {
 
 template<class Real>
-class MoreauYosidaQuantileQuadrangle : public ExpectationQuad<Real> {
+class MoreauYosidaCVaR : public ExpectationQuad<Real> {
 private:
 
   Real prob_;
@@ -59,7 +59,7 @@ private:
 
 public:
 
-  MoreauYosidaQuantileQuadrangle(Real prob, Real eps )
+  MoreauYosidaCVaR(Real prob, Real eps )
     : ExpectationQuad<Real>() {
     prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
     eps_  = ((eps > 0.0) ? eps : 1.0);
@@ -67,7 +67,7 @@ public:
     ub_   = eps_/omp_;
   }
 
-  MoreauYosidaQuantileQuadrangle(Teuchos::ParameterList &parlist)
+  MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle");

@@ -56,9 +56,9 @@
 #include "ROL_MeanDeviation.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_MeanVariance.hpp"
+#include "ROL_MoreauYosidaCVaR.hpp"
 
 // Risk Quadrangle Risk Measure Implementations
-#include "ROL_MoreauYosidaQuantileQuadrangle.hpp"
 #include "ROL_LogExponentialQuadrangle.hpp"
 #include "ROL_LogQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
@@ -74,7 +74,7 @@ namespace ROL {
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
     RISKMEASURE_MEANVARIANCE,
-    RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE,
+    RISKMEASURE_MOREAUYOSIDACVAR,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
@@ -99,8 +99,8 @@ namespace ROL {
              retString = "Mean Plus Variance From Target";          break;
       case RISKMEASURE_MEANVARIANCE:
              retString = "Mean Plus Variance";                      break;
-      case RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE:
-             retString = "Moreau-Yosida Quantile-Based Quadrangle"; break;
+      case RISKMEASURE_MOREAUYOSIDACVAR:
+             retString = "Moreau-Yosida CVaR";                      break;
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              retString = "Log-Exponential Quadrangle";              break;
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
@@ -124,7 +124,7 @@ namespace ROL {
             (ed == RISKMEASURE_MEANDEVIATION) ||
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
             (ed == RISKMEASURE_MEANVARIANCE) ||
-            (ed == RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_MOREAUYOSIDACVAR) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
@@ -180,8 +180,8 @@ namespace ROL {
              return Teuchos::rcp(new MeanVarianceFromTarget<Real>(parlist));
       case RISKMEASURE_MEANVARIANCE:
              return Teuchos::rcp(new MeanVariance<Real>(parlist));
-      case RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE:
-             return Teuchos::rcp(new MoreauYosidaQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_MOREAUYOSIDACVAR:
+             return Teuchos::rcp(new MoreauYosidaCVaR<Real>(parlist));
       case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
              return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
