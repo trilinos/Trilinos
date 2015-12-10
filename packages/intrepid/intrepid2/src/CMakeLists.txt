@@ -61,7 +61,7 @@ APPEND_SET(HEADERS
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Kokkos)
   APPEND_SET(HEADERS ${HEADERS}
-  Kokkos/KokkosRank.hpp
+  Kokkos/Intrepid2_KokkosRank.hpp
   Kokkos/Intrepid2_FieldContainer_Kokkos.hpp
   Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp
   Kokkos/Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp
