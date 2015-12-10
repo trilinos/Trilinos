@@ -58,6 +58,7 @@
 #include "ROL_MeanVariance.hpp"
 
 // Risk Quadrangle Risk Measure Implementations
+#include "ROL_MoreauYosidaQuantileQuadrangle.hpp"
 #include "ROL_LogExponentialQuadrangle.hpp"
 #include "ROL_LogQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
@@ -73,6 +74,7 @@ namespace ROL {
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
     RISKMEASURE_MEANVARIANCE,
+    RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
@@ -83,19 +85,34 @@ namespace ROL {
   inline std::string ERiskMeasureToString(ERiskMeasure ed) {
     std::string retString;
     switch(ed) {
-      case RISKMEASURE_CVAR:                     retString = "CVaR";                            break;
-      case RISKMEASURE_EXPUTILITY:               retString = "Exponential Utility";             break;
-      case RISKMEASURE_HMCR:                     retString = "HMCR";                            break;
-      case RISKMEASURE_MEANDEVIATIONFROMTARGET:  retString = "Mean Plus Deviation From Target"; break;
-      case RISKMEASURE_MEANDEVIATION:            retString = "Mean Plus Deviation";             break;
-      case RISKMEASURE_MEANVARIANCEFROMTARGET:   retString = "Mean Plus Variance From Target";  break;
-      case RISKMEASURE_MEANVARIANCE:             retString = "Mean Plus Variance";              break;
-      case RISKMEASURE_LOGEXPONENTIALQUADRANGLE: retString = "Log-Exponential Quadrangle";      break;
-      case RISKMEASURE_LOGQUANTILEQUADRANGLE:    retString = "Log-Quantile Quadrangle";         break;
-      case RISKMEASURE_QUANTILEQUADRANGLE:       retString = "Quantile-Based Quadrangle";       break;
-      case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:  retString = "Truncated Mean Quadrangle";       break;
-      case RISKMEASURE_LAST:                     retString = "Last Type (Dummy)";               break;
-      default:                                   retString = "INVALID ERiskMeasure";            break;
+      case RISKMEASURE_CVAR:
+             retString = "CVaR";                                    break;
+      case RISKMEASURE_EXPUTILITY:
+             retString = "Exponential Utility";                     break;
+      case RISKMEASURE_HMCR:
+             retString = "HMCR";                                    break;
+      case RISKMEASURE_MEANDEVIATIONFROMTARGET:
+             retString = "Mean Plus Deviation From Target";         break;
+      case RISKMEASURE_MEANDEVIATION:
+             retString = "Mean Plus Deviation";                     break;
+      case RISKMEASURE_MEANVARIANCEFROMTARGET:
+             retString = "Mean Plus Variance From Target";          break;
+      case RISKMEASURE_MEANVARIANCE:
+             retString = "Mean Plus Variance";                      break;
+      case RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE:
+             retString = "Moreau-Yosida Quantile-Based Quadrangle"; break;
+      case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
+             retString = "Log-Exponential Quadrangle";              break;
+      case RISKMEASURE_LOGQUANTILEQUADRANGLE:
+             retString = "Log-Quantile Quadrangle";                 break;
+      case RISKMEASURE_QUANTILEQUADRANGLE:
+             retString = "Quantile-Based Quadrangle";               break;
+      case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
+             retString = "Truncated Mean Quadrangle";               break;
+      case RISKMEASURE_LAST:
+             retString = "Last Type (Dummy)";                       break;
+      default:
+             retString = "INVALID ERiskMeasure";                    break;
     }
     return retString;
   }
@@ -107,6 +124,7 @@ namespace ROL {
             (ed == RISKMEASURE_MEANDEVIATION) ||
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
             (ed == RISKMEASURE_MEANVARIANCE) ||
+            (ed == RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
@@ -148,17 +166,30 @@ namespace ROL {
     std::string dist = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     ERiskMeasure ed = StringToERiskMeasure(dist);
     switch(ed) {
-      case RISKMEASURE_CVAR:                     return Teuchos::rcp(new CVaR<Real>(parlist));
-      case RISKMEASURE_EXPUTILITY:               return Teuchos::rcp(new ExpUtility<Real>);
-      case RISKMEASURE_HMCR:                     return Teuchos::rcp(new HMCR<Real>(parlist));
-      case RISKMEASURE_MEANDEVIATIONFROMTARGET:  return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
-      case RISKMEASURE_MEANDEVIATION:            return Teuchos::rcp(new MeanDeviation<Real>(parlist));
-      case RISKMEASURE_MEANVARIANCEFROMTARGET:   return Teuchos::rcp(new MeanVarianceFromTarget<Real>(parlist));
-      case RISKMEASURE_MEANVARIANCE:             return Teuchos::rcp(new MeanVariance<Real>(parlist));
-      case RISKMEASURE_LOGEXPONENTIALQUADRANGLE: return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
-      case RISKMEASURE_LOGQUANTILEQUADRANGLE:    return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
-      case RISKMEASURE_QUANTILEQUADRANGLE:       return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
-      case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:  return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
+      case RISKMEASURE_CVAR:
+             return Teuchos::rcp(new CVaR<Real>(parlist));
+      case RISKMEASURE_EXPUTILITY:
+             return Teuchos::rcp(new ExpUtility<Real>);
+      case RISKMEASURE_HMCR:
+             return Teuchos::rcp(new HMCR<Real>(parlist));
+      case RISKMEASURE_MEANDEVIATIONFROMTARGET:
+             return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
+      case RISKMEASURE_MEANDEVIATION:
+             return Teuchos::rcp(new MeanDeviation<Real>(parlist));
+      case RISKMEASURE_MEANVARIANCEFROMTARGET:
+             return Teuchos::rcp(new MeanVarianceFromTarget<Real>(parlist));
+      case RISKMEASURE_MEANVARIANCE:
+             return Teuchos::rcp(new MeanVariance<Real>(parlist));
+      case RISKMEASURE_MOREAUYOSIDAQUANTILEQUADRANGLE:
+             return Teuchos::rcp(new MoreauYosidaQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_LOGEXPONENTIALQUADRANGLE:
+             return Teuchos::rcp(new LogExponentialQuadrangle<Real>);
+      case RISKMEASURE_LOGQUANTILEQUADRANGLE:
+             return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_QUANTILEQUADRANGLE:
+             return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
+             return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                    "Invalid risk measure type" << dist);
