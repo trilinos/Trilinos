@@ -305,23 +305,186 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SCAL, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const IST six = three + three;
+    const IST ten = five + five;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (2 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (2 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // A1 == A2 and x1 == x2.  We will use SCAL on A1 and x1, and
+      // use conventional loops on A2 and x2, then compare the
+      // results.  The numbers are small enough that the test need not
+      // worry about rounding error.  We use a different value for
+      // each entry, in order to catch possible layout bugs (e.g.,
+      // mixing up the strides).
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        curVecVal += one;
+      }
+
+      Tpetra::Experimental::SCAL (two, A1);
+      Tpetra::Experimental::SCAL (three, x1);
+
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A2(i,j) *= two;
+        }
+        x2(j) *= three;
+      }
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A1(i,j) != A2(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x1(j) != x2(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, COPY, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const IST six = three + three;
+    const IST ten = five + five;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (3 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (3 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // A1 == A2 and x1 == x2.  We will use COPY to copy A1 into A3
+      // and x1 into A3, then compare the result against A2 resp. x2.
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          A3(i,j) = zero;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        x3(j) = zero;
+        curVecVal += one;
+      }
+
+      Tpetra::Experimental::COPY (A1, A3);
+      Tpetra::Experimental::COPY (x1, x3);
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A2(i,j) != A3(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x2(j) != x3(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LOCAL_ORDINAL ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SCAL, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, COPY, SCALAR, LOCAL_ORDINAL )
 
 #define UNIT_TEST_GROUP2( SCALAR ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LAPY2, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LARFGP, SCALAR )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  //
   // FIXME (mfh 17 Sep 2015) Fails for __float128!
   //
-  //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
   // FIXME (mfh 17 Sep 2015) Define ETI / test macros for real Scalar
   // types only.  Note that in LAPACK, _LAPY2 only exists for _ = S, D

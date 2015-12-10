@@ -213,6 +213,7 @@ void absMax (const ViewType2& Y, const ViewType1& X) {
 /// We actually implement versions for ViewType rank 1 or rank 2.
 template<class ViewType,
          class CoefficientType,
+         class LayoutType = typename ViewType::array_layout,
          class IndexType = int,
          const int rank = ViewType::rank>
 struct SCAL {
@@ -223,8 +224,9 @@ struct SCAL {
 ///   ViewType rank 1 (i.e., a vector).
 template<class ViewType,
          class CoefficientType,
+         class LayoutType,
          class IndexType>
-struct SCAL<ViewType, CoefficientType, IndexType, 1> {
+struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 1> {
   /// \brief x := alpha*x (rank-1 x, i.e., a vector)
   static void run (const CoefficientType& alpha, const ViewType& x)
   {
@@ -240,8 +242,9 @@ struct SCAL<ViewType, CoefficientType, IndexType, 1> {
 ///   ViewType rank 2 (i.e., a matrix).
 template<class ViewType,
          class CoefficientType,
+         class LayoutType,
          class IndexType>
-struct SCAL<ViewType, CoefficientType, IndexType, 2> {
+struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 2> {
   /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
   static void run (const CoefficientType& alpha, const ViewType& A)
   {
@@ -253,6 +256,28 @@ struct SCAL<ViewType, CoefficientType, IndexType, 2> {
       for (IndexType j = 0; j < numCols; ++j) {
         A(i,j) = alpha * A(i,j);
       }
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra::Experimental::SCAL function, for
+///   ViewType rank 2 (i.e., a matrix), and LayoutType = LayoutRight.
+///
+/// For LayoutRight (or LayoutLeft) input, we can flatten indexing
+/// from 2-D to 1-D.
+template<class ViewType,
+         class CoefficientType,
+         class IndexType>
+struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
+  /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
+  static void run (const CoefficientType& alpha, const ViewType& A)
+  {
+    const IndexType N = A.size ();
+    typedef typename std::decay<decltype (A(0,0)) >::type scalar_type;
+    scalar_type* const A_raw = A.ptr_on_device ();
+
+    for (IndexType i = 0; i < N; ++i) {
+      A_raw[i] = alpha * A_raw[i];
     }
   }
 };
@@ -332,7 +357,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
 /// We actually implement versions for ViewType rank 1 or rank 2.
 template<class ViewType1,
          class ViewType2,
-         class IndexType,
+         class LayoutType = typename ViewType1::array_layout,
+         class IndexType = int,
          const int rank = ViewType1::rank>
 struct COPY {
   static void run (const ViewType1& x, const ViewType2& y);
@@ -342,8 +368,9 @@ struct COPY {
 ///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
 template<class ViewType1,
          class ViewType2,
+         class LayoutType,
          class IndexType>
-struct COPY<ViewType1, ViewType2, IndexType, 1> {
+struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 1> {
   /// \brief y := x (rank-1 x and y, i.e., vectors)
   static void run (const ViewType1& x, const ViewType2& y)
   {
@@ -358,13 +385,16 @@ struct COPY<ViewType1, ViewType2, IndexType, 1> {
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
 template<class ViewType1,
          class ViewType2,
+         class LayoutType,
          class IndexType>
-struct COPY<ViewType1, ViewType2, IndexType, 2> {
+struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
   static void run (const ViewType1& X, const ViewType2& Y)
   {
     const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+
+    throw std::runtime_error ("OH HAI");
 
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < numRows; ++i) {
@@ -375,16 +405,40 @@ struct COPY<ViewType1, ViewType2, IndexType, 2> {
   }
 };
 
+/// \brief Implementation of Tpetra::Experimental::COPY function, for
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices) with LayoutRight.
+template<class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, IndexType, 2> {
+  /// \brief Y := X (rank-2 X and Y, i.e., matrices)
+  static void run (const ViewType1& X, const ViewType2& Y)
+  {
+    typedef typename std::decay<decltype (X(0,0)) >::type SX;
+    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
+
+    const IndexType N = static_cast<IndexType> (Y.size ());
+    const SX* const X_raw = X.ptr_on_device ();
+    SY* const Y_raw = Y.ptr_on_device ();
+
+    // BLAS _SCAL doesn't check whether alpha is 0.
+    for (IndexType i = 0; i < N; ++i) {
+      Y_raw[i] = X_raw[i];
+    }
+  }
+};
+
 } // namespace Impl
 
 /// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
 ///   (a matrix).
 template<class ViewType,
          class CoefficientType,
+         class LayoutType = typename ViewType::array_layout,
          class IndexType = int,
          const int rank = ViewType::rank>
 void SCAL (const CoefficientType& alpha, const ViewType& x) {
-  Impl::SCAL<ViewType, CoefficientType, IndexType, rank>::run (alpha, x);
+  Impl::SCAL<ViewType, CoefficientType, LayoutType, IndexType, rank>::run (alpha, x);
 }
 
 /// \brief y := y + alpha * x
@@ -407,16 +461,23 @@ AXPY (const CoefficientType& alpha,
   Impl::AXPY<CoefficientType, ViewType1, ViewType2, IndexType, rank>::run (alpha, x, y);
 }
 
-/// \brief x := alpha*x, where x is either rank 1 (a vector) or rank 2
-///   (a matrix).
+/// \brief y := x, where x and y are either rank 1 (vectors) or rank 2
+///   (matrices) with the same dimension(s).
+///
+/// \param x [in] The input vector / matrix.
+/// \param y [out] The output vector / matrix.
+///
+/// We put the output argument last, because that's what the BLAS
+/// functions _XCOPY (replace _ with "S", "D", "C", or "Z") do.
 template<class ViewType1,
          class ViewType2,
+         class LayoutType = typename ViewType1::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
 void COPY (const ViewType1& x, const ViewType2& y) {
   static_assert (ViewType1::rank == ViewType1::rank,
                  "COPY: x and y must have the same rank.");
-  Impl::COPY<ViewType1, ViewType2, IndexType, rank>::run (x, y);
+  Impl::COPY<ViewType1, ViewType2, LayoutType, IndexType, rank>::run (x, y);
 }
 
 /// \brief y := y + alpha * A * x
@@ -611,6 +672,11 @@ public:
     return blockSize_;
   }
 
+  //! Number of rows times number of columns.
+  LO size () const {
+    return blockSize_ * blockSize_;
+  }
+
   template<class IntegerType>
   void stride (IntegerType* const s) const {
     s[0] = strideX_;
@@ -797,6 +863,11 @@ public:
 
   //! Number of entries in the vector.
   LO dimension_0 () const {
+    return blockSize_;
+  }
+
+  //! Number of entries in the vector.
+  LO size () const {
     return blockSize_;
   }
 
