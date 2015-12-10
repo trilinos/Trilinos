@@ -1,6 +1,13 @@
-#include "gtest/gtest.h"
-#include <vector>
-#include <mpi.h>
+#include <mpi.h>                        // for MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <map>                          // for map, map<>::mapped_type, etc
+#include <ostream>                      // for basic_ostream::operator<<
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for EXPECT_EQ, TEST, etc
+#include "stk_mesh/base/ElemElemGraphImpl.hpp"
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemGraphCoincidentElems.hpp>
 

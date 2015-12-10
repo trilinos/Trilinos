@@ -31,24 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t, NULL
-#include <algorithm>                    // for sort
 #include <stdexcept>                    // for logic_error
-#include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <gtest/gtest.h>
-#include <utility>                      // for pair, make_pair
-#include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper, EXPECT_FALSE, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BucketConnectivity.hpp"
-#include "stk_mesh/base/BulkData.hpp"   // for BulkData, get_connectivity
+#include "gtest/gtest.h"                // for EXPECT_FALSE, EXPECT_TRUE, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
-#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
-#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+namespace stk { namespace mesh { class Part; } }
 
 namespace {
 

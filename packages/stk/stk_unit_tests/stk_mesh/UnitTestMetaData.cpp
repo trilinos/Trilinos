@@ -31,27 +31,28 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, TEST, etc
 #include <stddef.h>                     // for NULL, size_t
-#include <exception>                    // for exception
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stdexcept>                    // for runtime_error
+#include <stdexcept>                    // for runtime_error, logic_error
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
-#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, operator==, etc
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <string>                       // for string, operator==
 #include <vector>                       // for vector
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
+#include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/NamedPair.hpp"
-#include "unit_tests/BulkDataTester.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"
-#include <stk_mesh/base/GetEntities.hpp>
+#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
 
 
 namespace stk { namespace mesh { class Part; } }

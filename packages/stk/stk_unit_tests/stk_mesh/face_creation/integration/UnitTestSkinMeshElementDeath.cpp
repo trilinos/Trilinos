@@ -1,30 +1,24 @@
 
-#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <algorithm>                    // for find
 #include <iostream>                     // for operator<<, ostream, cerr, etc
 #include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io, etc
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
-#include "stk_unit_test_utils/ElemGraphTestUtils.hpp"  // for deactivate_elements, etc
-#include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for ompi_communicator_t, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
-#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Entity.hpp"     // for operator<<, Entity
 #include "stk_mesh/base/Selector.hpp"   // for Selector, etc
-#include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
+#include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+namespace stk { namespace mesh { class Part; } }
 
 namespace
 {

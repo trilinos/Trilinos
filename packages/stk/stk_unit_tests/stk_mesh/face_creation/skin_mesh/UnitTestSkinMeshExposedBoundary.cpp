@@ -1,48 +1,24 @@
-#include <gtest/gtest.h>
 
-#include <vector>
-#include <algorithm>
-#include <stdlib.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
+#include <vector>                       // for vector
+#include "UnitTestSkinMeshUseCaseUtils.hpp"  // for get_skin_parts, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/base/FieldTraits.hpp>
-#include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelVectorConcat.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/environment/memory_util.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/getOption.h>
 
-#include "stk_unit_test_utils/unittestMeshUtils.hpp"
-#include <stk_unit_test_utils/MeshFixture.hpp>
 
-#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>
 
-#include "UnitTestSkinMeshUseCaseUtils.hpp"
 
 namespace {
 

@@ -1,11 +1,22 @@
-#include "gtest/gtest.h"
-#include <mpi.h>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include <mpi.h>                        // for MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for TEST_F, ASSERT_EQ, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include <stk_util/parallel/CommSparse.hpp>
+namespace stk { namespace mesh { class Part; } }
 
 namespace
 {

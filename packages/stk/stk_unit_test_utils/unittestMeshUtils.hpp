@@ -1,8 +1,10 @@
 #ifndef unittestMeshUtils_hpp
 #define unittestMeshUtils_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include<string>
+#include <stk_mesh/base/Types.hpp>      // for EntityVector, PartVector
+#include <string>                       // for string
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk
 {

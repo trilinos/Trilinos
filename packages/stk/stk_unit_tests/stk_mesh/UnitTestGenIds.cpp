@@ -31,28 +31,32 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <gtest/gtest.h>
-#include <vector>
-#include <mpi.h>
-#include <algorithm>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include <fstream>
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <mpi.h>                        // for MPI_Bcast, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <stk_unit_test_utils/getOption.h>  // for getOption
+#include <stk_util/stk_config.h>        // for STK_HAS_MPI
+#include <algorithm>                    // for binary_search, sort
+#include <cstdint>                      // for uint64_t
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/environment/WallTime.hpp>  // for wall_time
+#include <stk_util/parallel/MPI.hpp>    // for Datatype
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_io/StkMeshIoBroker.hpp"
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_util/stk_config.h>
-#include <stk_unit_test_utils/getOption.h>
-#include <stdint.h>
 
 //====================
 

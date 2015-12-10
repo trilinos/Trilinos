@@ -1,10 +1,23 @@
 #include <gtest/gtest.h>
 #include "BulkDataTester.hpp"
-#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
+#include <algorithm>                    // for find, sort, etc
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/util/PairIter.hpp"   // for PairIter
+#include "unit_tests/BucketTester.hpp"  // for BucketTester
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk { namespace mesh { namespace unit_test {
 

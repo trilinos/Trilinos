@@ -31,14 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <gtest/gtest.h>
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <vector>                       // for operator!=
+#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc

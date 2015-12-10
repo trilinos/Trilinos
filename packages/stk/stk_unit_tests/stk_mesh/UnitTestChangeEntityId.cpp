@@ -31,19 +31,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <gtest/gtest.h>
 #include <vector>                       // for vector, operator==
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
-#include "stk_mesh/base/Types.hpp"      // for EntityId, BucketVector, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
 
 
 TEST( UnitTestChangeEntityId, change_id_small )
