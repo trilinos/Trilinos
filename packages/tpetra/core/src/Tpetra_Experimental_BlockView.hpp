@@ -532,7 +532,7 @@ GEMV (const char trans,
 /// accept it as a template parameter: that lets you add a const
 /// LittleBlock (e.g., LittleBlock<const double, int>) to a nonconst
 /// LittleBlock (e.g., LittleBlock<double, int>).
-template<class Scalar, class LO>
+template<class Scalar, class LO = int>
 class LittleBlock {
 public:
   typedef Scalar scalar_type;
@@ -544,6 +544,9 @@ private:
 public:
   //! Number of dimensions
   static const int rank = 2;
+
+  //! Data layout (in the same sense as Kokkos::View).
+  typedef Kokkos::LayoutRight array_layout;
 
   /// \brief Constructor
   /// \param A [in] Pointer to the block's entries
@@ -721,7 +724,7 @@ private:
 /// accept it as a template parameter: that lets you add a const
 /// LittleVector (e.g., LittleVector<const double, int>) to a nonconst
 /// LittleVector (e.g., LittleVector<double, int>).
-template<class Scalar, class LO>
+template<class Scalar, class LO = int>
 class LittleVector {
 public:
   typedef Scalar scalar_type;
@@ -733,6 +736,9 @@ private:
 public:
   //! Number of dimensions
   static const int rank = 1;
+
+  //! Data layout (in the same sense as Kokkos::View).
+  typedef Kokkos::LayoutRight array_layout;
 
   /// \brief Constructor
   /// \param A [in] Pointer to the vector's entries
