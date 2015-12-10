@@ -10,7 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <Kokkos_Random.hpp>
-#include "KokkosRank.hpp"
+#include "Intrepid2_KokkosRank.hpp"
 
 
 namespace Intrepid2{
