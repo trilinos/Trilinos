@@ -217,6 +217,8 @@ namespace Xpetra {
 
   }; // TpetraVector class
 
+#ifdef HAVE_XPETRA_EPETRA
+
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
 
@@ -527,6 +529,8 @@ namespace Xpetra {
 
   }; // TpetraVector class (specialization on GO=long long, NO=EpetraNode)
 #endif
+
+#endif // HAVE_XPETRA_EPETRA
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

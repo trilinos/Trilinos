@@ -344,7 +344,8 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<Map<LocalOrdinal,GlobalOrdinal,Node > >               toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&);
-  //
+
+#ifdef HAVE_XPETRA_EPETRA
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
@@ -520,8 +521,7 @@ namespace Xpetra {
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
-
-    // specialization for Tpetra Map on EpetraNode and GO=int
+  // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraMap<int, long long, EpetraNode>
     : public virtual Map<int,long long,EpetraNode> {
@@ -688,6 +688,8 @@ namespace Xpetra {
     //@}
   }; // TpetraMap class (specialization for GO=int and NO=EpetraNode)
 #endif
+
+#endif // HAVE_XPETRA_EPETRA
 
 } // Xpetra namespace
 

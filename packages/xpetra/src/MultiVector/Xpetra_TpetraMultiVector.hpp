@@ -443,6 +443,8 @@ namespace Xpetra {
     return Teuchos::null;
   }
 
+#ifdef HAVE_XPETRA_EPETRA
+
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
 
@@ -981,6 +983,8 @@ namespace Xpetra {
   }; // TpetraMultiVector class (specialization GO=int, NO=EpetraNode)
 
 #endif // TpetraMultiVector class (specialization GO=long long, NO=EpetraNode)
+
+#endif // HAVE_XPETRA_EPETRA
 
 } // Xpetra namespace
 

@@ -509,6 +509,7 @@ namespace Xpetra {
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > mtx_;
   }; // TpetraCrsMatrix class
 
+#ifdef HAVE_XPETRA_EPETRA
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
@@ -1191,6 +1192,8 @@ namespace Xpetra {
    //@}
   }; // TpetraCrsMatrix class (specialization for GO=long long, NO=EpetraNode)
 #endif
+
+#endif // HAVE_XPETRA_EPETRA
 
 } // Xpetra namespace
 
