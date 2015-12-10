@@ -60,7 +60,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
      tpetra/MueLu_TpetraOperator_def.hpp
    )
 
-   IF (${PACKAGE_NAME}_ENABLE_Belos AND TPETRA_INST_INT_INT)
+   IF (${PACKAGE_NAME}_ENABLE_Belos AND Tpetra_INST_INT_INT)
 
      APPEND_SET(HEADERS
        tpetra/MueLu_RefMaxwell_decl.hpp
