@@ -14,10 +14,12 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 # include <Epetra_config.h>
 #endif
 
-#if   (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)) && !defined(EPETRA_HAVE_OMP)
-  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-#elif (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)) && defined(EPETRA_HAVE_OMP)
+#if   (defined(HAVE_MUELU_EPETRA) &&  defined(EPETRA_HAVE_OMP) && (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
+  // Epetra is enabled with OpenMP node, but Tpetra is a) not enabled, or b) is not instantiated on OpenMP, or c) is not instantiated on OpenMP with <double,int,int>
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
+#elif (defined(HAVE_MUELU_EPETRA) && !defined(EPETRA_HAVE_OMP) && (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))
+  // Epetra is enabled with Serial node, but Tpetra is a) not enabled, or b) is not instantiated on Serial, or c) is not instantiated on Serial with <double,int,int>
+  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 #endif
 
 // Epetra = on, Tpetra = off
