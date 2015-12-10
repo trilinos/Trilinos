@@ -319,7 +319,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testConstructor1, out, success);               // TEST: Valid input parameter
       SFH::testInvalidCollection(&SFH::testInvalidConstructor1, out, success); // TEST: Invalid input parameter
@@ -333,7 +333,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testConstructor2, out, success); // TEST: Valid input parameter
       SFH::testInvalidCollection(&SFH::testInvalidConstructor2, out, success); // TEST: Valid input parameter
@@ -347,7 +347,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testSetSmootherPrototypes1, out, success); // TEST: Valid input parameter
       SFH::testInvalidCollection(&SFH::testInvalidSetSmootherPrototypes1, out, success); // TEST: Invalid input parameter
@@ -361,7 +361,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testSetSmootherPrototypes2, out, success); // TEST: Valid input parameter
       SFH::testInvalidCollection(&SFH::testInvalidSetSmootherPrototypes2, out, success); // TEST: Invalid input parameter
@@ -399,7 +399,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testBuild, out, success);
     }
@@ -412,7 +412,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SFH::testCollection(&SFH::testBuildSmootherDefaultArg, out, success); // TEST: default arg
       SFH::testCollection(&SFH::testBuildSmoother, out, success);           // TEST: PRE, POST and BOTH
@@ -429,7 +429,7 @@ namespace MueLuTests {
     {
 #     include <MueLu_UseShortNames.hpp>
       MUELU_TESTING_SET_OSTREAM;
-      MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+      MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
       typedef SmootherFactoryHelpers<SC,LO,GO,NO> SFH;
       SmootherFactory smooFact1(Teuchos::null);
       SmootherFactory smooFact2(Teuchos::null, Teuchos::null);

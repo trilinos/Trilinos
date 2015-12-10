@@ -40,6 +40,8 @@ APPEND_SET(SOURCES
   VariableContainer.cpp
 )
 
+IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
 APPEND_SET(SOURCES
   ParameterList/MLParameterListInterpreter.cpp
@@ -122,6 +124,8 @@ IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PA
     SOURCE_FILES test.xml testReuse.xml testWithRebalance.xml testPDE.xml testPDE1.xml
     )
 ENDIF()
+
+ENDIF() # BROKEN_TESTS
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   TRIBITS_ADD_EXECUTABLE(

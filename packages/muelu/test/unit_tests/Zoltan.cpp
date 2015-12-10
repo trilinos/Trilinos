@@ -62,7 +62,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -75,7 +75,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     out << std::endl;
     out << "This tests that the partitioning produced by Zoltan is \"reasonable\" for a matrix" << std::endl;
@@ -304,7 +304,7 @@ namespace MueLuTests {
 
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     out << std::endl;
     out << "This tests that the partitioning produced by Zoltan is \"reasonable\" for a matrix" << std::endl;

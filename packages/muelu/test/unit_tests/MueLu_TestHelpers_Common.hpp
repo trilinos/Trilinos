@@ -54,52 +54,52 @@
 
 //#define MUELU_DEBUGGER_MACRO
 
-// If linAlgebra==Epetra, this macro will return early from the test
-// if SC!=double, GO!={int}, or NO!=Serial.
-#define MUELU_TESTING_LIMIT_EPETRA_SCOPE(SC, GO, NO) \
+#define TYPE_EQUAL(TYPE1, TYPE2) \
+  (typeid(TYPE1).name() == typeid(TYPE2).name())
+
+#ifdef HAVE_MUELU_EPETRA
+
+# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+  // <double,int,int,EpetraNode>: run Epetra, do not run Tpetra
+#define MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO) \
   MUELU_DEBUGGER_MACRO \
   if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
-    NO nodeCheck; \
-    std::string nodeName = typeid(nodeCheck).name(); \
-    if (nodeName.find("Serial") == std::string::npos) { \
-      out << "Skipping Epetra for non-Serial nodes" << std::endl; \
+    if (!TYPE_EQUAL(SC, double))                { out << "Skipping Epetra for SC != double"     << std::endl; return; } \
+    if (!TYPE_EQUAL(GO, int))                   { out << "Skipping Epetra for GO != int"        << std::endl; return; } \
+    if (!TYPE_EQUAL(NO, Xpetra::EpetraNode))    { out << "Skipping Epetra for NO != EpetraNode" << std::endl; return; } \
+  } else if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) { \
+    if (TYPE_EQUAL(SC, double) && TYPE_EQUAL(GO, int) && TYPE_EQUAL(NO, Xpetra::EpetraNode)) { \
+      out << "Skipping Tpetra for <double, int, EpetraNode>" << std::endl; \
       return; \
     } \
-    GO index; \
-    int epetraIntegerCheck; \
-    std::string goName = typeid(index).name(); \
-    if (goName != typeid(epetraIntegerCheck).name()) { \
-       out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
-       return; \
-    } \
-    SC epetraScalarCheck; \
-    double doubleScalar; \
-    if (typeid(doubleScalar).name() != typeid(epetraScalarCheck).name()) { \
-       out << "Skipping Epetra for SC other than \"double\"" << std::endl; \
-       return; \
-    } \
+  }
+
+#define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
+  { out << "Skipping as we cannot run Epetra and Tpetra for the same combination of template args" << std::endl; return; }
+
+# else
+
+#define MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO) \
+  MUELU_DEBUGGER_MACRO \
+  if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) { \
+    if (!TYPE_EQUAL(SC, double))                { out << "Skipping Epetra for SC != double"     << std::endl; return; } \
+    if (!TYPE_EQUAL(GO, int))                   { out << "Skipping Epetra for GO != int"        << std::endl; return; } \
+    if (!TYPE_EQUAL(NO, Xpetra::EpetraNode))    { out << "Skipping Epetra for NO != EpetraNode" << std::endl; return; } \
   }
 
 // If linAlgebra==Tpetra, but the test also requires Epetra, this macro will cause the test
 // to return early if SC!=double, GO!={int}, or NO!=Serial.
 #define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO) \
-    Node nodeCheck; \
-    std::string nodeName = typeid(nodeCheck).name();  \
-    if (nodeName.find("Serial") == std::string::npos) { \
-      out << "Skipping Epetra for non-Serial nodes" << std::endl; \
-      return; \
-    } \
-    if (Teuchos::OrdinalTraits<GlobalOrdinal>::name() != std::string("int")) { \
-       out << "Skipping Epetra for GO other than \"int\" and \"long long\"" << std::endl; \
-       return; \
-    } \
-    if (Teuchos::ScalarTraits<Scalar>::name() != std::string("double")) { \
-       out << "Skipping Epetra for SC other than \"double\"" << std::endl; \
-       return; \
-    }
+    if (!TYPE_EQUAL(SC, double))                { out << "Skipping Epetra for SC != double"     << std::endl; return; } \
+    if (!TYPE_EQUAL(GO, int))                   { out << "Skipping Epetra for GO != int"        << std::endl; return; } \
+    if (!TYPE_EQUAL(NO, Xpetra::EpetraNode))    { out << "Skipping Epetra for NO != EpetraNode" << std::endl; return; }
+# endif
 
-//Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
-//This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.
+#endif // HAVE_MUELU_EPETRA
+
+// Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
+// This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.
 #define MUELU_TESTING_SET_OSTREAM \
    MueLu::VerboseObject::SetDefaultOStream(Teuchos::fancyOStream(out.getOStream()));
 
