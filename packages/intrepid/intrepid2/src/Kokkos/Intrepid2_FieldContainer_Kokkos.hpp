@@ -34,6 +34,21 @@ a[i]=initValue;
 
 };
 }
+
+
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type< Intrepid2::FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type<const Intrepid2::FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
+
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp"
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp"
 #include "Intrepid2_FieldContainer_Kokkos_OpenMP_Left.hpp"
