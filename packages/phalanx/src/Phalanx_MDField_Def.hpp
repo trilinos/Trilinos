@@ -55,7 +55,7 @@
 
 #ifdef Phalanx_ENABLE_IntrepidIntrepid2
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
-#include "KokkosRank.hpp"
+#include "Intrepid2_KokkosRank.hpp"
 #endif
 
 //**********************************************************************
