@@ -57,12 +57,15 @@ namespace BaskerNS
       typedef int l_Int;
       
       //l_Int p[M.nrow]; //output row_per
-      l_Int p[n]; //output row_per
+      //l_Int p[n]; //output row_per
+      l_Int *p = new l_Int[n];
       //l_Int r[M.nrow+1]; //comp_tabs
-      l_Int r[n+1]; //comp_tabs
+      //l_Int r[n+1]; //comp_tabs
+      l_Int *r = new l_Int[n+1];
       //We will want to add option to use q in the future
       
-      l_Int work[n*4];
+      //l_Int work[n*4];
+      l_Int *work = new l_Int[n*4];
       //l_Int work[M.nrow*4];
       
       //printf("before amesos call \n");
@@ -110,6 +113,11 @@ namespace BaskerNS
           CC[i] = r[i];
         }
       
+
+      delete [] p;
+      delete [] r;
+      delete [] work;
+
       return 0;
     }
   }; //end BaskerSSWraper template <int>
@@ -133,11 +141,14 @@ namespace BaskerNS
     {
       typedef long  l_Int;
       
-      l_Int p[n]; //output row_per
-      l_Int r[n+1]; //comp_tabs
+      //l_Int p[n]; //output row_per
+      l_Int *p = new l_Int[n];
+      //l_Int r[n+1]; //comp_tabs
+      l_Int *r = new l_Int[n+1];
       //We will want to add option to use q in the future
       
-      l_Int work[n*4];
+      //l_Int work[n*4];
+      l_Int *work = new l_Int[n*4];
       
       //printf("before amesos call \n");
       /*
@@ -181,6 +192,10 @@ namespace BaskerNS
       {
 	CC[i] = r[i];
       }
+
+    delete [] p;
+    delete [] r;
+    delete [] work;
 
     return 0;
   }//strong_component<long int, Entry, Exe_Space>
