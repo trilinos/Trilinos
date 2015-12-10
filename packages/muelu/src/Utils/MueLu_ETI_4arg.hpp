@@ -10,20 +10,27 @@
 # include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
 #endif
-#if !defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)
-  typedef Kokkos::Compat::KokkosSerialWrapperNode Kokkos_Compat_KokkosSerialWrapperNode;
+#if defined(HAVE_MUELU_EPETRA)
+# include <Epetra_config.h>
+#endif
+
+#if   (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)) && !defined(EPETRA_HAVE_OMP)
+  typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
+#elif (!defined(HAVE_MUELU_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL)) && defined(EPETRA_HAVE_OMP)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode EpetraNode;
 #endif
 
 // Epetra = on, Tpetra = off
 #if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_TPETRA)
-  MUELU_ETI_GROUP(double,int,int,Kokkos_Compat_KokkosSerialWrapperNode)
+  MUELU_ETI_GROUP(double,int,int,EpetraNode)
 #endif
 
 // Epetra = on, Tpetra = on
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_TPETRA)
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP)
-# if !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)
-  MUELU_ETI_GROUP(double,int,int,Kokkos_Compat_KokkosSerialWrapperNode)
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+  MUELU_ETI_GROUP(double,int,int,EpetraNode)
 # endif
 
 #endif
