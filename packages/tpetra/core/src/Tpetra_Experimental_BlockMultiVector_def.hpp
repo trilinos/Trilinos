@@ -627,7 +627,7 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
       } else if (CM == ADD) {
         X_dst.update (STS::one (), X_src);
       } else if (CM == ABSMAX) {
-        X_dst.absmax (X_src);
+        Impl::absMax (X_dst, X_src);
       }
     }
   }

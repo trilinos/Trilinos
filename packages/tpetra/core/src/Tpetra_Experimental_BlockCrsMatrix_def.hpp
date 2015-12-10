@@ -757,7 +757,8 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.absmax (A_new);
+
+        Impl::absMax (A_old, A_new);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -964,7 +965,7 @@ namespace Experimental {
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vIn, pointOffset);
-        A_old.absmax (A_new);
+        Impl::absMax (A_old, A_new);
         ++validCount;
       }
     }

@@ -115,6 +115,98 @@ namespace Experimental {
 
 namespace Impl {
 
+/// \brief Implementation of Tpetra's ABSMAX CombineMode for the small
+///   dense blocks in BlockCrsMatrix, or the small dense vectors in
+///   BlockMultiVector and BlockVector.
+///
+/// This is the "generic" version that we don't implement.
+/// We actually implement versions for ViewType rank 1 or rank 2.
+template<class ViewType1,
+         class ViewType2,
+         const int rank = ViewType1::rank>
+struct AbsMax {
+  static void run (const ViewType2& Y, const ViewType1& X);
+};
+
+/// \brief Implementation of Tpetra's ABSMAX CombineMode for the small
+///   dense blocks in BlockCrsMatrix.
+///
+/// Tpetra uses this operation to implement the ABSMAX CombineMode.
+template<class ViewType1,
+         class ViewType2>
+struct AbsMax<ViewType1, ViewType2, 2> {
+  /// \brief <tt>(*this)(i,j) := max(abs((*this)(i,j)), abs(X(i,j)))</tt>
+  ///   for all (i,j).
+  static void run (const ViewType2& Y, const ViewType1& X)
+  {
+    typedef typename std::remove_reference<decltype (Y(0,0)) >::type STY;
+    static_assert(! std::is_const<STY>::value,
+      "AbsMax: The type of each entry of Y must be nonconst.");
+    typedef typename std::remove_const<typename std::remove_reference<decltype (X(0,0)) >::type>::type STX;
+    static_assert(  std::is_same<STX, STY>::value,
+      "AbsMax: The type of each entry of X and Y must be the same.");
+    typedef Kokkos::Details::ArithTraits<STY> KAT;
+
+    for (int j = 0; j < Y.dimension_1 (); ++j) {
+      for (int i = 0; i < Y.dimension_0 (); ++i) {
+        STY& Y_ij = Y(i,j); // use ref here to avoid 2nd op() call on Y
+        const STX X_ij = X(i,j);
+        // NOTE: no std::max (not a CUDA __device__ function); must
+        // cast back up to complex.
+        const auto Y_ij_abs = KAT::abs (Y_ij);
+        const auto X_ij_abs = KAT::abs (X_ij);
+        Y_ij = (Y_ij_abs >= X_ij_abs) ?
+          static_cast<STY> (Y_ij_abs) :
+          static_cast<STY> (X_ij_abs);
+      }
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra's ABSMAX CombineMode for the small
+///   dense vectors in BlockMultiVector and BlockVector.
+///
+/// Tpetra uses this operation to implement the ABSMAX CombineMode.
+template<class ViewType1,
+         class ViewType2>
+struct AbsMax<ViewType1, ViewType2, 1> {
+  /// \brief <tt>(*this)(i) := max(abs((*this)(i)), abs(X(i)))</tt>
+  ///   for all i.
+  static void run (const ViewType2& Y, const ViewType1& X)
+  {
+    typedef typename std::remove_reference<decltype (Y(0)) >::type STY;
+    static_assert(! std::is_const<STY>::value,
+      "AbsMax: The type of each entry of Y must be nonconst.");
+    typedef typename std::remove_const<typename std::remove_reference<decltype (X(0)) >::type>::type STX;
+    static_assert(  std::is_same<STX, STY>::value,
+      "AbsMax: The type of each entry of X and Y must be the same.");
+    typedef Kokkos::Details::ArithTraits<STY> KAT;
+
+    for (int i = 0; i < Y.dimension_0 (); ++i) {
+      STY& Y_i = Y(i); // use ref here to avoid 2nd op() call on Y
+      const STX X_i = X(i);
+      // NOTE: no std::max (not a CUDA __device__ function); must
+      // cast back up to complex.
+      const auto Y_i_abs = KAT::abs (Y_i);
+      const auto X_i_abs = KAT::abs (X_i);
+      Y_i = (Y_i_abs >= X_i_abs) ?
+        static_cast<STY> (Y_i_abs) :
+        static_cast<STY> (X_i_abs);
+    }
+  }
+};
+
+/// \brief Implementation of Tpetra's ABSMAX CombineMode for the small
+///   dense blocks in BlockCrsMatrix, and the small dense vectors in
+///   BlockMultiVector and BlockVector.
+///
+/// This is the function that Tpetra actually uses to implement the
+/// ABSMAX CombineMode.
+template<class ViewType1, class ViewType2, const int rank = ViewType1::rank>
+void absMax (const ViewType2& Y, const ViewType1& X) {
+  AbsMax<ViewType1, ViewType2, rank>::run (Y, X);
+}
+
 /// \brief Implementation of Tpetra::Experimental::SCAL function.
 ///
 /// This is the "generic" version that we don't implement.
@@ -423,6 +515,7 @@ GEMV (const char trans,
     }
   }
 }
+
 #endif // 0
 
 /// \class LittleBlock
@@ -568,21 +661,6 @@ public:
     for (LO j = 0; j < blockSize_; ++j) {
       for (LO i = 0; i < blockSize_; ++i) {
         (*this)(i,j) = theAlpha;
-      }
-    }
-  }
-
-  /// \brief <tt>(*this)(i,j) := max(abs((*this)(i,j)), abs(X(i,j)))</tt>
-  ///   for all (i,j).
-  ///
-  /// Tpetra uses this operation to implement the ABSMAX CombineMode.
-  template<class LittleBlockType>
-  void absmax (const LittleBlockType& X) const {
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        impl_scalar_type& Y_ij = (*this)(i,j);
-        const impl_scalar_type X_ij = X(i,j);
-        Y_ij = std::max (STS::magnitude (Y_ij), STS::magnitude (X_ij));
       }
     }
   }
@@ -765,18 +843,6 @@ public:
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     for (LO i = 0; i < blockSize_; ++i) {
       (*this)(i) = theAlpha;
-    }
-  }
-
-  /// \brief <tt>(*this)(i,j) := max(abs((*this)(i,j)), abs(X(i,j)))</tt>
-  ///   for all (i,j).
-  ///
-  /// Tpetra uses this operation to implement the ABSMAX CombineMode.
-  template<class LittleVectorType>
-  void absmax (const LittleVectorType& X) const {
-    for (LO i = 0; i < blockSize_; ++i) {
-      impl_scalar_type& Y_i = (*this)(i);
-      Y_i = std::max (STS::magnitude (Y_i), STS::magnitude (X (i)));
     }
   }
 
