@@ -172,20 +172,6 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
-  /*Handle for Basker object*/
-#ifdef SHYLUBASKER
-
-#ifdef HAVE_AMESOS2_KOKKOS
-  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
-  typedef Kokkos::OpenMP Exe_Space;
-  mutable ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space> basker;
-#else
-     #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
-#endif
-
-#else
-  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
-#endif
 
   int num_threads;
 
@@ -201,6 +187,26 @@ private:
   mutable Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
   /// Persisting 1D store for B
   mutable Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
+
+
+
+
+    /*Handle for Basker object*/
+#ifdef SHYLUBASKER
+
+#ifdef HAVE_AMESOS2_KOKKOS
+  //#pragma message("HAVE SHYLUBASKER AND KOKKOS")
+  typedef Kokkos::OpenMP Exe_Space;
+   ::BaskerNS::Basker<local_ordinal_type,slu_type,Exe_Space>  *basker;
+#else
+     #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
+#endif
+
+#else
+  mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;
+#endif
+
+
 
 };                              // End class Basker
 
