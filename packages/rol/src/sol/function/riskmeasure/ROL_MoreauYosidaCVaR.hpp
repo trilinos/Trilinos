@@ -70,7 +70,7 @@ public:
   MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Moreau-Yosida CVaR");
     // Check CVaR inputs
     Real prob = list.get("Confidence Level",0.5);
     prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
