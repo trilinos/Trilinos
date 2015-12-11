@@ -17,9 +17,19 @@ index_type count_=1;
 index_type rankValue=0;
 index_type sizeValue=0;
 public:
-FieldContainer_Kokkos()=delete;
+
+
 
 template<class ScalarPoindex_typeer>
+ntainer_Kokkos() : dim0(0), dim1(0), dim2(0), dim3(0), dim4(0), dim5(0), dim6(0), dim7(0)
+    {
+      count_=0;
+      rankValue=0;
+      intepidManaged=true;
+      sizeValue=0;
+      containerMemory=new Scalar[sizeValue];
+    } ;
+
 FieldContainer_Kokkos(Kokkos::View<ScalarPoindex_typeer,Kokkos::LayoutRight,Kokkos::Cuda>& InContainer){
 dim0=dim[0]=InContainer.dimension(0);
 dim1=dim[1]=InContainer.dimension(1);
@@ -293,6 +303,13 @@ index_type dimension_7()const{return dim7;}
 void initialize(Scalar initValue){
 Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
+
+void initialize(){
+Scalar initValue=Scalar(0.0);
+Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+}
+
+
 };
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::~FieldContainer_Kokkos(){

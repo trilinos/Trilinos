@@ -90,6 +90,8 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
+      \param modelType the model type
+      \param model the model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
@@ -106,6 +108,7 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
+      \param graphModel the graph model
 
       The constructor does global communication to compute the graph metrics.
       The rest of the  methods are local.
@@ -234,8 +237,8 @@ template <typename Adapter>
   } 
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, numGlobalParts_,
-			   numNonEmpty_, metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, modelType,
+			   model, numGlobalParts_, numNonEmpty_, metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
