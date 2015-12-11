@@ -582,12 +582,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   little_vec_type bval(onevec.getRawPtr(),blockSize,1);
   little_vec_type xval(computeSolution.getRawPtr(),blockSize,1);
 
-  xval.matvecUpdate(1.0,dMat,bval);
+  //xval.matvecUpdate(1.0,dMat,bval);
+  Tpetra::Experimental::GEMV (1.0, dMat, bval, xval);
 
   for (int i = 0; i < blockSize; ++i)
     TEST_FLOATING_EQUALITY(exactSolution[i], computeSolution[i], 1e-13);
-
-
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal)

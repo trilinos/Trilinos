@@ -1125,7 +1125,7 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_
         little_vec_type xloc = A_times_Y_Block.getLocalBlock (k, i);
         little_vec_type yloc = yBlock.getLocalBlock (k, i);
         factorizedBlockDiag.solve (xloc, &blockDiagonalFactorizationPivots[i*blockSize]);
-        yloc.update (DampingFactor_, xloc);
+        Tpetra::Experimental::AXPY (DampingFactor_, xloc, yloc);
       }
     }
   }
