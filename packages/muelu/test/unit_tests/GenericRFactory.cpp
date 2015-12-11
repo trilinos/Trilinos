@@ -71,12 +71,6 @@
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 
-//TODO: remove this
-#ifdef HAVE_MUELU_EPETRAEXT
-#include <EpetraExt_RowMatrixOut.h>
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
-
 namespace MueLuTests {
 
   //this macro declares the unit-test-class:
