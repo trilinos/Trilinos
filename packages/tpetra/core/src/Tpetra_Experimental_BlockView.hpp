@@ -483,7 +483,7 @@ void SCAL (const CoefficientType& alpha, const ViewType& x) {
   Impl::SCAL<ViewType, CoefficientType, LayoutType, IndexType, rank>::run (alpha, x);
 }
 
-/// \brief y := y + alpha * x
+/// \brief <tt>y := y + alpha * x</tt> (dense vector or matrix update)
 ///
 /// This function follows the BLAS convention that if alpha == 0, then
 /// it does nothing.  (This matters only if x contains Inf or NaN
@@ -525,7 +525,14 @@ void COPY (const ViewType1& x, const ViewType2& y) {
   Impl::COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (x, y);
 }
 
-/// \brief y := y + alpha * A * x
+/// \brief <tt>y := y + alpha * A * x</tt> (dense matrix-vector multiply)
+///
+/// \param alpha [in] Coefficient by which to multiply A*x
+/// \param A [in] Small dense matrix (must have rank 2)
+/// \param x [in] Small dense vector input (must have rank 1 and at least as
+///   many rows as A has columns)
+/// \param y [in/out] Small dense vector output (must have rank 1 and
+///   at least as many rows as A has rows)
 ///
 /// This function follows the BLAS convention that if alpha == 0, then
 /// it does nothing.  (This matters only if x contains Inf or NaN
@@ -752,17 +759,6 @@ public:
     return A_[i * strideX_ + j * strideY_];
   }
 
-  //! <tt>*this := *this + alpha * X</tt>.
-  template<class LittleBlockType>
-  void update (const Scalar& alpha, const LittleBlockType& X) const {
-    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
-  }
-
-  //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
-  void scale (const Scalar& alpha) const {
-    SCAL (static_cast<impl_scalar_type> (alpha), *this);
-  }
-
   void factorize (int* ipiv, int & info)
   {
     typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
@@ -927,17 +923,6 @@ public:
     return A_[i * strideX_];
   }
 
-  //! <tt>*this := *this + alpha * X</tt>.
-  template<class LittleVectorType>
-  void update (const Scalar& alpha, const LittleVectorType& X) const {
-    AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
-  }
-
-  //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
-  void scale (const Scalar& alpha) const {
-    SCAL (static_cast<impl_scalar_type> (alpha), *this);
-  }
-
   //! true if and only if all entries of this equal all entries of X.
   template<class LittleVectorType>
   bool equal (const LittleVectorType& X) const {
@@ -950,16 +935,6 @@ public:
       }
     }
     return true;
-  }
-
-  //! <tt>(*this) := (*this) + alpha * A * X</tt> (matrix-vector multiply).
-  template<class LittleBlockType, class LittleVectorType>
-  void
-  matvecUpdate (const Scalar& alpha,
-                const LittleBlockType& A,
-                const LittleVectorType& X) const
-  {
-    GEMV (static_cast<impl_scalar_type> (alpha), A, X, *this);
   }
 
 private:
