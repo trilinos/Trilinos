@@ -998,7 +998,53 @@ private:
   const LO strideX_;
 };
 
+template<class ST1, class ST2, class LO>
+inline void
+deep_copy (const LittleBlock<ST2, LO>& dst,
+           const LittleBlock<ST1, LO>& src,
+           typename std::enable_if<std::is_convertible<ST1, ST2>::value && ! std::is_const<ST2>::value, int>::type* = NULL)
+{
+  COPY (src, dst);
+}
 
+template<class ST1, class ST2, class LO>
+inline void
+deep_copy (const LittleVector<ST2, LO>& dst,
+           const LittleVector<ST1, LO>& src,
+           typename std::enable_if<std::is_convertible<ST1, ST2>::value && ! std::is_const<ST2>::value, int>::type* = NULL)
+{
+  COPY (src, dst);
+}
+
+template<class ST1, class ST2, class LO>
+inline void
+deep_copy (const LittleBlock<ST2, LO>& dst,
+           const ST1& val,
+           typename std::enable_if<std::is_convertible<ST1, ST2>::value && ! std::is_const<ST2>::value, int>::type* = NULL)
+{
+  const LO numRows = dst.dimension_0 ();
+  const LO numCols = dst.dimension_1 ();
+
+  const ST2 theVal = static_cast<ST2> (val);
+  for (LO j = 0; j < numCols; ++j) {
+    for (LO i = 0; i < numRows; ++i) {
+      dst(i,j) = theVal;
+    }
+  }
+}
+
+template<class ST1, class ST2, class LO>
+inline void
+deep_copy (const LittleVector<ST2, LO>& dst,
+           const ST1& val,
+           typename std::enable_if<std::is_convertible<ST1, ST2>::value && ! std::is_const<ST2>::value, int>::type* = NULL)
+{
+  const LO N = dst.dimension_0 ();
+  const ST2 theVal = static_cast<ST2> (val);
+  for (LO i = 0; i < N; ++i) {
+    dst(i) = theVal;
+  }
+}
 
 
 } // namespace Experimental

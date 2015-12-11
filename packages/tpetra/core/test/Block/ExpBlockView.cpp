@@ -91,7 +91,7 @@ namespace {
       vec_type b (b_view.getRawPtr (), blockSize, 1);
       Teuchos::ArrayView<int> ipiv = ipivPool (0, blockSize);
 
-      A.fill (zero);
+      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
         b(i) = static_cast<ST> (i + 1);
@@ -152,7 +152,7 @@ namespace {
                     blockSize, 1, blockSize);
 
       // Fill A with the identity matrix.
-      A.fill (zero);
+      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
       }

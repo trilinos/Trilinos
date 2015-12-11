@@ -357,7 +357,7 @@ namespace Experimental {
       const size_t meshEnd = ptr_[lclRow+1];
       for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
         little_block_type A_cur = getNonConstLocalBlockFromAbsOffset (absBlkOff);
-        A_cur.fill (static_cast<impl_scalar_type> (alpha));
+        deep_copy (A_cur, static_cast<impl_scalar_type> (alpha));
       }
     }
   }
@@ -1174,7 +1174,7 @@ namespace Experimental {
         little_vec_type Y_cur = Y.getLocalBlock (lclRow, 0);
 
         if (beta == zero) {
-          Y_lcl.fill (zero);
+          deep_copy (Y_lcl, zero);
         } else if (beta == one) {
           COPY (Y_cur, Y_lcl);
         } else {
@@ -1203,7 +1203,7 @@ namespace Experimental {
           little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
 
           if (beta == zero) {
-            Y_lcl.fill (zero);
+            deep_copy (Y_lcl, zero);
           } else if (beta == one) {
             COPY (Y_cur, Y_lcl);
           } else {
