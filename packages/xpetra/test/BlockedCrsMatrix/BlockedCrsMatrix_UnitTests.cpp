@@ -542,9 +542,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
 #ifdef HAVE_TPETRA_SERIAL
 
 // TODO fix me
-#ifdef HAVE_XPETRA_SERIAL
-typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
+#ifdef HAVE_MUELU_EPETRA
+typedef Xpetra::EpetraNode EpetraNode;
+UNIT_TEST_GROUP_ORDINAL(double, int, int, EpetraNode)
 #endif
 
 #endif
