@@ -47,11 +47,10 @@
 #ifndef XPETRA_THYRAUTILS_HPP
 #define XPETRA_THYRAUTILS_HPP
 
+#include "Xpetra_ConfigDefs.hpp"
 #ifdef HAVE_XPETRA_THYRA
 
 #include <typeinfo>
-
-#include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
