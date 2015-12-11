@@ -943,6 +943,19 @@ private:
   const LO strideX_;
 };
 
+/// \brief Copy the LittleBlock src into the LittleBlock dst.
+///
+/// \param dst [out] Output LittleBlock
+/// \param src [in] Input LittleBlock; it must have at least as many
+///   rows and at least as many columns as \c src
+///
+/// Call this method with two arguments.  Ignore the third argument;
+/// its purpose is to ensure, at compile time, that it is legal to
+/// assign an entry of \c src to an entry of \c dst.
+///
+/// This works exactly like <tt>Kokkos::deep_copy(dst, src)</tt>.  In
+/// fact, we intend for (2-D, unmanaged) Kokkos::View to replace
+/// LittleBlock, and for Kokkos::deep_copy to replace this function.
 template<class ST1, class ST2, class LO>
 inline void
 deep_copy (const LittleBlock<ST2, LO>& dst,
@@ -952,6 +965,19 @@ deep_copy (const LittleBlock<ST2, LO>& dst,
   COPY (src, dst);
 }
 
+/// \brief Copy the LittleVector src into the LittleVector dst.
+///
+/// \param dst [out] Output LittleVector
+/// \param src [in] Input LittleVector; it must have at least as many
+///   rows and at least as many columns as \c src
+///
+/// Call this method with two arguments.  Ignore the third argument;
+/// its purpose is to ensure, at compile time, that it is legal to
+/// assign an entry of \c src to an entry of \c dst.
+///
+/// This works exactly like <tt>Kokkos::deep_copy(dst, src)</tt>.  In
+/// fact, we intend for (1-D, unmanaged) Kokkos::View to replace
+/// LittleVector, and for Kokkos::deep_copy to replace this function.
 template<class ST1, class ST2, class LO>
 inline void
 deep_copy (const LittleVector<ST2, LO>& dst,
@@ -961,6 +987,19 @@ deep_copy (const LittleVector<ST2, LO>& dst,
   COPY (src, dst);
 }
 
+/// \brief Assign the scalar \c val to all entries of the LittleBlock \c dst.
+///
+/// \param dst [out] Output LittleBlock
+/// \param val [in] Input scalar value; it must be assignable to an
+///   entry of \c dst
+///
+/// Call this method with two arguments.  Ignore the third argument;
+/// its purpose is to ensure, at compile time, that it is legal to
+/// assign \c val to an entry of \c dst.
+///
+/// This works exactly like <tt>Kokkos::deep_copy(dst, val)</tt>.  In
+/// fact, we intend for (2-D, unmanaged) Kokkos::View to replace
+/// LittleBlock, and for Kokkos::deep_copy to replace this function.
 template<class ST1, class ST2, class LO>
 inline void
 deep_copy (const LittleBlock<ST2, LO>& dst,
@@ -978,6 +1017,19 @@ deep_copy (const LittleBlock<ST2, LO>& dst,
   }
 }
 
+/// \brief Assign the scalar \c val to all entries of the LittleVector \c dst.
+///
+/// \param dst [out] Output LittleVector
+/// \param val [in] Input scalar value; it must be assignable to an
+///   entry of \c dst
+///
+/// Call this method with two arguments.  Ignore the third argument;
+/// its purpose is to ensure, at compile time, that it is legal to
+/// assign \c val to an entry of \c dst.
+///
+/// This works exactly like <tt>Kokkos::deep_copy(dst, val)</tt>.  In
+/// fact, we intend for (2-D, unmanaged) Kokkos::View to replace
+/// LittleVector, and for Kokkos::deep_copy to replace this function.
 template<class ST1, class ST2, class LO>
 inline void
 deep_copy (const LittleVector<ST2, LO>& dst,
@@ -990,7 +1042,6 @@ deep_copy (const LittleVector<ST2, LO>& dst,
     dst(i) = theVal;
   }
 }
-
 
 } // namespace Experimental
 } // namespace Tpetra
