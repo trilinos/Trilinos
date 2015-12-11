@@ -77,6 +77,8 @@
 #cmakedefine HAVE_MUELU_OPENMP
 #cmakedefine HAVE_MUELU_CUDA
 
+#cmakedefine HAVE_MUELU_BROKEN_TESTS
+
 /*  
  If deprecated warnings are on, and the compiler supports them, then
  define MUELU_DEPRECATED to emit deprecated warnings.  Otherwise,
