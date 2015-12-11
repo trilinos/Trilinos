@@ -36,6 +36,11 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/ElemElemGraph.hpp>
 
+namespace stk
+{
+namespace mesh
+{
+
 //void create_interior_block_boundary_sides(BulkData, Selector& blocksToConsider, Part& partToPutSidesInto);
 
 //void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
@@ -48,3 +53,7 @@ void create_exposed_boundary_sides(stk::mesh::BulkData &bulkData, stk::mesh::Sel
     elem_elem_graph.skin_mesh( skinnedPart );
 
 }
+
+
+} // namespace mesh
+} // namespace stk
