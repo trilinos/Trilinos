@@ -700,7 +700,10 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/belos)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/belos)
       LIST(APPEND TPETRA_HEADERS
+        sacado/kokkos/vector/belos/Belos_Tpetra_MP_Vector.hpp
         sacado/kokkos/vector/belos/Belos_TpetraAdapter_MP_Vector.hpp
+        sacado/kokkos/vector/belos/Belos_SolverManager_MP_Vector.hpp
+        sacado/kokkos/vector/belos/Belos_StatusTest_GenResNorm_MP_Vector.hpp
         sacado/kokkos/pce/belos/Belos_TpetraAdapter_UQ_PCE.hpp
         )
     ENDIF()

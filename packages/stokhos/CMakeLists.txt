@@ -25,6 +25,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
   "Enable experimental code in stokhos"
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Ensemble_Reduction
+  HAVE_STOKHOS_ENSEMBLE_REDUCT
+  "Enable reduction across across ensemble components."
+  ON )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Stokhos_ENABLE_CXX11
   HAVE_STOKHOS_CXX11

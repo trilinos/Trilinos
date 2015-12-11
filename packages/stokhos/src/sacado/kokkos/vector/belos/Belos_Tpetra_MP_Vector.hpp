@@ -39,28 +39,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef IFPACK2_KRYLOV_MP_VECTOR_HPP
-#define IFPACK2_KRYLOV_MP_VECTOR_HPP
+#ifndef BELOS_TPETRA_MP_VECTOR_HPP
+#define BELOS_TPETRA_MP_VECTOR_HPP
 
-// MP includes
-#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "Belos_SolverManager_MP_Vector.hpp"
+#include "Belos_StatusTest_GenResNorm_MP_Vector.hpp"
 
-// Belos adapters
-#include "Belos_Tpetra_MP_Vector.hpp"
-
-// Ifpack2 includes
-#include "Ifpack2_Krylov.hpp"
-
-#if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
-namespace Ifpack2 {
-
-  //! Specialization of BelosScalarType to MP types
-  template <typename S>
-  struct BelosScalarType< Sacado::MP::Vector<S> > {
-    typedef typename S::value_type type;
-  };
-
-}
 #endif
-
-#endif // IFPACK2_KRYLOV_MP_VECTOR_HPP

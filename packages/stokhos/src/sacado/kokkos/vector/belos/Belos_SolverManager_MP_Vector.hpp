@@ -39,28 +39,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef IFPACK2_KRYLOV_MP_VECTOR_HPP
-#define IFPACK2_KRYLOV_MP_VECTOR_HPP
+#ifndef BELOS_SOLVER_MANAGER_MP_VECTOR_HPP
+#define BELOS_SOLVER_MANAGER_MP_VECTOR_HPP
 
-// MP includes
-#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
-
-// Belos adapters
-#include "Belos_Tpetra_MP_Vector.hpp"
-
-// Ifpack2 includes
-#include "Ifpack2_Krylov.hpp"
-
-#if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
-namespace Ifpack2 {
-
-  //! Specialization of BelosScalarType to MP types
-  template <typename S>
-  struct BelosScalarType< Sacado::MP::Vector<S> > {
-    typedef typename S::value_type type;
-  };
-
+// Forward declaration
+namespace Sacado {
+  namespace MP {
+    template <class S> class Vector;
+  }
 }
-#endif
 
-#endif // IFPACK2_KRYLOV_MP_VECTOR_HPP
+namespace Belos {
+  namespace Details{
+
+    // Forward declaration
+    template<class S> class LapackSupportsScalar;
+
+    // Declare MP::Vector scalar type supports LAPACK
+    //
+    // This isn't really true, but allows use of this scalar type in limited
+    // circumstances in Belos that require LAPACK (e.g., PseudoBlockCG).
+    template<class S>
+    class LapackSupportsScalar< Sacado::MP::Vector<S> > {
+    public:
+      const static bool value = true;
+    };
+  }
+}
+
+#endif
