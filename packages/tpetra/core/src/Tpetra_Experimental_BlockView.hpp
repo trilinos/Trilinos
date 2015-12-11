@@ -123,7 +123,7 @@ namespace Impl {
 /// We actually implement versions for ViewType rank 1 or rank 2.
 template<class ViewType1,
          class ViewType2,
-         const int rank = ViewType1::rank>
+         const int rank1 = ViewType1::rank>
 struct AbsMax {
   static void run (const ViewType2& Y, const ViewType1& X);
 };
@@ -139,10 +139,12 @@ struct AbsMax<ViewType1, ViewType2, 2> {
   ///   for all (i,j).
   static void run (const ViewType2& Y, const ViewType1& X)
   {
+    static_assert (ViewType1::rank == ViewType2::rank,
+                   "AbsMax: ViewType1 and ViewType2 must have the same rank.");
     typedef typename std::remove_reference<decltype (Y(0,0)) >::type STY;
     static_assert(! std::is_const<STY>::value,
       "AbsMax: The type of each entry of Y must be nonconst.");
-    typedef typename std::remove_const<typename std::remove_reference<decltype (X(0,0)) >::type>::type STX;
+    typedef typename std::decay<decltype (X(0,0)) >::type STX;
     static_assert(  std::is_same<STX, STY>::value,
       "AbsMax: The type of each entry of X and Y must be the same.");
     typedef Kokkos::Details::ArithTraits<STY> KAT;
@@ -174,6 +176,9 @@ struct AbsMax<ViewType1, ViewType2, 1> {
   ///   for all i.
   static void run (const ViewType2& Y, const ViewType1& X)
   {
+    static_assert (ViewType1::rank == ViewType2::rank,
+                   "AbsMax: ViewType1 and ViewType2 must have the same rank.");
+
     typedef typename std::remove_reference<decltype (Y(0)) >::type STY;
     static_assert(! std::is_const<STY>::value,
       "AbsMax: The type of each entry of Y must be nonconst.");
@@ -204,6 +209,8 @@ struct AbsMax<ViewType1, ViewType2, 1> {
 /// ABSMAX CombineMode.
 template<class ViewType1, class ViewType2, const int rank = ViewType1::rank>
 void absMax (const ViewType2& Y, const ViewType1& X) {
+  static_assert (ViewType1::rank == ViewType2::rank,
+                 "absMax: ViewType1 and ViewType2 must have the same rank.");
   AbsMax<ViewType1, ViewType2, rank>::run (Y, X);
 }
 
