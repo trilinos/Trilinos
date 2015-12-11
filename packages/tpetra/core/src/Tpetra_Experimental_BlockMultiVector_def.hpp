@@ -364,7 +364,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
   const LO strideX = 1;
   const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                getBlockSize (), strideX);
-  X_dst.update (STS::one (), X_src);
+  AXPY (STS::one (), X_src, X_dst);
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -407,7 +407,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
+    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
 }
@@ -422,7 +422,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
     return false;
   } else {
     little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.getRawPtr ());
+    vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
 }
@@ -625,7 +625,7 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
       if (CM == INSERT || CM == REPLACE) {
         deep_copy (X_dst, X_src);
       } else if (CM == ADD) {
-        X_dst.update (STS::one (), X_src);
+        AXPY (STS::one (), X_src, X_dst);
       } else if (CM == ABSMAX) {
         Impl::absMax (X_dst, X_src);
       }
