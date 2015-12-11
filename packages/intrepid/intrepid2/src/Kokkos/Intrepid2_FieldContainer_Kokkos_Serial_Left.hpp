@@ -17,7 +17,17 @@ index_type sizeValue=0;
 bool intepidManaged=true;
 index_type count_=1;
 public:
-FieldContainer_Kokkos()=delete;
+
+FieldContainer_Kokkos() : dim0(0), dim1(0), dim2(0), dim3(0), dim4(0), dim5(0), dim6(0), dim7(0)
+    {
+      count_=0;
+      rankValue=0;
+      intepidManaged=true;
+      sizeValue=0;
+      containerMemory=new Scalar[sizeValue];
+    } ;
+
+
 FieldContainer_Kokkos(index_type dim_0);
 FieldContainer_Kokkos(index_type dim_0,index_type dim_1);
 FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2);
@@ -310,6 +320,13 @@ index_type dimension_7()const{return dim7;}
 void initialize(Scalar initValue){
 Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
+
+void initialize(){
+Scalar initValue=Scalar(0.0);
+Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
+}
+
+
 };
 
 template <class Scalar>
