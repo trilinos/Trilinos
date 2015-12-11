@@ -319,7 +319,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
     if (lib == Xpetra::UseEpetra){
 #if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
       typedef Epetra_CrsMatrix e_matrix_t;
-      typedef Xpetra::EpetraCrsMatrix xe_matrix_t;
+      typedef Xpetra::EpetraCrsMatrixT<gno_t,node_t> xe_matrix_t;
       // Do the import with the Epetra_CrsMatrix traits object
       const xe_matrix_t *xem = dynamic_cast<const xe_matrix_t *>(&from);
       RCP<const e_matrix_t> em = xem->getEpetra_CrsMatrix();
