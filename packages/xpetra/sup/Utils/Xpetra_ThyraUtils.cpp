@@ -55,7 +55,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
   // implementation of "toThyra" for full specialization on SC=double, LO=GO=int and NO=EpetraNode
   // We need the specialization in the cpp file due to a circle dependency in the .hpp files for BlockedCrsMatrix
-  static Teuchos::RCP<Thyra::LinearOpBase<double> >
+  Teuchos::RCP<Thyra::LinearOpBase<double> >
   ThyraUtils<double, int, int, EpetraNode>::toThyra(const Teuchos::RCP<Xpetra::BlockedCrsMatrix<double, int, int, EpetraNode> >& mat) {
 
     int nRows = mat->Rows();
