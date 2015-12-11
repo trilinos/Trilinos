@@ -523,7 +523,7 @@ void RBILUK<MatrixType>::compute ()
 
 
       scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
-      diagModBlock.fill(diagmod);
+      Tpetra::Experimental::deep_copy (diagModBlock, diagmod);
 
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];

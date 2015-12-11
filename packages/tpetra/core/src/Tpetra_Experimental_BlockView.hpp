@@ -758,25 +758,9 @@ public:
     AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
-  //! <tt>*this := X</tt>.
-  template<class LittleBlockType>
-  void assign (const LittleBlockType& X) const {
-    COPY (X, *this);
-  }
-
   //! <tt>(*this)(i,j) := alpha * (*this)(i,j)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
     SCAL (static_cast<impl_scalar_type> (alpha), *this);
-  }
-
-  //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
-  void fill (const Scalar& alpha) const {
-    const impl_scalar_type theAlpha = static_cast<Scalar> (alpha);
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
-        (*this)(i,j) = theAlpha;
-      }
-    }
   }
 
   void factorize (int* ipiv, int & info)
@@ -949,23 +933,9 @@ public:
     AXPY (static_cast<impl_scalar_type> (alpha), X, *this);
   }
 
-  //! <tt>*this := X</tt>.
-  template<class LittleVectorType>
-  void assign (const LittleVectorType& X) const {
-    COPY (X, *this);
-  }
-
   //! <tt>(*this)(i) := alpha * (*this)(i)</tt> for all (i,j).
   void scale (const Scalar& alpha) const {
     SCAL (static_cast<impl_scalar_type> (alpha), *this);
-  }
-
-  //! <tt>(*this)(i,j) := alpha</tt> for all (i,j).
-  void fill (const Scalar& alpha) const {
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    for (LO i = 0; i < blockSize_; ++i) {
-      (*this)(i) = theAlpha;
-    }
   }
 
   //! true if and only if all entries of this equal all entries of X.
