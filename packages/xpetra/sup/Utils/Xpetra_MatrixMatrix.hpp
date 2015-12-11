@@ -284,9 +284,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
       if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_XPETRA_EPETRAEXT
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
-#else
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
         Epetra_CrsMatrix & epA = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(A);
         Epetra_CrsMatrix & epB = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(B);
         Epetra_CrsMatrix & epC = Xpetra::Helpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Op2NonConstEpetraCrs(C);
@@ -308,6 +306,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           std::string msg = "EpetraExt::MatrixMatrix::Multiply return value of " + buf.str();
           throw(Exceptions::RuntimeError(msg));
         }
+#else
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 
 #endif
       } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
@@ -704,9 +704,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
       if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_XPETRA_EPETRAEXT
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
-#else
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
         Epetra_CrsMatrix & epA = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(A);
         Epetra_CrsMatrix & epB = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(B);
         Epetra_CrsMatrix & epC = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstEpetraCrs(C);
@@ -729,6 +727,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           throw(Exceptions::RuntimeError(msg));
         }
 
+#else
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
 #endif
       } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -876,7 +876,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       return Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
-#ifdef HAVE_XPETRA_EPETRAEXT
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     // Michael Gee's MLMultiply
     static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
                                                      const Epetra_CrsMatrix& epB,

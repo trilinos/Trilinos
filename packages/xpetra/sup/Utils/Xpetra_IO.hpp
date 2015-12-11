@@ -192,16 +192,12 @@ namespace Xpetra {
     /*! @brief Save map to file. */
     static void Write(const std::string& fileName, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & M) {
       RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > tmp_Map = rcpFromRef(M);
-#ifdef HAVE_XPETRA_EPETRAEXT
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(tmp_Map);
       if (tmp_EMap != Teuchos::null) {
-#ifdef HAVE_XPETRA_EPETRAEXT
         int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::BlockMapToMatrixMarketFile() return value of " + Teuchos::toString(rv));
-#else
-        throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
-#endif
         return;
       }
 #endif // HAVE_XPETRA_EPETRAEXT
@@ -226,16 +222,12 @@ namespace Xpetra {
       Write(mapfile, *(vec.getMap()));
 
       RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(vec);
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
       if (tmp_EVec != Teuchos::null) {
-# ifdef HAVE_XPETRA_EPETRAEXT
         int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-# else
-        throw Exceptions::RuntimeError("Compiled without EpetraExt");
-# endif
         return;
       }
 #endif // HAVE_XPETRA_EPETRA
@@ -266,17 +258,13 @@ namespace Xpetra {
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
       RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
-#if defined(HAVE_XPETRA_EPETRA)
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
       if (tmp_ECrsMtx != Teuchos::null) {
-#if defined(HAVE_XPETRA_EPETRAEXT)
         RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
         int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-#else
-        throw Exceptions::RuntimeError("Compiled without EpetraExt");
-#endif
         return;
       }
 #endif
@@ -614,16 +602,12 @@ namespace Xpetra {
     /*! @brief Save map to file. */
     static void Write(const std::string& fileName, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & M) {
       RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > tmp_Map = rcpFromRef(M);
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(tmp_Map);
       if (tmp_EMap != Teuchos::null) {
-#ifdef HAVE_XPETRA_EPETRAEXT
         int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::BlockMapToMatrixMarketFile() return value of " + Teuchos::toString(rv));
-#else
-        throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
-#endif
         return;
       }
 #endif // HAVE_XPETRA_EPETRA
@@ -651,16 +635,12 @@ namespace Xpetra {
       Write(mapfile, *(vec.getMap()));
 
       RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_Vec = Teuchos::rcpFromRef(vec);
-#ifdef HAVE_XPETRA_EPETRA
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> >(tmp_Vec);
       if (tmp_EVec != Teuchos::null) {
-#ifdef HAVE_XPETRA_EPETRAEXT
         int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-#else
-        throw Exceptions::RuntimeError("Compiled without EpetraExt");
-#endif
         return;
       }
 #endif // HAVE_XPETRA_EPETRAEXT
@@ -697,17 +677,13 @@ namespace Xpetra {
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
           dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
       RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tmp_CrsMtx = crsOp.getCrsMatrix();
-#if defined(HAVE_XPETRA_EPETRA)
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
       const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(tmp_CrsMtx);
       if (tmp_ECrsMtx != Teuchos::null) {
-#if defined(HAVE_XPETRA_EPETRAEXT)
         RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
         int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
         if (rv != 0)
           throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-#else
-        throw Exceptions::RuntimeError("Compiled without EpetraExt");
-#endif // HAVE_XPETRA_EPETRAEXT
         return;
       }
 #endif // endif HAVE_XPETRA_EPETRA
