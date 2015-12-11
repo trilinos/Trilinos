@@ -271,7 +271,8 @@ template <typename Adapter>
   // Create a GraphModel based on input data.
 
   RCP<GraphModel<base_adapter_t> > graph;
-  graph = rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
+  if (graphModel == Teuchos::null)
+    graph = rcp(new GraphModel<base_adapter_t>(ia,env,problemComm,modelFlags));
 
   // Local number of objects.
 
@@ -293,12 +294,23 @@ template <typename Adapter>
 
   ArrayRCP<scalar_t> globalSums;
 
-  try{
-    globalWeightedCutsByPart<Adapter>(env,
-      problemComm, graph, partArray, numGlobalParts_, graphMetrics_,
-				      globalSums);
+  if (graphModel == Teuchos::null) {
+    try{
+      globalWeightedCutsByPart<Adapter>(env,
+					problemComm, graph, partArray,
+					numGlobalParts_, graphMetrics_,
+					globalSums);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  } else {
+    try{
+      globalWeightedCutsByPart<Adapter>(env,
+					problemComm, graphModel, partArray,
+					numGlobalParts_, graphMetrics_,
+					globalSums);
+    }
+    Z2_FORWARD_EXCEPTIONS;
   }
-  Z2_FORWARD_EXCEPTIONS;
 
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
 
