@@ -189,6 +189,26 @@ namespace BaskerNS
   }//end test_solve
 
 
+  //Note: we will want to come back and make
+  //a much better multivector solve interface
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::solve_interface
+  (
+   Int nrhs,
+   Entry *_x,
+   Entry *_y
+   )
+  {
+    
+    for(Int r = 0; r < nrhs; r++)
+      {
+        solve_interface(&(_x[r*gm]), &(_y[r*gm]));
+      }
+
+  }//end solve_interface(nrhs,x,y);
+
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::solve_interface
@@ -198,7 +218,7 @@ namespace BaskerNS
    )
   {
   
-    //===== Move to view
+    //===== Move to view===========
     ENTRY_1DARRAY  x;
     ENTRY_1DARRAY  y;
 
@@ -308,6 +328,10 @@ namespace BaskerNS
         _x[i] = x(i);
       } 
 
+    #ifndef BASKER_KOKKOS
+    FREE_ENTRY_1DARRAY(x);
+    FREE_ENTRY_1DARRAY(y);
+    #endif
 
     return 0;
   }

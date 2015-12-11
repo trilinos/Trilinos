@@ -411,6 +411,16 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs,
+                                         Entry *b,
+                                         Entry *x)
+  {
+    solve_interface(nrhs,x,b);
+    return 0;
+  }
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Solve(ENTRY_1DARRAY b,
 					   ENTRY_1DARRAY x)
   {

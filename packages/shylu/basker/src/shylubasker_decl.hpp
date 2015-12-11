@@ -65,6 +65,8 @@ namespace BaskerNS
     BASKER_INLINE
     int Solve(Entry *b, Entry *x);
     BASKER_INLINE
+    int Solve(Int nrhs, Entry *b, Entry *x);
+    BASKER_INLINE
     int Solve(ENTRY_1DARRAY b, ENTRY_1DARRAY x);
     BASKER_INLINE
     int Solve(Int nrhs, Entry *b, Entry *x, Int option);
@@ -151,13 +153,10 @@ namespace BaskerNS
     INT_1DARRAY   btf_tabs; 
     Int           btf_tabs_offset;
     Int           btf_nblks;
-    //INT_2DARRAY   btf_ws;
-    //ENTRY_2DARRAY btf_X;
 
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
-    //INT_2DARRAY   btf_top_ws;
-    //ENTRY_2DARRAY btf_top_X;
+
  
   private:
 
@@ -762,6 +761,8 @@ namespace BaskerNS
     int test_solve();
     BASKER_INLINE
     int solve_interface(Entry *, Entry*);
+    BASKER_INLINE
+    int solve_interface(Int, Entry *, Entry*);
     BASKER_INLINE
     int solve_interface(ENTRY_1DARRAY, ENTRY_1DARRAY);
     BASKER_INLINE

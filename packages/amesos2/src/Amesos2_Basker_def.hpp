@@ -277,7 +277,7 @@ Basker<Matrix,Vector>::solve_impl(
 #ifdef SHYLUBASKER
       
       std::cout << "SHYLUBASKER Only handles 1 solve right now" << std::endl;
-      ierr = basker->Solve(bvals_.getRawPtr(), xvals_.getRawPtr());
+      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
       
 #else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());
