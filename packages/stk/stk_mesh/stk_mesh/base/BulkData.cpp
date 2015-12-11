@@ -4880,7 +4880,7 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
     pack_part_memberships(*this, comm, send_list);
 
     comm.communicate();
-    PartVector owner_parts, remove_parts;
+    PartVector owner_parts, remove_parts, parts_removed;
 
     const MetaData & meta = m_mesh_meta_data;
     for(int p = 0; p < p_size; ++p)
@@ -4916,6 +4916,7 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
             {
                 Part * const part = *ip;
                 const unsigned part_ord = part->mesh_meta_data_ordinal();
+
                 if(meta.universal_part().mesh_meta_data_ordinal() != part_ord &&
                    meta.locally_owned_part().mesh_meta_data_ordinal() != part_ord &&
                    meta.globally_shared_part().mesh_meta_data_ordinal() != part_ord &&
@@ -4926,7 +4927,7 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
                 }
             }
 
-            internal_change_entity_parts(entity, owner_parts, remove_parts);
+            internal_change_entity_parts_without_propogating_to_downward_connected_entities(entity, owner_parts, remove_parts, parts_removed);
         }
     }
 }
@@ -5231,6 +5232,29 @@ void fill_inducible_parts_from_list(const PartVector & partList, EntityRank rank
     }
 }
 
+void BulkData::internal_change_entity_parts_without_propogating_to_downward_connected_entities(Entity entity, const PartVector& add_parts, const PartVector& remove_parts, PartVector& parts_removed)
+{
+    internal_adjust_closure_count(entity, add_parts, remove_parts);
+
+    OrdinalVector newBucketPartList;
+    parts_removed.clear();
+    internal_fill_new_part_list_and_removed_part_list(entity, add_parts, remove_parts, newBucketPartList, parts_removed);
+    stk::util::sort_and_unique(newBucketPartList);
+    internal_move_entity_to_new_bucket(entity, newBucketPartList);
+}
+
+void BulkData::internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(Entity entity, const PartVector& add_parts, const PartVector& parts_removed)
+{
+    EntityRank e_rank = entity_rank(entity);
+
+    PartVector inducible_parts_added;
+    fill_inducible_parts_from_list(add_parts, e_rank, inducible_parts_added);
+    PartVector inducible_parts_removed;
+    fill_inducible_parts_from_list(parts_removed, e_rank, inducible_parts_removed);
+
+    internal_propagate_induced_part_changes_to_downward_connected_entities(entity, inducible_parts_added, inducible_parts_removed);
+}
+
 void BulkData::internal_change_entity_parts(
   Entity entity ,
   const std::vector<Part*> & add_parts ,
@@ -5245,23 +5269,9 @@ void BulkData::internal_change_entity_parts(
             || bucket_old->member_any(remove_parts);
     if(needToChangeParts)
     {
-        internal_adjust_closure_count(entity, add_parts, remove_parts);
-
         PartVector parts_removed;
-
-        OrdinalVector newBucketPartList;
-        internal_fill_new_part_list_and_removed_part_list(entity, add_parts, remove_parts, newBucketPartList, parts_removed);
-        stk::util::sort_and_unique(newBucketPartList);
-        internal_move_entity_to_new_bucket(entity, newBucketPartList);
-
-        EntityRank e_rank = entity_rank(entity);
-
-        PartVector inducible_parts_added;
-        fill_inducible_parts_from_list(add_parts, e_rank, inducible_parts_added);
-        PartVector inducible_parts_removed;
-        fill_inducible_parts_from_list(parts_removed, e_rank, inducible_parts_removed);
-
-        internal_propagate_induced_part_changes_to_downward_connected_entities(entity, inducible_parts_added, inducible_parts_removed);
+        internal_change_entity_parts_without_propogating_to_downward_connected_entities(entity, add_parts, remove_parts, parts_removed);
+        internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(entity, add_parts, parts_removed);
     }
 }
 

@@ -795,6 +795,9 @@ protected: //functions
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                      stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT );  // Mod Mark
 
+  void internal_change_entity_parts_without_propogating_to_downward_connected_entities(Entity entity, const PartVector& add_parts, const PartVector& remove_parts, PartVector& parts_removed);
+  void internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(Entity entity, const PartVector& add_parts, const PartVector& parts_removed);
+
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
    *  2) Change parts => update forward relations via part relation
@@ -1347,7 +1350,7 @@ private: // data
   ModificationNotifier notifier;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-//  stk::ModificationSummary m_modSummary;
+  //stk::ModificationSummary m_modSummary;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
