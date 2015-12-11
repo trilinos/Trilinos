@@ -465,6 +465,99 @@ namespace {
     }
   }
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, AXPY, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (4 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (4 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A4 (blkPool (3*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x4 (vecPool (3*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // Compare AXPY(alpha, A1, A3) and AXPY(alpha, x1, x3) with the
+      // manual equivalent of AXPY(alpha, A2, A4) resp. AXPY(alpha,
+      // x2, x4).
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          A3(i,j) = three; // just something different
+          A4(i,j) = three;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        x3(j) = three; // just something different
+        x4(j) = three; // just something different
+        curVecVal += one;
+      }
+
+      const IST alpha = five;
+
+      Tpetra::Experimental::AXPY (alpha, A1, A3); // A3 := A3 + alpha*A1
+      Tpetra::Experimental::AXPY (alpha, x1, x3); // x3 := x3 + alpha*x1
+
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A4(i,j) = A4(i,j) + alpha * A2(i,j);
+        }
+        x4(j) = x4(j) + alpha * x2(j);
+      }
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A3(i,j) != A4(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x3(j) != x4(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
+
 //
 // INSTANTIATIONS
 //
@@ -472,7 +565,8 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SCAL, SCALAR, LOCAL_ORDINAL ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, COPY, SCALAR, LOCAL_ORDINAL )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, COPY, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, AXPY, SCALAR, LOCAL_ORDINAL )
 
 #define UNIT_TEST_GROUP2( SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
