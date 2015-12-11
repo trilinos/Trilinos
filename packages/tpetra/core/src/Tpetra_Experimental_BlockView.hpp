@@ -395,7 +395,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
 /// We actually implement versions for ViewType rank 1 or rank 2.
 template<class ViewType1,
          class ViewType2,
-         class LayoutType = typename ViewType1::array_layout,
+         class LayoutType1 = typename ViewType1::array_layout,
+         class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
 struct COPY {
@@ -406,9 +407,10 @@ struct COPY {
 ///   ViewType1 and ViewType2 rank 1 (i.e., vectors).
 template<class ViewType1,
          class ViewType2,
-         class LayoutType,
+         class LayoutType1,
+         class LayoutType2,
          class IndexType>
-struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 1> {
+struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   /// \brief y := x (rank-1 x and y, i.e., vectors)
   static void run (const ViewType1& x, const ViewType2& y)
   {
@@ -423,9 +425,10 @@ struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 1> {
 ///   ViewType1 and ViewType2 rank 2 (i.e., matrices).
 template<class ViewType1,
          class ViewType2,
-         class LayoutType,
+         class LayoutType1,
+         class LayoutType2,
          class IndexType>
-struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 2> {
+struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
   static void run (const ViewType1& X, const ViewType2& Y)
   {
@@ -444,11 +447,12 @@ struct COPY<ViewType1, ViewType2, LayoutType, IndexType, 2> {
 };
 
 /// \brief Implementation of Tpetra::Experimental::COPY function, for
-///   ViewType1 and ViewType2 rank 2 (i.e., matrices) with LayoutRight.
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices), where both have
+///   LayoutRight (row-major order, with contiguous storage).
 template<class ViewType1,
          class ViewType2,
          class IndexType>
-struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, IndexType, 2> {
+struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
   static void run (const ViewType1& X, const ViewType2& Y)
   {
@@ -511,13 +515,14 @@ AXPY (const CoefficientType& alpha,
 /// functions _XCOPY (replace _ with "S", "D", "C", or "Z") do.
 template<class ViewType1,
          class ViewType2,
-         class LayoutType = typename ViewType1::array_layout,
+         class LayoutType1 = typename ViewType1::array_layout,
+         class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
 void COPY (const ViewType1& x, const ViewType2& y) {
   static_assert (ViewType1::rank == ViewType1::rank,
                  "COPY: x and y must have the same rank.");
-  Impl::COPY<ViewType1, ViewType2, LayoutType, IndexType, rank>::run (x, y);
+  Impl::COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (x, y);
 }
 
 /// \brief y := y + alpha * A * x
