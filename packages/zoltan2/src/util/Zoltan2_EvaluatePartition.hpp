@@ -90,6 +90,8 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
+      \param modelType the model type
+      \param model the model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
@@ -106,6 +108,7 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
+      \param graphModel the graph model
 
       The constructor does global communication to compute the graph metrics.
       The rest of the  methods are local.
