@@ -142,7 +142,7 @@ ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
-FUNCTION(MUELUADAPTERS_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE TPETRA_TEMPLATE_TYPE TEMPLATE_NODE PROCESSED_FILE SOURCES_LIST)
+FUNCTION(MUELUADAPTERS_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
   SET(SRCS "")
   FOREACH(CLASS ${ETI_CLASSES})
     string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
@@ -175,88 +175,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   GLOBAL_SET(MUELUADAPTERS_ETI_LO_GO_CLASSES
   )
 
-  # ETI for the Kokkos::Serial device.
-  IF (Tpetra_INST_SERIAL)
-
-  ###  Kokkos_Compat_KokkosThreadsWrapperNode
-
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
-      "HAVE_TPETRA_INST_SERIAL"
-      "Kokkos_Compat_KokkosSerialWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
-      "HAVE_TPETRA_INST_SERIAL"
-      "Kokkos_Compat_KokkosSerialWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-  ENDIF()
-
-  # ETI for the Kokkos::Threads device.
-  IF (Tpetra_INST_PTHREAD)
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
-      "HAVE_TPETRA_INST_PTHREAD"
-      "Kokkos_Compat_KokkosThreadsWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Threads.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
-      "HAVE_TPETRA_INST_PTHREAD"
-      "Kokkos_Compat_KokkosThreadsWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Threads.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-  ENDIF()
-
-  # ETI for the Kokkos::OpenMP device.
-  IF (Tpetra_INST_OPENMP)
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
-      "HAVE_TPETRA_INST_OPENMP"
-      "Kokkos_Compat_KokkosOpenMPWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_OpenMP.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
-      "HAVE_TPETRA_INST_OPENMP"
-      "Kokkos_Compat_KokkosOpenMPWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_OpenMP.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-  ENDIF()
-
-  # ETI for the Kokkos::Cuda device.
-  IF (Tpetra_INST_CUDA)
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
-      "HAVE_TPETRA_INST_CUDA"
-      "Kokkos_Compat_KokkosCudaWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Cuda.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
-      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
-      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
-      "HAVE_TPETRA_INST_CUDA"
-      "Kokkos_Compat_KokkosCudaWrapperNode"
-      "ExplicitInstantiation/CLASS_FILE_NAME_Cuda.cpp"
-      MueLuAdapters_SRCS)
-    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
-  ENDIF()
+  MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+    "${MUELUADAPTERS_ETI_CLASSES}"
+    ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
+    "HAVE_TPETRA_INST_SERIAL"
+    "Kokkos_Compat_KokkosSerialWrapperNode"
+    "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+    MueLuAdapters_SRCS)
+  LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+  MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+    "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
+    ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
+    "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+    MueLuAdapters_SRCS)
+  LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
 
   # add only automatically generated ETI cpp files
   APPEND_SET(SOURCES ${MUELUADAPTERS_ETI_CPP_SOURCES})
