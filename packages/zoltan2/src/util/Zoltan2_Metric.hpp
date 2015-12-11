@@ -1206,6 +1206,8 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
+ *   \param modelType the model type
+ *   \param model the model
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
@@ -1236,6 +1238,8 @@ template <typename Adapter>
     multiCriteriaNorm mcNorm,
     const RCP<const Adapter> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
+    enum ModelType modelType,
+    const RCP<const Model<Adapter> > &model,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
