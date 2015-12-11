@@ -45,6 +45,9 @@
 //
 // @HEADER
 
+#include "Xpetra_ConfigDefs.hpp"
+#ifdef HAVE_XPETRA_THYRA
+
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
 #include "Xpetra_ThyraUtils.hpp"
@@ -105,3 +108,5 @@ namespace Xpetra {
 #endif
 
 } // namespace Xpetra
+
+#endif // HAVE_XPETRA_THYRA
