@@ -96,7 +96,13 @@
     if (!TYPE_EQUAL(NO, Xpetra::EpetraNode))    { out << "Skipping Epetra for NO != EpetraNode" << std::endl; return; }
 # endif
 
-#endif // HAVE_MUELU_EPETRA
+#else  // HAVE_MUELU_EPETRA
+
+#define MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO)
+#define MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(SC, GO, NO)
+
+#endif  // HAVE_MUELU_EPETRA
+
 
 // Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
 // This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.
