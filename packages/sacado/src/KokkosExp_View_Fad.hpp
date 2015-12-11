@@ -42,6 +42,10 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
+#include <Kokkos_Core_fwd.hpp>
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
 #include <Kokkos_Macros.hpp>
 #include <Sacado_ConfigDefs.h>
 
@@ -956,6 +960,8 @@ void broadcast
 #endif
 
 //----------------------------------------------------------------------------
+
+#endif
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */
 
