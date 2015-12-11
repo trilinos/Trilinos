@@ -923,20 +923,6 @@ public:
     return A_[i * strideX_];
   }
 
-  //! true if and only if all entries of this equal all entries of X.
-  template<class LittleVectorType>
-  bool equal (const LittleVectorType& X) const {
-    if (getBlockSize () != X.getBlockSize ()) {
-      return false;
-    }
-    for (LO i = 0; i < blockSize_; ++i) {
-      if ((*this)(i) != X(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
 private:
   impl_scalar_type* const A_;
   const LO blockSize_;
