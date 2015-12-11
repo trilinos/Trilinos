@@ -304,7 +304,11 @@ namespace Sacado {
 // by defining SACADO_DISABLE_FAD_VIEW_SPEC in their code.
 //
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+
+#if defined(HAVE_SACADO_KOKKOSCORE) && \
+    defined(HAVE_SACADO_VIEW_SPEC) && \
+    !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && \
+    !defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 #include "impl/Kokkos_AnalyzeShape.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
@@ -396,3 +400,4 @@ public:
 } // namespace Kokkos
 
 #endif
+

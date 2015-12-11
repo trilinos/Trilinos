@@ -337,6 +337,18 @@ return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim
 
 }
 
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type< Intrepid::FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type<const Intrepid::FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
 
 
 #include "Intrepid_FieldContainer_Kokkos_CUDA_Left.hpp"

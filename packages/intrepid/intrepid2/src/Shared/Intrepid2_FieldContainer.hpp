@@ -773,6 +773,19 @@ namespace Intrepid2 {
     std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar, ArrayTypeId>& container);
  
   
+
+template<class FadType, class Scalar>
+struct Return_Type< FieldContainer<FadType>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
+template<class FadType, class Scalar>
+struct Return_Type<const FieldContainer<FadType>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
 } // end namespace Intrepid2
 
 // include templated definitions

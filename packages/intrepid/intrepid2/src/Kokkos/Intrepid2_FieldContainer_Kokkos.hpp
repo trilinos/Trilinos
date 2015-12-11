@@ -33,6 +33,20 @@ a[i]=initValue;
 }
 
 };
+
+
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type< FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
+template<class FadType, class Layout, class Device, class Scalar>
+struct Return_Type<const FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>{
+      typedef FadType& return_type;
+      typedef FadType  const_return_type;
+};
+
 }
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp"
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp"
