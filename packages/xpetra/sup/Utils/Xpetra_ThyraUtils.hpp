@@ -58,7 +58,7 @@
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
-#include "Epetra_Config.h"
+#include "Epetra_config.h"
 #include "Epetra_CombineMode.h"
 #endif
 
