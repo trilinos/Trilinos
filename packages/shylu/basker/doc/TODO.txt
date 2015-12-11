@@ -16,6 +16,8 @@ BASKER TODO
 ** Thread working array size (without ND)
 ** Sfactor pivot option
 ** Sfactor for large btf serial blocks
+** All Perms into one perm struct
+** Move ND schedule S into tree
 
 
 ***FIX converting error

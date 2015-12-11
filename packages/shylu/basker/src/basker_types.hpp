@@ -183,7 +183,7 @@
 
 #define FREE_ENTRY_1DARRAY(a)    \
   { \
-    a = ENTRY_1DRRAY(); \
+    a = ENTRY_1DARRAY(); \
   }
 
 #define FREE_ENTRY_2DARRAY(a,n)                  \

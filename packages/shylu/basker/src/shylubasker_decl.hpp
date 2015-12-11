@@ -96,6 +96,10 @@ namespace BaskerNS
     int KokkosPlay();
     BASKER_INLINE
     void DEBUG_PRINT();
+    
+    BASKER_INLINE
+    void Finalize();
+
  
     BASKER_INLINE
     int t_nfactor_blk(Int kid);
@@ -147,17 +151,14 @@ namespace BaskerNS
     INT_1DARRAY   btf_tabs; 
     Int           btf_tabs_offset;
     Int           btf_nblks;
-    INT_2DARRAY   btf_ws;
-    ENTRY_2DARRAY btf_X;
+    //INT_2DARRAY   btf_ws;
+    //ENTRY_2DARRAY btf_X;
 
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
-    INT_2DARRAY   btf_top_ws;
-    ENTRY_2DARRAY btf_top_X;
-
-
-
-    
+    //INT_2DARRAY   btf_top_ws;
+    //ENTRY_2DARRAY btf_top_X;
+ 
   private:
 
     /*basker_tree*/
@@ -852,16 +853,14 @@ namespace BaskerNS
     INT_1DARRAY gperm; 
     INT_1DARRAY gpermi;
 
-    //RHS and solutions
+    //RHS and solutions (These are not used anymore)
     ENTRY_2DARRAY rhs;
     ENTRY_2DARRAY sol;
     Int nrhs;
 
     
     BASKER_TREE   part_tree;
-    //basker_tree<Int, Entry, Exe_Space> tree;
     BASKER_TREE   tree;
-    //basker_symbolic_tree<Int, Entry, Exe_Space> stree;
     BASKER_SYMBOLIC_TREE stree;
 
     BASKER_STATS stats;
@@ -884,8 +883,10 @@ namespace BaskerNS
     Int num_threads;
     Int global_nnz;
 
+
+    //Don't think we use this anymore
     //Post ordering for symmetric
-    INT_1DARRAY perm_post_order;
+    //INT_1DARRAY perm_post_order;
 
     BaskerPointBarrier<Int,Entry,Exe_Space> basker_barrier;
 
@@ -912,28 +913,6 @@ namespace BaskerNS
     void amd_order(BASKER_MATRIX &M,INT_1DARRAY p);
     
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
-
-
-
-    /*
-    int my_amesos_csymamd(Int n , Int *Ap, Int *Ai, Int *p, Int *cmember);
-    */
-
-
-    /*
-    int amesos_amd(Int n, Int *Ap, Int *Ai,
-		   Int *p, double *Control, 
-		   double *Info);
-    */
-
-    /*
-    int amesos_colamd(Int n_row, Int n_col,
-		      Int Alen, 
-		      Int *A, Int *p,
-		      double *knobs,
-		      Int *stats);
-    */
-
 
 
   };

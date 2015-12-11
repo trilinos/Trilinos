@@ -36,21 +36,20 @@ namespace BaskerNS
   Basker<Int, Entry, Exe_Space>::Basker()
   {   
     //Presetup flags
-    matrix_flag    = false;
-    order_flag     = false;
-    tree_flag      = false;
-    symb_flag      = false;
-    factor_flag    = false;
-    workspace_flag = false;
-    rhs_flag       = false;
-    solve_flag     = false;
-    nd_flag        = false;
-    amd_flag       = false;
-
+    matrix_flag    = BASKER_FALSE;
+    order_flag     = BASKER_FALSE;
+    tree_flag      = BASKER_FALSE;
+    symb_flag      = BASKER_FALSE;
+    factor_flag    = BASKER_FALSE;
+    workspace_flag = BASKER_FALSE;
+    rhs_flag       = BASKER_FALSE;
+    solve_flag     = BASKER_FALSE;
+    nd_flag        = BASKER_FALSE;
+    amd_flag       = BASKER_FALSE;
 
     //Default number of threads
     num_threads = 1;
-    global_nnz = 0;
+    global_nnz  = 0;
 
   }//end Basker()
   
@@ -59,9 +58,85 @@ namespace BaskerNS
   Basker<Int ,Entry, Exe_Space>::~Basker()
   {
     
-
-  
   }//end ~Basker()
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::Finalize()
+  {
+
+    
+    //finalize all matrices
+    A.Finalize();
+    At.Finalize(); //??? is At even used
+    BTF_A.Finalize();
+    BTF_C.Finalize();
+    BTF_B.Finalize();
+    BTF_D.Finalize();
+    BTF_E.Finalize();
+
+   
+    //finalize array of 2d matrics
+    FREE_MATRIX_VIEW_2DARRAY(AV, tree.nblks);
+    FREE_MATRIX_VIEW_2DARRAY(AL, tree.nblks);
+    FREE_MATRIX_2DARRAY(AVM, tree.nblks);
+    FREE_MATRIX_2DARRAY(ALM, tree.nblks);
+
+
+    
+    FREE_MATRIX_2DARRAY(LL, tree.nblks);
+    FREE_MATRIX_2DARRAY(LU, tree.nblks);
+   
+    FREE_INT_1DARRAY(LL_size);
+    FREE_INT_1DARRAY(LU_size);
+    
+    //BTF structure
+    FREE_INT_1DARRAY(btf_tabs);
+    FREE_MATRIX_1DARRAY(LBTF);
+    FREE_MATRIX_1DARRAY(UBTF);
+
+    
+    //Thread Array
+    FREE_THREAD_1DARRAY(thread_array);
+    basker_barrier.Finalize();
+    
+    
+    //S (Check on this)
+    FREE_INT_2DARRAY(S, tree.nblks);
+    
+    //Permuations
+    FREE_INT_1DARRAY(gperm);
+    FREE_INT_1DARRAY(gpermi);
+    if(match_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_match_array);
+        match_flag = BASKER_FALSE;
+      }
+    if(btf_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_btf_array);
+        btf_flag = BASKER_FALSE;
+      }
+    if(nd_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_scotch_array);
+        nd_flag == BASKER_FALSE;
+      }
+    if(amd_flag == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(order_csym_array);
+        amd_flag == BASKER_FALSE;
+      }
+    
+    //Structures
+    part_tree.Finalize();
+    tree.Finalize();
+    stree.Finalize();
+    stats.Finalize();
+
+    /*
+    */
+  }//end Finalize()
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

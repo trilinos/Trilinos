@@ -5,8 +5,6 @@
 #include "basker_types.hpp"
 #include "basker_util.hpp"
 
-#include <assert.h>
-
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -24,14 +22,15 @@ namespace BaskerNS
   BASKER_INLINE
   BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix()
   {
-    label = "default called";
-    ncol  = 0;
-    nrow  = 0;
-    nnz   = 0;
-    v_fill = false;
-    tpivot = 0;
+    label   = "default called";
+    ncol    = 0;
+    nrow    = 0;
+    nnz     = 0;
+    v_fill  = BASKER_FALSE;
+    tpivot  = 0;
     #ifdef BASKER_2DL
-    p_size = 0;
+    p_size  = 0;
+    w_fill  = BASKER_FALSE;
     #endif
     //printf("matrix init\n");
   }//end BaskerMatrix()
@@ -40,16 +39,17 @@ namespace BaskerNS
   BASKER_INLINE
   BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix(string _label)
   {
-    label = _label;
-    ncol  = 0;
-    nrow  = 0;
-    nnz   = 0;
-    v_fill = false;
-    tpivot = 0;
+    label   = _label;
+    ncol    = 0;
+    nrow    = 0;
+    nnz     = 0;
+    v_fill  = BASKER_FALSE;
+    tpivot  = 0;
     #ifdef BASKER_2DL
-    p_size = 0;
+    p_size  = 0;
+    w_fill  = BASKER_FALSE;
     #endif
-  }//end BaskerMatrix()
+  }//end BaskerMatrix(label)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -60,10 +60,11 @@ namespace BaskerNS
   {
     tpivot = 0;
     #ifdef BASKER_2DL
-    p_size =0;
+    p_size = 0;
+    w_fill = BASKER_FALSE;
     #endif
 
-    v_fill = false;
+    v_fill = BASKER_FALSE;
     init_matrix("matrix", _m,_n,_nnz, col_ptr, row_idx, val);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
@@ -78,16 +79,40 @@ namespace BaskerNS
     tpivot = 0;
     #ifdef BASKER_2DL
     p_size = 0;
+    w_fill = BASKER_FALSE;
     #endif
 
-    v_fill = false;
+    v_fill = BASKER_FALSE;
     init_matrix(label, _m,_n,_nnz, col_ptr, row_idx, val);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   BaskerMatrix<Int,Entry,Exe_Space>::~BaskerMatrix()
-  {}//end ~BaskerMatrix
+  {
+    Finalize();
+  }//end ~BaskerMatrix
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::Finalize()
+  {
+    if(v_fill == BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(col_ptr);
+        FREE_INT_1DARRAY(row_idx);
+        FREE_ENTRY_1DARRAY(val);
+        v_fill = BASKER_FALSE;
+      }
+    
+    if(w_fill = BASKER_TRUE)
+      {
+        FREE_INT_1DARRAY(iws);
+        FREE_ENTRY_1DARRAY(ews);
+        w_fill = BASKER_FALSE;
+      }
+
+  }//end finalize()
 
   template <class Int, class Entry, class Exe_Space>
   void BaskerMatrix<Int,Entry,Exe_Space>::set_shape
@@ -95,19 +120,11 @@ namespace BaskerNS
    Int _sr, Int _m, Int _sc, Int _n
    )
   {
-    
-    //printf("\n\n Set_Shape -- DEBUG \n");
-    //printf("sr: %d m: %d sc: %d n: %d \n",
-    //	   _sr, _m, _sc, _n);
-    //printf("\n\n");
-
     srow = _sr;
     nrow = _m;
     scol = _sc;
     ncol = _n;
-    nnz = 0;
-
-    //return 0;
+    nnz  = 0;
   }//end set_shape()
 
   template <class Int, class Entry, class Exe_Space>
@@ -116,12 +133,12 @@ namespace BaskerNS
    Int* ptr, Int size, INT_1DARRAY a
    )
   {
-    //Kokkos::deep_copy(a.data, ptr);
+    //Does Kokkos have a copy function
     for(Int i=0; i < size; i++)
       {
-        a[i] = ptr[i];
+        a(i) = ptr[i];
       }
-    //return 0;
+
   }//end copy_vec(Int*, 1d)
 
   template <class Int, class Entry, class Exe_Space>
@@ -133,7 +150,7 @@ namespace BaskerNS
     //Kokkos::deep_copy(a.data, ptr);
     for(Int i=0; i < size; i++)
       {
-        a[i] = ptr[i];
+        a(i) = ptr[i];
       }
     //return 0;
   }//edn copy_vec(Entry*, 1d);
@@ -144,7 +161,7 @@ namespace BaskerNS
   {
     BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
     MALLOC_INT_1DARRAY(col_ptr, ncol+1);
-    for(Int i = 0; i < ncol+1; i++)
+    for(Int i = 0; i < ncol+1; ++i)
       {
 	col_ptr(i) = (Int) BASKER_MAX_IDX;
       }
@@ -155,7 +172,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::clean_col()
   {
-    for(Int i = 0; i < ncol+1; i++)
+    for(Int i = 0; i < ncol+1; ++i)
       {
 	col_ptr(i) = (Int) BASKER_MAX_IDX;
       }
@@ -170,29 +187,20 @@ namespace BaskerNS
    Int _m, Int _n, Int _nnz
    )
   {
-
-    //printf("start init_vectors\n");
     nrow = _m;
     ncol = _n;
     nnz  = _nnz;
     
-
-    //printf("init_vectors called\n");
-
     if(ncol >= 0)
       {
 	BASKER_ASSERT((ncol+1)>0, "matrix init_vector ncol");
 	MALLOC_INT_1DARRAY(col_ptr,ncol+1);
-	//col_ptr.malloc(label + "::col_ptr", ncol+1);
       }
     if(nnz > 0)
       {
-	//cout << "init size " << nnz << endl;
 	BASKER_ASSERT(nnz > 0, "matrix init_vector nnz");
 	MALLOC_INT_1DARRAY(row_idx,nnz);
-        //row_idx.malloc(label + "::row_idx", nnz);
 	MALLOC_ENTRY_1DARRAY(val,nnz);
-        //val.malloc(label + "::row_idx", nnz);
 	#ifdef BASKER_INC_LVL
 	MALLOC_INT_1DARRAY(inc_lvl, nnz);
 	#endif
@@ -204,20 +212,14 @@ namespace BaskerNS
 	BASKER_ASSERT((nnz+1)>0, "nnz+1 init_vector ");
 	MALLOC_INT_1DARRAY(row_idx, nnz+1);
 	row_idx(0) = (Int) 0;
-        //row_idx.malloc(label + "::row_idx", nnz);
 	MALLOC_ENTRY_1DARRAY(val, nnz+1);
 	val(0) = (Entry) 0;
-        //val.malloc(label + "::row_idx", nnz);
 	#ifdef BASKER_INC_LVL
 	MALLOC_INT_1DARRAY(inc_lvl, nnz+1);
 	#endif
 
-
-
       }
 
-    //printf("done init_vector \n");
-    //return 0;
   }//end init_vectors(Int, Int, Int)
 
   template <class Int, class Entry, class Exe_Space>
@@ -228,9 +230,10 @@ namespace BaskerNS
    Int _nnz
    )
   {
+
     label = _label;
     init_vectors(_m, _n, _nnz);
-    //return 0;
+
   }//end init_matrix(string, Int, Int, Int)
 
   template <class Int, class Entry, class Exe_Space>
@@ -246,7 +249,6 @@ namespace BaskerNS
     copy_vec(_col_ptr, _n+1,  col_ptr);
     copy_vec(_row_idx, _nnz, row_idx);
     copy_vec(_val,_nnz,     val);
-    //return 0;
   }//end init_matrix(string with ptrs)
 
 
@@ -260,24 +262,13 @@ namespace BaskerNS
    Int _nnz
    )
   {
-    //cout << "CALLED INIT MATRIX " << endl;
-    //cout <<_sr << " " << _sc << endl;
-    //cout << _m << " " << _n << " " << _nnz << endl;
-    //label = _label;
     srow = _sr;
     erow = srow + _m;
     scol = _sc;
     ecol = scol + _n;
-    //cout << "CALLED BEFORE INIT_VECTOR" << endl;
-    //cout << _m << " " << _n << " " << _nnz << endl;
+
     init_vectors(_m, _n, _nnz);
-    //MALLOC_INT_1DARRAY(col_ptr, _n+1);
-    //cout << "after col_pter malloc " << endl;
-    //MALLOC_INT_1DARRAY(row_idx, _nnz);
-    //cout << "after row_idx malloc " << endl;
-    //MALLOC_ENTRY_1DARRAY(val, _nnz);
-    //cout << "after val malloc " << endl;
-    //return 0;
+
   }//end init_matrix(Int, Int, Int, Int, Int)//srow and scol
 
   template <class Int, class Entry, class Exe_Space>
@@ -365,14 +356,13 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::malloc_perm(Int n)
   {
-    //lpinv.malloc(label+"::lperm", n);
-    //malloc(lpinv, n);
+
     BASKER_ASSERT(n > 0, "matrix malloc_perm");
-    MALLOC_INT_1DARRAY(lpinv,n);
-    
+    MALLOC_INT_1DARRAY(lpinv,n);    
+ 
     //Fix later.
     init_perm();
-    //return 0;
+
   }//end init_perm(Int)
 
   
@@ -382,7 +372,6 @@ namespace BaskerNS
   {
     for(Int i =0 ; i < nrow; i++)
       {
-        //lpinv[i] = max_idx;
 	lpinv(i) = BASKER_MAX_IDX;
       }
   }//end init_perm
@@ -391,19 +380,16 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::malloc_union_bit()
   {
-    //union_bit.malloc("union_bit", row_idx.size());
-    //malloc(union_bit, nnz);
+
     BASKER_ASSERT(nrow > 0, "matrix_malloc_union_bit");
     MALLOC_BOOL_1DARRAY(union_bit, nrow);
-    //return 0;
+
   }//end malloc_union_bit
   
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::init_union_bit()
   {
-    //union_bit.init(0,false);
-    //Basker<Int,Entry,Exe_Space>::init_value(union_bit, nrow, false);
     for(Int i =0 ; i <nrow; i++)
       {
 	union_bit[i] = BASKER_FALSE;
@@ -422,33 +408,25 @@ namespace BaskerNS
 	    pend(i) = BASKER_MAX_IDX;
 	  }
       }
-  }//edn init_pend()
+  }//end init_pend()
 
-
- 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int BaskerMatrix<Int,Entry,Exe_Space>::fill()
   {
-    if(v_fill == true)
+    if(v_fill == BASKER_TRUE)
       return -1;
-
-    //info();
-    //printf("ncol: %d \n", ncol);
 
     for(Int i = 0; i < ncol+1; i++)
       {
         col_ptr(i) = 0;
       }
-    //printf("Done int col_ptr \n");
+
     for(Int i = 0; i < nnz; i++)
       {
-	//row_idx[0] = 0;
         row_idx(i) = 0;
-	//row_idx.operator[]<Int>(i) = 0;
-	//row_idx.template operator[]<Int>(i) = 0;
       }
-    //printf("Done init row_idx\n");
+
     for(Int i = 0; i < nnz; i++)
       {
         val(i) = 0;
@@ -461,8 +439,7 @@ namespace BaskerNS
       }
     #endif
 
-    //printf("Done init val \n");
-    v_fill = true;
+    v_fill = BASKER_TRUE;
     return 0;
   }
   
@@ -474,10 +451,6 @@ namespace BaskerNS
    BASKER_BOOL   alloc
    )
   {
-
-    //printf("Matrix convert 2D, alloc: %d \n", alloc);
-    //M.info();
-    //info();
 
     if(nnz == 0)
       {
@@ -544,11 +517,6 @@ namespace BaskerNS
       {
 	//note col_ptr[k-scol] contains the starting index
 
-	if(k > 118798 && k < 118802)
-	  {
-	    ///printf("starting point:k  %d %d \n", k, col_ptr[k-scol]);
-	  }
-
 	if(col_ptr(k-scol) == BASKER_MAX_IDX)
 	  {
 	    col_ptr(k-scol) = temp_count;
@@ -610,11 +578,6 @@ namespace BaskerNS
     printf("\n Matrix Information: scol: %d ncol: %d srow: %d nrow: %d nnz: %d \n \n", 
 	   scol, ncol, srow, nrow, nnz);
 
-    /*
-    printf("\n Matrix Information: \n Label: %s \n ncol: %d nrow: %d nnz: %d \n \n", 
-	   label.c_str(), ncol, nrow, nnz);
-    */
-
   }//end info()
   
   template <class Int, class Entry, class Exe_Space>
@@ -640,13 +603,6 @@ namespace BaskerNS
       {
         printf(" %e , " , val(i));
       }
-    /*
-    printf("\n perm:  ");
-    for(Int i = 0; i < lpinv.size(); i++)
-      {
-        printf(" %d , ", lpinv[i]);
-      }
-    */
 
     printf("\n END PRINT \n");
 
@@ -662,7 +618,7 @@ namespace Kokkos
 namespace Impl
 {
 
-//-------------------------------Specialization for BaskerMatrix------------------//
+//----------------------------Specialization for BaskerMatrix----------------//
   template <class ExecSpace, class Int, class Entry>
   struct ViewDefaultConstruct<ExecSpace, BaskerNS::BaskerMatrix<Int,Entry,ExecSpace>, true>
   {
