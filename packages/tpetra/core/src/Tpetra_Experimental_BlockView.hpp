@@ -289,6 +289,8 @@ struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
 template<class CoefficientType,
          class ViewType1,
          class ViewType2,
+         class LayoutType1 = typename ViewType1::array_layout,
+         class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
 struct AXPY {
@@ -303,8 +305,10 @@ struct AXPY {
 template<class CoefficientType,
          class ViewType1,
          class ViewType2,
+         class LayoutType1,
+         class LayoutType2,
          class IndexType>
-struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 1> {
+struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   /// \brief y := y + alpha*x (rank-1 x and y, i.e., vectors)
   static void
   run (const CoefficientType& alpha,
@@ -327,8 +331,10 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 1> {
 template<class CoefficientType,
          class ViewType1,
          class ViewType2,
+         class LayoutType1,
+         class LayoutType2,
          class IndexType>
-struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
+struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
   static void
   run (const CoefficientType& alpha,
@@ -340,6 +346,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
     const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
 
+    throw std::runtime_error ("OH HAI");
+
     if (alpha != 0.0) {
       for (IndexType i = 0; i < numRows; ++i) {
         for (IndexType j = 0; j < numCols; ++j) {
@@ -350,6 +358,36 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, 2> {
   }
 };
 
+/// \brief Implementation of Tpetra::Experimental::AXPY function, for
+///   ViewType1 and ViewType2 rank 2 (i.e., matrices), when both
+///   ViewType1 and ViewType2 have LayoutRight.
+template<class CoefficientType,
+         class ViewType1,
+         class ViewType2,
+         class IndexType>
+struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
+  /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
+  static void
+  run (const CoefficientType& alpha,
+       const ViewType1& X,
+       const ViewType2& Y)
+  {
+    static_assert (ViewType1::rank == ViewType2::rank,
+                   "AXPY: X and Y must have the same rank.");
+    typedef typename std::decay<decltype (X(0,0)) >::type SX;
+    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
+
+    const IndexType N = static_cast<IndexType> (Y.size ());
+    const SX* const X_raw = X.ptr_on_device ();
+    SY* const Y_raw = Y.ptr_on_device ();
+
+    if (alpha != 0.0) {
+      for (IndexType i = 0; i < N; ++i) {
+        Y_raw[i] += alpha * X_raw[i];
+      }
+    }
+  }
+};
 
 /// \brief Implementation of Tpetra::Experimental::COPY function.
 ///
@@ -449,6 +487,8 @@ void SCAL (const CoefficientType& alpha, const ViewType& x) {
 template<class CoefficientType,
          class ViewType1,
          class ViewType2,
+         class LayoutType1 = typename ViewType1::array_layout,
+         class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
 void
@@ -458,7 +498,7 @@ AXPY (const CoefficientType& alpha,
 {
   static_assert (ViewType1::rank == ViewType1::rank,
                  "AXPY: x and y must have the same rank.");
-  Impl::AXPY<CoefficientType, ViewType1, ViewType2, IndexType, rank>::run (alpha, x, y);
+  Impl::AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (alpha, x, y);
 }
 
 /// \brief y := x, where x and y are either rank 1 (vectors) or rank 2
