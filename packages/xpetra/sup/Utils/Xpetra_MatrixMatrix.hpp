@@ -483,10 +483,13 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
+            RCP<Matrix> addRes = null;
             if (Cij.is_null ())
               Cij = temp;
-            else
-              Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
+            else {
+              Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd (*temp, false, 1.0, *Cij, false, 1.0, addRes, fos);
+              Cij = addRes;
+            }
           }
 
           if (!Cij.is_null())  {
@@ -499,6 +502,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                        "MatrixFactory failed in generating a CrsMatrixWrap." );
 
             RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+
             C->setMatrix(i, j, crsMatCij);
 
           } else {
@@ -1045,7 +1049,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
         for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
-          RCP<Matrix> Cij;
+          RCP<Matrix> Cij = Teuchos::null;
 
           for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
             RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > crmat1 = A.getMatrix(i,l);
@@ -1060,10 +1064,13 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             RCP<Xpetra::Matrix<SC,LO,GO,NO> > temp = Multiply (*crop1, false, *crop2, false, fos);
 
+            RCP<Matrix> addRes = Teuchos::null;
             if (Cij.is_null ())
               Cij = temp;
-            else
-              Xpetra::MatrixMatrix<SC,LO,GO,NO>::TwoMatrixAdd (*temp, false, 1.0, *Cij, 1.0);
+            else {
+              Xpetra::MatrixMatrix<SC,LO,GO,NO>::TwoMatrixAdd (*temp, false, 1.0, *Cij, false, 1.0, addRes, fos);
+              Cij = addRes;
+            }
           }
 
           if (!Cij.is_null())  {
@@ -1076,6 +1083,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                        "MatrixFactory failed in generating a CrsMatrixWrap." );
 
             RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > crsMatCij = crsCij->getCrsMatrix();
+
             C->setMatrix(i, j, crsMatCij);
 
           } else {
