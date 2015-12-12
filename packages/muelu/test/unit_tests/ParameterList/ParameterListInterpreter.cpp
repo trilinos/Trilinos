@@ -85,6 +85,7 @@ namespace MueLuTests {
   }
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ParameterListInterpreter, SetParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
