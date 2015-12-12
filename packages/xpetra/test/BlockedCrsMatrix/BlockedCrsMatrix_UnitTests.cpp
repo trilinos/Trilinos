@@ -390,12 +390,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Sca
 
   // matrix vector product
   bOpbOp_2->apply(*xx,*result,Teuchos::NO_TRANS);
-  std::cout << "Norm1 " << result->norm2() << std::endl;
 
   // check results
   Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > result2 =  Xpetra::VectorFactory<Scalar,LO,GO,Node>::Build(xfullmap ,true);
   fuAfuA_2->apply(*xx,*result2, Teuchos::NO_TRANS);
-  std::cout << "Norm2 " << result2->norm2() << std::endl;
 
   result2->update(1.0,*result,-1.0);
 
@@ -520,8 +518,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Sca
 //
 
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraApply,            SC, LO, GO, Node )
-    //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraApply,            SC, LO, GO, Node )  \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
 
 // TODO reactivate these tests after moving MM multiplication code to xpetra...
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
