@@ -53,9 +53,11 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Print_Utilities.hpp"
 
+#ifndef BUILD_PHALANX_FOR_ALBANY
 #ifdef Phalanx_ENABLE_IntrepidIntrepid2
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
+#endif
 #endif
 
 //**********************************************************************
@@ -1140,11 +1142,11 @@ std::ostream& PHX::operator<<(std::ostream& os,
 
 //template<class A>
 //struct Rank{static const int value = -1;};
+#ifndef BUILD_PHALANX_FOR_ALBANY
 #ifdef Phalanx_ENABLE_IntrepidIntrepid2
 
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
-
 namespace Intrepid2 {
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -1209,7 +1211,68 @@ struct Return_Type < PHX::MDField<DataT>, ScalarT> {
 
 #endif // Phalanx_ENABLE_IntrepidIntrepid2
 //********************************************************************************************
+#else
+#include "Intrepid_config.h" // for HAVE_INTREPID_KOKKOSCORE define
+#include "Intrepid_KokkosRank.hpp"
 
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+struct Rank <PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> > {
+ static const int value=PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::ArrayRank;
+
+};
+
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+struct Rank <const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> > {
+ static const int value=PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::ArrayRank;
+
+};
+
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7, class ScalarT>
+struct Return_Type <const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> ,ScalarT> {
+typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type return_type;
+typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type const_return_type;
+};
+
+
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7, class ScalarT>
+struct Return_Type < PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, ScalarT> {
+ typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type return_type;
+ typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type const_return_type;
+ };
+
+
+template<typename DataT>
+struct Rank <PHX::MDField<DataT> > {
+ static const int value = -1;
+};
+
+template<typename DataT>
+struct Rank <const PHX::MDField<DataT> > {
+  static const int value = -1;
+};
+
+template<typename DataT, class ScalarT>
+struct Return_Type <const PHX::MDField<DataT> ,ScalarT> {
+typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type return_type;
+typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type const_return_type;
+};
+
+template<typename DataT, class ScalarT>
+struct Return_Type < PHX::MDField<DataT>, ScalarT> {
+ typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type return_type;
+ typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type const_return_type;
+ };
+
+
+#endif
 
 
 
