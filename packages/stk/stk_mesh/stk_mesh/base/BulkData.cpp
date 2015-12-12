@@ -2900,13 +2900,17 @@ void BulkData::destroy_all_ghosting()
         i != m_entity_comm_list.rend() ; ++i) {
 
     if ( in_receive_ghost( i->key ) ) {
-        entity_comm_map_clear( i->key );
-        internal_destroy_entity_with_notification( i->entity );
-      i->key = EntityKey();
-      i->entity_comm = NULL;
+      entity_comm_map_clear_ghosting( i->key );
+      bool entity_is_not_shared = !bucket(i->entity).shared();
+      internal_destroy_entity_with_notification( i->entity );
+      if(entity_is_not_shared)
+      {
+        i->key = EntityKey();
+        i->entity_comm = NULL;
+      }
     }
     else {
-        entity_comm_map_clear_ghosting(i->key);
+      entity_comm_map_clear_ghosting(i->key);
       if ( internal_entity_comm_map(i->key).empty() ) {
         i->key = EntityKey();
         i->entity_comm = NULL;
@@ -2914,11 +2918,7 @@ void BulkData::destroy_all_ghosting()
     }
   }
 
-  EntityCommListInfoVector::iterator i =
-    std::remove_if( m_entity_comm_list.begin() ,
-                    m_entity_comm_list.end() , IsInvalid() );
-
-  m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+  delete_unneeded_entries_from_the_comm_list();
 }
 
 //----------------------------------------------------------------------
@@ -3311,6 +3311,14 @@ void BulkData::generate_ghosting_receive_list(const stk::mesh::Ghosting &ghostin
     }
 }
 
+void BulkData::delete_unneeded_entries_from_the_comm_list()
+{
+    EntityCommListInfoVector::iterator i =
+      std::remove_if( m_entity_comm_list.begin() ,
+                      m_entity_comm_list.end() , IsInvalid() );
+    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+}
+
 void BulkData::internal_change_ghosting(
   Ghosting & ghosting ,
   const std::vector<EntityProc> & add_send ,
@@ -3410,11 +3418,11 @@ void BulkData::internal_change_ghosting(
     }
   }
 
+  // if an entry in the comm_list has the EntityKey() value, it is invalid,
+  // and removed from the comm_list
+
   if ( removed ) {
-    EntityCommListInfoVector::iterator i =
-      std::remove_if( m_entity_comm_list.begin() ,
-                      m_entity_comm_list.end() , IsInvalid() );
-    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+    delete_unneeded_entries_from_the_comm_list();
   }
 
   //------------------------------------
@@ -4096,10 +4104,9 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
           changed = true;
       }
   }
+
   if ( changed ) {
-    i = std::remove_if( m_entity_comm_list.begin() ,
-                        m_entity_comm_list.end() , IsInvalid() );
-    m_entity_comm_list.erase( i , m_entity_comm_list.end() );
+      delete_unneeded_entries_from_the_comm_list();
   }
 }
 

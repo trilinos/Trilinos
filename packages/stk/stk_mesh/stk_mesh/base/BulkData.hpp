@@ -1043,6 +1043,9 @@ private: //functions
                                         bool need_to_change_ghosting,
                                         const std::vector<EntityProc> & add_send,
                                         const std::vector<EntityKey> & remove_receive);
+
+  void delete_unneeded_entries_from_the_comm_list();
+
 #ifdef __CUDACC__
 public:
 #endif
