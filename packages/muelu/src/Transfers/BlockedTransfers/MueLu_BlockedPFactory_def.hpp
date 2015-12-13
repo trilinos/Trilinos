@@ -271,6 +271,13 @@ namespace MueLu {
     if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;*/
     bool bRangeUseThyraStyleNumbering  = !this->areGidsUnique(fullRangeMapVector);
     bool bDomainUseThyraStyleNumbering = !this->areGidsUnique(fullDomainMapVector);
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Ain->getRowMap()->getComm();
+    int maxRangeStyles  = 0;
+    int maxDomainStyles = 0;
+    MueLu_maxAll(comm, bRangeUseThyraStyleNumbering  == true ? 1 : 0, maxRangeStyles);
+    MueLu_maxAll(comm, bDomainUseThyraStyleNumbering == true ? 1 : 0, maxDomainStyles);
+    bRangeUseThyraStyleNumbering  = (maxRangeStyles == 1) ? true : false;
+    bDomainUseThyraStyleNumbering = (maxDomainStyles == 1) ? true : false;
 
     // Build map extractors
     RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps, bRangeUseThyraStyleNumbering);
