@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2015-11-30 17:29:27 mhoemme"
+#+DATE: Time-stamp: "2015-12-13 12:43:56 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -11,6 +11,49 @@ following website: http://orgmode.org
 This file is best viewed and edited using Emacs (version >= 23), but
 you may view and edit it using any text editor.  Editors, please defer
 to the mark-up conventions already existing in this document.
+
+* Questions about building Tpetra
+** Weird C++ errors with Intel compiler
+
+The Intel compiler uses GCC header files for the C++ Standard Library.
+Versions of GCC < 4.7.x have poor or no support for C++11.  If the
+Intel compiler uses C++11, but the version of the GCC headers that it
+accesses is < 4.7.x, this will cause build errors.  The resulting
+errors might look like this:
+
+#+BEGIN_EXAMPLE
+[  0%] Building CXX object
+commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o
+cd /tmp/trilinos-build/commonTools/gtest &&
+/opt/apps/intel16/cray_mpich/7.2.4/bin/mpicxx   -Dgtest_EXPORTS -mkl
+-DMPICH_SKIP_MPICXX -std=c++11 -O3 -DNDEBUG -fPIC
+-I/tmp/trilinos-build -I/admin/build/rpms/BUILD/trilinos-12.2.2/co\
+mmonTools/gtest    -o CMakeFiles/gtest.dir/gtest/gtest-all.cc.o -c
+/admin/build/rpms/BUILD/trilinos-12.2.2/commonTools/gtest/gtest/gtest-all.cc
+/usr/include/c++/4.3/ext/new_allocator.h(114): error: a value of type
+"long" cannot be used to initialize an entity of type "char *"
+        { ::new((void *)__p) _Tp(std::forward<_Args>(__args)...); }
+                                 ^
+          detected during:
+            instantiation of "void
+            __gnu_cxx::new_allocator<_Tp>::construct(__gnu_cxx::new_allocator<_Tp>::pointer,
+            _Args &&...) [with _Tp=char *, _Args=<long>]" at line 704
+            of "/usr/include/c++/4.3/bits/stl_vector.h"
+            instantiation of "void std::vector<_Tp,
+            _Alloc>::push_back(_Args &&...) [with _Tp=char *,
+            _Alloc=std::allocator<char *>, _Args=<long>]" at line
+            7384 of
+            "/admin/build/rpms/BUILD/trilinos-12.2.2/commonTools/gtest/gtest/\
+gtest-all.cc"
+
+compilation aborted for
+/admin/build/rpms/BUILD/trilinos-12.2.2/commonTools/gtest/gtest/gtest-all.cc
+(code 2)
+#+END_EXAMPLE
+
+You can tell the Intel compiler to use a specific set of GCC headers
+by setting its "-gxx-name" flag.  Please refer to the Intel
+compiler's documentation for details.
 
 * Thread safety
 ** Weak and strong thread safety
