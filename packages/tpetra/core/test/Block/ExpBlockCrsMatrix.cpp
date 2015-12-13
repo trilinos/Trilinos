@@ -817,8 +817,7 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
-    out << "Testing Tpetra::Experimental::BlockCrsMatrix basic "
-      "functionality" << endl;
+    out << "Testing output of a Tpetra::Experimental::BlockCrsMatrix" << endl;
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
