@@ -15,60 +15,6 @@
 namespace BaskerNS
 {
 
-  /*
-  //Kokkos struct for init 2D Structure of A
-  template <class Int, class Entry, class Exe_Space>
-  struct kokkos_order_init_2D
-  {
-    #ifdef BASKER_KOKKOS
-    typedef Exe_Space                    execution_space;
-    typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
-    typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
-
-    Basker<Int,Entry,Exe_Space>  *basker;
-    BASKER_BOOL                  alloc;
-
-
-    kokkos_order_init_2D()
-    {}
-    
-    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b)
-    {
-      basker = _b;
-      alloc  = BASKER_TRUE;
-    }//end kokkos_order_init_2D()
-
-    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, 
-			 BASKER_BOOL alloc)
-    {
-      basker = _b;
-      alloc  = alloc;
-    }
-      
-
-    BASKER_INLINE
-    #ifdef BASKER_KOKKOS
-    void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
-    {
-      #ifdef BASKER_KOKKOS
-      Int kid = (Int)(thread.league_rank()*thread.team_size() +
-		      thread.team_rank());
-      #endif
-      //if((kid  >= 8))
-	{
-	  basker->t_init_2DA(kid, alloc);
-	}
-    }//end operator()
-
-  };//end kokkos_order_init_2D
-*/
-
-
-
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::default_order()
@@ -127,6 +73,7 @@ namespace BaskerNS
     sort_matrix(A);
     //printMTX("A_nonmatch.mtx", A);
     match_ordering(0);
+    printf("DEBUG1: done match\n");
     //for debuging
     sort_matrix(A);
     //printMTX("A_match.mtx", A);
@@ -137,6 +84,7 @@ namespace BaskerNS
     find_btf(A); 
 
     sort_matrix(BTF_C);
+    printf("DEBUG2: done sort C\n");
 
     //printf("TEst btf_offset %d \n", btf_tabs_offset);
 
@@ -144,104 +92,137 @@ namespace BaskerNS
       {
 
         //  printf("A/B block stuff called\n");
-    //3. ND on BTF_A
-    //currently finds ND and permute BTF_A
-    //Would like to change so finds permuation, 
-    //and move into 2D-Structure
-    //printMTX("A_BTF_FROM_A.mtx", BTF_A);
-    sort_matrix(BTF_A);
-    scotch_partition(BTF_A);
+	//3. ND on BTF_A
+	//currently finds ND and permute BTF_A
+	//Would like to change so finds permuation, 
+	//and move into 2D-Structure
+	//printMTX("A_BTF_FROM_A.mtx", BTF_A);
+	sort_matrix(BTF_A);
+	scotch_partition(BTF_A);
     
-    //need to do a row perm on BTF_B too
-    if(btf_nblks > 1)
-      {
-	permute_row(BTF_B, part_tree.permtab);
-      }
-    //needed because  moving into 2D-Structure,
-    //assumes sorted columns
-    sort_matrix(BTF_A);
-    if(btf_nblks > 1)
-      {
-	sort_matrix(BTF_B);
-	sort_matrix(BTF_C);
-      }
-    //For debug
-    //printMTX("A_BTF_PART_AFTER.mtx", BTF_A);
-
-    //4. Init tree structure
-    //This reduces the ND ordering into that fits,
-    //thread counts
-    init_tree_thread();
-
-
-    //5. Permute BTF_A
-    //Constrained symamd on A
-    INT_1DARRAY cmember;
-    MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
-    init_value(cmember,BTF_A.ncol+1,(Int) 0);
-    for(Int i = 0; i < tree.nblks; ++i)
-      {
-	for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j)
+	//need to do a row perm on BTF_B too
+	if(btf_nblks > 1)
 	  {
-	    cmember(j) = i;
+	    permute_row(BTF_B, part_tree.permtab);
 	  }
-      }
-    //INT_1DARRAY csymamd_perm = order_csym_array;
-    MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
-    //MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
-    init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
-    //init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
-    
-    csymamd_order(BTF_A, order_csym_array, cmember);
-    //csymamd_order(BTF_A, csymamd_perm, cmember);
+	//needed because  moving into 2D-Structure,
+	//assumes sorted columns
+	sort_matrix(BTF_A);
+	if(btf_nblks > 1)
+	  {
+	    sort_matrix(BTF_B);
+	    sort_matrix(BTF_C);
+	  }
+	//For debug
+	//printMTX("A_BTF_PART_AFTER.mtx", BTF_A);
+	
+	//4. Init tree structure
+	//This reduces the ND ordering into that fits,
+	//thread counts
+	init_tree_thread();
+	
 
-    //permute(BTF_A, csymamd_perm, csymamd_perm);
-    permute_col(BTF_A, order_csym_array);
-    sort_matrix(BTF_A);
-    permute_row(BTF_A, order_csym_array);
-    sort_matrix(BTF_A);
-    //printMTX("A_BTF_AMD.mtx", BTF_A);
-  
+	//5. Permute BTF_A
+	//Constrained symamd on A
+	INT_1DARRAY cmember;
+	MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+	init_value(cmember,BTF_A.ncol+1,(Int) 0);
+	for(Int i = 0; i < tree.nblks; ++i)
+	  {
+	    for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j)
+	      {
+		cmember(j) = i;
+	      }
+	  }
+	//INT_1DARRAY csymamd_perm = order_csym_array;
+	MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
+	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
+	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
+	
+	csymamd_order(BTF_A, order_csym_array, cmember);
+	//csymamd_order(BTF_A, csymamd_perm, cmember);
+	
+	//permute(BTF_A, csymamd_perm, csymamd_perm);
+	permute_col(BTF_A, order_csym_array);
+	sort_matrix(BTF_A);
+	permute_row(BTF_A, order_csym_array);
+	sort_matrix(BTF_A);
+	//printMTX("A_BTF_AMD.mtx", BTF_A);
+	
+	
+	if(btf_nblks > 1)
+	  {
+	    permute_row(BTF_B, order_csym_array);
+	    sort_matrix(BTF_B);
+	    //printMTX("B_BTF_AMD.mtx", BTF_B);
+	    sort_matrix(BTF_C);
+	    //printMTX("C_BTF_AMD.mtx", BTF_C);
+	  }
     
-    if(btf_nblks > 1)
-      {
-    permute_row(BTF_B, order_csym_array);
-    sort_matrix(BTF_B);
-    //printMTX("B_BTF_AMD.mtx", BTF_B);
-    sort_matrix(BTF_C);
-    //printMTX("C_BTF_AMD.mtx", BTF_C);
-      }
     
-    
-    //6. Move to 2D Structure
-    //finds the shapes for both view and submatrices,
-    //need to be changed over to just submatrices
-    matrix_to_views_2D(BTF_A);
-    //finds the starting point of A for submatrices
-    find_2D_convert(BTF_A);
-    //now we can fill submatrices
-    #ifdef BASKER_KOKKOS
-    kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-    Kokkos::fence();
-    #else
-    //Comeback
-    #endif
-
+	//6. Move to 2D Structure
+	//finds the shapes for both view and submatrices,
+	//need to be changed over to just submatrices
+	matrix_to_views_2D(BTF_A);
+	//finds the starting point of A for submatrices
+	find_2D_convert(BTF_A);
+	//now we can fill submatrices
+        #ifdef BASKER_KOKKOS
+	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+	Kokkos::fence();
+        #else
+	//Comeback
+        #endif
+	
       }//if btf_tab_offset == 0
 
-
+    
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-    //printMTX("C_TEST.mtx", BTF_C);
+	//printMTX("C_TEST.mtx", BTF_C);
+	//Permute C
+	INT_1DARRAY cmember;
+	MALLOC_INT_1DARRAY(cmember, BTF_C.ncol+1);
+	init_value(cmember,BTF_A.ncol+1,(Int) 0);
+	for(Int i = 0; i < btf_nblks; ++i)
+	  {
+	    for(Int j = (btf_tabs(i)-btf_tabs_offset); 
+		j < (btf_tabs(i+1)-btf_tabs_offset); ++j)
+	      {
+		cmember(j) = i;
+	      }
+	  }
+	MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
+	init_value(order_c_csym_array, BTF_C.ncol+1,(Int) 0);
+	
+	printf("BEFORE \n");
+
+	csymamd_order(BTF_C, order_c_csym_array, cmember);
+
+	printf("After perm\n");
+	
+	permute_col(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+	permute_row(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+
+	if(btf_tabs_offset != 0)
+	  {
+	    permute_col(BTF_B, order_c_csym_array);
+	    sort_matrix(BTF_B);
+	  }
+
       }
     //7. BTF lower permute
     //A and B done.  Forget C for now.  
     //Comback if really hurt performance
 
+    printMTX("BTF_C.mtx", BTF_C);
 
-    //printf("Done with ordering\n");
+    printf("Done with ordering\n");
     
     return 0;
   }//end btf_order

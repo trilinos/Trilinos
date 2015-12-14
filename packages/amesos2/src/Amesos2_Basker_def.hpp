@@ -61,7 +61,7 @@
 #include "Amesos2_Basker_decl.hpp"
 
 #ifdef SHYLUBASKER
-//#include "shylubasker_def.hpp"
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace Amesos2 {
@@ -100,7 +100,8 @@ Basker<Matrix,Vector>::Basker(
   basker->Options.verbose   = false;
   basker->Options.btf       = true;
   
-  num_threads = 1;
+  num_threads = Kokkos::OpenMP::max_hardware_threads();
+
 
 #endif  
 #endif

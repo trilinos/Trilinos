@@ -1304,9 +1304,18 @@ namespace BaskerNS
 
     if(btf_nblks > 1)
       {
-    sort_matrix(BTF_C);
+	sort_matrix(BTF_C);
+	permute_col(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+	permute_row(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+	
 
-    //printMTX("C_RELOAD.mtx", BTF_C);
+	if(btf_tabs_offset != 0)
+	  {
+	    permute_col(BTF_B, order_c_csym_array);	
+	    sort_matrix(BTF_B);
+	  }
 
       }
 

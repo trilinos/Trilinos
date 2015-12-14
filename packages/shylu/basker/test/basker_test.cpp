@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
-  //std::string fname = std::string(argv[1]);
+  std::string fname = std::string(argv[1]);
   //std::string rhsname = std::string(argv[2]);
   //Int numthreads = atoi(argv[3]);
 
-  std::string fname = "matrix1.mtx";
-  
-  Int numthreads = atoi(argv[1]);
+  //std::string fname = "matrix1.mtx";
+ 
+  Int numthreads = atoi(argv[2]);
 
   cout << "using " << numthreads << "threads" << endl;
 

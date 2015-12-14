@@ -906,7 +906,10 @@ namespace BaskerNS
     INT_1DARRAY order_btf_array;
     INT_1DARRAY order_scotch_array;
     INT_1DARRAY order_csym_array;
+    INT_1DARRAY order_c_csym_array;
 
+
+    void blk_amd(BASKER_MATRIX &x, INT_1DARRAY p);
 
 
 
