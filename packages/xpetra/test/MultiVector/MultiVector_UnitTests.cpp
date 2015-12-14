@@ -2632,10 +2632,17 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MULTIVECTOR_INSTANT )
 
 #include "Xpetra_Map.hpp" // defines EpetraNode
 typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
 XP_EPETRA_MULTIVECTOR_INSTANT(double,int,int,EpetraNode)
-
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
+XP_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+XP_EPETRA_MULTIVECTOR_INSTANT(double,int,LongLong,EpetraNode)
+#endif
 #endif
 
 }
