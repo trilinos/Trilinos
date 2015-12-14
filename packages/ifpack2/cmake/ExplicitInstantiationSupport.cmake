@@ -71,7 +71,8 @@ TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
                             "IFPACK2_INSTANTIATE_LG(LO,GO)"         IFPACK2_ETIMACRO_LG
                             "IFPACK2_INSTANTIATE_SLG(S,LO,GO)"      IFPACK2_ETIMACRO_SLG
                             "IFPACK2_INSTANTIATE_LGN(S,LO,GO,N)"      IFPACK2_ETIMACRO_LGN
-                            "IFPACK2_INSTANTIATE_SLGN(S,LO,GO,N)"     IFPACK2_ETIMACRO_SLGN                            
+                            "IFPACK2_INSTANTIATE_SLGN(S,LO,GO,N)"     IFPACK2_ETIMACRO_SLGN   
+                            "IFPACK2_INSTANTIATE_N(N)"     IFPACK2_ETIMACRO_N                          
                             )
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
                             "${Ifpack2_ETI_EXCLUDE_SET};${Ifpack2_ETI_EXCLUDE_SET_COMPLEX}"

@@ -43,6 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -63,6 +64,183 @@ namespace {
   // parameters: Scalar (ST) and LocalOrdinal (LO).  At some point, it
   // would make sense to include Node as well, but for now we omit it,
   // since LittleBlock and LittleVector as yet live in host memory.
+
+  // This example tests the factorization routine with a matrix
+  // that does not require partial pivoting
+  //
+  // FIXME (mfh 10 Dec 2015) This test doesn't actually depend on
+  // LocalOrdinal or GlobalOrdinal, but it was templated on LO
+  // (LocalOrdinal) and we just want this to work for now.  It
+  // should actually be .
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, Factor, ST, LO )
+  {
+    using Teuchos::Array;
+    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
+    typedef Teuchos::LAPACK<LO, ST>                          lapack_type;
+    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<LO*, device_type> int_vec_type;
+    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Create a matrix
+    block_type A("A",3,3);
+    A(0,0) = 10;
+    A(0,1) = 2;
+    A(0,2) = 3;
+    A(1,0) = 4;
+    A(1,1) = 20;
+    A(1,2) = 5;
+    A(2,0) = 6;
+    A(2,1) = 7;
+    A(2,2) = 30;
+
+    // Create the pivot vector
+    int_vec_type ipiv("ipiv",3);
+
+    // Compute the true factorization
+    block_type true_A("trueA",3,3);
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        true_A(i,j) = A(i,j);
+    int_vec_type true_piv("trueipiv",3);
+    LO info;
+
+    lapack_type lapackOBJ;
+    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our factorization
+    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the two solutions
+    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_ARRAYS( ipiv, true_piv );
+
+    // Create a RHS
+    scalar_vec_type rhs("rhs",3);
+    rhs(0) = 100;
+    rhs(1) = 200;
+    rhs(2) = 300;
+
+    scalar_vec_type true_rhs("truerhs",3,1);
+    for(int i=0; i<3; i++)
+      true_rhs(i) = rhs(i);
+
+    // Compute the true solution
+    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
+        true_rhs.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our solution
+    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the solutions
+    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+
+    // Compute the inverse
+    scalar_vec_type work("work",3);
+    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute the true inverse
+    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the inverses
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+  }
+
+
+  // This example tests the factorization routine with a matrix
+  // that requires partial pivoting
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, FactorPivot, ST, LO )
+  {
+    using Teuchos::Array;
+    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
+    typedef Teuchos::LAPACK<LO, ST>                          lapack_type;
+    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<LO*, device_type> int_vec_type;
+    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Create a matrix
+    block_type A("A",3,3);
+    A(2,0) = 10;
+    A(2,1) = 2;
+    A(2,2) = 3;
+    A(0,0) = 4;
+    A(0,1) = 20;
+    A(0,2) = 5;
+    A(1,0) = 6;
+    A(1,1) = 7;
+    A(1,2) = 30;
+
+    // Create the pivot vector
+    int_vec_type ipiv("ipiv",3);
+
+    // Compute the true factorization
+    block_type true_A("trueA",3,3);
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        true_A(i,j) = A(i,j);
+    int_vec_type true_piv("trueipiv",3);
+    LO info;
+
+    lapack_type lapackOBJ;
+    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our factorization
+    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the two solutions
+    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_ARRAYS( ipiv, true_piv );
+
+    // Create a RHS
+    scalar_vec_type rhs("rhs",3);
+    rhs(0) = 100;
+    rhs(1) = 200;
+    rhs(2) = 300;
+
+    scalar_vec_type true_rhs("truerhs",3,1);
+    for(int i=0; i<3; i++)
+      true_rhs(i) = rhs(i);
+
+    // Compute the true solution
+    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
+        true_rhs.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our solution
+    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the solutions
+    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+
+    // Compute the inverse
+    scalar_vec_type work("work",3);
+    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute the true inverse
+    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the inverses
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+  }
+
 
   // Test small dense block LU factorization and solve, with an easy
   // problem (the identity matrix).
@@ -563,6 +741,8 @@ namespace {
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, Factor, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, FactorPivot, SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SCAL, SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, COPY, SCALAR, LOCAL_ORDINAL ) \

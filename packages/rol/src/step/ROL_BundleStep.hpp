@@ -169,7 +169,9 @@ public:
     aggSubGradNew_     = g.clone();
     aggSubGradOldNorm_ = algo_state.gnorm;
     // Initialize line search
-    lineSearch_->initialize(x,x,g,obj,con);
+    if ( !isConvex_ ) {
+      lineSearch_->initialize(x,x,g,obj,con);
+    }
   }
 
   void compute( Vector<Real> &s, const Vector<Real> &x, Objective<Real> &obj, 

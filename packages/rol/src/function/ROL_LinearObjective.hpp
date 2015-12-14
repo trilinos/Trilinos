@@ -41,96 +41,51 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_SAMPLEGENERATOR_HPP
-#define ROL_SAMPLEGENERATOR_HPP
+#ifndef ROL_LINEAR_OBJECTIVE_H
+#define ROL_LINEAR_OBJECTIVE_H
 
-#include "Teuchos_RefCountPtr.hpp"
-#include "ROL_BatchManager.hpp"
+#include "ROL_Objective.hpp"
 #include "ROL_Vector.hpp"
+#include "Teuchos_RCP.hpp"
+
+/** @ingroup func_group
+    \class ROL::LinearObjective
+    \brief Provides the interface to evaluate linear objective functions.
+
+    This class implements the linear objective function
+    \f[
+       f(x) = \langle c, x\rangle_{\mathcal{X}^*,\mathcal{X}}
+    \f]
+    for fixed \f$c\in\mathcal{X}^*\f$.
+
+    ---
+*/
+
 
 namespace ROL {
 
-template<class Real> 
-class SampleGenerator {
+template <class Real>
+class LinearObjective : public Objective<Real> {
 private:
-  int begin_;
-  Teuchos::RCP<BatchManager<Real> > bman_;
-  std::vector<std::vector<Real> > points_;
-  std::vector<Real> weights_;
-
-protected:
-  void setPoints(std::vector<std::vector<Real> > &p) {
-    points_.clear();
-    points_.assign(p.begin(),p.end());
-  }
-  void setWeights(std::vector<Real> &w) {
-    weights_.clear();
-    weights_.assign(w.begin(),w.end());
-  }
+  const Teuchos::RCP<Vector<Real> > cost_;
 
 public:
-  virtual ~SampleGenerator() {}
-  SampleGenerator(const Teuchos::RCP<BatchManager<Real> > &bman)
-    : begin_(0), bman_(bman) {}
-  SampleGenerator(const SampleGenerator<Real> &sampler) 
-    : begin_(sampler.begin_), bman_(sampler.bman_),
-      points_(sampler.points_), weights_(sampler.weights_) {}
+  LinearObjective(const Teuchos::RCP<Vector<Real> > &cost) : cost_(cost) {}
 
-  virtual void update(const Vector<Real> &x) {
-    begin_ = 0;
-  } 
-
-  virtual int start(void) {
-    return begin_;
+  Real value( const Vector<Real> &x, Real &tol ) {
+    return x.dot(cost_->dual());
   }
 
-  virtual Real computeError(std::vector<Real> &vals) {
-    return 0.0;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    g.set(*cost_);
   }
 
-  virtual Real computeError(std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x) {
-    return 0.0;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    hv.zero();
   }
 
-  virtual void refine(void) {
-    begin_ = numMySamples();
-  }
+}; // class LinearObjective
 
-  virtual void setSamples(bool inConstructor = false) {}
-
-  virtual int numMySamples(void) const {
-    return weights_.size();
-  }
-
-  virtual std::vector<Real> getMyPoint(const int i) const {
-    return points_[i];
-  }  
-
-  virtual Real getMyWeight(const int i) const {
-    return weights_[i];
-  }
-
-  int batchID(void) const {
-    return bman_->batchID();
-  }
-
-  int numBatches(void) const {
-    return bman_->numBatches();
-  }
-
-  void sumAll(Real *input, Real *output, int dim) const {
-    bman_->sumAll(input, output, dim);
-  }
-
-  void sumAll(Vector<Real> &input, Vector<Real> &output) const {
-    bman_->sumAll(input,output);
-  }
-
-  void barrier(void) const {
-    bman_->barrier();
-  }
-};
-
-}
+} // namespace ROL
 
 #endif

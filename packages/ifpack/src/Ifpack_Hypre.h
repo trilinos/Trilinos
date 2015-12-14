@@ -347,7 +347,7 @@ public:
     \return Integer error code, set to 0 if successful.
   */
 
-    int SetParameter(bool UsePreconditioner){ UsePreconditioner = UsePreconditioner_; return 0;}
+    int SetParameter(bool UsePreconditioner){ UsePreconditioner_ = UsePreconditioner; return 0;}
 
     //! Choose to solve the problem or apply the preconditioner.
     /*!

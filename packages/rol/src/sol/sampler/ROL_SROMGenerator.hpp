@@ -95,9 +95,9 @@ private:
 
 public:
 
-  SROMGenerator(Teuchos::ParameterList                                &parlist,
-                Teuchos::RCP<BatchManager<Real> >                     &bman,
-                const std::vector<Teuchos::RCP<Distribution<Real> > > &dist)
+  SROMGenerator(Teuchos::ParameterList                          &parlist,
+          const Teuchos::RCP<BatchManager<Real> >               &bman,
+          const std::vector<Teuchos::RCP<Distribution<Real> > > &dist)
     : SampleGenerator<Real>(bman), parlist_(parlist), dist_(dist),
       dimension_(dist.size()) {
     // Get SROM sublist
