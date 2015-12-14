@@ -70,9 +70,11 @@ protected:
 
 public:
   virtual ~SampleGenerator() {}
-  SampleGenerator(Teuchos::RCP<BatchManager<Real> > &bman) : begin_(0), bman_(bman) {}
+  SampleGenerator(const Teuchos::RCP<BatchManager<Real> > &bman)
+    : begin_(0), bman_(bman) {}
   SampleGenerator(const SampleGenerator<Real> &sampler) 
-    : begin_(sampler.begin_), bman_(sampler.bman_), points_(sampler.points_), weights_(sampler.weights_) {}
+    : begin_(sampler.begin_), bman_(sampler.bman_),
+      points_(sampler.points_), weights_(sampler.weights_) {}
 
   virtual void update(const Vector<Real> &x) {
     begin_ = 0;
