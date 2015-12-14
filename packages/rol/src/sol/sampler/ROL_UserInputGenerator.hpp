@@ -114,13 +114,13 @@ private:
   }
 
 public:
-  UserInputGenerator(const Teuchos::ParameterList &parlist,
-                     const Teuchos::RCP<BatchManager<Real> > &bman)
+  UserInputGenerator(Teuchos::ParameterList &parlist,
+               const Teuchos::RCP<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
-    if ( list.isParameter("Points File Name")  &&
-         list.isParameter("Weights File Name") &&
+    if ( list.isParameter("Points File")  &&
+         list.isParameter("Weights File") &&
          list.isParameter("Number of Samples") &&
          list.isParameter("Dimension") ) {
       std::string file_pt = list.get("Points File Name","points.txt");
