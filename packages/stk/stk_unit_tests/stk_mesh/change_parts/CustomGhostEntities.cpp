@@ -110,7 +110,7 @@ private:
 
 TEST_F(CustomGhostEntities, removePart)
 {
-    if (get_bulk().parallel_size() == 2) {
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2) {
         custom_ghost_face_15_from_proc_0_to_proc_1();
         remove_face_15_from_myPart_on_proc_0();
         check_results();
