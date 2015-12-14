@@ -174,7 +174,7 @@ namespace {
     matrix->fillComplete();
     matrix->resumeFill();
 
-    Teuchos::Array<GO> indout(1,0);
+    Teuchos::Array<LO> indout(1,0);
     Teuchos::Array<Scalar> valout(1,5.0);
     matrix->replaceLocalValues(0, indout.view(0,indout.size()), valout.view(0,valout.size()));
     matrix->fillComplete();
@@ -1177,9 +1177,17 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( UNIT_TEST_GROUP_ORDINAL_KOKKOS )
 #if defined(HAVE_XPETRA_EPETRA)
 #include "Xpetra_Map.hpp" // defines EpetraNode
 typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES ( double, int, int, EpetraNode )
 UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( double, int, int, EpetraNode )
 UNIT_TEST_GROUP_ORDINAL_KOKKOS( double, int, int, EpetraNode )
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES ( double, int, LongLong, EpetraNode )
+UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( double, int, LongLong, EpetraNode )
+UNIT_TEST_GROUP_ORDINAL_KOKKOS( double, int, LongLong, EpetraNode )
+#endif
 #endif
 
 }
