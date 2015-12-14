@@ -237,7 +237,7 @@ public:
 
     Elementwise::ThresholdUpper<Real> threshold(0.0);
 
-    PartitionedVector<Real> &xpv = Teuchos::dyn_cast<PartitionedVector<Real> >(*x_);
+    //PartitionedVector<Real> &xpv = Teuchos::dyn_cast<PartitionedVector<Real> >(*x_);
 
     Teuchos::RCP<Vector<Real> > slack = x_->get(SLACK);
    
