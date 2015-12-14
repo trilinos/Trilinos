@@ -48,6 +48,8 @@
 #ifndef PACKAGES_XPETRA_SUP_UTILS_XPETRA_ITERATOROPS_HPP_
 #define PACKAGES_XPETRA_SUP_UTILS_XPETRA_ITERATOROPS_HPP_
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+
 #include "Xpetra_ConfigDefs.hpp"
 
 #include "Xpetra_Matrix.hpp"
@@ -66,7 +68,7 @@ namespace Xpetra {
   // General implementation
   // Epetra variant throws
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Jacobi(
+  void Jacobi_kokkos(
               Scalar omega,
               const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
               const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
@@ -121,7 +123,7 @@ namespace Xpetra {
 
 #if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
   template<>
-  void Jacobi<double,int,int,EpetraNode>(double omega,
+  void Jacobi_kokkos<double,int,int,EpetraNode>(double omega,
                                          const Xpetra::Vector<double,int,int,EpetraNode> & Dinv,
                                          const Xpetra::Matrix<double,int,int,EpetraNode> & A,
                                          const Xpetra::Matrix<double,int,int,EpetraNode> & B,
@@ -193,7 +195,7 @@ namespace Xpetra {
 
 #if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
   template<>
-  void Jacobi<double,int,long long,EpetraNode>(double omega,
+  void Jacobi_kokkos<double,int,long long,EpetraNode>(double omega,
                                                const Xpetra::Vector<double,int,long long,EpetraNode> & Dinv,
                                                const Xpetra::Matrix<double,int,long long,EpetraNode> & A,
                                                const Xpetra::Matrix<double,int,long long,EpetraNode> & B,
@@ -271,8 +273,8 @@ namespace Xpetra {
 
 */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class IteratorOps {
-#undef XPETRA_ITERATOROPS_SHORT
+  class IteratorOps_kokkos {
+#undef XPETRA_ITERATOROPS_KOKKOS_SHORT
 #include "Xpetra_UseShortNames.hpp"
   public:
 
@@ -285,7 +287,7 @@ namespace Xpetra {
       if (C == Teuchos::null)
         C = MatrixFactory::Build(B.getRowMap(),Teuchos::OrdinalTraits<LO>::zero());
 
-      Xpetra::Jacobi<Scalar,LocalOrdinal,GlobalOrdinal,Node>(omega, Dinv, A, B, *C, true, true,label);
+      Xpetra::Jacobi_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>(omega, Dinv, A, B, *C, true, true,label);
       C->CreateView("stridedMaps", rcpFromRef(A),false, rcpFromRef(B), false);
 
       return C;
@@ -295,6 +297,8 @@ namespace Xpetra {
 
 } // end namespace Xpetra
 
-#define XPETRA_ITERATOROPS_SHORT
+#define XPETRA_ITERATOROPS_KOKKOS_SHORT
+
+#endif // #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
 #endif /* PACKAGES_XPETRA_SUP_UTILS_XPETRA_ITERATOROPS_HPP_ */
