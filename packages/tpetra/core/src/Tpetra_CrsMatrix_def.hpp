@@ -2877,18 +2877,21 @@ namespace Tpetra {
     host_view_1d_type lclVecHost1d =
       Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
+    Kokkos::View<const size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      h_offsets(&offsets[0],offsets.size());
     // Find the diagonal entries and put them in lclVecHost1d.
     const size_t myNumRows = getNodeNumRows ();
     Kokkos::parallel_for ( Kokkos::RangePolicy<host_execution_space>( 0, myNumRows), [&] (const size_t& i) {
       lclVecHost1d(i) = STS::zero (); // default value if no diag entry
-      if (offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        ArrayView<const LocalOrdinal> ind;
-        ArrayView<const Scalar> val;
+      if (h_offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        //ArrayView<const LocalOrdinal> ind;
+        //ArrayView<const Scalar> val;
         // NOTE (mfh 02 Jan 2015) This technically does not assume
         // UVM, since the get{Global,Local}RowView methods are
         // supposed to return views of host data.
-        this->getLocalRowView (i, ind, val);
-        lclVecHost1d(i) = static_cast<impl_scalar_type> (val[offsets[i]]);
+        //this->getLocalRowView (i, ind, val);
+        auto row_i = lclMatrix_.template rowConst<size_t>(i);
+        lclVecHost1d(i) = static_cast<impl_scalar_type> (row_i.value(h_offsets[i]));
       }
     });
     lclVec.template sync<execution_space> (); // sync changes back to device
