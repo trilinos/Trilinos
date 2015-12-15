@@ -94,7 +94,7 @@ void NOX::Solver::AndersonAcceleration::init()
   {
     Teuchos::ParameterList validParams;
     validParams.set("Storage Depth", 2, "max number of previous iterates for which data stored");
-    validParams.set("Disable Storage Depth Check for Unit Testing", false, "If set to true, the check on the storage depth size is disabled so that we can generate some corner cases for unit testing.  WARNING: users should never set this to true!");
+    validParams.set("Disable Checks for Unit Testing", false, "If set to true, the check on the storage depth size is disabled so that we can generate some corner cases for unit testing.  WARNING: users should never set this to true!");
     validParams.set("Mixing Parameter", 1.0, "damping factor applied to residuals");
     validParams.set("Reorthogonalization Frequency", 0, "Least-squares problem solved by updating previous QR factorization. Number of iterations between reorthogonalizing columns of Q. Never reorthogonalize if less than 1.");
     validParams.sublist("Preconditioning").set("Precondition", false, "flag for preconditioning");
@@ -106,16 +106,16 @@ void NOX::Solver::AndersonAcceleration::init()
   }
 
   storeParam = paramsPtr->sublist("Anderson Parameters").get<int>("Storage Depth");
-  disableStorageDepthCheckForUnitTesting = paramsPtr->sublist("Anderson Parameters").get<bool>("Disable Storage Depth Check for Unit Testing");
+  disableChecksForUnitTesting = paramsPtr->sublist("Anderson Parameters").get<bool>("Disable Checks for Unit Testing");
 
-  if (!disableStorageDepthCheckForUnitTesting) {
+  if (!disableChecksForUnitTesting) {
     TEUCHOS_TEST_FOR_EXCEPTION((storeParam > solnPtr->getX().length()),std::logic_error,"Error - The \"Storage Depth\" with a value of " << storeParam << " must be less than the number of unknowns in the nonlinear problem which is currently " << solnPtr->getX().length() << ".  This reults in an ill-conditioned F matrix.");
   }
 
   mixParam = paramsPtr->sublist("Anderson Parameters").get<double>("Mixing Parameter");
-  if (storeParam <= 0){
+  if (storeParam < 0){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
-      << "Storage parameter must be positive" << std::endl;
+      << "Storage parameter must be non-negative" << std::endl;
     throw "NOX Error";
   }
   if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)){
@@ -238,8 +238,6 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       else if (utilsPtr->isPrintType(NOX::Utils::Warning))
         utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
     }
-    // Old code before before block above added for line search
-    //solnPtr->computeX(*solnPtr, *oldPrecF, mixParam);
 
     // Compute F for the first iterate in case it isn't in the line search
     rtype = solnPtr->computeF();
@@ -280,31 +278,33 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   }
 
   // Manage the matrices of past iterates and QR factors
-  if (nIter == accelerationStartIteration) {
-    // Initialize
-    nStore = 1;
-    xMat.resize(0);
-    qMat.resize(0);
-    xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
-    (xMat[0])->update(-1.0, oldSolnPtr->getX(), 1.0);
-    oldPrecF->update(1.0, *precF, -1.0);
-    rMat.shape(0,0);
-    qrAdd(*oldPrecF);
+  if (storeParam > 0) {
+    if (nIter == accelerationStartIteration) {
+      // Initialize
+      nStore = 1;
+      xMat.resize(0);
+      qMat.resize(0);
+      xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
+      (xMat[0])->update(-1.0, oldSolnPtr->getX(), 1.0);
+      oldPrecF->update(1.0, *precF, -1.0);
+      rMat.shape(0,0);
+      qrAdd(*oldPrecF);
     }
-  else if (nIter > accelerationStartIteration) {
-    if (nStore < storeParam){
-      xMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
-      nStore++;
+    else if (nIter > accelerationStartIteration) {
+      if (nStore < storeParam){
+        xMat.push_back(solnPtr->getX().clone(NOX::ShapeCopy));
+        nStore++;
+      }
+      else{
+        for (int ii = 0; ii<nStore-1; ii++)
+          *(xMat[ii]) = *(xMat[ii+1]);
+        qrDelete();
+      }
+      *(xMat[nStore-1]) = solnPtr->getX();
+      (xMat[nStore-1])->update(-1.0,oldSolnPtr->getX(),1.0);
+      oldPrecF->update(1.0, *precF, -1.0);
+      qrAdd(*oldPrecF);
     }
-    else{
-      for (int ii = 0; ii<nStore-1; ii++)
-        *(xMat[ii]) = *(xMat[ii+1]);
-      qrDelete();
-    }
-    *(xMat[nStore-1]) = solnPtr->getX();
-    (xMat[nStore-1])->update(-1.0,oldSolnPtr->getX(),1.0);
-    oldPrecF->update(1.0, *precF, -1.0);
-    qrAdd(*oldPrecF);
   }
 
   // Reorthogonalize 
@@ -380,14 +380,6 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
   }
-  // Old code before before block above added for line search
-  /*
-  solnPtr->computeX(*solnPtr, *precF, mixParam);
-  for (int ii=0; ii<nStore; ii++){
-    solnPtr->computeX(*solnPtr, *(xMat[ii]), -gamma(ii,0));
-    solnPtr->computeX(*solnPtr, *(qMat[ii]), -Rgamma(ii,0));
-  }
-  */
 
   // Compute F for new current solution in case the line search didn't .
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
@@ -457,7 +449,8 @@ void NOX::Solver::AndersonAcceleration::qrAdd(NOX::Abstract::Vector& newCol)
     rMat(ii,N) += Alpha;
   }
   rMat(N,N) = newCol.norm();
-  TEUCHOS_TEST_FOR_EXCEPTION((rMat(N,N) < 1.0e-16),std::logic_error,"Error - R factor is singular to machine precision!");
+  if (!disableChecksForUnitTesting)
+    TEUCHOS_TEST_FOR_EXCEPTION((rMat(N,N) < 1.0e-16),std::runtime_error,"Error - R factor is singular to machine precision!");
   *(qMat[N]) = newCol.scale(1.0/rMat(N,N));
 }
 
@@ -503,7 +496,8 @@ void NOX::Solver::AndersonAcceleration::reorthogonalize()
         qMat[ii]->update(-R(jj,ii),*(qMat[jj]),1.0);
       }
       R(ii,ii) = qMat[ii]->norm();
-      TEUCHOS_TEST_FOR_EXCEPTION((R(ii,ii) < 1.0e-16),std::logic_error,"Error - R factor is singular to machine precision!");
+      if (!disableChecksForUnitTesting)
+        TEUCHOS_TEST_FOR_EXCEPTION((R(ii,ii) < 1.0e-16),std::runtime_error,"Error - R factor is singular to machine precision!");
       qMat[ii]->scale(1.0/R(ii,ii));
     }
 

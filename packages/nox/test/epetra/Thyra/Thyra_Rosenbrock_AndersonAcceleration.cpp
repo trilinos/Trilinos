@@ -299,7 +299,7 @@ TEUCHOS_UNIT_TEST(AndersonAcceleration, AA_IllConditionedQRMonitoring)
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Anderson Accelerated Fixed-Point");
   nl_params->sublist("Anderson Parameters").set("Storage Depth", 3);  // should normally get error
-  nl_params->sublist("Anderson Parameters").set("Disable Storage Depth Check for Unit Testing", true);  // should normally get error
+  nl_params->sublist("Anderson Parameters").set("Disable Checks for Unit Testing", true);  // should normally get error
   nl_params->sublist("Anderson Parameters").set("Mixing Parameter", 1.0);
   nl_params->sublist("Anderson Parameters").set("Acceleration Start Iteration", 1);
   nl_params->sublist("Anderson Parameters").set("Adjust Matrix for Condition Number", true);
