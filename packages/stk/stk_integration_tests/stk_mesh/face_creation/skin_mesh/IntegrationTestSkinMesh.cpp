@@ -220,6 +220,8 @@ void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     stk::all_reduce_sum<unsigned>( communicator, &localSkinnedCount, &globalSkinnedCount , 1 );
 
     EXPECT_EQ(testCase.second.numberOfSkinnedBoundaryFaces, globalSkinnedCount);
+
+    EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, blocksToSkin, skin));
 }
 
 void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -236,13 +238,9 @@ void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::Automat
     filter_test_case(test_cases, "ALefRA.e");
     filter_test_case(test_cases, "ARefLA.e");
     filter_test_case(test_cases, "AeDfA.e");
+    filter_test_case(test_cases, "ALeDB.e");
+    filter_test_case(test_cases, "ADReA.e");
 
-    if(stk::mesh::BulkData::NO_AUTO_AURA == auraOption)
-    {
-        // Fail with no aura
-        filter_test_case(test_cases, "ALeDB.e");
-        filter_test_case(test_cases, "ADReA.e");
-    }
 
     if(stk::mesh::BulkData::AUTO_AURA == auraOption)
     {
@@ -262,6 +260,16 @@ void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::Automat
         filter_test_case(test_cases, "ALeRA.e");
         filter_test_case(test_cases, "ARA.e");
         filter_test_case(test_cases, "ARB.e");
+
+        // These fail with AURA in debug
+        filter_test_case(test_cases, "ARReA.e");
+        filter_test_case(test_cases, "ARReB.e");
+        filter_test_case(test_cases, "ARe.e");
+        filter_test_case(test_cases, "AReLA.e");
+        filter_test_case(test_cases, "AReLB.e");
+        filter_test_case(test_cases, "AReRA.e");
+        filter_test_case(test_cases, "AReRB.e");
+        filter_test_case(test_cases, "Ae.e");
     }
 }
 

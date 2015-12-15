@@ -100,6 +100,8 @@ public:
                                          impl::ParallelGraphInfo &new_parallel_graph_entries);
     stk::mesh::EntityId get_available_side_id();
 
+    std::vector<EntitySidePair> extract_skinned_sideset( );
+
 protected:
     void fill_graph();
     void update_number_of_parallel_edges();

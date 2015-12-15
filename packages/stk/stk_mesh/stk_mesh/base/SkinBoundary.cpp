@@ -32,9 +32,12 @@
 //
 
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/ElemElemGraph.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk
 {
@@ -45,13 +48,59 @@ namespace mesh
 
 //void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
 
-void create_exposed_boundary_sides(stk::mesh::BulkData &bulkData, stk::mesh::Selector& blocksToSkin, stk::mesh::Part& partToPutSidesInto)
+void create_exposed_boundary_sides(BulkData &bulkData, Selector& blocksToSkin, Part& partToPutSidesInto)
 {
-    const stk::mesh::PartVector skinnedPart{&partToPutSidesInto};
+    const PartVector skinnedPart{&partToPutSidesInto};
 
-    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, blocksToSkin);
+    ElemElemGraph elem_elem_graph(bulkData, blocksToSkin);
     elem_elem_graph.skin_mesh( skinnedPart );
 
+}
+
+bool verify_exposed_boundary_sides_count(BulkData &bulkData, const Part& skinnedPart, const std::vector<EntitySidePair> &skinnedSideSet)
+{
+    std::vector<unsigned> skin_counts;
+    count_entities(skinnedPart & bulkData.mesh_meta_data().locally_owned_part(), bulkData, skin_counts);
+
+    std::vector<unsigned>  localSkinnedCount(2);
+    localSkinnedCount[0] = skin_counts[bulkData.mesh_meta_data().side_rank()];
+    localSkinnedCount[1] = skinnedSideSet.size();
+    std::vector<unsigned> globalSkinnedCount = {0, 0};
+    stk::all_reduce_sum<unsigned>( bulkData.parallel(), &localSkinnedCount[0], &globalSkinnedCount[0] , 2 );
+
+    return (globalSkinnedCount[0] == globalSkinnedCount[1]);
+}
+
+Entity get_face_for_element_side_pair(BulkData &bulkData, const EntitySidePair &facet)
+{
+    const Entity * faces = bulkData.begin_faces(facet.first);
+    unsigned numFaces = bulkData.num_faces(facet.first);
+
+    ConnectivityOrdinal const * ordinals = bulkData.begin_face_ordinals(facet.first);
+
+    for(unsigned i = 0; i<numFaces; ++i)
+    {
+        if(ordinals[i] == facet.second)
+            return faces[i];
+    }
+
+    return Entity();
+}
+
+bool check_exposed_boundary_sides(BulkData &bulkData, Selector& skinnedBlock, const Part& skinnedPart)
+{
+    ElemElemGraph elem_elem_graph(bulkData, skinnedBlock);
+    std::vector<EntitySidePair> skinnedSideSet = elem_elem_graph.extract_skinned_sideset(  );
+
+    for(const EntitySidePair &facet : skinnedSideSet)
+    {
+        Entity face = get_face_for_element_side_pair(bulkData, facet);
+
+        if(!bulkData.is_valid(face) || !bulkData.bucket(face).member(skinnedPart))
+            return false;
+    }
+
+    return verify_exposed_boundary_sides_count(bulkData, skinnedPart, skinnedSideSet);
 }
 
 

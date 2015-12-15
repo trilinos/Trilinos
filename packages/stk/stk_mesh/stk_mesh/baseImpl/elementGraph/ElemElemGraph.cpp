@@ -2036,6 +2036,33 @@ std::vector<int> ElemElemGraph::get_sides_exposed_on_other_procs(stk::mesh::impl
     return exposedSides;
 }
 
+std::vector<EntitySidePair> ElemElemGraph::extract_skinned_sideset(  )
+{
+    std::vector<EntitySidePair> skinnedSideSet;
+
+    const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
+
+    for(size_t i=0;i<buckets.size();++i)
+    {
+        const stk::mesh::Bucket &bucket = *buckets[i];
+        for(size_t j=0;j<bucket.size();++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+
+            stk::mesh::impl::LocalId localId = get_local_element_id(element);
+            std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
+
+            for(size_t k=0; k<exposedSides.size(); ++k)
+            {
+                EntitySidePair entitySidePair(element, static_cast<ConnectivityOrdinal> (exposedSides[k]));
+                skinnedSideSet.push_back(entitySidePair);
+            }
+        }
+    }
+
+    return skinnedSideSet;
+}
+
 std::vector<int> ElemElemGraph::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                                        stk::mesh::Entity element,
                                                        stk::mesh::impl::LocalId localId)
