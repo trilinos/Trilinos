@@ -16,7 +16,6 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Import.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
@@ -52,41 +51,40 @@ ModelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
   TEUCHOS_ASSERT(nonnull(comm_));
 
   // owned space
-  x_owned_map_ = rcp(new Epetra_Map(num_global_elements_,0,*comm_));
-  x_space_ = ::Thyra::create_VectorSpace(x_owned_map_);
+  x_map_ = rcp(new Epetra_Map(num_global_elements_,0,*comm_));
+  x_space_ = ::Thyra::create_VectorSpace(x_map_);
 
   // residual space
-  f_owned_map_ = x_owned_map_;
+  f_map_ = x_map_;
   f_space_ = x_space_;
 
   x0_ = ::Thyra::createMember(x_space_);
   V_S(x0_.ptr(), ST::zero());
 
-  // Initialize the graph for W CrsMatrix object
-  W_graph_ = createGraph();
-
   // Create the nodal coordinates
   {
-    node_coordinates_ = Teuchos::rcp(new Epetra_Vector(*x_owned_map_));
-    Scalar dx = 1.0/((double) num_global_elements_);
-    for (int i=0; i < x_owned_map_->NumMyElements(); i++) {
-      (*node_coordinates_)[i] = 0.5*dx + dx*((double) x_owned_map_->MinMyGID() + i);
-    }
+    node_coordinates_.resize(num_global_elements_);
+    Scalar dx = 1.0/static_cast<Scalar>(num_global_elements_);
+    for (int i=0; i < num_global_elements_; i++)
+      node_coordinates_[i] = 0.5*dx + dx*static_cast<Scalar>(i);
   }
 
-  // Compute the kernel of the integral operator, A_heq
-  A_heq = rcp(new Epetra_MultiVector(*x_owned_map_,num_global_elements));
-  for (int i=0; i<num_global_elements_; i++)
-    (*A_heq)(i)->PutScalar((*node_coordinates_)[i]);
-  Teuchos::RCP<Epetra_MultiVector> Temp = rcp(new Epetra_MultiVector(*A_heq));
-  Teuchos::RCP<Epetra_MultiVector> Eye = rcp(new Epetra_MultiVector(*x_owned_map_,num_global_elements_));
-  for (int i=0; i<num_global_elements_; i++)
-    Eye->ReplaceGlobalValue(i,i,1.0);
-  A_heq->Multiply('N','T',1.0,*Eye,*Temp,0.0); //Is there a better way to transpose A_heq?
-  Temp->Multiply('N','N',1.0,*Eye,*A_heq,1.0);
-  Temp->Reciprocal(*Temp);
-  double cc = 0.5*paramC/((double) num_global_elements);
-  A_heq->Multiply(cc,*A_heq,*Temp,0.0);
+  // Compute the kernel of the integral operator, A_heq_
+  A_heq_ = rcp(new Epetra_CrsMatrix(::Copy,*x_map_,num_global_elements_));
+  int num_local_elements = x_map_->NumMyElements();
+  for (int i=0; i<num_local_elements; i++) { // Loop over rows on process
+    int row = x_map_->GID(i);
+    for(int j=0; j<num_global_elements_; j++) { // Loop over entries in row
+      Scalar value = node_coordinates_[row]/(node_coordinates_[row]+node_coordinates_[j]);
+      A_heq_->InsertGlobalValues(row,1,&value,&j);
+    }
+  }
+  A_heq_->FillComplete();
+  Scalar cc = 0.5*paramC_/static_cast<Scalar>(num_global_elements_);
+  A_heq_->Scale(cc);
+
+  ones_ = Teuchos::rcp(new Epetra_Vector(*x_map_));
+  ones_->PutScalar(1.0);
 
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -98,7 +96,6 @@ ModelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
-
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
@@ -106,19 +103,6 @@ ModelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
 }
 
 // Initializers/Accessors
-
-template<class Scalar>
-Teuchos::RCP<Epetra_CrsGraph>
-ModelEvaluatorHeq<Scalar>::createGraph()
-{
-  Teuchos::RCP<Epetra_CrsGraph> W_graph;
-
-  // Create the shell for the
-  W_graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_owned_map_, 5));
-
-  W_graph->FillComplete();
-  return W_graph;
-}
 
 template<class Scalar>
 void ModelEvaluatorHeq<Scalar>::set_x0(const Teuchos::ArrayView<const Scalar> &x0_in)
@@ -176,7 +160,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 ModelEvaluatorHeq<Scalar>::create_W_op() const
 {
   Teuchos::RCP<Epetra_CrsMatrix> W_epetra =
-    Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+    Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*x_map_,num_global_elements_));
 
   return Thyra::nonconstEpetraLinearOp(W_epetra);
 }
@@ -186,7 +170,7 @@ Teuchos::RCP< ::Thyra::PreconditionerBase<Scalar> >
 ModelEvaluatorHeq<Scalar>::create_W_prec() const
 {
   Teuchos::RCP<Epetra_CrsMatrix> W_epetra =
-    Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
+    Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*x_map_,1));
 
   const Teuchos::RCP<Thyra::LinearOpBase< Scalar > > W_op =
     Thyra::nonconstEpetraLinearOp(W_epetra);
@@ -242,14 +226,11 @@ void ModelEvaluatorHeq<Scalar>::evalModelImpl(
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
   const RCP<Thyra::PreconditionerBase<Scalar> > W_prec_out = outArgs.get_W_prec();
 
-//  RCP<const Epetra_Vector> x;
-//  x = Thyra::get_Epetra_Vector(*x_owned_map_,inArgs.get_x());
-  if (is_null(x_ptr)) {
-    x_ptr = Teuchos::rcp(new Epetra_Vector(*x_owned_map_));
+  if (is_null(x_ptr_)) {
+    x_ptr_ = Teuchos::rcp(new Epetra_Vector(*x_map_));
   }
-
-  x_ptr = Thyra::get_Epetra_Vector(*x_owned_map_,inArgs.get_x());
-  const Epetra_Vector& x = *x_ptr;
+  x_ptr_ = Thyra::get_Epetra_Vector(*x_map_,inArgs.get_x());
+  const Epetra_Vector& x = *x_ptr_;
 
   if ( nonnull(f_out) || nonnull(W_out) || nonnull(W_prec_out) ) {
 
@@ -259,7 +240,7 @@ void ModelEvaluatorHeq<Scalar>::evalModelImpl(
 
     RCP<Epetra_Vector> f;
     if (nonnull(f_out)) {
-      f = Thyra::get_Epetra_Vector(*f_owned_map_,outArgs.get_f());
+      f = Thyra::get_Epetra_Vector(*f_map_,outArgs.get_f());
     }
 
     RCP<Epetra_CrsMatrix> J;
@@ -274,57 +255,51 @@ void ModelEvaluatorHeq<Scalar>::evalModelImpl(
       RCP<Epetra_Operator> M_epetra = Thyra::get_Epetra_Operator(*(W_prec_out->getNonconstRightPrecOp()));
       M_inv = rcp_dynamic_cast<Epetra_CrsMatrix>(M_epetra);
       TEUCHOS_ASSERT(nonnull(M_inv));
-      J_diagonal_ = Teuchos::rcp(new Epetra_Vector(*x_owned_map_));
     }
-
-    int ierr = 0;
 
     // Zero out the objects that will be filled
     if (nonnull(f))
-      f->PutScalar(1.0);
+      f->PutScalar(0.0);
     if (nonnull(J))
       J->PutScalar(0.0);
     if (nonnull(M_inv))
       M_inv->PutScalar(0.0);
 
+    // Shared computation for f or J evaluation
+    RCP<Epetra_Vector> workVec = rcp(new Epetra_Vector(*x_map_));
+    if (nonnull(f) || nonnull(J)) {
+      A_heq_->Multiply(false, x, *workVec);
+      workVec->Update(1.0,*ones_,-1.0);
+      workVec->Reciprocal(*workVec);
+    }
+
     // Computing f
-    RCP<Epetra_Vector> Scale = rcp(new Epetra_Vector(*x_owned_map_));
     if (nonnull(f)){
-//      x.Print(std::cout);
-      ierr = f->Multiply('N','N',-1.0,*A_heq,x,1.0);
-      ierr = f->Reciprocal(*f);
-      *Scale = *f;
-      ierr = f->Update(-1.0,x,1.0);
+      *f = *workVec;
+      f->Update(-1.0,x,1.0);
     }
 
     // Computing Jacobian
     if (nonnull(J)){
-      Scale->Multiply(-1.0,*Scale,*Scale,0.0);
-      for (int i=0; i<num_global_elements_; i++){
-        for (int j=0; j<num_global_elements_; j++){
-          double Value = (*A_heq)[i][j];
-          J->ReplaceGlobalValues(i,1,&Value,&j);
-        }
+      *J = *A_heq_;
+      workVec->Multiply(1.0,*workVec,*workVec,0.0);
+      J->LeftScale(*workVec);
+      // Subtract off identity
+      int num_local_elements = x_map_->NumMyElements();
+      for (int i=0; i<num_local_elements; i++) {
+        int row = x_map_->GID(i);
+        Scalar value = -1.0;
+        J->SumIntoGlobalValues(row,1,&value,&row);
       }
       J->FillComplete();
-      J->LeftScale(*Scale);
-      double Value = 1.0;
-      for (int i=0; i<num_global_elements_; i++)
-        J->SumIntoGlobalValues(i,1,&Value,&i);
     }
 
-    // Preconditioner
+    // Preconditioner, set to identity
     if (nonnull(M_inv)){
-      RCP<Epetra_Vector> Diag = Teuchos::rcp(new Epetra_Vector(*x_owned_map_));
-      Diag->PutScalar(1.0);
-      M_inv->ReplaceDiagonalValues(*Diag);
+      M_inv->ReplaceDiagonalValues(*ones_);
       M_inv->FillComplete();
     }
-
-    TEUCHOS_ASSERT(ierr > -1);
-
   }
-
 }
 
 

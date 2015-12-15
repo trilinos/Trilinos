@@ -115,8 +115,7 @@ int main(int argc, char *argv[])
 
     const int num_elements = 400;
 
-    // Check we have only one processor since this problem doesn't work
-    // for more than one proc
+    // Check we have at least one unknown per processor
     if (Comm.NumProc() > num_elements) {
       std::cerr << "Error! Number of elements must be greate than number of processors!"
         << std::endl;
@@ -202,10 +201,12 @@ int main(int argc, char *argv[])
 
     success = status==0;
 
-    if (success)
-      std::cout << "Test passed!" << std::endl;
-    else
-      std::cout << "Test failed!" << std::endl;
+    if (Comm.MyPID() == 0) {
+      if (success)
+        std::cout << "Test passed!" << std::endl;
+      else
+        std::cout << "Test failed!" << std::endl;
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

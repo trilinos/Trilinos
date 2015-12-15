@@ -2,6 +2,7 @@
 #define NOX_THYRA_MODEL_EVALUATOR_HEQ_DECL_HPP
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
+#include <vector>
 
 template<class Scalar> class ModelEvaluatorHeq;
 
@@ -20,14 +21,10 @@ modelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
  *
  * The equation modeled is:
 
-  \f$ F(x)_i = x_i - (1 - \frac{c}{2N}\sum_{j=1}^N \frac{\mu_ix_j}{\mu_i + \mu_j})^{-1} = 0\f$
+  \f$ F(x)_i = x_i - (1 - \frac{c}{2N}\sum_{j=1}^N \frac{\mu_ix_j}{\mu_i + \mu_j})^{-1} = 0, 1 <= i <= N\f$
 
- * In this, \f$[0,1\f]$ is discretized into \f$N\f$ uniformly sized
+ * In this, \f$[0,1]\f$ is discretized into \f$N\f$ uniformly sized
  * cells and \f$\{\mu_j\}\f$ are the midpoints of these cells.
- * The Matrix <tt>W = d(f)/d(x)</tt> is implemented as a
- * <tt>Thyra::MultiVectorBase</tt> object and the class
- * <tt>Thyra::DefaultSerialDenseLinearOpWithSolveFactory</tt> is used to
- * create the linear solver.
  */
 template<class Scalar>
 class ModelEvaluatorHeq
@@ -73,9 +70,6 @@ public:
 
 private:
 
-  /** Allocates and returns the Jacobian matrix graph */
-  virtual Teuchos::RCP<Epetra_CrsGraph> createGraph();
-
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -96,24 +90,20 @@ private: // data members
   const Scalar paramC_;
 
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > x_space_;
-  Teuchos::RCP<const Epetra_Map>   x_owned_map_;
-  Teuchos::RCP<const Epetra_Map>   x_ghosted_map_;
-  Teuchos::RCP<const Epetra_Import> importer_;
+  Teuchos::RCP<const Epetra_Map>   x_map_;
 
   Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > f_space_;
-  Teuchos::RCP<const Epetra_Map>   f_owned_map_;
-
-  Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
+  Teuchos::RCP<const Epetra_Map>   f_map_;
 
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
 
-  Teuchos::RCP<Epetra_MultiVector> A_heq;
+  Teuchos::RCP<Epetra_CrsMatrix> A_heq_;
 
-  mutable Teuchos::RCP<const Epetra_Vector> x_ptr;
+  mutable Teuchos::RCP<const Epetra_Vector> x_ptr_;
 
-  Teuchos::RCP<Epetra_Vector> node_coordinates_;
+  std::vector<Scalar> node_coordinates_;
 
-  mutable Teuchos::RCP<Epetra_Vector> J_diagonal_;
+  Teuchos::RCP<Epetra_Vector> ones_;
 
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
   Teuchos::RCP< ::Thyra::VectorBase<Scalar> > x0_;
