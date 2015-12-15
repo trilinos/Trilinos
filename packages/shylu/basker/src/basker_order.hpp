@@ -73,7 +73,7 @@ namespace BaskerNS
     sort_matrix(A);
     //printMTX("A_nonmatch.mtx", A);
     match_ordering(0);
-    printf("DEBUG1: done match\n");
+    //printf("DEBUG1: done match\n");
     //for debuging
     sort_matrix(A);
     //printMTX("A_match.mtx", A);
@@ -84,7 +84,7 @@ namespace BaskerNS
     find_btf(A); 
 
     sort_matrix(BTF_C);
-    printf("DEBUG2: done sort C\n");
+    //printf("DEBUG2: done sort C\n");
 
     //printf("TEst btf_offset %d \n", btf_tabs_offset);
 
@@ -200,7 +200,9 @@ namespace BaskerNS
 	
 	printf("BEFORE \n");
 
-	csymamd_order(BTF_C, order_c_csym_array, cmember);
+	//csymamd_order(BTF_C, order_c_csym_array, cmember);
+
+	blk_amd(BTF_C, order_c_csym_array);
 
 	printf("After perm\n");
 	

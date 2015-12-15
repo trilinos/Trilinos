@@ -15,56 +15,6 @@
 namespace BaskerNS
 {
 
-   //===============================AMD===================
-  
-  template <class Int>
-  BASKER_FINLINE
-  int amesos_amd
-  (
-   Int n,
-   Int *Ap, 
-   Int *Ai, 
-   Int *p, 
-   double *Control,
-   double *Info
-   )
-  {
-    return -1;
-  }//end amesos_amd()
-    
-  template <>
-  BASKER_FINLINE
-  int amesos_amd<>
-  (
-   int n,
-   int *Ap,
-   int *Ai,
-   int *p,
-   double *Control,
-   double *Info
-   )
-  {
-    amesos_amd_order(n,Ap,Ai,p,Control,Info);
-    return 0;
-  }//end amesos_amd<int>
- 
-
-  template <>
-  BASKER_FINLINE
-  int amesos_amd<>
-  (
-   long n,
-   long  *Ap,
-   long *Ai,
-   long *p,
-   double   *Control,
-   double   *Info
-   )
-  {
-    amesos_amd_l_order(n,Ap,Ai,p,Control,Info);
-    return 0;
-  }//end amesos_amd<long int>
-  
 
     //==========================csymamd===================
 
@@ -287,6 +237,13 @@ namespace BaskerNS
 	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
 	if(blk_size < 3)
 	  {
+	    
+	    //printf("debug, blk_size: %d \n", blk_size);
+	    for(Int ii = 0; ii < blk_size; ++ii)
+	      {
+		//printf("set %d \n", btf_tabs(b)+ii-M.scol);
+		p(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+	      }
 	    continue;
 	  }
 	
@@ -302,17 +259,65 @@ namespace BaskerNS
 	  {
 	    for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
 	      {
-		temp_row(nnz) = M.row_idx(i);
+		if(M.row_idx(i) < btf_tabs(b))
+		  continue;
+		  
+		temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
 		nnz++;
 	      }// end over all row_idx
 	    temp_col(column) = nnz;
 	    column++;
 	  }//end over all columns k
 	
-       
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("col_ptr: ");
+	for(Int i = 0 ; i < blk_size+1; i++)
+	  {
+	    printf("%d, ", temp_col(i));
+	  }
+	printf("\n");
+	printf("row_idx: ");
+	for(Int i = 0; i < nnz; i++)
+	  {
+	    printf("%d, ", temp_row(i));
+	  }
+	printf("\n");
+	#endif
 
+
+	BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
+					&(temp_row(0)),&(tempp(0)));
+
+
+	
+	#ifdef BASKER_DEBUG_ORDER_AMD
+	printf("blk: %d order: \n", b);
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    printf("%d, ", tempp(ii));
+	  }
+	#endif
+
+				     
+	//Add to the bigger perm vector
+	for(Int ii = 0; ii < blk_size; ii++)
+	  {
+	    //printf("loc: %d val: %d \n", 
+	    //ii+btf_tabs(b), tempp(ii)+btf_tabs(b));
+
+	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+	  }
+	
       }//over all blk_tabs
 
+    #ifdef BASKER_DEBUG_AMD_ORDER
+    printf("blk amd final order\n");
+    for(Int ii = 0; ii < M.ncol; ii++)
+      {
+	printf("%d, ", p(ii));
+      }
+    printf("\n");
+    #endif
 
   }//edn blk_amd()
       
