@@ -11,6 +11,7 @@
 
 #include "SideIdPool.hpp"
 #include "ElemElemGraphImpl.hpp"
+#include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
 
 namespace stk { class CommBuffer; }
@@ -226,9 +227,6 @@ private:
                                              stk::mesh::EntityVector &skinned_elements);
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
-    std::map<int, stk::mesh::EntityIdVector> convert_local_ids_to_entity_ids(
-            const std::map<int, std::vector<stk::mesh::impl::LocalId>> &extractedIdsByProc);
-    std::map<int, stk::mesh::EntityIdVector> get_extracted_coincident_entity_ids();
 
 public:
     void write_graph() const;

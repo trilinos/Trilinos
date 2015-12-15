@@ -1,5 +1,6 @@
 #include "ElemElemGraph.hpp"
 #include "ElemElemGraphImpl.hpp"
+#include "ElemGraphCoincidentElems.hpp"
 #include "ElemGraphShellConnections.hpp"
 
 #include <vector>
@@ -60,29 +61,6 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Sel
     fill_from_mesh();
 }
 
-std::map<int, stk::mesh::EntityIdVector> ElemElemGraph::convert_local_ids_to_entity_ids(const std::map<int, std::vector<stk::mesh::impl::LocalId>> &extractedIdsByProc)
-{
-    std::map<int, stk::mesh::EntityIdVector> extractedEntityIdsByProc;
-    for(const std::pair<int, std::vector<stk::mesh::impl::LocalId>> &localIdMapEntry : extractedIdsByProc)
-    {
-        stk::mesh::EntityIdVector &entityIdVec = extractedEntityIdsByProc[localIdMapEntry.first];
-        entityIdVec.resize(localIdMapEntry.second.size());
-        for(size_t i=0; i<localIdMapEntry.second.size(); i++)
-        {
-            stk::mesh::Entity extractedElem = m_local_id_to_element_entity[localIdMapEntry.second[i]];
-            entityIdVec[i] = m_bulk_data.identifier(extractedElem);
-        }
-    }
-    return extractedEntityIdsByProc;
-}
-
-std::map<int, stk::mesh::EntityIdVector> ElemElemGraph::get_extracted_coincident_entity_ids()
-{
-    std::map<int, std::vector<stk::mesh::impl::LocalId>> extractedIdsByProc =
-            stk::mesh::impl::get_extracted_coincident_local_ids(m_graph, m_parallelInfoForGraphEdges, m_coincidentGraph);
-    return convert_local_ids_to_entity_ids(extractedIdsByProc);
-}
-
 void ElemElemGraph::fill_from_mesh()
 {
     clear_data_members();
@@ -124,8 +102,6 @@ void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
                                            m_coincidentGraph,
                                            idMapper,
                                            m_bulk_data.parallel());
-//    std::map<int, stk::mesh::EntityIdVector> extractedEntityIdsByProc = get_extracted_coincident_entity_ids();
-//
 //    stk::mesh::impl::remove_edges_to_extracted_coincident_elements_on_other_procs(extractedEntityIdsByProc, m_graph, m_bulk_data.parallel());
 }
 

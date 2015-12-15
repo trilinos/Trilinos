@@ -2,6 +2,7 @@
 #include <vector>
 #include <mpi.h>
 #include <stk_mesh/base/GraphEdgeData.hpp>
+#include <stk_mesh/base/ElemGraphCoincidentElems.hpp>
 
 namespace
 {
@@ -202,48 +203,4 @@ TEST(CoincidentElements, CorrectFaceId)
     }
 }
 
-
-
-//TEST(CoincidentElements, ExtractCoincidentHex8sWithAdjacentHexInParallel)
-//{
-//    MPI_Comm comm = MPI_COMM_WORLD;
-//    if(running_on_num_procs(comm, 2))
-//    {
-//        stk::mesh::Graph graph;
-//        stk::mesh::ParallelInfoForGraphEdges parallelInfoForGraphEdges(stk::parallel_machine_rank(comm));
-//        make_graph_of_coincident_hex8s_with_adjacent_hex_in_parallel(graph, parallelInfoForGraphEdges, comm);
-//
-//        std::vector<stk::topology> topologies = {stk::topology::HEX_8, stk::topology::HEX_8};
-//        stk::mesh::impl::SparseGraph extractedCoincidentElements = stk::mesh::impl::extract_coincident_sides(graph, topologies);
-//
-//        std::map<int, std::vector<stk::mesh::impl::LocalId>> extractedIdsByProc =
-//                stk::mesh::impl::get_extracted_coincident_local_ids(graph, parallelInfoForGraphEdges, extractedCoincidentElements);
-//        if(stk::parallel_machine_rank(comm) == 0)
-//        {
-//            ASSERT_EQ(1u, extractedIdsByProc.size());
-//            EXPECT_EQ(1u, extractedIdsByProc[1].size());
-//            EXPECT_EQ(1, extractedIdsByProc[1][0]);
-//        }
-//        else
-//        {
-//            ASSERT_TRUE(extractedIdsByProc.empty());
-//        }
-//
-//        std::map<int, stk::mesh::EntityIdVector> extractedEntityIdsByProc;
-//        if(stk::parallel_machine_rank(comm) == 0)
-//            extractedEntityIdsByProc[1] = {2};
-//
-//        stk::mesh::impl::remove_edges_to_extracted_coincident_elements_on_other_procs(extractedEntityIdsByProc, graph, comm);
-//
-//        if(stk::parallel_machine_rank(comm) == 0)
-//        {
-//            EXPECT_EQ(1u, graph.get_num_edges_for_element(0));
-//            EXPECT_EQ(0u, graph.get_num_edges_for_element(1));
-//        }
-//        else
-//        {
-//            EXPECT_EQ(1u, graph.get_num_edges_for_element(0));
-//        }
-//    }
-//}
 }
