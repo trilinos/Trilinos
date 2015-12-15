@@ -175,6 +175,8 @@ namespace BaskerNS
         #else
 	//Comeback
         #endif
+
+	printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 
@@ -184,9 +186,11 @@ namespace BaskerNS
 	sort_matrix(BTF_C);
 	//printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
+	/* not used
 	INT_1DARRAY cmember;
 	MALLOC_INT_1DARRAY(cmember, BTF_C.ncol+1);
-	init_value(cmember,BTF_A.ncol+1,(Int) 0);
+	init_value(cmember, BTF_C.ncol+1, (Int) 0);
+	printf("cmember size: %d \n", BTF_C.ncol+1);
 	for(Int i = 0; i < btf_nblks; ++i)
 	  {
 	    for(Int j = (btf_tabs(i)-btf_tabs_offset); 
@@ -195,6 +199,7 @@ namespace BaskerNS
 		cmember(j) = i;
 	      }
 	  }
+	*/
 	MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
 	init_value(order_c_csym_array, BTF_C.ncol+1,(Int) 0);
 	
@@ -215,14 +220,13 @@ namespace BaskerNS
 	  {
 	    permute_col(BTF_B, order_c_csym_array);
 	    sort_matrix(BTF_B);
+	    printMTX("BTF_B.mtx", BTF_B);
 	  }
 
-      }
-    //7. BTF lower permute
-    //A and B done.  Forget C for now.  
-    //Comback if really hurt performance
+	printMTX("BTF_C.mtx", BTF_C);
 
-    printMTX("BTF_C.mtx", BTF_C);
+      }
+  
 
     printf("Done with ordering\n");
     
@@ -485,10 +489,15 @@ namespace BaskerNS
    /*GOBACK and make this good*/
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::permute_col(
-					BASKER_MATRIX &M,
-					 INT_1DARRAY col)
+  int Basker<Int, Entry, Exe_Space>::permute_col
+  (
+   BASKER_MATRIX &M,
+   INT_1DARRAY col
+   )
   {
+    if((M.ncol == 0)||(M.nnz == 0))
+      return 0;
+
     Int n = M.ncol;
     Int nnz = M.nnz;
     //printf("Using n: %d nnz: %d \n", n, nnz);
@@ -506,25 +515,25 @@ namespace BaskerNS
     //Determine column ptr of output matrix
     for(Int j = 0; j < n; j++)
       {
-        Int i = col[j];
-        temp_p[i+1] = M.col_ptr[j+1] - M.col_ptr[j];
+        Int i = col (j);
+        temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
       }
     //Get ptrs from lengths
-    temp_p[0] = 0;
+    temp_p (0) = 0;
   
     for(Int j = 0; j < n; j++)
       {
-        temp_p[j+1] = temp_p[j+1] + temp_p[j];
+        temp_p (j+1) = temp_p (j+1) + temp_p (j);
       }
     //copy idxs
     
     for(Int ii = 0; ii < n; ii++)
       {
-        Int ko = temp_p[col[ii]];
-        for(Int k = M.col_ptr[ii]; k < M.col_ptr[ii+1]; k++)
+        Int ko = temp_p (col (ii) );
+        for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
           {
-            temp_i[ko] = M.row_idx[k];
-            temp_v[ko] = M.val[k];
+            temp_i (ko) = M.row_idx (k);
+            temp_v (ko) = M.val (k);
             ko++;
           }
       }
@@ -532,89 +541,19 @@ namespace BaskerNS
     //copy back int A
     for(Int ii=0; ii < n+1; ii++)
       {
-        M.col_ptr[ii] = temp_p[ii];
+        M.col_ptr (ii) = temp_p (ii);
       }
     for(Int ii=0; ii < nnz; ii++)
       {
-        M.row_idx[ii] = temp_i[ii];
-        M.val[ii] = temp_v[ii];
+        M.row_idx (ii) = temp_i (ii);
+        M.val (ii) = temp_v (ii);
       }
-    FREE(temp_p);
-    FREE(temp_i);
-    FREE(temp_v);
+    FREE_INT_1DARRAY(temp_p);
+    FREE_INT_1DARRAY(temp_i);
+    FREE_ENTRY_1DARRAY(temp_v);
 
     return 0;
   }//end permute_col(int) 
-
-  
-  //For part of matrix --- subview
-  /*GOBACK and make this good*/
-  /*
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::permute_col(
-				 BASKER_MATRIX_VIEW &MV,
-					 INT_1DARRAY col)
-  {
-    Int n = M.ncol;
-    Int nnz = M.nnz;
-    printf("Using n: %d nnz: %d \n", n, nnz);
-    INT_1DARRAY temp_p;
-    MALLOC_INT_1DARRAY(temp_p, n+1);
-    init_value(temp_p, n+1, (Int)0);
-    INT_1DARRAY temp_i;
-    MALLOC_INT_1DARRAY(temp_i, nnz);
-    init_value(temp_i, nnz, (Int)0);
-    ENTRY_1DARRAY temp_v;
-    MALLOC_ENTRY_1DARRAY(temp_v, nnz);
-    init_value(temp_v, nnz, (Entry)0.0);
-
-   
-    //Determine column ptr of output matrix
-    for(Int j = 0; j < n; j++)
-      {
-        Int i = col[j];
-        temp_p[i+1] = M.col_ptr[j+1] - M.col_ptr[j];
-      }
-    //Get ptrs from lengths
-    temp_p[0] = 0;
-  
-    for(Int j = 0; j < n; j++)
-      {
-        temp_p[j+1] = temp_p[j+1] + temp_p[j];
-      }
-    //copy idxs
-    
-    for(Int ii = 0; ii < n; ii++)
-      {
-        Int ko = temp_p[col[ii]];
-        for(Int k = M.col_ptr[ii]; k < M.col_ptr[ii+1]; k++)
-          {
-            temp_i[ko] = M.row_idx[k];
-            temp_v[ko] = M.val[k];
-            ko++;
-          }
-      }
-    
-    //copy back int A
-    for(Int ii=0; ii < n+1; ii++)
-      {
-        M.col_ptr[ii] = temp_p[ii];
-      }
-    for(Int ii=0; ii < nnz; ii++)
-      {
-        M.row_idx[ii] = temp_i[ii];
-        M.val[ii] = temp_v[ii];
-      }
-    FREE(temp_p);
-    FREE(temp_i);
-    FREE(temp_v);
-
-    return 0;
-  }//end permute_col(int)
-  */
-
-
   
   /*GOBACK and make this good*/
   template <class Int, class Entry, class Exe_Space>
@@ -623,7 +562,11 @@ namespace BaskerNS
 				      BASKER_MATRIX &M,
 				       INT_1DARRAY row)
   {
-   
+
+    if(M.nnz == 0)
+      {
+	return 0;
+      }
     Int nnz = M.nnz;
     INT_1DARRAY temp_i;
     MALLOC_INT_1DARRAY(temp_i, nnz);
@@ -639,7 +582,7 @@ namespace BaskerNS
       {
         M.row_idx[k] = temp_i[k];
       }
-    FREE(temp_i);
+    FREE_INT_1DARRAY(temp_i);
     return 0;
   }//end permute_row(matrix,int)
 
@@ -649,7 +592,7 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::sort_matrix(BASKER_MATRIX &M)
   {
     
-    if(M.ncol == 0)
+    if(M.nnz == 0)
       return 0;
     //printf("COMEBACK and add sort_matrix\n");
     //just use insertion sort
@@ -700,41 +643,6 @@ namespace BaskerNS
 
     return 0;
   }//end sort_matrix()
-
-  /*  ------ To Be Used Later
-  template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::local_global_perm
-  (
-   INT_1DARRAY lperm, Int ln,
-   INT_1DARRAY gperm, Int gn,
-   Int loffset
-   )
-  {
-    //Reminder
-    //format perm[i] = k, old i is new k
-
-    if(ln > gn)
-      {
-	BASKER_ASSERT(0==1, "Error in local_global_perm");
-      }
-
-
-    //update local perm with their global index
-    for(Int i = 0; i < ln; ++i)
-      {
-	lperm(i) =  gperm(lperm(i)+loffset);
-
-      }//for - entries in lperm
-
-    //copy back into global index
-    for(Int i =0; i < ln; ++i)
-      {
-	gperm(i+loffset) = lperm(i);
-      }
-
-
-  }//end local_global_perm
-  */
 
 }//end namespace basker
 #endif //end ifndef basker_order_hpp

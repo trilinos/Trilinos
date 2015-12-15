@@ -307,6 +307,9 @@ namespace BaskerNS
 
 	    p(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
 	  }
+
+
+	FREE_INT_1DARRAY(tempp);
 	
       }//over all blk_tabs
 
@@ -319,10 +322,11 @@ namespace BaskerNS
     printf("\n");
     #endif
 
-  }//edn blk_amd()
+    FREE_INT_1DARRAY(temp_col);
+    FREE_INT_1DARRAY(temp_row);
+    
+  }//end blk_amd()
       
-
-
 }//end namespace BaskerNS
 
 #endif

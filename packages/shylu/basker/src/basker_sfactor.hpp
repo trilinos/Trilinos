@@ -2570,14 +2570,14 @@ namespace BaskerNS
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    lblk_size*lblk_size);
+			    (.5*lblk_size*lblk_size)+lblk_size);
 	
 	UBTF[i-btf_tabs_offset].init_matrix("UBFT",
 			    btf_tabs[i],
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    lblk_size*lblk_size);
+			    (.5*lblk_size*lblk_size)+lblk_size);
 
 	//will have have to do the fill in nfactor
 

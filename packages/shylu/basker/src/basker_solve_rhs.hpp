@@ -375,7 +375,7 @@ namespace BaskerNS
 	   
 	    serial_solve(y,x);
 	    
-	    //printf("After serial solve\n");
+	    printf("After serial solve\n");
 	    //printf("i: %d x: %f y: %f \n", 0, x(0), y(0));
 	    //printf("i: %d x: %f y: %f \n", 24, x(24), y(24));
    
@@ -462,6 +462,7 @@ namespace BaskerNS
 	y(i) = (Entry) 0.0;
       }
     
+    //printf("Test \n");
 
     //Start in C and go backwards
     //In first level, only due U\L\x->y
@@ -493,7 +494,7 @@ namespace BaskerNS
 	//if(b > btf_tabs_offset)
 	  {
 	//x = BTF_C*y;
-            //printf("spmv tab: %d \n", b+btf_tabs_offset);
+	    //  printf("spmv tab: %d \n", b+btf_tabs_offset);
          spmv_BTF(b+btf_tabs_offset,
 		 BTF_C, y, x);
 	  }
