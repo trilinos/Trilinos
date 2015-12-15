@@ -263,6 +263,20 @@ void unpack_extracted_coincident_element_ids_and_delete_connecting_graph_edges(s
 void remove_edges_to_extracted_coincident_elements_on_other_procs(const std::map<int, stk::mesh::EntityIdVector> &extractedEntityIdsByProc,
                                                                   stk::mesh::Graph &graph,
                                                                   MPI_Comm comm);
+
+class IdMapper
+{
+public:
+    virtual stk::mesh::EntityId localToGlobal(stk::mesh::impl::LocalId local) const = 0;
+    virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const = 0;
+};
+
+void choose_face_id_for_coincident_elements(const stk::mesh::Graph &graph,
+                                            stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,
+                                            const stk::mesh::impl::SparseGraph &extractedCoincidentElements,
+                                            const IdMapper &idMapper,
+                                            MPI_Comm comm);
+
 }
 }} // end namespaces stk mesh
 

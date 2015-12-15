@@ -88,8 +88,6 @@ public:
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
-    bool is_valid_graph_element(stk::mesh::Entity local_element) const;
-
     size_t size() {return m_graph.get_num_elements_in_graph() - m_deleted_element_local_id_pool.size();}
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
@@ -118,10 +116,6 @@ protected:
     stk::topology get_topology_of_connected_element(const GraphEdge &graphEdge);
 
     stk::topology get_topology_of_remote_element(const GraphEdge &graphEdge);
-
-    void  break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
-
-    void break_remote_volume_element_connections_across_shells(const std::vector< std::pair< stk::mesh::Entity, stk::mesh::EntityId > > & localAndRemoteElementsConnectedToShell);
 
     void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
                                               const stk::mesh::EntityVector & sideNodes,
@@ -178,6 +172,8 @@ protected:
     void pack_both_remote_shell_connectivity(stk::CommSparse &comm, impl::LocalId shellId, impl::LocalId leftId, impl::LocalId rightId);
 
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
+
+    bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Selector m_skinned_selector;
@@ -254,6 +250,7 @@ private:
     std::vector<int> get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                             stk::mesh::Entity element,
                                             stk::mesh::impl::LocalId localId);
+    void extract_coincident_edges_and_fix_chosen_side_ids();
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
