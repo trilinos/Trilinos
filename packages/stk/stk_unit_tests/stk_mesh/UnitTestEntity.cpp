@@ -36,6 +36,8 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stdexcept>
+
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -43,11 +45,6 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 namespace stk { namespace mesh { struct Entity; } }
-
-
-
-
-
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;
