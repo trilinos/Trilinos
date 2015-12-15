@@ -8,6 +8,7 @@
 #include "basker_types.hpp"
 #include "basker_structs.hpp"
 #include "basker_thread.hpp"
+#include "basker_scalar_traits.hpp"
 
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
@@ -741,6 +742,12 @@ namespace BaskerNS
     void printVec(INT_1DARRAY, Int);
     BASKER_INLINE
     void printVec(ENTRY_1DARRAY, Int);
+    BASKER_INLINE
+    void printVec(std::string, INT_1DARRAY, Int);
+    BASKER_INLINE
+    void printVec(std::string, ENTRY_1DARRAY, Int);
+
+
     //inline
     //Int t_get_kid(const TeamMember &thread);
 

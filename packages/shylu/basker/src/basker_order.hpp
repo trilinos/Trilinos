@@ -372,6 +372,7 @@ namespace BaskerNS
 	vec(i) = temp(i);
       }
    
+    FREE_ENTRY_1DARRAY(temp);
 
     return 0;
   }
@@ -384,11 +385,17 @@ namespace BaskerNS
   (
    ENTRY_1DARRAY vec,
    INT_1DARRAY   p, 
-   Int n,
-   Int m, 
+   Int n, //size(vec) //size(vec) > size(p)
+   Int m, //size(p)
    Int start
    )
   {
+    if(m > n)
+      {
+        printf("ERROR Permute inv \n");
+        return BASKER_ERROR;
+      }
+        
     ENTRY_1DARRAY temp;
     MALLOC_ENTRY_1DARRAY(temp, n);
     init_value(temp, n, (Entry) 0.0);
@@ -397,14 +404,15 @@ namespace BaskerNS
     for(Int i = 0; i < n; i++)
       {
 	//temp(i) = vec(p(i));
-	temp(p(i)) = vec(i);
+	temp(p(i)+start) = vec(i+start);
       }
     //Copy back
     for(Int i = 0; i < n; i++)
       {
-	vec(i) = temp(i);
+	vec(i+start) = temp(i+start);
       }
    
+    FREE_ENTRY_1DARRAY(temp);
 
     return 0;
   }
@@ -435,6 +443,8 @@ namespace BaskerNS
 	vec(i) = temp(i);
       }
    
+    
+    FREE_ENTRY_1DARRAY(temp);
 
     return 0;
   }
@@ -447,11 +457,18 @@ namespace BaskerNS
   (
    ENTRY_1DARRAY vec,
    INT_1DARRAY   p, 
-   Int n, 
-   Int m, 
+   Int n, //n = size(vec) //n > m 
+   Int m,  //m = size(p) 
    Int start
    )
   {
+
+    if(m > n)
+      {
+        printf("ERROR permtue \n");
+        return BASKER_ERROR;
+      }
+
     ENTRY_1DARRAY temp;
     MALLOC_ENTRY_1DARRAY(temp, n);
     init_value(temp, n, (Entry) 0.0);
@@ -468,6 +485,7 @@ namespace BaskerNS
 	vec(i) = temp(i);
       }
    
+    FREE_ENTRY_1DARRAY(temp);
 
     return 0;
   }
@@ -475,10 +493,12 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::permute(
-					     BASKER_MATRIX &M,
-					     INT_1DARRAY row,
-					     INT_1DARRAY col)
+  int Basker<Int, Entry, Exe_Space>::permute
+  (
+   BASKER_MATRIX &M,
+   INT_1DARRAY row,
+   INT_1DARRAY col
+   )
   {
     permute_col(M,col);
     permute_row(M,row);

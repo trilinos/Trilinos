@@ -331,6 +331,7 @@ namespace BaskerNS
               cout << "Error: Matrix is singular, blk" << endl;
               cout << "MaxIndex: " << maxindex << " pivot " 
                    << pivot << endl;
+              cout << "lcnt: " << lcnt << endl;
               return 2;
             }          
 

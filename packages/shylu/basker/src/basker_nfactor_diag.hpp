@@ -1,7 +1,7 @@
 #ifndef BASKER_NFACTOR_DIAG_HPP
 #define BASKER_NFACTOR_DIAG_HPP
 
-//#include "basker_decl.hpp"
+
 #include "basker_matrix_decl.hpp"
 #include "basker_matrix_view_decl.hpp"
 #include "basker_matrix_view_def.hpp"
@@ -146,6 +146,11 @@ namespace BaskerNS
     U.col_ptr(1) = 1;
     L.col_ptr(0) = 0;
     L.col_ptr(1) = 1;
+
+   
+    gperm(k) = k;
+    gpermi(k)= k;
+
     
     return 0;
   }//end t_single_factor
@@ -166,7 +171,6 @@ namespace BaskerNS
     BASKER_MATRIX  &U = UBTF(c-btab);
     BASKER_MATRIX  &L = LBTF(c-btab);
     
-
     //JDB: brow hack: fix.
     Int brow2 = L.srow;
 
@@ -320,9 +324,7 @@ namespace BaskerNS
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
-	      //maxindex = k-brow;
 	      maxindex = k - brow2;
-	      //pivot    = X[k-brow];
 	      pivot    = X(maxindex);
 	    }
 	  
@@ -341,10 +343,8 @@ namespace BaskerNS
               return 2;
             }          
 
-          //gperm[maxindex] = k;
-	  //gpermi[k] = maxindex;
-	  //gperm(maxindex+brow) = k;
-	  //gpermi(k)            = maxindex+brow;
+          //printf("----------------PIVOT------------blk: %d %d \n", 
+          //      c, btf_tabs(c+1)-btf_tabs(c));
 	  gperm(maxindex+brow2) = k;
 	  gpermi(k)             = maxindex+brow2;
 
