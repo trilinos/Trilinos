@@ -187,7 +187,7 @@ void expect_correct_connected_element_via_side(stk::mesh::ElemElemGraph& elemEle
     EXPECT_EQ(otherElem, elem_via_side.element);
 }
 
-TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
+TEST( ElementGraph, HexAddShellAddShellSerial )
 {
     //  ID.proc
     //
@@ -276,7 +276,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
-TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
+TEST( ElementGraph, HexAddShellAddShellHexSerial )
 {
     //  ID.proc
     //

@@ -102,7 +102,27 @@ void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids()
                                            m_coincidentGraph,
                                            idMapper,
                                            m_bulk_data.parallel());
-//    stk::mesh::impl::remove_edges_to_extracted_coincident_elements_on_other_procs(extractedEntityIdsByProc, m_graph, m_bulk_data.parallel());
+}
+
+void ElemElemGraph::extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(const stk::mesh::EntityVector &elems)
+{
+    std::vector<impl::LocalId> localIds = get_local_ids_for_element_entities(elems);
+    impl::append_extracted_coincident_sides(m_graph, m_element_topologies, localIds, m_coincidentGraph);
+    impl::BulkDataIdMapper idMapper(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id);
+    choose_face_id_for_coincident_elements(m_graph,
+                                           m_parallelInfoForGraphEdges,
+                                           m_coincidentGraph,
+                                           idMapper,
+                                           m_bulk_data.parallel());
+}
+
+std::vector<impl::LocalId> ElemElemGraph::get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems)
+{
+    std::vector<impl::LocalId> localIds;
+    localIds.reserve(elems.size());
+    for(stk::mesh::Entity elem : elems)
+        localIds.push_back(m_entity_to_local_id[elem.local_offset()]);
+    return localIds;
 }
 
 void ElemElemGraph::update_number_of_parallel_edges()
@@ -1536,6 +1556,8 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
     }
 
     fill_parallel_graph(only_added_elements);
+
+    extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(allElementsNotAlreadyInGraph);
 
     GraphInfo graphInfo(m_graph, m_parallelInfoForGraphEdges, m_element_topologies);
     remove_graph_edges_blocked_by_shell(graphInfo);
