@@ -3,8 +3,8 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
-#include <stk_mesh/base/ElemGraphCoincidentElems.hpp>
+#include "ElemElemGraphImpl.hpp"
+#include "ElemGraphCoincidentElems.hpp"
 
 namespace stk
 {

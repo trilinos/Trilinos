@@ -41,7 +41,7 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 #include "BucketTester.hpp"
 

@@ -7,9 +7,9 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
-#include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for process_killed_elements, etc
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc

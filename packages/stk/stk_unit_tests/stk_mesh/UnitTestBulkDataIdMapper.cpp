@@ -2,7 +2,7 @@
 #include <mpi.h>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/baseImpl/BulkDataIdMapper.hpp>
+#include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace

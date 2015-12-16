@@ -2,9 +2,9 @@
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
 #include <unit_tests/BulkDataTester.hpp>
 #include "FaceCreatorFixture.hpp"
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace
 {

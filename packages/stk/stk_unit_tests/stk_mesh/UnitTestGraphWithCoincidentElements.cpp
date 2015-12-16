@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include <vector>
 #include <mpi.h>
-#include <stk_mesh/base/GraphEdgeData.hpp>
-#include <stk_mesh/base/ElemGraphCoincidentElems.hpp>
+#include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemGraphCoincidentElems.hpp>
 
 namespace
 {

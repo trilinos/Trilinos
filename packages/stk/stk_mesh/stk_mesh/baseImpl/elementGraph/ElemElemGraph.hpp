@@ -7,9 +7,9 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/SideIdPool.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 
-#include "SideIdPool.hpp"
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"

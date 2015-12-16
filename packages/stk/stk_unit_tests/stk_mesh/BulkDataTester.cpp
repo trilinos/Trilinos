@@ -2,9 +2,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-
-#include <stk_mesh/base/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace stk { namespace mesh { namespace unit_test {
 

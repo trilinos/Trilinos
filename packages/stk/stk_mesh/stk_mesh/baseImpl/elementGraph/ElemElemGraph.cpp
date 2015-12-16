@@ -2,6 +2,7 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "ElemGraphShellConnections.hpp"
+#include "BulkDataIdMapper.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -14,7 +15,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/BulkDataIdMapper.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
