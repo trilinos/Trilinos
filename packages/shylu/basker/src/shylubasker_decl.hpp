@@ -33,6 +33,8 @@ namespace BaskerNS
     typedef typename TeamPolicy::member_type TeamMember;
     #endif
 
+    typedef Basker_ScalarTraits<Entry>        EntryOP;
+
     //Options
     basker_options<Int,Entry,Exe_Space> Options;
 

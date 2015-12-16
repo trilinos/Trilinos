@@ -1349,16 +1349,18 @@ namespace BaskerNS
        //printf("considering: %d %f \n", 
        //      j, value);
 
-       absv = abs(value);
+       //absv = abs(value);
+       absv = EntryOP::approxABS(value);
        //if(t == L.max_idx)
        if(t == BASKER_MAX_IDX)
 	 {
 	   lcnt++;
 
-	   if(absv > maxv) 
+	   //if(absv > maxv)
+	   if(EntryOP::gt(absv,maxv))
 	     {
-	       maxv = absv;
-	       pivot = value;
+	       maxv     = absv;
+	       pivot    = value;
 	       maxindex = j;                
 	     }
 	 }
@@ -1371,11 +1373,7 @@ namespace BaskerNS
    if(Options.no_pivot == BASKER_TRUE)
      {
        maxindex = k;
-       //pivot = X[k-brow];
        pivot = X(k);
-       
-       //printf("pivot: %d %f \n", maxindex, pivot);
-       
      }
 
 
@@ -1532,9 +1530,11 @@ namespace BaskerNS
 	       L.row_idx(lnnz) = j;
 	       #ifdef BASKER_2DL
 	       //L.val[lnnz] = X[j-brow]/pivot;
-	       L.val(lnnz) = X(j)/pivot;
+	       //L.val(lnnz) = X(j)/pivot;
+	       L.val(lnnz) = EntryOP::divide(X(j), pivot);
 	       #else
-	       L.val[lnnz] = X[j]/pivot;
+	       //L.val[lnnz] = X[j]/pivot;
+	       L.val(lnnz) = EntryOP::divide(X(j), pivot);
 	       #endif
 	       lnnz++;
 	     }
