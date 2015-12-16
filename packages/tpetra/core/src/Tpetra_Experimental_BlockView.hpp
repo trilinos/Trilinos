@@ -570,6 +570,149 @@ GEMV (const CoefficientType& alpha,
   }
 }
 
+
+/// \brief Computes C = alpha*A*B + beta*C
+template<class ViewType1,
+         class ViewType2,
+         class ViewType3,
+         class CoefficientType,
+         class IndexType = int>
+void
+GEMM(const char transA[],
+     const char transB[],
+     const CoefficientType alpha,
+     const ViewType1& A,
+     const ViewType2& B,
+     const CoefficientType beta,
+     ViewType3& C)
+{
+  // Assert that A, B, and C are in fact matrices
+  static_assert (ViewType1::rank == 2, "GEMM: A must have rank 2 (be a matrix).");
+  static_assert (ViewType2::rank == 2, "GEMM: B must have rank 2 (be a matrix).");
+  static_assert (ViewType3::rank == 2, "GEMM: C must have rank 2 (be a matrix).");
+
+  typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
+  typedef Kokkos::Details::ArithTraits<Scalar> STS;
+  const Scalar ZERO = STS::zero();
+  const Scalar ONE = STS::one();
+
+  // Get the dimensions
+  IndexType m, n, k;
+  if(transA[0] == 'N' || transA[0] == 'n') {
+    m = static_cast<IndexType> (A.dimension_0 ());
+    n = static_cast<IndexType> (A.dimension_1 ());
+  }
+  else {
+    m = static_cast<IndexType> (A.dimension_1 ());
+    n = static_cast<IndexType> (A.dimension_0 ());
+  }
+  k = static_cast<IndexType> (C.dimension_1 ());
+
+  // quick return if possible
+  if(alpha == ZERO && beta == ONE)
+    return;
+
+  // And if alpha equals zero...
+  if(alpha == ZERO) {
+    if(beta == ZERO) {
+      for(IndexType i=0; i<m; i++) {
+        for(IndexType j=0; j<k; j++) {
+          C(i,j) = ZERO;
+        }
+      }
+    }
+    else {
+      for(IndexType i=0; i<m; i++) {
+        for(IndexType j=0; j<k; j++) {
+          C(i,j) = beta*C(i,j);
+        }
+      }
+    }
+  }
+
+  // Start the operations
+  if(transB[0] == 'n' || transB[0] == 'N') {
+    if(transA[0] == 'n' || transA[0] == 'N') {
+      // Form C = alpha*A*B + beta*C
+      for(IndexType j=0; j<n; j++) {
+        if(beta == ZERO) {
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = ZERO;
+          }
+        }
+        else if(beta != ONE) {
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = beta*C(i,j);
+          }
+        }
+        for(IndexType l=0; l<k; l++) {
+          Scalar temp = alpha*B(l,j);
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = C(i,j) + temp*A(i,l);
+          }
+        }
+      }
+    }
+    else {
+      // Form C = alpha*A**T*B + beta*C
+      for(IndexType j=0; j<n; j++) {
+        for(IndexType i=0; i<m; i++) {
+          Scalar temp = ZERO;
+          for(IndexType l=0; l<k; l++) {
+            temp = temp + A(l,i)*B(l,j);
+          }
+          if(beta == ZERO) {
+            C(i,j) = alpha*temp;
+          }
+          else {
+            C(i,j) = alpha*temp + beta*C(i,j);
+          }
+        }
+      }
+    }
+  }
+  else {
+    if(transA[0] == 'n' || transA[0] == 'N') {
+      // Form C = alpha*A*B**T + beta*C
+      for(IndexType j=0; j<n; j++) {
+        if(beta == ZERO) {
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = ZERO;
+          }
+        }
+        else if(beta != ONE) {
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = beta*C(i,j);
+          }
+        }
+        for(IndexType l=0; l<k; l++) {
+          Scalar temp = alpha*B(j,l);
+          for(IndexType i=0; i<m; i++) {
+            C(i,j) = C(i,j) + temp*A(i,l);
+          }
+        }
+      }
+    }
+    else {
+      // Form C = alpha*A**T*B**T + beta*C
+      for(IndexType j=0; j<n; j++) {
+        for(IndexType i=0; i<m; i++) {
+          Scalar temp = ZERO;
+          for(IndexType l=0; l<k; l++) {
+            temp = temp + A(l,i)*B(j,l);
+          }
+          if(beta == ZERO) {
+            C(i,j) = alpha*temp;
+          }
+          else {
+            C(i,j) = alpha*temp + beta*C(i,j);
+          }
+        }
+      }
+    }
+  }
+}
+
 /// \brief Computes A = P*L*U
 template<class LittleBlockType,
          class LittleVectorType>
