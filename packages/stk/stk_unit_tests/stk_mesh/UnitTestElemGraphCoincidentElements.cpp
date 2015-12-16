@@ -180,12 +180,31 @@ TEST_F(HexShellShell, Hex0Shell0Shell1Parallel )
     }
 }
 
+TEST_F(HexShellShell, DISABLED_Skin)
+{
+    if(stk::parallel_machine_size(get_comm()) == 2u)
+    {
+        setup_hex_shell_shell_on_procs({0, 1, 0});
+
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        elemElemGraph.skin_mesh({});
+
+        stk::mesh::Selector ownedOrShared = get_meta().locally_owned_part() | get_meta().globally_shared_part();
+
+        if(stk::parallel_machine_rank(get_comm()) == 0)
+            EXPECT_EQ(6u, stk::mesh::count_selected_entities(ownedOrShared, get_bulk().buckets(stk::topology::FACE_RANK)));
+        else
+            EXPECT_EQ(1u, stk::mesh::count_selected_entities(ownedOrShared, get_bulk().buckets(stk::topology::FACE_RANK)));
+    }
+}
+
 void expect_correct_connected_element_via_side(stk::mesh::ElemElemGraph& elemElemGraph, stk::mesh::Entity elem, int k, stk::mesh::Entity otherElem, int viaSide)
 {
     stk::mesh::impl::ElementViaSidePair elem_via_side = elemElemGraph.get_connected_element_and_via_side(elem, k);
     EXPECT_EQ(viaSide,      elem_via_side.side);
     EXPECT_EQ(otherElem, elem_via_side.element);
 }
+
 
 TEST( ElementGraph, HexAddShellAddShellSerial )
 {
