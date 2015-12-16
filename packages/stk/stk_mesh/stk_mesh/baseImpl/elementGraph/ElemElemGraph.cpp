@@ -2036,9 +2036,9 @@ std::vector<int> ElemElemGraph::get_sides_exposed_on_other_procs(stk::mesh::impl
     return exposedSides;
 }
 
-std::vector<EntitySidePair> ElemElemGraph::extract_skinned_sideset(  )
+std::vector<SideSetEntry> ElemElemGraph::extract_skinned_sideset(  )
 {
-    std::vector<EntitySidePair> skinnedSideSet;
+    std::vector<SideSetEntry> skinnedSideSet;
 
     const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
 
@@ -2054,8 +2054,7 @@ std::vector<EntitySidePair> ElemElemGraph::extract_skinned_sideset(  )
 
             for(size_t k=0; k<exposedSides.size(); ++k)
             {
-                EntitySidePair entitySidePair(element, static_cast<ConnectivityOrdinal> (exposedSides[k]));
-                skinnedSideSet.push_back(entitySidePair);
+                skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
             }
         }
     }

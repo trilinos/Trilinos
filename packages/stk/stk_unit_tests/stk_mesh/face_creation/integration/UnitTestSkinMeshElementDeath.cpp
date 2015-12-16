@@ -4,7 +4,7 @@
 #include <iostream>                     // for operator<<, ostream, cerr, etc
 #include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements, etc
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for process_killed_elements, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc

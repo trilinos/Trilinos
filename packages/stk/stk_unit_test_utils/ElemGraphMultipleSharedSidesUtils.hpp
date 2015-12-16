@@ -48,8 +48,8 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 

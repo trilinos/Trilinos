@@ -1,7 +1,7 @@
 #include <stddef.h>                     // for size_t
 #include "gtest/gtest.h"                // for TEST_F
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include "stk_mesh/base/ElemElemGraph.hpp"  // for ElemElemGraph
+#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"  // for ElemElemGraph
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_unit_test_utils/ElemGraphMultipleSharedSidesUtils.hpp"
 
