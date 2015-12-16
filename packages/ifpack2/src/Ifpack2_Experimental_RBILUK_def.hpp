@@ -609,7 +609,7 @@ void RBILUK<MatrixType>::compute ()
 
         typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type ImplMagnitudeType;
         ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<impl_scalar_type>::magnitude(work[0]);
-        lwork = static_cast<int>(worksize);
+        lwork = Teuchos::as<int>(worksize);
         work.resize(lwork);
         lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
