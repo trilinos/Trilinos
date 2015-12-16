@@ -194,6 +194,37 @@ public:
     } 
   }
 
+  // Apply the same unary function to each subvector
+  void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->applyUnary(f);
+    }
+  }
+
+  // Apply the same binary function to each pair of subvectors in this vector and x
+  void applyBinary( const Elementwise::BinaryFunction<Real> &f, const V &x ) {
+    const PV &xs = Teuchos::dyn_cast<const PV>(x);
+
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->applyBinary(f,*xs.get(i));
+    }
+  }
+
+  Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+
+    Real result = r.initialValue();
+
+    for( size_type i=0; i<vecs_->size(); ++i ) {
+      r.reduce((*vecs_)[i]->reduce(r),result);
+    }     
+    return result;
+
+  }
+
+
+
+
+
   // Methods that do not exist in the base class
 
   Teuchos::RCP<const Vector<Real> > get(size_type i) const {
