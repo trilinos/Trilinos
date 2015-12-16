@@ -176,7 +176,7 @@ void test_read_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     EXPECT_NO_FATAL_FAILURE(do_input_from_file(meshSpec, bulkData, communicator));
 }
 
-#define VERBOSE_OUTPUT
+#undef VERBOSE_OUTPUT
 
 void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communicator, stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
@@ -226,31 +226,26 @@ void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
 
 void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
-    // These 3 fail because the number of skinned faces does not match expectation
-    filter_test_case(test_cases, "Aef.e");
-    //filter_test_case(test_cases, "AefA.e");
-    //filter_test_case(test_cases, "AefB.e");
-
-    // These fail with both AURA and NO_AURA
-
-
-    //filter_test_case(test_cases, "ALeXfRA.e");
-    filter_test_case(test_cases, "ALefRA.e");
-    filter_test_case(test_cases, "ARefLA.e");
-    filter_test_case(test_cases, "AeDfA.e");
-    filter_test_case(test_cases, "ADReA.e");
-
-    // Fails with 3+ procs
-    filter_test_case(test_cases, "ADeLB.e");
-    filter_test_case(test_cases, "ALeDfRA.e");
-    filter_test_case(test_cases, "ALeDfRB.e");
-    filter_test_case(test_cases, "ALeLB.e");
-    filter_test_case(test_cases, "AReDA.e");
-    filter_test_case(test_cases, "AReDB.e");
-
     if(stk::mesh::BulkData::AUTO_AURA == auraOption)
     {
-        // Fail with aura
+        filter_test_case(test_cases, "Aef.e");
+        //filter_test_case(test_cases, "AefA.e");
+        //filter_test_case(test_cases, "AefB.e");
+
+        //filter_test_case(test_cases, "ALeXfRA.e");
+        filter_test_case(test_cases, "ALefRA.e");
+        filter_test_case(test_cases, "ARefLA.e");
+        filter_test_case(test_cases, "AeDfA.e");
+        filter_test_case(test_cases, "ADReA.e");
+
+        // Fails with 3+ procs
+        filter_test_case(test_cases, "ADeLB.e");
+        filter_test_case(test_cases, "ALeDfRA.e");
+        filter_test_case(test_cases, "ALeDfRB.e");
+        filter_test_case(test_cases, "ALeLB.e");
+        filter_test_case(test_cases, "AReDA.e");
+        filter_test_case(test_cases, "AReDB.e");
+
         filter_test_case(test_cases, "ADReB.e");
         filter_test_case(test_cases, "ADe.e");
         filter_test_case(test_cases, "ADeLA.e");
