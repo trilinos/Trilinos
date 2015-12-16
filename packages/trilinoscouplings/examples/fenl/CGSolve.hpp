@@ -81,6 +81,7 @@ struct result_struct {
   double add_time, dot_time, matvec_time, iter_time, prec_setup_time,
     prec_apply_time, total_time;
   int iteration;
+  std::vector<int> ensemble_its;
   double norm_res;
   result_struct() :
     add_time(0), dot_time(0), matvec_time(0), iter_time(0), prec_setup_time(0),
@@ -207,7 +208,7 @@ result_struct cg_solve(
   double prec_setup = 0;
   double prec_apply = 0;
   return result_struct(addtime,dottime,matvectime,prec_setup,prec_apply,
-                       totaltime,k-1,normr);
+                       totaltime,k-1,FENL::scalar_norm(normr));
 }
 
 

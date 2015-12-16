@@ -104,6 +104,14 @@ void fill_coords( const coords_type& coords,
   FillCoords<coords_type,coords_vec_type>(coords, coords_vec);
 }
 
+template <typename S, typename V, typename O>
+struct ExtractEnsembleIts {
+  static std::vector<int>
+  apply(const Belos::SolverManager<S,V,O>& solver) {
+    return std::vector<int>();
+  }
+};
+
 template <class SM, class SV, class LO, class GO, class N, class Mesh>
 result_struct
 belos_solve(
@@ -223,6 +231,16 @@ belos_solve(
   cgsolve.matvec_time = time_mat_vec->totalElapsedTime();
   cgsolve.prec_apply_time = time_prec_apply->totalElapsedTime();
   cgsolve.prec_setup_time = time_prec_setup->totalElapsedTime();
+
+  // Extract the number of iterations for ensembles
+  cgsolve.ensemble_its =
+    ExtractEnsembleIts<BelosScalarType, VectorType, OperatorType>::apply(*solver);
+  // if (cgsolve.ensemble_its.size() > 0) {
+  //   std::cout << std::endl << "ensemble iterations = ";
+  //   for (std::size_t i=0; i<cgsolve.ensemble_its.size(); ++i)
+  //     std::cout << cgsolve.ensemble_its[i] << " ";
+  //   std::cout << std::endl;
+  // }
 
   return cgsolve;
 }

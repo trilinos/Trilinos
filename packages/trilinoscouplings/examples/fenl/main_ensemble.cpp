@@ -265,6 +265,30 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
+#if defined( HAVE_TPETRA_SERIAL )
+    if ( cmdline.USE_SERIAL ) {
+#if defined(__MIC__)
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::Serial , 16 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::Serial , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
+#else
+      if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
+           cmdline.USE_UQ_ENSEMBLE == 4 )
+        run< Kokkos::Serial ,  4 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
+        run< Kokkos::Serial , 16 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
+        run< Kokkos::Serial , 32 >( comm , cmdline );
+      else
+        std::cout << "Invalid ensemble size!" << std::endl;
+#endif
+    }
+#endif
+
 #if defined( HAVE_TPETRA_PTHREAD )
     if ( cmdline.USE_THREADS ) {
 #if defined(__MIC__)
