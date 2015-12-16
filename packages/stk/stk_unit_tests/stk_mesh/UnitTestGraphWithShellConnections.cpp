@@ -19,10 +19,10 @@ class GraphWithShells : public ::testing::Test
 {
 protected:
     GraphWithShells() :
+            procRank(stk::parallel_machine_rank(comm)),
             parGraphInfo(procRank),
             graphInfo(graph, parGraphInfo, elementTopologies)
     {
-        procRank = stk::parallel_machine_rank(comm);
     }
 
     void run_test_on_num_procs(int numProcs)
