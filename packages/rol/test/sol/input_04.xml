@@ -12,7 +12,7 @@
         <Parameter name="Output to Screen"        type="bool"   value="true"              />
         <!-- ===========  STEP FOR SUBPROBLEM SOLVE  =========== -->
         <ParameterList name="Step">
-          <Parameter name="Type" type="string" value="Interior Point" />
+          <Parameter name="Type" type="string" value="Augmented Lagrangian" />
           <!-- ===========  INTERIOR POINT  =========== -->
           <ParameterList name="Interior Point">
             <Parameter name="Initial Barrier Penalty"          type="double" value="0.1"   />
