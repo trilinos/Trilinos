@@ -685,8 +685,19 @@ private:
   //! Contains the diagonal elements of \c A_.
   mutable Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
 
-  Teuchos::RCP<block_crs_matrix_type> BlockDiagonal_;
-  Teuchos::Array<int> blockDiagonalFactorizationPivots;
+
+  typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
+                       typename block_crs_matrix_type::device_type> block_diag_type;
+  typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
+                       typename block_crs_matrix_type::device_type,
+                       Kokkos::MemoryUnmanaged> unmanaged_block_diag_type;
+  block_diag_type BlockDiagonal_;
+
+  typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type> pivots_type;
+  typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type,
+                       Kokkos::MemoryUnmanaged> unmanaged_pivots_type;
+  pivots_type blockDiagonalFactorizationPivots_;
+
   Teuchos::RCP<block_multivector_type> yBlockColumnPointMap_;
 
 

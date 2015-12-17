@@ -571,6 +571,7 @@ void Relaxation<MatrixType>::initialize ()
 template<class MatrixType>
 void Relaxation<MatrixType>::computeBlockCrs ()
 {
+  using Kokkos::ALL;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -609,14 +610,28 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     const local_ordinal_type blockSize = blockCrsA->getBlockSize ();
 
     if (! savedDiagOffsets_) {
-      BlockDiagonal_ = Teuchos::null;
-      BlockDiagonal_ = rcp(new block_crs_matrix_type(*Ifpack2::Details::computeDiagonalGraph(blockCrsA->getCrsGraph()), blockSize));
+      BlockDiagonal_ = block_diag_type (); // clear it
+      BlockDiagonal_ = block_diag_type ("Ifpack2::Relaxation::BlockDiagonal_",
+                                        blockCrsA->getCrsGraph().getNodeNumRows (),
+                                        blockSize, blockSize);
       blockCrsA->getLocalDiagOffsets (diagOffsets_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (diagOffsets_.size ()) != BlockDiagonal_.dimension_0 (),
+         std::logic_error, "diagOffsets_.size() = " << diagOffsets_.size () <<
+         " != BlockDiagonal_.dimension_0() = " << BlockDiagonal_.dimension_0 () <<
+         ".  Please report this bug to the Ifpack2 developers.");
       savedDiagOffsets_ = true;
     }
-    blockCrsA->getLocalDiagCopy (*BlockDiagonal_, diagOffsets_ ());
+    blockCrsA->getLocalDiagCopy (BlockDiagonal_, diagOffsets_ ());
 
-    const size_t numMyRows = A_->getNodeNumRows ();
+    const size_t lclNumMeshRows = A_->getNodeNumRows ();
+
+    // Use an unmanaged View in this method, so that when we take
+    // subviews of it (to get each diagonal block), we don't have to
+    // touch the reference count.  Reference count updates are a
+    // thread scalability bottleneck and have a performance cost even
+    // without using threads.
+    unmanaged_block_diag_type blockDiag = BlockDiagonal_;
 
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
@@ -625,32 +640,38 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       Array<scalar_type> values (maxLength * blockSize * blockSize);
       size_t numEntries = 0;
 
-      for (size_t i = 0; i < numMyRows; ++i) {
+      for (size_t i = 0; i < lclNumMeshRows; ++i) {
+        // FIXME (mfh 16 Dec 2015) Get views instead of copies.
         blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
-        scalar_type* diagBlock = (scalar_type*) BlockDiagonal_->getLocalBlock (i,i).getRawPtr ();
+
+        auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
         for (local_ordinal_type subRow = 0; subRow < blockSize; ++subRow) {
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries ; ++k) {
-            if (static_cast<size_t> (indices[k]) > numMyRows) {
+            if (static_cast<size_t> (indices[k]) > lclNumMeshRows) {
               const size_t offset = blockSize*blockSize*k + subRow*blockSize;
               for (local_ordinal_type subCol = 0; subCol < blockSize; ++subCol) {
                 diagonal_boost += STS::magnitude (values[offset+subCol] / two);
               }
             }
           }
-          if (STS::magnitude (diagBlock[subRow*(blockSize+1)]) < L1Eta_ * diagonal_boost) {
-            diagBlock[subRow*(blockSize+1)] += diagonal_boost;
+          if (STS::magnitude (diagBlock(subRow, subRow)) < L1Eta_ * diagonal_boost) {
+            diagBlock(subRow, subRow) += diagonal_boost;
           }
         }
       }
     }
 
-    blockDiagonalFactorizationPivots.resize (numMyRows * blockSize);
-    int info;
-    for (size_t i = 0 ; i < numMyRows; ++i) {
-      typename block_crs_matrix_type::little_block_type diagBlock =
-        BlockDiagonal_->getLocalBlock (i, i);
-      diagBlock.factorize (&blockDiagonalFactorizationPivots[i*blockSize], info);
+    blockDiagonalFactorizationPivots_ =
+      pivots_type ("Ifpack2::Relaxation::pivots", lclNumMeshRows, blockSize);
+    // Use an unmanaged View to avoid ref count overhead in loop below.
+    unmanaged_pivots_type pivots = blockDiagonalFactorizationPivots_;
+
+    int info = 0;
+    for (size_t i = 0 ; i < lclNumMeshRows; ++i) {
+      auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
+      auto ipiv = Kokkos::subview (pivots, i, ALL ());
+      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
     }
 
     Importer_ = A_->getGraph ()->getImporter ();
@@ -1093,12 +1114,17 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_
                                    Tpetra::MultiVector<scalar_type, local_ordinal_type,
                                                        global_ordinal_type,node_type>& Y) const
 {
+  using Kokkos::ALL;
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type,node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> MV;
-  typedef typename block_crs_matrix_type::little_block_type little_block_type;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+
+  // Get unmanaged Views, so that taking subviews repeatedly won't
+  // update the reference count.
+  unmanaged_block_diag_type blockDiag = BlockDiagonal_;
+  unmanaged_pivots_type pivots = blockDiagonalFactorizationPivots_;
 
   if (ZeroStartingSolution_) {
     Y.putScalar (STS::zero ());
@@ -1121,10 +1147,12 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_
     for (size_t i = 0; i < numVectors; ++i) {
       for (size_t k = 0; k < numRows; ++k) {
         // Each iteration: Y = Y + \omega D^{-1} (X - A*Y)
-        little_block_type factorizedBlockDiag = BlockDiagonal_->getLocalBlock (k, k);
+        auto factorizedBlockDiag = Kokkos::subview (blockDiag, k, ALL (), ALL ());
+        auto ipiv = Kokkos::subview (pivots, k, ALL ());
         little_vec_type xloc = A_times_Y_Block.getLocalBlock (k, i);
         little_vec_type yloc = yBlock.getLocalBlock (k, i);
-        factorizedBlockDiag.solve (xloc, &blockDiagonalFactorizationPivots[i*blockSize]);
+        int info = 0;
+        Tpetra::Experimental::GETRS ("N", factorizedBlockDiag, ipiv, xloc, info);
         Tpetra::Experimental::AXPY (DampingFactor_, xloc, yloc);
       }
     }
@@ -1457,8 +1485,8 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, *BlockDiagonal_,
-                        &blockDiagonalFactorizationPivots[0],
+    A.localGaussSeidel (xBlock, *yBlockCol, BlockDiagonal_,
+                        blockDiagonalFactorizationPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
@@ -1805,8 +1833,8 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, *BlockDiagonal_,
-                        &blockDiagonalFactorizationPivots[0],
+    A.localGaussSeidel (xBlock, *yBlockCol, BlockDiagonal_,
+                        blockDiagonalFactorizationPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
