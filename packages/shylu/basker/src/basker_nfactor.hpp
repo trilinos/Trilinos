@@ -108,8 +108,10 @@ namespace BaskerNS
     typedef typename TeamPolicy::member_type     MemberType;
     //Note: To be added
     #endif //end basker_no_lambda
-
+    
+    #ifdef BASKER_TIME
     printf("Time DOMAIN: %f \n", timer.seconds());
+    #endif
     timer.reset();
 
     #else// else basker_kokkos
@@ -153,8 +155,10 @@ namespace BaskerNS
 	Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
 			     sep_nfactor);
 	Kokkos::fence();
+	#ifdef BASKER_TIME
 	printf("Time INNERSEP: %d %f \n", 
 	       l, timer_inner_sep.seconds());
+	#endif
         #else //ELSE BASKER_NO_LAMBDA
 	//Note: to be added
         #endif //end BASKER_NO_LAMBDA
@@ -185,8 +189,10 @@ namespace BaskerNS
 	Kokkos::parallel_for(TeamPolicy(num_threads,1),
 			     diag_nfactor);
 	Kokkos::fence();
+	#ifdef BASKER_TIME
 	printf("Time BTF: %f \n", 
 	       timer_btf.seconds());
+	#endif
 
       }//end btf call
 

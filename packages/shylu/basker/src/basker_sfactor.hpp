@@ -137,13 +137,13 @@ namespace BaskerNS
 	 symmetric_sfactor();
        }
 
-     //#ifdef BASKER_DEBUG_SFACTOR
+     #ifdef BASKER_DEBUG_SFACTOR
      printf("\n\n\n");
      printf("----------------------------------\n");
      printf("Total NNZ: %d \n", global_nnz);
      printf("----------------------------------\n");
      printf("\n\n\n");
-     //#endif
+     #endif
           
 
      
@@ -2570,14 +2570,17 @@ namespace BaskerNS
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    (.5*lblk_size*lblk_size)+lblk_size);
+	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);	    
+
+					    //			    (.5*lblk_size*lblk_size)+lblk_size);
 	
 	UBTF[i-btf_tabs_offset].init_matrix("UBFT",
 			    btf_tabs[i],
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-			    (.5*lblk_size*lblk_size)+lblk_size);
+	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);
+					    //(.5*lblk_size*lblk_size)+lblk_size);
 
 	//will have have to do the fill in nfactor
 
@@ -2594,8 +2597,8 @@ namespace BaskerNS
       {
 	BASKER_ASSERT(num_threads > 0, "sfactor num_threads");
 	MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-	printf("thread array alloc\n");
-	printf("max_blk_size: %d \n", max_blk_size);
+	//printf("thread array alloc\n");
+	//printf("max_blk_size: %d \n", max_blk_size);
       }
 
 

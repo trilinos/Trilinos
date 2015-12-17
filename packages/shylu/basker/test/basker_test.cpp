@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
   cout << "--------------Done Solve----------------------"<<endl;
   mybasker.Finalize();
   cout << "--------------Called Finalize-----------------"<<endl;
-
+ 
   //}//After
   //Kokkos::fence();
 

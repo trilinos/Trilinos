@@ -47,8 +47,6 @@
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Version.hpp>
 
-#include <MueLu_UseDefaultTypes.hpp>
-
 #include <MueLu_ZoltanInterface.hpp>
 
 #include <Galeri_XpetraUtils.hpp>
@@ -62,7 +60,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -75,7 +73,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     out << std::endl;
     out << "This tests that the partitioning produced by Zoltan is \"reasonable\" for a matrix" << std::endl;
@@ -99,11 +97,11 @@ namespace MueLuTests {
     level.SetFactoryManager(factoryHandler);
     GO nx=7;
     GO ny=nx;
-    GO numGlobalElements = nx*ny;
+    Xpetra::global_size_t numGlobalElements = nx*ny;
     size_t maxEntriesPerRow=30;
 
     // Populate CrsMatrix with random number of entries (up to maxEntriesPerRow) per row.
-    RCP<const Map> map = MapFactory::createUniformContigMap(TestHelpers::Parameters::getLib(), numGlobalElements, comm);
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, 0/*indexBase*/, comm);
     const size_t numMyElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getNodeElementList();
     RCP<Matrix> A = rcp(new CrsMatrixWrap(map, 1)); // Force underlying linear algebra library to allocate more
@@ -304,7 +302,7 @@ namespace MueLuTests {
 
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
     out << std::endl;
     out << "This tests that the partitioning produced by Zoltan is \"reasonable\" for a matrix" << std::endl;
@@ -342,9 +340,9 @@ namespace MueLuTests {
       int nproc = comm->getSize();
       if (comm->getRank() < nproc-1) numMyNodes = numNodes / nproc;
       else numMyNodes = numNodes - (numNodes/nproc) * (nproc-1);
-      map = MapFactory::createContigMap(TestHelpers::Parameters::getLib(), numGlobalElements, numMyNodes*dofsPerNode, comm);
+      map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyNodes*dofsPerNode, 0/*indexBase*/, comm);
     } else {
-      map = MapFactory::createUniformContigMap(TestHelpers::Parameters::getLib(), numGlobalElements, comm);
+      map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, 0/*indexBase*/, comm);
     }
 
     const size_t numMyElements = map->getNodeNumElements();
@@ -388,7 +386,7 @@ namespace MueLuTests {
     Teuchos::ParameterList list;
     list.set("nx",nx);
     list.set("ny",ny);
-    RCP<const Map> coalescedMap = MapFactory::createContigMap(TestHelpers::Parameters::getLib(), numGlobalElements/dofsPerNode, numMyNodes, comm);
+    RCP<const Map> coalescedMap = MapFactory::Build<NO>(TestHelpers::Parameters::getLib(), numGlobalElements/dofsPerNode, numMyNodes, 0/*indexBase*/, comm);
     RCP<MultiVector> XYZ = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",coalescedMap,list);
 
     // XYZ are the "coalesce" coordinates as it has been generated for 1 DOF/node and we are using them for 3 DOFS/node

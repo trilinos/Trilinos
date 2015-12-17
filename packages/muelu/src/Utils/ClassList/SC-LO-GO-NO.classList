@@ -68,8 +68,8 @@ SaPFactory
 SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 SchurComplementFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 SegregatedAFactory
-ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS)
-ShiftedLaplacianOperator - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_BELOS)
+ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacianOperator - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
 SimpleSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 Smoother
 SmootherBase

@@ -3,7 +3,6 @@
 
 #include "basker_types.hpp"
 #include "basker_sswrapper.hpp"
-#include <assert.h>
 
 //Depends on SuiteSparse in Amesos
 #ifdef HAVE_AMESOS
@@ -81,6 +80,8 @@ namespace BaskerNS
 
     strong_component(M,nblks,order_btf_array,btf_tabs);
 
+    btf_nblks = nblks;
+
     btf_flag = BASKER_TRUE;
 
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -105,6 +106,8 @@ namespace BaskerNS
 	//printf("%d, ", btf_perm(i));
       }
     */
+
+    printf("num_threads: %d \n", num_threads);
     printf("\n\nBTF tabs: \n");
     for(Int i=0; i < nblks+1; i++)
       {
@@ -116,45 +119,46 @@ namespace BaskerNS
     permute_col(M, order_btf_array);
     permute_row(M, order_btf_array);
 
-    MALLOC_INT_1DARRAY(order_blk_amd, M.ncol);
-    init_value(order_blk_amd, M.ncol, (Int)0);
+    MALLOC_INT_1DARRAY(order_blk_amd_array, M.ncol);
+    init_value(order_blk_amd_array, M.ncol, (Int)0);
     MALLOC_INT_1DARRAY(btf_blk_nnz, nblks+1);
     init_value(btf_blk_nnz, nblks+1, (Int) 0);
     MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
-    init_value(btf_blk_nnx, nblks+1, (Int) 0);
+    init_value(btf_blk_work, nblks+1, (Int) 0);
+
 
     //Find AMD blk ordering, get nnz, and get work
-    btf_blk_amd( M, order_blk_amd, btf_blk_nnz, btf_blk_work);
+    btf_blk_amd( M, order_blk_amd_array,
+		 btf_blk_nnz, btf_blk_work);
 
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("blk_perm:\n");
     for(Int i = 0; i < M.ncol; i++)
       {
-	printf("(%d,%d) ", i, order_blk_amd(i));
+	printf("(%d,%d) ", i, order_blk_amd_array(i));
       }
     printf("\n");
-    printf("blk_size/blk_nnz/work: \n");
+    printf("id/blk_size/blk_nnz/work: \n");
     for(Int i = 0; i < nblks; i++)
       {
-	printf("(%d, %d, %d) ", btf_tabs(i+1)-btf_tabs(b), 
-	       btf_blk_nnz(b), btf_blk_work(b));
+	printf("(%d, %d, %d, %d) ", i,
+	       btf_tabs(i+1)-btf_tabs(i), 
+	       btf_blk_nnz(i), btf_blk_work(i));
       }
     printf("\n");
     #endif
 
-    permute_col(M, order_blk_amd);
-    permute_col(M, order_blk_amd);
+    permute_col(M, order_blk_amd_array);
+    permute_col(M, order_blk_amd_array);
     sort_matrix(M);
        
-    //break_into_parts2(M, nblks, btf_tabs, btf_nnz, btf_work );
+    break_into_parts2(M, nblks, btf_tabs);
 
-    btf_nblks = nblks;
-
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 
 	   btf_tabs(btf_tabs_offset));
-    //#endif
+    #endif
 
     return 0;
   }//end find BTF(nnz)
@@ -187,9 +191,9 @@ namespace BaskerNS
     if(nblks == 1)
       {
 	
-        //#ifdef BASKER_DEBUG_ORDER_BTF
+        #ifdef BASKER_DEBUG_ORDER_BTF
 	printf("Short Circuit part_call \n");
-	//#endif
+	#endif
 	BTF_A = A;
 	//Options.btf = BASKER_FALSE;
 	btf_tabs_offset = 1;
@@ -204,8 +208,8 @@ namespace BaskerNS
     while(move_fwd==BASKER_TRUE)
       {
 
-	Int blk_size = btf_tabs(blk_idx)-btf_tabs(blk_idx-1);
-
+	Int blk_size = btf_tabs(blk_idx)-
+	                     btf_tabs(blk_idx-1);
 
 	#ifdef BASKER_DEBUG_ORDER_BTF
 	printf("move_fwd loop \n");
@@ -258,12 +262,12 @@ namespace BaskerNS
 	  }
       }//end while(move_fwd)
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Done finding BTF cut.  Cut size: %d scol: %d \n",
 	   t_size, scol);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
     BASKER_ASSERT((scol >= 0) && (scol < M.ncol), "SCOL\n");
-    //#endif
+    #endif
     
     //Comeback and change
     btf_tabs_offset = blk_idx;
@@ -277,10 +281,10 @@ namespace BaskerNS
     BTF_A.set_shape(0, scol, 0, scol);
     BTF_A.nnz = M.col_ptr(scol);
     
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Init BTF_A. ncol: %d nnz: %d \n",
 	   scol, BTF_A.nnz);
-    //#endif
+    #endif
 
     if(BTF_A.v_fill == BASKER_FALSE)
       {
@@ -494,56 +498,70 @@ namespace BaskerNS
       }
 
     //Step 1.
-    Int break_size    = (M.ncol + (M.ncol*BASKER_BTF_IMBALANCE))/num_threads;
+    //Find total work estimate
+    Int total_work_estimate = 0;
+    for(Int b = 0; b < nblks; b++)
+      {
+	total_work_estimate += btf_blk_work(b);
+      }
+    //printf("Total work estimate: %d \n",
+    //	   total_work_estimate);
+    //printf("num_threads: %d epsilon: %f \n",
+    //	   num_threads, 
+    //	   ((double)1/num_threads) +
+    //	   ((double)BASKER_BTF_IMBALANCE));
+    Int break_size    = ceil((double)total_work_estimate*(
+		((double)1/num_threads) + 
+		((double)BASKER_BTF_IMBALANCE)));
+
+    // printf("Break size: %d \n", break_size);
+
     Int t_size            = 0;
     Int scol              = M.ncol;
     Int blk_idx           = nblks;
     BASKER_BOOL  move_fwd = BASKER_TRUE;
+
+
     while(move_fwd==BASKER_TRUE)
       {
 
-	Int blk_size = btf_tabs(blk_idx)-btf_tabs(blk_idx-1);
-
+	//printf("------TEST blk_idx: %d \n",
+	// blk_idx);
+	Int blk_work = btf_blk_work(blk_idx-1);
+	Int blk_size  = btf_tabs(blk_idx) - 
+	                        btf_tabs(blk_idx-1);
 
 	#ifdef BASKER_DEBUG_ORDER_BTF
-	printf("move_fwd loop \n");
+	printf(" \n move_fwd loop \n");
 	BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
+	BASKER_ASSERT(blk_work>=0, "btk_work wrong");
 	BASKER_ASSERT(blk_size>0, "btf blk size wrong");
-	printf("blk_idx: %d blk_size: %d \n", 
-	       blk_idx, blk_size);
-	std::cout << blk_size << std::endl;
+	printf("blk_idx: %d blk_work: %d blk_size: %d \n",
+	       blk_idx, blk_work, blk_size);
 	#endif
 
-
-	//if((blk_size < Options.btf_large) &&
-	// ((((double)t_size+blk_size)/(double)M.ncol) < Options.btf_max_percent))
-
-	if(blk_size < 
+	if(((blk_work < break_size) ||
+	    (blk_work < BASKER_BTF_SMALL)) &&
+	   (blk_idx > 1))
 	  {
 	    #ifdef BASKER_DEBUG_ORDER_BTF
 	    printf("first choice \n");
-	    printf("blksize test: %d %d %d \n",
-		   blk_size, Options.btf_large, 
-		   BASKER_BTF_LARGE);
-	    printf("blkpercent test: %f %f %f \n", 
-		   ((double)t_size+blk_size)/(double)M.ncol, 
-		   Options.btf_max_percent, 
-		   (double) BASKER_BTF_MAX_PERCENT);
 	    #endif
 
-	   
-		t_size = t_size+blk_size;
-		blk_idx = blk_idx-1;
-		scol   = btf_tabs[blk_idx];
+	      
+	      t_size = t_size+blk_size;
+	      blk_idx = blk_idx-1;
+	      scol   = btf_tabs[blk_idx];
 	   
 	  }
 	else
 	  {
 	    //printf("second choice \n");
-	    //#ifdef BASKER_DEBUG_ORDER_BTF
+	    #ifdef BASKER_DEBUG_ORDER_BTF
 	    printf("Cut: blk_size: %d percent: %f \n",
-		   blk_size, ((double)t_size+blk_size)/(double)M.ncol);
-	    
+		   blk_size, 
+		((double)t_size+blk_size)/(double)M.ncol);
+	    #endif
 	    if((((double)t_size+blk_size)/(double)M.ncol)
 	       == 1.0)
 	      {
@@ -553,17 +571,20 @@ namespace BaskerNS
 		
 	      }
 
-	    //#endif
+	   
 	    move_fwd = BASKER_FALSE;
 	  }
       }//end while(move_fwd)
 
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Done finding BTF cut.  Cut size: %d scol: %d \n",
 	   t_size, scol);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
+
+
+    
     BASKER_ASSERT((scol >= 0) && (scol < M.ncol), "SCOL\n");
-    //#endif
+    #endif
     
     //Comeback and change
     btf_tabs_offset = blk_idx;
@@ -577,10 +598,10 @@ namespace BaskerNS
     BTF_A.set_shape(0, scol, 0, scol);
     BTF_A.nnz = M.col_ptr(scol);
     
-    //#ifdef BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Init BTF_A. ncol: %d nnz: %d \n",
 	   scol, BTF_A.nnz);
-    //#endif
+    #endif
 
     if(BTF_A.v_fill == BASKER_FALSE)
       {
@@ -750,7 +771,7 @@ namespace BaskerNS
     //printf("DEBUG\n");
     //BTF_C.print();
     //printf("\n\n");
-
+    
     return 0;
 
   }//end break_into_parts2 (based on imbalance)
@@ -800,7 +821,7 @@ namespace BaskerNS
     #endif
 
     
-    printf("FOUND NBLKS: %d \n", nblks);
+    //printf("FOUND NBLKS: %d \n", nblks);
 
     return 0;
 

@@ -85,7 +85,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_EpetraOperator.hpp>
 
 
@@ -94,7 +94,7 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+typedef Xpetra::EpetraNode Node;
 #endif
 
 /*!
@@ -107,7 +107,7 @@ typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
 
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include "MueLu_UseShortNames.hpp"
   using Teuchos::RCP;
   using Teuchos::rcp;

@@ -53,9 +53,8 @@
 # ************************************************************************
 # @HEADER
 
-# JJH corresponds to do-configure-no_serial
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-broken.cmake")
 
 #
 # Set the options specific to this build case
@@ -63,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_SERIAL_OPENMP)
+SET(BUILD_DIR_NAME BROKEN_NO_SERIAL)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -74,10 +73,11 @@ SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
     "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
-    "-DTpetra_INST_INT_LONG:BOOL=OFF"
-    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
+    "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
     "-DTpetra_INST_SERIAL:BOOL=OFF"
-    "-DTrilinos_ENABLE_OpenMP=ON"
+    "-DKokkos_ENABLE_Serial:BOOL=ON"
 
   ### MISC ###
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
@@ -92,8 +92,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_HWLOC:BOOL=ON"
 
   ### PACKAGES CONFIGURATION ###
-  "-DMueLu_ENABLE_Experimental:BOOL=ON"
-  "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
 )
 
 #

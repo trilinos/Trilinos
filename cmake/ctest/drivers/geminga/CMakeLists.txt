@@ -25,6 +25,7 @@ SET(RUN_CUDA_OLD_TESTS ON)
 
 if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
+  # Regular tests
   TRILINOS_DRIVER_ADD_DASHBOARD(
     SERIAL_DEBUG_MueLu_Tpetra
     ctest_linux_nightly_serial_debug_muelu_tpetra_geminga.cmake
@@ -42,13 +43,14 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_Epetra
-    ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
+    OPENMPI_1.10.0_RELEASE_MueLu
+    ctest_linux_nightly_mpi_release_muelu_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
 
+  # ETI tests
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_INT_NO_SERIAL
     ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_geminga.cmake
@@ -58,7 +60,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_SERIAL
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_SERIAL
     ctest_linux_nightly_mpi_release_muelu_no_serial_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
@@ -66,22 +68,38 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_DEV_MueLu_Tpetra_NO_INT
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT
     ctest_linux_nightly_mpi_release_muelu_no_int_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
 
-
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_RELEASE_MueLu
-    ctest_linux_nightly_mpi_release_muelu_geminga.cmake
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_EPETRA_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_epetra_no_serial_openmp_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
 
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT
+    ctest_linux_nightly_mpi_release_muelu_no_int_openmp_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  # Refactor (kokkos) tests
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
     ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_geminga.cmake
@@ -90,6 +108,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 420
     )
 
+  # Misc tests
   if(RUN_HEAVY_MEMORY_TESTS)
 
     TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -139,6 +158,57 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
       )
 
   endif()
+
+elseif($ENV{CTEST_CONFIGURATION} MATCHES "broken")
+
+  # ETI tests
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_Tpetra_NO_INT_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_serial_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_NO_INT
+    ctest_linux_nightly_mpi_release_muelu_no_int_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_NO_EPETRA_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_epetra_no_serial_openmp_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_NO_INT_NO_SERIAL
+    ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    BROKEN_NO_INT
+    ctest_linux_nightly_mpi_release_muelu_no_int_openmp_broken_geminga.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
 
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
 
