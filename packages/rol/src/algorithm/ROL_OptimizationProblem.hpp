@@ -162,6 +162,9 @@ public:
           = Teuchos::rcp( new LogBarrierObjective<Real> );
         obj_ = Teuchos::rcp( new InteriorPoint::PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
       }
+      else {
+        bnd_ = Teuchos::rcp(&*bnd,false);
+      }
     }
     else {
       bnd_ = Teuchos::rcp(&*bnd,false);
