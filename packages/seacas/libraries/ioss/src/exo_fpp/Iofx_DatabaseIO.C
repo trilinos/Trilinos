@@ -312,9 +312,11 @@ namespace Iofx {
               Ioss::FileInfo path = Ioss::FileInfo(decoded_filename.c_str());
               Ioss::Utils::create_path(path.pathname());
             }
+#ifdef HAVE_MPI
             if (dbUsage != Ioss::WRITE_HISTORY) {
               MPI_Barrier(util().communicator());
             }
+#endif
             exodusFilePtr = ex_create(decoded_filename.c_str(), mode, &cpu_word_size, &dbRealWordSize);
             if (exodusFilePtr < 0) {
               dbState = Ioss::STATE_INVALID;
