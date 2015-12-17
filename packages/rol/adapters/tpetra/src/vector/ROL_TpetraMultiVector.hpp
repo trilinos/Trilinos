@@ -151,6 +151,11 @@ class TpetraMultiVector : public Vector<Real> {
     /** \brief Assign \f$y \leftarrow x \f$ where \f$y = \mbox{*this}\f$.
     */
     void set(const Vector<Real> &x) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
       const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
       tpetra_vec_->assign(*ex.getVector()); 
     }
@@ -158,8 +163,25 @@ class TpetraMultiVector : public Vector<Real> {
     /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
     */
     void plus(const V &x) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
       const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
       tpetra_vec_->update(1.0,*ex.getVector(),1.0); 
+    }
+
+
+    void axpy( const Real alpha, const Vector<Real> &x ) {
+
+      TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                  std::invalid_argument,
+                                  "Error: Vectors must have the same dimension." );
+
+      const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
+      tpetra_vec_->update(alpha,*ex.getVector(),1.0); 
+
     }
 
     /** \brief Compute \f$y \leftarrow \alpha y\f$ where \f$y = \mbox{*this}\f$.
@@ -171,6 +193,11 @@ class TpetraMultiVector : public Vector<Real> {
     /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
     */
     Real dot( const V &x ) const {
+
+      TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                  std::invalid_argument,
+                                  "Error: Vectors must have the same dimension." );
+
       Real v; // Need this to make a 1-element ArrayView
       Teuchos::ArrayView<Real> val(&v,1);
       const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
@@ -210,6 +237,11 @@ class TpetraMultiVector : public Vector<Real> {
     }
 
     VP basis( const int i ) const {
+
+      TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+                                  std::invalid_argument,
+                                  "Error: Basis index must be between 0 and vector dimension." );
+
       using Teuchos::RCP; 
       using Teuchos::rcp; 
       typedef typename MV::map_type map_type;
@@ -240,7 +272,12 @@ class TpetraMultiVector : public Vector<Real> {
     }
 
     void applyBinary( const BF &f, const V &x ) {
-      const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                  std::invalid_argument,
+                                  "Error: Vectors must have the same dimension." );
+ 
+     const TMV &ex = Teuchos::dyn_cast<const TMV>(x);
       CMVP xp = ex.getVector();
 
       ViewType v_lcl = tpetra_vec_->getDualView().d_view;
