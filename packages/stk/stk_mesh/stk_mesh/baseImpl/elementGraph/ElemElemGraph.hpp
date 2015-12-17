@@ -220,7 +220,6 @@ private:
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
     bool is_connected_element_in_body_to_be_skinned(const stk::mesh::GraphEdge &graphEdge);
     bool is_element_selected_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &selector, stk::mesh::Entity otherElement);
-    void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity, const stk::mesh::GraphEdge &graphEdge, stk::mesh::EntityVector skinned_elements);
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
@@ -231,12 +230,6 @@ private:
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,
                                                  std::vector<stk::mesh::sharing_info> &shared_modified);
-    void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
-                                      impl::ElementSidePair skinnedElemSidePair,
-                                      stk::mesh::EntityVector &skinned_elements);
-    void connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
-                                             impl::ElementSidePair skinnedElemSidePair,
-                                             stk::mesh::EntityVector &skinned_elements);
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
 
