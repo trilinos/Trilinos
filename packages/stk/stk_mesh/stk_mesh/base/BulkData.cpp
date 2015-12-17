@@ -1557,7 +1557,7 @@ bool print_comm_data_for_entity_in_ghosting(const BulkData& mesh, const Ghosting
     std::vector<int> procs;
     mesh.comm_procs(ghosting, entityKey, procs);
     if (procs.empty()) { return false; }
-    out << "        Ghosting " << mesh.ghosting_part(ghosting).name() << " with procs:  " << stk::util::join(procs, ", ");
+    out << "        Ghosting " << mesh.ghosting_part(ghosting).name() << " with procs:  " << stk::util::join(procs, ", ") << std::endl;
     return true;
 }
 
@@ -3558,6 +3558,7 @@ bool BulkData::pack_entity_modification( const bool packShared , stk::CommSparse
       EntityState status = this->is_valid(entity) ? this->state(entity) : Deleted;
 
       if ( status == Modified || status == Deleted ) {
+        int owned_closure_int = owned_closure(entity) ? 1 : 0;
   
         for ( PairIterEntityComm ec(i->entity_comm->comm_map); ! ec.empty() ; ++ec )
         {
@@ -3565,7 +3566,8 @@ bool BulkData::pack_entity_modification( const bool packShared , stk::CommSparse
           {
             comm.send_buffer( ec->proc )
                 .pack<EntityKey>( i->key )
-                .pack<EntityState>( status );
+                .pack<EntityState>( status )
+                .pack<int>(owned_closure_int);
   
             flag = true ;
           }
@@ -3605,16 +3607,20 @@ void BulkData::communicate_entity_modification( const bool shared , std::vector<
       CommBuffer & buf = comm.recv_buffer( procNumber );
       EntityKey key;
       EntityState state;
+      int remote_owned_closure_int;
+      bool remote_owned_closure;
 
       while ( buf.remaining() ) {
 
         buf.unpack<EntityKey>( key )
-           .unpack<EntityState>( state );
+           .unpack<EntityState>( state )
+           .unpack<int>( remote_owned_closure_int);
+        remote_owned_closure = ((remote_owned_closure_int==1)?true:false);
 
         // search through entity_comm, should only receive info on entities
         // that are communicated.
         EntityCommListInfo info = find_entity(*this, entityCommList, key);
-        EntityParallelState parallel_state = {procNumber, state, info, this};
+        EntityParallelState parallel_state = {procNumber, state, info, remote_owned_closure, this};
         data.push_back( parallel_state );
       }
     }
@@ -6485,31 +6491,28 @@ bool BulkData::comm_mesh_verify_parallel_consistency(std::ostream & error_log )
   return verified_ok == 1 ;
 }
 
-namespace {
-
-
 // Enforce that shared entities must be in the owned closure:
 
-void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
+void BulkData::destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing )
 {
-  EntityRank entity_rank = mesh.entity_rank(entity);
+  EntityRank entity_rank = this->entity_rank(entity);
 
-  const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  const EntityRank end_rank = static_cast<EntityRank>(this->mesh_meta_data().entity_rank_count());
   EntityVector temp_entities;
   Entity const* rels = NULL;
   int num_rels = 0;
 
   for (EntityRank irank = static_cast<EntityRank>(end_rank - 1); irank > entity_rank; --irank)
   {
-    bool canOneHaveConnectivityFromEntityRankToIrank = mesh.connectivity_map().valid(entity_rank, irank);
+    bool canOneHaveConnectivityFromEntityRankToIrank = this->connectivity_map().valid(entity_rank, irank);
     if (canOneHaveConnectivityFromEntityRankToIrank)
     {
-      num_rels = mesh.num_connectivity(entity, irank);
-      rels     = mesh.begin(entity, irank);
+      num_rels = this->num_connectivity(entity, irank);
+      rels     = this->begin(entity, irank);
     }
     else
     {
-      num_rels = get_connectivity(mesh, entity, irank, temp_entities);
+      num_rels = get_connectivity(*this, entity, irank, temp_entities);
       rels     = &*temp_entities.begin();
     }
 
@@ -6517,16 +6520,26 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
     {
       Entity e = rels[r];
 
-      bool upwardRelationOfEntityIsInClosure = mesh.owned_closure(e);
-      ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, mesh.entity_rank(e) << " with id " << mesh.identifier(e) << " should not be in closure." );
+      bool upwardRelationOfEntityIsInClosure = this->owned_closure(e);
+      ThrowRequireMsg( !upwardRelationOfEntityIsInClosure, this->entity_rank(e) << " with id " << this->identifier(e) << " should not be in closure." );
 
       // Recursion
-      destroy_dependent_ghosts( mesh , e );
+      if (this->bucket(e).in_aura())// && !this->in_receive_custom_ghost(this->entity_key(e)))
+      {
+          this->destroy_dependent_ghosts( e, entitiesToRemoveFromSharing );
+      }
     }
   }
 
-  mesh.destroy_entity( entity );
-}
+  const bool successfully_destroyed_entity = this->destroy_entity(entity);
+  if (!successfully_destroyed_entity)
+  {
+      std::vector<int> sharing_procs;
+      comm_shared_procs(entity_key(entity), sharing_procs);
+      for(int p : sharing_procs) {
+          entitiesToRemoveFromSharing.push_back(EntityProc(entity, p));
+      }
+  }
 }
 
 // Entities with sharing information that are not in the owned closure
@@ -6539,7 +6552,7 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity entity )
 // have an upward relation to an owned entity be destroyed so that
 // ownership transfers to another process?
 
-void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure()
+void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing)
 {
   for ( EntityCommListInfoVector::const_reverse_iterator
         i =  internal_comm_list().rbegin() ;
@@ -6556,8 +6569,20 @@ void BulkData::delete_shared_entities_which_are_no_longer_in_owned_closure()
 
     if ( entityIsSharedButNotInClosure )
     {
-      destroy_dependent_ghosts( *this , entity );
+      destroy_dependent_ghosts( entity, entitiesToRemoveFromSharing );
     }
+  }
+}
+
+void BulkData::remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing)
+{
+  for(const EntityProc& entityAndProc : entitiesToRemoveFromSharing) {
+      EntityKey key = this->entity_key(entityAndProc.first);
+      this->entity_comm_map_erase(key,EntityCommInfo(BulkData::SHARED, entityAndProc.second));
+      if (!this->in_shared(key)) {
+          this->internal_change_entity_parts(entityAndProc.first,{},{&this->mesh_meta_data().globally_shared_part()});
+          this->internal_mark_entity(entityAndProc.first, NOT_SHARED);
+      }
   }
 }
 

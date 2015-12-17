@@ -117,7 +117,7 @@ class BulkData {
 
 public:
   enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
+  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
 
   enum AutomaticAuraOption {
       NO_AUTO_AURA,
@@ -542,6 +542,7 @@ public:
   bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
+  bool in_receive_custom_ghost( EntityKey key ) const;
   bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
@@ -981,7 +982,8 @@ protected: //functions
 
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
-  void delete_shared_entities_which_are_no_longer_in_owned_closure(); // Mod Mark
+  void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing); // Mod Mark
+  virtual void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing);
   virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, const shared_entity_type &sentity);
   void update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc,  shared_entity_type& shared_entity_this_proc, int proc_id) const;
   void update_shared_entity_this_proc(EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id);
@@ -1053,6 +1055,7 @@ public:
     int                 from_proc;
     EntityState         state;
     EntityCommListInfo  comm_info;
+    bool                remote_owned_closure;
     const BulkData* mesh;
 
     bool operator<(const EntityParallelState& rhs) const
@@ -1293,6 +1296,8 @@ private:
                                                                      EntityRank entity_rank, stk::mesh::Selector selected);
 
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
+
+  void destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing );
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
