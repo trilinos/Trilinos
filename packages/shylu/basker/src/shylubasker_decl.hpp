@@ -160,6 +160,10 @@ namespace BaskerNS
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
 
+
+    //These are temp arrys that are used for ordering and sfator
+    INT_1DARRAY btf_blk_work;
+    INT_1DARRAY btf_blk_nnz;
  
   private:
 
@@ -279,6 +283,8 @@ namespace BaskerNS
     /*basker_order_btf.hpp*/
     BASKER_INLINE
     int find_btf(BASKER_MATRIX &M);
+    BASKER_INLINE
+    int find_btf2(BASKER_MATRIX &M);
     BASKER_INLINE
     int break_into_parts(BASKER_MATRIX &M,
 			 Int nblks,
@@ -918,8 +924,9 @@ namespace BaskerNS
     INT_1DARRAY order_c_csym_array;
 
 
-    void blk_amd(BASKER_MATRIX &x, INT_1DARRAY p);
-
+    void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
+    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p,
+		     INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
 
     //basker_order_amd

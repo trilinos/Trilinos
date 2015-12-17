@@ -48,6 +48,22 @@ namespace BaskerNS
       return -1;
     }
 
+     static
+    inline
+    int amd_order
+    (
+     Int          n,
+     Int       *col_ptr,
+     Int       *row_ptr,
+     Int       *p,
+     double    &l_nnz,
+     double    &lu_work
+     )
+    {
+      return -1;
+    }
+
+
    
   }; //end BaskerSSWrapper template <Int>
 
@@ -166,6 +182,45 @@ namespace BaskerNS
     }
 
 
+        static
+    inline
+    int amd_order
+    (
+     int n, 
+     int *col_ptr,
+     int *row_idx,
+     int *p, 
+     double &l_nnz,
+     double &lu_work
+     )
+    {
+      double Info[AMD_INFO];
+      
+      for(int i = 0; i < AMD_INFO; ++i)
+	{Info[i] = 0;}
+	
+
+      //printf("n: %d \n", n);
+      int ret = amesos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
+
+      //if(ret == AMD_OK)
+      //printf("OK\n");
+      if(ret == AMD_OUT_OF_MEMORY)
+	printf("Memory \n");
+      if(ret == AMD_INVALID)
+	printf("Invalid\n");
+      if(ret == AMD_OK_BUT_JUMBLED)
+	printf("Jumbled\n");
+
+      //These are round bounds but help in deciding work
+      l_nnz   = Info[AMD_LNZ];
+      lu_work = Info[AMD_NMULTSUBS_LU];
+
+      return 0;
+    }
+
+
+
   }; //end BaskerSSWraper template <int>
 
   template <>
@@ -271,6 +326,39 @@ namespace BaskerNS
       if(ret == AMD_OK_BUT_JUMBLED)
 	printf("AMD Jumbled\n");
       
+      return 0;
+    }//amd_order
+
+
+    static
+    inline
+    int amd_order
+    (
+     long n, 
+     long *col_ptr,
+     long *row_idx,
+     long *p,
+     double &l_nnz,
+     double &lu_work
+     )
+    {
+      double Info[AMD_INFO];
+      for(long i = 0; i < AMD_INFO; ++i)
+	{Info[i] = 0;}
+      //printf("n: %d\n", n);
+      long ret = amesos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
+      //if(ret == AMD_OK)
+      //	printf("OK\n");
+      if(ret == AMD_OUT_OF_MEMORY)
+	printf("AMD Memory \n");
+      if(ret == AMD_INVALID)
+	printf("AMD Invalid\n");
+      if(ret == AMD_OK_BUT_JUMBLED)
+	printf("AMD Jumbled\n");
+      
+      l_nnz   = Info[AMD_LNZ];
+      lu_work = Info[AMD_NMULTSUBS_LU];
+
       return 0;
     }
 

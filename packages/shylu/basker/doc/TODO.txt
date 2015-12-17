@@ -1,9 +1,6 @@
 BASKER TODO
 
 * Things to do
-** Complex numbers
-   ** factor
-   ** numerical orderings
 ** Full btf
    ** Fix double BTF structure
    ** Fix btf balance (not hard coded)
