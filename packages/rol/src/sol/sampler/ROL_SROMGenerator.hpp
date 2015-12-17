@@ -199,7 +199,7 @@ private:
     std::vector<Real> wt_lo(numMySamples_,0.), wt_hi(numMySamples_,1.);
     std::vector<Real> pt_eq(dimension_*numMySamples_,0.), wt_eq(numMySamples_,1.);
     Real lo = 0., hi = 0.;
-    srand(12345*bman->batchID());
+    srand(12345*SampleGenerator<Real>::batchID());
     for ( size_t j = 0; j < dimension_; j++) {
       lo = dist_[j]->lowerBound();
       hi = dist_[j]->upperBound();
