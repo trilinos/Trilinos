@@ -196,7 +196,7 @@ namespace Iohb {
         new_this->logStream = open_stream(get_filename().c_str(),
             &(new_this->streamNeedsDelete),
             append);
-        if (*new_this->logStream == 0){
+        if (new_this->logStream == NULL){
           Ioss::Utils::create_path(get_filename().c_str());
           new_this->logStream = open_stream(get_filename().c_str(),
               &(new_this->streamNeedsDelete),
