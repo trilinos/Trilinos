@@ -675,6 +675,25 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
     }
 
+    // In a debug build, do an extra test to make sure that all the
+    // factorizations were computed correctly.
+#ifdef HAVE_IFPACK2_DEBUG
+    const int numResults = 2;
+    // Use "max = -min" trick to get min and max in a single all-reduce.
+    int lclResults[2], gblResults[2];
+    lclResults[0] = info;
+    lclResults[1] = -info;
+    gblResults[0] = 0;
+    gblResults[1] = 0;
+    reduceAll<int, int> (* (A_->getGraph ()->getComm ()), REDUCE_MIN,
+                         numResults, lclResults, gblResults);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gblResults[0] != 0 || gblResults[1] != 0, std::runtime_error,
+       "Ifpack2::Relaxation::compute: When processing the input "
+       "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
+       "failed on one or more (MPI) processes.");
+#endif // HAVE_IFPACK2_DEBUG
+
     Importer_ = A_->getGraph ()->getImporter ();
   } // end TimeMonitor scope
 
