@@ -584,6 +584,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::REDUCE_SUM;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
+  typedef local_ordinal_type LO;
 
   {
     // Reset the timer each time, since Relaxation uses the same Time
@@ -607,50 +608,50 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     // Reset state.
     IsComputed_ = false;
 
-    const local_ordinal_type blockSize = blockCrsA->getBlockSize ();
+    const LO lclNumMeshRows =
+      blockCrsA->getCrsGraph ().getNodeNumRows ();
+    const LO blockSize = blockCrsA->getBlockSize ();
 
     if (! savedDiagOffsets_) {
-      BlockDiagonal_ = block_diag_type (); // clear it
-      BlockDiagonal_ = block_diag_type ("Ifpack2::Relaxation::BlockDiagonal_",
-                                        blockCrsA->getCrsGraph().getNodeNumRows (),
-                                        blockSize, blockSize);
+      blockDiag_ = block_diag_type (); // clear it before reallocating
+      blockDiag_ = block_diag_type ("Ifpack2::Relaxation::blockDiag_",
+                                    lclNumMeshRows, blockSize, blockSize);
       blockCrsA->getLocalDiagOffsets (diagOffsets_);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (diagOffsets_.size ()) != BlockDiagonal_.dimension_0 (),
+        (static_cast<size_t> (diagOffsets_.size ()) !=
+         static_cast<size_t> (blockDiag_.dimension_0 ()),
          std::logic_error, "diagOffsets_.size() = " << diagOffsets_.size () <<
-         " != BlockDiagonal_.dimension_0() = " << BlockDiagonal_.dimension_0 () <<
+         " != blockDiag_.dimension_0() = " << blockDiag_.dimension_0 () <<
          ".  Please report this bug to the Ifpack2 developers.");
       savedDiagOffsets_ = true;
     }
-    blockCrsA->getLocalDiagCopy (BlockDiagonal_, diagOffsets_ ());
-
-    const size_t lclNumMeshRows = A_->getNodeNumRows ();
+    blockCrsA->getLocalDiagCopy (blockDiag_, diagOffsets_ ());
 
     // Use an unmanaged View in this method, so that when we take
     // subviews of it (to get each diagonal block), we don't have to
     // touch the reference count.  Reference count updates are a
     // thread scalability bottleneck and have a performance cost even
     // without using threads.
-    unmanaged_block_diag_type blockDiag = BlockDiagonal_;
+    unmanaged_block_diag_type blockDiag = blockDiag_;
 
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
       const size_t maxLength = A_->getNodeMaxNumRowEntries ();
-      Array<local_ordinal_type> indices (maxLength);
+      Array<LO> indices (maxLength);
       Array<scalar_type> values (maxLength * blockSize * blockSize);
       size_t numEntries = 0;
 
-      for (size_t i = 0; i < lclNumMeshRows; ++i) {
+      for (LO i = 0; i < lclNumMeshRows; ++i) {
         // FIXME (mfh 16 Dec 2015) Get views instead of copies.
         blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
 
         auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
-        for (local_ordinal_type subRow = 0; subRow < blockSize; ++subRow) {
+        for (LO subRow = 0; subRow < blockSize; ++subRow) {
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries ; ++k) {
-            if (static_cast<size_t> (indices[k]) > lclNumMeshRows) {
+            if (indices[k] > lclNumMeshRows) {
               const size_t offset = blockSize*blockSize*k + subRow*blockSize;
-              for (local_ordinal_type subCol = 0; subCol < blockSize; ++subCol) {
+              for (LO subCol = 0; subCol < blockSize; ++subCol) {
                 diagonal_boost += STS::magnitude (values[offset+subCol] / two);
               }
             }
@@ -662,13 +663,13 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       }
     }
 
-    blockDiagonalFactorizationPivots_ =
+    blockDiagFactPivots_ =
       pivots_type ("Ifpack2::Relaxation::pivots", lclNumMeshRows, blockSize);
     // Use an unmanaged View to avoid ref count overhead in loop below.
-    unmanaged_pivots_type pivots = blockDiagonalFactorizationPivots_;
+    unmanaged_pivots_type pivots = blockDiagFactPivots_;
 
     int info = 0;
-    for (size_t i = 0 ; i < lclNumMeshRows; ++i) {
+    for (LO i = 0 ; i < lclNumMeshRows; ++i) {
       auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
       auto ipiv = Kokkos::subview (pivots, i, ALL ());
       Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
@@ -1123,8 +1124,8 @@ ApplyInverseJacobi_BlockCrsMatrix (const Tpetra::MultiVector<scalar_type, local_
 
   // Get unmanaged Views, so that taking subviews repeatedly won't
   // update the reference count.
-  unmanaged_block_diag_type blockDiag = BlockDiagonal_;
-  unmanaged_pivots_type pivots = blockDiagonalFactorizationPivots_;
+  unmanaged_block_diag_type blockDiag = blockDiag_;
+  unmanaged_pivots_type pivots = blockDiagFactPivots_;
 
   if (ZeroStartingSolution_) {
     Y.putScalar (STS::zero ());
@@ -1485,8 +1486,8 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport(yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, BlockDiagonal_,
-                        blockDiagonalFactorizationPivots_,
+    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_,
+                        blockDiagFactPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =
@@ -1833,8 +1834,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol->doImport (yBlock, *Importer_, Tpetra::INSERT);
     }
-    A.localGaussSeidel (xBlock, *yBlockCol, BlockDiagonal_,
-                        blockDiagonalFactorizationPivots_,
+    A.localGaussSeidel (xBlock, *yBlockCol, blockDiag_, blockDiagFactPivots_,
                         DampingFactor_, direction);
     if (performImport) {
       RCP<const MV> yBlockColPointDomain =

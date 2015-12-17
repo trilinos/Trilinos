@@ -691,15 +691,43 @@ private:
   typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
                        typename block_crs_matrix_type::device_type,
                        Kokkos::MemoryUnmanaged> unmanaged_block_diag_type;
-  block_diag_type BlockDiagonal_;
+
+  /// \brief Storage of the BlockCrsMatrix's block diagonal.
+  ///
+  /// This is only allocated and used if the input matrix is a
+  /// Tpetra::BlockCrsMatrix.  In that case, Ifpack2::Relaxation does
+  /// block relaxation, using the (small dense) blocks in the
+  /// BlockCrsMatrix.
+  ///
+  /// "Block diagonal" means the blocks in the BlockCrsMatrix
+  /// corresponding to the diagonal entries of the BlockCrsMatrix's
+  /// graph.  To get the block corresponding to local (graph
+  /// a.k.a. "mesh") row index i, do the following:
+  /// \code
+  /// auto D_ii = Kokkos::subview (blockDiag_, i, Kokkos::ALL (), Kokkos::ALL ());
+  /// \endcode
+  block_diag_type blockDiag_;
 
   typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type> pivots_type;
   typedef Kokkos::View<int**, typename block_crs_matrix_type::device_type,
                        Kokkos::MemoryUnmanaged> unmanaged_pivots_type;
-  pivots_type blockDiagonalFactorizationPivots_;
+
+  /// \brief Pivots from LU factorization (with partial pivoting) of
+  ///   the BlockCrsMatrix's block diagonal.
+  ///
+  /// This is only allocated and used if the input matrix is a
+  /// Tpetra::BlockCrsMatrix.  In that case, Ifpack2::Relaxation does
+  /// block relaxation, using the (small dense) blocks in the
+  /// BlockCrsMatrix.
+  ///
+  /// To get the 1-D array of pivots corresponding to local (graph
+  /// a.k.a. "mesh") row index i, do the following:
+  /// \code
+  /// auto ipiv_i = Kokkos::subview (blockDiagFactPivots_, i, Kokkos::ALL ());
+  /// \endcode
+  pivots_type blockDiagFactPivots_;
 
   Teuchos::RCP<block_multivector_type> yBlockColumnPointMap_;
-
 
   //! How many times to apply the relaxation per apply() call.
   int NumSweeps_;
