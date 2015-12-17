@@ -54,66 +54,53 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-broken.cmake")
 
 #
-# Platform/compiler specific options for geminga using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME BROKEN_Tpetra_NO_INT)
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(Trilinos_PACKAGES MueLu Xpetra)
 
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
+    "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
+    "-DTpetra_INST_INT_INT:BOOL=OFF"
+    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=ON"
+    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
+    "-DTpetra_INST_SERIAL:BOOL=ON"
+    "-DKokkos_ENABLE_Serial:BOOL=ON"
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS=ON"
-    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
+      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
+      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
+  "-DTPL_ENABLE_HWLOC:BOOL=ON"
 
-    "-DTrilinos_ENABLE_Fortran=OFF"
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+)
 
-    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-    ### PACKAGE CONFIGURATION ###
-
-    ### MISC ###
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "GCC-5.2.0")
-
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI=ON"
-            "-DMPI_BASE_DIR=/home/aprokop/local/opt/openmpi-1.10.0"
-            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
-       )
-
-    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/g++"
-      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
