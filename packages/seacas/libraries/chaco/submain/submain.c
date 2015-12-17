@@ -453,9 +453,10 @@ End_Label:
 
 
     total_time += seconds() - start_time;
-    time_out(outfile);
-
-    if (outfile != NULL) fclose(outfile);
+    if (outfile != NULL) {
+      time_out(outfile);
+      fclose(outfile);
+    }
     Output_File = NULL;
 
     return(0);

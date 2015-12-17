@@ -74,8 +74,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_LIBRARY(
   stk_io
   NOINSTALLHEADERS ${HEADERS}
-#  DEPLIBS stk_mesh_base stk_mesh_fem
-  DEPLIBS stk_mesh_base 
+  DEPLIBS
   SOURCES ${SOURCES}
   )
 

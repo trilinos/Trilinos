@@ -37,9 +37,10 @@
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for fprintf, stderr, NULL, etc
 #include <stdlib.h>                     // for exit, free, malloc
-#include <string.h>                     // for strcpy, strrchr, memset, etc
+#include <string.h>                     // for strrchr, memset, etc
 #include <unistd.h>                     // for sysconf, _SC_OPEN_MAX
 #include <vector>                       // for vector
+#include <string>
 #include "exodusII.h"                   // for ex_close, etc
 #include "nem_spread.h"                 // for NemSpread, etc
 #include "pe_common.h"                  // for MAX_CHUNK_SIZE
@@ -177,7 +178,7 @@ void NemSpread<T,INT>::read_restart_data ()
   int    exoid=0, *par_exoid = NULL;
 
   float  vers;
-  char   cTemp[512];
+  std::string cTemp;
 
   /* computing precision should be the same as the database precision
    *
@@ -236,7 +237,8 @@ void NemSpread<T,INT>::read_restart_data ()
 
     /* Get the count of elements in each element block */
     for (int cnt = 0; cnt < globals.Num_Elem_Blk; cnt++) {
-      if (ex_get_block(exoid, EX_ELEM_BLOCK, eb_ids_global[cnt], cTemp,
+      char blk_name[MAX_STR_LENGTH];
+      if (ex_get_block(exoid, EX_ELEM_BLOCK, eb_ids_global[cnt], blk_name,
 		       &(eb_cnts_global[cnt]), NULL, NULL, NULL, NULL) < 0) {
 	fprintf(stderr, "%s: unable to get element count for block id " ST_ZU "",
 		yo, (size_t)eb_ids_global[cnt]);
@@ -407,32 +409,31 @@ void NemSpread<T,INT>::read_restart_data ()
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    strcpy(cTemp, strrchr(Output_File_Base_Name, '/')+1);
+    cTemp = strrchr(Output_File_Base_Name, '/')+1;
   } else {
     /* No separator; this is already just the basename... */
-    strcpy(cTemp, Output_File_Base_Name);
+    cTemp = Output_File_Base_Name;
   }    
   
   if (strlen(PIO_Info.Exo_Extension) == 0)
-    add_fname_ext(cTemp, ".par");
+    cTemp += ".par";
   else
-    add_fname_ext(cTemp, PIO_Info.Exo_Extension);
+    cTemp += PIO_Info.Exo_Extension;
   
   int open_file_count = get_free_descriptor_count();
   if (open_file_count >Proc_Info[5]) {
     printf("All output files opened simultaneously.\n");
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-      char Parallel_File_Name[MAX_FNL];
-      gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
-		       Proc_Info[0]);
+      std::string Parallel_File_Name =
+	gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
       
       /* Open the parallel Exodus II file for writing */
       cpu_ws = io_ws;
       int mode = EX_WRITE | int64api | int64db;
-      if ((par_exoid[iproc]=ex_open(Parallel_File_Name, mode, &cpu_ws,
+      if ((par_exoid[iproc]=ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws,
 				    &io_ws, &vers)) < 0) {
 	fprintf(stderr,"[%d] %s Could not open parallel Exodus II file: %s\n",
-		iproc, yo, Parallel_File_Name);
+		iproc, yo, Parallel_File_Name.c_str());
 	exit(1);
       }
     }
@@ -462,17 +463,16 @@ void NemSpread<T,INT>::read_restart_data ()
     for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
 
       if (open_file_count <Proc_Info[5]) {
-	char Parallel_File_Name[MAX_FNL];
-	gen_par_filename(cTemp, Parallel_File_Name, Proc_Ids[iproc],
-			 Proc_Info[0]);
+	std::string Parallel_File_Name = 
+	  gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
 	  
 	/* Open the parallel Exodus II file for writing */
 	cpu_ws = io_ws;
 	int mode = EX_WRITE | int64api | int64db;
-	if ((par_exoid[iproc]=ex_open(Parallel_File_Name, mode, &cpu_ws,
+	if ((par_exoid[iproc]=ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws,
 				      &io_ws, &vers)) < 0) {
 	  fprintf(stderr,"[%d] %s Could not open parallel Exodus II file: %s\n",
-		  iproc, yo, Parallel_File_Name);
+		  iproc, yo, Parallel_File_Name.c_str());
 	  exit(1);
 	}
       }

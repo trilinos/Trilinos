@@ -115,8 +115,6 @@ int main (int argc, char **argv)
    printf ("         CPU word size %1d\n",CPU_word_size);
    printf ("         I/O word size %1d\n",IO_word_size);
 
-   /* ncopts = NC_VERBOSE; */
-
 /* read database parameters */
 
    error = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem,

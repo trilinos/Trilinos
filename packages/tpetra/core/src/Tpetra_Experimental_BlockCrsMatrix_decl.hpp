@@ -614,6 +614,23 @@ public:
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed
+  ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
+  ///
+  /// \param diag [out] On input: Must be preallocated, with
+  ///   dimensions at least (number of diagonal blocks on the calling
+  ///   process) x getBlockSize() x getBlockSize(). On output: the
+  ///   diagonal blocks.  Leftmost index is "which block," then the
+  ///   row index within a block, then the column index within a
+  ///   block.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  void
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const;
 
   //! Computes the DiagonalGraph
   void computeDiagonalGraph ();
@@ -885,6 +902,13 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
+
+  /// \c Block at the given local mesh row and relative (mesh) offset.
+  ///
+  /// Use this for 2-argument getLocalDiagCopy that writes to Kokkos::View.
+  const_little_block_type
+  getConstLocalBlockFromRelOffset (const LO lclMeshRow,
+                                   const size_t relMeshOffset) const;
 
 public:
   //! The communicator over which this matrix is distributed.

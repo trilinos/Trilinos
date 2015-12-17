@@ -128,9 +128,36 @@ private:
             if(mNumFails > 0)
             {
                 ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
-                printf("%d tests.\n", mNumFails);
+                printf("%d tests:\n", mNumFails);
+                print_failed_tests(unit_test);
             }
         }
+    }
+
+    void print_failed_tests(const ::testing::UnitTest& unit_test)
+    {
+        for(int i = 0; i < unit_test.total_test_case_count(); i++)
+        {
+            const ::testing::TestCase* testCase = unit_test.GetTestCase(i);
+            if(testCase->Failed())
+                print_failed_tests_in_case(testCase);
+        }
+    }
+
+    void print_failed_tests_in_case(const ::testing::TestCase* testCase)
+    {
+        for(int j = 0; j < testCase->total_test_count(); j++)
+        {
+            const ::testing::TestInfo* testInfo = testCase->GetTestInfo(j);
+            if(testInfo->result()->Failed())
+                print_failed_test_name(testCase, testInfo);
+        }
+    }
+
+    void print_failed_test_name(const ::testing::TestCase* testCase, const ::testing::TestInfo* testInfo)
+    {
+        ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
+        printf("--gtest_filter=%s.%s\n", testCase->name(), testInfo->name());
     }
 };
 

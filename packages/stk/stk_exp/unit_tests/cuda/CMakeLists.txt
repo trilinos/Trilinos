@@ -16,7 +16,7 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   exp_unit_cuda
   SOURCES ${SOURCES}
-  DEPLIBS stk_mesh_base stk_topology
+  DEPLIBS
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

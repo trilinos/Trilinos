@@ -29,11 +29,12 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
 
+  clp.setOption("serial", "no-serial",     &cmdline.USE_SERIAL, "use the serial device");
   clp.setOption("threads",                 &cmdline.USE_THREADS, "number of pthreads threads");
   clp.setOption("openmp",                  &cmdline.USE_OPENMP,  "number of openmp threads");
   clp.setOption("numa",                    &cmdline.USE_NUMA,  "number of numa nodes");
   clp.setOption("cores",                   &cmdline.USE_CORE_PER_NUMA, "cores per numa node");
-  clp.setOption("cuda", "no-cuda",         &cmdline.USE_CUDA,  "use CUDA");
+  clp.setOption("cuda", "no-cuda",         &cmdline.USE_CUDA,  "use the CUDA device");
   clp.setOption("device",                  &cmdline.USE_CUDA_DEV,  "CUDA device ID.  Set to default of -1 to use the default device as determined by the local node MPI rank and --ngpus");
   clp.setOption("ngpus",                   &cmdline.USE_NGPUS, "Number of GPUs per node for multi-GPU runs via MPI");
   std::string fixtureSpec="2x2x2";
@@ -124,6 +125,9 @@ clp_return_type parse_cmdline( int argc , char ** argv, CMD & cmdline,
 // Print command line
 void print_cmdline( std::ostream & s , const CMD & cmd )
 {
+  if ( cmd.USE_SERIAL  ) {
+    s << " Serial" ;
+  }
   if ( cmd.USE_THREADS  ) {
     s << " Threads(" << cmd.USE_THREADS
       << ") NUMA(" << cmd.USE_NUMA
@@ -226,6 +230,7 @@ std::vector< size_t >
 print_headers( std::ostream & s , const CMD & cmd , const int comm_rank )
 {
   if ( 0 == comm_rank ) {
+   if ( cmd.USE_SERIAL  ) { s << "SERIAL"  ; }
    if ( cmd.USE_THREADS  ) { s << "THREADS , " << cmd.USE_THREADS  ; }
    else if ( cmd.USE_OPENMP  ) { s << "OPENMP , " << cmd.USE_OPENMP  ; }
    else if ( cmd.USE_CUDA  ) { s << "CUDA" ; }

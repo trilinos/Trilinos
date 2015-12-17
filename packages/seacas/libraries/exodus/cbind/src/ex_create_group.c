@@ -77,6 +77,6 @@ int ex_create_group (int parent_id, const char *group_name)
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
-#endif
   return (exoid);
+#endif
 }

@@ -99,11 +99,6 @@ extern "C" {
  */
 #define EXODUS_DEFAULT_SIZE 1
 
-/* Exodus error return codes - function return values:                      */
-#define EX_FATAL        -1      /* fatal error flag def                     */
-#define EX_NOERR         0      /* no error flag def                        */
-#define EX_WARN          1      /* warning flag def                         */
-
 /* Used to map between root (file id) and group ids when using groups */
 #define EX_FILE_ID_MASK (0xffff0000) /* Must match FILE_ID_MASK in netcdf nc4internal.h */
 #define EX_GRP_ID_MASK  (0x0000ffff) /* Must match GRP_ID_MASK in netcdf nc4internal.h */

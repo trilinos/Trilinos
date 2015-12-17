@@ -1,0 +1,473 @@
+#!/bin/bash
+
+########################################################################
+function usage {
+  if [ $OLDGETOPT -eq 1 ] ; then
+    usage_old
+  else
+    usage_new
+  fi
+}
+  
+function usage_new {
+cat <<DECOMP_USAGE_EOF
+Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
+               [--root <root directory>] [--subdir <sub directory]
+               [--multikl] [--spectral] [--inertial] [--linear]
+               [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
+               [...others...] meshfile.ext
+
+Decomposition methods: [0..3] = speed ranking 0=fastest
+              (See chaco and/or zoltan documentation for more details)
+ --multikl:   [3] Multilevel KL. Gives high quality partitions.
+                  Slow, high memory use.
+ --spectral:  [2] use eigenvectors of a matrix constructed from the 
+                  graph to partition the graph.
+ --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
+ --rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ --rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ --rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan), ignoring the z dimension coordinates
+ --inertial:  [1] (default) vertices divided into sets of equal mass by planes
+                  orthogonal to the principle axis. Good, fast, medium memory
+ --linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+                  (fast and sometimes good).
+ --random:    [0] vertices are assigned randomly to sets in a way that 
+                  preserves balance.
+ --scattered: [0] vertices are handed out in order with the next vertex 
+                  going to whichever set is smallest.
+ --brick      [-] special decomposition method; not useful for general use.
+ --zpinch     [-] special decomposition method; not useful for general use.
+
+ NOTE: The decomposition options can also be specified as "-l type"
+       For example "--multikl" is the same as "-l multikl"
+
+Other options:
+--help             Print this message (-h)
+--input            Optional nem_slice input file (-i)
+--viz_mesh         Output mesh showing processor distribution of elements.
+--spheres_linear   Decompose sphere elements using linear method (matches old behavior) (-s)
+--processors #p    Specify number of processors (-p, -j)
+--root root_dir    Root directory to begin the path to on the separate disks (-R)
+--subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
+--64               Force creation of 64-bit integer decomposed files (-6)
+
+   help-email:  seacas-users@software.sandia.gov
+
+DECOMP_USAGE_EOF
+exit 1
+}
+
+function usage_old {
+cat <<DECOMP_USAGE_EOF
+Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
+               [-R <root directory>] [-S <sub directory]
+               [-l multikl] [-l spectral] [-l inertial] [-l linear]
+               [-l rcb] [-l rcb_ignore_z] [-l rib] [-l hsfc] [-l random] [-l scattered]
+               [...others...] meshfile.ext
+
+Decomposition methods: [0..3] = speed ranking 0=fastest
+              (See chaco and/or zoltan documentation for more details)
+ -l multikl:   [3] Multilevel KL. Gives high quality partitions.
+                  Slow, high memory use.
+ -l spectral:  [2] use eigenvectors of a matrix constructed from the 
+                  graph to partition the graph.
+ -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
+ -l rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ -l rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ -l rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan) ignoring the z dimension coordinates
+ -l inertial:  [1] (default) vertices divided into sets of equal mass by planes
+                  orthogonal to the principle axis. Good, fast, medium memory
+ -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+                  (fast and sometimes good).
+ -l random:    [0] vertices are assigned randomly to sets in a way that 
+                  preserves balance.
+ -l scattered: [0] vertices are handed out in order with the next vertex 
+                  going to whichever set is smallest.
+ -l brick      [-] special decomposition method; not useful for general use.
+ -l zpinch     [-] special decomposition method; not useful for general use.
+
+Other options:
+-h          Print this message
+-i          Optional nem_slice input file
+-s          Decompose sphere elements using linear method (matches old behavior)
+-p #p       Specify number of processors (or -j)
+-R root_dir Root directory to begin the path to on the separate disks 
+-S sub_dir  Continuation of the path on the separate disks to the files
+
+   help-email: sierra-help@sandia.gov 
+
+DECOMP_USAGE_EOF
+exit 1
+}
+
+function old_getopt {
+echo ${txtred}
+cat <<DECOMP_EOF
+########################################################################
+The "getopt" executable that is available on this system is an older
+version that is not compatible with the needs of the "decomp" tool.
+If possible, you should update your getopt to a newer version and make
+sure that the new getopt is in your path.
+
+Below are some options for getting the current getopt version:
+* If on a Mac: "sudo port install getopt"
+* Search the internet for "getopt-1.1.5" or "getopt-1.1.4"; download and build
+
+Enter "-h" for the modified options that this version supports.
+Enter "-H" for the options that the standard version supports.
+########################################################################
+
+DECOMP_EOF
+echo ${txtrst}
+}
+
+########################################################################
+function execute_loadbalance {
+    basename=$1
+    processors=$2
+    decomp_method=$3
+    nem_slice_flag=$4
+    NEM_SLICE=$5
+    input=$6
+
+    output=$basename.$suffix_mesh.decomp.out
+    error=$basename.$suffix_mesh.decomp.err
+    nemesis=$basename.$suffix_mesh.nem
+    genesis=$basename.$suffix_mesh
+
+    # Check for valid executable...
+    if [ ! -x $NEM_SLICE ]
+    then
+	echo
+	echo ${txtred}
+	echo "ERROR: Could not find or execute $NEM_SLICE"
+	echo "ERROR: Configuration error"
+	echo ${txtrst}
+	echo
+
+	return -1
+    fi
+
+    date=`date '+%m/%d/%y'`
+    time=`date '+%H:%M:%S'`
+    prob_dir=`pwd | sed "s/.*\///g"`
+    
+    if [ -e $output ]
+    then
+	rm -f $output
+    fi
+    
+    if [ -n "$input" -a -e "$input" ]
+    then
+	echo ${txtblu}
+	echo "Executing:"
+	echo "   $NEM_SLICE -e $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+	echo "   ...see $output for nem_slice status"
+	echo ${txtrst}
+	($NEM_SLICE -e $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
+	load_rc=$?
+    else
+	echo ${txtblu}
+	echo "Executing:"
+	echo "   $NEM_SLICE -e $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+	echo "   ...see $output for nem_slice status"
+	echo ${txtrst}
+	($NEM_SLICE -e $spheres $decomp_method $do_viz $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
+	load_rc=$?
+    fi
+    return $load_rc
+}
+
+########################################################################
+# Create the nem_spread input file (basename.pex) and execute nem_spread...
+function execute_spread {
+    basename=$1
+    rootdir=$2
+    subdir=$3
+    numproc=$4
+    NEM_SPREAD=$5
+
+    output=$basename.$suffix_mesh.decomp.out
+    error=$basename.$suffix_mesh.decomp.err
+    nemesis=$basename.$suffix_mesh.nem
+    genesis=$basename.$suffix_mesh
+
+    pexsh=$basename.$suffix_mesh.pex
+
+    # Check for valid executable...
+    if [ ! -x $NEM_SPREAD ]
+    then
+	echo
+	echo ${txtred}
+	echo "ERROR: Could not find or execute $NEM_SPREAD"
+	echo "ERROR: Configuration error"
+	echo ${txtrst}
+	echo
+	return -1
+    fi
+    
+    if [ "$subdir" != "." ]
+    then
+	dir=$rootdir/$subdir
+	if [ ! -e $dir ]
+	then
+	    echo "making directory $dir"
+	    mkdir -p $dir
+	fi
+    fi
+    
+    if [ -e $pexsh ]
+    then
+	/bin/rm -rf $pexsh
+    fi
+    
+    echo "Input FEM file                   = $genesis"                  >  $pexsh
+    echo "LB file                          = $nemesis"                  >> $pexsh
+    echo "Parallel Results File Base Name  = $basename"                 >> $pexsh
+    echo "File Extension for Spread Files  = .$suffix_spread"           >> $pexsh
+    echo "Number of Processors             = $numproc "                 >> $pexsh
+    if [ "$debug_level" != "0" ]
+    then
+    echo "Debug                            = $debug_level"              >> $pexsh
+    fi
+    echo "------------------------------------------------------------" >> $pexsh
+    echo "                Parallel I/O section"                         >> $pexsh
+    echo "------------------------------------------------------------" >> $pexsh
+    echo "Parallel Disk Info= number=1, offset=1, zeros, nosubdirectory">> $pexsh
+    echo "Parallel file location = root=$rootdir, subdir=$subdir"       >> $pexsh
+    
+    echo ${txtblu}
+    echo "Executing:"
+    echo "   $NEM_SPREAD $use64 $pexsh"
+    echo ${txtrst}
+    $NEM_SPREAD $use64 $pexsh
+}
+
+########################################################################
+# initialize variables
+# Text color variables
+if test "${TERM}set" != xtermset ; then
+    export TERM=dumb
+fi
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+
+basename=''
+processors=''
+debug_level='0'
+decomp_method="-l inertial"
+nem_slice_flag="-c"
+rootdir="`pwd`/"
+subdir="."
+spheres="-S"
+do_viz=""
+curdir=`pwd`
+use64=''
+
+ACCESS=@ACCESSDIR@
+NEM_SLICE=${ACCESS}/bin/nem_slice
+NEM_SPREAD=${ACCESS}/bin/nem_spread
+
+########################################################################
+# Test that the getopt being used will handle the long options...
+TEST=`getopt -T`
+if [ $? != 4 ] ; then
+  old_getopt
+  OLDGETOPT=1
+else
+  OLDGETOPT=0
+fi
+
+if [ $# -eq 0 ] ; then
+    usage
+fi
+
+########################################################################
+# decomp options:
+if [ $OLDGETOPT -eq 1 ] ; then
+   TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl:vd: $*`
+else
+   TEMP=`getopt -o Hh6n:i:o:p:j:r:R:S:sl:vVd: -a \
+       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spheres_linear,viz_mesh,verbose,debug: \
+       --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
+       -n 'decomp' -- "$@"`
+fi
+
+if [ $? != 0 ] ; then usage ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+	case "$1" in
+	    -h|--help)
+	      usage ; shift ;;
+	    -H|--help)
+	      usage_new ; shift ;;
+	    -v|--verbose)
+	      set -x ; shift ;;
+	    -V|--viz_mesh)
+	      do_viz="-y" ; shift ;; 
+	    -d|--debug)
+	      debug_level="$2" ; shift 2 ;;
+	    -n|--nem_slice_flag)
+	      nem_slice_flag="$2" ; shift 2 ;;
+	    -i|--input)
+	      input=$2 ; shift 2 ;;
+	    -p|-j|--processors)
+	      processors=$2 ; shift 2 ;;
+	    -R|--rootdir)
+	      rootdir=$2 ; shift 2 ;;
+	    -S|--subdir)
+	      subdir=$2 ; shift 2 ;;
+	    -s|--spheres_linear) 
+	      spheres="" ; shift ;;
+	    -6|--64) 
+	      use64="-64" ; shift ;;
+	    -l)
+	      decomp_method="-l $2" ; shift 2 ;;
+
+# Decomposition Method options...
+	    --multikl)   decomp_method="-l multikl" ; shift ;;
+	    --rcb)       decomp_method="-l rcb" ; shift ;;
+	    --rcb_ignore_z)       decomp_method="-l rcb,ignore_z" ; shift ;;
+	    --rib)       decomp_method="-l rib" ; shift ;;
+	    --hsfc)      decomp_method="-l hsfc" ; shift ;;
+	    --spectral)  decomp_method="-l spectral" ; shift ;;
+	    --inertial)  decomp_method="-l inertial" ; shift ;;
+	    --linear)    decomp_method="-l linear" ; shift ;;
+	    --random)    decomp_method="-l random" ; shift ;;
+	    --scattered) decomp_method="-l scattered" ; shift ;;
+	    --brick)     decomp_method="-l brick" ; shift ;;
+	    --zpinch)    decomp_method="-l zpinch" ; shift ;;
+	    --) shift ; break ;;
+	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
+	esac
+done
+
+########################################################################
+if [ $# -eq 0 ] ; then
+    echo ${txtred}
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR:  No 'meshfile' specified."
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    echo ${txtrst}
+    usage
+else
+    if [ -e "$1" ]
+    then
+	file=$1
+	suffix_mesh=${file##*.}
+	suffix_spread=$suffix_mesh
+	basename=${file%.*}
+    else
+    echo ${txtred}
+	echo "ERROR:******************************************************************"
+	echo "ERROR:"
+	echo "ERROR: $1 does not exist."
+	echo "ERROR:"
+	echo "ERROR:******************************************************************"
+	echo ${txtrst}
+	usage
+    fi
+fi    
+
+if [ -n "$input" ]
+then
+   if [ ! -e "$input" ]
+   then
+    echo ${txtred}
+	echo "ERROR:******************************************************************"
+	echo "ERROR:"
+	echo "ERROR: Input file $input does not exist."
+	echo "ERROR:"
+	echo "ERROR:******************************************************************"
+	echo ${txtrst}
+	usage
+   fi
+fi
+
+if test -z "$processors"
+then
+  echo
+  echo ${txtred}
+  echo "ERROR:***************************************************"
+  echo "ERROR:"
+  echo "ERROR: Must specify number of processors --processors (-p -j) option"
+  echo "ERROR:"
+  echo "ERROR:***************************************************"
+  echo ${txtrst}
+  echo
+  usage
+fi
+
+if [ $processors -eq 1 ]
+then
+    echo ${txtgrn}
+    echo "INFO: No decomposition needed for --processors = 1"
+    echo ${txtrst}
+    echo
+    exit 0
+fi
+
+########################################################################
+execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" 
+if [ $? -ne 0 ]
+then
+    echo ${txtred}
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR     During nem_slice execution. Check error output above and rerun"
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    echo ${txtrst}
+    exit 1
+else
+    echo "${txtgrn}...nem_slice successful execution${txtrst}"
+fi
+
+########################################################################
+execute_spread "$basename" "$rootdir" "$subdir" "$processors" "$NEM_SPREAD"
+if [ $? -ne 0 ]
+then
+    echo ${txtred}
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR    During nem_spread execution. Check error output above and rerun"
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    echo ${txtrst}
+    exit 1
+else
+    echo "${txtgrn}...nem_spread successful execution${txtrst}"
+fi
+
+if [ ! -z $SEACAS_NO_LOGGING ]
+then
+    echo "SEACAS Audit logging disabled via SEACAS_NO_LOGGING setting"
+else
+# Echo audit information to ${ACCESS}/etc/audit.log
+# Hard-wire time until get a csh-type time output ...
+    time_used="0.000u 0.000s 0:00.00 0.0% 0+0k 0+0io 0pf+0w "
+    
+# Get name of user running code
+    userid=`echo $LOGNAME`
+    
+# Write info to audit.log file
+    if [ -w ${ACCESS}/etc/audit.log ]
+    then
+       echo "decomp ${userid} `date` ${time_used} `hostname`" >> ${ACCESS}/etc/audit.log
+    fi
+fi
+
+echo "${txtgrn}DECOMP Successful Execution${txtrst}"

@@ -344,6 +344,8 @@ namespace Iopx {
 
       void simple_decompose(const std::string &method,
                             const std::vector<INT> &element_dist);
+      void simple_node_decompose(const std::string &method,
+				 const std::vector<INT> &node_dist);
 
       template <typename T>
       int handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T *ioss_data) const ;

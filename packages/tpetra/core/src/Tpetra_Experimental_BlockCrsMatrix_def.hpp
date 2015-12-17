@@ -408,37 +408,87 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const
   {
+    const char tfecfFuncName[] =
+      "Tpetra::BlockCrsMatrix::getLocalDiagOffsets: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! graph_.hasColMap (), std::runtime_error,
+       "The matrix's graph does not yet have a column Map.");
 
-    const map_type& rowMap = * (graph_.getRowMap());
+    // FIXME (mfh 13 Dec 2015) This method currently only works if the
+    // graph is locally indexed.  We check "globally indexed" rather
+    // than "not locally indexed," because currently, "neither locally
+    // nor globally indexed" means that the graph is empty on the
+    // calling process.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph_.isGloballyIndexed (), std::runtime_error,
+       "The matrix's graph is globally indexed.");
+
+    const map_type& rowMap = * (graph_.getRowMap ());
     const map_type& colMap = * (graph_.getColMap ());
 
-    const size_t myNumRows = rowMeshMap_.getNodeNumElements();
-    if (static_cast<size_t> (offsets.size ()) != myNumRows) {
-      offsets.resize (static_cast<size_t> (myNumRows));
+    const LO lclNumRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    if (static_cast<LO> (offsets.size ()) != lclNumRows) {
+      offsets.resize (lclNumRows);
     }
 
 #ifdef HAVE_TPETRA_DEBUG
     bool allRowMapDiagEntriesInColMap = true;
     bool allDiagEntriesFound = true;
+    bool allOffsetsCorrect = true;
+    bool noOtherWeirdness = true;
+    std::vector<std::pair<LO, size_t> > wrongOffsets;
+    auto localGraph = this->graph_.getLocalGraph ();
 #endif // HAVE_TPETRA_DEBUG
 
-    for (size_t r = 0; r < myNumRows; ++r) {
-      const GO rgid = rowMap.getGlobalElement (r);
-      const LO rlid = colMap.getLocalElement (rgid);
+    for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {
+      const GO gblRowInd = rowMap.getGlobalElement (lclRowInd);
+      const GO gblColInd = gblRowInd;
+      const LO lclColInd = colMap.getLocalElement (gblColInd);
+
+      if (lclColInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+#ifdef HAVE_TPETRA_DEBUG
+        allRowMapDiagEntriesInColMap = false;
+#endif // HAVE_TPETRA_DEBUG
+        offsets[lclRowInd] = Teuchos::OrdinalTraits<size_t>::invalid ();
+      }
+      else {
+        const RowInfo rowInfo = graph_.getRowInfo (lclRowInd);
+        if (static_cast<LO> (rowInfo.localRow) == lclRowInd &&
+            rowInfo.numEntries > 0) {
+          const size_t offset = graph_.findLocalIndex (rowInfo, lclColInd);
+          offsets[lclRowInd] = offset;
 
 #ifdef HAVE_TPETRA_DEBUG
-      if (rlid == Teuchos::OrdinalTraits<LO>::invalid ()) {
-        allRowMapDiagEntriesInColMap = false;
-      }
+          // Now that we have what we think is an offset, make sure
+          // that it really does point to the diagonal entry.  Offsets
+          // are _relative_ to each row, not absolute (for the whole
+          // (local) matrix).
+          const LO* lclColInds = NULL;
+          Scalar* lclVals = NULL;
+          LO numEnt = 0;
+          LO err = this->getLocalRowView (lclRowInd, lclColInds, lclVals, numEnt);
+          if (err != 0) {
+            noOtherWeirdness = false;
+          }
+          else { // err = 0; view is correct
+            if (offset >= static_cast<size_t> (numEnt)) {
+              // Offsets are relative to each row, so this means that
+              // the offset is out of bounds.
+              allOffsetsCorrect = false;
+              wrongOffsets.push_back (std::make_pair (lclRowInd, offset));
+            } else {
+              const LO actualLclColInd = lclColInds[offset];
+              const GO actualGblColInd = colMap.getGlobalElement (actualLclColInd);
+              if (actualGblColInd != gblColInd) {
+                allOffsetsCorrect = false;
+                wrongOffsets.push_back (std::make_pair (lclRowInd, offset));
+              }
+            }
+          }
 #endif // HAVE_TPETRA_DEBUG
-
-      if (rlid != Teuchos::OrdinalTraits<LO>::invalid ()) {
-        RowInfo rowinfo = graph_.getRowInfo (r);
-        if (rowinfo.numEntries > 0) {
-          offsets[r] = graph_.findLocalIndex (rowinfo, rlid);
         }
         else {
-          offsets[r] = Teuchos::OrdinalTraits<size_t>::invalid ();
+          offsets[lclRowInd] = Teuchos::OrdinalTraits<size_t>::invalid ();
 #ifdef HAVE_TPETRA_DEBUG
           allDiagEntriesFound = false;
 #endif // HAVE_TPETRA_DEBUG
@@ -447,38 +497,66 @@ namespace Experimental {
     }
 
 #ifdef HAVE_TPETRA_DEBUG
+    if (wrongOffsets.size () != 0) {
+      std::ostringstream os;
+      os << "Proc " << this->getComm ()->getRank () << ": Wrong offsets: [";
+      for (size_t k = 0; k < wrongOffsets.size (); ++k) {
+        os << "(" << wrongOffsets[k].first << ","
+           << wrongOffsets[k].second << ")";
+        if (k + 1 < wrongOffsets.size ()) {
+          os << ", ";
+        }
+      }
+      os << "]" << std::endl;
+      std::cerr << os.str ();
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
     using Teuchos::reduceAll;
     using std::endl;
-    const char tfecfFuncName[] = "getLocalDiagOffsets";
-
     const bool localSuccess =
-      allRowMapDiagEntriesInColMap && allDiagEntriesFound;
-    int localResults[3];
-    localResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
-    localResults[1] = allDiagEntriesFound ? 1 : 0;
+      allRowMapDiagEntriesInColMap && allDiagEntriesFound && allOffsetsCorrect;
+    const int numResults = 5;
+    int lclResults[5];
+    lclResults[0] = allRowMapDiagEntriesInColMap ? 1 : 0;
+    lclResults[1] = allDiagEntriesFound ? 1 : 0;
+    lclResults[2] = allOffsetsCorrect ? 1 : 0;
+    lclResults[3] = noOtherWeirdness ? 1 : 0;
     // min-all-reduce will compute least rank of all the processes
     // that didn't succeed.
-    localResults[2] =
+    lclResults[4] =
       ! localSuccess ? getComm ()->getRank () : getComm ()->getSize ();
-    int globalResults[3];
-    globalResults[0] = 0;
-    globalResults[1] = 0;
-    globalResults[2] = 0;
-    reduceAll<int, int> (* (getComm ()), Teuchos::REDUCE_MIN,
-                         3, localResults, globalResults);
-    if (globalResults[0] == 0 || globalResults[1] == 0) {
+
+    int gblResults[5];
+    gblResults[0] = 0;
+    gblResults[1] = 0;
+    gblResults[2] = 0;
+    gblResults[3] = 0;
+    gblResults[4] = 0;
+    reduceAll<int, int> (* (this->getComm ()), Teuchos::REDUCE_MIN,
+                         numResults, lclResults, gblResults);
+
+    if (gblResults[0] != 1 || gblResults[1] != 1 || gblResults[2] != 1
+        || gblResults[3] != 1) {
       std::ostringstream os; // build error message
-      const bool both =
-        globalResults[0] == 0 && globalResults[1] == 0;
-      os << ": At least one process (including Process " << globalResults[2]
-         << ") had the following issue" << (both ? "s" : "") << ":" << endl;
-      if (globalResults[0] == 0) {
+      os << "Issue(s) that we noticed (on Process " << gblResults[4] << ", "
+        "possibly among others): " << endl;
+      if (gblResults[0] == 0) {
         os << "  - The column Map does not contain at least one diagonal entry "
           "of the matrix." << endl;
       }
-      if (globalResults[1] == 0) {
-        os << "  - There is a row on that / those process(es) that does not "
-          "contain a diagonal entry." << endl;
+      if (gblResults[1] == 0) {
+        os << "  - On one or more processes, some row does not contain a "
+          "diagonal entry." << endl;
+      }
+      if (gblResults[2] == 0) {
+        os << "  - On one or more processes, some offsets are incorrect."
+           << endl;
+      }
+      if (gblResults[3] == 0) {
+        os << "  - One or more processes had some other error."
+           << endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
     }
@@ -721,6 +799,43 @@ namespace Experimental {
         diag.replaceLocalValues (i, cols.getRawPtr(), &vals[offsets[i]*blockSize_*blockSize_], 1);
       }
     }
+  }
+
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::parallel_for;
+    typedef typename Kokkos::View<impl_scalar_type***, device_type,
+      Kokkos::MemoryUnmanaged>::HostMirror::execution_space host_exec_space;
+
+    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO blockSize = this->getBlockSize ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<LO> (diag.dimension_0 ()) < lclNumMeshRows ||
+       static_cast<LO> (diag.dimension_1 ()) < blockSize ||
+       static_cast<LO> (diag.dimension_2 ()) < blockSize,
+       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
+       "The input Kokkos::View is not big enough to hold all the data.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<LO> (offsets.size ()) < lclNumMeshRows,
+       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
+       "offsets.size() = " << offsets.size () << " < local number of diagonal "
+       "blocks " << lclNumMeshRows << ".");
+
+    // mfh 12 Dec 2015: Use the host execution space, since we haven't
+    // quite made everything work with CUDA yet.
+    typedef Kokkos::RangePolicy<host_exec_space, LO> policy_type;
+    parallel_for (policy_type (0, lclNumMeshRows), [=] (const LO& lclMeshRow) {
+        auto D_in = this->getConstLocalBlockFromRelOffset (lclMeshRow, offsets[lclMeshRow]);
+        auto D_out = Kokkos::subview (diag, lclMeshRow, ALL (), ALL ());
+        COPY (D_in, D_out);
+      });
   }
 
 
@@ -1340,6 +1455,33 @@ namespace Experimental {
     } else {
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
       return getConstLocalBlockFromInput (val_, absPointOffset);
+    }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::const_little_block_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getConstLocalBlockFromRelOffset (const LO lclMeshRow,
+                                   const size_t relMeshOffset) const
+  {
+    typedef impl_scalar_type IST;
+
+    const LO* lclColInds = NULL;
+    Scalar* lclVals = NULL;
+    LO numEnt = 0;
+
+    LO err = this->getLocalRowView (lclMeshRow, lclColInds, lclVals, numEnt);
+    if (err != 0) {
+      // An empty block signifies an error.  We don't expect to see
+      // this error in correct code, but it's helpful for avoiding
+      // memory corruption in case there is a bug.
+      return const_little_block_type (NULL, 0, 0, 0);
+    }
+    else {
+      const size_t relPointOffset = relMeshOffset * this->offsetPerBlock ();
+      IST* lclValsImpl = reinterpret_cast<IST*> (lclVals);
+      return this->getConstLocalBlockFromInput (const_cast<const IST*> (lclValsImpl),
+                                                relPointOffset);
     }
   }
 

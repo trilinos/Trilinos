@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: rdelb.f,v 1.6 1999/01/25 16:38:47 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDELB (A, IDELB, NAMELB, NUMELB, NUMLNK, NUMATR,
      &   LINK, KATRIB, *)
@@ -80,8 +79,8 @@ C   --   Uses NUMEL, NELBLK of /DBNUMS/
       IF (NERR .GT. 0) GOTO 30
 
 C ... Set all entries in the LINK array to -1.
-C     This is a kludge, but lets us discriminate between quads and shells
-C     in other parts of the program (newess)
+C     This is a kludge, but lets us discriminate between quads, tris, 
+C     and shells in other parts of the program (newess)
       CALL INIINT(4*NUMEL, -1, LINK)
 
       call exgebi (ndbin, idelb, ierr)
@@ -95,18 +94,13 @@ C ... See if there are any non-quad element blocks since we have to
 C     read in the connectivity different for exodusII than the code
 C     expects
         if (numlnk(ielb) .ne. 4) then
-          if (numlnk(ielb) .ne. 2) then
-            call PRTERR('FATAL',
-     &        'Non-Quad or Beam elements not allowed')
-          else
-C ... Know that numlnk(ielb) == 2 at this point
-            if (numelb(ielb) .gt. MAXNQ) MAXNQ = NUMELB(IELB)
-          end if
+          if (numelb(ielb)*numlnk(ielb) .gt. MAXNQ)
+     *      MAXNQ = numelb(ielb)*numlnk(ielb)
         end if
  5    continue
       
       if (maxnq .gt. 0) then
-        call mdrsrv('LINTMP', klntmp, maxnq*2)
+        call mdrsrv('LINTMP', klntmp, maxnq)
         call mdstat (nerr, mem)
         IF (NERR .GT. 0) GOTO 20
       end if

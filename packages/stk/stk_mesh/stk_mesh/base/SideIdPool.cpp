@@ -16,6 +16,7 @@ SideIdPool::SideIdPool(stk::mesh::BulkData &bulk) :
 
 void SideIdPool::generate_initial_ids(unsigned numIdsNeeded)
 {
+    mNumIdsUsed = 0;
     mBulkData.generate_new_ids(mBulkData.mesh_meta_data().side_rank(), numIdsNeeded, mSuggestedIds);
 }
 

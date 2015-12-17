@@ -33,6 +33,7 @@
 
 #include <gtest/gtest.h>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 
 int gl_argc=0;
 char** gl_argv=0;
@@ -45,6 +46,8 @@ int main(int argc, char **argv)
 
     gl_argc = argc;
     gl_argv = argv;
+
+    stk::unit_test_util::create_parallel_output(stk::parallel_machine_rank(MPI_COMM_WORLD));
 
     int returnVal = RUN_ALL_TESTS();
 

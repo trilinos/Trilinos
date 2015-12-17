@@ -58,6 +58,23 @@
 #include "Stokhos_MueLu_MP_Vector.hpp"
 #endif
 
+namespace Kokkos {
+namespace Example {
+namespace FENL {
+
+template <typename S>
+typename S::value_type
+scalar_norm(const Sacado::MP::Vector<S>& x) {
+  typename S::value_type z = 0.0;
+  for (typename S::ordinal_type i=0; i<x.size(); ++i)
+    z += x.fastAccessCoeff(i)*x.fastAccessCoeff(i);
+  z = std::sqrt(z);
+  return z;
+}
+
+} /* namespace FENL */
+} /* namespace Example */
+} /* namespace Kokkos */
 
 #include <fenl.hpp>
 #include <fenl_impl.hpp>
@@ -114,6 +131,24 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
 #endif
 
 } /* namespace FENL */
+
+template <typename S, typename V, typename O>
+struct ExtractEnsembleIts;
+
+template <typename S, typename V, typename O>
+struct ExtractEnsembleIts<Sacado::MP::Vector<S>,V,O> {
+  typedef Sacado::MP::Vector<S> Sc;
+
+  static std::vector<int>
+  apply(const Belos::SolverManager<Sc,V,O>& solver) {
+    const Belos::PseudoBlockCGSolMgr<Sc, V, O>* cg_solver =
+      dynamic_cast<const Belos::PseudoBlockCGSolMgr<Sc, V, O>*>(&solver);
+    if (cg_solver != 0)
+      return cg_solver->getResidualStatusTest()->getEnsembleIterations();
+    return std::vector<int>();
+  }
+};
+
 } /* namespace Example */
 } /* namespace Kokkos */
 

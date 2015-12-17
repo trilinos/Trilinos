@@ -124,7 +124,7 @@ lanczos_ext_float (
     int       ritzval_flag;	/* status flag for get_ritzvals() */
     double    resid;		/* residual */
     int       memory_ok;	/* TRUE until memory runs out */
-    float    *vwsqrt_float;     /* float version of vwsqrt */
+    float    *vwsqrt_float = NULL;     /* float version of vwsqrt */
 
     struct orthlink_float *makeorthlnk_float();	/* makes space for new entry in orthog. set */
     struct scanlink *mkscanlist();		/* init scan list for min ritz vecs */
@@ -225,12 +225,9 @@ lanczos_ext_float (
     }
 
     /* Make a float copy of vwsqrt */
-    if (vwsqrt == NULL) {
-        vwsqrt_float = NULL;
-    }
-    else {
-        vwsqrt_float = mkvec_float(0,n);
-        double_to_float(vwsqrt_float,1,n,vwsqrt);
+    if (vwsqrt != NULL) {
+      vwsqrt_float = mkvec_float(0,n);
+      double_to_float(vwsqrt_float,1,n,vwsqrt);
     }
 
     /* Initialize space. */
@@ -557,6 +554,9 @@ lanczos_ext_float (
     frvec(v, 1);
     frvec(work1, 1);
     frvec(work2, 1);
+    if (vwsqrt != NULL)
+      frvec_float(vwsqrt_float, 1);
+    
     init_time += lanc_seconds() - time;
 
     if (maxj == 0) return(1);  /* see note on beta[0] and maxj above */

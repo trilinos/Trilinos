@@ -69,7 +69,7 @@ kl_refine (
     extern double KL_IMBALANCE;	/* fractional imbalance allowed in KL */
     struct bilist *ptr;		/* element in set_list */
     double    subgoal[2];	/* goal within two subgraphs */
-    double    weights[2];	/* weights for each set */
+    double    weights[2] = {0.0, 0.0};	/* weights for each set */
     double    maxdeg;		/* largest degree of a vertex */
     double    ratio;		/* set sizes / goals */
     int      *null_ptr;		/* argument to klspiff */

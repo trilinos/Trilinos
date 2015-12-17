@@ -141,9 +141,9 @@ int ex_create_par_int (const char *path,
 		       MPI_Info info,
 		       int   run_version)
 {
-  int exoid, dims[1];
+  int exoid;
   int status;
-  int dimid, time_dim;
+  int dimid;
   int old_fill;
   int lio_ws;
   int filesiz;

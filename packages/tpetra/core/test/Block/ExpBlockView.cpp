@@ -76,10 +76,20 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
-    typedef Teuchos::LAPACK<LO, ST>                          lapack_type;
+    typedef typename device_type::execution_space execution_space;
+    typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Tpetra's Node does the right thing with respect to
+    // Kokkos::initialize etc.
+    typename Tpetra::Vector<ST, LO>::node_type node;
+    (void) node;
+    TEST_ASSERT( execution_space::is_initialized () );
+    if (! execution_space::is_initialized ()) {
+      return; // don't bother to continue
+    }
 
     // Create a matrix
     block_type A("A",3,3);
@@ -162,10 +172,20 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
-    typedef Teuchos::LAPACK<LO, ST>                          lapack_type;
+    typedef typename device_type::execution_space execution_space;
+    typedef Teuchos::LAPACK<LO, ST> lapack_type;
     typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
     typedef Kokkos::View<LO*, device_type> int_vec_type;
     typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Tpetra's Node does the right thing with respect to
+    // Kokkos::initialize etc.
+    typename Tpetra::Vector<ST, LO>::node_type node;
+    (void) node;
+    TEST_ASSERT( execution_space::is_initialized () );
+    if (! execution_space::is_initialized ()) {
+      return; // don't bother to continue
+    }
 
     // Create a matrix
     block_type A("A",3,3);

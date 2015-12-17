@@ -43,7 +43,7 @@
 #include <stdlib.h>
 
 void
-cgi_def_ini ()
+cgi_def_ini (void)
 {
    fprintf (stderr, "cgi: error: no device drivers specified\n");
    exit (1);

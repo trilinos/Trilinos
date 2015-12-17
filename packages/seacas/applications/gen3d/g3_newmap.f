@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: newmap.f,v 1.3 2000/01/26 22:33:35 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE NEWMAP (MAPEL, MAPEL3, IXEL, INCEL, NREL, IELCOL)
 C=======================================================================

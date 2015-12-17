@@ -151,6 +151,8 @@ struct Perf {
   }
 };
 
+inline double scalar_norm(double x) { return x; }
+
 // Struct for storing UQ quadrature data
 template <typename Device>
 struct QuadratureData {

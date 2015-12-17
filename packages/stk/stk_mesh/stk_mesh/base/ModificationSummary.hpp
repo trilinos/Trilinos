@@ -52,7 +52,7 @@ public:
     {
     }
 
-    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+    void track_set_global_id(stk::mesh::Entity entity, uint32_t newId)
     {
     }
 
@@ -126,7 +126,7 @@ public:
 
     void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity);
 
-    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId);
+    void track_set_global_id(stk::mesh::Entity entity, uint32_t newId);
 
     void track_destroy_entity(stk::mesh::Entity entity);
 
@@ -144,7 +144,7 @@ public:
 
     void write_summary(int mod_cycle_count, bool sort=true);
 
-    void set_proc_id(int proc_id);
+    void set_proc_id(int proc_id) { m_procId = proc_id; }
 
 private:
 
@@ -167,7 +167,8 @@ private:
     int m_lastModCycle;
     int m_modCounter;
     int m_modificationSummaryNumber;
-    int m_proc_id;
+    int m_procId = -1;
+    std::vector<size_t> watchedFaces;
 };
 
 } // namespace

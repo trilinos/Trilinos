@@ -93,13 +93,11 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
   if (assignment[0] < 0) {
     printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
 	   1, inassignname, assignment[0]);
-    fclose(finassign);
     return (1);
   }
 
   if (end_flag == -1) {
     printf("ERROR: No values found in assignment file `%s'\n", inassignname);
-    fclose(finassign);
     return (1);
   }
 
@@ -110,13 +108,11 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
     j = fscanf(finassign, "%d", &(assignment[i]));
     if (j != 1) {
       printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
-      fclose(finassign);
       return (1);
     }
     if (assignment[i] < 0) {
       printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
 	     i+1, inassignname, assignment[i]);
-      fclose(finassign);
       return (1);
     }
     if (assignment[i] > nvtxs) {	/* warn since probably an error */
@@ -154,8 +150,6 @@ static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, i
 	      "         Numerical data found after expected end of file\n");
     }
   }
-
-  fclose(finassign);
   return (0);
 }
 
@@ -199,21 +193,18 @@ input_assign_inv (
     if (end_flag == -1) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       No values found\n");
-	fclose(finassign);
 	return (1);
     }
 
     if (size < 0) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       Size of set %d less than zero (%d)\n", set, size);
-	fclose(finassign);
 	return (1);
     }
 
     if (total + size > nvtxs) {
 	printf("ERROR: In assignment file `%s'\n", inassignname);
 	printf("       Total set sizes greater than nvtxs (%d)\n", nvtxs);
-	fclose(finassign);
 	return (1);
     }
 
@@ -225,7 +216,6 @@ input_assign_inv (
 	    if (j != 1) {
 	        printf("ERROR: Too few values in assignment file `%s'.\n",
 		    inassignname);
-	        fclose(finassign);
 	        return (1);
 	    }
 
@@ -233,14 +223,12 @@ input_assign_inv (
 		printf("ERROR: In assignment file `%s'\n", inassignname);
 		printf("       Entry %d of set %d invalid (%d)\n", 
 		    total + i, set, k);
-		fclose(finassign);
 		return (1);
 	    }
 
 	    if ((int) assignment[k - 1] != -1) {
 		printf("ERROR: In assignment file `%s'\n", inassignname);
 		printf("       Vertex %d assigned to multiple sets\n", k);
-		fclose(finassign);
 		return (1);
 	    }
 
@@ -254,7 +242,6 @@ input_assign_inv (
 	    if (total != nvtxs) {
 	        printf("ERROR: Too few values in assignment file `%s'.\n",
 		    inassignname);
-		fclose(finassign);
 		return (1);
 	    }
 	    else {
@@ -267,18 +254,14 @@ input_assign_inv (
 	if (size < 0) {
 	    printf("ERROR: In assignment file `%s'\n", inassignname);
 	    printf("       Size of set %d less than zero (%d)\n", set, size);
-	    fclose(finassign);
 	    return (1);
 	}
 
 	if (total + size > nvtxs) {
 	    printf("ERROR: In assignment file `%s'\n", inassignname);
 	    printf("       Total set sizes greater than nvtxs (%d)\n", nvtxs);
-	    fclose(finassign);
 	    return (1);
 	}
     }
-
-    fclose(finassign);
     return (0);
 }

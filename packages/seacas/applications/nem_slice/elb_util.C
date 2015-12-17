@@ -154,18 +154,20 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void string_to_lower(char *in_string, const char cval)
+void string_to_lower(char in_string[], const char cval)
 {
-  if (in_string != NULL) {
-    size_t len = strlen(in_string);
-    for(size_t cnt=0; cnt < len; cnt++) {
-      if(in_string[cnt] == cval)
-	return;
-      
-      if(isupper(in_string[cnt]))
-	in_string[cnt] = tolower(in_string[cnt]);
-    }
+  int len, cnt;
+
+  len = strlen(in_string);
+  for(cnt=0; cnt < len; cnt++)
+  {
+    if(in_string[cnt] == cval)
+      return;
+
+    if(isupper(in_string[cnt]))
+      in_string[cnt] = tolower(in_string[cnt]);
   }
+
   return;
 }
 

@@ -44,11 +44,11 @@
 void    cgix11_();      /* tell linker to load driver */
 
 void
-cgisx11()               /* make name external so linker will load file*/
+cgisx11(void)               /* make name external so linker will load file*/
 {}
 
 void
-cgi_def_ini()
+cgi_def_ini(void)
 {
   anything *devid;
 

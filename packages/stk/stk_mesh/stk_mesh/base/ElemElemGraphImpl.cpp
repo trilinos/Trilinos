@@ -15,6 +15,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk { namespace mesh {
 
@@ -182,17 +183,16 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
     for(size_t i=0;i<elements_to_comm.size();++i)
     {
         int remote_proc = elements_to_comm[i].m_proc_id;
-        stk::mesh::EntityId localId = elements_to_comm[i].m_localElementId;
-        stk::mesh::EntityId remoteId = elements_to_comm[i].m_remoteElementId;
-
-        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(localId);
-        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(remoteId);
+        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(elements_to_comm[i].m_localElementId);
+        comm.send_buffer(remote_proc).pack<int>(elements_to_comm[i].m_localSide);
+        comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(elements_to_comm[i].m_remoteElementId);
+        comm.send_buffer(remote_proc).pack<int>(elements_to_comm[i].m_remoteSide);
     }
 }
 
-std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm)
+std::vector<graphEdgeProc> communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm)
 {
-    std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > remote_edges;
+    std::vector<graphEdgeProc> remote_edges;
     stk::CommSparse comm(communicator);
     pack_elements_to_comm(comm, elements_to_comm);
     comm.allocate_buffers();
@@ -205,10 +205,14 @@ std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_ki
         while(comm.recv_buffer(i).remaining())
         {
             stk::mesh::EntityId remoteId;
+            int remoteSide;
             stk::mesh::EntityId localId;
+            int localSide;
             comm.recv_buffer(i).unpack<stk::mesh::EntityId>(remoteId);
+            comm.recv_buffer(i).unpack<int>(remoteSide);
             comm.recv_buffer(i).unpack<stk::mesh::EntityId>(localId);
-            remote_edges.push_back(std::make_pair(localId, remoteId));
+            comm.recv_buffer(i).unpack<int>(localSide);
+            remote_edges.push_back(graphEdgeProc(localId, localSide, remoteId, remoteSide, i));
         }
     }
     return remote_edges;
@@ -386,13 +390,10 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
     return side_parts;
 }
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info,
+        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts)
 {
-    int side_id = elementGraph.get_side_from_element1_to_remote_element2(local_element, remote_id);
-    ThrowRequireMsg(side_id != -1, "Program error. Please contact sierra-help@sandia.gov for support.");
-
     stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
     std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
@@ -474,25 +475,19 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     return side;
 }
 
-stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
-        int element1_side_id)
+void add_shell_element_if_coincident(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
 {
-    stk::mesh::EntityId element1_global_id = bulkData.identifier(element1);
-    stk::mesh::EntityId element2_global_id = bulkData.identifier(element2);
-    stk::mesh::EntityId side_global_id = 0;
+    const stk::mesh::EntityVector &sideNodesOfReceivedElement = connectedElem.m_sideNodes;
+    stk::mesh::OrdinalAndPermutation localElemOrdAndPerm =
+            stk::mesh::get_ordinal_and_permutation(mesh, localElement, mesh.mesh_meta_data().side_rank(), sideNodesOfReceivedElement);
+    // for shell element, want the nodes of the solid to be in opposite order. So getting non-matching side ordinals
+    // means the normals oppose
+    bool does_local_shell_side_normal_oppose_other_element_side_normal = (localElemOrdAndPerm.first == sideOrdinal);
 
-    if(element1_global_id < element2_global_id)
+    if (does_local_shell_side_normal_oppose_other_element_side_normal)
     {
-        side_global_id = get_element_side_multiplier() * element1_global_id + element1_side_id;
+        filteredConnectedElements.push_back(connectedElem);
     }
-    else
-    {
-        int side_id = elementGraph.get_side_from_element1_to_locally_owned_element2(element2, element1);
-        ThrowRequireMsg(side_id != -1, "Program error. Contact sierra-help@sandia.gov for support.");
-        side_global_id = get_element_side_multiplier() * element2_global_id + side_id;
-    }
-
-    return side_global_id;
 }
 
 void add_solid_element_if_normals_oppose_to_shell(const stk::mesh::BulkData& mesh, const unsigned sideOrdinal, const stk::mesh::Entity localElement, const ConnectedElementData& connectedElem, ConnectedElementDataVector& filteredConnectedElements)
@@ -563,10 +558,13 @@ void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh
         ConnectedElementDataVector filteredConnectedElements;
         for (const ConnectedElementData & connectedElem: connectedElementData)
         {
-            if(mesh.identifier(localElement) == connectedElem.m_elementIdentifier) continue;
-            ThrowRequireMsg(!connectedElem.m_elementTopology.is_shell(), "Coinicident shells not supported in graph(" << mesh.identifier(localElement) << ", "
-                    << connectedElem.m_elementIdentifier << "). Contact sierra-help@sandia.gov for support.");
-            add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+            if(mesh.identifier(localElement) != connectedElem.m_elementIdentifier)
+            {
+                if(connectedElem.m_elementTopology.is_shell())
+                    add_shell_element_if_coincident(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+                else
+                    add_solid_element_if_normals_oppose_to_shell(mesh, sideOrdinal, localElement, connectedElem, filteredConnectedElements);
+            }
         }
         connectedElementData.swap(filteredConnectedElements);
     }
@@ -614,29 +612,27 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
     }
 }
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
-        std::vector<ElementSidePair>& element_side_pairs)
+bool is_local_element(stk::mesh::impl::LocalId elemId)
 {
-    size_t num_sides = topology.num_sides();
-    std::vector<int> elem_sides;
+    return (elemId >= 0);
+}
 
-    if (internal_sides.size() < num_sides)
+void add_exposed_sides(LocalId elementId, size_t numElemSides,
+                      const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
+{
+    if (graph.get_num_edges_for_element(elementId) < numElemSides)
     {
-        elem_sides.assign(num_sides, -1);
-        for(size_t j=0; j<internal_sides.size(); ++j)
+        std::vector<int> elemSides(numElemSides, -1);
+        for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
         {
-            int sideId = internal_sides[j];
-            elem_sides[sideId] = internal_sides[j];
+            const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
+            int sideId = graphEdge.side1;
+            elemSides[sideId] = sideId;
         }
 
-        for(size_t j=0; j<num_sides; ++j)
-        {
-            if (elem_sides[j] == -1)
-            {
-                int sideId = j;
-                element_side_pairs.push_back(std::make_pair(elementId, sideId));
-            }
-        }
+        for(size_t sideId = 0; sideId < numElemSides; ++sideId)
+            if (elemSides[sideId] == -1)
+                element_side_pairs.push_back(sideId);
     }
 }
 

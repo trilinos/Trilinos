@@ -9,6 +9,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequire
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -44,8 +45,13 @@ public:
 
     virtual void finished_modification_end_notification()
     {
-        elemGraph.add_elements(elementsAdded);
-        elementsAdded.clear();
+        size_t numLocalElementsAdded = elementsAdded.size();
+        size_t numGlobalElementsAdded = 0;
+        stk::all_reduce_sum(bulkData.parallel(), &numLocalElementsAdded, &numGlobalElementsAdded, 1);
+        if (numGlobalElementsAdded > 0) {
+            elemGraph.add_elements(elementsAdded);
+            elementsAdded.clear();
+        }
     }
 
     virtual void started_modification_end_notification()
@@ -56,13 +62,14 @@ public:
 
     virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
+//        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
     }
 
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
-        newParallelGraphEntries.clear();
+//        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
+//        newParallelGraphEntries.clear();
+        elemGraph.fill_from_mesh();
     }
 private:
     stk::mesh::BulkData &bulkData;

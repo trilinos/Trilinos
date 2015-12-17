@@ -42,6 +42,8 @@
 #ifndef KOKKOS_BLAS1_MP_VECTOR_HPP
 #define KOKKOS_BLAS1_MP_VECTOR_HPP
 
+#include "Sacado_ConfigDefs.h"
+
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
@@ -52,6 +54,8 @@
 //----------------------------------------------------------------------------
 
 namespace KokkosBlas {
+
+#if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
 
 template <typename XT, typename XL, typename XD, typename XM,
           typename YT, typename YL, typename YD, typename YM>
@@ -324,6 +328,8 @@ mult(
   typename BVector::flat_array_type B_flat = B;
   mult( c.coeff(0), C_flat, ab.coeff(0), A_flat, B_flat );
 }
+
+#endif
 
 } // namespace KokkosBlas
 

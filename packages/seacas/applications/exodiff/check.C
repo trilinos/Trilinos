@@ -276,7 +276,7 @@ namespace {
   
     size_t node_count =  block1->Size() * block1->Num_Nodes_per_Elmt();
     SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Elmt());
-  
+    
     for (size_t e = 0; e < node_count; ++e) {
       if (conn1[e] != conn2[e]) {
 	size_t elem = e / block2->Num_Nodes_per_Elmt();

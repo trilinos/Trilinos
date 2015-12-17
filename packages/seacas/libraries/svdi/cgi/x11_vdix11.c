@@ -612,7 +612,7 @@ static int font_height, font_width;    /* char size in device coord. */
 
 /* flush polyline buffer */
 /* implemented as macro to save the overhead of subroutine call */
-void x11_vflush() {                                                  
+void x11_vflush(void) {                                                  
    if (x11_nvert > 1) {                                                 
       XDrawLines(display, draw_id, gc, vlist, x11_nvert, CoordModeOrigin); 
    }                                                                
@@ -628,7 +628,6 @@ int *justif;
   unsigned long valuemask;
   unsigned int d_width, d_height;
   char *geometry = NULL, *bufferpic = NULL, *allcolors = NULL;
-  int geom_result;
   XSetWindowAttributes setwinattr;
   XWindowAttributes winattr;
   XWMHints wmhints;
@@ -696,7 +695,7 @@ int *justif;
   /* use user-supplied default geometry if available */
   geometry = XGetDefault(display,"svdi","Geometry");
   if (geometry) 
-    geom_result = XParseGeometry(geometry,&xpos,&ypos,&x_width,&x_height);
+    XParseGeometry(geometry,&xpos,&ypos,&x_width,&x_height);
 
   /* setup colors */
   /* first try for a 24 bit visual */
@@ -921,8 +920,7 @@ int *justif;
      init = initialization flag (1 means called from initialization phase,
             otherwise 0)
 */
-void x_dynamics(init)
-int init; 
+void x_dynamics(int init)
 {
    XWindowAttributes win_info;
    float asp1;
@@ -1444,6 +1442,7 @@ void vdstfc(int *color_index)
    /* check valid color index */
    if (loc_index < 0 || loc_index > 255) {
      fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n",724,5);
+     loc_index = def_fc_index;
    }
 
    if (loc_index > ncolors-1) loc_index = def_fc_index;
@@ -1461,6 +1460,7 @@ int *color_index;
 
    if (loc_index < 0 || loc_index > 255)
       { fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n",724,5);
+	loc_index = def_bc_index;
       }
 
    if (loc_index > ncolors-1) loc_index = def_bc_index;
@@ -1637,7 +1637,7 @@ float attr_array[];
    vdstcs(attr_array+5);
 }
 
-void x_check_window()
+void x_check_window(void)
 {
    int change;
    XEvent x_event;
@@ -1657,7 +1657,7 @@ void x_check_window()
    }
 }
 
-void x_clear_pixmap()
+void x_clear_pixmap(void)
 {
    /* temporarily set foreground color to the background color and draw a
       big fill rectangle to clear the pixmap,

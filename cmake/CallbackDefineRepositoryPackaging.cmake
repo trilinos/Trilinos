@@ -7,12 +7,6 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
   SET(Trilinos_SOURCE_EXCLUDE_DIR ${Trilinos_SOURCE_DIR})
   #PRINT_VAR(Trilinos_SOURCE_EXCLUDE_DIR)
 
-  # Automatically update the version file for sierra
-  IF (NOT MSVC AND PROJECT_NAME STREQUAL "Trilinos")
-    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE("Trilinos"  "."  FALSE
-      ${Trilinos_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
-  ENDIF()
-
   SET(CPACK_SOURCE_IGNORE_FILES
     ${CPACK_SOURCE_IGNORE_FILES}
     ${Trilinos_SOURCE_EXCLUDE_DIR}/.*[.]pyc$

@@ -10,6 +10,8 @@
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct sharing_info; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
+namespace stk { namespace mesh { class Graph; } }
+namespace stk { namespace mesh { class ParallelInfoForGraphEdges; } }
 namespace stk { class CommSparse; }
 
 namespace stk { namespace mesh {
@@ -22,15 +24,16 @@ struct graphEdgeProc
 {
     stk::mesh::EntityId m_localElementId;
     stk::mesh::EntityId m_remoteElementId;
+    int m_localSide;
+    int m_remoteSide;
     int m_proc_id;
-    graphEdgeProc(const stk::mesh::EntityId& localElementId, const stk::mesh::EntityId &remoteElementId, int proc_id) :
-        m_localElementId(localElementId), m_remoteElementId(remoteElementId), m_proc_id(proc_id) {}
+    graphEdgeProc(const stk::mesh::EntityId& localElementId, int localSide, const stk::mesh::EntityId &remoteElementId, int remoteSide, int proc_id) :
+        m_localElementId(localElementId), m_remoteElementId(remoteElementId), m_localSide(localSide), m_remoteSide(remoteSide), m_proc_id(proc_id) {}
 };
 
 struct parallel_info
 {
     int m_other_proc;
-    int m_other_side_ord;
     int m_permutation;
     stk::topology m_remote_element_toplogy;
     bool m_in_body_to_be_skinned;
@@ -38,8 +41,8 @@ struct parallel_info
 
     stk::mesh::EntityId m_chosen_side_id;
 
-    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
-        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
+    parallel_info(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology, bool inPart, bool isInAir=false) :
+        m_other_proc(proc), m_permutation(perm), m_remote_element_toplogy(other_elem_topology), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
         m_chosen_side_id(chosen_face_id) {}
 };
 
@@ -86,6 +89,7 @@ struct ShellConnectivityData
     int                 m_nearElementProc;
     stk::mesh::EntityId m_shellElementId;
     stk::mesh::EntityId m_farElementId;
+    int                 m_farElementSide;
     int                 m_farElementProc;
     bool                m_farElementIsRemote;
 };
@@ -97,8 +101,78 @@ struct DeletedElementData
     int                 m_remoteProc;
 };
 
+struct ElementViaSidePair
+{
+    stk::mesh::Entity element;
+    int side;
+};
+
+struct IdViaSidePair
+{
+    stk::mesh::EntityId id;
+    int side;
+};
+
+}//namespace impl
+
+struct GraphEdge
+{
+    GraphEdge(impl::LocalId e1, int s1, impl::LocalId e2, int s2) :
+        elem1(e1), elem2(e2), side1(s1), side2(s2)
+    {}
+    GraphEdge() :
+        elem1(std::numeric_limits<impl::LocalId>::max()), elem2(std::numeric_limits<impl::LocalId>::max()), side1(-1), side2(-1)
+    {}
+    impl::LocalId elem1;
+    impl::LocalId elem2;
+    int side1;
+    int side2;
+};
+
+typedef GraphEdge CoincidentElementConnection;
+
+struct GraphEdgeLessByElem2 {
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        if (a.elem2 != b.elem2)
+        {
+            return a.elem2 < b.elem2;
+        }
+        else if (a.side2 != b.side2)
+        {
+            return a.side2 < b.side2;
+        }
+        else if (a.elem1 != b.elem1)
+        {
+            return a.elem1 < b.elem1;
+        }
+        else
+        {
+            return a.side1 < b.side1;
+        }
+    }
+};
+
+inline
+bool operator==(const GraphEdge& a, const GraphEdge& b)
+{
+    return  a.elem1 == b.elem1 &&
+            a.side1 == b.side1 &&
+            a.elem2 == b.elem2 &&
+            a.side2 == b.side2;
+}
+
+inline
+std::ostream& operator<<(std::ostream& out, const GraphEdge& graphEdge)
+{
+    out << "(" << graphEdge.elem1 << "," << graphEdge.side1 << " -> " << graphEdge.elem2 << "," << graphEdge.side2 << ")";
+    return out;
+}
+
+namespace impl {
+
 typedef std::pair<LocalId,int> ElementSidePair;
-typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
+typedef std::map<GraphEdge, parallel_info, GraphEdgeLessByElem2> ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
@@ -120,12 +194,12 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
-std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm);
+std::vector<graphEdgeProc> communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm);
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info,
+        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
 
 void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
@@ -148,9 +222,6 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
         stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 
-stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
-        int element1_side_id);
-
 void filter_out_invalid_solid_shell_connections(const stk::mesh::BulkData & mesh,
                                           stk::mesh::Entity localElement,
                                           const unsigned sideOrdinal,
@@ -164,8 +235,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
-        std::vector<ElementSidePair>& element_side_pairs);
+void add_exposed_sides(LocalId elementId, size_t numElemSides, const stk::mesh::Graph& graph, std::vector<int> &element_side_pairs);
 
 void create_sides_created_during_death_part(stk::mesh::MetaData &metaData);
 stk::mesh::Part* get_sides_created_during_death_part(const stk::mesh::MetaData &metaData);
@@ -173,7 +243,8 @@ void add_parts_from_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity ele
 stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData, const stk::mesh::PartVector& parts_for_creating_side, stk::mesh::Entity element, int side_ord);
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
-}
-}} // end namespaces stk mesh
+bool is_local_element(stk::mesh::impl::LocalId elemId);
+
+}}} // end namespaces stk mesh
 
 #endif

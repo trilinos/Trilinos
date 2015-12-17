@@ -66,7 +66,7 @@ ENDIF()
 
 TRIBITS_ADD_LIBRARY(
   stk_mesh_fixtures
-  DEPLIBS stk_mesh_base
+  DEPLIBS
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

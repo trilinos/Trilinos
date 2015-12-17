@@ -248,6 +248,12 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
+#if defined( HAVE_TPETRA_SERIAL )
+    if ( cmdline.USE_SERIAL ) {
+      run< Kokkos::Serial >( comm , cmdline );
+    }
+#endif
+
 #if defined( HAVE_TPETRA_PTHREAD )
     if ( cmdline.USE_THREADS ) {
       run< Kokkos::Threads >( comm , cmdline );

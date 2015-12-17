@@ -37,7 +37,7 @@
  * OVERVIEW
  *
  * This file contains jacket routines written in C for interfacing Fortran
- * ExodusII function calls to the actual C binding for ExodusII.
+ * Exodus function calls to the actual C binding for Exodus.
 
  * In general, these functions handle
  * character-string parameter conventions, convert between
@@ -417,7 +417,7 @@ F2C(exgqa,EXGQA) (int *idexo,
   }
   alen = 4;                     /* qa records are 4 strings deep */
 
-  /* do ExodusII C call to find out how many qa records are avail */
+  /* do Exodus C call to find out how many qa records are avail */
   num_qa_records = ex_inquire_int(*idexo, EX_INQ_QA);
   if (num_qa_records < 0) {
     *ierr = EX_FATAL;
@@ -449,7 +449,7 @@ F2C(exgqa,EXGQA) (int *idexo,
   }
   *(sptr + iii) = 0;            /* null out last pointer */
 
-  /* do ExodusII C call to get qa records */
+  /* do Exodus C call to get qa records */
   if (ex_get_qa(*idexo, (void *) sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     goto error_ret;
@@ -539,7 +539,7 @@ F2C(exginf,EXGINF) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  /* do exodusII C call to find out how many info records are avail */
+  /* do exodus C call to find out how many info records are avail */
   num_info = ex_inquire_int(*idexo, EX_INQ_INFO);
   if (num_info < 0) {
     *ierr = EX_FATAL;
@@ -553,7 +553,7 @@ F2C(exginf,EXGINF) (int *idexo,
   /*
    * Step 1: Allocate space for string ptr array Step 2: Allocate space
    * for info record strings, and put pointers into str ptr array Step
-   * 3: Do ExodusII call to get records Step 4: Copy strings into
+   * 3: Do Exodus call to get records Step 4: Copy strings into
    * passed Fortran buffer space
    */
 
@@ -574,7 +574,7 @@ F2C(exginf,EXGINF) (int *idexo,
                                                  * array */
   *(aptr + i) = 0;              /* null out last pointer */
 
-  /* Do exodusII call to get info records */
+  /* Do exodus call to get info records */
   if (ex_get_info(*idexo, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);
@@ -644,7 +644,7 @@ F2C(expcon,EXPCON) (int *idexo,
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
-  /* do ExodusII C call to find out how many dimensions  */
+  /* do Exodus C call to find out how many dimensions  */
   ndim = ex_inquire_int(*idexo, EX_INQ_DIM);
   if (ndim < 0) {
     *ierr = EX_FATAL;
@@ -708,7 +708,7 @@ F2C(exgcon,EXGCON) (int *idexo,
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
-  /* do ExodusII C call to find out how many dimensions */
+  /* do Exodus C call to find out how many dimensions */
   ndim = ex_inquire_int(*idexo, EX_INQ_DIM);
   if (ndim < 0) {
     *ierr = EX_FATAL;
@@ -732,7 +732,7 @@ F2C(exgcon,EXGCON) (int *idexo,
     *(aptr + i) = sptr + i * (slen + 1);
   }
 
-  /* do ExodusII C call to get coord name records */
+  /* do Exodus C call to get coord name records */
   if (ex_get_coord_names(*idexo, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up string space */
@@ -1165,7 +1165,7 @@ F2C(expnams,EXPNAMS) (int *idexo,
                                                                  * buffer */
   }
   *(aptr + i) = 0;              /* null out last ptr */
-  /* do ExodusII C call to write results variables names */
+  /* do Exodus C call to write results variables names */
   if (ex_put_names(*idexo, (ex_entity_type) * type, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -1207,7 +1207,7 @@ F2C(expnam,EXPNAM) (int *idexo,
   /* Copy Fortran names to staging space */
   ex_fstrncpy(sptr, name, slen);       /* copy string into buffer */
 
-  /* do ExodusII C call to write results variables names */
+  /* do Exodus C call to write results variables names */
   if (ex_put_name(*idexo, (ex_entity_type) *type, *id, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -1256,7 +1256,7 @@ F2C(exgnams,EXGNAMS) (int *idexo,
     *(aptr + i) = sptr + i * (slen + 1);        /* put address into ptr array */
   *(aptr + i) = 0;              /* null out last ptr */
 
-  /* do ExodusII C call to read results variables names */
+  /* do Exodus C call to read results variables names */
   if (ex_get_names(*idexo, (ex_entity_type) * type, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */
@@ -1303,7 +1303,7 @@ F2C(exgnam,EXGNAM) (int *idexo,
     *ierr = EX_MEMFAIL;
     return;
   }
-  /* do ExodusII C call to read object  name */
+  /* do Exodus C call to read object  name */
   if (ex_get_name(*idexo, *type, *id, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */
@@ -1430,7 +1430,7 @@ F2C(exgpn,EXGPN) (int *idexo,
   }
 
 
-  /* do ExodusII C call to find out how many properties */
+  /* do Exodus C call to find out how many properties */
   num_props = ex_inquire_int(*idexo, inq_code);
   if (num_props < 0) {
     *ierr = EX_FATAL;
@@ -1460,7 +1460,7 @@ F2C(exgpn,EXGPN) (int *idexo,
                                                  * into ptr array */
   *(aptr + i) = 0;              /* set last pointer to null */
 
-  /* do ExodusII C call to get property name records */
+  /* do Exodus C call to get property name records */
   if (ex_get_prop_names(*idexo, (ex_entity_type) * obj_type, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up string space */
@@ -1551,7 +1551,7 @@ F2C(exgp,EXGP) (int *idexo,
   /* Copy property name from Fortran string to staging area */
   ex_fstrncpy(sptr, prop_name, slen);
 
-  /* use exodusII C routine to get the property value */
+  /* use exodus C routine to get the property value */
   if (ex_get_prop(*idexo, (ex_entity_type) * obj_type, *obj_id, sptr, value) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -1594,7 +1594,7 @@ F2C(exgpa,EXGPA) (int *idexo,
   ex_fstrncpy(sptr, prop_name, slen);
 
 
-  /* use exodusII C routine to get the values array */
+  /* use exodus C routine to get the values array */
   if (ex_get_prop_array(*idexo, (ex_entity_type) * obj_type, sptr, values) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -1635,7 +1635,7 @@ F2C(exppa,EXPPA) (int *idexo,
   ex_fstrncpy(sptr, prop_name, slen);
 
 
-  /* Use exodusII C routine to store the property values */
+  /* Use exodus C routine to store the property values */
   if (ex_put_prop_array(*idexo, (ex_entity_type) * obj_type, sptr, values) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -2167,7 +2167,7 @@ F2C(expvan,EXPVAN) (int *idexo,
                                                                          * buffer */
   }
   *(aptr + i) = 0;              /* null out last ptr */
-  /* do ExodusII C call to write results variables names */
+  /* do Exodus C call to write results variables names */
   if (ex_put_var_names(*idexo, var_type, *num_vars, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
   }
@@ -2217,7 +2217,7 @@ F2C(exgvan,EXGVAN) (int *idexo,
     *(aptr + i) = sptr + i * (slen + 1);        /* put address into ptr array */
   *(aptr + i) = 0;              /* null out last ptr */
 
-  /* do ExodusII C call to read results variables names */
+  /* do Exodus C call to read results variables names */
   if (ex_get_var_names(*idexo, var_type, *num_vars, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */
@@ -2842,6 +2842,15 @@ F2C(exmxnm,EXMXNM) (int *idexo,
   *ierr = ex_set_max_name_length(*idexo, *length);
 }
 
+void
+F2C(exsetopt,EXSETOPT) (int *idexo,
+		      int *option,
+		      int *value,
+		      int *ierr)
+{
+  *ierr = ex_set_option(*idexo, *option, *value);
+}
+
 /*
  * copy EXODUS file
  */
@@ -2965,7 +2974,7 @@ F2C(exgvnm,EXGVNM) (int *idexo,
     *ierr = EX_MEMFAIL;
     return;
   }
-  /* do ExodusII C call to read results variables names */
+  /* do Exodus C call to read results variables names */
   if (ex_get_var_name(*idexo, var_type, *var_index, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */
@@ -3092,7 +3101,7 @@ F2C(expvnm,EXPVNM) (int *idexo,
   ex_fstrncpy(sptr, var_name, slen);    /* copy string into buffer */
 
 
-  /* do ExodusII C call to write results variable name */
+  /* do Exodus C call to write results variable name */
   if (ex_put_var_name(*idexo, var_type, *var_index, sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr);                 /* free up allocated space */

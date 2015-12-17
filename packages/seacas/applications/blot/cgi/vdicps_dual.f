@@ -492,7 +492,7 @@ C
           COLDEF(3)=1.
         END IF
           DO 115 IK=0,255,8
-          CALL WCPSCO(1,IC+IK,COLDEF,0)
+          CALL WCPSCO(IC+IK,COLDEF,0)
           IF(IC.EQ.0) THEN
             COLDEF(1)=0.2
             COLDEF(2)=0.2
@@ -1894,7 +1894,7 @@ C
       vector(2) = color
   999 RETURN
       END
-      SUBROUTINE WCPSCO(NUM,INDEX,CLRARY,CLRMOD)
+      SUBROUTINE WCPSCO(INDEX,CLRARY,CLRMOD)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C VDSTCO           -Set Color Table.
@@ -1959,8 +1959,8 @@ C                   unsupported value is specified, it should be ignored.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER NUM,INDEX(NUM),CLRMOD
-      REAL CLRARY(3,NUM)
+      INTEGER INDEX,CLRMOD
+      REAL CLRARY(3)
       CHARACTER*6 KOLIND
       CHARACTER*20 KOLCOM
       COMMON /VCVEC1/ IVECT
@@ -1974,89 +1974,82 @@ C     mopoly controls polygon fill =0, on ;  =1, off
 C     mocolr controls color =0, on ;  =1, off
       COMMON /VCPSTB/ MOPOLY, MOCOLR
 C
-C CHECK FOR VALID NUM.
-      IF(NUM.LT.1.OR.NUM.GT.256) THEN
-         CALL VBERRH(723,5)
-         GOTO 999
-      END IF
 C
 C CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
-         CALL VBERRH(725,5)
-         GOTO 999
+        CALL VBERRH(725,5)
+        GOTO 999
       END IF
 C
 C CHECK FOR VALID INDEXES.
-      DO 100 I=1,NUM
-         INDEXN=INDEX(I)
-         IF(INDEXN.LT.0.OR.INDEXN.GT.255) THEN
-            CALL VBERRH(724,5)
-            GOTO 100
-         END IF
+      IF(INDEX.LT.0.OR.INDEX.GT.255) THEN
+        CALL VBERRH(724,5)
+        GOTO 100
+      END IF
 C CHECK FOR VALID CLRARY.
-         CLRAR1=CLRARY(1,I)
-         CLRAR2=CLRARY(2,I)
-         CLRAR3=CLRARY(3,I)
-         IF(CLRMOD.EQ.0) THEN
-            IF(CLRAR1.LT.0..OR.CLRAR1.GT.1.
-     X      .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
-     X      .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
-               CALL VBERRH(727,5)
-               GOTO 100
-            END IF
+      CLRAR1=CLRARY(1)
+      CLRAR2=CLRARY(2)
+      CLRAR3=CLRARY(3)
+      IF(CLRMOD.EQ.0) THEN
+        IF(CLRAR1.LT.0..OR.CLRAR1.GT.1.
+     X    .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
+     X    .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
+          CALL VBERRH(727,5)
+          GOTO 100
+        END IF
 C
 C 256 INDEXES ARE SUPPORTED:
-              DO 200 IC=1,3
-  200         PCOLS(IC,INDEXN+1)=CLRARY(IC,I)
+        DO 200 IC=1,3
+ 200      PCOLS(IC,INDEX+1)=CLRARY(IC)
 C
 C           define symbol for color reference
 C
-            IF(MOCOLR.NE.0) GO TO 390
+          IF(MOCOLR.NE.0) GO TO 390
 C
 C           if a set of vectors was in process, issue stroke command
 C           to draw them - then start a new path.
 C
-            IF(IVECT.NE.0) THEN
-              CALL PSTBUF(2,'s ')
-              IVECT=0
-            END IF
-            CALL PSTBUF(0,' ')
-            CALL PSTBUF(2,'r ')
-            KOLIND='/c'
-            IF(INDEXN.LE.9) THEN
-              WRITE(KOLIND(3:3),'(I1)',ERR=310) INDEXN
-              NNN=4
-            ELSEIF(INDEXN.LE.99) THEN
-              WRITE(KOLIND(3:4),'(I2)',ERR=310) INDEXN
-              NNN=5
-            ELSE
-              WRITE(KOLIND(3:5),'(I3)',ERR=310) INDEXN
-              NNN=6
-            END IF
-            WRITE(KOLCOM,300,ERR=310) (PCOLS(IC,INDEXN+1),IC=1,3)
-  300       FORMAT(F5.3,2F6.3,' q}')
-            CALL PSTBUF(NNN+26,KOLIND(1:NNN)//'{'//KOLCOM//' def ')
-  310       CONTINUE
+          IF(IVECT.NE.0) THEN
+            CALL PSTBUF(2,'s ')
+            IVECT=0
+          END IF
+          CALL PSTBUF(0,' ')
+          CALL PSTBUF(2,'r ')
+          KOLIND='/c'
+          IF(INDEX.LE.9) THEN
+            WRITE(KOLIND(3:3),'(I1)',ERR=310) INDEX
+            NNN=4
+          ELSEIF(INDEX.LE.99) THEN
+            WRITE(KOLIND(3:4),'(I2)',ERR=310) INDEX
+            NNN=5
+          ELSE
+            WRITE(KOLIND(3:5),'(I3)',ERR=310) INDEX
+            NNN=6
+          END IF
+          WRITE(KOLCOM,300,ERR=310) (PCOLS(IC,INDEX+1),IC=1,3)
+ 300      FORMAT(F5.3,2F6.3,' q}')
+          CALL PSTBUF(NNN+26,KOLIND(1:NNN)//'{'//KOLCOM//' def ')
+ 310      CONTINUE
 C           save and restore can not be in same line - why?
-            CALL PSTBUF(0,' ')
-            CALL PSTBUF(1,'v')
-            CALL PSTBUF(0,' ')
-  390       CONTINUE
-         ELSE
-            IF(CLRAR1.LT.0..OR.CLRAR1.GT.360.
+          CALL PSTBUF(0,' ')
+          CALL PSTBUF(1,'v')
+          CALL PSTBUF(0,' ')
+ 390      CONTINUE
+        ELSE
+          IF(CLRAR1.LT.0..OR.CLRAR1.GT.360.
      X      .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
      X      .OR.CLRAR3.LT.0..OR.CLRAR3.GT.1.) THEN
-               CALL VBERRH(727,5)
-               GOTO 100
-            END IF
+            CALL VBERRH(727,5)
+            GOTO 100
+          END IF
 C
 C 256 INDEXES ARE SUPPORTED:
-           STOP 'HLS COLORS NOT AVAILABLE'
-         END IF
-  100 CONTINUE
+          STOP 'HLS COLORS NOT AVAILABLE'
+        END IF
+ 100    CONTINUE
 C
-  999 RETURN
-      END
+ 999    RETURN
+        END
       SUBROUTINE WCPSFC(COLOR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C

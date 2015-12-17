@@ -59,7 +59,7 @@
 
 // Belos solver
 #ifdef HAVE_STOKHOS_BELOS
-#include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "Belos_Tpetra_MP_Vector.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
@@ -269,6 +269,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Check
 
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+
   // Local contribution
   dot_type local_val(0);
   for (size_t i=0; i<num_my_row; ++i) {
@@ -284,6 +286,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   dot_type val(0);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
+
+#else
+
+  // Local contribution
+  dot_type local_val(VectorSize, 0.0);
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      BaseScalar v = generate_vector_coefficient<BaseScalar,size_t>(
+        nrow, VectorSize, row, j);
+      local_val.fastAccessCoeff(j) += 0.12345 * v * v;
+    }
+  }
+
+  // Global reduction
+  dot_type val(VectorSize, 0.0);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
+                     Teuchos::outArg(val));
+
+#endif
 
   out << "dot = " << dot << " expected = " << val << std::endl;
 
@@ -453,6 +475,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Check
 
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+
   // Local contribution
   Array<dot_type> local_vals(ncol, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -470,6 +494,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Array<dot_type> vals(ncol, dot_type(0));
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
                      local_vals.getRawPtr(), vals.getRawPtr());
+
+#else
+
+  // Local contribution
+  Array<dot_type> local_vals(ncol, dot_type(VectorSize, 0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, j, k);
+        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+      }
+    }
+  }
+
+  // Global reduction
+  Array<dot_type> vals(ncol, dot_type(VectorSize, 0.0));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
+                     local_vals.getRawPtr(), vals.getRawPtr());
+
+#endif
 
   BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol; ++j) {
@@ -556,6 +602,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Check
 
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+
   // Local contribution
   Array<dot_type> local_vals(ncol_sub, dot_type(0));
   for (size_t i=0; i<num_my_row; ++i) {
@@ -574,6 +622,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,
                      Teuchos::as<int>(ncol_sub), local_vals.getRawPtr(),
                      vals.getRawPtr());
+
+#else
+
+  // Local contribution
+  Array<dot_type> local_vals(ncol_sub, dot_type(VectorSize, 0.0));
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (size_t j=0; j<ncol_sub; ++j) {
+      for (LocalOrdinal k=0; k<VectorSize; ++k) {
+        BaseScalar v = generate_multi_vector_coefficient<BaseScalar,size_t>(
+          nrow, ncol, VectorSize, row, cols[j], k);
+        local_vals[j].fastAccessCoeff(k) += 0.12345 * v * v;
+      }
+    }
+  }
+
+  // Global reduction
+  Array<dot_type> vals(ncol_sub, dot_type(VectorSize, 0.0));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,
+                     Teuchos::as<int>(ncol_sub), local_vals.getRawPtr(),
+                     vals.getRawPtr());
+
+#endif
 
   BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol_sub; ++j) {
@@ -1052,13 +1123,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       columnIndices[0] = row-1;
       columnIndices[1] = row;
       columnIndices[2] = row+1;
-      vals[0] = Scalar(1.0) * a_val;
-      vals[1] = Scalar(-2.0) * a_val;
-      vals[2] = Scalar(1.0) * a_val;
+      vals[0] = Scalar(-1.0) * a_val;
+      vals[1] = Scalar(2.0) * a_val;
+      vals[2] = Scalar(-1.0) * a_val;
       matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
     }
   }
   matrix->fillComplete();
+
+  matrix->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
+                   Teuchos::VERB_EXTREME);
 
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
@@ -1073,7 +1147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     if (row == 0 || row == nrow-1)
       b_view[i] = Scalar(0.0);
     else
-      b_view[i] = Scalar(b_val * h * h);
+      b_view[i] = -Scalar(b_val * h * h);
   }
 
   // Solve
@@ -1199,9 +1273,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       columnIndices[0] = row-1;
       columnIndices[1] = row;
       columnIndices[2] = row+1;
-      vals[0] = Scalar(1.0) * a_val;
-      vals[1] = Scalar(-2.0) * a_val;
-      vals[2] = Scalar(1.0) * a_val;
+      vals[0] = Scalar(-1.0) * a_val;
+      vals[1] = Scalar(2.0) * a_val;
+      vals[2] = Scalar(-1.0) * a_val;
       matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
     }
   }
@@ -1220,7 +1294,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     if (row == 0 || row == nrow-1)
       b_view[i] = Scalar(0.0);
     else
-      b_view[i] = Scalar(b_val * h * h);
+      b_view[i] = -Scalar(b_val * h * h);
   }
 
   // Create preconditioner
@@ -1369,7 +1443,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
   typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
@@ -1529,7 +1607,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
   typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
@@ -1675,9 +1757,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       columnIndices[0] = row-1;
       columnIndices[1] = row;
       columnIndices[2] = row+1;
-      vals[0] = Scalar(1.0) * a_val;
-      vals[1] = Scalar(-2.0) * a_val;
-      vals[2] = Scalar(1.0) * a_val;
+      vals[0] = Scalar(-1.0) * a_val;
+      vals[1] = Scalar(2.0) * a_val;
+      vals[2] = Scalar(-1.0) * a_val;
       matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
     }
   }
@@ -1696,7 +1778,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     if (row == 0 || row == nrow-1)
       b_view[i] = Scalar(0.0);
     else
-      b_view[i] = Scalar(b_val * h * h);
+      b_view[i] = -Scalar(b_val * h * h);
   }
 
   // Create preconditioner
@@ -1709,7 +1791,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;
+#ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
   typedef BaseScalar BelosScalar;
+#else
+  typedef Scalar BelosScalar;
+#endif
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   typedef Belos::LinearProblem<BelosScalar,MV,OP> BLinProb;
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
@@ -1725,13 +1811,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   belosParams->set("Output Style", 1);
   belosParams->set("Output Frequency", 1);
   belosParams->set("Output Stream", out.getOStream());
-  //belosParams->set("Orthogonalization", "TSQR");
-  RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
-    rcp(new Belos::PseudoBlockGmresSolMgr<BelosScalar,MV,OP>(problem, belosParams));
-  // RCP<Belos::SolverManager<BelosScalar,MV,OP> > solver =
-  //   rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP>(problem, belosParams));
+  // Turn off residual scaling so we can see some variation in the number
+  // of iterations across the ensemble when not doing ensemble reductions
+  belosParams->set("Implicit Residual Scaling", "None");
+
+  RCP<Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP,true> > solver =
+    rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP,true>(problem, belosParams));
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
+
+#ifndef HAVE_STOKHOS_ENSEMBLE_REDUCT
+  // Get and print number of ensemble iterations
+  std::vector<int> ensemble_iterations =
+    solver->getResidualStatusTest()->getEnsembleIterations();
+  out << "Ensemble iterations = ";
+  for (int i=0; i<VectorSize; ++i)
+    out << ensemble_iterations[i] << " ";
+  out << std::endl;
+#endif
 
   // x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
   //             Teuchos::VERB_EXTREME);
@@ -1851,9 +1948,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       columnIndices[0] = row-1;
       columnIndices[1] = row;
       columnIndices[2] = row+1;
-      vals[0] = Scalar(1.0) * a_val;
-      vals[1] = Scalar(-2.0) * a_val;
-      vals[2] = Scalar(1.0) * a_val;
+      vals[0] = Scalar(-1.0) * a_val;
+      vals[1] = Scalar(2.0) * a_val;
+      vals[2] = Scalar(-1.0) * a_val;
       matrix->replaceGlobalValues(row, columnIndices(0,3), vals(0,3));
     }
   }
@@ -1872,7 +1969,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     if (row == 0 || row == nrow-1)
       b_view[i] = Scalar(0.0);
     else
-      b_view[i] = Scalar(b_val * h * h);
+      b_view[i] = -Scalar(b_val * h * h);
   }
 
   // Solve

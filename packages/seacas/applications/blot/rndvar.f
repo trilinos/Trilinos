@@ -30,7 +30,7 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      SUBROUTINE RNDVAR (A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
+      SUBROUTINE RNDVAR (A, IA, LA, IVAR, IELBLK, INSTEP, LENVAR, VAR)
 C=======================================================================
 
 C   --*** RNDVAR *** (BLOT) Read variable
@@ -79,7 +79,9 @@ C   --It is connected to unit 90.
       REAL VAR(*)
 
       DIMENSION A(*)
-
+      INTEGER IA(*)
+      LOGICAL LA(*)
+      
       CHARACTER TYP
 
       INTEGER KNELB, KIEVOK, KIDELB
@@ -125,8 +127,8 @@ C      --   variable truth table; variable i of block j exists iff ISEVOK(j,i)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 130
         
-        call rndelv(ndb, imin, imax, instep, idvar, a(kidelb),
-     &              a(knelb), var(1), a(kievok), nelblk)
+        call rndelv(ndb, imin, imax, instep, idvar, ia(kidelb),
+     &    ia(knelb), var(1), la(kievok), nelblk)
       END IF
       
  130  CONTINUE
