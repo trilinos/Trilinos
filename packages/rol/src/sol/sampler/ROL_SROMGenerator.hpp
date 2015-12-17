@@ -118,7 +118,8 @@ public:
     Teuchos::RCP<AtomVector<Real> > atom, atom_lo, atom_hi, atom_eq;
     Teuchos::RCP<Vector<Real> > x, x_lo, x_hi, x_eq;
     initialize_vectors(prob,prob_lo,prob_hi,prob_eq,atom,atom_lo,atom_hi,atom_eq,x,x_lo,x_hi,x_eq,bman);
-    StdVector<Real> l(Teuchos::rcp(new std::vector<Real>(1,0.)));
+    Teuchos::RCP<Vector<Real> > l
+      = Teuchos::rcp(new StdVector<Real>(Teuchos::rcp(new std::vector<Real>(1,0.))));
     bool optProb = false, optAtom = true;
     for ( int i = 0; i < 2; i++ ) {
       if ( i == 0 ) { optProb = false; optAtom = true;  }
@@ -142,11 +143,12 @@ public:
       if ( print_ && optProb ) { std::cout << "\nCheck ScalarLinearEqualityConstraint\n"; }
       check_constraint(*x,con,bman,optProb);
       // Solve optimization problems to sample
-      bool useAugLag = true;
       Teuchos::RCP<Algorithm<Real> > algo;
-      initialize_optimizer(algo,parlist,optProb,useAugLag);
+      initialize_optimizer(algo,list,optProb);
       if ( optProb ) {
-        algo->run(*x,l,*obj,*con,*bnd,print_);
+        Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(&list,false);
+        ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,l,plist);
+        algo->run(optProblem,print_);
       }
       else {
         algo->run(*x,*obj,*bnd,print_);
@@ -197,6 +199,7 @@ private:
     std::vector<Real> wt_lo(numMySamples_,0.), wt_hi(numMySamples_,1.);
     std::vector<Real> pt_eq(dimension_*numMySamples_,0.), wt_eq(numMySamples_,1.);
     Real lo = 0., hi = 0.;
+    srand(12345*bman->batchID());
     for ( size_t j = 0; j < dimension_; j++) {
       lo = dist_[j]->lowerBound();
       hi = dist_[j]->upperBound();
@@ -269,16 +272,18 @@ private:
 
   void initialize_optimizer(Teuchos::RCP<Algorithm<Real> > &algo,
                             Teuchos::ParameterList         &parlist,
-                            const bool optProb,
-                            const bool useAugLag = true) const {
+                            const bool optProb) const {
+    std::string type = parlist.sublist("Step").get("Type","Trust Region");
     if ( optProb ) {
-      if ( !useAugLag ) {
+      if ( type == "Moreau Yosida" ) {
         algo = Teuchos::rcp(new Algorithm<Real>("Moreau-Yosida Penalty",parlist,false));
       }
-      else {
+      else if ( type == "Augmented Lagrangian" ) {
         algo = Teuchos::rcp(new Algorithm<Real>("Augmented Lagrangian",parlist,false));
       }
-      //algo_ = Teuchos::rcp(new Algorithm<Real>("Interior Point",parlist_,false));
+      else {
+        algo = Teuchos::rcp(new Algorithm<Real>("Interior Point",parlist,false));
+      }
     }
     else {
       algo = Teuchos::rcp(new Algorithm<Real>("Trust Region",parlist,false));

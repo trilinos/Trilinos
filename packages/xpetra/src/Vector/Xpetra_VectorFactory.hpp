@@ -91,18 +91,18 @@ namespace Xpetra {
   };
 #define XPETRA_VECTORFACTORY_SHORT
 
-  // Specializations on Serial node (mainly used for Epetra)
-#ifdef HAVE_XPETRA_SERIAL
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
 
-  // Specialization for Scalar=double, LO=GO=int and Serial node
+  // Specialization for Scalar=double, LO=GO=int and EpetraNode node
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class VectorFactory<double, int, int, EpetraNode> {
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
     typedef int                                 GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -117,37 +117,31 @@ namespace Xpetra {
       XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraVector(map, zeroOut) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("VectorFactory<int,int>", "TpetraVector<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraVectorT<int,Node>(map, zeroOut) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+#endif
 
-  // Specialization for Scalar=double, LO=int, GO=long long and Serial node
+  // Specialization for Scalar=double, LO=int, GO=long long and EpetraNode
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+
   template <>
-  class VectorFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class VectorFactory<double, int, long long, EpetraNode> {
 
     typedef double                              Scalar;
     typedef int                                 LocalOrdinal;
     typedef long long                           GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -166,29 +160,31 @@ namespace Xpetra {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
-#if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
         return rcp( new EpetraVectorT<long long,Node>(map, zeroOut) );
-#endif
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
+#endif
 
 #define XPETRA_VECTORFACTORY_SHORT
 
-  // Specialization for Scalar=int, LO=GO=int and Serial node
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+
+
+  // Specialization for Scalar=int, LO=GO=int and EpetraNode
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class VectorFactory<int, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class VectorFactory<int, int, int, EpetraNode> {
 
     typedef int                                 Scalar;
     typedef int                                 LocalOrdinal;
     typedef int                                 GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -207,29 +203,29 @@ namespace Xpetra {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraIntVectorT<int,Node>(map, zeroOut) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
 
   };
+#endif
+
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
 
   // Specialization for Scalar=int, LO=int, GO=long long and Serial node
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+
   template <>
-  class VectorFactory<int, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class VectorFactory<int, int, long long, EpetraNode> {
 
     typedef int                                 Scalar;
     typedef int                                 LocalOrdinal;
     typedef long long                           GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
 #undef XPETRA_VECTORFACTORY_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -248,17 +244,14 @@ namespace Xpetra {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
-#if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
         return rcp( new EpetraIntVectorT<long long,Node>(map, zeroOut) );
-#endif
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
-#endif // HAVE_XPETRA_SERIAL
+#endif
 }
 
 #define XPETRA_VECTORFACTORY_SHORT

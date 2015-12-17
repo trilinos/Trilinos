@@ -1686,12 +1686,14 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, localGSDiagonalMatrix, Scalar, LO, GO, Node )
   {
+    using Kokkos::ALL;
     typedef Scalar ST;
     typedef Tpetra::Experimental::BlockVector<ST, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<ST, LO, GO, Node> BCM;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    //typedef typename BCM::impl_scalar_type impl_scalar_type;
+    typedef typename graph_type::device_type device_type;
+    typedef typename BCM::impl_scalar_type impl_scalar_type;
     typedef Teuchos::ScalarTraits<ST> STS;
 
     const ST two = STS::one () + STS::one ();
@@ -1787,39 +1789,45 @@ namespace {
       solution.replaceLocalValues (lclRowInd, baseResidual.getRawPtr ());
     }
 
-    BCM diagonalMat(graph, blockSize);
-
     Teuchos::ArrayRCP<size_t> diagonalOffsets(numLocalMeshPoints);
     blockMat.getLocalDiagOffsets(diagonalOffsets);
-    blockMat.getLocalDiagCopy(diagonalMat, diagonalOffsets());
 
-    Scalar* blockVals;
-    Scalar* diagVals;
-    const LO* blkColInds;
-    const LO* diagColInds;
-    LO blkNumColInds;
-    LO diagNumColInds;
+    typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
+    block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
+                               blockSize, blockSize);
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets());
 
-    Teuchos::Array<int> pivots (blockSize*numLocalMeshPoints+1, 1);
-    out << "pivots size = " << pivots.size() << endl;
+    Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
+    // That's how we found this test: the pivots array was filled with ones.
+    Kokkos::deep_copy (pivots, 1);
+    out << "pivots size = " << pivots.dimension_0() << endl;
 
-    int* ipiv = pivots.getRawPtr ();
-    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
-         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      blockMat.getLocalRowView (lclRowInd, blkColInds, blockVals, blkNumColInds);
-      diagonalMat.getLocalRowView (lclRowInd, diagColInds, diagVals, diagNumColInds);
-      for (LO k = 0; k < blockSize*blockSize; ++k) {
-        TEST_EQUALITY( blockVals[k], diagVals[k] );
+    for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
+      auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
+
+      // Make sure that the diagonal block is correct.
+      Scalar* blkVals = NULL;
+      const LO* blkColInds = NULL;
+      LO blkNumEnt = 0;
+      blockMat.getLocalRowView (lclMeshRow, blkColInds, blkVals, blkNumEnt);
+
+      TEST_EQUALITY( blkNumEnt, static_cast<LO> (1) );
+      if (blkNumEnt == 1) {
+        typename BCM::const_little_block_type diagBlock2 (blkVals, blockSize, blockSize, 1);
+        for (LO j = 0; j < blockSize; ++j) {
+          for (LO i = 0; i < blockSize; ++i) {
+            TEST_EQUALITY( diagBlock(i,j), diagBlock2(i,j) );
+          }
+        }
       }
 
-      typename BCM::little_block_type diagBlock =
-        diagonalMat.getLocalBlock(lclRowInd, lclRowInd);
-      const LO pivotOffset = blockSize * (lclRowInd - meshRowMap.getMinLocalIndex ());
-      int info = -5;
-      diagBlock.factorize (&ipiv[pivotOffset], info);
+      auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
+      int info = 0;
+      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, diagonalMat, &pivots[0],
+    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
                                STS::one(), Tpetra::Forward);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
@@ -1833,9 +1841,8 @@ namespace {
       }
     }
 
-    blockMat.localGaussSeidel (residual, solution, diagonalMat,
-                               pivots.getRawPtr (), STS::one (),
-                               Tpetra::Backward);
+    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
+                               STS::one (), Tpetra::Backward);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
@@ -1857,9 +1864,12 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, localGSTriangularMatrices, ST, LO, GO, Node )
   {
+    using Kokkos::ALL;
     typedef Tpetra::Experimental::BlockVector<ST, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<ST, LO, GO, Node> BCM;
+    typedef typename BCM::impl_scalar_type impl_scalar_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef typename graph_type::device_type device_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Teuchos::ScalarTraits<ST> STS;
 
@@ -1985,32 +1995,25 @@ namespace {
 
     Teuchos::ArrayRCP<size_t> diagonalOffsets(numLocalMeshPoints);
     blockMat.getLocalDiagOffsets(diagonalOffsets);
-    blockMat.getLocalDiagCopy(diagonalMat, diagonalOffsets());
 
-    ST* blockVals;
-    ST* diagVals;
+    typedef Kokkos::View<impl_scalar_type***, device_type> block_diag_type;
+    block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
+                               blockSize, blockSize);
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets());
 
-    Teuchos::Array<int> pivots(blockSize*numLocalMeshPoints+1, Teuchos::OrdinalTraits<int>::one());
+    Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
+    // That's how we found this test: the pivots array was filled with ones.
+    Kokkos::deep_copy (pivots, 1);
 
-    int* ipiv = pivots.getRawPtr ();
-    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
-         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BCM::little_block_type diagBlock =
-        diagonalMat.getLocalBlock (lclRowInd, lclRowInd);
-      typename BCM::little_block_type block =
-        blockMat.getLocalBlock (lclRowInd, lclRowInd);
-
-      diagVals = reinterpret_cast<ST*> (diagBlock.getRawPtr ());
-      blockVals = reinterpret_cast<ST*> (block.getRawPtr ());
-      for (LO k = 0; k < blockSize * blockSize; ++k) {
-        TEST_EQUALITY( blockVals[k], diagVals[k] );
-      }
-      const LO pivotOffset = blockSize * (lclRowInd - meshRowMap.getMinLocalIndex ());
-      int info = -5;
-      diagBlock.factorize (&ipiv[pivotOffset], info);
+    for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
+      auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
+      auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
+      int info = 0;
+      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, diagonalMat, &pivots[0],
+    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
                                STS::one (), Tpetra::Forward);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
@@ -2058,26 +2061,17 @@ namespace {
       }
     }
 
-    blockMat.getLocalDiagCopy (diagonalMat, diagonalOffsets ());
+    blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets ());
 
-    ipiv = pivots.getRawPtr();
-    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
-         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BCM::little_block_type diagBlock =
-        diagonalMat.getLocalBlock(lclRowInd, lclRowInd);
-      typename BCM::little_block_type block =
-        blockMat.getLocalBlock(lclRowInd, lclRowInd);
-      diagVals = reinterpret_cast<ST*> (diagBlock.getRawPtr ());
-      blockVals = reinterpret_cast<ST*> (block.getRawPtr ());
-      for (LO k = 0; k < blockSize*blockSize; ++k) {
-        TEST_EQUALITY( blockVals[k], diagVals[k] );
-      }
-      const LO pivotOffset = blockSize * (lclRowInd - meshRowMap.getMinLocalIndex ());
-      int info = -5;
-      diagBlock.factorize (&ipiv[pivotOffset], info);
+    for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
+      auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
+      auto ipiv = Kokkos::subview (pivots, lclMeshRow, ALL ());
+      int info = 0;
+      Tpetra::Experimental::GETF2 (diagBlock, ipiv, info);
+      TEST_EQUALITY( info, 0 );
     }
 
-    blockMat.localGaussSeidel (residual, solution, diagonalMat, &pivots[0],
+    blockMat.localGaussSeidel (residual, solution, blockDiag, pivots,
                                STS::one (), Tpetra::Symmetric);
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();

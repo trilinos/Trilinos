@@ -620,11 +620,15 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& B,
                     BlockMultiVector<Scalar, LO, GO, Node>& X,
-                    BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-                    const int * factorizationPivots,
-                    const Scalar omega,
+                    const Kokkos::View<impl_scalar_type***, device_type,
+                          Kokkos::MemoryUnmanaged>& factoredDiagonal,
+                    const Kokkos::View<int**, device_type,
+                          Kokkos::MemoryUnmanaged>& factorizationPivots,
+                    const Scalar& omega,
                     const ESweepDirection direction) const
   {
+    using Kokkos::ALL;
+
     const LO numLocalMeshRows =
       static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
@@ -637,10 +641,6 @@ namespace Experimental {
     Teuchos::Array<impl_scalar_type> localMem (blockSize);
     Teuchos::Array<impl_scalar_type> localMat (blockSize*blockSize);
     little_vec_type X_lcl (localMem.getRawPtr (), blockSize, 1);
-
-    const LO * columnIndices;
-    Scalar * Dmat;
-    LO numIndices;
 
     // FIXME (mfh 12 Aug 2014) This probably won't work if LO is unsigned.
     LO rowBegin = 0, rowEnd = 0, rowStride = 0;
@@ -655,8 +655,8 @@ namespace Experimental {
       rowStride = -1;
     }
     else if (direction == Symmetric) {
-      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Forward);
-      this->localGaussSeidel (B, X, factorizedDiagonal, factorizationPivots, omega, Backward);
+      this->localGaussSeidel (B, X, factoredDiagonal, factorizationPivots, omega, Forward);
+      this->localGaussSeidel (B, X, factoredDiagonal, factorizationPivots, omega, Backward);
       return;
     }
 
@@ -684,14 +684,17 @@ namespace Experimental {
           const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
           //X_lcl.matvecUpdate (alpha, A_cur, X_cur);
           GEMV (alpha, A_cur, X_cur, X_lcl);
-        } // for each entry in the current local row of the matrx
+        } // for each entry in the current local row of the matrix
 
-        factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
-                                            Dmat, numIndices);
-        little_block_type D_lcl =
-          getNonConstLocalBlockFromInput (reinterpret_cast<impl_scalar_type*> (Dmat), 0);
+        // FIXME (mfh 16 Dec 2015) Get an unmanaged subview of
+        // factoredDiagonal BEFORE getting its subview!  This will
+        // avoid reference counting overhead, which introduces a
+        // scalability bottleneck.
+        auto D_lcl = Kokkos::subview (factoredDiagonal, actlRow, ALL (), ALL ());
+        auto ipiv = Kokkos::subview (factorizationPivots, actlRow, ALL ());
+        int info = 0;
+        GETRS ("N", D_lcl, ipiv, X_lcl, info);
 
-        D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
         little_vec_type X_update = X.getLocalBlock (actlRow, 0);
         COPY (X_lcl, X_update);
       } // for each local row of the matrix
@@ -720,12 +723,14 @@ namespace Experimental {
             GEMV (alpha, A_cur, X_cur, X_lcl);
           } // for each entry in the current local row of the matrx
 
-          factorizedDiagonal.getLocalRowView (actlRow, columnIndices,
-                                              Dmat, numIndices);
-          little_block_type D_lcl =
-            getNonConstLocalBlockFromInput (reinterpret_cast<impl_scalar_type*> (Dmat), 0);
-
-          D_lcl.solve (X_lcl, &factorizationPivots[actlRow*blockSize_]);
+          // FIXME (mfh 16 Dec 2015) Get an unmanaged subview of
+          // factoredDiagonal BEFORE getting its subview!  This will
+          // avoid reference counting overhead, which introduces a
+          // scalability bottleneck.
+          auto D_lcl = Kokkos::subview (factoredDiagonal, actlRow, ALL (), ALL ());
+          auto ipiv = Kokkos::subview (factorizationPivots, actlRow, ALL ());
+          int info = 0;
+          GETRS ("N", D_lcl, ipiv, X_lcl, info);
 
           little_vec_type X_update = X.getLocalBlock (actlRow, j);
           COPY (X_lcl, X_update);

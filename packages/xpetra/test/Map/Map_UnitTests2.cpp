@@ -44,23 +44,15 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_RCP.hpp>
 
-#include "Teuchos_RCP.hpp"
-
-#include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
 
-#include "Xpetra_MapFactory.hpp"
-
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraMap.hpp"
+#  include "Xpetra_TpetraMap.hpp"
 #endif
-
 #ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
+#  include "Xpetra_EpetraMap.hpp"
 #endif
 
 // This file regroups tests that are specific to Xpetra.
@@ -95,7 +87,7 @@ namespace {
 
   // Test of correctness for the return value of the function: Map::getRemoteIndexList()
   // (getRemoteIndexList() uses Xpetra::LookupStatus toXpetra(int))
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, getRemoteIndexList, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, getRemoteIndexList, M, LO, GO, N )
   {
     typedef typename Teuchos::ArrayView<int>::const_iterator IntConstIt;
     typedef typename ArrayRCP<GO>::size_type GOSize;
@@ -128,39 +120,49 @@ namespace {
   //
   // INSTANTIATIONS
   //
-
-#define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, getRemoteIndexList, M, LO, GO )
-
 #ifdef HAVE_XPETRA_TPETRA
 
-#define UNIT_TEST_GROUP_ORDINAL_TPETRA( LO, GO ) \
-  typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO;       \
-    UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
-#ifdef HAVE_TPETRA_INT_INT
-  UNIT_TEST_GROUP_ORDINAL_TPETRA(int , int)
-#endif
-#ifdef HAVE_TPETRA_INT_LONG
-  UNIT_TEST_GROUP_ORDINAL_TPETRA(int , long)
-#endif
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-  typedef long long LongLongInt;
-  UNIT_TEST_GROUP_ORDINAL_TPETRA(int , LongLongInt)
-#endif
+  #define XPETRA_TPETRA_TYPES( LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N;
 
-#endif // HAVE_XPETRA_TPETRA
+#endif
 
 #ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-  typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
-  UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
-#else
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-  typedef long long LongLongInt;
-  typedef Xpetra::EpetraMapT<long long, Node> EpetraMap;
-  UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , LongLongInt)
+
+  #define XPETRA_EPETRA_TYPES( LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N;
+
 #endif
-#endif // HAVE_XPETRA_EPETRA
+
+// List of tests (which run both on Epetra and Tpetra)
+#define XP_MAP_INSTANT(LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, getRemoteIndexList, M##LO##GO##N , LO, GO, N )
+
+#if defined(HAVE_XPETRA_TPETRA)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+// no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
+TPETRA_INSTANTIATE_LGN ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_LGN ( XP_MAP_INSTANT )
+
+#endif
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+XPETRA_EPETRA_TYPES(int,int,EpetraNode)
+XP_MAP_INSTANT(int,int,EpetraNode)
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(int,LongLong,EpetraNode)
+XP_MAP_INSTANT(int,LongLong,EpetraNode)
+#endif
+#endif
 
 }

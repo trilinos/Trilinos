@@ -73,7 +73,7 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     // Determine Epetra/Tpetra mode
     Teuchos::CommandLineProcessor clp(false);

@@ -77,9 +77,15 @@ public:
   }
 
   void set( const V &x ) {
+
+
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
-    
+
+    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same number of subvectors." );
+
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->set(*xs.get(i));
     }
@@ -89,6 +95,10 @@ public:
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
     
+    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same number of subvectors." );
+
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->plus(*xs.get(i));
     }
@@ -103,6 +113,11 @@ public:
   void axpy( const Real alpha, const V &x ) {
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(x);
+
+    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same number of subvectors." );
+
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->axpy(alpha,*xs.get(i));
     }
@@ -111,6 +126,11 @@ public:
   Real dot( const V &x ) const {
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(x);
+ 
+   TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same number of subvectors." );
+
     Real result = 0; 
       for( size_type i=0; i<vecs_->size(); ++i ) { 
         result += (*vecs_)[i]->dot(*xs.get(i));
@@ -150,6 +170,11 @@ public:
   }
 
   RCPV basis( const int i ) const {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+                                std::invalid_argument,
+                                "Error: Basis index must be between 0 and vector dimension." );
+
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::dyn_cast;

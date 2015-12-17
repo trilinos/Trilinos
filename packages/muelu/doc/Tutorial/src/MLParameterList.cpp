@@ -58,7 +58,7 @@
 #include <AztecOO.h>
 #endif
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_EpetraOperator.hpp>
 
 #include <MueLu.hpp>
@@ -74,13 +74,13 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+typedef Xpetra::EpetraNode Node;
 #endif
 
 // Default problem is Laplace1D with nx = 8748. Use --help to list available options.
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     H->GetLevel(0)->Set("Nullspace", nullspace);
     H->GetLevel(0)->Set("A", A);
     // TUTORIALSPLIT ===========================================================
-    
+
     //
     // build hierarchy
     //

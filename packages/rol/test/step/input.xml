@@ -30,6 +30,8 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
+    <Parameter name="Type" type="string" value="Trust Region" />
+
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
       <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />

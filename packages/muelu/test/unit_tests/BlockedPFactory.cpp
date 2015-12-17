@@ -65,18 +65,20 @@
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_Exceptions.hpp"
 
 namespace MueLuTests {
-
-#include "MueLu_UseShortNames.hpp"
 
   /////////////////////////
   // helper function
   // note: we assume "domainmap" to be linear starting with GIDs from domainmap->getMinAllGlobalIndex() to
   //       domainmap->getMaxAllGlobalIndex() and build a quadratic triangular matrix with the stencil (b,a,c)
-  Teuchos::RCP<CrsMatrixWrap> GenerateProblemMatrix(const Teuchos::RCP<const Map> rangemap, const Teuchos::RCP<const Map> domainmap, Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal, GlobalOrdinal, Node> >
+  GenerateProblemMatrix(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rangemap,
+                        const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > domainmap,
+                        Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+#include "MueLu_UseShortNames.hpp"
     Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(rangemap, 3);
 
     LocalOrdinal NumMyRowElements = rangemap->getNodeNumElements();
@@ -133,9 +135,11 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST(BlockedPFactory, Constructor)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-    // test for accessing subblocks from a blocked CRS Matrix using SubBlockAFactory
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -172,10 +176,10 @@ namespace MueLuTests {
 
     Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
 
-    RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix(map1,map1,2,-1,-1);
-    RCP<CrsMatrixWrap> Op12 = GenerateProblemMatrix(map1,map2,1, 0, 0);
-    RCP<CrsMatrixWrap> Op21 = GenerateProblemMatrix(map2,map1,1, 0, 0);
-    RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix(map2,map2,3,-2,-1);
+    RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map1,map1,2,-1,-1);
+    RCP<CrsMatrixWrap> Op12 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map1,map2,1, 0, 0);
+    RCP<CrsMatrixWrap> Op21 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map2,map1,1, 0, 0);
+    RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map2,map2,3,-2,-1);
 
     // build blocked operator
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
@@ -280,6 +284,12 @@ namespace MueLuTests {
     TEST_EQUALITY(rones->norm1(),5.0);
     TEST_EQUALITY(rones->normInf(),2.0);
   } //Constructor
-}
+
+#  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedPFactory, Constructor, SC, LO, GO, Node) \
+
+#include <MueLu_ETI_4arg.hpp>
+
+} // namespace MueLuTests
 
 

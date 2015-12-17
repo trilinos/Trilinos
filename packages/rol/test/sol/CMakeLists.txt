@@ -39,8 +39,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   solDataCopy
   SOURCE_FILES
-    input.xml
-    test_02.xml
+    input_01.xml
+    input_02.xml
+    input_03.xml
+    input_04.xml
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )

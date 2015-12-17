@@ -2698,6 +2698,8 @@ namespace Tpetra {
     bool allDiagEntriesFound = true;
 #endif // HAVE_TPETRA_DEBUG
 
+    // FIXME (mfh 16 Dec 2015) It's easy to thread-parallelize this
+    // setup, at least on the host.
     for (size_t r = 0; r < myNumRows; ++r) {
       const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
       const LocalOrdinal rlid = colMap.getLocalElement (rgid);

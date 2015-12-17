@@ -2,7 +2,7 @@
 
 classListDir=../ClassList/
 
-for i in Non-Templated LO-GO-NO SC-LO-GO-NO SC-LO-GO
+for i in Non-Templated LO-GO-NO SC-LO-GO-NO
   do
 
   classList=$classListDir/$i.classList

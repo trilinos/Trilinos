@@ -186,26 +186,23 @@ namespace MueLu {
 
   }; // class AmesosSmoother
 
-  //! Non-member templated function GetAmesosSmoother() returns a new AmesosSmoother object when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
+  //! Non-member templated function GetAmesosSmoother() returns a new AmesosSmoother object
+  // when <Scalar, LocalOrdinal, GlobalOrdinal> == <double, int, int>. Otherwise, an exception is thrown.
   //! This function simplifies the usage of AmesosSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  GetAmesosSmoother (const std::string& type = "",
-                     const Teuchos::ParameterList& paramList = Teuchos::ParameterList ())
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+  GetAmesosSmoother (const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList ()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                               "AmesosSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
 
   // specialization for Epetra
 #if defined(HAVE_MUELU_SERIAL)
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
-  GetAmesosSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
-                                       const Teuchos::ParameterList& paramList)
-  {
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-    return rcp (new MueLu::AmesosSmoother<Node>(type, paramList));
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Xpetra::EpetraNode> >
+  GetAmesosSmoother<double, int, int, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList) {
+    return rcp (new MueLu::AmesosSmoother<Xpetra::EpetraNode>(type, paramList));
   }
 #endif // HAVE_MUELU_SERIAL
 
