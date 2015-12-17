@@ -173,6 +173,9 @@ void test_read_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulkData(meta, communicator, auraOption);
 
+    if(bulkData.parallel_rank() == 0)
+        std::cerr << "Reading " << meshSpec << std::endl;
+
     EXPECT_NO_FATAL_FAILURE(do_input_from_file(meshSpec, bulkData, communicator));
 }
 
@@ -200,6 +203,8 @@ void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     std::cout << bulkData.parallel_rank() << ") Initial number of faces = " << initialFaceCount << std::endl;
 #endif
 
+    if(bulkData.parallel_rank() == 0)
+        std::cerr << "Skinning " << meshSpec << std::endl;
     EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_boundary_sides(bulkData, blocksToSkin, skin));
 
 #if defined(VERBOSE_OUTPUT)
