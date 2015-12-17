@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     // Set solver parameters
     parlist->sublist("Step").set("Type","Interior Point");
     parlist->sublist("Step").sublist("Interior Point").set("Initial Barrier Penalty",mu);
-    parlist->sublist("Step").sublist("Interior Point").set("Minimium Barrier Penalty",1e-8);
+    parlist->sublist("Step").sublist("Interior Point").set("Minimum Barrier Penalty",1e-8);
     parlist->sublist("Step").sublist("Interior Point").set("Barrier Penalty Reduction Factor",factor);
     parlist->sublist("Step").sublist("Interior Point").set("Subproblem Iteration Limit",30);
 

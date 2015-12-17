@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT ROL ALGORITHM ********************************************/
     /**********************************************************************************************/
     // Get ROL parameterlist
-    std::string filename = "input.xml";
+    std::string filename = "input_03.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     Teuchos::ParameterList list = *parlist;
