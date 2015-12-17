@@ -13,13 +13,6 @@ bool do_sides_match_and_elem2_is_local(const stk::mesh::GraphEdge &graphEdge, in
     return graphEdge.side1 == side && impl::is_local_element(graphEdge.elem2);
 }
 
-void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elem, int elemSide)
-{
-    impl::ElementSidePair elemSidePair(m_entity_to_local_id[elem.local_offset()], elemSide);
-    stk::mesh::EntityVector skinned_elements;
-    connect_side_to_all_elements(sideEntity, elemSidePair, skinned_elements);
-}
-
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity,
                                                  impl::ElementSidePair skinnedElemSidePair,
                                                  stk::mesh::EntityVector &skinned_elements)

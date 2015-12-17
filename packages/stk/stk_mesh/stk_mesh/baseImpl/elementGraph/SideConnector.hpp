@@ -32,7 +32,6 @@ public:
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
                                       impl::ElementSidePair skinnedElemSidePair,
                                       stk::mesh::EntityVector &skinned_elements);
-    void connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elem, int elemSide);
 private:
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
                                               const stk::mesh::GraphEdge &graphEdge,
