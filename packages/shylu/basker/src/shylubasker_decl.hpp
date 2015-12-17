@@ -219,6 +219,8 @@ namespace BaskerNS
     BASKER_INLINE
     int btf_order();
     BASKER_INLINE
+    int btf_order2();
+    BASKER_INLINE
     int partition(int option);
     BASKER_INLINE
     int match_ordering(int option);
@@ -322,6 +324,8 @@ namespace BaskerNS
 		Int ata_option);
     BASKER_INLINE
     int sfactor_copy();
+    BASKER_INLINE
+    int sfactor_copy2();
 
 
     //old
@@ -922,6 +926,8 @@ namespace BaskerNS
     INT_1DARRAY order_scotch_array;
     INT_1DARRAY order_csym_array;
     INT_1DARRAY order_c_csym_array;
+    //for experimental 
+    INT_1DARRAY order_blk_amd_array;
 
 
     void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);

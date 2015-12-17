@@ -349,11 +349,17 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(temp_col, M.ncol+1);
     INT_1DARRAY temp_row;
     MALLOC_INT_1DARRAY(temp_row, M.nnz);
+    //printf("Done with btf_blk_amd malloc \n");
+    //printf("blks: %d \n" , btf_nblks);
 
 
     for(Int b = 0; b < btf_nblks; b++)
       {
 	Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+
+	//printf("blk: %d blk_size: %d \n",
+	//     b, blk_size);
+
 	if(blk_size < 3)
 	  {
 	    

@@ -2,7 +2,7 @@
                     =====================
 
 <Copyright> 
-Bakser: A LU package
+Basker: Threaded Sparse LU package for matrices with low fill-in
 Copyright 2015 Sandia Corporation
 Contact Joshua Dennis Booth (jdbooth@sandia.gov)
 
@@ -25,7 +25,6 @@ See test for example.
 As a package WITH Amesos2.
 Do instruction with Amesos2, PLUS
 -DCMAKE_CXX_FLAGS:STRING="-DSHYLUBASKER"
--DTeuchos_ENABLE_COMPLEX:BOOL=OFF     #no complex support yet!
 
 <Current Limitations>
 Due to converting my experiemental code into a package that can easily be compiled in the Trilinos FrameWork, the following options where set.

@@ -302,7 +302,8 @@ namespace BaskerNS
     else
       {
 	//printf("btf_order called \n");
-	btf_order();
+	//btf_order();
+	btf_order2();
 	if(btf_tabs_offset != 0)
 	  {
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
@@ -347,7 +348,6 @@ namespace BaskerNS
     Kokkos::Impl::Timer timer;
     #endif
     
-    //factor_tree(option);
     factor_notoken(option);
     
     #ifdef BASKER_KOKKOS_TIME
@@ -369,7 +369,8 @@ namespace BaskerNS
       {
 	return BASKER_ERROR;
       }
-    err = sfactor_copy();
+    //err = sfactor_copy();
+    err = sfactor_copy2();
     //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {
