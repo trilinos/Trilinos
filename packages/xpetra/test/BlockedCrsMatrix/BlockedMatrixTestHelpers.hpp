@@ -2,6 +2,8 @@
 #include <iterator>
 #include <Epetra_CrsMatrix.h>
 
+#include <Xpetra_Map.hpp>
+
 namespace XpetraBlockMatrixTests {
 
 //////////////////////////////////////////////////////////////////////////
@@ -26,6 +28,25 @@ Teuchos::RCP<Epetra_Map> SplitMap(const Epetra_Map& Amap, const Epetra_Map& Agiv
   return Aunknown;
 }
 
+// Xpetra version of SplitMap
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > SplitMap(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & Amap, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & Agiven) {
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Amap.getComm();
+
+  size_t count=0;
+  std::vector<GlobalOrdinal> myaugids(Amap.getNodeNumElements());
+  for (size_t i=0; i<Amap.getNodeNumElements(); ++i) {
+    const GlobalOrdinal gid = Amap.getGlobalElement(i);
+    if (Agiven.isNodeGlobalElement(gid)) continue;
+    myaugids[Teuchos::as<GlobalOrdinal>(count)] = gid;
+    ++count;
+  }
+  myaugids.resize(count);
+  GlobalOrdinal gcount;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, count, Teuchos::outArg(gcount));
+  return Teuchos::rcp(new Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> (gcount,count,&myaugids[0],0,comm));
+}
+
 Teuchos::RCP<Epetra_Map> CreateMap(const std::set<int>& gids, const Epetra_Comm& comm) {
   std::vector<int> mapvec;
   mapvec.reserve(gids.size());
@@ -36,6 +57,26 @@ Teuchos::RCP<Epetra_Map> CreateMap(const std::set<int>& gids, const Epetra_Comm&
           &mapvec[0],
           0,
           comm));
+  mapvec.clear();
+  return map;
+}
+
+// Xpetra version of CreateMap
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > CreateMap(const std::set<GlobalOrdinal>& gids, const Teuchos::Comm<int>& comm) {
+  std::vector<GlobalOrdinal> mapvec;
+  mapvec.reserve(gids.size());
+  mapvec.assign(gids.begin(), gids.end());
+  GlobalOrdinal count = Teuchos::as<GlobalOrdinal>(mapvec.size());
+  GlobalOrdinal gcount;
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, count, Teuchos::outArg(gcount));
+
+  Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map =
+      Teuchos::rcp(new Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(gcount,
+          mapvec.size(),
+          &mapvec[0],
+          0,
+          Teuchos::rcpFromRef(comm)));
   mapvec.clear();
   return map;
 }

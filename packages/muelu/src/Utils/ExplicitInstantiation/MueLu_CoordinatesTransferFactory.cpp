@@ -46,55 +46,11 @@
 
 
 
-#include "MueLu_ExplicitInstantiation.hpp"
-
 #include "MueLu_CoordinatesTransferFactory_def.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
-  #include <TpetraCore_config.h>
-  #include "TpetraCore_ETIHelperMacros.h"
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  template class MueLu::CoordinatesTransferFactory<SC,LO,GO,NO>;
 
-  #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-          template class MueLu::CoordinatesTransferFactory<S,LO,GO,N>;
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
-#endif
-
-#ifdef HAVE_MUELU_EPETRA
-  #ifdef HAVE_MUELU_TPETRA
-    #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-      #ifdef HAVE_TPETRA_INST_CUDA_DEFAULT
-        // in case of Cuda being the default Node we need the default node type on the host
-        typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-        typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
-        template class MueLu::CoordinatesTransferFactory<double,int,int, default_node_type >;
-      #elif HAVE_TPETRA_INST_OPENMP_DEFAULT
-        template class MueLu::CoordinatesTransferFactory<double,int,int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
-      #elif HAVE_TPETRA_INST_SERIAL_DEFAULT
-        template class MueLu::CoordinatesTransferFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-      #elif HAVE_TPETRA_INST_PTHREAD_DEFAULT
-        template class MueLu::CoordinatesTransferFactory<double,int,int, Kokkos::Compat::KokkosThreadsWrapperNode >;
-      #else
-        // TODO: there should be at least one default node active!! maybe we have to tweak MueLu CMakeLists.txt?
-        template class MueLu::CoordinatesTransferFactory<double,int,int, Kokkos::Compat::KokkosSerialWrapperNode >;
-      #endif
-    #endif
-  #else
-    #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-      // Epetra only case.  We need the host memory space and the default host execution space.
-      // We have to specify the host here, because the default execution space could be CUDA.
-      // If you don't want to use OpenMP, you could try to use Kokkos::Serial, as long as it is enabled.
-      #ifdef KOKKOS_HAVE_SERIAL
-        typedef Kokkos::Serial default_host_execution_space;
-      #else
-        typedef Kokkos::View<int>::HostMirror::execution_space default_host_execution_space;
-      #endif // KOKKOS_HAVE_SERIAL
-      typedef Kokkos::Compat::KokkosDeviceWrapperNode<host_execution_space, Kokkos::HostSpace> default_node_type;
-      template class MueLu::CoordinatesTransferFactory<double, int, int, default_node_type>;
-    #endif
-  #endif // HAVE_MUELU_TPETRA
-#endif // end ifdef HAVE_MUELU_EPETRA
+#include "MueLu_ETI_4arg.hpp"
 
 

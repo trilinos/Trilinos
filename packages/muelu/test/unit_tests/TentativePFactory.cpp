@@ -72,7 +72,7 @@ namespace MueLuTests {
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -87,7 +87,7 @@ namespace MueLuTests {
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -169,7 +169,7 @@ namespace MueLuTests {
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -256,7 +256,7 @@ namespace MueLuTests {
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -316,7 +316,7 @@ namespace MueLuTests {
     //  return;
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_EPETRA_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 #   if !defined(MUELU_HAVE_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Ifpack");
 #   endif

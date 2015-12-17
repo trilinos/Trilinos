@@ -84,7 +84,7 @@
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_EpetraOperator.hpp>
 
 // prescribe types
@@ -92,11 +92,11 @@
 typedef double Scalar;
 typedef int LocalOrdinal;
 typedef int GlobalOrdinal;
-typedef Kokkos::Compat::KokkosSerialWrapperNode Node; // Epetra needs SerialNode
+typedef Xpetra::EpetraNode Node;
 #endif
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP; // reference count pointers

@@ -49,25 +49,11 @@
 
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 
-#include "@CLASS_FILE_NAME@_decl.hpp"
 #include "@CLASS_FILE_NAME@_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
 
-#if defined(@TPETRA_TEMPLATE_TYPE@)
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  template class @CLASS@<SC,LO,GO,NO>;
 
-// Need this for the mangling of the Node typedef.
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-#define MUELU_LOCAL_INSTANT(S,LO,GO) \
-        template class @CLASS@<S,LO,GO,@TEMPLATE_NODE@>;
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
-
-#else
-#warning "We don't have the @TEMPLATE_NODE@."
-
-#endif
+#include "MueLu_ETI_4arg.hpp"
 
 #endif // HAVE_MUELU_EXPLICIT_INSTANTIATION

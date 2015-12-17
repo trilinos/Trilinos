@@ -51,7 +51,7 @@
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_IteratorOps.hpp>
+#include <Xpetra_IteratorOps_kokkos.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -154,7 +154,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
+        finalP = Xpetra::IteratorOps_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
       }
 
     } else {
