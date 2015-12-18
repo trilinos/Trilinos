@@ -43,60 +43,17 @@
 #define TPETRA_EXPERIMENTAL_BLOCKVIEW_HPP
 
 /// \file Tpetra_Experimental_BlockView.hpp
-/// \brief Declaration and definition of LittleBlock and LittleVector
+/// \brief LittleBlock, LittleVector, and kernels
+///
+/// This file declares and defines Tpetra::Experimental::LittleBlock
+/// (a small dense matrix) and Tpetra::Experimental::LittleVector (a
+/// small dense vector).  It also defines generic computational
+/// kernels for linear algebra operations with LittleBlock and
+/// LittleVector (or with compatible Kokkos::View specializations).
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
-#ifdef HAVE_TPETRA_INST_FLOAT128
-#  include "Teuchos_BLAS.hpp"
-#endif // HAVE_TPETRA_INST_FLOAT128
-
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_Complex.hpp"
-
-#ifdef HAVE_TPETRA_INST_FLOAT128
-#  include "Teuchos_Details_Lapack128.hpp"
-#endif // HAVE_TPETRA_INST_FLOAT128
-
-namespace Tpetra {
-namespace Details {
-
-  /// \brief Return the Teuchos::LAPACK specialization corresponding
-  ///   to the given Scalar type.
-  ///
-  /// The reason this exists is the same reason why the
-  /// impl_scalar_type typedef in Tpetra::MultiVector may differ from
-  /// its Scalar template parameter.  For example, Scalar =
-  /// std::complex<T> corresponds to impl_scalar_type =
-  /// Kokkos::complex<T>.  The latter has no Teuchos::LAPACK
-  /// specialization, so we have to map it back to std::complex<T>.
-  template<class Scalar>
-  struct GetLapackType {
-    typedef Scalar lapack_scalar_type;
-    typedef Teuchos::LAPACK<int, Scalar> lapack_type;
-  };
-
-  template<class T>
-  struct GetLapackType<Kokkos::complex<T> > {
-    typedef std::complex<T> lapack_scalar_type;
-    typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
-  };
-
-#ifdef HAVE_TPETRA_INST_FLOAT128
-  template<>
-  struct GetLapackType<__float128> {
-    typedef __float128 lapack_scalar_type;
-    // Use the Lapack128 class we declared above to implement the
-    // linear algebra operations needed for small dense blocks and
-    // vectors.
-    typedef Teuchos::Details::Lapack128 lapack_type;
-  };
-#endif // HAVE_TPETRA_INST_FLOAT128
-
-} // namespace Details
-} // namespace Tpetra
-
 
 namespace Tpetra {
 

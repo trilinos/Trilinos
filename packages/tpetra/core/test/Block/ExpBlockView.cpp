@@ -46,6 +46,10 @@
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_Details_Lapack128.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
 
 namespace {
 
@@ -54,6 +58,38 @@ namespace {
   using Teuchos::RCP;
   using std::endl;
   typedef Teuchos::Array<int>::size_type size_type;
+
+  /// \brief Return the Teuchos::LAPACK specialization corresponding
+  ///   to the given Scalar type.
+  ///
+  /// The reason this exists is the same reason why the
+  /// impl_scalar_type typedef in Tpetra::MultiVector may differ from
+  /// its Scalar template parameter.  For example, Scalar =
+  /// std::complex<T> corresponds to impl_scalar_type =
+  /// Kokkos::complex<T>.  The latter has no Teuchos::LAPACK
+  /// specialization, so we have to map it back to std::complex<T>.
+  template<class Scalar>
+  struct GetLapackType {
+    typedef Scalar lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, Scalar> lapack_type;
+  };
+
+  template<class T>
+  struct GetLapackType<Kokkos::complex<T> > {
+    typedef std::complex<T> lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
+  };
+
+#ifdef HAVE_TPETRA_INST_FLOAT128
+  template<>
+  struct GetLapackType<__float128> {
+    typedef __float128 lapack_scalar_type;
+    // Use the Lapack128 class we declared above to implement the
+    // linear algebra operations needed for small dense blocks and
+    // vectors.
+    typedef Teuchos::Details::Lapack128 lapack_type;
+  };
+#endif // HAVE_TPETRA_INST_FLOAT128
 
   //
   // UNIT TESTS
@@ -332,7 +368,7 @@ namespace {
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
     const LO maxBlockSize = 32;
 
-    typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+    typename GetLapackType<ST>::lapack_type lapack;
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -422,7 +458,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+      typename GetLapackType<ST>::lapack_type lapack;
       // Rough tolerance for rounding errors.  LAPY2 uses a different
       // formula, so I expect it to commit different rounding error.
       const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
@@ -475,7 +511,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+      typename GetLapackType<ST>::lapack_type lapack;
 
       const ST zero = Teuchos::ScalarTraits<ST>::zero ();
       const ST one = Teuchos::ScalarTraits<ST>::one ();
