@@ -61,10 +61,6 @@ typedef Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node> IO;
 typedef Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorOps;
 #endif
 
-#ifdef XPETRA_ITERATOROPS_KOKKOS_SHORT
-typedef Xpetra::IteratorOps_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node> IteratorOps_kokkos;
-#endif
-
 #ifdef XPETRA_VECTOR_SHORT
 typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #endif
