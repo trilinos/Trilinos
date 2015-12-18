@@ -397,6 +397,7 @@ initAllValues (const block_crs_matrix_type& A)
 template<class MatrixType>
 void RBILUK<MatrixType>::compute ()
 {
+  typedef impl_scalar_type IST;
   const char prefix[] = "Ifpack2::Experimental::RBILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -417,10 +418,7 @@ void RBILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
-  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_scalar_type LST;
-  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_type lapack_type;
 
-  lapack_type lapack;
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
@@ -448,8 +446,12 @@ void RBILUK<MatrixType>::compute ()
     const local_ordinal_type rowStride = blockSize_;
     const local_ordinal_type colStride = 1;
 
-    Teuchos::Array<int> ipiv(blockSize_);
-    Teuchos::Array<LST> work(1);
+    Teuchos::Array<int> ipiv_teuchos(blockSize_);
+    Kokkos::View<int*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize_);
+    Teuchos::Array<IST> work_teuchos(blockSize_);
+    Kokkos::View<IST*, Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged> work (work_teuchos.getRawPtr (), blockSize_);
 
     size_t num_cols = U_block_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
@@ -598,29 +600,19 @@ void RBILUK<MatrixType>::compute ()
 //      }
 //      else
       {
-
-        LST* const d_raw = reinterpret_cast<LST*> (dmat.ptr_on_device ());
-        int lapackInfo;
+        int lapackInfo = 0;
         for (int k = 0; k < blockSize_; ++k) {
           ipiv[k] = 0;
         }
 
-        lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
+        Tpetra::Experimental::GETF2 (dmat, ipiv, lapackInfo);
+        //lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
 
-        int lwork = -1;
-        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
-          "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
-
-        typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type ImplMagnitudeType;
-        ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<impl_scalar_type>::magnitude(work[0]);
-        lwork = Teuchos::as<int>(worksize);
-        work.resize(lwork);
-        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+        Tpetra::Experimental::GETRI (dmat, ipiv, work, lapackInfo);
+        //lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
