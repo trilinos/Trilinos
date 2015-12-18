@@ -726,7 +726,7 @@ void
 GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
 {
   // The type of an entry of ipiv is the index type.
-  typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
+  typedef typename std::decay<decltype (ipiv(0)) >::type IndexType;
   static_assert (std::is_integral<IndexType>::value,
                  "GETF2: The type of each entry of ipiv must be an integer type.");
   typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
