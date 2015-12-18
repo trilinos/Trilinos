@@ -828,9 +828,12 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
   {
     // The type of an entry of ipiv is the index type.
     typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
-    static_assert (std::is_integral<IndexType>::value,
-                   "GETRS: The type of each entry of ipiv must be an integer type.");
-    typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
+    // IndexType must be signed, because this code does a countdown loop
+    // to zero.  Unsigned integers are always >= 0, even on underflow.
+    static_assert (std::is_integral<IndexType>::value &&
+                   std::is_signed<IndexType>::value,
+                   "GETRS: The type of each entry of ipiv must be a signed integer.");
+    typedef typename std::decay<decltype (A(0,0))>::type Scalar;
     static_assert (! std::is_const<std::remove_reference<decltype (B(0))>>::value,
                    "GETRS: B must not be a const View (or LittleBlock).");
     static_assert (LittleBlockType::rank == 2, "GETRS: A must have rank 2 (be a matrix).");
@@ -985,8 +988,11 @@ GETRI (const LittleBlockType& A,
 {
   // The type of an entry of ipiv is the index type.
   typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
-  static_assert (std::is_integral<IndexType>::value,
-                 "GETRI: The type of each entry of ipiv must be an integer type.");
+  // IndexType must be signed, because this code does a countdown loop
+  // to zero.  Unsigned integers are always >= 0, even on underflow.
+  static_assert (std::is_integral<IndexType>::value &&
+                 std::is_signed<IndexType>::value,
+                 "GETRI: The type of each entry of ipiv must be a signed integer.");
   typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
   static_assert (! std::is_const<std::remove_reference<decltype (A(0,0))>>::value,
                  "GETRI: A must not be a const View (or LittleBlock).");
