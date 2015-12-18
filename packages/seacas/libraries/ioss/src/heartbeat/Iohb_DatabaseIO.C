@@ -120,11 +120,17 @@ namespace {
       // something better here if we want to share streams among
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
+      std::ofstream *tmp = NULL;
       if(append_file)
-        log_stream = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
+        tmp = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
       else
-        log_stream = new std::ofstream(filename.c_str());
-      *needs_delete = true;
+        tmp = new std::ofstream(filename.c_str());
+      if (tmp != NULL && !tmp->is_open()) {
+	delete tmp;
+      } else {
+	log_stream = tmp;
+	*needs_delete = true;
+      }
     }
     return log_stream;
   }
@@ -198,7 +204,7 @@ namespace Iohb {
             &(new_this->streamNeedsDelete),
             append);
 
-        if (new_this->logStream == NULL || *new_this->logStream == NULL){
+        if (new_this->logStream == NULL) {
           Ioss::Utils::create_path(get_filename().c_str());
           new_this->logStream = open_stream(get_filename().c_str(),
               &(new_this->streamNeedsDelete),
