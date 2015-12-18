@@ -532,7 +532,10 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::COPY (currentVal, multiplier);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+        // alpha = 1, beta = 0
+        Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
+                                    STS::zero (), matTmp);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
 
@@ -547,7 +550,9 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
               little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), kkval);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -558,10 +563,14 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), kkval);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              Tpetra::Experimental::GEMM ("N", "N", -STM::one (), multiplier, uumat,
+                                          STM::one (), diagModBlock);
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -620,7 +629,9 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         // scale U by the diagonal inverse
-        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+        Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
+                                    STS::zero (), matTmp);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
       }

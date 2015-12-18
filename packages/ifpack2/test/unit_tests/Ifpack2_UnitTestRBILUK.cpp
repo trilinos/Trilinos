@@ -406,12 +406,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-
   typedef Tpetra::Experimental::LittleBlock<Scalar,LocalOrdinal> little_block_type;
   typedef Tpetra::Experimental::LittleVector<Scalar,LocalOrdinal> little_vec_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  Ifpack2::Experimental::BlockMatrixOperations<Scalar,Scalar> blockOps;
 
   const int blockSize = 5;
   const int blockMatSize = blockSize*blockSize;
@@ -483,16 +480,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   bMatrix[23] = 4;
   bMatrix[24] = -5;
 
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
+  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
 
   for (int k = 0; k < blockMatSize; ++k)
   {
     TEST_FLOATING_EQUALITY(aMatrix[k], cMatrix[k], 1e-14);
   }
 
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), aMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, -1.0, 1.0);
-  blockOps.square_matrix_matrix_multiply(identityMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
-  blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), bMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
+  Tpetra::Experimental::GEMM ("N", "N", -STS::one (), A, A, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), aMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, -1.0, 1.0);
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), I, I, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(identityMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
+
+  Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, B, STS::one (), C);
+  //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), bMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize, 1.0, 1.0);
 
   exactMatrix[0] = -8.00000000000000;
   exactMatrix[1] = 18.0000000000000;
