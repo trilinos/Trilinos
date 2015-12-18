@@ -25,6 +25,8 @@
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
+#define VERBOSE_OUTPUT
+
 namespace Ioss { class DatabaseIO; }
 
 namespace
@@ -148,11 +150,11 @@ void filter_test_case(TestCaseData& test_cases, const std::string& filename)
     }
 }
 
-void do_input_from_file(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator)
+void do_input_from_file(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
-    if(stk::parallel_machine_size(communicator) == 1)
+    if(bulkData.parallel_size() == 1)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io(meshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(meshSpec, bulkData, bulkData.parallel());
     }
     else
     {
@@ -170,10 +172,9 @@ void test_read_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     if(bulkData.parallel_rank() == 0)
         std::cerr << "Reading " << meshSpec << std::endl;
 
-    EXPECT_NO_FATAL_FAILURE(do_input_from_file(meshSpec, bulkData, communicator));
+    EXPECT_NO_FATAL_FAILURE(do_input_from_file(meshSpec, bulkData));
 }
 
-#undef VERBOSE_OUTPUT
 
 void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communicator, stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
@@ -182,7 +183,7 @@ void test_skin_file(const TestCaseDatum& testCase, stk::ParallelMachine communic
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulkData(meta, communicator, auraOption);
 
-    do_input_from_file(meshSpec, bulkData, communicator);
+    do_input_from_file(meshSpec, bulkData);
 
     stk::mesh::Selector blocksToSkin = meta.universal_part();
     stk::mesh::Part &skin = meta.declare_part("skin", meta.side_rank());
@@ -325,7 +326,7 @@ void test_skin_fails_with_extra_face(stk::mesh::BulkData::AutomaticAuraOption au
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulkData(meta, communicator, auraOption);
 
-        do_input_from_file(meshSpec, bulkData, bulkData.parallel());
+        do_input_from_file(meshSpec, bulkData);
 
         stk::mesh::Selector blocksToSkin = meta.universal_part();
         stk::mesh::Part &skin = meta.declare_part("skin", meta.side_rank());
@@ -364,7 +365,7 @@ void test_skin_fails_with_missing_face(stk::mesh::BulkData::AutomaticAuraOption 
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulkData(meta, communicator, auraOption);
 
-        do_input_from_file(meshSpec, bulkData, bulkData.parallel());
+        do_input_from_file(meshSpec, bulkData);
 
         stk::mesh::Selector blocksToSkin = meta.universal_part();
         stk::mesh::Part &skin = meta.declare_part("skin", meta.side_rank());

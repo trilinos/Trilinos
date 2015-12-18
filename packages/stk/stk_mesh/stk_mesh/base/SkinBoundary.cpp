@@ -83,8 +83,9 @@ bool check_global_truth_value(bool truthValue, MPI_Comm communicator)
 bool check_sideset_inclusion_in_skinning(BulkData &bulkData, stk::mesh::EntityVector &sidesetFaces, Part& skinnedPart)
 {
     stk::mesh::EntityVector skinnedFaces;
-    stk::mesh::get_selected_entities(skinnedPart, bulkData.buckets(stk::topology::FACE_RANK), skinnedFaces);
+    stk::mesh::get_selected_entities(skinnedPart & bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::FACE_RANK), skinnedFaces);
     stk::util::sort_and_unique(sidesetFaces);
+    stk::util::sort_and_unique(skinnedFaces);
     return check_global_truth_value(sidesetFaces == skinnedFaces, bulkData.parallel());
 }
 
@@ -100,14 +101,15 @@ bool check_if_sideset_is_part_of_skinning(BulkData &bulkData, std::vector<SideSe
     return true;
 }
 
-stk::mesh::EntityVector get_faces_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet)
+stk::mesh::EntityVector get_locally_owned_faces_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet)
 {
     stk::mesh::EntityVector sidesetFaces;
 
     for(const SideSetEntry &facet : skinnedSideSet)
     {
         Entity face = get_face_for_element_side_pair(bulkData, facet);
-        sidesetFaces.push_back(face);
+        if(bulkData.bucket(face).owned())
+            sidesetFaces.push_back(face);
     }
 
     return sidesetFaces;
@@ -120,7 +122,7 @@ bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlo
 
     if(!check_if_sideset_is_part_of_skinning(bulkData, skinnedSideSet, skinnedPart)) return false;
 
-    stk::mesh::EntityVector sidesetFaces = get_faces_from_sideset(bulkData, skinnedSideSet);
+    stk::mesh::EntityVector sidesetFaces = get_locally_owned_faces_from_sideset(bulkData, skinnedSideSet);
 
     return check_sideset_inclusion_in_skinning(bulkData, sidesetFaces, skinnedPart);
 }
