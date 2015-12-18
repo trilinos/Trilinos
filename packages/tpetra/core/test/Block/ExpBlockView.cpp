@@ -268,6 +268,7 @@ namespace {
   {
     typedef Tpetra::Experimental::LittleBlock<ST, LO> block_type;
     typedef Tpetra::Experimental::LittleVector<ST, LO> vec_type;
+    typedef Tpetra::Experimental::LittleVector<int, LO> piv_type;
     const ST zero = static_cast<ST> (0.0);
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
@@ -287,24 +288,23 @@ namespace {
       vec_type x (x_view.getRawPtr (), blockSize, 1);
       Teuchos::ArrayView<ST> b_view = vecPool (blockSize, blockSize);
       vec_type b (b_view.getRawPtr (), blockSize, 1);
-      Teuchos::ArrayView<int> ipiv = ipivPool (0, blockSize);
+      piv_type ipiv (ipivPool.getRawPtr (), blockSize, 1);
 
       Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
         b(i) = static_cast<ST> (i + 1);
         x(i) = b(i); // copy of right-hand side on input
-        ipiv[i] = 0;
+        ipiv(i) = 0;
       }
 
       int info = 0;
       std::cerr << "Factor A for blockSize = " << blockSize << std::endl;
-      A.factorize (ipiv.getRawPtr (), info);
-
+      Tpetra::Experimental::GETF2 (A, ipiv, info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info == 0) {
         std::cerr << "Solve: blockSize = " << blockSize << std::endl;
-        A.solve (x, ipiv.getRawPtr ());
+        Tpetra::Experimental::GETRS ("N", A, ipiv, x, info);
       }
       std::cerr << "Done with factor and solve" << std::endl;
 

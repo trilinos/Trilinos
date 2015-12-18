@@ -1268,44 +1268,6 @@ public:
     return A_[i * strideX_ + j * strideY_];
   }
 
-  void factorize (int* ipiv, int & info)
-  {
-    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
-
-    LST* const A_raw = reinterpret_cast<LST*> (A_);
-    lapack_type lapack;
-    // NOTE (mfh 03 Jan 2015) This method doesn't check the 'info'
-    // output argument, but it returns info, so the user is
-    // responsible for checking.
-    lapack.GETRF(blockSize_, blockSize_, A_raw, blockSize_, ipiv, &info);
-  }
-
-  template<class LittleVectorType>
-  void factorize (LittleVectorType & ipiv, int & info)
-  {
-    GETRF(*this,ipiv,info);
-  }
-
-  template<class LittleVectorType>
-  void solve (LittleVectorType & X, const int* ipiv) const
-  {
-    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
-
-    // FIXME (mfh 03 Jan 2015) Check using enable_if that Scalar can
-    // be safely converted to LST.
-
-    lapack_type lapack;
-    LST* const A_raw = reinterpret_cast<LST*> (A_);
-    LST* const X_raw = reinterpret_cast<LST*> (X.getRawPtr ());
-    int info = 0;
-    char trans = 'T';
-    // FIXME (mfh 03 Jan 2015) Either check the 'info' output
-    // argument, or return it.
-    lapack.GETRS(trans, blockSize_, 1, A_raw, blockSize_, ipiv, X_raw, blockSize_, &info);
-  }
-
 private:
   impl_scalar_type* const A_;
   const LO blockSize_;
