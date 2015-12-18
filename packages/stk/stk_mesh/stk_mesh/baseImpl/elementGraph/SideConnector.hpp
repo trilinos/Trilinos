@@ -25,8 +25,7 @@ public:
             m_bulk_data(b),
             m_graph(g),
             m_coincidentGraph(cg),
-            m_local_id_to_element_entity(localToElement),
-            m_entity_to_local_id(elemToLocal)
+            m_local_id_to_element_entity(localToElement)
     {
     }
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
@@ -43,7 +42,6 @@ private:
     const stk::mesh::Graph &m_graph;
     const stk::mesh::impl::SparseGraph &m_coincidentGraph;
     const stk::mesh::EntityVector &m_local_id_to_element_entity;
-    const std::vector<impl::LocalId> &m_entity_to_local_id;
 };
 
 }
