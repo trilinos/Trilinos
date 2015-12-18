@@ -139,15 +139,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
   }
   IFPACK2RBILUK_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
 
-  try {
-    bcrsmatrix->computeDiagonalGraph ();
-  } catch (std::exception& e) {
-    lclSuccess = 0;
-    errStrm << "Process " << myRank << ": computeDiagonalGraph() threw exception: "
-            << e.what () << endl;
-  }
-  IFPACK2RBILUK_REPORT_GLOBAL_ERR( "computeDiagonalGraph()" );
-
   RCP<prec_type> prec;
   try {
     RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
@@ -241,7 +232,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   prec_type prec (const_bcrsmatrix);
@@ -296,7 +286,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_full_local_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   prec_type prec (const_bcrsmatrix);
@@ -356,7 +345,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
     tif_utest::create_banded_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc, rbandwidth);
   RCP<block_crs_matrix_type> bcrsmatrix =
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_banded_block_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize, rbandwidth));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
@@ -608,7 +596,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
 
   RCP<block_crs_matrix_type> bcrsmatrix;
   bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph ();
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
   Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);

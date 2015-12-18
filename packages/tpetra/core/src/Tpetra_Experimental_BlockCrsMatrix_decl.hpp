@@ -647,14 +647,6 @@ public:
                                        Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
-  //! Computes the DiagonalGraph
-  void computeDiagonalGraph ();
-
-  //! Reports on whether the DiagonalGraph has been Computed
-  bool isComputedDiagonalGraph() const { return computedDiagonalGraph_;}
-
-  Teuchos::RCP<crs_graph_type> getDiagonalGraph () const;
-
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
   LO
@@ -861,9 +853,6 @@ private:
                           BlockMultiVector<Scalar, LO, GO, Node>& Y,
                           const Scalar alpha,
                           const Scalar beta);
-
-  Teuchos::RCP<crs_graph_type> diagonalGraph_;
-  bool computedDiagonalGraph_;
 
   /// \brief Get the relative block offset of the given block.
   ///

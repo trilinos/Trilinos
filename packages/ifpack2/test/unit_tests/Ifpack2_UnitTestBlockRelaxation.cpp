@@ -521,7 +521,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   RCP<block_crs_matrix_type> bcrsmatrix;
   bcrsmatrix = Teuchos::rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LO,GO,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph ();
 
   RCP<prec_type> prec;
   try {
@@ -642,15 +641,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   }
   IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "create_triangular_matrix" );
 
-  try {
-    bcrsmatrix->computeDiagonalGraph ();
-  } catch (std::exception& e) {
-    lclSuccess = 0;
-    errStrm << "Process " << myRank << ": computeDiagonalGraph() threw exception: "
-            << e.what () << endl;
-  }
-  IFPACK2BLOCKRELAXATION_REPORT_GLOBAL_ERR( "computeDiagonalGraph()" );
-
 //  Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 //  bcrsmatrix->describe (*wrappedStream, Teuchos::VERB_EXTREME);
 
@@ -748,7 +738,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
     tif_utest::create_dense_local_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
     Teuchos::rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
 //  Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 //  bcrsmatrix->describe (*wrappedStream, Teuchos::VERB_EXTREME);

@@ -1934,9 +1934,6 @@ namespace {
     TEST_NOTHROW( residual = BV (meshRowMap, blockSize));
     BV solution;
     TEST_NOTHROW( solution = BV (meshRowMap, blockSize));
-    blockMat.computeDiagonalGraph();
-    BCM diagonalMat;
-    TEST_NOTHROW( diagonalMat = BCM (* (blockMat.getDiagonalGraph ()), blockSize) );
 
     Teuchos::Array<ST> basematrix (maxNumEntPerRow * maxNumEntPerRow, STS::zero ());
     basematrix[0] = two;

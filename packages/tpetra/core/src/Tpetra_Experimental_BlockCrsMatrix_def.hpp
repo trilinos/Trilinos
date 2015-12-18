@@ -76,8 +76,7 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
   }
 
@@ -96,8 +95,7 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -156,8 +154,7 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true), // row major blocks by default
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -561,58 +558,6 @@ namespace Experimental {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
     }
 #endif // HAVE_TPETRA_DEBUG
-  }
-
-  template <class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  computeDiagonalGraph ()
-  {
-    using Teuchos::rcp;
-
-    if (computedDiagonalGraph_) {
-      // FIXME (mfh 12 Aug 2014) Consider storing the "diagonal graph"
-      // separately from the matrix.  It should really go in the
-      // preconditioner, not here.  We could do this by adding a
-      // method that accepts a nonconst diagonal graph, and updates
-      // it.  btw it would probably be a better idea to use a
-      // BlockMultiVector to store the diagonal, not a graph.
-      return;
-    }
-
-    const size_t maxDiagEntPerRow = 1;
-    // NOTE (mfh 12 Aug 2014) We could also pass in the column Map
-    // here.  However, we still would have to do LID->GID lookups to
-    // make sure that we are using the correct diagonal column
-    // indices, so it probably wouldn't help much.
-    diagonalGraph_ =
-      rcp (new crs_graph_type (graph_.getRowMap (), maxDiagEntPerRow,
-                               Tpetra::StaticProfile));
-    const map_type& meshRowMap = * (graph_.getRowMap ());
-
-    Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
-
-    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
-         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      diagGblColInds[0] = gblRowInd;
-      diagonalGraph_->insertGlobalIndices (gblRowInd, diagGblColInds ());
-    }
-    diagonalGraph_->fillComplete (graph_.getDomainMap (),
-                                  graph_.getRangeMap ());
-    computedDiagonalGraph_ = true;
-  }
-
-  template <class Scalar, class LO, class GO, class Node>
-  Teuchos::RCP<CrsGraph<LO, GO, Node> >
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getDiagonalGraph () const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! computedDiagonalGraph_, std::runtime_error, "Tpetra::Experimental::"
-      "BlockCrsMatrix::getDiagonalGraph: You must call computeDiagonalGraph() "
-      "before calling this method.");
-    return diagonalGraph_;
   }
 
   template <class Scalar, class LO, class GO, class Node>
