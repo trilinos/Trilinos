@@ -84,6 +84,28 @@ namespace Example {
 namespace FENL {
 
 #if defined( KOKKOS_HAVE_CUDA )
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+template <typename ViewType>
+struct LocalViewTraits<
+  ViewType,
+  typename std::enable_if< std::is_same<typename ViewType::execution_space,
+                                        Kokkos::Cuda>::value &&
+                           Kokkos::is_view_mp_vector<ViewType>::value
+                         >::type > {
+  typedef ViewType view_type;
+  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
+  typedef typename local_view_type::value_type local_value_type;
+  static const bool use_team = true;
+
+  KOKKOS_INLINE_FUNCTION
+  static local_view_type create_local_view(const view_type& v,
+                                           const unsigned local_rank)
+  {
+    return Kokkos::partition<1>(v, local_rank);
+  }
+};
+#else
 template <typename ViewType>
 struct LocalViewTraits<
   ViewType,
@@ -107,6 +129,7 @@ struct LocalViewTraits<
     return local_v;
   }
 };
+#endif
 
 // Compute DeviceConfig struct's based on scalar type
 template <typename StorageType>

@@ -902,6 +902,23 @@ create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
                          dims[7] );
 }
 
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad { static const bool value = false; };
+
+template <typename T, typename L, typename D, typename M>
+struct is_view_fad< View<T,L,D,M,Impl::ViewSpecializeSacadoFad> > {
+  static const bool value = true;
+};
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_fad<view_type>::value, unsigned >::type
+dimension_scalar(const view_type& view) {
+  return view.storage_size();
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

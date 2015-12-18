@@ -228,7 +228,7 @@ struct ReplaceDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type vec_size = host_matrix_values.sacado_size();
+    const ordinal_type vec_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     for (ordinal_type row=0; row<nrow; ++row) {
       bool s = compareVecs(host_matrix_values(row),
@@ -276,7 +276,7 @@ struct AddDiagonalValuesKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type vec_size = host_matrix_values.sacado_size();
+    const ordinal_type vec_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     for (ordinal_type row=0; row<nrow; ++row) {
       bool s = compareVecs(host_matrix_values(row),
@@ -325,7 +325,7 @@ struct AddDiagonalValuesAtomicKernel {
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
-    const ordinal_type vec_size = host_matrix_values.sacado_size();
+    const ordinal_type vec_size = Kokkos::dimension_scalar(host_matrix_values);
     bool success = true;
     for (ordinal_type row=0; row<nrow; ++row) {
       value_type val;
@@ -435,10 +435,17 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   //------------------------------
   // Generate input multivector:
 
+  // FIXME:  Experimental view needs to be fixed so that construct is called
+  // when not initializing
+  // block_vector_type x =
+  //   block_vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length, stoch_length);
+  // block_vector_type y =
+  //   block_vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length, stoch_length);
+
   block_vector_type x =
-    block_vector_type(Kokkos::ViewAllocateWithoutInitializing("x"), fem_length, stoch_length);
+    block_vector_type("x", fem_length, stoch_length);
   block_vector_type y =
-    block_vector_type(Kokkos::ViewAllocateWithoutInitializing("y"), fem_length, stoch_length);
+    block_vector_type("y", fem_length, stoch_length);
 
   typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
   typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
@@ -465,9 +472,12 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   matrix_graph_type matrix_graph =
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
+  // FIXME:
+  // matrix_values_type matrix_values =
+  //   matrix_values_type(
+  //     Kokkos::ViewAllocateWithoutInitializing("matrix"), fem_graph_length, stoch_length);
   matrix_values_type matrix_values =
-    matrix_values_type(
-      Kokkos::ViewAllocateWithoutInitializing("matrix"), fem_graph_length, stoch_length);
+    matrix_values_type("matrix", fem_graph_length, stoch_length);
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;

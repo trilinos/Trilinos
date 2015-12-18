@@ -100,6 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Traits, ScalarValue, ad_type, scalar_type )
   TEUCHOS_TEST_EQUALITY(Sacado::ScalarValue<ad_type>::eval(a), v, out, success);
 }
 
+#ifdef HAVE_STOKHOS_PCE_SCALAR_TYPE
 //
 // Sacado::ETPCE::OrthogPoly
 //
@@ -117,7 +118,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, pce_expr_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, pce_expr_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, pce_expr_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, pce_expr_type, double )
+#endif
 
+#ifdef HAVE_STOKHOS_ENSEMBLE_SCALAR_TYPE
 //
 // Sacado::MP::Vector
 //
@@ -128,6 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ValueType, mp_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Traits, IsADType, mp_type )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, Value, mp_type, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Traits, ScalarValue, mp_type, double )
+#endif
 
 // Can't test Expr because there is no way to actually create one
 

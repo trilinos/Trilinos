@@ -388,6 +388,14 @@ namespace Sacado {
     static const bool value = false;
   };
 
+  //! Specialization of %IsStaticallySized for const types
+  /*!
+   * This should work for most types
+   */
+  template <typename T> struct IsStaticallySized<const T> {
+    static const bool value = IsStaticallySized<T>::value;
+  };
+
   //! Base template specification for static size
   template <typename T> struct StaticSize {
     static const unsigned value = 0;

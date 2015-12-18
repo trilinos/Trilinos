@@ -47,6 +47,26 @@
 
 namespace Kokkos {
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+// Type name for a local, unmanaged view with possibly a different static size
+template <typename ViewType,
+          unsigned LocalSize,
+          bool isStatic = Sacado::IsStaticallySized<typename ViewType::value_type>::value>
+struct LocalMPVectorView {};
+
+template <typename ViewType, unsigned LocalSize>
+struct LocalMPVectorView<ViewType, LocalSize, false> {
+  typedef ViewType type;
+};
+
+template <typename D, typename ... P, unsigned LocalSize>
+struct LocalMPVectorView< View<D,P...>, LocalSize, true > {
+  typedef typename Kokkos::Experimental::Impl::ViewMapping< void, typename Kokkos::Experimental::ViewTraits<D,P...>, Sacado::MP::VectorPartition<LocalSize> >::type type;
+};
+
+#else
+
 // Type name for a local, unmanaged view with possibly a different static size
 template <typename ViewType,
           unsigned LocalSize,
@@ -150,6 +170,8 @@ struct LocalMPVectorView<ViewType, LocalSize, 3, false> {
                         Kokkos::MemoryUnmanaged > type;
 };
 
+#endif
+
 namespace Impl {
 
 template< class OldStorageType , class Device >
@@ -185,6 +207,10 @@ struct RebindStokhosStorageDevice< const Sacado::MP::Vector< OldStorageType > , 
 };
 
 } // namespace Impl
+
+// Whether a given type is a view with scalar type Sacado::MP::Vector
+template <typename view_type>
+struct is_view_mp_vector { static const bool value = false; };
 
 } // namespace Kokkos
 
