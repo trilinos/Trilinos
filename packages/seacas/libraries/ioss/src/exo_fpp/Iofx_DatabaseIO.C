@@ -89,10 +89,6 @@
 #include "Ioss_State.h"
 #include "Ioss_VariableType.h"
 
-#ifdef HAVE_MPI    
-#include "Ioss_FileInfo.h"
-#endif
-
 // ========================================================================
 // Static internal helper functions
 // ========================================================================
@@ -309,7 +305,7 @@ namespace Iofx {
                                     &cpu_word_size, &dbRealWordSize);
           if (exodusFilePtr < 0) {
             if (myProcessor == 0){
-              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename.c_str());
+              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename);
               Ioss::Utils::create_path(path.pathname());
             }
 #ifdef HAVE_MPI

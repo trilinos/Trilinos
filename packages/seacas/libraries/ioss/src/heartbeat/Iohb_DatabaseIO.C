@@ -47,6 +47,7 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
@@ -200,13 +201,14 @@ namespace Iohb {
 
       if (util().parallel_rank() == 0) {
 
-        new_this->logStream = open_stream(get_filename().c_str(),
+        new_this->logStream = open_stream(get_filename(),
             &(new_this->streamNeedsDelete),
             append);
 
         if (new_this->logStream == NULL) {
-          Ioss::Utils::create_path(get_filename().c_str());
-          new_this->logStream = open_stream(get_filename().c_str(),
+	  Ioss::FileInfo path = Ioss::FileInfo(get_filename());
+	  Ioss::Utils::create_path(path.pathname());
+	  new_this->logStream = open_stream(get_filename(),
               &(new_this->streamNeedsDelete),
               append);
         }
