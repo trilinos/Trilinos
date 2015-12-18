@@ -571,20 +571,26 @@ GEMV (const CoefficientType& alpha,
 }
 
 
-/// \brief Computes C = alpha*A*B + beta*C
+/// \brief Small dense matrix-matrix multiply: <tt>C := alpha*A*B + beta*C</tt>
+///
+/// \tparam ViewType1 Type of the first matrix input A.
+/// \tparam ViewType2 Type of the second matrix input B.
+/// \tparam ViewType3 Type of the third matrix input/output C.
+/// \tparam CoefficientType Type of the scalar coefficients alpha and beta.
+/// \tparam IndexType Type of the index used in for loops; defaults to \c int.
 template<class ViewType1,
          class ViewType2,
          class ViewType3,
          class CoefficientType,
          class IndexType = int>
 void
-GEMM(const char transA[],
-     const char transB[],
-     const CoefficientType alpha,
-     const ViewType1& A,
-     const ViewType2& B,
-     const CoefficientType beta,
-     ViewType3& C)
+GEMM (const char transA[],
+      const char transB[],
+      const CoefficientType& alpha,
+      const ViewType1& A,
+      const ViewType2& B,
+      const CoefficientType& beta,
+      const ViewType3& C)
 {
   // Assert that A, B, and C are in fact matrices
   static_assert (ViewType1::rank == 2, "GEMM: A must have rank 2 (be a matrix).");
@@ -717,7 +723,7 @@ GEMM(const char transA[],
 template<class LittleBlockType,
          class LittleVectorType>
 void
-GETF2 (LittleBlockType& A, LittleVectorType& ipiv, int& info)
+GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
 {
   // The type of an entry of ipiv is the index type.
   typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
@@ -790,109 +796,192 @@ GETF2 (LittleBlockType& A, LittleVectorType& ipiv, int& info)
   }
 }
 
+namespace Impl {
 
 /// \brief Computes the solution to Ax=b
 ///
 /// We have not implemented transpose yet, or multiple RHS
 template<class LittleBlockType,
          class LittleIntVectorType,
+         class LittleScalarVectorType,
+         const int rank = LittleScalarVectorType::rank>
+struct GETRS {
+  static void
+  run (const char mode[],
+       const LittleBlockType& A,
+       const LittleIntVectorType& ipiv,
+       const LittleScalarVectorType& B,
+       int& info);
+};
+
+//! Special case of GETRS for a single right-hand side.
+template<class LittleBlockType,
+         class LittleIntVectorType,
          class LittleScalarVectorType>
-void
-GETRS (const char mode[], const LittleBlockType& A, const LittleIntVectorType& ipiv, LittleScalarVectorType& B, int& info)
-{
-  // The type of an entry of ipiv is the index type.
-  typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
-  static_assert (std::is_integral<IndexType>::value,
-                 "GETRS: The type of each entry of ipiv must be an integer type.");
-  typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
-  static_assert (! std::is_const<std::remove_reference<decltype (B(0))>>::value,
-                 "GETRS: B must not be a const View (or LittleBlock).");
-  static_assert (LittleBlockType::rank == 2, "GETRS: A must have rank 2 (be a matrix).");
-  typedef Kokkos::Details::ArithTraits<Scalar> STS;
-  const Scalar ZERO = STS::zero();
+struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
+  static void
+  run (const char mode[],
+       const LittleBlockType& A,
+       const LittleIntVectorType& ipiv,
+       const LittleScalarVectorType& B,
+       int& info)
+  {
+    // The type of an entry of ipiv is the index type.
+    typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
+    static_assert (std::is_integral<IndexType>::value,
+                   "GETRS: The type of each entry of ipiv must be an integer type.");
+    typedef typename std::remove_reference<decltype (A(0,0))>::type Scalar;
+    static_assert (! std::is_const<std::remove_reference<decltype (B(0))>>::value,
+                   "GETRS: B must not be a const View (or LittleBlock).");
+    static_assert (LittleBlockType::rank == 2, "GETRS: A must have rank 2 (be a matrix).");
+    static_assert (LittleIntVectorType::rank == 1, "GETRS: ipiv must have rank 1.");
+    static_assert (LittleScalarVectorType::rank == 1, "GETRS: For this specialization, B must have rank 1.");
 
-  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-  const IndexType pivDim = static_cast<IndexType> (ipiv.dimension_0 ());
+    typedef Kokkos::Details::ArithTraits<Scalar> STS;
+    const Scalar ZERO = STS::zero();
+    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
+    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    const IndexType pivDim = static_cast<IndexType> (ipiv.dimension_0 ());
 
-  info = 0;
+    info = 0;
 
-  // Ensure that the matrix is square
-  if (numRows != numCols) {
-    info = -2;
-    return;
-  }
-
-  // Ensure that the pivot array is sufficiently large
-  if (pivDim < numRows) {
-    info = -3;
-    return;
-  }
-
-  // We do not support the multiple RHS case at this time
-  if(LittleScalarVectorType::rank > 1) {
-    info = -4;
-    return;
-  }
-
-  // Ensure that mode is valid
-  // Right now, we do not support transpose
-  //if(mode[0] != 'c' && mode[0] != 'C' && mode[0] != 'n' && mode[0] != 'N' && mode[0] != 't' && mode[0] != 'T') {
-  if(mode[0] != 'n' && mode[0] != 'N') {
-    info = -1;
-    return;
-  }
-
-  // No transpose case
-  if(mode[0] == 'n' || mode[0] == 'N') {
-    // Apply row interchanges to the RHS
-    for(IndexType i=0; i<numRows; i++) {
-      if(ipiv(i) != i+1) {
-        Scalar temp = B(i);
-        B(i) = B(ipiv(i)-1);
-        B(ipiv(i)-1) = temp;
-      }
+    // Ensure that the matrix is square
+    if (numRows != numCols) {
+      info = -2;
+      return;
     }
 
-    // Solve Lx=b, overwriting b with x
-    for(IndexType r=1; r < numRows; r++) {
-      for(IndexType c=0; c < r; c++) {
-        B(r) = B(r) - A(r,c)*B(c);
-      }
+    // Ensure that the pivot array is sufficiently large
+    if (pivDim < numRows) {
+      info = -3;
+      return;
     }
 
-    // Solve Ux=b, overwriting b with x
-    for(IndexType r=numRows-1; r >= 0; r--) {
-      // Check whether U is singular
-      if(A(r,r) == ZERO) {
-        info = r+1;
+    // No transpose case
+    if(mode[0] == 'n' || mode[0] == 'N') {
+      // Apply row interchanges to the RHS
+      for(IndexType i=0; i<numRows; i++) {
+        if(ipiv(i) != i+1) {
+          Scalar temp = B(i);
+          B(i) = B(ipiv(i)-1);
+          B(ipiv(i)-1) = temp;
+        }
+      }
+
+      // Solve Lx=b, overwriting b with x
+      for(IndexType r=1; r < numRows; r++) {
+        for(IndexType c=0; c < r; c++) {
+          B(r) = B(r) - A(r,c)*B(c);
+        }
+      }
+
+      // Solve Ux=b, overwriting b with x
+      for(IndexType r=numRows-1; r >= 0; r--) {
+        // Check whether U is singular
+        if(A(r,r) == ZERO) {
+          info = r+1;
+          return;
+        }
+
+        for(IndexType c=r+1; c < numCols; c++) {
+          B(r) = B(r) - A(r,c)*B(c);
+        }
+        B(r) = B(r) / A(r,r);
+      }
+    }
+    // Transpose case
+    else if(mode[0] == 't' || mode[0] == 'T') {
+      info = -1; // NOT YET IMPLEMENTED
+      return;
+    }
+    // Conjugate transpose case
+    else if (mode[0] == 'c' || mode[0] == 'C') {
+      info = -1; // NOT YET IMPLEMENTED
+      return;
+    }
+    else { // invalid mode
+      info = -1;
+      return;
+    }
+  }
+};
+
+
+//! Special case of GETRS for multiple right-hand sides.
+template<class LittleBlockType,
+         class LittleIntVectorType,
+         class LittleScalarVectorType>
+struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 2> {
+  static void
+  run (const char mode[],
+       const LittleBlockType& A,
+       const LittleIntVectorType& ipiv,
+       const LittleScalarVectorType& B,
+       int& info)
+  {
+    // The type of an entry of ipiv is the index type.
+    typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0)) >::type>::type IndexType;
+    static_assert (std::is_integral<IndexType>::value,
+                   "GETRS: The type of each entry of ipiv must be an integer type.");
+    static_assert (! std::is_const<std::remove_reference<decltype (B(0)) > >::value,
+                   "GETRS: B must not be a const View (or LittleBlock).");
+    static_assert (LittleBlockType::rank == 2, "GETRS: A must have rank 2 (be a matrix).");
+    static_assert (LittleIntVectorType::rank == 1, "GETRS: ipiv must have rank 1.");
+    static_assert (LittleScalarVectorType::rank == 2, "GETRS: For this specialization, B must have rank 2.");
+
+    // The current implementation iterates over one right-hand side at
+    // a time.  It might be faster to do this differently, but this
+    // should work for now.
+    const IndexType numRhs = B.dimension_1 ();
+    info = 0;
+
+    for (IndexType rhs = 0; rhs < numRhs; ++rhs) {
+      auto B_cur = Kokkos::subview (B, Kokkos::ALL (), rhs);
+      GETRS<LittleBlockType, LittleIntVectorType, decltype (B_cur), 1>::run (mode, A, ipiv, B_cur, info);
+      if (info != 0) {
         return;
       }
-
-      for(IndexType c=r+1; c < numCols; c++) {
-        B(r) = B(r) - A(r,c)*B(c);
-      }
-      B(r) = B(r) / A(r,r);
     }
   }
-  // Transpose case
-  else if(mode[0] == 't' || mode[0] == 'T') {
+};
 
-  }
-  // Conjugate transpose case
-  else {
+} // namespace Impl
 
-  }
-
-}
-
-
-/// \brief Computes the inverse of A
+/// \brief Solve the linear system(s) AX=B, using the result of GETRF or GETF2.
+///
+/// \warning We have not implemented transpose yet, or multiple right-hand sides.
 template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
 void
-GETRI (const LittleBlockType& A, const LittleIntVectorType& ipiv, LittleScalarVectorType& work, int& info)
+GETRS (const char mode[], const LittleBlockType& A, const LittleIntVectorType& ipiv, const LittleScalarVectorType& B, int& info)
+{
+  Impl::GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, LittleScalarVectorType::rank>::run (mode, A, ipiv, B, info);
+}
+
+
+/// \brief Compute inverse of A, using result of GETRF or GETF2.
+///
+/// \tparam LittleBlockType Type of dense matrix \c A
+/// \tparam LittleBlockType Type of 1-D pivot array \c ipiv
+/// \tparam LittleScalarVectorType Type of 1-D work array \c work
+///
+/// \param A [in/out] On input: output matrix resulting from running
+///   GETRF or GETF2 on a square matrix A.  On output: inverse of the
+///   original matrix A.
+/// \param ipiv [in] Pivot array from the LU factorization.
+/// \param work [out] Temporary workspace; must be at least as long as
+///   the number of rows in A.
+/// \param info [out] On output, 0 if the routine was successful, else
+///   nonzero.
+template<class LittleBlockType,
+         class LittleIntVectorType,
+         class LittleScalarVectorType>
+void
+GETRI (const LittleBlockType& A,
+       const LittleIntVectorType& ipiv,
+       const LittleScalarVectorType& work,
+       int& info)
 {
   // The type of an entry of ipiv is the index type.
   typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
