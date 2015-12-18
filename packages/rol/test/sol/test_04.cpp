@@ -141,14 +141,23 @@ int main(int argc, char* argv[]) {
     }
     *outStream << std::endl;
 
-    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
-      std::cout << commptr->getRank() << "  "; 
-      for (size_t d = 0; d < dimension; d++) {
-        std::cout << std::setw(20) << (sampler->getMyPoint(k))[d] << "  ";
-      }
-      std::cout << std::setw(20) << sampler->getMyWeight(k) << std::endl;
-    }
-    std::cout << std::endl;
+//    std::ofstream file;
+//    std::stringstream name;
+//    name << "samples." << commptr->getRank() << ".txt";
+//    file.open(name.str().c_str()); 
+//    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
+//      for (size_t d = 0; d < dimension; d++) {
+//        file << std::setprecision(std::numeric_limits<double>::digits10)
+//             << std::scientific
+//             << (sampler->getMyPoint(k))[d];
+//        file << "  ";
+//      }
+//      file << std::setprecision(std::numeric_limits<double>::digits10)
+//           << std::scientific
+//           << sampler->getMyWeight(k) << std::endl;
+//    }
+//    file.close();
+//    commptr->barrier();
 
   }
   catch (std::logic_error err) {
