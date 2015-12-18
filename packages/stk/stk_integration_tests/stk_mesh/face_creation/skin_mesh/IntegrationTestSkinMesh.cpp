@@ -148,12 +148,6 @@ void filter_test_case(TestCaseData& test_cases, const std::string& filename)
     }
 }
 
-TestCaseDatum select_test_case(TestCaseData& test_cases, const std::string& filename)
-{
-    TestCaseData::iterator iter = test_cases.find(filename);
-    return *iter;
-}
-
 void do_input_from_file(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator)
 {
     if(stk::parallel_machine_size(communicator) == 1)
@@ -318,6 +312,81 @@ TEST(SkinMesh, skin_all_files_aura)
 TEST(SkinMesh, skin_all_files_no_aura)
 {
     test_skin_all_files(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_fails_with_extra_face(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(communicator) == 2)
+    {
+        const std::string &meshSpec = "ARA.e";
+
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulkData(meta, communicator, auraOption);
+
+        do_input_from_file(meshSpec, bulkData, bulkData.parallel());
+
+        stk::mesh::Selector blocksToSkin = meta.universal_part();
+        stk::mesh::Part &skin = meta.declare_part("skin", meta.side_rank());
+
+        EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_boundary_sides(bulkData, blocksToSkin, skin));
+
+        bulkData.modification_begin();
+        if(bulkData.parallel_rank() == 1)
+        {
+            stk::mesh::EntityVector notSkinFaces;
+            stk::mesh::Selector notSkin = !skin;
+            stk::mesh::get_selected_entities(notSkin, bulkData.buckets(stk::topology::FACE_RANK), notSkinFaces);
+            ASSERT_EQ(1u, notSkinFaces.size());
+            bulkData.change_entity_parts(notSkinFaces[0], {&skin});
+        }
+        bulkData.modification_end();
+
+        EXPECT_FALSE(stk::mesh::check_exposed_boundary_sides(bulkData, blocksToSkin, skin));
+    }
+}
+
+
+TEST(SkinMesh, check_skin_fails_with_extra_face)
+{
+    test_skin_fails_with_extra_face(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_skin_fails_with_missing_face(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(communicator) == 2)
+    {
+        const std::string &meshSpec = "ARA.e";
+
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData bulkData(meta, communicator, auraOption);
+
+        do_input_from_file(meshSpec, bulkData, bulkData.parallel());
+
+        stk::mesh::Selector blocksToSkin = meta.universal_part();
+        stk::mesh::Part &skin = meta.declare_part("skin", meta.side_rank());
+
+        EXPECT_NO_FATAL_FAILURE(stk::mesh::create_exposed_boundary_sides(bulkData, blocksToSkin, skin));
+
+        bulkData.modification_begin();
+
+        stk::mesh::EntityVector skinFaces;
+        stk::mesh::get_selected_entities(skin, bulkData.buckets(stk::topology::FACE_RANK), skinFaces);
+        ASSERT_EQ(5u, skinFaces.size());
+        bulkData.change_entity_parts(skinFaces[0], {}, {&skin});
+
+        bulkData.modification_end();
+
+        EXPECT_FALSE(stk::mesh::check_exposed_boundary_sides(bulkData, blocksToSkin, skin));
+    }
+}
+
+TEST(SkinMesh, check_skin_fails_with_missing_face)
+{
+    test_skin_fails_with_missing_face(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 } //namespace

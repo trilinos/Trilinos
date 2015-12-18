@@ -48,18 +48,9 @@
 using stk::mesh::MetaData;
 
 namespace {
-  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
-  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
-  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
-
   const size_t nodes_per_hex = 8;
   const size_t faces_per_hex = 6;
   const size_t nodes_per_quad= 4;
-
-  const size_t nodes_per_tet = 4;
-  const size_t faces_per_tet = 4;
-  const size_t nodes_per_tri = 3;
 
   size_t exp_hex_face_count(size_t nx, size_t ny, size_t nz)
   {

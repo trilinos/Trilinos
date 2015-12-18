@@ -46,8 +46,8 @@ namespace stk { namespace mesh {
 
 //void create_interior_block_boundary_sides(BulkData, Selector& blocksToConsider, Part& partToPutSidesInto);
 
-void create_exposed_boundary_sides(BulkData &bulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
-bool check_exposed_boundary_sides(BulkData &bulkData, Selector& skinnedBlock, const Part& skinnedPart);
+void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto);
+bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart);
 
 //void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
 

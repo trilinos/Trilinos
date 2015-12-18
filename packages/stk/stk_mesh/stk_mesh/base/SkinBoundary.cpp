@@ -38,6 +38,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk
 {
@@ -48,13 +49,11 @@ namespace mesh
 
 //void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
 
-void create_exposed_boundary_sides(BulkData &bulkData, Selector& blocksToSkin, Part& partToPutSidesInto)
+void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto)
 {
     const PartVector skinnedPart{&partToPutSidesInto};
 
-    ElemElemGraph elem_elem_graph(bulkData, blocksToSkin);
-    elem_elem_graph.skin_mesh( skinnedPart );
-
+    ElemElemGraph(bulkData, blocksToSkin).skin_mesh( skinnedPart );
 }
 
 Entity get_face_for_element_side_pair(BulkData &bulkData, const SideSetEntry &facet)
@@ -73,11 +72,24 @@ Entity get_face_for_element_side_pair(BulkData &bulkData, const SideSetEntry &fa
     return Entity();
 }
 
-bool check_exposed_boundary_sides(BulkData &bulkData, Selector& skinnedBlock, const Part& skinnedPart)
+bool check_global_truth_value(bool truthValue, MPI_Comm communicator)
 {
-    ElemElemGraph elem_elem_graph(bulkData, skinnedBlock);
-    std::vector<SideSetEntry> skinnedSideSet = elem_elem_graph.extract_skinned_sideset(  );
+    unsigned localResult = truthValue;
+    unsigned globalResult = 0;
+    stk::all_reduce_min<unsigned>( communicator, &localResult, &globalResult , 1 );
+    return (0 != globalResult);
+}
 
+bool check_sideset_inclusion_in_skinning(BulkData &bulkData, stk::mesh::EntityVector &sidesetFaces, Part& skinnedPart)
+{
+    stk::mesh::EntityVector skinnedFaces;
+    stk::mesh::get_selected_entities(skinnedPart, bulkData.buckets(stk::topology::FACE_RANK), skinnedFaces);
+    stk::util::sort_and_unique(sidesetFaces);
+    return check_global_truth_value(sidesetFaces == skinnedFaces, bulkData.parallel());
+}
+
+bool check_if_sideset_is_part_of_skinning(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet, Part& skinnedPart)
+{
     for(const SideSetEntry &facet : skinnedSideSet)
     {
         Entity face = get_face_for_element_side_pair(bulkData, facet);
@@ -85,10 +97,33 @@ bool check_exposed_boundary_sides(BulkData &bulkData, Selector& skinnedBlock, co
         if(!bulkData.is_valid(face) || !bulkData.bucket(face).member(skinnedPart))
             return false;
     }
-
     return true;
 }
 
+stk::mesh::EntityVector get_faces_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet)
+{
+    stk::mesh::EntityVector sidesetFaces;
+
+    for(const SideSetEntry &facet : skinnedSideSet)
+    {
+        Entity face = get_face_for_element_side_pair(bulkData, facet);
+        sidesetFaces.push_back(face);
+    }
+
+    return sidesetFaces;
+}
+
+
+bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart)
+{
+    std::vector<SideSetEntry> skinnedSideSet = ElemElemGraph(bulkData, skinnedBlock).extract_skinned_sideset(  );
+
+    if(!check_if_sideset_is_part_of_skinning(bulkData, skinnedSideSet, skinnedPart)) return false;
+
+    stk::mesh::EntityVector sidesetFaces = get_faces_from_sideset(bulkData, skinnedSideSet);
+
+    return check_sideset_inclusion_in_skinning(bulkData, sidesetFaces, skinnedPart);
+}
 
 } // namespace mesh
 } // namespace stk
