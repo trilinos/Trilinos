@@ -15,7 +15,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"  // for deactivate_elements, etc
-#include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"

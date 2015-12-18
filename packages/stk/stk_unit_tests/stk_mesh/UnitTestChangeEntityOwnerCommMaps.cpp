@@ -44,7 +44,6 @@
 #include <vector>                       // for vector
 #include "BulkDataTester.hpp"           // for BulkDataTester
 #include "UnitTestCEOCommonUtils.hpp"   // for add_nodes_to_move, etc
-#include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for MPI_Comm_size, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_io/IossBridge.hpp"        // for is_part_io_part, etc

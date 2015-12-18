@@ -17,7 +17,6 @@
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
 #include "ElementGraphTester.hpp"       // for ElemElemGraphTester
-#include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
