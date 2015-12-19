@@ -43,8 +43,13 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_Details_Lapack128.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
 
 namespace {
 
@@ -53,6 +58,38 @@ namespace {
   using Teuchos::RCP;
   using std::endl;
   typedef Teuchos::Array<int>::size_type size_type;
+
+  /// \brief Return the Teuchos::LAPACK specialization corresponding
+  ///   to the given Scalar type.
+  ///
+  /// The reason this exists is the same reason why the
+  /// impl_scalar_type typedef in Tpetra::MultiVector may differ from
+  /// its Scalar template parameter.  For example, Scalar =
+  /// std::complex<T> corresponds to impl_scalar_type =
+  /// Kokkos::complex<T>.  The latter has no Teuchos::LAPACK
+  /// specialization, so we have to map it back to std::complex<T>.
+  template<class Scalar>
+  struct GetLapackType {
+    typedef Scalar lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, Scalar> lapack_type;
+  };
+
+  template<class T>
+  struct GetLapackType<Kokkos::complex<T> > {
+    typedef std::complex<T> lapack_scalar_type;
+    typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
+  };
+
+#ifdef HAVE_TPETRA_INST_FLOAT128
+  template<>
+  struct GetLapackType<__float128> {
+    typedef __float128 lapack_scalar_type;
+    // Use the Lapack128 class we declared above to implement the
+    // linear algebra operations needed for small dense blocks and
+    // vectors.
+    typedef Teuchos::Details::Lapack128 lapack_type;
+  };
+#endif // HAVE_TPETRA_INST_FLOAT128
 
   //
   // UNIT TESTS
@@ -64,12 +101,210 @@ namespace {
   // would make sense to include Node as well, but for now we omit it,
   // since LittleBlock and LittleVector as yet live in host memory.
 
+  // This example tests the factorization routine with a matrix
+  // that does not require partial pivoting
+  //
+  // FIXME (mfh 10 Dec 2015) This test doesn't actually depend on
+  // LocalOrdinal or GlobalOrdinal, but it was templated on LO
+  // (LocalOrdinal) and we just want this to work for now.  It
+  // should actually be .
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, Factor, ST, LO )
+  {
+    using Teuchos::Array;
+    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
+    typedef typename device_type::execution_space execution_space;
+    typedef Teuchos::LAPACK<LO, ST> lapack_type;
+    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<LO*, device_type> int_vec_type;
+    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Tpetra's Node does the right thing with respect to
+    // Kokkos::initialize etc.
+    typename Tpetra::Vector<ST, LO>::node_type node;
+    (void) node;
+    TEST_ASSERT( execution_space::is_initialized () );
+    if (! execution_space::is_initialized ()) {
+      return; // don't bother to continue
+    }
+
+    // Create a matrix
+    block_type A("A",3,3);
+    A(0,0) = 10;
+    A(0,1) = 2;
+    A(0,2) = 3;
+    A(1,0) = 4;
+    A(1,1) = 20;
+    A(1,2) = 5;
+    A(2,0) = 6;
+    A(2,1) = 7;
+    A(2,2) = 30;
+
+    // Create the pivot vector
+    int_vec_type ipiv("ipiv",3);
+
+    // Compute the true factorization
+    block_type true_A("trueA",3,3);
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        true_A(i,j) = A(i,j);
+    int_vec_type true_piv("trueipiv",3);
+    LO info;
+
+    lapack_type lapackOBJ;
+    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our factorization
+    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the two solutions
+    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_ARRAYS( ipiv, true_piv );
+
+    // Create a RHS
+    scalar_vec_type rhs("rhs",3);
+    rhs(0) = 100;
+    rhs(1) = 200;
+    rhs(2) = 300;
+
+    scalar_vec_type true_rhs("truerhs",3,1);
+    for(int i=0; i<3; i++)
+      true_rhs(i) = rhs(i);
+
+    // Compute the true solution
+    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
+        true_rhs.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our solution
+    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the solutions
+    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+
+    // Compute the inverse
+    scalar_vec_type work("work",3);
+    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute the true inverse
+    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the inverses
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+  }
+
+
+  // This example tests the factorization routine with a matrix
+  // that requires partial pivoting
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, FactorPivot, ST, LO )
+  {
+    using Teuchos::Array;
+    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
+    typedef typename device_type::execution_space execution_space;
+    typedef Teuchos::LAPACK<LO, ST> lapack_type;
+    typedef Kokkos::View<ST**, Kokkos::LayoutLeft, device_type> block_type;
+    typedef Kokkos::View<LO*, device_type> int_vec_type;
+    typedef Kokkos::View<ST*, device_type> scalar_vec_type;
+
+    // Tpetra's Node does the right thing with respect to
+    // Kokkos::initialize etc.
+    typename Tpetra::Vector<ST, LO>::node_type node;
+    (void) node;
+    TEST_ASSERT( execution_space::is_initialized () );
+    if (! execution_space::is_initialized ()) {
+      return; // don't bother to continue
+    }
+
+    // Create a matrix
+    block_type A("A",3,3);
+    A(2,0) = 10;
+    A(2,1) = 2;
+    A(2,2) = 3;
+    A(0,0) = 4;
+    A(0,1) = 20;
+    A(0,2) = 5;
+    A(1,0) = 6;
+    A(1,1) = 7;
+    A(1,2) = 30;
+
+    // Create the pivot vector
+    int_vec_type ipiv("ipiv",3);
+
+    // Compute the true factorization
+    block_type true_A("trueA",3,3);
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        true_A(i,j) = A(i,j);
+    int_vec_type true_piv("trueipiv",3);
+    LO info;
+
+    lapack_type lapackOBJ;
+    lapackOBJ.GETRF(3,3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our factorization
+    Tpetra::Experimental::GETF2<block_type,int_vec_type>(A,ipiv,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the two solutions
+    Teuchos::ArrayView<ST> ptr1(A.ptr_on_device(),9);
+    Teuchos::ArrayView<ST> ptr2(true_A.ptr_on_device(),9);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+    TEST_COMPARE_ARRAYS( ipiv, true_piv );
+
+    // Create a RHS
+    scalar_vec_type rhs("rhs",3);
+    rhs(0) = 100;
+    rhs(1) = 200;
+    rhs(2) = 300;
+
+    scalar_vec_type true_rhs("truerhs",3,1);
+    for(int i=0; i<3; i++)
+      true_rhs(i) = rhs(i);
+
+    // Compute the true solution
+    lapackOBJ.GETRS('n',3,1,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),
+        true_rhs.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute our solution
+    Tpetra::Experimental::GETRS<block_type,int_vec_type,scalar_vec_type>("n",A,ipiv,rhs,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the solutions
+    Teuchos::ArrayView<ST> ptr3(rhs.ptr_on_device(),3);
+    Teuchos::ArrayView<ST> ptr4(true_rhs.ptr_on_device(),3);
+    TEST_COMPARE_FLOATING_ARRAYS( ptr3, ptr4, 1e-10 );
+
+    // Compute the inverse
+    scalar_vec_type work("work",3);
+    Tpetra::Experimental::GETRI<block_type,int_vec_type,scalar_vec_type>(A,ipiv,work,info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compute the true inverse
+    lapackOBJ.GETRI(3,true_A.ptr_on_device(),3,true_piv.ptr_on_device(),work.ptr_on_device(),3,&info);
+    TEST_EQUALITY_CONST( info, 0 );
+
+    // Compare the inverses
+    TEST_COMPARE_FLOATING_ARRAYS( ptr1, ptr2, 1e-10 );
+  }
+
+
   // Test small dense block LU factorization and solve, with an easy
   // problem (the identity matrix).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SolveIdentity, ST, LO )
   {
     typedef Tpetra::Experimental::LittleBlock<ST, LO> block_type;
     typedef Tpetra::Experimental::LittleVector<ST, LO> vec_type;
+    typedef Tpetra::Experimental::LittleVector<int, LO> piv_type;
     const ST zero = static_cast<ST> (0.0);
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
@@ -89,24 +324,23 @@ namespace {
       vec_type x (x_view.getRawPtr (), blockSize, 1);
       Teuchos::ArrayView<ST> b_view = vecPool (blockSize, blockSize);
       vec_type b (b_view.getRawPtr (), blockSize, 1);
-      Teuchos::ArrayView<int> ipiv = ipivPool (0, blockSize);
+      piv_type ipiv (ipivPool.getRawPtr (), blockSize, 1);
 
-      A.fill (zero);
+      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
         b(i) = static_cast<ST> (i + 1);
         x(i) = b(i); // copy of right-hand side on input
-        ipiv[i] = 0;
+        ipiv(i) = 0;
       }
 
       int info = 0;
       std::cerr << "Factor A for blockSize = " << blockSize << std::endl;
-      A.factorize (ipiv.getRawPtr (), info);
-
+      Tpetra::Experimental::GETF2 (A, ipiv, info);
       TEST_EQUALITY_CONST( info, 0 );
       if (info == 0) {
         std::cerr << "Solve: blockSize = " << blockSize << std::endl;
-        A.solve (x, ipiv.getRawPtr ());
+        Tpetra::Experimental::GETRS ("N", A, ipiv, x, info);
       }
       std::cerr << "Done with factor and solve" << std::endl;
 
@@ -134,7 +368,7 @@ namespace {
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
     const LO maxBlockSize = 32;
 
-    typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+    typename GetLapackType<ST>::lapack_type lapack;
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -152,7 +386,7 @@ namespace {
                     blockSize, 1, blockSize);
 
       // Fill A with the identity matrix.
-      A.fill (zero);
+      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
       }
@@ -224,7 +458,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+      typename GetLapackType<ST>::lapack_type lapack;
       // Rough tolerance for rounding errors.  LAPY2 uses a different
       // formula, so I expect it to commit different rounding error.
       const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
@@ -277,7 +511,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+      typename GetLapackType<ST>::lapack_type lapack;
 
       const ST zero = Teuchos::ScalarTraits<ST>::zero ();
       const ST one = Teuchos::ScalarTraits<ST>::one ();
@@ -305,23 +539,282 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SCAL, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const IST six = three + three;
+    const IST ten = five + five;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (2 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (2 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // A1 == A2 and x1 == x2.  We will use SCAL on A1 and x1, and
+      // use conventional loops on A2 and x2, then compare the
+      // results.  The numbers are small enough that the test need not
+      // worry about rounding error.  We use a different value for
+      // each entry, in order to catch possible layout bugs (e.g.,
+      // mixing up the strides).
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        curVecVal += one;
+      }
+
+      Tpetra::Experimental::SCAL (two, A1);
+      Tpetra::Experimental::SCAL (three, x1);
+
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A2(i,j) *= two;
+        }
+        x2(j) *= three;
+      }
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A1(i,j) != A2(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x1(j) != x2(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, COPY, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const IST six = three + three;
+    const IST ten = five + five;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (3 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (3 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // A1 == A2 and x1 == x2.  We will use COPY to copy A1 into A3
+      // and x1 into A3, then compare the result against A2 resp. x2.
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          A3(i,j) = zero;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        x3(j) = zero;
+        curVecVal += one;
+      }
+
+      Tpetra::Experimental::COPY (A1, A3);
+      Tpetra::Experimental::COPY (x1, x3);
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A2(i,j) != A3(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x2(j) != x3(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, AXPY, ST, LO )
+  {
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+
+    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
+    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
+    const IST two = one + one;
+    const IST three = two + one;
+    const IST five = three + two;
+    const LO minBlkSize = 1; // 1x1 "blks" should also work
+    const LO maxBlkSize = 32;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<IST> blkPool (4 * maxBlkSize * maxBlkSize);
+    // Memory pool for the LittleVector instances.
+    Teuchos::Array<IST> vecPool (4 * maxBlkSize);
+
+    for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      blk_type A4 (blkPool (3*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
+                   blkSize, 1, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+      vec_type x4 (vecPool (3*blkSize, blkSize).getRawPtr (),
+                   blkSize, 1);
+
+      // Compare AXPY(alpha, A1, A3) and AXPY(alpha, x1, x3) with the
+      // manual equivalent of AXPY(alpha, A2, A4) resp. AXPY(alpha,
+      // x2, x4).
+      IST curVecVal = one;
+      IST curBlkVal = one;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A1(i,j) = curBlkVal;
+          A2(i,j) = curBlkVal;
+          A3(i,j) = three; // just something different
+          A4(i,j) = three;
+          curBlkVal += one;
+        }
+        x1(j) = curVecVal;
+        x2(j) = curVecVal;
+        x3(j) = three; // just something different
+        x4(j) = three; // just something different
+        curVecVal += one;
+      }
+
+      const IST alpha = five;
+
+      Tpetra::Experimental::AXPY (alpha, A1, A3); // A3 := A3 + alpha*A1
+      Tpetra::Experimental::AXPY (alpha, x1, x3); // x3 := x3 + alpha*x1
+
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          A4(i,j) = A4(i,j) + alpha * A2(i,j);
+        }
+        x4(j) = x4(j) + alpha * x2(j);
+      }
+
+      bool blksEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        for (LO i = 0; i < blkSize; ++i) {
+          if (A3(i,j) != A4(i,j)) {
+            blksEq = false;
+            break;
+          }
+        }
+      }
+      TEST_ASSERT( blksEq );
+
+      bool vecsEq = true;
+      for (LO j = 0; j < blkSize; ++j) {
+        if (x3(j) != x4(j)) {
+          vecsEq = false;
+          break;
+        }
+      }
+      TEST_ASSERT( vecsEq );
+    }
+  }
+
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LOCAL_ORDINAL ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, Factor, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, FactorPivot, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SCAL, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, COPY, SCALAR, LOCAL_ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, AXPY, SCALAR, LOCAL_ORDINAL )
 
 #define UNIT_TEST_GROUP2( SCALAR ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LAPY2, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LARFGP, SCALAR )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  //
   // FIXME (mfh 17 Sep 2015) Fails for __float128!
   //
-  //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
   // FIXME (mfh 17 Sep 2015) Define ETI / test macros for real Scalar
   // types only.  Note that in LAPACK, _LAPY2 only exists for _ = S, D

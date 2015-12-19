@@ -36,7 +36,8 @@
 #ifndef FORTYP_H
 #define FORTYP_H
 
-typedef long    f_integer;
+/* typedef long    f_integer; */
+typedef int     f_integer;
 typedef float   f_real;
 
 #endif

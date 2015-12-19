@@ -31,6 +31,13 @@
         integer EX_MAPS_INT64_API
         integer EX_IDS_INT64_API,EX_BULK_INT64_API,EX_ALL_INT64_API
 
+        integer EX_OPT_MAX_NAME_LENGTH
+        integer EX_OPT_COMPRESSION_TYPE
+        integer EX_OPT_COMPRESSION_LEVEL
+        integer EX_OPT_COMPRESSION_SHUFFLE
+        integer EX_OPT_INTEGER_SIZE_API
+        integer EX_OPT_INTEGER_SIZE_DB
+
         parameter (EXWRIT =     1)   !       EXWRIT - File open for write
         parameter (EXWRT  =     1)   !       EXWRT  - File open for write (alternate to EXWRIT)
         parameter (EXREAD =     2)   !       EXREAD - File open for read
@@ -70,6 +77,14 @@
         parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data (local indices, counts, maps); not ids
         parameter (EX_ALL_INT64_API =  8192+16384+32768) ! All of the above...
 
+!
+!  -- For EXSETOPT Calls
+        parameter (EX_OPT_MAX_NAME_LENGTH = 1)
+        parameter (EX_OPT_COMPRESSION_TYPE = 2)    !Currently not used. GZip by default
+        parameter (EX_OPT_COMPRESSION_LEVEL = 3)   ! 0 (disabled/fastest) ... 9 (best/slowest)
+        parameter (EX_OPT_COMPRESSION_SHUFFLE = 4) ! 0 (disabled); 1 (enabled)
+        parameter (EX_OPT_INTEGER_SIZE_API = 5)    ! See *_INT64_* values above
+        parameter (EX_OPT_INTEGER_SIZE_DB  = 6)    ! (query only)
 !
 !  --INQUIRE FLAGS
       integer EXTYPE, EXVERS, EXDBVR, EXTITL, EXDIM, EXNODE

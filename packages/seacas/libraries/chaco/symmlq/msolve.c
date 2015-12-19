@@ -39,33 +39,14 @@
 #include "structs.h"
 
 int 
-msolve_ (long *lnvtxs, double *x, double *y, double *dA, double *vwsqrt, double *work)
+msolve_ (int nvtxs, double *x, double *y)
 {
-    struct vtx_data **A;
-    int       nvtxs;
-    int       i;
+  int i;
 
-    A = (struct vtx_data **) dA;
-    nvtxs = (int) *lnvtxs;
+  /* Just do a copy for now. */
+  for (i = 0; i < nvtxs; i++) {
+    y[i] = x[i];
+  }
 
-    /* to placate alint */
-    A = A;
-    vwsqrt = vwsqrt;
-
-    /* Offset arrays for our C numbering. */
-    x -= 1;
-    y -= 1;
-    work -= 1;
-
-    /* Just do a copy for now. */
-    for (i = nvtxs; i; i--) {
-	y[i] = x[i];
-    }
-
-    /* Restore arrays to Fortran numbering. */
-    x -= 1;
-    y -= 1;
-    work -= 1;
-
-    return (0);
+  return (0);
 }

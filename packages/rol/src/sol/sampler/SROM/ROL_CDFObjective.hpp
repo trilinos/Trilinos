@@ -63,7 +63,7 @@ private:
   std::vector<Teuchos::RCP<Distribution<Real> > > dist_;
   std::vector<Real> lowerBound_;
   std::vector<Real> upperBound_;
-  size_t dimension_;
+  int dimension_;
 
   const Real scale_;
   const Real sqrt2_;
@@ -76,7 +76,7 @@ private:
   std::vector<Real> wts_;
 
   // Number of quadrature points
-  size_t numPoints_;
+  int numPoints_;
 
   void initializeQuadrature(void) {
     numPoints_ = 20;
@@ -102,13 +102,13 @@ private:
     wts_[17] = 0.0406014298003869; pts_[17] =  0.9639719272779138;
     wts_[18] = 0.0176140071391521; pts_[18] = -0.9931285991850949;
     wts_[19] = 0.0176140071391521; pts_[19] =  0.9931285991850949;
-    for (size_t i = 0; i < numPoints_; i++) {
+    for (int i = 0; i < numPoints_; i++) {
       wts_[i] *= 0.5;
       pts_[i] += 1.; pts_[i] *= 0.5;
     }
   }
 
-  Real valueCDF(const size_t dim, const Real loc,
+  Real valueCDF(const int dim, const Real loc,
                 const ProbabilityVector<Real> &prob,
                 const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
@@ -123,7 +123,7 @@ private:
   }
 
   Real gradientCDF(std::vector<Real> &gradx, std::vector<Real> &gradp,
-             const size_t dim, const Real loc,
+             const int dim, const Real loc,
              const ProbabilityVector<Real> &prob,
              const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
@@ -144,7 +144,7 @@ private:
   Real hessVecCDF(std::vector<Real> &hvxx, std::vector<Real> &hvxp, std::vector<Real> &hvpx,
                   std::vector<Real> &gradx, std::vector<Real> &gradp,
                   Real &sumx, Real &sump,
-            const size_t dim, const Real loc,
+            const int dim, const Real loc,
              const ProbabilityVector<Real> &prob,
              const AtomVector<Real>        &atom,
              const ProbabilityVector<Real> &vprob,
@@ -185,7 +185,7 @@ public:
       optProb_(optProb), optAtom_(optAtom) {
     lowerBound_.resize(dimension_,0.0);
     upperBound_.resize(dimension_,0.0);
-    for ( size_t i = 0; i < dimension_; i++ ) {
+    for ( int i = 0; i < dimension_; i++ ) {
       lowerBound_[i] = dist[i]->lowerBound();
       upperBound_[i] = dist[i]->upperBound();
     }
@@ -197,10 +197,10 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     Real val = 0., diff = 0., pt = 0., wt = 0., meas = 0., lb = 0.;
-    for (size_t d = 0; d < dimension_; d++) {
+    for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
-      for (size_t k = 0; k < numPoints_; k++) {
+      for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
         diff = (valueCDF(d,pt,prob,atom)-dist_[d]->evaluateCDF(pt));
@@ -220,10 +220,10 @@ public:
     Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0.;
     std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension_; d++) {
+    for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
-      for (size_t k = 0; k < numPoints_; k++) {
+      for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
         val = gradientCDF(gradx,gradp,d,pt,prob,atom);
@@ -261,10 +261,10 @@ public:
     Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0., sumx = 0., sump = 0.;
     std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension_; d++) {
+    for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
-      for (size_t k = 0; k < numPoints_; k++) {
+      for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
         val = hessVecCDF(hvxx,hvxp,hvpx,gradx,gradp,sumx,sump,d,pt,prob,atom,vprob,vatom);

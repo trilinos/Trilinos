@@ -753,7 +753,8 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
   os << print_table;
   
   double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
-  printTimeToPrintTable(os, durationToPrintTable);
+  if (parallel_machine_rank(parallel_machine) == 0)
+    printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
 

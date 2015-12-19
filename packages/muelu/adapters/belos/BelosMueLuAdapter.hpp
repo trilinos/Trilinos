@@ -70,9 +70,10 @@ namespace Belos {
   /** \brief MueLuOpFailure is thrown when a return value from an MueLu
    * call on an Xpetra::Operator or MueLu::Hierarchy is non-zero.
    */
-  class MueLuOpFailure : public BelosError {public:
-    MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class MueLuOpFailure : public BelosError {
+  public:
+    MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
 
   //TODO: doc
   template <class Scalar,
@@ -127,6 +128,7 @@ namespace Belos {
       if (!Hierarchy_.is_null())
         Hierarchy_->Iterate(x, y, 1, true);
     }
+    //@}
 
 #ifdef HAVE_MUELU_TPETRA
     // TO SKIP THE TRAIT IMPLEMENTATION OF XPETRA::MULTIVECTOR
@@ -166,20 +168,21 @@ namespace Belos {
   };
 
   template <>
-  class MueLuOp<double, int, int> :
-    public OperatorT<Xpetra::MultiVector<double, int, int> >
+  class MueLuOp<double, int, int, Xpetra::EpetraNode> :
+    public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #ifdef HAVE_MUELU_TPETRA
-    , public OperatorT<Tpetra::MultiVector<double, int, int> >
+    // FIXME: guard
+    , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #endif
 #ifdef HAVE_MUELU_EPETRA
     , public OperatorT<Epetra_MultiVector>
     , public Belos::Operator<double>
 #endif
   {
-    typedef double                                                          Scalar;
-    typedef int                                                             LocalOrdinal;
-    typedef int                                                             GlobalOrdinal;
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type  Node;
+    typedef double             Scalar;
+    typedef int                LocalOrdinal;
+    typedef int                GlobalOrdinal;
+    typedef Xpetra::EpetraNode Node;
 
   public:
 

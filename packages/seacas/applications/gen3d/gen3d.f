@@ -446,6 +446,11 @@ C   --Open the output database
          call exerr('grepos', 'Error from excre', ierr)
          go to 50
       endif
+      if (l64bit) then
+C ... Compress the output
+        call exsetopt(ndbout, EX_OPT_COMPRESSION_LEVEL, 1, ierr)
+        call exsetopt(ndbout, EX_OPT_COMPRESSION_SHUFFLE, 1, ierr)
+      end if
 
 C   --Write the QA records
       CALL DBOQA (NDBOUT, QAINFO, NQAREC, c(kqarec),

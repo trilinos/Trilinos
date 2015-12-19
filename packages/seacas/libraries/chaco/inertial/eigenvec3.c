@@ -49,7 +49,7 @@ ch_evals3 (
     double *eval3		/* largest eigenvalue */
 )
 {
-    double    mat[3][3];	/* scaled version of H */
+    double    mat[3][3] = {{0.0}};	/* scaled version of H */
     double    a1, a2, a3;	/* coefficents of cubic equation */
     double    q, r;		/* intermediate terms */
     double    q3, r2;		/* powers of q and r */

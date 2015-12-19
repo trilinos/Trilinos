@@ -42,6 +42,6 @@ C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
       QAINFO(1) = 'Gen3DII                         '
       QAINFO(2) = '                                '
       QAINFO(3) = '                                '
-      QAINFO(2)(:8) = '20150928'
-      QAINFO(3)(:8) = ' 1.39   '
+      QAINFO(2)(:8) = '20151103'
+      QAINFO(3)(:8) = ' 1.40   '
       

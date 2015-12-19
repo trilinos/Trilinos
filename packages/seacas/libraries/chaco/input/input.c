@@ -82,7 +82,7 @@ input_queries (
     while (*fin == NULL) {
 	if (PROMPT)
 	    printf("Graph input file: ");
-	scanf("%s", inname);
+	(void)scanf("%s", inname);
 
 	*fin = fopen(inname, "r");
 	if (*fin == NULL) {
@@ -94,14 +94,14 @@ input_queries (
     if (OUTPUT_ASSIGN && !SEQUENCE) {
 	if (PROMPT)
 	    printf("Assignment output file: ");
-	scanf("%s", outassignname);
+	(void)scanf("%s", outassignname);
     }
 
     /* Name output results file. */
     if (ECHO < 0) {
 	if (PROMPT)
 	    printf("File name for saving run results: ");
-	scanf("%s", outfilename);
+	(void)scanf("%s", outfilename);
     }
 
     /* Initialize the method flags */
@@ -134,7 +134,7 @@ input_queries (
 	while (*finassign == NULL) {
 	    if (PROMPT)
 		printf("Assignment input file: ");
-	    scanf("%s", inassignname);
+	    (void)scanf("%s", inassignname);
 
 	    *finassign = fopen(inassignname, "r");
 	    if (*finassign == NULL) {
@@ -147,7 +147,7 @@ input_queries (
 	while (*fingeom == NULL) {
 	    if (PROMPT)
 		printf("Geometry input file name: ");
-	    scanf("%s", geomname);
+	    (void)scanf("%s", geomname);
 
 	    *fingeom = fopen(geomname, "r");
 	    if (*fingeom == NULL) {
@@ -170,7 +170,7 @@ input_queries (
                 while (*fingeom == NULL) {
                     if (PROMPT)
                         printf("Geometry input file name: ");
-                    scanf("%s", geomname);
+                    (void)scanf("%s", geomname);
  
                     *fingeom = fopen(geomname, "r");
                     if (*fingeom == NULL) {
@@ -192,7 +192,7 @@ input_queries (
             while (*fingeom == NULL) {
                 if (PROMPT)
                     printf("Geometry input file name: ");
-                scanf("%s", geomname);
+                (void)scanf("%s", geomname);
  
                 *fingeom = fopen(geomname, "r");
                 if (*fingeom == NULL) {

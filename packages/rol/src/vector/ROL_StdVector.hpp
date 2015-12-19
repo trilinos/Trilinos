@@ -70,12 +70,22 @@ public:
   StdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
 
   void set( const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     std::copy(xval.begin(),xval.end(),std_vec_->begin());   
   }
 
   void plus( const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
@@ -85,6 +95,11 @@ public:
   }
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
@@ -101,6 +116,11 @@ public:
   }
 
   virtual Real dot( const Vector<Real> &x ) const {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();
@@ -130,6 +150,11 @@ public:
   }
 
   Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+                                std::invalid_argument,
+                                "Error: Basis index must be between 0 and vector dimension." );
+
     Teuchos::RCP<StdVector> e = Teuchos::rcp( new StdVector( Teuchos::rcp(new std::vector<Element>(std_vec_->size(), 0.0)) ));
     (*e->getVector())[i] = 1.0;
     return e;
@@ -147,6 +172,11 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
+
+    TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same dimension." );
+
     const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
     const std::vector<Element>& xval = *ex.getVector();
     uint dim  = std_vec_->size();

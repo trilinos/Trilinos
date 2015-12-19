@@ -115,3 +115,6 @@
 
 /* Define if Thyra is enabled */
 #cmakedefine HAVE_STOKHOS_THYRA
+
+/* Define if reductions across ensembles are enabled */
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_REDUCT

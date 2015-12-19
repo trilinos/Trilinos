@@ -8,6 +8,7 @@
 #include "basker_types.hpp"
 #include "basker_structs.hpp"
 #include "basker_thread.hpp"
+#include "basker_scalar_traits.hpp"
 
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
@@ -31,6 +32,8 @@ namespace BaskerNS
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
     #endif
+
+    typedef Basker_ScalarTraits<Entry>        EntryOP;
 
     //Options
     basker_options<Int,Entry,Exe_Space> Options;
@@ -65,6 +68,8 @@ namespace BaskerNS
     BASKER_INLINE
     int Solve(Entry *b, Entry *x);
     BASKER_INLINE
+    int Solve(Int nrhs, Entry *b, Entry *x);
+    BASKER_INLINE
     int Solve(ENTRY_1DARRAY b, ENTRY_1DARRAY x);
     BASKER_INLINE
     int Solve(Int nrhs, Entry *b, Entry *x, Int option);
@@ -96,6 +101,10 @@ namespace BaskerNS
     int KokkosPlay();
     BASKER_INLINE
     void DEBUG_PRINT();
+    
+    BASKER_INLINE
+    void Finalize();
+
  
     BASKER_INLINE
     int t_nfactor_blk(Int kid);
@@ -147,17 +156,15 @@ namespace BaskerNS
     INT_1DARRAY   btf_tabs; 
     Int           btf_tabs_offset;
     Int           btf_nblks;
-    INT_2DARRAY   btf_ws;
-    ENTRY_2DARRAY btf_X;
 
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
-    INT_2DARRAY   btf_top_ws;
-    ENTRY_2DARRAY btf_top_X;
 
 
-
-    
+    //These are temp arrys that are used for ordering and sfator
+    INT_1DARRAY btf_blk_work;
+    INT_1DARRAY btf_blk_nnz;
+ 
   private:
 
     /*basker_tree*/
@@ -211,6 +218,8 @@ namespace BaskerNS
 		    Int *tree_tabs);
     BASKER_INLINE
     int btf_order();
+    BASKER_INLINE
+    int btf_order2();
     BASKER_INLINE
     int partition(int option);
     BASKER_INLINE
@@ -277,6 +286,8 @@ namespace BaskerNS
     BASKER_INLINE
     int find_btf(BASKER_MATRIX &M);
     BASKER_INLINE
+    int find_btf2(BASKER_MATRIX &M);
+    BASKER_INLINE
     int break_into_parts(BASKER_MATRIX &M,
 			 Int nblks,
 			 INT_1DARRAY btf_tabs);
@@ -313,6 +324,8 @@ namespace BaskerNS
 		Int ata_option);
     BASKER_INLINE
     int sfactor_copy();
+    BASKER_INLINE
+    int sfactor_copy2();
 
 
     //old
@@ -741,6 +754,12 @@ namespace BaskerNS
     void printVec(INT_1DARRAY, Int);
     BASKER_INLINE
     void printVec(ENTRY_1DARRAY, Int);
+    BASKER_INLINE
+    void printVec(std::string, INT_1DARRAY, Int);
+    BASKER_INLINE
+    void printVec(std::string, ENTRY_1DARRAY, Int);
+
+
     //inline
     //Int t_get_kid(const TeamMember &thread);
 
@@ -761,6 +780,8 @@ namespace BaskerNS
     int test_solve();
     BASKER_INLINE
     int solve_interface(Entry *, Entry*);
+    BASKER_INLINE
+    int solve_interface(Int, Entry *, Entry*);
     BASKER_INLINE
     int solve_interface(ENTRY_1DARRAY, ENTRY_1DARRAY);
     BASKER_INLINE
@@ -852,16 +873,14 @@ namespace BaskerNS
     INT_1DARRAY gperm; 
     INT_1DARRAY gpermi;
 
-    //RHS and solutions
+    //RHS and solutions (These are not used anymore)
     ENTRY_2DARRAY rhs;
     ENTRY_2DARRAY sol;
     Int nrhs;
 
     
     BASKER_TREE   part_tree;
-    //basker_tree<Int, Entry, Exe_Space> tree;
     BASKER_TREE   tree;
-    //basker_symbolic_tree<Int, Entry, Exe_Space> stree;
     BASKER_SYMBOLIC_TREE stree;
 
     BASKER_STATS stats;
@@ -884,8 +903,10 @@ namespace BaskerNS
     Int num_threads;
     Int global_nnz;
 
+
+    //Don't think we use this anymore
     //Post ordering for symmetric
-    INT_1DARRAY perm_post_order;
+    //INT_1DARRAY perm_post_order;
 
     BaskerPointBarrier<Int,Entry,Exe_Space> basker_barrier;
 
@@ -904,36 +925,20 @@ namespace BaskerNS
     INT_1DARRAY order_btf_array;
     INT_1DARRAY order_scotch_array;
     INT_1DARRAY order_csym_array;
+    INT_1DARRAY order_c_csym_array;
+    //for experimental 
+    INT_1DARRAY order_blk_amd_array;
 
 
+    void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
+    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p,
+		     INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
 
     //basker_order_amd
     void amd_order(BASKER_MATRIX &M,INT_1DARRAY p);
     
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
-
-
-
-    /*
-    int my_amesos_csymamd(Int n , Int *Ap, Int *Ai, Int *p, Int *cmember);
-    */
-
-
-    /*
-    int amesos_amd(Int n, Int *Ap, Int *Ai,
-		   Int *p, double *Control, 
-		   double *Info);
-    */
-
-    /*
-    int amesos_colamd(Int n_row, Int n_col,
-		      Int Alen, 
-		      Int *A, Int *p,
-		      double *knobs,
-		      Int *stats);
-    */
-
 
 
   };

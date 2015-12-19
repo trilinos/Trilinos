@@ -61,9 +61,6 @@
 // Examples headers:
 
 #include <BoxElemFixture.hpp>
-#include <CGSolve.hpp>
-#include <BelosSolve.hpp>
-
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
 #include <Kokkos_DefaultNode.hpp>
@@ -71,6 +68,8 @@
 #include <Tpetra_Vector.hpp>
 #include "Tpetra_MultiVector.hpp"
 
+#include <CGSolve.hpp>
+#include <BelosSolve.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -459,8 +458,8 @@ public:
 
         const Magnitude residual_norm = g_nodal_residual.norm2();
 
-        perf.newton_residual = residual_norm ;
-        perf.error_max = residual_norm ;
+        perf.newton_residual = scalar_norm(residual_norm) ;
+        perf.error_max = scalar_norm(residual_norm) ;
 
         if ( 0 == perf.newton_iter_count ) {
           residual_norm_init = residual_norm ;
@@ -514,7 +513,7 @@ public:
         //--------------------------------
 
         if ( print_flag ) {
-          const double delta_norm = g_nodal_delta.norm2();
+          const Magnitude delta_norm = g_nodal_delta.norm2();
 
           std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                     << " residual[" << perf.newton_residual << "]"

@@ -58,7 +58,7 @@
 #include <Xpetra_TpetraVector.hpp>
 #include <Tpetra_Vector.hpp>
 
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraVector.hpp>
 #include <Xpetra_EpetraUtils.hpp>
@@ -193,7 +193,7 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 // Epetra_CrsMatrix
 template <>
 struct XpetraTraits<Epetra_CrsMatrix>
@@ -317,9 +317,9 @@ struct XpetraTraits<Xpetra::CrsMatrix<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-#ifdef HAVE_ZOLTAN_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
       typedef Epetra_CrsMatrix e_matrix_t;
-      typedef Xpetra::EpetraCrsMatrix xe_matrix_t;
+      typedef Xpetra::EpetraCrsMatrixT<gno_t,node_t> xe_matrix_t;
       // Do the import with the Epetra_CrsMatrix traits object
       const xe_matrix_t *xem = dynamic_cast<const xe_matrix_t *>(&from);
       RCP<const e_matrix_t> em = xem->getEpetra_CrsMatrix();
@@ -426,7 +426,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 // Epetra_CrsGraph
 template < >
 struct XpetraTraits<Epetra_CrsGraph>
@@ -586,7 +586,7 @@ struct XpetraTraits<Xpetra::CrsGraph<int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
       typedef Xpetra::EpetraCrsGraphT<gno_t,node_t> xe_graph_t;
       typedef Epetra_CrsGraph e_graph_t;
       // Do the import with the Epetra_CrsGraph traits object
@@ -664,7 +664,7 @@ struct XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 // Epetra_Vector
 template < >
 struct XpetraTraits<Epetra_Vector>
@@ -770,7 +770,7 @@ struct XpetraTraits<Xpetra::Vector<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
       typedef Epetra_Vector e_vector_t;
       typedef Xpetra::EpetraVectorT<gno_t,node_t> xe_vector_t;
       // Do the import with the Epetra_Vector traits object
@@ -848,7 +848,7 @@ struct XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
 };
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 // Epetra_MultiVector
 template < >
 struct XpetraTraits<Epetra_MultiVector>
@@ -955,7 +955,7 @@ struct XpetraTraits<Xpetra::MultiVector<double, int, int, node_t> >
     Xpetra::UnderlyingLib lib = from.getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
       typedef Epetra_MultiVector e_mvector_t;
       typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
       // Do the import with the Epetra_MultiVector traits object

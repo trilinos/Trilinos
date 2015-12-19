@@ -94,7 +94,7 @@ public:
   }
 
   int getNumMyAtoms(void) const {
-    return StdVector<Real>::dimension();
+    return (int)numMySamples_;
   }
 };
 

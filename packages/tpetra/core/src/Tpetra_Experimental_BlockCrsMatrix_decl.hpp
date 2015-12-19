@@ -340,21 +340,36 @@ public:
                             const int numSweeps,
                             const bool zeroInitialGuess) const;
 
-
-  /// \brief Local Gauss-Seidel solve given a factorized diagonal
+  /// \brief Local Gauss-Seidel solve, given a factorized diagonal
   ///
-  /// This method computes the smoothing of A*X = B, where A is *this
-  /// (the block matrix), B is the residual and X is the approximate solution. It
-  /// requires a factorized diagonal and pivots (partial pivoting in LAPACK coming
-  /// from GETRF) to be passed in. It takes an SOR relaxation factor. Valid
-  /// sweep directions are Forward, Backward, or Symmetric.
+  /// \param Residual [in] The "residual" (right-hand side) block
+  ///   (multi)vector
+  /// \param Solution [in/out] On input: the initial guess / current
+  ///   approximate solution.  On output: the new approximate
+  ///   solution.
+  /// \param factoredDiagonal [in] Block diagonal, whose blocks have
+  ///   been factored using LU with partial pivoting, and have the
+  ///   same format as that produced by LAPACK's _GETRF routine.
+  /// \param factorizationPivots [in] Pivots from the block
+  ///   factorizations
+  /// \param omega [in] (S)SOR relaxation coefficient
+  /// \param direction [in] Forward, Backward, or Symmetric.
+  ///
+  /// One may access block i in \c factoredDiagonal using the
+  /// following code:
+  /// \code
+  /// auto D_ii = Kokkos::subview(factoredDiagonal, j, Kokkos::ALL(), Kokkos::ALL());
+  /// \endcode
+  /// The resulting block is b x b, where <tt>b = this->getBlockSize()</tt>.
   void
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
                           BlockMultiVector<Scalar, LO, GO, Node>& Solution,
-                          BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-                          const int * factorizationPivots,
-                          const Scalar omega,
-                          const ESweepDirection direction) const;
+                    const Kokkos::View<impl_scalar_type***, device_type,
+                          Kokkos::MemoryUnmanaged>& factoredDiagonal,
+                    const Kokkos::View<int**, device_type,
+                          Kokkos::MemoryUnmanaged>& factorizationPivots,
+                    const Scalar& omega,
+                    const ESweepDirection direction) const;
 
   /// \brief Replace values at the given (mesh, i.e., block) column
   ///   indices, in the given (mesh, i.e., block) row.
@@ -614,6 +629,23 @@ public:
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed
+  ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
+  ///
+  /// \param diag [out] On input: Must be preallocated, with
+  ///   dimensions at least (number of diagonal blocks on the calling
+  ///   process) x getBlockSize() x getBlockSize(). On output: the
+  ///   diagonal blocks.  Leftmost index is "which block," then the
+  ///   row index within a block, then the column index within a
+  ///   block.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  void
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const;
 
   //! Computes the DiagonalGraph
   void computeDiagonalGraph ();
@@ -885,6 +917,13 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
+
+  /// \c Block at the given local mesh row and relative (mesh) offset.
+  ///
+  /// Use this for 2-argument getLocalDiagCopy that writes to Kokkos::View.
+  const_little_block_type
+  getConstLocalBlockFromRelOffset (const LO lclMeshRow,
+                                   const size_t relMeshOffset) const;
 
 public:
   //! The communicator over which this matrix is distributed.

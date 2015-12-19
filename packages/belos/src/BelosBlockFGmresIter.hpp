@@ -775,7 +775,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
           sigma = blas.DOT (blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
           sigma += (*H_)(i,curDim+j);
           sigma *= beta[i];
-          blas.AXPY (blockSize_, -sigma, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
+          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
           (*H_)(i,curDim+j) -= sigma;
         }
 
@@ -809,7 +809,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
                             1, &(*z_)(curDim+j+1,i), 1);
           sigma += (*z_)(curDim+j,i);
           sigma *= beta[curDim+j];
-          blas.AXPY (blockSize_, -sigma, &(*H_)(curDim+j+1,curDim+j),
+          blas.AXPY (blockSize_, ScalarType(-sigma), &(*H_)(curDim+j+1,curDim+j),
                      1, &(*z_)(curDim+j+1,i), 1);
           (*z_)(curDim+j,i) -= sigma;
         }

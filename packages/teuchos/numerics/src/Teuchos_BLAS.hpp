@@ -323,7 +323,7 @@ namespace Teuchos
             ScalarType* db,
             ScalarType* c,
             ScalarType* s) const;
-    private:
+
       /// Return ABS(x) if y > 0 or y is +0, else -ABS(x) (if y is -0 or < 0).
       ///
       /// Note that SIGN respects IEEE 754 floating-point signed zero.

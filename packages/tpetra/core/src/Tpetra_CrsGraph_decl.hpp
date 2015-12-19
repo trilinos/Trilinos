@@ -2355,12 +2355,17 @@ namespace Tpetra {
                        device_type, Kokkos::MemoryUnmanaged>& colInds,
                      const size_t hint = 0) const;
 
+  public:
     /// \brief Get the local graph.
+    ///
+    /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
+    ///   IMPLEMENTATION DETAIL.  DO NOT CALL THIS FUNCTION!!!
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
     local_graph_type getLocalGraph () const;
 
+  protected:
     //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
     TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
 

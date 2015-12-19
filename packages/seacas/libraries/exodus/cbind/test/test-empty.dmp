@@ -1,0 +1,2 @@
+test.exo exoid = 65536
+after ex_get_init, error =   0

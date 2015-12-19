@@ -33,7 +33,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <assert.h>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <algorithm>

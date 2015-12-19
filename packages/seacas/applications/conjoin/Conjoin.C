@@ -963,6 +963,7 @@ namespace {
     for (int i=0; i < num_qa_records+1; i++) {
       for (int j=0; j < 4; j++) {
 	qaRecord[i].qa_record[0][j] = new char[MAX_STR_LENGTH+1];
+	qaRecord[i].qa_record[0][j][0] = '\0';
       }
     }
     if (num_qa_records) error += ex_get_qa(id, qaRecord[0].qa_record);
@@ -1635,8 +1636,9 @@ namespace {
 					   global_node);
 	  if (iter == global_node_map.end()) {
 	    NodeInfo n = global_node;
-	    std::cerr << n.id << "\t" << n.x << "\t" << n.y << "\t" << n.z << "\n";
-	    SMART_ASSERT(iter != global_node_map.end());
+	    std::cerr << "Bad Node in build_reverse_node_map: "
+		      << n.id << "\tat location: " << n.x << "\t" << n.y << "\t" << n.z << "\n";
+	    exit(EXIT_FAILURE);
 	  }
 	  cur_pos = iter;
 	}
@@ -1707,7 +1709,7 @@ namespace {
 
       // See if any of the variable names conflict with the status variable name...
       if (status != "NONE") {
-	for (size_t i=0; i < vars.count(OUT)-1; i++) {
+	for (size_t i=0; i < (size_t)vars.count(OUT)-1; i++) {
 	  if (case_compare(output_name_list[i], status) == 0) {
 	    // Error -- duplicate element variable names on output database.
 	    std::cerr << "\nERROR: A " << vars.label()
@@ -1730,6 +1732,7 @@ namespace {
 	int i = 0;
 	int ifld = 1;
 	std::cerr << "\t";
+	std::ios::fmtflags f(std::cerr.flags());
 	while (i < vars.count(OUT)) {
 	  std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
 	  if (++ifld > nfield && i < vars.count(OUT)) {
@@ -1738,7 +1741,7 @@ namespace {
 	  }
 	}
 	std::cerr << "\n\n";
-	std::cerr << std::right; // Reset back to what it was.
+	std::cerr.flags(f); // Reset back to what it was.
       }
 
       ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);
@@ -2195,7 +2198,11 @@ namespace {
 	  set.entry_list = NULL;
 	  set.extra_list = NULL;
 	  set.distribution_factor_list = NULL;
-	  ex_get_sets(id, 1, &set);
+	  int error = ex_get_sets(id, 1, &set);
+	  if (error != EX_NOERR) {
+	    std::cerr << "ERROR: Cannot get side set with id " << set.id << "\n";
+	    exit(EXIT_FAILURE);
+	  }
 
 	  sets[p][i].sideCount = set.num_entry;
 	  sets[p][i].dfCount = set.num_distribution_factor;

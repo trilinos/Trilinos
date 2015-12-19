@@ -36,6 +36,8 @@
 #include <stdio.h>                      // for sprintf, fprintf, printf, etc
 #include <stdlib.h>                     // for exit
 #include <string.h>                     // for strcat, strcpy, strlen, etc
+#include <sstream>
+#include <string>
 #include "ps_pario_const.h"             // for Parallel_IO, PIO_Info
 #include "rf_allo.h"                    // for array_alloc
 #include "rf_io_const.h"                // for Debug_Flag, MAX_FNL
@@ -51,6 +53,14 @@
           add_fname_ext()    void        gen_par_filename (pe_util.c)
 
 ******************************************************************************/
+namespace {
+  template <class T> static std::string to_string(const T & t)
+  {
+    std::ostringstream os;
+    os << t;
+    return os.str();
+  }
+}
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -105,8 +115,7 @@ void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[],
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void gen_par_filename(char *scalar_fname, char *par_fname,
-                      int proc_for, int nprocs)
+std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs)
 /*----------------------------------------------------------------------------
  *
  *      Author(s):     Gary Hennigan (1421)
@@ -142,7 +151,7 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
 
   int i1, iTemp1, ctrlID;
   int iMaxDigit=0, iMyDigit=0;
-  char cTemp[MAX_FNL];
+  std::string par_filename;
 
 /************************* EXECUTION BEGINS *******************************/
 
@@ -172,69 +181,53 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
    * Append the number of processors in this run to the scalar file name
    * along with a '.' (period).
    */
-  par_fname[0] = 0x00;
-  strcpy(par_fname, scalar_fname);
-  strcat(par_fname, ".");
-  sprintf(cTemp, "%d", nprocs);
-  strcat(par_fname, cTemp);
-  strcat(par_fname, ".");
+  par_filename = scalar_fname + std::string(".") + to_string(nprocs) +
+    std::string(".");
 
   /*
    * Append the proper number of zeros to the filename.
    */
   for(i1=0; i1 < iMaxDigit-iMyDigit; i1++)
-    strcat(par_fname, "0");
+    par_filename += std::string("0");
 
   /*
    * Generate the name of the directory on which the parallel disk
    * array resides. This also directs which processor writes to what
    * disk.
    */
-  sprintf(cTemp, "%d", proc_for);
-  strcat(par_fname, cTemp);
-  strcpy(cTemp, par_fname);
-
+  par_filename += to_string(proc_for);
 
   /*
    * Finally, generate the complete file specification for the parallel
    * file used by this processor.
    */
   if(PIO_Info.NoSubdirectory == 1) {
-    sprintf(par_fname, "%s%s%s",
-	    PIO_Info.Par_Dsk_Root, PIO_Info.Par_Dsk_SubDirec, cTemp);
+    par_filename = std::string(PIO_Info.Par_Dsk_Root) +
+      std::string(PIO_Info.Par_Dsk_SubDirec) + par_filename;
   } else {
     if(PIO_Info.Zeros) {
       ctrlID = PIO_Info.RDsk_List[proc_for][0];
       if(ctrlID <= 9) {
-	sprintf(par_fname, "%s%d%d/%s%s", PIO_Info.Par_Dsk_Root,0,
-		ctrlID, PIO_Info.Par_Dsk_SubDirec, cTemp);
+	par_filename = std::string(PIO_Info.Par_Dsk_Root) +
+	  "0" + to_string(ctrlID) + "/" + 
+	  std::string(PIO_Info.Par_Dsk_SubDirec) + par_filename;
       }
       else {
-	sprintf(par_fname, "%s%d/%s%s", PIO_Info.Par_Dsk_Root,
-		ctrlID, PIO_Info.Par_Dsk_SubDirec, cTemp);
+	par_filename = std::string(PIO_Info.Par_Dsk_Root) +
+	  to_string(ctrlID) + "/" + 
+	  std::string(PIO_Info.Par_Dsk_SubDirec) + par_filename;
       }
   }
     else {
       ctrlID = PIO_Info.RDsk_List[proc_for][0];
-      sprintf(par_fname, "%s%d/%s%s", PIO_Info.Par_Dsk_Root, ctrlID,
-	      PIO_Info.Par_Dsk_SubDirec, cTemp);
+      par_filename = std::string(PIO_Info.Par_Dsk_Root) + to_string(ctrlID) +
+	"/" + std::string(PIO_Info.Par_Dsk_SubDirec) + par_filename;
     }
   }
-/* not supporting ncubed right now ------>
-  else if(strcmp(PIO_Info.Targ_Machine,"ncube") == 0) {
-    diskID = proc_for % PIO_Info.Num_Dsks_PCtrlr;
-    ctrlID = (proc_for / PIO_Info.Num_Dsks_PCtrlr) % PIO_Info.Num_Dsk_Ctrlrs;
-    sprintf(par_fname, "%s%d%d/%s%s", PIO_Info.Par_Dsk_Root,
-            ctrlID, diskID+PIO_Info.PDsk_Add_Fact, PIO_Info.Par_Dsk_SubDirec,
-            cTemp);
-
-  }
-<-------------------*/
-
   if(Debug_Flag >= 4)
-    printf("Parallel file name: %s\n", par_fname);
+    printf("Parallel file name: %s\n", par_filename.c_str());
 
-  return;
+  return par_filename;
 }
 
 /*****************************************************************************/

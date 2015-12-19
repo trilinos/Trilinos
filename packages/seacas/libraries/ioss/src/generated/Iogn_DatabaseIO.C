@@ -193,6 +193,7 @@ namespace Iogn {
 
     get_step_times();
 
+    add_transient_fields(this_region);
     get_nodeblocks();
     get_elemblocks();
     get_nodesets();
@@ -265,10 +266,16 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int64_t DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
-                                         void */* data */, size_t /* data_size */) const
+  int64_t DatabaseIO::get_field_internal(const Ioss::Region* region,
+					 const Ioss::Field& field,
+					 void *data, size_t data_size) const
   {
-    return -1;
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::TRANSIENT) {
+      // Fill the field with arbitrary data...
+      ((double*)data)[0] = (double)rand();
+    }
+    return 1;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,

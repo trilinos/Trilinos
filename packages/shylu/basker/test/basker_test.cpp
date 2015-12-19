@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
   typedef void*          Exe_Space;
   #endif
     
-  //std::string fname = std::string(argv[1]);
+  std::string fname = std::string(argv[1]);
   //std::string rhsname = std::string(argv[2]);
   //Int numthreads = atoi(argv[3]);
 
-  std::string fname = "matrix1.mtx";
-  
-  Int numthreads = atoi(argv[1]);
+  //std::string fname = "matrix1.mtx";
+ 
+  Int numthreads = atoi(argv[2]);
 
   cout << "using " << numthreads << "threads" << endl;
 
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
   */
 
   //Before Init
-  {
+  //{
   int result = 0;
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
@@ -207,9 +207,10 @@ int main(int argc, char* argv[])
   mybasker.SolveTest();
   //mybasker.Solve(y,x);
   cout << "--------------Done Solve----------------------"<<endl;
-
-
-  }//After
+  mybasker.Finalize();
+  cout << "--------------Called Finalize-----------------"<<endl;
+ 
+  //}//After
   //Kokkos::fence();
 
   //#ifdef BASKER_KOKKOS

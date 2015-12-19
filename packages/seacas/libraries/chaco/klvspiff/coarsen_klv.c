@@ -100,8 +100,8 @@ coarsen_klv (
     float    *new_term_wgts[MAXSETS];	/* modified for Bui's method */
     float   **real_term_wgts;	/* which of previous two to use */
     float     ewgt_max;		/* largest edge weight in graph */
-    float    *twptr;		/* loops through term_wgts */
-    float    *twptr_save;	/* copy of twptr */
+    float    *twptr = NULL;	/* loops through term_wgts */
+    float    *twptr_save = NULL;/* copy of twptr */
     float    *ctwptr;		/* loops through cterm_wgts */
     float   **ccoords;		/* coarse graph coordinates */
     int      *v2cv;		/* mapping from vtxs to coarse vtxs */
@@ -131,138 +131,6 @@ coarsen_klv (
 
     /* Is problem small enough to solve? */
     if (nvtxs <= vmax || give_up) {
-
-	/* Starting here, everything could be replaced by simple partitioner */
-	/* coded w/ few lines below. */
-/*
-	if (using_vwgts) {
-	    vwsqrt = smalloc((nvtxs + 1) * sizeof(double));
-	    makevwsqrt(vwsqrt, graph, nvtxs);
-	}
-	else
-	    vwsqrt = NULL;
-*/
-	/* Create space for subgraph yvecs. */
-/*
-	for (i = 1; i <= ndims; i++) {
-	    yvecs[i] = smalloc((nvtxs + 1) * sizeof(double));
-	}
-
-	active = smalloc(nvtxs * sizeof(int));
-	if (mkconnected) {
-	    make_connected(graph, nvtxs, &nedges, (int *) &(yvecs[1][0]),
-			   active, &cdata, using_ewgts);
-	    if (DEBUG_CONNECTED > 0) {
-		printf("Enforcing connectivity on coarse graph\n");
-		print_connected(cdata);
-	    }
-	}
-*/
-	/* If not coarsening ewgts, then need care with term_wgts. */
-/*
-	if (!using_ewgts && term_wgts[1] != NULL && step != 0) {
-	    twptr = smalloc((nvtxs + 1) * (nsets - 1) * sizeof(float));
-	    twptr_save = twptr;
-	    for (j = 1; j < nsets; j++) {
-		new_term_wgts[j] = twptr;
-		twptr += nvtxs + 1;
-	    }
-
-	    for (j = 1; j < nsets; j++) {
-		twptr = term_wgts[j];
-		ctwptr = new_term_wgts[j];
-		for (i = 1; i <= nvtxs; i++) {
-		    if (twptr[i] > .5)
-			ctwptr[i] = 1;
-		    else if (twptr[i] < -.5)
-			ctwptr[i] = -1;
-		    else
-			ctwptr[i] = 0;
-		}
-	    }
-	    real_term_wgts = new_term_wgts;
-	}
-	else {
-	    real_term_wgts = term_wgts;
-	    new_term_wgts[1] = NULL;
-	}
-*/
-
-	/* Partition coarse graph with spectral method */
-/*
-	maxdeg = find_maxdeg(graph, nvtxs, using_ewgts, &ewgt_max);
-	eigensolve(graph, nvtxs, nedges, maxdeg, vwgt_max, vwsqrt,
-		   using_vwgts, using_ewgts, real_term_wgts, 0, (float **) NULL,
-		   yvecs, evals, architecture, assignment, goal,
-		   solver_flag, FALSE, 0, ndims, mediantype, eigtol);
-
-	if (mkconnected)
-	    make_unconnected(graph, &nedges, &cdata, using_ewgts);
-
-	if (!COARSEN_VWGTS && step != 0) {
-	    goal_weight = 0;
-	    for (i = 0; i < nsets; i++)
-		goal_weight += goal[i];
-	    for (i = 0; i < nsets; i++)
-		new_goal[i] = goal[i] * (nvtxs / goal_weight);
-	    real_goal = new_goal;
-	}
-	else
-	    real_goal = goal;
-
-	assign(graph, yvecs, nvtxs, ndims, architecture, nsets, vwsqrt, assignment,
-	       active, mediantype, real_goal, vwgt_max);
-
-	sfree(active);
-*/
-	/* Check for boundary and flag those guys with a 2 */
-/*
-	list_length = find_bndy(graph, nvtxs, assignment, 2, &bndy_list);
-	count_weights(graph, nvtxs, assignment, nsets + 1, weights, (vwgt_max != 1));
-
-	if (COARSE_KL_BOTTOM || !(step % nstep)) {
-	    if (LIMIT_KL_EWGTS) {
-		find_maxdeg(graph, nvtxs, using_ewgts, &ewgt_max);
-		compress_ewgts(graph, nvtxs, nedges, ewgt_max, using_ewgts);
-	    }
-
-	    max_dev = (step == 0) ? vwgt_max : 5 * vwgt_max;
-	    total_weight = 0;
-	    for (i = 0; i < nsets; i++) {
-		total_weight += real_goal[i];
-	    }
-	    if (max_dev > total_max)
-		max_dev = vwgt_max;
-	    goal_weight = total_weight * KL_IMBALANCE / nsets;
-	    if (goal_weight > max_dev) {
-		max_dev = goal_weight;
-	    }
-
-	    if (COARSE_KLV) {
-		klvspiff(graph, nvtxs, assignment, real_goal,
-			 max_dev, &bndy_list, weights);
-	    }
-	    if (COARSE_BPM) {
-		bpm_improve(graph, assignment, real_goal, max_dev, &bndy_list,
-			    weights, using_vwgts);
-	    }
-	    if (LIMIT_KL_EWGTS)
-		restore_ewgts(graph, nvtxs);
-	}
-
-	if (real_term_wgts != term_wgts && new_term_wgts[1] != NULL) {
-	    sfree(real_term_wgts[1]);
-	}
-	if (vwsqrt != NULL)
-	    sfree(vwsqrt);
-	for (i = ndims; i > 0; i--)
-	    sfree(yvecs[i]);
-
-	real_goal = goal;
-*/
-
-	/* The following could replace everything above. */
-/* */
 	real_goal = goal; 
 
         simple_part(graph, nvtxs, assignment, nsets, 1, real_goal);
@@ -288,8 +156,6 @@ coarsen_klv (
 	    bpm_improve(graph, assignment, real_goal, max_dev, &bndy_list,
 			    weights, using_vwgts);
 	}
-/* */
-
 	*pbndy_list = bndy_list;
 	return;
     }
@@ -410,16 +276,15 @@ coarsen_klv (
 
     /* Free the space that was allocated. */
     sfree(cassignment);
-    if (cterm_wgts[1] != NULL)
-	sfree(cterm_wgts[1]);
+    if (twptr_save != NULL) {
+	sfree(twptr_save);
+	twptr_save = NULL;
+    }
     free_graph(cgraph);
     sfree(v2cv);
 
     /* Smooth using KL or BPM every nstep steps. */
     if (!(step % nstep) && !flattened) {
-/*
-    if (!(step % nstep)) {
-*/
 	if (!COARSEN_VWGTS && step != 0) {	/* Construct new goal */
 	    goal_weight = 0;
 	    for (i = 0; i < nsets; i++)
@@ -483,25 +348,13 @@ coarsen_klv (
 	}
 
 	if (COARSE_KLV) {
-/*
-printf("Before KLV");
-print_sep_size(bndy_list, graph);
-*/
 	    klvspiff(graph, nvtxs, assignment, real_goal,
 		     max_dev, &bndy_list, weights);
 	}
 	if (COARSE_BPM) {
-/*
-printf("Before BPM");
-print_sep_size(bndy_list, graph);
-*/
 	    bpm_improve(graph, assignment, real_goal, max_dev, &bndy_list,
 			weights, using_vwgts);
 	}
-/*
-printf("Returning");
-print_sep_size(bndy_list, graph);
-*/
 
 	if (real_term_wgts != term_wgts && new_term_wgts[1] != NULL) {
 	    sfree(real_term_wgts[1]);
@@ -512,6 +365,11 @@ print_sep_size(bndy_list, graph);
     }
 
     *pbndy_list = bndy_list;
+
+    if (twptr_save != NULL) {
+	sfree(twptr_save);
+	twptr_save = NULL;
+    }
 
     /* Free the space that was allocated. */
     if (ccoords != NULL) {

@@ -39,6 +39,7 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SameType.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -600,23 +601,23 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
                                    EntityRank       entity_rank_to,
                                    OrdinalVector  & induced_parts)
 {
-  const Bucket   & bucket_from    = mesh.bucket(entity_from);
-  const int      local_proc_rank  = mesh.parallel_rank();
-  const EntityRank entity_rank_from = bucket_from.entity_rank();
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
-  ThrowAssert(entity_rank_from > entity_rank_to);
+  const int      local_proc_rank  = mesh.parallel_rank();
 
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
   if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
+    const Bucket   & bucket_from    = mesh.bucket(entity_from);
+    const EntityRank entity_rank_from = bucket_from.entity_rank();
+    ThrowAssert(entity_rank_from > entity_rank_to);
 
     const stk::mesh::PartVector &superset_parts = bucket_from.supersets();
 
     // Contributions of the 'from' entity:
-    for ( size_t i=0; i<superset_parts.size(); i++ ) {
+    for ( size_t i=0, end=superset_parts.size(); i<end; i++ ) {
       Part & part = *superset_parts[i] ;
       if ( part.should_induce(entity_rank_from) && ! contains_ordinal( omit.begin(), omit.end() , part.mesh_meta_data_ordinal() )) {
-          insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
+          stk::util::insert_keep_sorted_and_unique(part.mesh_meta_data_ordinal(), induced_parts);
       }
     }
   }
@@ -1039,6 +1040,8 @@ void move_unowned_entities_for_owner_to_ghost(
         }
     }
 }
+
+
 
 } // namespace impl
 } // namespace mesh

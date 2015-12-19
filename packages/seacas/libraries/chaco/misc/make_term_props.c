@@ -81,6 +81,10 @@ make_term_props (
 	dist += set_max + 1;
     }
 
+    for (k = 0; k < MAXSETS; k++) {
+      term_wgt[k] = 0;
+    }
+
     if (architecture == 0) {
 	avg_dists_cube(ndims_tot, ndims, set_info, nsets, set_max, subsets, dists);
     }

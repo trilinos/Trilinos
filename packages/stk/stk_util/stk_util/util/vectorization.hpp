@@ -42,4 +42,12 @@
 #define RESTRICT_ALIAS
 #endif
 
+#if defined(__INTEL_COMPILER)
+#define IVDEP_ALIAS _Pragma("ivdep")
+#elif defined(__GNUC__)
+#define IVDEP_ALIAS
+#else
+#define IVDEP_ALIAS
+#endif
+
 #endif

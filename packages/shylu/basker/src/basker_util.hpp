@@ -1495,6 +1495,42 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
+  void Basker<Int, Entry,Exe_Space>::printVec
+  (
+   std::string fname, 
+   INT_1DARRAY x, 
+   Int n
+   )
+  {
+    FILE *fp;
+    fp = fopen(fname.c_str(), "w");
+    for(Int i = 0; i < n; i++)
+      {
+        fprintf(fp, "%d \n", x(i));
+      }
+    fclose(fp);
+  }//end printVec(file,Int);
+
+    template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+    void Basker<Int, Entry,Exe_Space>::printVec
+  (
+   std::string fname, 
+   ENTRY_1DARRAY x, 
+   Int n
+   )
+  {
+    FILE *fp;
+    fp = fopen(fname.c_str(), "w");
+    for(Int i = 0; i < n; i++)
+      {
+        fprintf(fp, "%f \n", x(i));
+      }
+    fclose(fp);
+  }//end printVec(file,Int);
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::printVec
   (
    INT_1DARRAY x,

@@ -266,6 +266,26 @@
     id=\"50\" name=\"forTestingOnlyFlag\" type=\"int\" validatorId=\"50\" value=\"0\" \
     docString='  Used only for testing; look at Zoltan2_AlgForTestingOnly for interpretations' \
     /> \
+   <Parameter  \
+    id=\"51\" name=\"pulp_vert_imbalance\" type=\"string\" validatorId=\"19\" value=\"1.1\" \
+    docString='  vertex imbalance tolerance, ratio of maximum load over average load (default 1.1)' \
+    /> \
+   <Parameter  \
+    id=\"52\" name=\"pulp_edge_imbalance\" type=\"string\" validatorId=\"19\" value=\"1.1\" \
+    docString='  edge imbalance tolerance, ratio of maximum load over average load (default 1.1)' \
+    /> \
+   <Parameter  \
+    id=\"53\" name=\"pulp_lp_init\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    docString='  perform label propagation-based initialization (default false)' \
+    /> \
+   <Parameter  \
+    id=\"54\" name=\"pulp_minimize_maxcut\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    docString='  perform per-part max cut minimization (default false)' \
+    /> \
+   <Parameter  \
+    id=\"55\" name=\"pulp_verbose\" type=\"string\" validatorId=\"51\" value=\"false\" \
+    docString='  verbose output (default false)' \
+    /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
    <ParameterList   name=\"parma_parameters\"> \
@@ -413,6 +433,7 @@
         <String value=\"phg\"/> \
         <String value=\"metis\"/> \
         <String value=\"parmetis\"/> \
+        <String value=\"pulp\"/> \
         <String value=\"parma\"/> \
         <String value=\"scotch\"/> \
         <String value=\"ptscotch\"/> \
@@ -490,6 +511,16 @@
       </Validator> \
       <Validator max=\"10\" min=\"1\" precision=\"0\" step=\"1\" type=\"EnhancedNumberValidator(int)\" validatorId=\"49\"/> \
       <Validator max=\"1000\" min=\"0\" precision=\"0\" step=\"1\" type=\"EnhancedNumberValidator(int)\" validatorId=\"50\"/> \
+      <Validator defaultParameterName=\"pulp_verbose\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"51\"> \
+        <String integralValue=\"1\" stringValue=\"true\"/> \
+        <String integralValue=\"1\" stringValue=\"yes\"/> \
+        <String integralValue=\"1\" stringValue=\"1\"/> \
+        <String integralValue=\"1\" stringValue=\"on\"/> \
+        <String integralValue=\"0\" stringValue=\"false\"/> \
+        <String integralValue=\"0\" stringValue=\"no\"/> \
+        <String integralValue=\"0\" stringValue=\"0\"/> \
+        <String integralValue=\"0\" stringValue=\"off\"/> \
+      </Validator> \
     </Validators> \
   </ParameterList>"
 

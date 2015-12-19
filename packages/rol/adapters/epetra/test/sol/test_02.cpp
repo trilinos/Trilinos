@@ -88,20 +88,20 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Distribution<double> > dist;
     std::vector<Teuchos::RCP<ROL::Distribution<double> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
-    Dlist.sublist("Distribution").set("Name","Beta");
+    Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     double alpha = 1., beta = 4.;
     // Fill moment vector and initial guess
     for (size_t d = 0; d < dimension; d++) {
       // Build distribution for dimension d
       alpha++; beta++;
-      Dlist.sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
-      Dlist.sublist("Distribution").sublist("Beta").set("Shape 2",beta);
+      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
+      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 2",beta);
       dist = ROL::DistributionFactory<double>(Dlist);
       distVec[d] = ROL::DistributionFactory<double>(Dlist);
     }
 
     // Get ROL parameterlist
-    std::string filename = "input.xml";
+    std::string filename = "input_02.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 

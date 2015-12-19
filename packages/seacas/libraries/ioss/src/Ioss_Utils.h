@@ -197,6 +197,12 @@ namespace Ioss {
    * real mesh. This routine will add the mesh portion to a history file.
    */
     static void generate_history_mesh(Ioss::Region *region);
+
+    /*!
+     * This function is used to create the path to an output directory (or history, restart, etc.)
+     * if it does not exist.
+     */
+    static void create_path(const std::string& path);
   };
 
 }

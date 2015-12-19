@@ -16,6 +16,7 @@ enum clp_return_type {CLP_HELP=0,
       CLP_OK};
 
 struct CMD {
+  bool USE_SERIAL;
   int USE_THREADS;
   int USE_OPENMP;
   int USE_NUMA;
@@ -54,7 +55,8 @@ struct CMD {
   int ERROR;
   int COUNT;
 
-  CMD() : USE_THREADS(0),
+  CMD() : USE_SERIAL(0),
+          USE_THREADS(0),
           USE_OPENMP(0),
           USE_NUMA(0),
           USE_CORE_PER_NUMA(0),

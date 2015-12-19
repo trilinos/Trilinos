@@ -130,8 +130,6 @@ int main (int argc, char **argv)
   ex_inquire(exoid,EX_INQ_LIB_VERS, &idum, &version, cdum);
   printf ("EXODUSII Library API; version %4.2f (%d)\n", version, idum);
 
-  /* ncopts = NC_VERBOSE; */
-
   /* See how many groups are children of the 'root_id'... */
   root_id = exoid;
 

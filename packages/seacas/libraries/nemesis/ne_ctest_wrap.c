@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
   /* Unitialized local variables */
   int     ne_file_id;
-  char    test_direc[256], file_name[256];
+  char    *file_name = "./ne_test.exoII";
   float	  version;
 
   /* Initialized local variables */
@@ -117,56 +117,8 @@ int main(int argc, char *argv[])
 
   char  *yo="main";
   int    io_ws=0, cpu_ws=0, t_pass=0, t_fail=0;
-  int    debug_flag=0;
 
 /*-----------------------------Execution Begins-----------------------------*/
-
-  /* Get the location of the temporary file to use for the test */
-  if (argc <= 1) {
-    /* Nothing specified. Use defaults. */
-    strcpy(file_name, "./ne_test.exoII");
-  }
-  else if (argc == 2) {
-    /* Test for the help flag */
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "-?") == 0) {
-      /* Output the help line */
-      printf("Usage:\n\tne_test <optional directory> <optional file name>\n");
-      exit(0);
-    }
-    /* Test for the debug flag */
-    else if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "-d") == 0) {
-      printf("****DEBUG MODE****\n");
-      ex_opts(EX_VERBOSE | EX_DEBUG);
-      strcpy(file_name, "./ne_test.exoII");
-      debug_flag = 1;
-    }
-    /* Else get the directory name and assign default name */
-    else {
-      strcpy(test_direc, argv[1]);
-      if (test_direc[strlen(test_direc)-1] != '/') {
-        strcpy(file_name, test_direc);
-        strcat(file_name, "/ne_test.exoII");
-      }
-      else {
-        strcpy(file_name, test_direc);
-        strcat(file_name, "ne_test.exoII");
-      }
-    }
-  }
-  else if (argc == 3) {
-    /* Both directory and file name specified */
-    strcpy(test_direc, argv[1]);
-    if (test_direc[strlen(test_direc)-1] == '/') {
-      strcpy(file_name, test_direc);
-      strcat(file_name, "/");
-      strcat(file_name, argv[2]);
-    }
-    else {
-      strcpy(file_name, test_direc);
-      strcat(file_name, argv[2]);
-    }
-  }
-
 /*---------------------------------------------------------------------------*/
 /*                      OUTPUT TEST SECTION                                  */
 /*---------------------------------------------------------------------------*/
@@ -203,8 +155,6 @@ int main(int argc, char *argv[])
   if (ne_test_piinf(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -216,8 +166,6 @@ int main(int argc, char *argv[])
   if (ne_test_pinig(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -229,8 +177,6 @@ int main(int argc, char *argv[])
   if (ne_test_pelbid(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -242,8 +188,6 @@ int main(int argc, char *argv[])
   if (ne_test_pnsp(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -255,8 +199,6 @@ int main(int argc, char *argv[])
   if (ne_test_pssp(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -278,8 +220,6 @@ int main(int argc, char *argv[])
   if (ne_test_pnm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -291,8 +231,6 @@ int main(int argc, char *argv[])
   if (ne_test_pem(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -305,8 +243,6 @@ int main(int argc, char *argv[])
   if (ne_test_pcmpc(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -318,8 +254,6 @@ int main(int argc, char *argv[])
   if (ne_test_pncm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -331,8 +265,6 @@ int main(int argc, char *argv[])
   if (ne_test_pecm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -344,8 +276,6 @@ int main(int argc, char *argv[])
   if (ex_close(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
     fprintf(stderr, "[%s]: ERROR, unable to close test file \"%s\"!\n",
             yo, file_name);
     exit(-1);
@@ -364,8 +294,6 @@ int main(int argc, char *argv[])
   if (ex_open(file_name, EX_READ, &cpu_ws, &io_ws, &version) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -377,8 +305,6 @@ int main(int argc, char *argv[])
   if (ne_test_giinf(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -390,8 +316,6 @@ int main(int argc, char *argv[])
   if (ne_test_ginig(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -403,8 +327,6 @@ int main(int argc, char *argv[])
   if (ne_test_gelbid(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -416,8 +338,6 @@ int main(int argc, char *argv[])
   if (ne_test_gnsp(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -429,8 +349,6 @@ int main(int argc, char *argv[])
   if (ne_test_gssp(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -442,8 +360,6 @@ int main(int argc, char *argv[])
   if (ne_test_glbp(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -455,8 +371,6 @@ int main(int argc, char *argv[])
   if (ne_test_gnm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -468,8 +382,6 @@ int main(int argc, char *argv[])
   if (ne_test_gem(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -481,8 +393,6 @@ int main(int argc, char *argv[])
   if (ne_test_gncm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);
@@ -494,8 +404,6 @@ int main(int argc, char *argv[])
   if (ne_test_gecm(ne_file_id) < 0) {
     printf("FAILED\n"); fflush(stdout);
     t_fail++;
-    if (debug_flag == 1)
-      return 1;
   }
   else {
     printf("successful\n"); fflush(stdout);

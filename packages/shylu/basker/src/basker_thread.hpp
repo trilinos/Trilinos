@@ -54,11 +54,18 @@ namespace BaskerNS
 	    }
 	}
     }//end BaskerPointBarrier
+
     ~BaskerPointBarrier()
     {
-      //printf("THREADS BARRIER DESTORY: %d \n", nthreads);
-
-     
+      //JDB: Need to figure out why this does not work
+      //Finalize();
+    }//end ~BaskerPointBarrier()
+    
+    inline
+    void Finalize()
+    {
+      
+      //std::cout << "flag: " << init_flg << std::endl;
       if(init_flg == BASKER_TRUE)
 	{
 	  for(Int i = 0; i < nthreads; ++i)
@@ -66,12 +73,12 @@ namespace BaskerNS
 	      
 	      delete [] token[i];
 	    }
-	  //printf("done dele inner \n");
+
 	  delete [] token;
-	  //printf("done dele outter \n");
+  
 	}
-      
-    }
+      init_flg == BASKER_FALSE;
+    }//end Finalize()
     
     inline
     void BarrierLeader(Int my_leader, Int my_id, Int task, 

@@ -61,10 +61,10 @@ namespace MueLu {
     It allows MueLu to be used as a preconditioner for AztecOO (for instance).
 */
   class EpetraOperator : public Epetra_Operator {
-    typedef double                                              SC;
-    typedef int                                                 LO;
-    typedef int                                                 GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode             NO;
+    typedef double              SC;
+    typedef int                 LO;
+    typedef int                 GO;
+    typedef Xpetra::EpetraNode  NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>                     Matrix;
     typedef MueLu::Hierarchy<SC,LO,GO,NO>                   Hierarchy;

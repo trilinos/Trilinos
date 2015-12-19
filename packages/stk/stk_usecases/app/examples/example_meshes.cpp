@@ -52,7 +52,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 
 using namespace stk ;
 

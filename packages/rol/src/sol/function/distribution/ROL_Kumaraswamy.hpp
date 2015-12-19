@@ -58,6 +58,7 @@ private:
   Real b_;
   Real exp1_;
   Real exp2_;
+  Real bGAMMAb_;
 
   size_t nchoosek(const size_t n, const size_t k) const {
     return ((k==0) ? 1 : (n*nchoosek(n-1,k-1))/k);
@@ -67,7 +68,9 @@ public:
   Kumaraswamy(const Real a = 0., const Real b = 1.,
               const Real exp1 = 0.5, const Real exp2 = 0.5)
     : a_(std::min(a,b)), b_(std::max(a,b)),
-      exp1_((exp1>0.) ? exp1 : 0.5), exp2_((exp2>0.) ? exp2 : 0.5) {}
+      exp1_((exp1>0.) ? exp1 : 0.5), exp2_((exp2>0.) ? exp2 : 0.5) {
+    bGAMMAb_ = exp2_*tgamma(exp2_);
+  }
 
   Kumaraswamy(Teuchos::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Lower Bound",0.);
@@ -80,6 +83,8 @@ public:
     exp1_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Exponent 2",0.5);
     exp1_ = (exp1_ > 0.) ? exp1_ : 0.5;
     exp2_ = (exp2_ > 0.) ? exp2_ : 0.5;
+
+    bGAMMAb_ = exp2_*tgamma(exp2_);
   }
 
   Real evaluatePDF(const Real input) const {
@@ -106,12 +111,12 @@ public:
 
   Real moment(const size_t m) const {
     Real val = 0., binom = 0., moment = 0.;
-    for (size_t i = 0; i < m; i++) {
-      moment = exp2_*tgamma(1.+(Real)i/exp1_)*tgamma(exp2_)/tgamma(1.+exp2_+(Real)i/exp1_);
+    for (size_t i = 0; i < m+1; i++) {
+      moment = bGAMMAb_*tgamma(1.+(Real)i/exp1_)/tgamma(1.+exp2_+(Real)i/exp1_);
       binom  = (Real)nchoosek(m,i);
       val   += binom*std::pow(a_,m-i)*std::pow(b_-a_,i+1)*moment;
-    }    
-    return val; 
+    }
+    return val;
   }
 
   Real lowerBound(void) const {

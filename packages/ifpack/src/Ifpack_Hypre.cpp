@@ -117,10 +117,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 
   YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
   YLocal_ = hypre_ParVectorLocalVector(YVec_);
-  std::vector<int> rows; rows.resize(iupper - ilower +1);
-  for(int i = ilower; i <= iupper; i++){
-    rows[i-ilower] = i;
-  }
+
   // amk November 24, 2015: This previously created a map that Epetra does not consider
   // to be contiguous.  hypre doesn't like that, so I changed it.
   MySimpleMap_ = rcp(new Epetra_Map(A_->NumGlobalRows(), iupper-ilower+1, 0, Comm()));

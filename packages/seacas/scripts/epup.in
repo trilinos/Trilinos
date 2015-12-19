@@ -1,0 +1,87 @@
+#!/bin/bash
+
+########################################################################
+function usage {
+cat <<EPU_USAGE_EOF
+Usage:  epup --subcycle <cycle_count> ...normal epu options...
+
+   Runs multiple copies of epu simultaneously to create <cycle_count>
+   sub-files from the original files.  
+
+   ->->-> Send email to gdsjaar@sandia.gov for epup support.<-<-<-
+
+EPU_USAGE_EOF
+exit 1
+}
+
+########################################################################
+function execute_epu {
+    cycles=$1
+    all_options=$2
+    
+    $PARALLEL -u "$EPU -cycle {} $all_options" ::: $($ZPAD $cycles)
+
+    epu_rc=$?
+    return $epu_rc
+}
+
+########################################################################
+# initialize variables
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+cycles=-1
+
+ACCESS=@ACCESSDIR@
+EPU=${ACCESS}/bin/epu
+PARALLEL=${ACCESS}/bin/parallel
+ZPAD=${ACCESS}/bin/zpad
+if [ $# -eq 0 ] ; then
+  usage
+fi
+
+########################################################################
+# epu options:
+GETOPT=${ACCESS}/bin/getopt.seacas
+
+all_options="$@"
+
+TEMP=`${GETOPT} -q -o hs:f -a \
+    --long help,subcycle: \
+    -n 'epup' -- "$@"`
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+	case "$1" in
+	    -h|--help)
+	      usage ; shift ;;
+	    -s|--subcycle)
+	      cycles="$2" ; shift 2 ;;
+	    --) shift ; break ;;
+	esac
+done
+
+########################################################################
+if [ $# -eq 0 ] ; then
+    echo "${txtred}ERROR:  No epu options specified${txtrst}"
+    usage
+fi    
+
+execute_epu "$cycles" "$all_options" 
+if [ $? -ne 0 ]
+then
+    echo "${txtred}ERROR     During epu execution. Check error output above and rerun${txtrst}"
+    exit 1
+else
+    echo "${txtgrn}...epup successful execution${txtrst}"
+fi

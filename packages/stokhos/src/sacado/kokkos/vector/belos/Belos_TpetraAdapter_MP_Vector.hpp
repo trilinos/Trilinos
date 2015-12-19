@@ -89,14 +89,15 @@ namespace Belos {
   /// correspond exactly to the four template parameters of
   /// Tpetra::MultiVector.  See the Tpetra::MultiVector documentation
   /// for more information.
-  template<class BaseScalar, class Storage, class LO, class GO, class Node>
-  class MultiVecTraits<BaseScalar,
+  template<class Storage, class LO, class GO, class Node>
+  class MultiVecTraits<typename Storage::value_type,
                        Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
                                             LO,GO,Node,true> > {
+  public:
     typedef typename Storage::ordinal_type s_ordinal;
+    typedef typename Storage::value_type BaseScalar;
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-  public:
 
     /// \brief Create a new multivector with \c numvecs columns.
     ///
@@ -898,16 +899,16 @@ namespace Belos {
   /// correspond exactly to the four template parameters of
   /// Tpetra::MultiVector.  See the Tpetra::MultiVector documentation
   /// for more information.
-  template<class BaseScalar, class Storage, class LO, class GO, class Device>
-  class MultiVecTraits<BaseScalar,
+  template<class Storage, class LO, class GO, class Device>
+  class MultiVecTraits<typename Storage::value_type,
                        Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
                                             LO,GO,
                                             Kokkos::Compat::KokkosDeviceWrapperNode<Device>,
                                             false > > {
   public:
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-  private:
     typedef typename Storage::ordinal_type s_ordinal;
+    typedef typename Storage::value_type BaseScalar;
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
   public:
@@ -1577,8 +1578,8 @@ namespace Belos {
   ////////////////////////////////////////////////////////////////////
 
   /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
-  template <class BaseScalar, class Storage, class LO, class GO, class Node>
-  class OperatorTraits <BaseScalar,
+  template <class Storage, class LO, class GO, class Node>
+  class OperatorTraits <typename Storage::value_type,
                         Tpetra::MultiVector<Sacado::MP::Vector<Storage>,
                                              LO,GO,Node>,
                         Tpetra::Operator<Sacado::MP::Vector<Storage>,

@@ -37,7 +37,15 @@ namespace BaskerNS
       time_nfactor = 0;
       time_upper_solve = 0;
       time_lower_solve = 0;
-    }
+    }//BaskerStats()
+    ~BaskerStats()
+    {
+      Finalize();
+    }//end ~BaskerStats()
+    void Finalize()
+    {
+      //printf("baskerstats finalize todo \n");
+    }//end Finalize()
     
 
     Int Unnz;

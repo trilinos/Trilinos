@@ -193,9 +193,15 @@ namespace Iohb {
       bool append = open_create_behavior() == Ioss::DB_APPEND;
 
       if (util().parallel_rank() == 0) {
-	new_this->logStream = open_stream(get_filename().c_str(),
-					  &(new_this->streamNeedsDelete),
-					  append);
+        new_this->logStream = open_stream(get_filename().c_str(),
+            &(new_this->streamNeedsDelete),
+            append);
+        if (*new_this->logStream == 0){
+          Ioss::Utils::create_path(get_filename().c_str());
+          new_this->logStream = open_stream(get_filename().c_str(),
+              &(new_this->streamNeedsDelete),
+              append);
+        }
       } else {
 	// All processors except processor 0
 	new_this->logStream = NULL;

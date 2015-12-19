@@ -61,7 +61,7 @@
 #include "Amesos2_Basker_decl.hpp"
 
 #ifdef SHYLUBASKER
-//#include "shylubasker_def.hpp"
+#include "Kokkos_Core.hpp"
 #endif
 
 namespace Amesos2 {
@@ -100,7 +100,8 @@ Basker<Matrix,Vector>::Basker(
   basker->Options.verbose   = false;
   basker->Options.btf       = true;
   
-  num_threads = 1;
+  num_threads = Kokkos::OpenMP::max_hardware_threads();
+
 
 #endif  
 #endif
@@ -277,7 +278,7 @@ Basker<Matrix,Vector>::solve_impl(
 #ifdef SHYLUBASKER
       
       std::cout << "SHYLUBASKER Only handles 1 solve right now" << std::endl;
-      ierr = basker->Solve(bvals_.getRawPtr(), xvals_.getRawPtr());
+      ierr = basker->Solve(nrhs, bvals_.getRawPtr(), xvals_.getRawPtr());
       
 #else
     ierr = basker.solveMultiple(nrhs, bvals_.getRawPtr(),xvals_.getRawPtr());

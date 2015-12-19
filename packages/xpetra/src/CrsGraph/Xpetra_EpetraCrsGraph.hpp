@@ -61,223 +61,835 @@
 
 namespace Xpetra {
 
-  // TODO: move that elsewhere
-  template<class GlobalOrdinal, class Node>
-  RCP< const CrsGraph<int, GlobalOrdinal, Node> >
-  toXpetra (const Epetra_CrsGraph& graph);
+// TODO: move that elsewhere
+template<class GlobalOrdinal, class Node>
+RCP< const CrsGraph<int, GlobalOrdinal, Node> >
+toXpetra (const Epetra_CrsGraph& graph);
 
-  template<class GlobalOrdinal, class Node>
-  const Epetra_CrsGraph&
-  toEpetra (const RCP<const CrsGraph<int, GlobalOrdinal, Node> > &graph);
+template<class GlobalOrdinal, class Node>
+const Epetra_CrsGraph&
+toEpetra (const RCP<const CrsGraph<int, GlobalOrdinal, Node> > &graph);
 
-  template<class EpetraGlobalOrdinal, class Node>
-  class EpetraCrsGraphT
-    : public CrsGraph<int, EpetraGlobalOrdinal, Node>
-  {
-    typedef int LocalOrdinal;
-    typedef EpetraGlobalOrdinal GlobalOrdinal;
-    //! The specialization of Map used by this class.
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+template<class GlobalOrdinal, class Node>
+class EpetraCrsGraphT
+    : public CrsGraph<int, GlobalOrdinal, Node>
+{
+  typedef int LocalOrdinal;
 
-  public:
+  //! The specialization of Map used by this class.
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-    //! @name Constructor/Destructor Methods
-    //@{
-    //! Constructor specifying fixed number of entries for each row.
-    EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+public:
 
+  //! @name Constructor/Destructor Methods
+  //@{
+  //! Constructor specifying fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+  }
 
-    ////! Constructor specifying (possibly different) number of entries in each row.
-	// Definition not in cpp, so comment out
-    //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+  //! Constructor specifying column Map and fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+  }
 
-    //! Constructor specifying column Map and fixed number of entries for each row.
-    EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+  ////! Constructor specifying column Map and number of entries in each row.
+  // Definition not in cpp, so comment out
+  //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
 
-    ////! Constructor specifying column Map and number of entries in each row.
-	// Definition not in cpp, so comment out
-    //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+  //! Destructor.
+  virtual ~EpetraCrsGraphT() { }
 
-    //! Destructor.
-    virtual ~EpetraCrsGraphT() { }
+  //@}
 
-    //@}
+  //! @name Insertion/Removal Methods
+  //@{
 
-    //! @name Insertion/Removal Methods
-    //@{
+  //! Insert global indices into the graph.
+  void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices) {  }
 
-    //! Insert global indices into the graph.
-    void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices);
+  //! Insert local indices into the graph.
+  void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal> &indices) {  }
 
-    //! Insert local indices into the graph.
-    void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices);
+  //! Remove all graph indices from the specified local row.
+  void removeLocalIndices(LocalOrdinal localRow) {  }
 
-    //! Remove all graph indices from the specified local row.
-    void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraphT::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
+  //@}
 
-    //@}
+  //! @name Transformational Methods
+  //@{
 
-    //! @name Transformational Methods
-    //@{
+  //! Signal that data entry is complete, specifying domain and range maps.
+  void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null){  }
 
-    //! Signal that data entry is complete, specifying domain and range maps.
-    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null);
+  //! Signal that data entry is complete.
+  void fillComplete(const RCP< ParameterList > &params=null) {  }
+  //@}
 
-    //! Signal that data entry is complete.
-    void fillComplete(const RCP< ParameterList > &params=null);
+  //! @name Methods implementing RowGraph.
+  //@{
 
-    //@}
+  //! Returns the communicator.
+  RCP< const Comm< int > >  getComm() const {
+    return Teuchos::null;
+  }
 
-    //! @name Methods implementing RowGraph.
-    //@{
+  //! Returns the Map that describes the row distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { return Teuchos::null; }
 
-    //! Returns the communicator.
-    RCP< const Comm< int > >  getComm() const {
-      XPETRA_MONITOR("EpetraCrsGraphT::getComm");
-      return toXpetra (graph_->Comm ());
-    }
+  //! Returns the Map that describes the column distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { return Teuchos::null; }
 
-    //! Returns the Map that describes the row distribution in this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RowMap()); }
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
 
-    //! Returns the Map that describes the column distribution in this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getColMap"); return toXpetra<GlobalOrdinal,Node>(graph_->ColMap()); }
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return Teuchos::null; }
 
-    //! Returns the Map associated with the domain of this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getDomainMap"); return toXpetra<GlobalOrdinal,Node>(graph_->DomainMap()); }
+  //! Returns the importer associated with this graph.
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { return Teuchos::null; }
 
-    //! Returns the Map associated with the domain of this graph.
-    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRangeMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RangeMap()); }
+  //! Returns the exporter associated with this graph.
+  RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { return Teuchos::null; }
 
-    //! Returns the importer associated with this graph.
-    RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getImporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Importer()); }
+  //! Returns the number of global rows in the graph.
+  global_size_t getGlobalNumRows() const { return 0; }
 
-    //! Returns the exporter associated with this graph.
-    RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getExporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Exporter()); }
+  //! Returns the number of global columns in the graph.
+  global_size_t getGlobalNumCols() const { return 0; }
 
-    //! Returns the number of global rows in the graph.
-    global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumRows"); return graph_->NumGlobalRows64(); }
+  //! Returns the number of graph rows owned on the calling node.
+  size_t getNodeNumRows() const { return 0; }
 
-    //! Returns the number of global columns in the graph.
-    global_size_t getGlobalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumCols"); return graph_->NumGlobalCols64(); }
+  //! Returns the number of columns connected to the locally owned rows of this graph.
+  size_t getNodeNumCols() const { return 0; }
 
-    //! Returns the number of graph rows owned on the calling node.
-    size_t getNodeNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumRows"); return graph_->NumMyRows(); }
+  //! Returns the index base for global indices for this graph.
+  GlobalOrdinal getIndexBase() const { return 0; }
 
-    //! Returns the number of columns connected to the locally owned rows of this graph.
-    size_t getNodeNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumCols"); return graph_->NumMyCols(); }
+  //! Returns the global number of entries in the graph.
+  global_size_t getGlobalNumEntries() const { return 0; }
 
-    //! Returns the index base for global indices for this graph.
-    GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraCrsGraphT::getIndexBase"); return (GlobalOrdinal) graph_->IndexBase64(); }
+  //! Returns the local number of entries in the graph.
+  size_t getNodeNumEntries() const { return 0; }
 
-    //! Returns the global number of entries in the graph.
-    global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumEntries"); return graph_->NumGlobalEntries64(); }
+  //! Returns the current number of entries on this node in the specified global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
 
-    //! Returns the local number of entries in the graph.
-    size_t getNodeNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumEntries"); return graph_->NumMyEntries(); }
+  //! Returns the current number of entries on this node in the specified local row.
+  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
-    //! Returns the current number of entries on this node in the specified global row.
-    size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInGlobalRow"); return graph_->NumGlobalIndices(globalRow); }
+  //! Returns the current number of allocated entries for this node in the specified global row .
+  size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const { return 0; }
 
-    //! Returns the current number of entries on this node in the specified local row.
-    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInLocalRow"); return graph_->NumMyIndices(localRow); }
+  //! Returns the current number of allocated entries on this node in the specified local row.
+  size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
 
-    //! Returns the current number of allocated entries for this node in the specified global row .
-    size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInGlobalRow"); return graph_->NumAllocatedGlobalIndices(globalRow); }
+  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
+  global_size_t getGlobalNumDiags() const { return 0; }
 
-    //! Returns the current number of allocated entries on this node in the specified local row.
-    size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInLocalRow"); return graph_->NumAllocatedMyIndices(localRow); }
+  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
+  size_t getNodeNumDiags() const { return 0; }
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumDiags"); return graph_->NumGlobalDiagonals64(); }
+  //! Maximum number of entries in all rows over all processes.
+  size_t getGlobalMaxNumRowEntries() const { return 0; }
 
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
+  //! Maximum number of entries in all rows owned by the calling process.
+  size_t getNodeMaxNumRowEntries() const { return 0; }
 
-    //! Maximum number of entries in all rows over all processes.
-    size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
+  //! Whether the graph has a column Map.
+  bool hasColMap() const { return false; }
 
-    //! Maximum number of entries in all rows owned by the calling process.
-    size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
+  //! Whether the graph is locally lower triangular.
+  bool isLowerTriangular() const { return false; }
 
-    //! Whether the graph has a column Map.
-    bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
+  //! Whether the graph is locally upper triangular.
+  bool isUpperTriangular() const { return false; }
 
-    //! Whether the graph is locally lower triangular.
-    bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isLowerTriangular"); return graph_->LowerTriangular(); }
+  //! Whether column indices are stored using local indices on the calling process.
+  bool isLocallyIndexed() const { return false; }
 
-    //! Whether the graph is locally upper triangular.
-    bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isUpperTriangular"); return graph_->UpperTriangular(); }
+  //! Whether column indices are stored using global indices on the calling process.
+  bool isGloballyIndexed() const { return false; }
 
-    //! Whether column indices are stored using local indices on the calling process.
-    bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
+  //! Whether fillComplete() has been called and the graph is in compute mode.
+  bool isFillComplete() const { return false; }
 
-    //! Whether column indices are stored using global indices on the calling process.
-    bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isGloballyIndexed"); return graph_->IndicesAreGlobal(); }
+  //! Returns true if storage has been optimized.
+  bool isStorageOptimized() const { return false; }
 
-    //! Whether fillComplete() has been called and the graph is in compute mode.
-    bool isFillComplete() const { XPETRA_MONITOR("EpetraCrsGraphT::isFillComplete"); return graph_->Filled(); }
+  //! Return a const, nonpersisting view of global indices in the given row.
+  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const {  }
 
-    //! Returns true if storage has been optimized.
-    bool isStorageOptimized() const { XPETRA_MONITOR("EpetraCrsGraphT::isStorageOptimized"); return graph_->StorageOptimized(); }
+  //! Return a const, nonpersisting view of local indices in the given row.
+  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {  }
+  //@}
 
-    //! Return a const, nonpersisting view of global indices in the given row.
-    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const;
+  //! @name Overridden from Teuchos::Describable
+  //@{
 
-    //! Return a const, nonpersisting view of local indices in the given row.
-    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const;
+  //! Return a simple one-line description of this object.
+  std::string description() const { return std::string(""); }
 
-    //@}
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
 
-    //! @name Overridden from Teuchos::Describable
-    //@{
+  //@}
 
-    //! Return a simple one-line description of this object.
-    std::string description() const;
+  //! Implements DistObject interface
+  //{@
 
-    //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  //! Access function for the Tpetra::Map this DistObject was constructed with.
+  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return Teuchos::null; }
 
-    //@}
+  //! Import.
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {  }
 
-    //! Implements DistObject interface
-    //{@
+  //! Export.
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {  }
 
-    //! Access function for the Tpetra::Map this DistObject was constructed with.
-    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getMap"); return toXpetra<GlobalOrdinal,Node>(graph_->Map()); }
+  //! Import (using an Exporter).
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {  }
 
-    //! Import.
-    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
+  //! Export (using an Importer).
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {  }
+  //@}
 
-    //! Export.
-    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
+  //! @name Xpetra specific
+  //@{
 
-    //! Import (using an Exporter).
-    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+  //! EpetraCrsGraphT constructor to wrap a Epetra_CrsGraph object
+  EpetraCrsGraphT(const Teuchos::RCP<Epetra_CrsGraph> &graph) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+  }
 
-    //! Export (using an Importer).
-    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+  //! Get the underlying Epetra graph
+  RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return Teuchos::null; }
 
-    //@}
+  //@}
 
-    //! @name Xpetra specific
-    //@{
+private:
 
-    //! EpetraCrsGraphT constructor to wrap a Epetra_CrsGraph object
-    EpetraCrsGraphT(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!graph->RowMap().GlobalIndicesIsType<GlobalOrdinal>(), std::runtime_error, "Xpetra::EpetraCrsGraphT: GlobalOrdinal mismatch.");
-    }
+}; // EpetraCrsGraphT class
 
-    //! Get the underlying Epetra graph
-    RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
+// specialization on GO=int and Node=EpetraNode
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+template<>
+class EpetraCrsGraphT<int, EpetraNode>
+: public virtual CrsGraph<int, int, EpetraNode>
+{
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef EpetraNode Node;
 
-    //@}
+  //! The specialization of Map used by this class.
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-  private:
+public:
 
-    RCP<Epetra_CrsGraph> graph_;
+  //! @name Constructor/Destructor Methods
+  //@{
+  //! Constructor specifying fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+: graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
 
-  }; // EpetraCrsGraphT class
+
+  ////! Constructor specifying (possibly different) number of entries in each row.
+  // Definition not in cpp, so comment out
+  //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+
+  //! Constructor specifying column Map and fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null)
+  : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
+
+  ////! Constructor specifying column Map and number of entries in each row.
+  // Definition not in cpp, so comment out
+  //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+
+  //! Destructor.
+  virtual ~EpetraCrsGraphT() { }
+
+  //@}
+
+  //! @name Insertion/Removal Methods
+  //@{
+
+  //! Insert global indices into the graph.
+  void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertGlobalIndices");
+
+    GlobalOrdinal* indices_rawPtr = const_cast<GlobalOrdinal*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+    XPETRA_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr));
+  }
+
+  //! Insert local indices into the graph.
+  void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertLocalIndices");
+
+    int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+    XPETRA_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr));
+  }
+
+  //! Remove all graph indices from the specified local row.
+  void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraphT::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
+
+  //@}
+
+  //! @name Transformational Methods
+  //@{
+
+  //! Signal that data entry is complete, specifying domain and range maps.
+  void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null){
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
+
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
+  }
+
+  //! Signal that data entry is complete.
+  void fillComplete(const RCP< ParameterList > &params=null) {
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
+
+    graph_->FillComplete();
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
+  }
+  //@}
+
+  //! @name Methods implementing RowGraph.
+  //@{
+
+  //! Returns the communicator.
+  RCP< const Comm< int > >  getComm() const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getComm");
+    return toXpetra (graph_->Comm ());
+  }
+
+  //! Returns the Map that describes the row distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RowMap()); }
+
+  //! Returns the Map that describes the column distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getColMap"); return toXpetra<GlobalOrdinal,Node>(graph_->ColMap()); }
+
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getDomainMap"); return toXpetra<GlobalOrdinal,Node>(graph_->DomainMap()); }
+
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRangeMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RangeMap()); }
+
+  //! Returns the importer associated with this graph.
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getImporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Importer()); }
+
+  //! Returns the exporter associated with this graph.
+  RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getExporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Exporter()); }
+
+  //! Returns the number of global rows in the graph.
+  global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumRows"); return graph_->NumGlobalRows64(); }
+
+  //! Returns the number of global columns in the graph.
+  global_size_t getGlobalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumCols"); return graph_->NumGlobalCols64(); }
+
+  //! Returns the number of graph rows owned on the calling node.
+  size_t getNodeNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumRows"); return graph_->NumMyRows(); }
+
+  //! Returns the number of columns connected to the locally owned rows of this graph.
+  size_t getNodeNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumCols"); return graph_->NumMyCols(); }
+
+  //! Returns the index base for global indices for this graph.
+  GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraCrsGraphT::getIndexBase"); return (GlobalOrdinal) graph_->IndexBase64(); }
+
+  //! Returns the global number of entries in the graph.
+  global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumEntries"); return graph_->NumGlobalEntries64(); }
+
+  //! Returns the local number of entries in the graph.
+  size_t getNodeNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumEntries"); return graph_->NumMyEntries(); }
+
+  //! Returns the current number of entries on this node in the specified global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInGlobalRow"); return graph_->NumGlobalIndices(globalRow); }
+
+  //! Returns the current number of entries on this node in the specified local row.
+  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInLocalRow"); return graph_->NumMyIndices(localRow); }
+
+  //! Returns the current number of allocated entries for this node in the specified global row .
+  size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInGlobalRow"); return graph_->NumAllocatedGlobalIndices(globalRow); }
+
+  //! Returns the current number of allocated entries on this node in the specified local row.
+  size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInLocalRow"); return graph_->NumAllocatedMyIndices(localRow); }
+
+  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
+  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumDiags"); return graph_->NumGlobalDiagonals64(); }
+
+  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
+  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
+
+  //! Maximum number of entries in all rows over all processes.
+  size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
+
+  //! Maximum number of entries in all rows owned by the calling process.
+  size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
+
+  //! Whether the graph has a column Map.
+  bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
+
+  //! Whether the graph is locally lower triangular.
+  bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isLowerTriangular"); return graph_->LowerTriangular(); }
+
+  //! Whether the graph is locally upper triangular.
+  bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isUpperTriangular"); return graph_->UpperTriangular(); }
+
+  //! Whether column indices are stored using local indices on the calling process.
+  bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
+
+  //! Whether column indices are stored using global indices on the calling process.
+  bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isGloballyIndexed"); return graph_->IndicesAreGlobal(); }
+
+  //! Whether fillComplete() has been called and the graph is in compute mode.
+  bool isFillComplete() const { XPETRA_MONITOR("EpetraCrsGraphT::isFillComplete"); return graph_->Filled(); }
+
+  //! Returns true if storage has been optimized.
+  bool isStorageOptimized() const { XPETRA_MONITOR("EpetraCrsGraphT::isStorageOptimized"); return graph_->StorageOptimized(); }
+
+  //! Return a const, nonpersisting view of global indices in the given row.
+  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getGlobalRowView");
+
+    int      numEntries;
+    GlobalOrdinal    * eIndices;
+
+    XPETRA_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
+    if (numEntries == 0) { eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+    Indices = ArrayView<const GlobalOrdinal>(eIndices, numEntries);
+  }
+
+  //! Return a const, nonpersisting view of local indices in the given row.
+  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getLocalRowView");
+
+    int      numEntries;
+    int    * eIndices;
+
+    XPETRA_ERR_CHECK(graph_->ExtractMyRowView(LocalRow, numEntries, eIndices));
+    if (numEntries == 0) { eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+    indices = ArrayView<const int>(eIndices, numEntries);
+  }
+  //@}
+
+  //! @name Overridden from Teuchos::Describable
+  //@{
+
+  //! Return a simple one-line description of this object.
+  std::string description() const { XPETRA_MONITOR("EpetraCrsGraphT::description"); return "NotImplemented"; }
+
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::describe");
+
+    out << "EpetraCrsGraphT::describe : Warning, verbosity level is ignored by this method." << std::endl;
+    const Epetra_BlockMap rowmap = graph_->RowMap();
+    if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraphT **\n\nrowmap" << std::endl;
+    rowmap.Print(out);
+    graph_->Print(out);
+  }
+
+  //@}
+
+  //! Implements DistObject interface
+  //{@
+
+  //! Access function for the Tpetra::Map this DistObject was constructed with.
+  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getMap"); return toXpetra<GlobalOrdinal,Node>(graph_->Map()); }
+
+  //! Import.
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  //! Export.
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  //! Import (using an Exporter).
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+
+  }
+
+  //! Export (using an Importer).
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+  //@}
+
+  //! @name Xpetra specific
+  //@{
+
+  //! EpetraCrsGraphT constructor to wrap a Epetra_CrsGraph object
+  EpetraCrsGraphT(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->RowMap().GlobalIndicesIsType<GlobalOrdinal>(), std::runtime_error, "Xpetra::EpetraCrsGraphT: GlobalOrdinal mismatch.");
+  }
+
+  //! Get the underlying Epetra graph
+  RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
+
+  //@}
+
+private:
+
+  RCP<Epetra_CrsGraph> graph_;
+
+
+};
+
+#endif // specialization on Node=EpetraNode and GO=int
+
+// specialization on GO=long long and Node=EpetraNode
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+template<>
+class EpetraCrsGraphT<long long, EpetraNode>
+: public virtual CrsGraph<int, long long, EpetraNode>
+{
+  typedef int LocalOrdinal;
+  typedef long long GlobalOrdinal;
+  typedef EpetraNode Node;
+
+  //! The specialization of Map used by this class.
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+public:
+
+  //! @name Constructor/Destructor Methods
+  //@{
+  //! Constructor specifying fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null)
+: graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
+
+
+  ////! Constructor specifying (possibly different) number of entries in each row.
+  // Definition not in cpp, so comment out
+  //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+
+  //! Constructor specifying column Map and fixed number of entries for each row.
+  EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null)
+  : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
+
+  ////! Constructor specifying column Map and number of entries in each row.
+  // Definition not in cpp, so comment out
+  //EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null);
+
+  //! Destructor.
+  virtual ~EpetraCrsGraphT() { }
+
+  //@}
+
+  //! @name Insertion/Removal Methods
+  //@{
+
+  //! Insert global indices into the graph.
+  void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertGlobalIndices");
+
+    GlobalOrdinal* indices_rawPtr = const_cast<GlobalOrdinal*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+    XPETRA_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr));
+  }
+
+  //! Insert local indices into the graph.
+  void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal> &indices) {
+    XPETRA_MONITOR("EpetraCrsGraphT::insertLocalIndices");
+
+    int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+    XPETRA_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr));
+  }
+
+  //! Remove all graph indices from the specified local row.
+  void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraphT::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
+
+  //@}
+
+  //! @name Transformational Methods
+  //@{
+
+  //! Signal that data entry is complete, specifying domain and range maps.
+  void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null){
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
+
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
+  }
+
+  //! Signal that data entry is complete.
+  void fillComplete(const RCP< ParameterList > &params=null) {
+    XPETRA_MONITOR("EpetraCrsGraphT::fillComplete");
+
+    graph_->FillComplete();
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
+  }
+  //@}
+
+  //! @name Methods implementing RowGraph.
+  //@{
+
+  //! Returns the communicator.
+  RCP< const Comm< int > >  getComm() const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getComm");
+    return toXpetra (graph_->Comm ());
+  }
+
+  //! Returns the Map that describes the row distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRowMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RowMap()); }
+
+  //! Returns the Map that describes the column distribution in this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getColMap"); return toXpetra<GlobalOrdinal,Node>(graph_->ColMap()); }
+
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getDomainMap"); return toXpetra<GlobalOrdinal,Node>(graph_->DomainMap()); }
+
+  //! Returns the Map associated with the domain of this graph.
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getRangeMap"); return toXpetra<GlobalOrdinal,Node>(graph_->RangeMap()); }
+
+  //! Returns the importer associated with this graph.
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getImporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Importer()); }
+
+  //! Returns the exporter associated with this graph.
+  RCP< const Export< LocalOrdinal, GlobalOrdinal, Node > > getExporter() const { XPETRA_MONITOR("EpetraCrsGraphT::getExporter"); return toXpetra<GlobalOrdinal,Node>(graph_->Exporter()); }
+
+  //! Returns the number of global rows in the graph.
+  global_size_t getGlobalNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumRows"); return graph_->NumGlobalRows64(); }
+
+  //! Returns the number of global columns in the graph.
+  global_size_t getGlobalNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumCols"); return graph_->NumGlobalCols64(); }
+
+  //! Returns the number of graph rows owned on the calling node.
+  size_t getNodeNumRows() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumRows"); return graph_->NumMyRows(); }
+
+  //! Returns the number of columns connected to the locally owned rows of this graph.
+  size_t getNodeNumCols() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumCols"); return graph_->NumMyCols(); }
+
+  //! Returns the index base for global indices for this graph.
+  GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("EpetraCrsGraphT::getIndexBase"); return (GlobalOrdinal) graph_->IndexBase64(); }
+
+  //! Returns the global number of entries in the graph.
+  global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumEntries"); return graph_->NumGlobalEntries64(); }
+
+  //! Returns the local number of entries in the graph.
+  size_t getNodeNumEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumEntries"); return graph_->NumMyEntries(); }
+
+  //! Returns the current number of entries on this node in the specified global row.
+  size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInGlobalRow"); return graph_->NumGlobalIndices(globalRow); }
+
+  //! Returns the current number of entries on this node in the specified local row.
+  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumEntriesInLocalRow"); return graph_->NumMyIndices(localRow); }
+
+  //! Returns the current number of allocated entries for this node in the specified global row .
+  size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInGlobalRow"); return graph_->NumAllocatedGlobalIndices(globalRow); }
+
+  //! Returns the current number of allocated entries on this node in the specified local row.
+  size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("EpetraCrsGraphT::getNumAllocatedEntriesInLocalRow"); return graph_->NumAllocatedMyIndices(localRow); }
+
+  //! Returns the number of global diagonal entries, based on global row/column index comparisons.
+  global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalNumDiags"); return graph_->NumGlobalDiagonals64(); }
+
+  //! Returns the number of local diagonal entries, based on global row/column index comparisons.
+  size_t getNodeNumDiags() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeNumDiags"); return graph_->NumMyDiagonals(); }
+
+  //! Maximum number of entries in all rows over all processes.
+  size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getGlobalMaxNumRowEntries"); return graph_->GlobalMaxNumIndices(); }
+
+  //! Maximum number of entries in all rows owned by the calling process.
+  size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("EpetraCrsGraphT::getNodeMaxNumRowEntries"); return graph_->MaxNumIndices(); }
+
+  //! Whether the graph has a column Map.
+  bool hasColMap() const { XPETRA_MONITOR("EpetraCrsGraphT::hasColMap"); return graph_->HaveColMap(); }
+
+  //! Whether the graph is locally lower triangular.
+  bool isLowerTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isLowerTriangular"); return graph_->LowerTriangular(); }
+
+  //! Whether the graph is locally upper triangular.
+  bool isUpperTriangular() const { XPETRA_MONITOR("EpetraCrsGraphT::isUpperTriangular"); return graph_->UpperTriangular(); }
+
+  //! Whether column indices are stored using local indices on the calling process.
+  bool isLocallyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isLocallyIndexed"); return graph_->IndicesAreLocal(); }
+
+  //! Whether column indices are stored using global indices on the calling process.
+  bool isGloballyIndexed() const { XPETRA_MONITOR("EpetraCrsGraphT::isGloballyIndexed"); return graph_->IndicesAreGlobal(); }
+
+  //! Whether fillComplete() has been called and the graph is in compute mode.
+  bool isFillComplete() const { XPETRA_MONITOR("EpetraCrsGraphT::isFillComplete"); return graph_->Filled(); }
+
+  //! Returns true if storage has been optimized.
+  bool isStorageOptimized() const { XPETRA_MONITOR("EpetraCrsGraphT::isStorageOptimized"); return graph_->StorageOptimized(); }
+
+  //! Return a const, nonpersisting view of global indices in the given row.
+  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getGlobalRowView");
+
+    int      numEntries;
+    GlobalOrdinal    * eIndices;
+
+    XPETRA_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
+    if (numEntries == 0) { eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+    Indices = ArrayView<const GlobalOrdinal>(eIndices, numEntries);
+  }
+
+  //! Return a const, nonpersisting view of local indices in the given row.
+  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getLocalRowView");
+
+    int      numEntries;
+    int    * eIndices;
+
+    XPETRA_ERR_CHECK(graph_->ExtractMyRowView(LocalRow, numEntries, eIndices));
+    if (numEntries == 0) { eIndices = NULL; } // Cf. TEUCHOS_TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+    indices = ArrayView<const int>(eIndices, numEntries);
+  }
+  //@}
+
+  //! @name Overridden from Teuchos::Describable
+  //@{
+
+  //! Return a simple one-line description of this object.
+  std::string description() const { XPETRA_MONITOR("EpetraCrsGraphT::description"); return "NotImplemented"; }
+
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::describe");
+
+    out << "EpetraCrsGraphT::describe : Warning, verbosity level is ignored by this method." << std::endl;
+    const Epetra_BlockMap rowmap = graph_->RowMap();
+    if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraphT **\n\nrowmap" << std::endl;
+    rowmap.Print(out);
+    graph_->Print(out);
+  }
+
+  //@}
+
+  //! Implements DistObject interface
+  //{@
+
+  //! Access function for the Tpetra::Map this DistObject was constructed with.
+  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsGraphT::getMap"); return toXpetra<GlobalOrdinal,Node>(graph_->Map()); }
+
+  //! Import.
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  //! Export.
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Import<LocalOrdinal, GlobalOrdinal, Node>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  //! Import (using an Exporter).
+  void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doImport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, source, tSource, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+
+  }
+
+  //! Export (using an Importer).
+  void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+      const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraphT::doExport");
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal COMMA Node>, dest, tDest, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExportT<GlobalOrdinal COMMA Node>, exporter, tExporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+  //@}
+
+  //! @name Xpetra specific
+  //@{
+
+  //! EpetraCrsGraphT constructor to wrap a Epetra_CrsGraph object
+  EpetraCrsGraphT(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!graph->RowMap().GlobalIndicesIsType<GlobalOrdinal>(), std::runtime_error, "Xpetra::EpetraCrsGraphT: GlobalOrdinal mismatch.");
+  }
+
+  //! Get the underlying Epetra graph
+  RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
+
+  //@}
+
+private:
+
+  RCP<Epetra_CrsGraph> graph_;
+
+
+};
+#endif // specialization on Node=EpetraNode and GO=int
 
 } // Xpetra namespace
 

@@ -54,9 +54,12 @@ namespace ROL {
 
 template<class Real> 
 class UserInputGenerator : public SampleGenerator<Real> {
-public:
-  UserInputGenerator(std::string file_pt, std::string file_wt, int n, int dim, 
-    Teuchos::RCP<BatchManager<Real> > &bman) : SampleGenerator<Real>(bman) {
+private:
+  void sample(const std::string &file_pt,
+              const std::string &file_wt,
+              const int n,
+              const int dim,
+              const Teuchos::RCP<BatchManager<Real> > &bman) {
     // Read in full point data and weight data
     std::fstream input_pt;
     input_pt.open(file_pt.c_str(),std::ios::in);
@@ -108,6 +111,37 @@ public:
     }
     input_pt.close();
     input_wt.close();
+  }
+
+public:
+  UserInputGenerator(Teuchos::ParameterList &parlist,
+               const Teuchos::RCP<BatchManager<Real> > &bman)
+    : SampleGenerator<Real>(bman) {
+    Teuchos::ParameterList &list
+      = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
+    if ( list.isParameter("Points File")  &&
+         list.isParameter("Weights File") &&
+         list.isParameter("Number of Samples") &&
+         list.isParameter("Dimension") ) {
+      std::string file_pt = list.get("Points File Name","points.txt");
+      std::string file_wt = list.get("Weights File Name","weights.txt");
+      int n = list.get("Number of Samples",100);
+      int dim = list.get("Dimension",4);
+      sample(file_pt,file_wt,n,dim,bman);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ">>> (ROL::UserInputGenerator): ParameterList does not contain sufficient information.");
+    }
+  }
+
+  UserInputGenerator(const std::string file_pt,
+                     const std::string file_wt,
+                     const int n,
+                     const int dim, 
+                     const Teuchos::RCP<BatchManager<Real> > &bman)
+    : SampleGenerator<Real>(bman) {
+    sample(file_pt,file_wt,n,dim,bman);
   }
 
   void refine(void) {}

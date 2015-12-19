@@ -35,7 +35,6 @@ C=======================================================================
       SUBROUTINE INIGRD (FROM, TO, GRAD, NINT, NPTS, ARRAY)
 C=======================================================================
 
-C   $Id: inigrd.f,v 1.2 1991/02/07 10:35:19 gdsjaar Exp $
 C   $Log: inigrd.f,v $
 C   Revision 1.2  1991/02/07 10:35:19  gdsjaar
 C   Removed Debug Comment lines from files

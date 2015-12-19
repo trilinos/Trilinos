@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#if defined(_MSC_VER)
+# pragma warning(disable:4996) /* deprecation */
+#endif
+
 #include "exodusII_test.h"
 
 
@@ -21,7 +25,7 @@ typedef struct
   MainFuncPointer func;
 } functionMapEntry;
 
-functionMapEntry cmakeGeneratedFunctionMapEntries[] = {
+static functionMapEntry cmakeGeneratedFunctionMapEntries[] = {
     {
     "CreateEdgeFace",
     CreateEdgeFace
@@ -37,7 +41,7 @@ functionMapEntry cmakeGeneratedFunctionMapEntries[] = {
 /* Allocate and create a lowercased copy of string
    (note that it has to be free'd manually) */
 
-char* lowercase(const char *string)
+static char* lowercase(const char *string)
 {
   char *new_string, *p;
 
@@ -69,7 +73,7 @@ char* lowercase(const char *string)
 
 int main(int ac, char *av[])
 {
-  int i, NumTests, testNum, partial_match;
+  int i, NumTests, testNum = 0, partial_match;
   char *arg, *test_name;
   int count;
   int testToRun = -1;
@@ -92,7 +96,6 @@ int main(int ac, char *av[])
       }
     printf("To run a test, enter the test number: ");
     fflush(stdout);
-    testNum = 0;
     if( scanf("%d", &testNum) != 1 )
       {
       printf("Couldn't parse that input as a number\n");
@@ -149,6 +152,13 @@ int main(int ac, char *av[])
     int result;
   ex_opts( EX_VERBOSE );
 
+    if (testToRun < 0 || testToRun >= NumTests)
+      {
+      printf(
+        "testToRun was modified by TestDriver code to an invalid value: %3d.\n",
+        testNum);
+      return -1;
+      }
     result = (*cmakeGeneratedFunctionMapEntries[testToRun].func)(ac, av);
 
     return result;

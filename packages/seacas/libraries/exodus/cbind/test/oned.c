@@ -114,7 +114,6 @@ int main (int argc, char **argv)
    printf (" cpu word size: %d io word size: %d\n",CPU_word_size,IO_word_size);
 
    EXCHECK(ex_set_max_name_length(exoid, 40));
-   /* ncopts = NC_VERBOSE; */
 
 /* initialize file with parameters */
 

@@ -69,7 +69,6 @@ void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh:
     broker.add_mesh_database(fileName, stk::io::READ_MESH);
     broker.create_input_mesh();
     broker.populate_bulk_data();
-    unlink(fileName.c_str());
 }
 
 void generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(const std::string &meshSizeSpec, stk::mesh::BulkData &mesh, const std::string &decompositionMethod)
@@ -80,6 +79,7 @@ void generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(const 
     generated_mesh_to_file_in_serial(meshSizeSpec,tempFilename);
 
     read_from_serial_file_and_decompose(tempFilename, mesh, decompositionMethod);
+    unlink(tempFilename.c_str());
 }
 
 

@@ -408,15 +408,20 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 }
 
 
-void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
+bool EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 {
-  if (!cached_find(key)) return;
+  bool did_clear_ghosting = false;
+  if (!cached_find(key)) return did_clear_ghosting;
 
   EntityCommInfoVector & comm_map = m_last_lookup->second.comm_map;
 
   EntityCommInfoVector::iterator j = comm_map.begin();
   while ( j != comm_map.end() && j->ghost_id == 0 ) { ++j ; }
-  comm_map.erase( j , comm_map.end() );
+  if (j != comm_map.end())
+  {
+      comm_map.erase( j , comm_map.end() );
+      did_clear_ghosting = true;
+  }
 
   if (comm_map.empty()) {
     m_last_lookup = m_comm_map.erase(m_last_lookup);
@@ -424,17 +429,21 @@ void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
           m_comm_map_change_listener->removedKey(key);
       }
   }
+  return did_clear_ghosting;
 }
 
 
-void EntityCommDatabase::comm_clear(const EntityKey & key)
+bool EntityCommDatabase::comm_clear(const EntityKey & key)
 {
-  if (!cached_find(key)) return;
+    bool did_clear = false;
+    if (!cached_find(key)) return did_clear;
 
-  m_last_lookup = m_comm_map.erase(m_last_lookup);
-      if (m_comm_map_change_listener != nullptr) {
-          m_comm_map_change_listener->removedKey(key);
-      }
+    m_last_lookup = m_comm_map.erase(m_last_lookup);
+    did_clear = true;
+    if (m_comm_map_change_listener != nullptr) {
+      m_comm_map_change_listener->removedKey(key);
+    }
+    return did_clear;
 }
 
 

@@ -45,21 +45,25 @@
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Amesos2_config.h>
+
 #include "MueLu_TestHelpers.hpp"
+#include "MueLu_Version.hpp"
+
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_TestHelpersSmoothers.hpp"
 
-#include "MueLu_UseDefaultTypes.hpp"
-
 namespace MueLuTests {
-
-#include "MueLu_UseShortNames.hpp"
 
   // this namespace already has:  #include "MueLu_UseShortNames.hpp"
   using namespace TestHelpers::Smoothers;
 
-  TEUCHOS_UNIT_TEST(Amesos2Smoother, NotSetup)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Amesos2Smoother, NotSetup, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
+
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
 #if defined HAVE_AMESOS2_KLU2 || defined HAVE_AMESOS2_SUPERLU
@@ -68,8 +72,13 @@ namespace MueLuTests {
     }
   }
 
-  TEUCHOS_UNIT_TEST(Amesos2Smoother, Apply_Correctness)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Amesos2Smoother, Apply_Correctness, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
+
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
     {
       Teuchos::RCP<Amesos2Smoother> smoother;
@@ -84,5 +93,11 @@ namespace MueLuTests {
 #endif
     }
   }
+
+#  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, NotSetup, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Amesos2Smoother, Apply_Correctness, SC, LO, GO, Node)
+
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

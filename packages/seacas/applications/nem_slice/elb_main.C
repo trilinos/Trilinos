@@ -152,10 +152,9 @@ int main (int argc, char *argv[])
     std::cerr << "Input Mesh File = '" << mesh_file_name << "'" << std::endl;
     int exoid=ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
     if (exoid < 0) {
-      char ctemp[1024];
-      sprintf(ctemp, "fatal: unable to open input ExodusII file %s",
-	      mesh_file_name);
-      Gen_Error(0, ctemp);
+      std::string error("fatal: unable to open input ExodusII file ");
+      error += mesh_file_name;
+      Gen_Error(0, error.c_str());
       return 0;
     }
 
@@ -320,7 +319,7 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
   if(lb.type == INERTIAL || lb.type == ZPINCH ||
      lb.type == BRICK || lb.type == ZOLTAN_RCB ||
      lb.type == ZOLTAN_RIB || lb.type == ZOLTAN_HSFC ||
-     problem.vis_out == ELB_TRUE)
+     problem.vis_out == 1 || problem.vis_out == 2)
     problem.read_coords = ELB_TRUE;
   else
     problem.read_coords = ELB_FALSE;
@@ -446,7 +445,7 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
   printf("Time to generate load-balance maps: %fs\n", time2-time1);
 
   /* Output the visualization file */
-  if(problem.vis_out == ELB_TRUE)
+  if(problem.vis_out == 1 || problem.vis_out == 2)
   {
     time1 = get_time();
     if(!write_vis(nemI_out_file, exoII_inp_file, &machine, &problem,

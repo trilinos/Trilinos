@@ -55,7 +55,7 @@
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningHelpers.hpp>
 
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
 #include <Xpetra_EpetraMultiVector.hpp>
 #endif
 #include <Xpetra_TpetraMultiVector.hpp>
@@ -245,7 +245,7 @@ template <typename User>
     }
   }
   else if (map_->lib() == Xpetra::UseEpetra){
-#ifdef HAVE_ZOLTAN2_EPETRA
+#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
     typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
     const xe_mvector_t *evector =
       dynamic_cast<const xe_mvector_t *>(vector_.get());

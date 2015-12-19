@@ -558,6 +558,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                             problemComm_,
                                             this->graphModel_));
     }
+    else if (algName_ == std::string("pulp")) {
+      this->algorithm_ = rcp(new AlgPuLP<Adapter>(this->envConst_,
+                                            problemComm_,
+                                            this->baseInputAdapter_));
+    }
     else if (algName_ == std::string("block")) {
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          problemComm_, this->identifierModel_));
@@ -820,6 +825,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
+    else if (algorithm == std::string("pulp"))
+    {
+      algName_ = algorithm;
+    }
     else if (algorithm == std::string("patoh") ||
              algorithm == std::string("phg"))
     {
@@ -881,10 +890,18 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
+#ifdef HAVE_ZOLTAN2_PULP
+      // TODO: XtraPuLP
+      //if (problemComm_->getSize() > 1)
+      //  algName_ = std::string("xtrapulp"); 
+      //else
+      algName_ = std::string("pulp");
+#else
       if (problemComm_->getSize() > 1)
         algName_ = std::string("phg"); 
       else
         algName_ = std::string("patoh"); 
+#endif
 #endif
 #endif
     }

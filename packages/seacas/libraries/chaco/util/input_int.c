@@ -50,6 +50,10 @@ int       input_int(void)
     int       i;		/* loop counter */
     int       isdigit(int);
 
+    for (i=0; i < LINE_LENGTH; i++) {
+      line[i] = '\0';
+    }
+
     i = 0;
     done = FALSE;
     while (!done) {
@@ -65,6 +69,6 @@ int       input_int(void)
 	done = TRUE;
     }
 
-    sscanf(line, "%d", &val);
+    (void)sscanf(line, "%d", &val);
     return (val);
 }

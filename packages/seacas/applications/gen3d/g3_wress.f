@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C     $Id: wress.f,v 1.8 2003/08/19 17:56:44 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE WRESS (A, IA, IDFRO, IDBCK,
      &     ISSFRO, ISSBCK, NSSUR, NESUR, NSSFRO, NSSBCK,
@@ -131,7 +130,18 @@ C     The size of the array is MAX(NSSFRO, NSSBCK)
          call inirea(nssur, 1.0, a(ktdist))
 C ... Front sidesets are surface 6
          call iniint(nesur, 6, ia(kiside))
-         do 20 iss = 1, nfro
+C ... If the element number is negative, then we use surface 5
+C     See newess for the code that sets the element number negative
+         if (nfro .gt. 0) then
+           do i = 1, nesur
+             if (issfro(i) .lt. 0) then
+               ia(kiside+i-1) = 5
+               issfro(i) = -issfro(i)
+             end if
+           end do
+
+         end if
+         do iss = 1, nfro
            call expsp (ndbout, idfro(iss), nesur, nssur, ierr)
            if (ierr .lt. 0) then
               call exerr('gen3d2', 'Error from expsp', exlmsg)
@@ -147,21 +157,23 @@ C ... Front sidesets are surface 6
               call exerr('gen3d2', 'Error from expssd', exlmsg)
               go to 40
            endif
- 20      continue
+         end do
+
+
 C ... Back sidesets are surface 5
          call iniint(nesur, 5, ia(kiside))
 C ... If the element number is negative, then we use surface 4
 C     See newess for the code that sets the element number negative
          if (nbck .gt. 0) then
-           do 25 i = 1, nesur
+           do i = 1, nesur
              if (issbck(i) .lt. 0) then
                ia(kiside+i-1) = 4
                issbck(i) = -issbck(i)
              end if
- 25        continue
+           end do
          end if
          
-         do 30 iss = 1, nbck
+         do iss = 1, nbck
             call expsp (ndbout, idbck(iss), nesur, nssur, ierr)
            if (ierr .lt. 0) then
               call exerr('gen3d2', 'Error from expsp', exlmsg)
@@ -177,7 +189,7 @@ C     See newess for the code that sets the element number negative
               call exerr('gen3d2', 'Error from expssd', exlmsg)
               go to 40
            endif
- 30      continue
+         end do
          call mddel('TDIST')
          call mddel('ISIDE')
       end if

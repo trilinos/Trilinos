@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Distribution<double> > dist;
 
     // Get ROL parameterlist
-    std::string filename = "test_02.xml";
+    std::string filename = "input_02.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );   
   
