@@ -27,14 +27,18 @@ struct Box {
 };
 
 struct ConstCrsMatrix {
-  const Int m, n;
-  const Int* const ir; // rowptr
-  const Int* const jc; // col
-  const Real* const d;
+  enum Direction { forward = 0, transpose };
 
-  ConstCrsMatrix (const Int nrow, const Int ncol, const Int* ir, const Int* jc,
-                  const Real* d, bool deallocate = true)
-    : m(nrow), n(ncol), ir(ir), jc(jc), d(d), deallocate_(deallocate)
+  const Int m, n;
+  const Size* const ir; // row pointer
+  const Int* const jc;  // col
+  const Real* const d;
+  Direction dir;
+
+  ConstCrsMatrix (const Int nrow, const Int ncol, const Size* ir, const Int* jc,
+                  const Real* d, Direction dir, bool deallocate)
+    : m(nrow), n(ncol), ir(ir), jc(jc), d(d), dir(dir),
+      deallocate_(deallocate)
   {}
   ~ConstCrsMatrix();
 private:
@@ -43,19 +47,14 @@ private:
 
 struct CrsMatrix {
   Int m, n;
-  Int* const ir; // rowptr
+  Size* const ir; // rowptr
   Int* const jc; // col
   Real* d;
 
-  CrsMatrix (const Int nrow, const Int ncol, Int* ir, Int* jc, Real* d,
-             bool deallocate = true)
-    : m(nrow), n(ncol), ir(ir), jc(jc), d(d), deallocate_(deallocate)
+  CrsMatrix (const Int nrow, const Int ncol, Size* ir, Int* jc, Real* d)
+    : m(nrow), n(ncol), ir(ir), jc(jc), d(d)
   {}
   ~CrsMatrix();
-  bool get_deallocate () const { return deallocate_; }
-  void set_deallocate (const bool val) { deallocate_ = val; }
-private:
-  bool deallocate_;
 };
 
 struct Options {
@@ -69,7 +68,7 @@ struct Options {
 
 struct Partition {
   CrsMatrix* cm;
-  std::vector<Int> A_idxs;
+  std::vector<Size> A_idxs;
   Partition () : cm(0) {}
   ~Partition () { clear(); }
   void clear();
@@ -98,10 +97,11 @@ private:
 
 class Segmenter {
 protected:
-  std::vector<Int> nnz_, p_;
+  std::vector<Size> nnz_;
+  std::vector<Int> p_;
 public:
   virtual ~Segmenter () {}
-  Int nnz (const Int idx) const { return nnz_[idx]; }
+  Size nnz (const Int idx) const { return nnz_[idx]; }
   const std::vector<Int>& p () const { return p_; }
 };
 
@@ -117,7 +117,7 @@ public:
       ls_blk_sz_(ls_blk_sz), block_0_nnz_os_(block_0_nnz_os)
   { segment(); }
   // nnz in segment idx.
-  Int nnz (const Int idx) const { return nnz_[idx]; }
+  Size nnz (const Int idx) const { return nnz_[idx]; }
   const std::vector<Int>& p () const { return p_; }
 private:
   void count_nnz_by_row(std::vector<Int>& rcnt);
@@ -127,7 +127,7 @@ private:
 };
 
 struct InitInfo {
-  unsigned short nthreads, min_blksz, max_nrhs, min_parallel_rows;
+  Int nthreads, min_blksz, max_nrhs, min_parallel_rows;
   Real min_dense_density;
 };
 
@@ -152,9 +152,11 @@ class TMatrix;
 class SerialBlock {
   friend std::ostream& operator<<(std::ostream& os, const TMatrix& m);
 
-  Int r0_, c0_, nr_, nc_, roff_, coff_, nnz_;
+  Int r0_, c0_, nr_, nc_, roff_, coff_;
+  Size nnz_;
   Real* d_;
-  Int* ir_, * jc_;
+  Size* ir_;
+  Int* jc_;
   bool deallocate_, is_dense_;
 
   void reinit_numeric_spars(const CrsMatrix& A);
@@ -184,7 +186,7 @@ public:
   bool inited () const { return d_; }
   void n1Axpy(const Real* RESTRICT x, const Int ldx, const Int nrhs,
               Real* RESTRICT y, const Int ldy) const;
-  Int nnz () const { return nnz_; }
+  Size nnz () const { return nnz_; }
   bool is_sparse () const { return ir_; }
 
   // Experimental.
@@ -257,7 +259,8 @@ protected:
 };
 
 class OnDiagTri : public Tri {
-  Int c0_, nnz_;
+  Int c0_;
+  Size nnz_;
   Real* d_; // Packed by column in dense tri format.
   CrsMatrix* m_;
 #ifdef USE_MKL
@@ -278,7 +281,7 @@ public:
             const InitInfo& in);
   // Initialization that takes up space as a block but has no data.
   void init(const Int r0, const Int c0, const Int n);
-  int nthreads() const;
+  Int nthreads() const;
   void init_metadata(const CrsMatrix& T, const Int r0, const Int c0,
                      const Int n, const InitInfo& in);
   void init_memory(const InitInfo& in);
@@ -286,7 +289,7 @@ public:
   void reinit_numeric(const CrsMatrix& T);
   void solve(const Real* b, const Int ldb, Real* x, const Int ldx,
              const Int nrhs) const;
-  Int nnz () const { return nnz_; }
+  Size nnz () const { return nnz_; }
   bool inited () const { return d_ || m_; }
 
 private: // For inverse of on-diag triangle.
@@ -385,11 +388,11 @@ private:
   mutable p2p::Done p2p_done_value_;
   void find_task_responsible_for_variable(std::vector<p2p::Pair>& pairs);
   Int fill_graph(const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
-                 std::vector<Int>& gp, std::vector<Int>& wrk);
-  void prune_graph(const std::vector<Int>& gc, const std::vector<Int>& gp,
+                 std::vector<Size>& gp, std::vector<Int>& wrk);
+  void prune_graph(const std::vector<Int>& gc, const std::vector<Size>& gp,
                    std::vector<Int>& g, std::vector<Int>& gsz,
                    std::vector<Int>& wrk, const Int max_gelen);
-  void fill_dependencies(const std::vector<Int>& g, const std::vector<Int>& gp,
+  void fill_dependencies(const std::vector<Int>& g, const std::vector<Size>& gp,
                          const std::vector<Int>& gsz);
 public:
   void p2p_init();
@@ -412,6 +415,7 @@ public:
   void init(const Int n, const bool is_lo, const std::vector<Int>& lsis,
             const std::vector<Int>& dpis, const Int nthreads,
             const Int max_nrhs, const Int* p, const Int* q, const Real* r);
+  void reinit_numeric(const Real* r);
   Real* from_outside(const Real* x, const Int nrhs) const;
   void to_outside(Real* x, const Int nrhs, const Real a, const Real b) const;
 };
@@ -420,7 +424,7 @@ public:
 class TriSolver {
   Int n_;
   bool is_lo_;
-  unsigned short nthreads_;
+  Int nthreads_;
   Partition p_[2];
 
   Permuter perm_;
@@ -435,7 +439,7 @@ public:
   void init(const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
             const bool save_for_reprocess, const Int* p, const Int* q,
             const Real* r, const Options& o);
-  void init_numeric(const ConstCrsMatrix* T);
+  void reinit_numeric(const ConstCrsMatrix* T, const Real* r);
   bool is_lower_tri () const { return is_lo_; }
   // x and b can be the same pointers.
   void solve(const Real* b, const Int nrhs, Real* x, const Real alpha,
@@ -444,9 +448,10 @@ public:
 
 } // namespace impl
 
-struct CrsMatrix : impl::ConstCrsMatrix {
-  CrsMatrix (const Int nrow, const Int* ir, const Int* jc, const Real* d)
-    : impl::ConstCrsMatrix(nrow, nrow, ir, jc, d, false)
+struct CrsMatrix : public impl::ConstCrsMatrix {
+  CrsMatrix (const Int nrow, const Size* ir, const Int* jc, const Real* d,
+             const impl::ConstCrsMatrix::Direction dir)
+    : impl::ConstCrsMatrix(nrow, nrow, ir, jc, d, dir, false)
   {}
 };
 

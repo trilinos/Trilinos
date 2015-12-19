@@ -3,7 +3,6 @@
 # include <mkl.h>
 #endif
 
-#include <sys/time.h>
 #include <cstdio>
 #include <cmath>
 #include <iostream>
@@ -218,15 +217,19 @@ ConstCrsMatrix::~ConstCrsMatrix () {
 }
 
 CrsMatrix::~CrsMatrix () {
-  if ( ! deallocate_) return;
   deln_const(ir); deln_const(jc); deln_const(d);
+}
+
+inline ConstCrsMatrix::Direction
+opposite (const ConstCrsMatrix::Direction dir) {
+  return static_cast<ConstCrsMatrix::Direction>((dir + 1) % 2);
 }
 
 template<typename T> static T* vec2arr (const std::vector<T>& v) {
   if (v.empty()) return NULL;
   T* a;
   ALLOC(a = allocn<T>(v.size()), ;, "vec2arr");
-  memcpy(a, &v[0], sizeof(T)*v.size());
+  memcpy(a, v.data(), sizeof(T)*v.size());
   return a;
 }
 
@@ -241,13 +244,15 @@ inline void Partition::clear_d () { deln(cm->d); }
 
 namespace {
 struct SparseData {
-  Int* ir, * jc;
+  Size* ir;
+  Int* jc;
   Real* d;
-  SparseData (const Int m, const Int nnz, const bool touch = false) {
-    ir = jc = 0;
+  SparseData (const Int m, const Size nnz, const bool touch = false) {
+    ir = 0;
+    jc = 0;
     d = 0;
     try {
-      ir = allocn<Int>(m+1, touch);
+      ir = allocn<Size>(m+1, touch);
       if (nnz > 0) {
         jc = allocn<Int>(nnz, touch);
         d = allocn<Real>(nnz, touch);
@@ -302,15 +307,17 @@ inline void set_num_threads (const int nthreads, NumThreads& save) {
 }
 
 inline void restore_num_threads (const NumThreads& save) {
+#ifdef USE_MKL
+  mkl_set_dynamic(save.mkl_dynamic);
+#endif
+
   // This ruins performance on especially the KNC if the number of threads is
   // actually switching. Need to think about this more. Right now, the interface
   // does not promise OMP state will remain the same.
   return;
-
   omp_set_num_threads(save.omp);
 #ifdef USE_MKL
   mkl_set_num_threads(save.mkl);
-  mkl_set_dynamic(save.mkl_dynamic);
 #endif
 }
 
@@ -337,21 +344,21 @@ void throw_if_nthreads_not_ok (const int nthreads) {
 
 // Return i such that ir[i] is the first value >= c. If no such i exists,
 // return n.
-inline Int find_first (const Int* ir, const Int n, const Int c) {
-  return c == 0 ? 0 : std::lower_bound(ir, ir+n, c) - ir;
+inline Int find_first (const Int* jc, const Int n, const Int c) {
+  return c == 0 ? 0 : std::lower_bound(jc, jc+n, c) - jc;
 }
 
 // Return the number of nonzeros in row r that are in [c_first, c_last). The
 // corresponding indices, relative to the start of the row, are i_first:i_last.
-inline Int find_first_and_last (const Int* const ir, const Int r,
+inline Int find_first_and_last (const Size* const ir, const Int r,
                                 const Int* const jc,
                                 const Int c_first, const Int c_last,
                                 Int& i_first, Int& i_last) {
   assert(c_last >= c_first);
-  const Int
+  const Size
     iri = ir[r],
-    irip1 = ir[r+1],
-    n = irip1 - iri;
+    irip1 = ir[r+1];
+  const Int n = static_cast<Int>(irip1 - iri);
   i_first = find_first(jc + iri, n, c_first);
   if (i_first == n) {
     i_last = i_first;
@@ -363,12 +370,12 @@ inline Int find_first_and_last (const Int* const ir, const Int r,
 }
 
 // Crop the submatrix A(b) such that A(cb) has no 0 border.
-Int crop_matrix (const CrsMatrix& T, const Box& b, Box& cb) {
+Size crop_matrix (const CrsMatrix& T, const Box& b, Box& cb) {
   cb.r0 = -1;
   Int r1 = -1;
   cb.c0 = b.c0 + b.nc;
   Int c1 = b.c0;
-  Int nnz = 0;
+  Size nnz = 0;
   //todo ||ize if not nested.
   for (Int r = b.r0, lrow = 0; r < b.r0 + b.nr; ++r, ++lrow) {
     Int i_first, i_last;
@@ -376,7 +383,7 @@ Int crop_matrix (const CrsMatrix& T, const Box& b, Box& cb) {
                                         i_first, i_last);
     if (cnt) {
       nnz += cnt;
-      const Int irr = T.ir[r];
+      const Size irr = T.ir[r];
       cb.c0 = std::min(cb.c0, T.jc[irr + i_first]);
       c1 = std::max(c1, T.jc[irr + i_last - 1]);
       r1 = r;
@@ -422,7 +429,7 @@ Int decide_level_set_max_index (const std::vector<Int>& N, const Int size_thr,
 void alloc_lsets (const Int lsmi, const Int sns, const std::vector<Int>& level,
                   const std::vector<Int>& n, LevelSetter::LevelSets& lsets) {
   if (lsmi < 0) return;
-  const Int Lm_sr = level.size();
+  const Int Lm_sr = static_cast<Int>(level.size());
   lsets.resize(lsmi+1);
   for (Int i = 0; i <= lsmi; ++i)
     lsets[i].reserve(sns * n[i]);
@@ -436,7 +443,6 @@ void alloc_lsets (const Int lsmi, const Int sns, const std::vector<Int>& level,
 }
 
 namespace locrsrow {
-// Serial impl for reference.
 Int schedule_serial (const ConstCrsMatrix& L, const Int sns,
                      std::vector<Int>& w) {
   // Eq. 18 in Y. Saad's 1989 SIAM J Sci Stat Comput paper.
@@ -445,7 +451,7 @@ Int schedule_serial (const ConstCrsMatrix& L, const Int sns,
     w.resize(L.m, -1);
     for (Int r = 0; r < L.m; ++r) {
       Int level = -1;
-      for (Int j = L.ir[r]; j < L.ir[r+1]; ++j)
+      for (Size j = L.ir[r]; j < L.ir[r+1]; ++j)
         level = std::max(level, w[L.jc[j]]);
       ++level;
       w[r] = level;
@@ -459,7 +465,7 @@ Int schedule_serial (const ConstCrsMatrix& L, const Int sns,
       Int level = -1;
       for (Int i = 0; i < sns; ++i, ++r) {
         // For each row in the block row:
-        for (Int j = L.ir[r]; j < L.ir[r+1]; ++j) {
+        for (Size j = L.ir[r]; j < L.ir[r+1]; ++j) {
           const Int sc = L.jc[j] / sns;
           level = std::max(level, w[sc]);
         }
@@ -480,7 +486,7 @@ Int schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
     rows_per_thread = std::max(1, blksz / nthreads);
   if (blksz > L.m)
     return schedule_serial(L, 1, w);
-  std::vector<Int> frontier(blksz);
+  std::vector<Size> frontier(blksz);
   for (Int i = 0; i < blksz; ++i) frontier[i] = L.ir[i];
   w.resize(L.m);
   Int max_level = -1;
@@ -489,17 +495,17 @@ Int schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
   {
 #   pragma omp for schedule(static, parfor_static_size)
     for (Int i = 0; i < L.m; ++i) w[i] = -1;
-    const Int* const ir = L.ir;
+    const Size* const ir = L.ir;
     const Int* const jc = L.jc;
     for (Int c = 0; c < L.m; c += blksz) {
-      const Int tlim = std::min(c + blksz, L.m);
+      const Int tlim = std::min<Int>(c + blksz, L.m);
       // On-diag serial triangle.
 #     pragma omp single nowait
       {
         for (Int r = c; r < tlim; ++r) {
           // w[r] contains the max level seen so far.
           Int level = w[r];
-          for (Int j = frontier[r - c], jlim = ir[r+1]; j < jlim; ++j)
+          for (Size j = frontier[r - c], jlim = ir[r+1]; j < jlim; ++j)
             level = std::max(level, w[jc[j]]);
           ++level;
           w[r] = level;
@@ -509,13 +515,13 @@ Int schedule_sns1 (const ConstCrsMatrix& L, std::vector<Int>& w,
       }
       if (tlim == L.m) break;
       // Off-diag parallel block row.
-      const Int rlim = std::min(tlim + blksz, L.m);
+      const Int rlim = std::min<Int>(tlim + blksz, L.m);
       while (done != c) ;
 #     pragma omp for schedule(static, rows_per_thread)
       for (Int r = tlim; r < rlim; ++r) {
         Int level = -1;
-        const Int jlim = ir[r+1];
-        for (Int j = ir[r]; j < jlim; ++j) {
+        const Size jlim = ir[r+1];
+        for (Size j = ir[r]; j < jlim; ++j) {
           const Int c = jc[j];
           if (c >= tlim) {
             frontier[r - tlim] = j;
@@ -543,7 +549,7 @@ Int schedule (const ConstCrsMatrix& L, const Int sns, std::vector<Int>& w,
     rows_per_thread = std::max(1, (blksz + nthreads) / nthreads);
   if (blksz > Lm_sr)
     return schedule_serial(L, sns, w);
-  std::vector<Int> frontier(bnr);
+  std::vector<Size> frontier(bnr);
   for (Int i = 0; i < bnr; ++i) frontier[i] = L.ir[i];
   w.resize(Lm_sr);
   Int max_level = -1;
@@ -551,10 +557,10 @@ Int schedule (const ConstCrsMatrix& L, const Int sns, std::vector<Int>& w,
   {
 #   pragma omp for schedule(static, parfor_static_size)
     for (Int i = 0; i < Lm_sr; ++i) w[i] = -1;
-    const Int* const ir = L.ir;
+    const Size* const ir = L.ir;
     const Int* const jc = L.jc;
     for (Int sc = 0; sc < Lm_sr; sc += blksz) {
-      const Int stlim = std::min(sc + blksz, Lm_sr);
+      const Int stlim = std::min<Int>(sc + blksz, Lm_sr);
       // On-diag serial triangle.
 #     pragma omp single nowait
       {
@@ -562,7 +568,7 @@ Int schedule (const ConstCrsMatrix& L, const Int sns, std::vector<Int>& w,
         for (Int sr = sc, r = c; sr < stlim; ++sr) {
           Int level = w[sr];
           for (Int i = 0; i < sns; ++i, ++r)
-            for (Int j = frontier[r - c], jlim = ir[r+1]; j < jlim; ++j) {
+            for (Size j = frontier[r - c], jlim = ir[r+1]; j < jlim; ++j) {
               const Int jsc = jc[j] / sns;
               assert(jsc >= sc);
               level = std::max(level, w[jsc]);
@@ -576,14 +582,14 @@ Int schedule (const ConstCrsMatrix& L, const Int sns, std::vector<Int>& w,
       // Off-diag parallel block row.
 #     pragma omp barrier
       const Int
-        srlim = std::min(stlim + blksz, Lm_sr),
+        srlim = std::min<Int>(stlim + blksz, Lm_sr),
         tlim = sns*stlim;
 #     pragma omp for schedule(static, rows_per_thread)
       for (Int sr = stlim; sr < srlim; ++sr) {
         Int level = -1;
         for (Int i = 0, r = sns*sr; i < sns; ++i, ++r) {
-          const Int jlim = ir[r+1];
-          for (Int j = ir[r]; j < jlim; ++j) {
+          const Size jlim = ir[r+1];
+          for (Size j = ir[r]; j < jlim; ++j) {
             const Int c = jc[j];
             if (c >= tlim) {
               frontier[r - tlim] = j;
@@ -635,7 +641,7 @@ Int schedule_serial (const ConstCrsMatrix& U, const Int sns,
       ++w[r];
       const Int level = w[r];
       max_level = std::max(level, max_level);
-      for (Int j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
+      for (Size j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
         const Int c = U.jc[j];
         w[c] = std::max(w[c], level);
       }
@@ -648,7 +654,7 @@ Int schedule_serial (const ConstCrsMatrix& U, const Int sns,
       const Int level = w[sr];
       max_level = std::max(level, max_level);
       for (Int i = 0; i < sns; ++i, ++r)
-        for (Int j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
+        for (Size j = U.ir[r] + 1; j < U.ir[r+1]; ++j) {
           const Int sc = U.jc[j] / sns;
           w[sc] = std::max(w[sc], level);
         }
@@ -713,7 +719,7 @@ void LevelSetter::reverse_variable_order (Int n) {
 namespace {
 CrsMatrix* get_matrix_p (const CrsMatrix& A, const std::vector<Int>& p) {
   const Int n = static_cast<Int>(p.size());
-  Int nnz = 0;
+  Size nnz = 0;
   for (size_t i = 0; i < p.size(); ++i) {
     const Int r = p[i];
     nnz += A.ir[r+1] - A.ir[r];
@@ -721,35 +727,36 @@ CrsMatrix* get_matrix_p (const CrsMatrix& A, const std::vector<Int>& p) {
 
   SparseData sd(n, nnz, true);
   for (size_t i = 0; i < p.size(); ++i) {
-    const Int r = p[i], nc = A.ir[r+1] - A.ir[r];
+    const Int r = p[i];
+    const Size nc = A.ir[r+1] - A.ir[r];
     sd.ir[i+1] = sd.ir[i] + nc;
     memcpy(sd.jc + sd.ir[i], A.jc + A.ir[r], nc*sizeof(*sd.jc));
     memcpy(sd.d + sd.ir[i], A.d + A.ir[r], nc*sizeof(*sd.d));
   }
 
   CrsMatrix* cm;
-  ALLOC(cm = new CrsMatrix(n, A.n, sd.ir, sd.jc, sd.d, true),
+  ALLOC(cm = new CrsMatrix(n, A.n, sd.ir, sd.jc, sd.d),
         sd.free(),
         "get_matrix_p");
   return cm;
 }
 
 ConstCrsMatrix* permute_to_other_tri (const ConstCrsMatrix& U) {
-  const Int n = U.m, nnz = U.ir[n];
+  const Int n = U.m;
+  const Size nnz = U.ir[n];
   SparseData sd(n, nnz);
 # pragma omp parallel for schedule(static)
   for (Int k = 1; k <= n; ++k)
     sd.ir[k] = nnz - U.ir[n-k];
 # pragma omp parallel for schedule(static)
-  for (Int k = 0; k < nnz; ++k) {
-    const Int i = nnz - k - 1;
+  for (Size k = 0; k < nnz; ++k) {
+    const Size i = nnz - k - 1;
     sd.jc[k] = n - U.jc[i] - 1;
     sd.d[k] = U.d[i];
   }
-  ConstCrsMatrix* ccm;
-  ALLOC(ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, true),
-        sd.free(),
-        "permute_to_other_tri");
+  ConstCrsMatrix* ccm = 0;
+  ALLOC(ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, U.dir, true),
+        sd.free(), "permute_to_other_tri");
   return ccm;
 }
 
@@ -802,7 +809,7 @@ Shape determine_shape (const ConstCrsMatrix& A) {
 # pragma omp parallel for schedule(static, parfor_static_size)
   for (Int r = 0; r < A.m; ++r) {
     bool diag_fnd = false;
-    for (Int j = A.ir[r]; j < A.ir[r+1]; ++j) {
+    for (Size j = A.ir[r]; j < A.ir[r+1]; ++j) {
       const Int c = A.jc[j];
       if (c != r) {
         if ( ! tri_determined) {
@@ -861,7 +868,7 @@ public:
 void get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
                                     Partition& p) {
   // Count nnz.
-  Int nnz = 0;
+  Size nnz = 0;
 # pragma omp parallel for reduction(+:nnz)
   for (size_t i = 0; i < pv.size(); ++i) {
     const Int k = pv.get(i);
@@ -869,9 +876,8 @@ void get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
   }
   SparseData sd(pv.size(), nnz);
   for (size_t ipv = 0; ipv < pv.size(); ++ipv) {
-    const Int
-      i = pv.get(ipv),
-      nc = A.ir[i+1] - A.ir[i];
+    const Int i = pv.get(ipv);
+    const Size nc = A.ir[i+1] - A.ir[i];
     sd.ir[ipv+1] = sd.ir[ipv] + nc;
   }
   assert(sd.ir[pv.size()] == nnz);
@@ -879,19 +885,19 @@ void get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
   const Int ipv_lim = pv.size();
 # pragma omp parallel for schedule(static, parfor_static_size)
   for (Int ipv = 0; ipv < ipv_lim; ++ipv) {
-    const Int
-      i = pv.get(ipv),
+    const Int i = pv.get(ipv);
+    const Size
       nc = A.ir[i+1] - A.ir[i],
       Aj0 = A.ir[i],
       Bj0 = sd.ir[ipv];
-    for (Int j = 0; j < nc; ++j) {
-      const Int Aj = Aj0 + j, Bj = Bj0 + j;
+    for (Size j = 0; j < nc; ++j) {
+      const Size Aj = Aj0 + j, Bj = Bj0 + j;
       sd.jc[Bj] = pv.to_block(A.jc[Aj]);
       sd.d[Bj] = A.d[Aj];
       p.A_idxs[Bj] = Aj;
     }
   }
-  ALLOC(p.cm = new CrsMatrix(pv.size(), pv.size(), sd.ir, sd.jc, sd.d, true),
+  ALLOC(p.cm = new CrsMatrix(pv.size(), pv.size(), sd.ir, sd.jc, sd.d),
         sd.free(),
         "get_matrix_pp_with_covers_all");
 }
@@ -900,7 +906,7 @@ void get_matrix_pp_with_covers_all (const ConstCrsMatrix& A, const PermVec& pv,
 void get_matrix_p_qp_with_covers_all (
   const ConstCrsMatrix& A, const PermVec& pv, const PermVec& qv, Partition& p)
 {
-  Int nnz = 0;
+  Size nnz = 0;
 # pragma omp parallel for reduction(+:nnz)
   for (size_t i = 0; i < pv.size(); ++i) {
     const Int r = pv.get(i);
@@ -909,9 +915,8 @@ void get_matrix_p_qp_with_covers_all (
 
   SparseData sd(pv.size(), nnz);
   for (size_t ipv = 0, lim = pv.size(); ipv < lim; ++ipv) {
-    const Int
-      r = pv.get(ipv),
-      nc = A.ir[r+1] - A.ir[r];
+    const Int r = pv.get(ipv);
+    const Size nc = A.ir[r+1] - A.ir[r];
     sd.ir[ipv+1] = sd.ir[ipv] + nc;
   }
   assert(sd.ir[pv.size()] == nnz);
@@ -920,13 +925,13 @@ void get_matrix_p_qp_with_covers_all (
   const Int ipv_lim = (Int) pv.size();
 # pragma omp parallel for schedule(static, parfor_static_size)
   for (Int ipv = 0; ipv < ipv_lim; ++ipv) {
-    const Int
-      i = pv.get(ipv),
+    const Int i = pv.get(ipv);
+    const Size
       nc = A.ir[i+1] - A.ir[i],
       Aj0 = A.ir[i],
       Bj0 = sd.ir[ipv];
-    for (Int j = 0; j < nc; ++j) {
-      const Int
+    for (Size j = 0; j < nc; ++j) {
+      const Size
         Aj = Aj0 + j, Bj = Bj0 + j,
         Ac = A.jc[Aj];
       sd.jc[Bj] = qv.has(Ac) ? qv.to_block(Ac) : qv.size() + pv.to_block(Ac);
@@ -935,13 +940,14 @@ void get_matrix_p_qp_with_covers_all (
     }
   }
 
-  ALLOC(p.cm = new CrsMatrix(pv.size(), A.n, sd.ir, sd.jc, sd.d, true),
+  ALLOC(p.cm = new CrsMatrix(pv.size(), A.n, sd.ir, sd.jc, sd.d),
         sd.free(),
         "get_matrix_p_qp_with_covers_all");
 }
 
 template<typename T> struct SortEntry {
-  Int i, A_idx; T d;
+  Size A_idx;
+  Int i; T d;
   SortEntry () {}
   bool operator< (const SortEntry& se) const { return i < se.i; }
 };
@@ -951,7 +957,7 @@ void sort (Partition& p) {
   CrsMatrix& A = *p.cm;
 
   //todo ||ize
-  int max_nc = 0;
+  Size max_nc = 0;
   for (Int r = 0; r < A.m; ++r)
     max_nc = std::max(max_nc, A.ir[r+1] - A.ir[r]);
   std::vector< SortEntry<Real> > sess(nthreads * max_nc);
@@ -959,17 +965,17 @@ void sort (Partition& p) {
 # pragma omp parallel for schedule(static, 1)
   for (Int r = 0; r < A.m; ++r) {
     const int tid = omp_get_thread_num();
-    const Int irr = A.ir[r], irrp1 = A.ir[r+1], nc = irrp1 - irr;
+    const Size irr = A.ir[r], irrp1 = A.ir[r+1], nc = irrp1 - irr;
     SortEntry<Real>* ses = &sess[tid*max_nc];
-    for (Int j = 0; j < nc; ++j) {
-      const Int Aj = irr + j;
+    for (Size j = 0; j < nc; ++j) {
+      const Size Aj = irr + j;
       ses[j].i = A.jc[Aj];
       ses[j].d = A.d[Aj];
       ses[j].A_idx = p.A_idxs[Aj];
     }
     std::sort(ses, ses + nc);
-    for (Int j = 0; j < nc; ++j) {
-      const Int Aj = irr + j;
+    for (Size j = 0; j < nc; ++j) {
+      const Size Aj = irr + j;
       A.jc[Aj] = ses[j].i;
       A.d[Aj] = ses[j].d;
       p.A_idxs[Aj] = ses[j].A_idx;
@@ -993,26 +999,25 @@ void partition_into_2_blocks (
   sort(p[1]);
 }
 
-inline void copy_partition (const ConstCrsMatrix& A, Partition& p,
-                            const bool is_lo) {
-  const Int ilim = (Int) p.A_idxs.size();
-  if (is_lo) {
-#   pragma omp parallel for schedule(static)
-    for (Int i = 0; i < ilim; ++i)
-      p.cm->d[i] = A.d[p.A_idxs[i]];
-  } else {
-    const Int nnz = A.ir[A.m];
-#   pragma omp parallel for schedule(static)
-    for (Int i = 0; i < ilim; ++i)
-      p.cm->d[i] = A.d[nnz - p.A_idxs[i] - 1];
-  }
+// inside || {}
+inline void reverse_A_idxs (const Size nnz, Partition& p) {
+# pragma omp for schedule(static)
+  for (size_t i = 0; i < p.A_idxs.size(); ++i)
+    p.A_idxs[i] = nnz - p.A_idxs[i] - 1;
+}
+
+inline void copy_partition (const ConstCrsMatrix& A, Partition& p) {
+  const Size ilim = static_cast<Size>(p.A_idxs.size());
+# pragma omp parallel for schedule(static)
+  for (Size i = 0; i < ilim; ++i)
+    p.cm->d[i] = A.d[p.A_idxs[i]];
 }
 
 inline void
-repartition_into_2_blocks (Partition* const p, const ConstCrsMatrix& A,
-                           const bool is_lo) {
+repartition_into_2_blocks (Partition* const p, const ConstCrsMatrix& A) {
   for (int i = 0; i < 2; ++i)
-    if (p[i].cm) copy_partition(A, p[i], is_lo);
+    if (p[i].cm)
+      copy_partition(A, p[i]);
 }
 } // namespace
 
@@ -1048,13 +1053,14 @@ void CrsSegmenter::init_nnz (const std::vector<Int>& rcnt) {
 // rows. Attempt to remove spikes in #rows.
 inline void
 smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
-               std::vector<Int>& nnz, const bool ignore_0) {
+               std::vector<Size>& nnz, const bool ignore_0) {
   const Int n = (Int) p.size() - 1;
   if (n <= 1) return;
   Int first = ignore_0 ? 1 : 0;
   for (int it = 0; ; ++it) {
     // Find a spike.
-    Int s_val = nnz[first], s_i = 0;
+    Size s_val = nnz[first];
+    Int s_i = 0;
     for (Int i = first + 1; i < n; ++i)
       if (nnz[i] > s_val) {
         s_i = i;
@@ -1062,7 +1068,8 @@ smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
       }
 
     // See if it decreases the spikiness to move a row from one set to another.
-    Int rnnz, d, idx, s;
+    Size rnnz, s;
+    Int d, idx;
     if (s_i == 0) {
       idx = p[1] - p[0] - 1;
       rnnz = rcnt[idx];
@@ -1080,7 +1087,8 @@ smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
     } else {
       const Int
         idx_l = p[s_i] - p[0],
-        idx_r = p[s_i+1] - 1 - p[0],
+        idx_r = p[s_i+1] - 1 - p[0];
+      const Size
         s_l = std::max(nnz[s_i-1] + rcnt[idx_l], nnz[s_i] - rcnt[idx_l]),
         s_r = std::max(nnz[s_i+1] + rcnt[idx_r], nnz[s_i] - rcnt[idx_r]);
       s = std::min(s_l, s_r);
@@ -1104,7 +1112,7 @@ smooth_spikes (const std::vector<Int>& rcnt, std::vector<Int>& p,
 
 void CrsSegmenter::segment () {
   assert(nr_ % ls_blk_sz_ == 0);
-  const Int nseg = std::min(nthreads_, nr_ / ls_blk_sz_);
+  const Int nseg = std::min<Int>(nthreads_, nr_ / ls_blk_sz_);
   if (nseg == 0) {
     assert(nr_ == 0);
     p_.resize(1, r0_);
@@ -1154,11 +1162,11 @@ void CrsSegmenter::segment () {
         Int j = (std::upper_bound(cs_rcnt.begin() + j0, cs_rcnt.end(), d)
                  - cs_rcnt.begin());
         if (d - cs_rcnt[j-1] > cs_rcnt[j] - d) ++j;
-        j = std::min(j, (Int) cs_rcnt.size() - nseg + i);
+        j = std::min<Int>(j, cs_rcnt.size() - nseg + i);
         if (j < j0) {
           // If not all the threads will have work, let the earlier threads have
           // the work.
-          j = std::min(j0, (Int) cs_rcnt.size());
+          j = std::min<Int>(j0, cs_rcnt.size());
           assert(r0_ + j*ls_blk_sz_ == p_[i-1] + 1);
         }
         p_[i] = r0_ + j*ls_blk_sz_;
@@ -1213,7 +1221,7 @@ void TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   // p2p sync'ing favors fewer threads. So don't run a bunch of threads on small
   // blocks.
   const Int nt = nnz / square(in.min_parallel_rows) + 1;
-  const Int nseg = std::max(1, std::min((Int) in.nthreads, nt));
+  const Int nseg = std::max<Int>(1, std::min(in.nthreads, nt));
   CrsSegmenter seg(A, r0, c0, nr, nc, nseg, 1, block_0_nnz_os);
 
   if (nnz)
@@ -1336,7 +1344,8 @@ inline void SerialBlock::clear () {
     deln(jc_);
     deln(d_);
   }
-  ir_ = jc_ = 0;
+  ir_ = 0;
+  jc_ = 0;
   roff_ = coff_ = 0;
   d_ = 0;
 }
@@ -1373,7 +1382,7 @@ void SerialBlock::init_memory (const InitInfo& in) {
     ALLOC(d_ = allocn<Real>(nr_*nc_, true), ;, "DenseSerialBlock::init");
   } else {
     try {
-      ir_ = allocn<Int>(nr_+1, true);
+      ir_ = allocn<Size>(nr_+1, true);
       if (nnz_ == 0) {
         ir_[nr_] = 0;
         return;
@@ -1400,11 +1409,11 @@ inline void SerialBlock::reinit_numeric (const CrsMatrix& A) {
 void SerialBlock::reinit_numeric_dense (const CrsMatrix& A) {
   const Int ilim = r0_ + nr_;
   for (Int i = r0_; i < ilim; ++i) {
-    const Int
-      lrow = i - r0_,
+    const Int lrow = i - r0_;
+    const Size
       iri = A.ir[i],
       irip1 = A.ir[i+1];
-    for (Int j = iri + find_first(A.jc + iri, irip1 - iri, c0_);
+    for (Size j = iri + find_first(A.jc + iri, irip1 - iri, c0_);
          j < irip1; ++j) {
       const Int lcol = A.jc[j] - c0_;
       if (lcol >= nc_) break;
@@ -1415,12 +1424,13 @@ void SerialBlock::reinit_numeric_dense (const CrsMatrix& A) {
 }
 
 inline void SerialBlock::reinit_numeric_spars (const CrsMatrix& A) {
-  Int k = 0, pk = 0, nzero_seq = 0, prev_entry = 0;
+  Size k = 0, pk = 0;
+  Int nzero_seq = 0, prev_entry = 0;
   ir_[0] = 0;
   const Int ilim = r0_ + nr_;
   for (Int i = r0_; i < ilim; ++i) {
-    const Int iri = A.ir[i], irip1 = A.ir[i+1];
-    for (Int g = iri + find_first(A.jc + iri, irip1 - iri, c0_);
+    const Size iri = A.ir[i], irip1 = A.ir[i+1];
+    for (Size g = iri + find_first(A.jc + iri, irip1 - iri, c0_);
          g < irip1; ++g) {
       const Int jcg = A.jc[g];
       if (jcg >= c0_ + nc_) break;
@@ -1491,9 +1501,9 @@ void OnDiagTri::init (const Int r0, const Int c0, const Int n) {
 }
 
 inline bool is_dense_tri (const CrsMatrix& T, const Int r0, const Int c0,
-                          const Int n, const InitInfo& in, Int& nnz) {
+                          const Int n, const InitInfo& in, Size& nnz) {
   nnz = count_nnz_lotri(T, r0, c0, n);
-  return nnz >= in.min_dense_density*ntri(n);
+  return nnz >= 0.5*in.min_dense_density*ntri(n);
 }
 
 void OnDiagTri::init_metadata (const CrsMatrix& T, const Int r0, const Int c0,
@@ -1515,7 +1525,7 @@ void OnDiagTri::init_memory (const InitInfo& in) {
     if ( ! t_.empty()) inv_init_memory();
   } else {
     SparseData sd(n_, nnz_);
-    ALLOC(m_ = new CrsMatrix(n_, n_, sd.ir, sd.jc, sd.d, true),
+    ALLOC(m_ = new CrsMatrix(n_, n_, sd.ir, sd.jc, sd.d),
           sd.free(); clear(),
           "OnDiagTri::init_memory");
 #ifdef USE_MKL
@@ -1529,20 +1539,20 @@ void OnDiagTri::init_numeric (const CrsMatrix& T) {
   if (dense_) {
     reinit_numeric(T);
   } else {
-    Int* const ir = m_->ir;
+    Size* const ir = m_->ir;
     Int* const jc = m_->jc;
     Real* const d = m_->d;
     for (Int grow = r0_; grow < r0_ + n_; ++grow) {
-      const Int
-        lrow = grow - r0_,
+      const Int lrow = grow - r0_;
+      const Size
         irg = T.ir[grow],
         irgp1 = T.ir[grow+1];
       ir[lrow+1] = ir[lrow];
-      for (Int k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
+      for (Size k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= n_) break;
-        Int& i = ir[lrow+1];
+        Size& i = ir[lrow+1];
         jc[i] = lcol;
         d[i] =
 #ifndef USE_MKL
@@ -1562,17 +1572,17 @@ void OnDiagTri::init_numeric (const CrsMatrix& T) {
 void OnDiagTri::reinit_numeric (const CrsMatrix& T) {
   if (d_) {
     memset(d_, 0, ntri(n_)*sizeof(*d_));
-    Int nnz = 0;
+    Size nnz = 0;
     for (Int grow = r0_; grow < r0_ + n_; ++grow) {
-      const Int
-        lrow = grow - r0_,
+      const Int lrow = grow - r0_;
+      const Size
         irg = T.ir[grow],
         irgp1 = T.ir[grow+1];
-      for (Int k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
+      for (Size k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= n_) break;
-        const Int di = (lrow*(lrow + 1))/2 + lcol;
+        const Size di = (lrow*(lrow + 1))/2 + lcol;
         const Real dv = lrow == lcol ? 1/T.d[k] : T.d[k];
         // Compressed dense triangle.
         d_[di] = dv;
@@ -1583,12 +1593,13 @@ void OnDiagTri::reinit_numeric (const CrsMatrix& T) {
       inv_reinit_numeric(T);
   } else if (m_) {
     Real* const d = m_->d;
-    for (Int grow = r0_, i = 0; grow < r0_ + n_; ++grow) {
-      const Int
-        lrow = grow - r0_,
+    Int i = 0;
+    for (Int grow = r0_; grow < r0_ + n_; ++grow) {
+      const Int lrow = grow - r0_;
+      const Size
         irg = T.ir[grow],
         irgp1 = T.ir[grow+1];
-      for (Int k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
+      for (Size k = irg + find_first(T.jc + irg, irgp1 - irg, c0_);
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= n_) break;
@@ -1603,8 +1614,8 @@ void OnDiagTri::reinit_numeric (const CrsMatrix& T) {
   }
 }
 
-inline int OnDiagTri::nthreads () const {
-  return std::max(1, static_cast<int>(t_.size()));
+inline Int OnDiagTri::nthreads () const {
+  return std::max<Int>(1, static_cast<Int>(t_.size()));
 }
 
 OnDiagTri::Thread::~Thread () { deln(d); }
@@ -1671,7 +1682,7 @@ inline void invert (Real* T, const Int n, Real* w) {
 
 void OnDiagTri::inv_reinit_numeric (const CrsMatrix& T) {
   { std::vector<Real> w(n_);
-    invert(d_, n_, &w[0]); }
+    invert(d_, n_, w.data()); }
   for (int tid = 0; tid < nthreads(); ++tid) {
     Thread& t = t_[tid];
     const Int nr0 = ntri(t.r0);
@@ -1702,7 +1713,7 @@ void build_recursive_tri_r (const CrsMatrix& T, const Int r, const Int c,
                             const Int n, const InitInfo& in,
                             std::list<Box>& b) {
   if (n <= in.min_blksz) {
-    Int nnz;
+    Size nnz;
     if (n <= in.min_parallel_rows || is_dense_tri(T, r, c, n, in, nnz)) {
       b.push_back(Box(r, c, n, n));
       return;
@@ -1885,7 +1896,7 @@ void LevelSetTri::update_permutation (std::vector<Int>& lsis,
       }
     }
 #   pragma omp barrier
-    for (Int i = 0, nnz = t.m->ir[t.m->m]; i < nnz; ++i) {
+    for (Size i = 0, nnz = t.m->ir[t.m->m]; i < nnz; ++i) {
       Int& jci = t.m->jc[i];
       if (jci < mvp_block_nc_) continue;
       jci = mvp_block_nc_ + q[jci - mvp_block_nc_];
@@ -1918,7 +1929,7 @@ find_task_responsible_for_variable (std::vector<p2p::Pair>& pairs) {
 // inside || {}
 Int LevelSetTri::
 fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
-            std::vector<Int>& gp, std::vector<Int>& wrk) {
+            std::vector<Size>& gp, std::vector<Int>& wrk) {
   // O(nnz/nthreads) time and O(nnz) space. Reduce the entry-wise graph to the
   // (lvl, tid)-wise dependency graph.
   const int tid = omp_get_thread_num();
@@ -1928,11 +1939,11 @@ fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
   const Int nlvls = (Int) lsp.size() - 1;
   // Build the graph g. g[e] is the list of dependencies for (level, tid) e.
   const CrsMatrix* const cm = t.m;
-  const Int* const ir = cm->ir;
+  const Size* const ir = cm->ir;
   const Int* const jc = cm->jc;
 
   // Get an unused piece of the workspace.
-  Int* Te = &wrk[0];
+  Int* Te = wrk.data();
   for (int i = 0; i < tid; ++i) {
     const CrsMatrix* const m = t_[i].m;
     if (m) Te += m->ir[m->m];
@@ -1942,11 +1953,11 @@ fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
   for (Int ils = 1, ils_lim = (Int) lsp.size() - 1; ils < ils_lim; ++ils) {
     const Int e = ls_p2p_sub2ind(ils, tid);
     Int* const Te0 = Te + ir[lsp[ils]];
-    const Int Ten = ir[lsp[ils+1]] - ir[lsp[ils]];
+    const Size Ten = ir[lsp[ils+1]] - ir[lsp[ils]];
     // Record all e = (lvl, tid) dependencies in a CRS matrix structurally
     // identical to cm.
     for (Int r = lsp[ils], rlim = lsp[ils+1]; r < rlim; ++r)
-      for (Int j = ir[r], jlim = ir[r+1]; j < jlim; ++j) {
+      for (Size j = ir[r], jlim = ir[r+1]; j < jlim; ++j) {
         const Int c = jc[j] - mvp_block_nc_;
         if (c < 0) {
           Te[j] = -1;
@@ -1960,7 +1971,7 @@ fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
     std::sort(Te0, Te0 + Ten);
     // ... count the number of unique entries.
     Int k = 0, prev = -1;
-    for (Int i = 0; i < Ten; ++i)
+    for (Size i = 0; i < Ten; ++i)
       if (Te0[i] != prev) {
         prev = Te0[i];
         const Int r_lvl = ls_p2p_ind2lvl(prev);
@@ -1976,7 +1987,7 @@ fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
 # pragma omp barrier
 # pragma omp master
   for (Int i = 1; i <= n; ++i) {
-    if (gp[i] > max_gelen) max_gelen = gp[i];
+    if (static_cast<Int>(gp[i]) > max_gelen) max_gelen = gp[i];
     gp[i] += gp[i-1];
   }
 # pragma omp barrier
@@ -1986,17 +1997,17 @@ fill_graph (const std::vector<p2p::Pair>& pairs, std::vector<Int>& g,
   for (Int ils = 1, ils_lim = (Int) lsp.size() - 1; ils < ils_lim; ++ils) {
     const Int e = ls_p2p_sub2ind(ils, tid);
     Int* const Te0 = Te + ir[lsp[ils]];
-    const Int Ten = ir[lsp[ils+1]] - ir[lsp[ils]];
+    const Size Ten = ir[lsp[ils+1]] - ir[lsp[ils]];
     Int* const ge_g = &g[gp[e]];
     Int k = 0, prev = -1;
-    for (Int i = 0; i < Ten; ++i)
+    for (Size i = 0; i < Ten; ++i)
       if (Te0[i] != prev) {
         prev = Te0[i];
         const Int r_lvl = ls_p2p_ind2lvl(prev);
         if (r_lvl != ils)
           ge_g[k++] = prev;
       }
-    assert(k == gp[e+1] - gp[e]);
+    assert(k == static_cast<Int>(gp[e+1] - gp[e]));
     // Sort for the prune_graph phase.
     std::sort(ge_g, ge_g + k);
   }
@@ -2027,7 +2038,7 @@ mark_intersection (const Int* a, const Int an, const Int* b, const Int bn,
 
 // inside || {}
 void LevelSetTri::
-prune_graph (const std::vector<Int>& gc, const std::vector<Int>& gp,
+prune_graph (const std::vector<Int>& gc, const std::vector<Size>& gp,
              std::vector<Int>& g, std::vector<Int>& gsz,
              std::vector<Int>& wrk, const Int max_gelen) {
   // Time complexity is a little complicated. See Park et al 2014. Space is
@@ -2040,7 +2051,7 @@ prune_graph (const std::vector<Int>& gc, const std::vector<Int>& gp,
   // own e's.
 # pragma omp for schedule(static,1)
   for (Int e = 0; e < n; ++e) {
-    const Int gcelen = gp[e+1] - gp[e];
+    const Int gcelen = static_cast<Int>(gp[e+1] - gp[e]);
     if (gcelen == 0) continue;
     // e's dependencies.
     const Int* const gce = &gc[gp[e]];
@@ -2052,7 +2063,7 @@ prune_graph (const std::vector<Int>& gc, const std::vector<Int>& gp,
       if (edlvl == 0) continue; // No parent deps to check.
       // ed's dependencies.
       const Int* const gced = &gc[gp[ed]];
-      const Int gcedlen = gp[ed+1] - gp[ed];
+      const Int gcedlen = static_cast<Int>(gp[ed+1] - gp[ed]);
       mark_intersection(gce, gcelen, gced, gcedlen, mark);
     }
     // Insert the pruned set of dependencies.
@@ -2071,7 +2082,7 @@ prune_graph (const std::vector<Int>& gc, const std::vector<Int>& gp,
 
 // inside || {}
 void LevelSetTri::
-fill_dependencies (const std::vector<Int>& g, const std::vector<Int>& gp,
+fill_dependencies (const std::vector<Int>& g, const std::vector<Size>& gp,
                    const std::vector<Int>& gsz) {
   const int tid = omp_get_thread_num();
   Thread& t = t_[tid];
@@ -2119,7 +2130,7 @@ void LevelSetTri::p2p_init () {
   }
   if (t_[0].lsp.size() <= 1) return;
 
-  Int nnz = 0;
+  Size nnz = 0;
   for (size_t i = 0, n = t_.size(); i < n; ++i) {
     const CrsMatrix* const cm = t_[i].m;
     if (cm) nnz += cm->ir[cm->m];
@@ -2130,7 +2141,8 @@ void LevelSetTri::p2p_init () {
   //   g(e) is the set of dependencies (incoming edges) for node e. gp is the
   // pointer to g(e). So g(e) is written g[gp[e]]. gsz is the size of g(e).
   //   A node e represents a pair (level, thread id) that is a task.
-  std::vector<Int> g, gp, gsz, gc;
+  std::vector<Int> g, gsz, gc;
+  std::vector<Size> gp;
   std::vector<Int> wrk;
   // Thread and level responsible for a variable.
   std::vector<p2p::Pair> pairs;
@@ -2152,7 +2164,7 @@ void LevelSetTri::p2p_init () {
       max_gelen = max_gelen_t;
       // In the unlikely case that max_gelen * #threads > nnz, allocate more
       // workspace.
-      const Int space = max_gelen * t_.size();
+      const Size space = max_gelen * t_.size();
       if (space > nnz)
         ALLOC(wrk.resize(space), ;, "p2p_init (space)");
     }
@@ -2165,7 +2177,7 @@ void LevelSetTri::p2p_init () {
 
 inline void set_diag_reciprocal (CrsMatrix& T) {
   for (Int i = 0; i < T.m; ++i) {
-    const Int j = T.ir[i+1]-1;
+    const Size j = T.ir[i+1]-1;
     T.d[j] = 1/T.d[j];
   }
 }
@@ -2190,8 +2202,8 @@ void LevelSetTri::reinit_numeric (const CrsMatrix& T) {
     assert(t.m);
     const std::vector<Int>& p = ps_[tid];
     for (size_t i = 0; i < p.size(); ++i) {
-      const Int r = p[i], nc = T.ir[r+1] - T.ir[r];
-      assert(nc == t.m->ir[i+1] - t.m->ir[i]);
+      const Int r = p[i], nc = static_cast<Int>(T.ir[r+1] - T.ir[r]);
+      assert(nc == static_cast<Int>(t.m->ir[i+1] - t.m->ir[i]));
       memcpy(t.m->d + t.m->ir[i], T.d + T.ir[r], nc*sizeof(*t.m->d));
     }
     set_diag_reciprocal(*t_[tid].m);
@@ -2221,7 +2233,7 @@ void Permuter::init (
     q_ = p || q ? allocn<Int>(n_) : p_;
     if (scale) {
       scale_ = allocn<Real>(n_);
-      memcpy(scale_, scale, n_*sizeof(*scale_));
+      reinit_numeric(scale);
     }
   } catch (...) {
     clear();
@@ -2251,14 +2263,19 @@ void Permuter::init (
   } else {
     // Just the internal (level set and data parallel) permutations.
     if ( ! lsis.empty())
-      memcpy(p_ + (is_lo_ ? 0 : dpis.size()), &lsis[0],
+      memcpy(p_ + (is_lo_ ? 0 : dpis.size()), lsis.data(),
              lsis.size()*sizeof(*p_));
     if ( ! dpis.empty())
-      memcpy(p_ + (is_lo_ ? n - dpis.size() : 0), &dpis[0],
+      memcpy(p_ + (is_lo_ ? n - dpis.size() : 0), dpis.data(),
              dpis.size()*sizeof(*p_));
     if ( ! is_lo_)
       for (Int i = 0; i < n_; ++i) p_[i] = n_ - p_[i] - 1;
   }
+}
+
+inline void Permuter::reinit_numeric (const Real* scale) {
+  if (scale)
+    memcpy(scale_, scale, n_*sizeof(*scale_));
 }
 
 void TriSolver::clear () {}
@@ -2278,7 +2295,7 @@ void analyze (const ConstCrsMatrix& T, const LevelSetter& lsr) {
     const std::vector<Int>& ls = lsr.lset(ils);
     for (size_t i = 0; i < ls.size(); ++i) {
       const Int r = ls[i];
-      for (Int j = T.ir[r]; j < T.ir[r+1]; ++j) {
+      for (Size j = T.ir[r]; j < T.ir[r+1]; ++j) {
         const Int c = T.jc[j];
         if (rls[c] == ils-1 && cnted[c] != ils) {
           ++cnt;
@@ -2290,6 +2307,114 @@ void analyze (const ConstCrsMatrix& T, const LevelSetter& lsr) {
   }
 }
 
+namespace {
+// len(irt) == n-1 because of how the transpose algorithm offsets irt. Partition
+// by nonzeros. At exit, start[i] is the starting column for the i'th thread.
+void partition_irt (const Int n, const Size* const irt, const Size nnz,
+                    const Int nparts, std::vector<Int>& start) {
+  const Int nseg = std::min<Int>(nparts, n);
+  Int i0 = 1, j0 = 1;
+  start.resize(nseg);
+  
+  for (Int i = i0; i < nseg; ++i) {
+    const Real d = ((Real) i / nseg)*nnz;
+    Int j = static_cast<Int>(std::upper_bound(irt + j0, irt + n - 1, d) - irt);
+    if (d - irt[j-1] > irt[j] - d) ++j;
+    j = std::min<Int>(j, n - nseg + i);
+    if (j < j0) {
+      // If not all the threads will have work, let the earlier threads have
+      // the work.
+      j = std::min<Int>(j0, n);
+      assert(j == start[i-1] + 1);
+    }
+    start[i] = j;
+    j0 = j + 1;
+  }
+}
+
+void transpose (
+  const Int m, const Size* const ir, const Int* const jc, const Real* const d,
+  Size* const irt, Int* const jct, Real* const dt,
+  std::vector<Size>* transpose_perm = 0)
+{
+  const Size nnz = ir[m];
+  if (transpose_perm) transpose_perm->resize(nnz);
+  std::vector<Int> start;
+  // 1. Count the number of entries in each col.
+# pragma omp parallel
+  {
+#   pragma omp for schedule(static)
+    for (Int i = 0; i <= m; ++i)
+      irt[i] = 0;
+#   pragma omp single
+    {
+      for (Size k = 0; k < nnz; ++k) {
+        // Store shifted up by 1. This makes extra workspace unnecessary.
+        ++irt[jc[k]+1];
+      }
+      // 2. Cumsum to get the col pointers.
+      // Could do a parallel scan, but this step is extremely negligible.
+      Size sum = 0;
+      for (Int i = 0; i < m; ++i) {
+        const Size incr = irt[i+1];
+        irt[i+1] = sum;
+        sum += incr;
+      }
+      assert(sum == nnz);
+      // At this point, At.ir[i+1] gives what is normally in At.ir[i].
+      // 3. Fill in jc and d.
+      partition_irt(m, irt + 2, nnz, omp_get_max_threads(), start);
+    }
+    const int tid = omp_get_thread_num();
+    if (tid < static_cast<int>(start.size())) {
+      const Int
+        start_tid = start[tid],
+        stop = tid + 1 == static_cast<int>(start.size()) ? m : start[tid+1];
+      for (Int r = 0; r < m; ++r) {
+        const Size irr = ir[r], jlim = ir[r+1];
+        if (stop <= jc[irr] || start_tid > jc[jlim-1]) continue;
+        for (Size j = irr + find_first(jc + irr, jlim - irr, start_tid);
+             j < jlim; ++j) {
+          const Int c = jc[j];
+          if (c >= stop) break;
+          // Points to next entry to be filled.
+          // 3a. Increment to next available entry.
+          const Size p = irt[c+1]++;
+          jct[p] = r;
+          dt[p] = d[j];
+          if (transpose_perm)
+            (*transpose_perm)[p] = j;
+        }
+      }
+    }
+  }
+  // 4. Step 3a made it such that At.ir[i] is now what we need except for
+  // i = 0. At.ir[0] was already set to 0 in step 1, so we're done.
+  assert(irt[m] == nnz);
+}
+
+//todo Refactor into LS and ||ize second pass.
+ConstCrsMatrix* transpose (const ConstCrsMatrix& T,
+                           std::vector<Size>* transpose_perm = 0) {
+  const Int n = T.m;
+  SparseData sd(n, T.ir[n]);
+  transpose(n, T.ir, T.jc, T.d, sd.ir, sd.jc, sd.d, transpose_perm);
+  ConstCrsMatrix* ccm = 0;
+  ALLOC(ccm = new ConstCrsMatrix(n, n, sd.ir, sd.jc, sd.d, opposite(T.dir),
+                                 true),
+        sd.free(), "transpose");
+  return ccm;
+}
+
+// inside || {}
+void compose_transpose (const std::vector<Size>& transpose_perm, Partition& p) {
+  std::vector<Size> A_idxs_copy(p.A_idxs);
+# pragma omp for schedule(static)
+  for (size_t i = 0; i < p.A_idxs.size(); ++i)
+    p.A_idxs[i] = transpose_perm[A_idxs_copy[i]];
+}
+} // namespace
+
 void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
                       const bool save_for_reprocess, const Int* p, const Int* q,
                       const Real* scale, const Options& o) {
@@ -2300,6 +2425,7 @@ void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
   try {
     // Basic size parameters.
     n_ = T->m;
+    const Size nnz = T->ir[T->m];
     nthreads_ = nthreads;
     InitInfo in;
     in.nthreads = nthreads_;
@@ -2307,6 +2433,13 @@ void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
     in.min_dense_density = o.min_dense_density;
     in.max_nrhs = max_nrhs;
     in.min_parallel_rows = o.min_parallel_rows;
+
+    const bool make_transpose = T->dir == ConstCrsMatrix::transpose;
+    std::vector<Size> transpose_perm;
+    if (make_transpose) {
+      T = transpose(*T, save_for_reprocess ? &transpose_perm : 0);
+      delete_T = true;
+    }
 
     // Determine shape.
     Shape shape = determine_shape(*T);
@@ -2321,7 +2454,9 @@ void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
     lstr.init(*T, lstr_threshold, is_lo_, o);
 
     if ( ! is_lo_) {
+      const ConstCrsMatrix* Tp = delete_T ? T : 0;
       T = permute_to_other_tri(*T);
+      if (delete_T) del(Tp);
       delete_T = true;
       lstr.reverse_variable_order(n_);
     }
@@ -2377,7 +2512,14 @@ void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
     if (save_for_reprocess) {
       // For 32-bit Int, 64-bit Real, save 2/3 of memory during solves at little
       // extra init_numeric cost.
-      for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear_d();
+      for (Int i = 0; i < 2; ++i)
+        if (p_[i].cm) {
+          p_[i].clear_d();
+          if ( ! is_lo_)
+            reverse_A_idxs(nnz, p_[i]);
+          if (make_transpose)
+            compose_transpose(transpose_perm, p_[i]);
+        }
     } else {
       for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear();
     }
@@ -2391,18 +2533,16 @@ void TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
 }
 
 // Reinitialize numbers, but keep the same structures.
-void TriSolver::init_numeric (const ConstCrsMatrix* T) {
+void TriSolver::reinit_numeric (const ConstCrsMatrix* T, const Real* r) {
   NumThreads nthreads_state;
   set_num_threads(nthreads_, nthreads_state);
   for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].alloc_d();
-  repartition_into_2_blocks(p_, *T, is_lo_);
+  repartition_into_2_blocks(p_, *T);
   lst_.reinit_numeric(*p_[0].cm);
-  if (p_[1].cm->m > 0) {
-    //todo Tighten up some of these init_numeric impls. Might want to do
-    // reinit_numeric like for lst.
+  if (p_[1].cm->m > 0)
     t_.init_numeric(*p_[1].cm);
-  }
   for (Int i = 0; i < 2; ++i) if (p_[i].cm) p_[i].clear_d();
+  if (r) perm_.reinit_numeric(r);
   restore_num_threads(nthreads_state);
 }
 
@@ -2463,16 +2603,16 @@ inline void OnDiagTri::solve_spars (const Real* b, const Int ldb, Real* x,
 #else
   const CrsMatrix& T = *m_;
   const Int m = T.m;
-  const Int* const ir = T.ir;
+  const Size* const ir = T.ir;
   const Int* const jc = T.jc;
   const Real* const d = T.d;
   for (int irhs = 0; ; ) {
     for (int r = 0; r < m; ++r) {
-      const Int
+      const Size
         rp_rp1 = ir[r+1],
         jlim = rp_rp1 - 1;
       Real a = b[r];
-      for (Int j = ir[r]; j < jlim; ++j)
+      for (Size j = ir[r]; j < jlim; ++j)
         a -= x[jc[j]] * d[j];
       x[r] = a * d[rp_rp1 - 1];
     }
@@ -2500,10 +2640,10 @@ n1Axpy_spars (const Real* RESTRICT x, const Int ldx, const Int nrhs,
   hts_mkl_dcsrmm(false, nr_, nc_, d_, ir_, jc_, x, ldx, y, ldy, nrhs);
 #else
   for (Int k = 0; ; ) {
-    Int iri = ir_[0];
+    Size iri = ir_[0];
     for (Int i = 0; i < nr_; ++i) {
-      const Int irip1 = ir_[i+1];
-      const Int N = irip1 - iri;
+      const Size irip1 = ir_[i+1];
+      const Int N = static_cast<Int>(irip1 - iri);
       if (N <= 0) {
         if (N < 0) i -= irip1;
         continue;
@@ -2635,24 +2775,23 @@ inline void LevelSetTri::solve (const Real* b, Real* ix, const Int ldx,
   const int tid = omp_get_thread_num();
   const CrsMatrix* const T = t_[tid].m;
   Real* x = ix;
-  const Int* const ir = T->ir;
+  const Size* const ir = T->ir;
   const Int* const jc = T->jc;
   const Real* const d = T->d;
   const std::vector<Int>& p = t_[tid].p;
   const std::vector<Int>& lsp = t_[tid].lsp;
   const Int lsp_size_m1 = (Int) lsp.size() - 1;
   for (Int irhs = 0; ; ) {
-    for (Int
-           ils = 0,      // level set index
-           i = lsp[ils], // this thread's current row
-           j = ir[i];    // the usual j index into jc and d
-         ils < lsp_size_m1;
-         ++ils) {
+    Int
+      ils = 0,      // level set index
+      i = lsp[ils]; // this thread's current row
+    Size j = ir[i]; // the usual j index into jc and d
+    for ( ; ils < lsp_size_m1; ++ils) {
       const Int lsp_ilsp1 = lsp[ils+1];
       for (Int r = mvp_block_nc_ + p[ils];
            i < lsp_ilsp1;
            ++i, ++r) {
-        const Int jlim = ir[i+1] - 1;
+        const Size jlim = ir[i+1] - 1;
         Real a = b[r];
         for ( ; j < jlim; ++j)
           a -= x[jc[j]] * d[j];
@@ -2676,7 +2815,7 @@ LevelSetTri::p2p_solve (const Real* b, Real* x, const Int ldx,
   const Int nlvls = (Int) lsp.size() - 1;
   if (nlvls == 0) return;
   const CrsMatrix* const T = t.m;
-  const Int* const ir = T->ir;
+  const Size* const ir = T->ir;
   const Int* const jc = T->jc;
   const Real* const d = T->d;
   const std::vector<Int>& p = t.p;
@@ -2685,12 +2824,11 @@ LevelSetTri::p2p_solve (const Real* b, Real* x, const Int ldx,
   const std::vector<Int>& p2p_depends = t.p2p_depends;
   p2p::Done p2p_done_value = p2p_done_value_;
   for (Int irhs = 0; irhs < nrhs; ++irhs) {
-    for (Int
-           ils = 0,      // level set index
-           i = lsp[ils], // this thread's current row
-           j = ir[i];    // the usual j index into jc and d
-         ;
-         ++ils) {
+    Int
+      ils = 0,      // level set index
+      i = lsp[ils]; // this thread's current row
+    Size j = ir[i]; // the usual j index into jc and d
+    for ( ; ; ++ils) {
       const Int lsp_ilsp1 = lsp[ils+1];
       if (i == lsp_ilsp1) {
         if (ils == lsp_size_m2) break;
@@ -2714,7 +2852,7 @@ LevelSetTri::p2p_solve (const Real* b, Real* x, const Int ldx,
       for (Int r = mvp_block_nc_ + p[ils];
            i < lsp_ilsp1;
            ++i, ++r) {
-        const Int jlim = ir[i+1] - 1;
+        const Size jlim = ir[i+1] - 1;
         Real a = b[r];
         for ( ; j < jlim; ++j)
           a -= x[jc[j]] * d[j];
@@ -2854,14 +2992,14 @@ ondiag_solve (const OnDiagTri& t, Real* x, const Int ldx, const Int nrhs,
     t.solve(x, ldx, x, ldx, nrhs);
     *t_barrier = step;
   } else {
-    t.solve(x, ldx, &wrk_[0], t.n(), nrhs);
+    t.solve(x, ldx, wrk_.data(), t.n(), nrhs);
     inv_tri_done[tid] = step;
     for (int i = 0; i < t.nthreads(); ++i)
       while (inv_tri_done[i] < step) ;
     if (tid == 0) {
       //todo Could ||ize.
       for (Int irhs = 0; irhs < nrhs; ++irhs)
-        memcpy(x + irhs*ldx, &wrk_[0] + irhs*t.n(), t.n()*sizeof(Real));
+        memcpy(x + irhs*ldx, wrk_.data() + irhs*t.n(), t.n()*sizeof(Real));
       *t_barrier = step;
     }
   }
@@ -2877,12 +3015,12 @@ inline void RecursiveTri::solve (const Real* b, Real* x, const Int ldx,
   const Int sn = static_cast<Int>(nd_.s.size());
   Real* x_osi, * x_os;
   volatile Int* const t_barrier = &nd_.t_barrier;
-  volatile Int* const inv_tri_done = &nd_.inv_tri_done[0];
-  volatile p2p::Done* const s_done = &nd_.s_done[0];
-  const Int* const t_ids = &nd_.t_ids[0];
-  const Int* const t_idx = &nd_.t_idx[0];
-  const Int* const s_ids = nd_.s_ids[tid].empty() ? 0 : &nd_.s_ids[tid][0];
-  const Int* const s_idx = nd_.s_idx[tid].empty() ? 0 : &nd_.s_idx[tid][0];
+  volatile Int* const inv_tri_done = nd_.inv_tri_done.data();
+  volatile p2p::Done* const s_done = nd_.s_done.data();
+  const Int* const t_ids = nd_.t_ids.data();
+  const Int* const t_idx = nd_.t_idx.data();
+  const Int* const s_ids = nd_.s_ids[tid].empty() ? 0 : nd_.s_ids[tid].data();
+  const Int* const s_idx = nd_.s_idx[tid].empty() ? 0 : nd_.s_idx[tid].data();
   const p2p::Done done_symbol = nd_.done_symbol;
   { const OnDiagTri& t = nd_.t[0];
     if (tid < t.nthreads())
@@ -2976,15 +3114,15 @@ void trisolve_serial (const CrsMatrix& T, Real* ix, const Int nrhs, bool is_lo,
     // Solve.
     if (is_lo) {
       for (Int r = 0; r < T.m; ++r) {
-        const Int rp_rp1 = T.ir[r+1];
-        for (Int j = T.ir[r]; j < rp_rp1 - 1; ++j)
+        const Size rp_rp1 = T.ir[r+1];
+        for (Size j = T.ir[r]; j < rp_rp1 - 1; ++j)
           x[r] -= x[T.jc[j]] * T.d[j];
         x[r] /= T.d[rp_rp1 - 1];
       }
     } else {
       for (Int r = T.m - 1; r >= 0; --r) {
-        const Int rp_r = T.ir[r];
-        for (Int j = rp_r + 1; j < T.ir[r+1]; ++j)
+        const Size rp_r = T.ir[r];
+        for (Size j = rp_r + 1; j < T.ir[r+1]; ++j)
           x[r] -= x[T.jc[j]] * T.d[j];
         x[r] /= T.d[rp_r];
       }
@@ -3002,10 +3140,13 @@ void trisolve_serial (const CrsMatrix& T, Real* ix, const Int nrhs, bool is_lo,
 }
 } // namespace
 
-CrsMatrix* make_CrsMatrix (const Int nrow, const Int* rowptr, const Int* col,
-                           const Real* val) {
+CrsMatrix* make_CrsMatrix (const Int nrow, const Size* rowptr, const Int* col,
+                           const Real* val, const bool make_transpose) {
   CrsMatrix* m;
-  ALLOC(m = new CrsMatrix(nrow, rowptr, col, val), ;, "make_CrsMatrix");
+  ALLOC(m = new CrsMatrix(nrow, rowptr, col, val,
+                          make_transpose ? impl::ConstCrsMatrix::transpose :
+                          impl::ConstCrsMatrix::forward),
+        ;, "make_CrsMatrix");
   return m;
 }
 
@@ -3027,8 +3168,8 @@ Impl* preprocess (const CrsMatrix* T, const Int max_nrhs, const Int nthreads,
   return impl;
 }
 
-void reprocess_numeric (Impl* impl, const CrsMatrix* T) {
-  impl->ts.init_numeric(T);
+void reprocess_numeric (Impl* impl, const CrsMatrix* T, const Real* r) {
+  impl->ts.reinit_numeric(T, r);
 }
 
 bool is_lower_tri (const Impl* impl) { return impl->ts.is_lower_tri(); }

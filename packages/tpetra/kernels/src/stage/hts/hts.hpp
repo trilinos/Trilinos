@@ -71,8 +71,10 @@ namespace hts {
 
 // Integer type of the row pointer and column index arrays.
 #ifdef USE_MKL
+typedef MKL_INT Size;
 typedef MKL_INT Int;
 #else
+typedef int Size;
 typedef int Int;
 #endif
 // Real type of the matrix entries.
@@ -102,20 +104,22 @@ struct NotFullDiagonal : public Exception {
   NotFullDiagonal () : Exception("Lacks a full diagonal.") {}
 };
 
-// Interface between the user's and the solver's data. It's just a shallow
-// wrapper to the user's data. The data passed in must persist at least as long
-// as the CrsMatrix.
+// Interface between the user's and the solver's data. Shallow wrapper to the
+// user's data. The data passed in must persist at least as long as the
+// CrsMatrix.
 CrsMatrix*
 make_CrsMatrix(
-  // Number of rows in the matrix.
-  const Int nrow,
+  // Dimension of the matrix.
+  const Int n,
   // Base-0 index pointers into col. Array has length nrow+1, where rowptr[nrow]
   // is the number of nonzeros.
-  const Int* rowptr,
-  // Base-0 index pointers to columns.
+  const Size* rowptr,
+  // Ordered base-0 index pointers to columns.
   const Int* col,
   // Values.
-  const Real* val);
+  const Real* val,
+  // Make the transpose of this matrix.
+  const bool make_transpose = false);
 
 // Delete the CrsMatrix. This does not destroy the user's data that T wraps.
 void delete_CrsMatrix(CrsMatrix* T);
@@ -172,7 +176,7 @@ preprocess(
 
 // Use T to replace the numbers in impl. The symbolic structure of T must be the
 // same as in the call to preprocess.
-void reprocess_numeric(Impl* impl, const CrsMatrix* T);
+void reprocess_numeric(Impl* impl, const CrsMatrix* T, const Real* r = 0);
 
 // Ask whether T is lower or upper triangular.
 bool is_lower_tri(const Impl* impl);
