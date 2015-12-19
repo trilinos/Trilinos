@@ -45,7 +45,7 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
-#include "Phalanx_Evaluator_Manager.hpp"
+#include "Phalanx_DAG_Manager.hpp"
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DimTag.hpp"
 
@@ -71,7 +71,7 @@ PHX_DIM_TAG_IMPLEMENTATION(BASIS)
 
 #include "Evaluator_MockDAG.hpp"
 
-void registerDagNodes(PHX::EvaluatorManager<PHX::MyTraits>& em,
+void registerDagNodes(PHX::DagManager<PHX::MyTraits>& em,
 		      bool addCircularDependency,
 		      bool buildDuplicateEvaluator,
 		      bool removeRequiredFieldEvaluatorA,
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   using namespace Teuchos;
   using namespace PHX;
   
-  EvaluatorManager<MyTraits> em;
+  DagManager<MyTraits> em;
 
   registerDagNodes(em,false,false,false,false);
 
@@ -166,6 +166,13 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
     TEST_EQUALITY(order_new[2],1);
     TEST_EQUALITY(order_new[3],0);
   }
+
+  // Test some class methods
+  const std::vector< Teuchos::RCP<PHX::FieldTag> >& tags = em.getFieldTags();
+  TEST_EQUALITY(tags.size(),5);
+  em.writeGraphvizFile("basic_dag.dot",true,true,false);
+  cout << "\n" << em << endl;   cout << "\n" << em << endl;  
+ 
   //Teuchos::TimeMonitor::summarize();
 }
 
@@ -176,7 +183,7 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   using namespace Teuchos;
   using namespace PHX;
   
-  EvaluatorManager<MyTraits> em("cyclic");
+  DagManager<MyTraits> em("cyclic");
   em.setDefaultGraphvizFilenameForErrors("error_cyclic.dot");
   em.setWriteGraphvizFileOnError(true);
 
@@ -197,7 +204,7 @@ TEUCHOS_UNIT_TEST(dag, duplicate_evaluators)
   using namespace Teuchos;
   using namespace PHX;
   
-  EvaluatorManager<MyTraits> em("duplicate_evaluators");
+  DagManager<MyTraits> em("duplicate_evaluators");
   em.setDefaultGraphvizFilenameForErrors("error_duplicate_evaluators.dot");
   em.setWriteGraphvizFileOnError(true);
 
@@ -216,7 +223,7 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
   using namespace Teuchos;
   using namespace PHX;
   
-  EvaluatorManager<MyTraits> em("missing_req_field");
+  DagManager<MyTraits> em("missing_req_field");
   em.setDefaultGraphvizFilenameForErrors("error_missing_req_field.dot");
   em.setWriteGraphvizFileOnError(true);
 
@@ -237,7 +244,7 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluator)
   using namespace Teuchos;
   using namespace PHX;
   
-  EvaluatorManager<MyTraits> em("missing_evaluator");
+  DagManager<MyTraits> em("missing_evaluator");
   em.setDefaultGraphvizFilenameForErrors("error_missing_evaluator.dot");
   em.setWriteGraphvizFileOnError(true);
 
