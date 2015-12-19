@@ -1236,10 +1236,9 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const Adapter> &ia,
+    const RCP<const typename Adapter::base_adapter_t> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
     enum ModelType modelType,
-    const RCP<const Model<Adapter> > &model,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
@@ -1281,12 +1280,23 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
-    for (int i=0; i < nWeights; i++){
-      int stride;
-      const scalar_t *wgt;
-      ia->getWeightsView(wgt, stride, i); 
-      ArrayRCP<const scalar_t> wgtArray(wgt, 0, stride*numLocalObjects, false);
-      weights[i] = sdata_t(wgtArray, stride);
+    if ((ia->adapterType() == GraphAdapterType ||
+	 ia->adapterType() == MatrixAdapterType ||
+	 ia->adapterType() == MeshAdapterType) &&
+	(modelType == GraphModelType ||
+	 modelType == HypergraphModelType)) {
+      if (modelType == GraphModelType) {
+	std::bitset<NUM_MODEL_FLAGS> modelFlags;
+      } else {
+      }
+    } else {
+      for (int i=0; i < nWeights; i++){
+	int stride;
+	const scalar_t *wgt;
+	ia->getWeightsView(wgt, stride, i); 
+	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
+	weights[i] = sdata_t(wgtArray, stride);
+      }
     }
   }
 

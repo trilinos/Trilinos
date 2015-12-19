@@ -98,10 +98,9 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const Adapter> &ia, 
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln,
-    enum ModelType modelType = MAX_NUM_MODEL_TYPES,
-    const RCP<const Model<Adapter> > &model = Teuchos::null);
+    enum ModelType modelType);
 
   /*! \brief Constructor
       \param env   the problem environment
@@ -208,10 +207,9 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const Adapter> &ia, 
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln,
-  enum ModelType modelType,
-  const RCP<const Model<Adapter> > &model):
+  enum ModelType modelType):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
@@ -238,7 +236,7 @@ template <typename Adapter>
 
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, modelType,
-			   model, numGlobalParts_, numNonEmpty_, metrics_);
+			   numGlobalParts_, numNonEmpty_, metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
