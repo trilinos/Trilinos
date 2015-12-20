@@ -1238,6 +1238,7 @@ template <typename Adapter>
     const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
     enum ModelType modelType,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
@@ -1247,6 +1248,7 @@ template <typename Adapter>
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef StridedData<lno_t, scalar_t> sdata_t;
 
   // Local number of objects.
@@ -1282,7 +1284,11 @@ template <typename Adapter>
     if ((ia->adapterType() == GraphAdapterType ||
 	 ia->adapterType() == MatrixAdapterType ||
 	 ia->adapterType() == MeshAdapterType) && modelType==GraphModelType) {
-      std::bitset<NUM_MODEL_FLAGS> modelFlags;
+      if (graphModel == Teuchos::null) {
+	std::bitset<NUM_MODEL_FLAGS> modelFlags;
+	RCP<GraphModel<base_adapter_t> > graph;
+      } else {
+      }
     } else {
       for (int i=0; i < nWeights; i++){
 	int stride;
