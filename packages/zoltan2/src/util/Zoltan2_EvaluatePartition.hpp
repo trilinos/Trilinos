@@ -91,7 +91,6 @@ public:
       \param ia the problem input adapter
       \param soln  the solution
       \param modelType the model type
-      \param model the model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
@@ -286,11 +285,11 @@ template <typename Adapter>
     parts = soln->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set",
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
-  } else {
+  } /*else {
     part_t *procs = new part_t [numLocalObjects];
     for (size_t i=0; i<numLocalObjects; i++) procs[i] = problemComm->getRank();
     parts = procs;
-  }
+    }*/
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   ArrayRCP<scalar_t> globalSums;

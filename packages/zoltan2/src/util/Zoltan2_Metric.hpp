@@ -1207,7 +1207,6 @@ template <typename scalar_t, typename part_t>
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
  *   \param modelType the model type
- *   \param model the model
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
@@ -1261,11 +1260,11 @@ template <typename Adapter>
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
-  } else {
+  } /*else {
     part_t *procs = new part_t [numLocalObjects];
     for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
     parts = procs;
-  }
+    }*/
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   // Weights, if any, for each object.
