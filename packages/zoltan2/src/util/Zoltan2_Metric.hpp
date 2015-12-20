@@ -1260,11 +1260,11 @@ template <typename Adapter>
     parts = solution->getPartListView();
     env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
       ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
-  } /*else {
+  } else {
     part_t *procs = new part_t [numLocalObjects];
     for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
     parts = procs;
-    }*/
+  }
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   // Weights, if any, for each object.
