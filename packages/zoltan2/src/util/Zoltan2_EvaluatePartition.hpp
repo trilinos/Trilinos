@@ -97,9 +97,9 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const typename Adapter::base_adapter_t> &ia, 
+    const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln,
-    enum ModelType modelType);
+    enum ModelType modelType = IdentifierModelType);
 
   /*! \brief Constructor
       \param env   the problem environment
@@ -206,7 +206,7 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const typename Adapter::base_adapter_t> &ia, 
+  const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln,
   enum ModelType modelType):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),

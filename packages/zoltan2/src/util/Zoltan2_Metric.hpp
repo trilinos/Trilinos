@@ -1235,7 +1235,7 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     multiCriteriaNorm mcNorm,
-    const RCP<const typename Adapter::base_adapter_t> &ia,
+    const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
     enum ModelType modelType,
     typename Adapter::part_t &numParts,
