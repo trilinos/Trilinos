@@ -1279,16 +1279,11 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
-    /*if ((ia->adapterType() == GraphAdapterType ||
+    if ((ia->adapterType() == GraphAdapterType ||
 	 ia->adapterType() == MatrixAdapterType ||
-	 ia->adapterType() == MeshAdapterType) &&
-	(modelType == GraphModelType ||
-	 modelType == HypergraphModelType)) {
-      if (modelType == GraphModelType) {
-	std::bitset<NUM_MODEL_FLAGS> modelFlags;
-      } else {
-      }
-      } else {*/
+	 ia->adapterType() == MeshAdapterType) && modelType==GraphModelType) {
+      std::bitset<NUM_MODEL_FLAGS> modelFlags;
+    } else {
       for (int i=0; i < nWeights; i++){
 	int stride;
 	const scalar_t *wgt;
@@ -1296,7 +1291,7 @@ template <typename Adapter>
 	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
 	weights[i] = sdata_t(wgtArray, stride);
       }
-      //}
+    }
   }
 
   // Relative part sizes, if any, assigned to the parts.
