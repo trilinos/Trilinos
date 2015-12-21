@@ -1282,8 +1282,7 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
-    int stride = 1;
-    if ((ia->adapterType() == GraphAdapterType ||
+    /*if ((ia->adapterType() == GraphAdapterType ||
 	 ia->adapterType() == MatrixAdapterType ||
 	 ia->adapterType() == MeshAdapterType) && modelType==GraphModelType) {
       if (graphModel == Teuchos::null) {
@@ -1302,14 +1301,15 @@ template <typename Adapter>
 	  weights[i] = sdata_t(wgtArray, stride);
 	}
       }
-    } else {
+      } else {*/
       for (int i=0; i < nWeights; i++){
 	const scalar_t *wgt;
+	int stride;
 	ia->getWeightsView(wgt, stride, i); 
 	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
 	weights[i] = sdata_t(wgtArray, stride);
       }
-    }
+      //}
   }
 
   // Relative part sizes, if any, assigned to the parts.
