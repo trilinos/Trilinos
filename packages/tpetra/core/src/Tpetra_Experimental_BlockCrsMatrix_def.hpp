@@ -3053,6 +3053,7 @@ namespace Experimental {
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
     }
 
+#if 0
     Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
     diag.describe (*wrappedStream, Teuchos::VERB_EXTREME);
 
@@ -3060,6 +3061,7 @@ namespace Experimental {
     int nnz = getNodeNumEntries()*bs*bs;
     for(int i=0; i<nnz; i++)
       std::cout << "val[" << i << "] = " << val_[i] << std::endl;
+#endif // 0
   }
 
   template<class Scalar, class LO, class GO, class Node>
