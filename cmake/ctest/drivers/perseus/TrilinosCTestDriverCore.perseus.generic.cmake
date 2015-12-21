@@ -115,8 +115,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         "-D CMAKE_CXX_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicxx"
         "-D CMAKE_C_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpicc" 
         "-D CMAKE_FORTRAN_COMPILER:FILEPATH=${MPI_BASE_DIR}/bin/mpifort" 
-        "-D MPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
-        "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
+        "-D MPI_EXEC:FILEPATH=${MPI_BASE_DIR}/bin/mpirun"
+        "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to-socket"
 
        )
   ENDIF()
