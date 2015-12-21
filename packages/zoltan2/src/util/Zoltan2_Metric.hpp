@@ -1237,7 +1237,7 @@ template <typename Adapter>
     multiCriteriaNorm mcNorm,
     const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
-    enum ModelType modelType,
+    bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
@@ -1282,9 +1282,7 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
-    /*if ((ia->adapterType() == GraphAdapterType ||
-	 ia->adapterType() == MatrixAdapterType ||
-	 ia->adapterType() == MeshAdapterType) && modelType==GraphModelType) {
+    if (useDegreeAsWeight) {
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
@@ -1297,11 +1295,11 @@ template <typename Adapter>
 	  for (size_t j=0; j < numLocalObjects; j++) {
 	    wgt[j] = vwgts[i][j];
 	  }
-	  ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
-	  weights[i] = sdata_t(wgtArray, stride);
+	  ArrayRCP<const scalar_t> wgtArray(wgt,0,numLocalObjects,false);
+	  weights[i] = sdata_t(wgtArray, 1);
 	}
       }
-      } else {*/
+    } else {
       for (int i=0; i < nWeights; i++){
 	const scalar_t *wgt;
 	int stride;
@@ -1309,7 +1307,7 @@ template <typename Adapter>
 	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
 	weights[i] = sdata_t(wgtArray, stride);
       }
-      //}
+    }
   }
 
   // Relative part sizes, if any, assigned to the parts.
