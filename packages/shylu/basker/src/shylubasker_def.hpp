@@ -81,8 +81,6 @@ namespace BaskerNS
     FREE_MATRIX_VIEW_2DARRAY(AL, tree.nblks);
     FREE_MATRIX_2DARRAY(AVM, tree.nblks);
     FREE_MATRIX_2DARRAY(ALM, tree.nblks);
-
-
     
     FREE_MATRIX_2DARRAY(LL, tree.nblks);
     FREE_MATRIX_2DARRAY(LU, tree.nblks);
@@ -92,8 +90,11 @@ namespace BaskerNS
     
     //BTF structure
     FREE_INT_1DARRAY(btf_tabs);
+    FREE_INT_1DARRAY(btf_blk_work);
+    FREE_INT_1DARRAY(btf_blk_nnz);
     FREE_MATRIX_1DARRAY(LBTF);
     FREE_MATRIX_1DARRAY(UBTF);
+   
 
     
     //Thread Array
