@@ -258,7 +258,8 @@ public:
       vec_ = Teuchos::rcp(new RiskVector<Real>(parlist,vec));
     }
     else if ( type == "BPOE" ) {
-      vec_ = Teuchos::rcp(new RiskVector<Real>(vec,true,1.));
+      std::vector<Real> stat(1,1.);
+      vec_ = Teuchos::rcp(new RiskVector<Real>(vec,stat,true));
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -315,7 +316,8 @@ public:
       return Teuchos::rcp(new RiskVector<Real>(parlist,vec));
     }
     else if ( type == "BPOE" ) {
-      return Teuchos::rcp(new RiskVector<Real>(vec,true,1.));
+      std::vector<Real> stat(1,1.);
+      return Teuchos::rcp(new RiskVector<Real>(vec,stat,true));
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
