@@ -73,8 +73,7 @@ namespace Experimental {
     ind_ (NULL),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (0),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
@@ -92,8 +91,7 @@ namespace Experimental {
     val_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
@@ -151,8 +149,7 @@ namespace Experimental {
     ind_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
@@ -1350,16 +1347,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   offsetPerBlock () const
   {
-    const LO numRows = blockSize_;
-
-    LO numCols = blockSize_;
-    if (columnPadding_ > 0) { // Column padding == 0 means no padding.
-      const LO numColsRoundedDown = (blockSize_ / columnPadding_) * columnPadding_;
-      numCols = (numColsRoundedDown < numCols) ?
-        (numColsRoundedDown + columnPadding_) :
-        numColsRoundedDown;
-    }
-    return numRows * numCols;
+    return offsetPerBlock_;
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1368,13 +1356,9 @@ namespace Experimental {
   getConstLocalBlockFromInput (const impl_scalar_type* val,
                                const size_t pointOffset) const
   {
-    if (rowMajor_) {
-      const size_t rowStride = (columnPadding_ == 0) ?
-        static_cast<size_t> (blockSize_) : static_cast<size_t> (columnPadding_);
-      return const_little_block_type (val + pointOffset, blockSize_, rowStride, 1);
-    } else {
-      return const_little_block_type (val + pointOffset, blockSize_, 1, blockSize_);
-    }
+    // Row major blocks
+    const LO rowStride = blockSize_;
+    return const_little_block_type (val + pointOffset, blockSize_, rowStride, 1);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1383,13 +1367,9 @@ namespace Experimental {
   getNonConstLocalBlockFromInput (impl_scalar_type* val,
                                   const size_t pointOffset) const
   {
-    if (rowMajor_) {
-      const size_t rowStride = (columnPadding_ == 0) ?
-        static_cast<size_t> (blockSize_) : static_cast<size_t> (columnPadding_);
-      return little_block_type (val + pointOffset, blockSize_, rowStride, 1);
-    } else {
-      return little_block_type (val + pointOffset, blockSize_, 1, blockSize_);
-    }
+    // Row major blocks
+    const LO rowStride = blockSize_;
+    return little_block_type (val + pointOffset, blockSize_, rowStride, 1);
   }
 
   template<class Scalar, class LO, class GO, class Node>

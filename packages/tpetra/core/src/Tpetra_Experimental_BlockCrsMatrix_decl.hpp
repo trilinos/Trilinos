@@ -772,17 +772,8 @@ private:
   /// See the documentation of X_colMap_ above.
   Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
 
-  /// \brief Padding to use for "little blocks" in the matrix.
-  ///
-  /// If this is nonzero, we pad the number of columns in each little
-  /// block up to a multiple of the padding value.  This will let us
-  /// potentially do explicit short-vector SIMD in the dense little
-  /// block matrix-vector multiply.  We got this idea from Kendall
-  /// Pierson's FETI code (thanks Kendall!).
-  LO columnPadding_;
-
-  //! Whether "little blocks" are stored in row-major (or column-major) order.
-  bool rowMajor_;
+  /// \brief Offset between blocks in the matrix.
+  LO offsetPerBlock_;
 
   /// \brief Whether this object on the calling process is in an error state.
   ///
