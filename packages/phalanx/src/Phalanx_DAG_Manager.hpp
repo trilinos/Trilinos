@@ -49,6 +49,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <tuple>
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
@@ -140,7 +141,19 @@ namespace PHX {
     //! Printing
     void print(std::ostream& os) const;
 
+    //! Returns the Topological sort ordering. Used for unit testing.
     const std::vector<int>& getEvaluatorInternalOrdering() const;
+
+    //! Returns the intrenally registered nodes. Used for unit testing.
+    const std::vector<PHX::DagNode<Traits>>& getDagNodes() const;
+
+    /** \brief Returns the speedup and parallelizability of the graph.
+
+	Estimates are based on execution times.  This will return
+	garbage if the evaluateFields() call has not been made to log
+	execution times.
+     */
+    void analyzeGraph(double& speedup, double& parallelizability) const;
 
   protected:
 

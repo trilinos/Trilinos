@@ -301,6 +301,16 @@ void PHX::FieldManager<Traits>::print(std::ostream& os) const
 
 // **************************************************************
 template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+analyzeGraph(double& s, double& p) const
+{
+  m_eval_containers.template getAsObject<EvalT>()->analyzeGraph(s,p);
+}
+
+// **************************************************************
+template<typename Traits>
 inline
 std::ostream& PHX::operator<<(std::ostream& os, 
 			      const PHX::FieldManager<Traits>& vm)

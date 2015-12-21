@@ -222,5 +222,13 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
 }
 
 // *************************************************************************
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+analyzeGraph(double& speedup, double& parallelizability) const
+{
+  this->dag_manager_.analyzeGraph(speedup,parallelizability);
+}
+
+// *************************************************************************
 
 #endif 

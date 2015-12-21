@@ -324,10 +324,17 @@ void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
+
+    using clock = std::chrono::steady_clock;
+    std::chrono::time_point<clock> start = clock::now();
+
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
+
+    nodes_[topoSortEvalIndex[n]].setExecutionTime(clock::now()-start);
   }
 }
 
@@ -513,6 +520,14 @@ PHX::DagManager<Traits>::getEvaluatorInternalOrdering() const
 
 //=======================================================================
 template<typename Traits>
+const std::vector<PHX::DagNode<Traits>>&
+PHX::DagManager<Traits>::getDagNodes() const
+{
+  return nodes_;
+}
+
+//=======================================================================
+template<typename Traits>
 void PHX::DagManager<Traits>::print(std::ostream& os) const
 {
   os << "******************************************************" << std::endl;
@@ -549,6 +564,42 @@ void PHX::DagManager<Traits>::print(std::ostream& os) const
   os << "Finished PHX::DagManager" << std::endl;
   os << "Evaluation Type = " << evaluation_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
+
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
+analyzeGraph(double& speedup, double& parallelizability) const
+{
+  using std::vector;
+  using duration = std::chrono::duration<double>;
+
+  duration T_1 = duration(0.0);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    T_1 += node.executionTime();
+
+    duration t_data_ready(0.0);
+    const auto& adjacencies = node.adjacencies();
+    for (const auto& adj_node_index : adjacencies) {
+      t_data_ready = std::max(t_data_ready, nodes_[adj_node_index].finishTime());
+    }
+    const_cast<PHX::DagNode<Traits>&>(node).setStartTime(t_data_ready); 
+    const_cast<PHX::DagNode<Traits>&>(node).setFinishTime(t_data_ready + node.executionTime());
+
+  }
+
+  duration T_inf = duration(0.0);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    T_inf = std::max(T_inf,node.finishTime());
+  }
+
+  speedup = T_1.count() / T_inf.count();
+  parallelizability = ( 1.0 - (1.0/speedup) )
+    / ( 1.0 - (1.0 / static_cast<double>(topoSortEvalIndex.size())) );
 
 }
 
