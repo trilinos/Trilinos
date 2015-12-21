@@ -49,6 +49,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Phalanx_KokkosUtilities.cpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -65,6 +66,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(node_normals, stk_testing)
   {
     using Teuchos::RCP;
+
+    PHX::InitializeKokkosDevice();
     
     //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::RCP<Teuchos::FancyOStream> pout= Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));

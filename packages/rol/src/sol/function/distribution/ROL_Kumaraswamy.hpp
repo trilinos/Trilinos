@@ -80,7 +80,7 @@ public:
     b_ = std::max(b_,tmp);
 
     exp1_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Exponent 1",0.5);
-    exp1_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Exponent 2",0.5);
+    exp2_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Exponent 2",0.5);
     exp1_ = (exp1_ > 0.) ? exp1_ : 0.5;
     exp2_ = (exp2_ > 0.) ? exp2_ : 0.5;
 

@@ -165,7 +165,13 @@ namespace ROL {
 
   template<class Real>
   inline Teuchos::RCP<Distribution<Real> > DistributionFactory(Teuchos::ParameterList &parlist) {
-    std::string dist = parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac");
+    std::string dist;
+    if ( parlist.isSublist("SOL") ) {
+      dist.assign(parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac"));
+    }
+    else {
+      dist.assign(parlist.sublist("Distribution").get("Name","Dirac"));
+    }
     EDistribution ed = StringToEDistribution(dist);
     switch(ed) {
       case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(parlist));
