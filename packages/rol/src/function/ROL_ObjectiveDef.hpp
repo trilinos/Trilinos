@@ -63,10 +63,10 @@ Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Re
 template <class Real>
 void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
   g.zero();
-  Real deriv = 0.0;
-  Real h     = 0.0;
+  Real deriv = 0.0, h = 0.0, xi = 0.0;
   for (int i = 0; i < g.dimension(); i++) {
-    h     = x.dot(*x.basis(i))*tol;
+    xi    = std::abs(x.dot(*x.basis(i)));
+    h     = ((xi < ROL_EPSILON) ? 1. : xi)*tol;
     deriv = this->dirDeriv(x,*x.basis(i),h);
     g.axpy(deriv,*g.basis(i));
   }
