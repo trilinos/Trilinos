@@ -53,28 +53,36 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 else ()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC
-  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_openmp_hwloc_gcc_perseus.cmake
+  MPI_Downstream_ETI_OPENMP
+  ctest_linux_nightly_mpi_release_downstream_ETI_openmp_generic_perseus.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 180
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_THREADS_INTEL
-  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_threads_hwloc_intel_perseus.cmake
+  MPI_Downstream_ETI_CUDA
+  ctest_linux_nightly_mpi_release_downstream_ETI_cuda_generic_perseus.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 180
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_SERIAL_GCC
-  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 180
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_Downstream_KokkosRefactor_ETI_THREADS_INTEL
+#  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_threads_hwloc_intel_perseus.cmake
+#  CTEST_INSTALLER_TYPE release
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 180
+#)
+
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_Downstream_ETI_NO_THREADS
+#  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima.cmake
+#  CTEST_INSTALLER_TYPE release
+#  RUN_SERIAL
+#  TIMEOUT_MINUTES 180
+#)
 
 endif ()
 
