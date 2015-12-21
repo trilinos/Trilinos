@@ -1246,6 +1246,7 @@ template <typename Adapter>
   env->debug(DETAILED_STATUS, "Entering objectMetrics");
 
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
@@ -1281,6 +1282,7 @@ template <typename Adapter>
     weights[0] = sdata_t();
   }
   else{
+    int stride = 1;
     if ((ia->adapterType() == GraphAdapterType ||
 	 ia->adapterType() == MatrixAdapterType ||
 	 ia->adapterType() == MeshAdapterType) && modelType==GraphModelType) {
@@ -1288,10 +1290,20 @@ template <typename Adapter>
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
       } else {
+	ArrayView<const gno_t> Ids;
+	ArrayView<sdata_t> vwgts;
+	graphModel->getVertexList(Ids, vwgts);
+	scalar_t *wgt = new scalar_t[numLocalObjects];
+	for (int i=0; i < nWeights; i++){
+	  for (size_t j=0; j < numLocalObjects; j++) {
+	    wgt[j] = vwgts[i][j];
+	  }
+	  ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
+	  weights[i] = sdata_t(wgtArray, stride);
+	}
       }
     } else {
       for (int i=0; i < nWeights; i++){
-	int stride;
 	const scalar_t *wgt;
 	ia->getWeightsView(wgt, stride, i); 
 	ArrayRCP<const scalar_t> wgtArray(wgt,0,stride*numLocalObjects,false);
