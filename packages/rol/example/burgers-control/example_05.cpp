@@ -146,120 +146,144 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
     // Build CVaR objective function
-    Teuchos::ParameterList list;
-    list.sublist("SOL").set("Store Sampled Value and Gradient",true);
-    list.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-2);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,list,sampler) );
-    // Build CVaR vectors
-    double x1v = 10.0*random<double>(comm)-5.0;
+    Teuchos::ParameterList list1;
+    list1.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    list1.sublist("SOL").set("Store Sampled Value and Gradient",true);
+    list1.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-2);
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    list1.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    // Build stochastic problem
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
-    ROL::RiskVector<double> x1c(x1p,true,x1v);
+    x1p->zero();
+    ROL::StochasticProblem<double> optProb1(list1,pObj,sampler,x1p);
+    Teuchos::RCP<ROL::Vector<double> > dp = Teuchos::rcp(&d,false);
+    Teuchos::RCP<ROL::Vector<double> > D = optProb1.createVector(list1,dp);
+    optProb1.checkObjectiveGradient(*D,true,*outStream);
+    optProb1.checkObjectiveHessVec(*D,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
-    x1c.zero();
     clock_t start = clock();
-    algo->run(x1c,*obj,true,*outStream);
+    algo->run(optProb1,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* SMOOTHED CVAR 1.e-4 ************************************************/
     /**********************************************************************************************/
     *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
-    // Build CVaR objective function
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-4);
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,list,sampler) );
-    // Build CVaR vectors
-    double x2v = 10.0*random<double>(comm)-5.0;
+    Teuchos::ParameterList list2;
+    list2.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    list2.sublist("SOL").set("Store Sampled Value and Gradient",true);
+    list2.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-4);
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    list2.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    // Build stochastic problem
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
-    ROL::RiskVector<double> x2c(x2p,true,x2v);
+    x2p->set(*x1p);
+    ROL::StochasticProblem<double> optProb2(list2,pObj,sampler,x2p);
+    optProb2.setSolutionStatistic(list2,optProb1.getSolutionStatistic());
+    D = optProb2.createVector(list2,dp);
+    optProb2.checkObjectiveGradient(*D,true,*outStream);
+    optProb2.checkObjectiveHessVec(*D,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
-    x2c.set(x1c);
     start = clock();
-    algo->run(x2c,*obj,true,*outStream);
+    algo->run(optProb2,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* SMOOTHED CVAR 1.e-6 ************************************************/
     /**********************************************************************************************/
     *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
-    // Build CVaR objective function
-    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-6);
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,list,sampler) );
-    // Build CVaR vectors
-    double x3v = 10.0*random<double>(comm)-5.0;
+    Teuchos::ParameterList list3;
+    list3.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    list3.sublist("SOL").set("Store Sampled Value and Gradient",true);
+    list3.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1.e-6);
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    list3.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    // Build stochastic problem
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
-    ROL::RiskVector<double> x3c(x3p,true,x3v);
+    x3p->set(*x2p);
+    ROL::StochasticProblem<double> optProb3(list3,pObj,sampler,x3p);
+    optProb3.setSolutionStatistic(list3,optProb2.getSolutionStatistic());
+    D = optProb3.createVector(list3,dp);
+    optProb3.checkObjectiveGradient(*D,true,*outStream);
+    optProb3.checkObjectiveHessVec(*D,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
-    x3c.set(x2c);
     start = clock();
-    algo->run(x3c,*obj,true,*outStream);
+    algo->run(optProb3,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* NONSMOOTH PROBLEM **************************************************/
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
-    // Build CVaR objective function
+    Teuchos::ParameterList list;
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    list.sublist("SOL").set("Store Sampled Value and Gradient",true);
+    list.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",0.99);
+    list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",1.0);
     list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",0.);
     list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Dirac");
     list.sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Dirac").set("Location",0.);
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,list,sampler) );
-    // Build CVaR vector
-    double zv = 10.0*random<double>(comm)-5.0;
+    // Build stochastic problem
     Teuchos::RCP<ROL::Vector<double> > zp = Teuchos::rcp(&z,false);
-    ROL::RiskVector<double> zc(zp,true,zv);
+    zp->set(*x3p);
+    ROL::StochasticProblem<double> optProb(list,pObj,sampler,zp);
+    optProb.setSolutionStatistic(list,optProb3.getSolutionStatistic());
+    D = optProb.createVector(list,dp);
+    optProb.checkObjectiveGradient(*D,true,*outStream);
+    optProb.checkObjectiveHessVec(*D,true,*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Bundle",*parlist,false));
-    zc.set(x3c);
     start = clock();
-    algo->run(zc,*obj,true,*outStream);
+    algo->run(optProb,true,*outStream);
     *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* COMPUTE ERROR ******************************************************/
     /**********************************************************************************************/
     *outStream << "\nSUMMARY:\n";
     *outStream << "  ---------------------------------------------\n";
-    *outStream << "    True Value-At-Risk    = " << zc.getStatistic() << "\n";
+    *outStream << "    True Value-At-Risk    = " << optProb.getSolutionStatistic() << "\n";
     *outStream << "  ---------------------------------------------\n";
-    double VARerror  = std::abs(zc.getStatistic()-x1c.getStatistic());
+    double VARerror  = std::abs(optProb.getSolutionStatistic()-optProb1.getSolutionStatistic());
     Teuchos::RCP<ROL::Vector<double> > cErr = x1.clone();
     cErr->set(x1); cErr->axpy(-1.0,z);
     double CTRLerror = cErr->norm();
-    cErr = x1c.clone();
-    cErr->set(x1c); cErr->axpy(-1.0,zc);
-    double TOTerror1 = cErr->norm();
-    *outStream << "    Value-At-Risk (1.e-2) = " << x1c.getStatistic() << "\n";
+    double TOTerror1 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
+    *outStream << "    Value-At-Risk (1.e-2) = " << optProb1.getSolutionStatistic() << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror1 << "\n";
     *outStream << "  ---------------------------------------------\n";
-    VARerror  = std::abs(zc.getStatistic()-x2c.getStatistic());
+    VARerror  = std::abs(optProb.getSolutionStatistic()-optProb2.getSolutionStatistic());
     cErr = x2.clone();
     cErr->set(x2); cErr->axpy(-1.0,z);
     CTRLerror = cErr->norm();
-    cErr = x2c.clone();
-    cErr->set(x2c); cErr->axpy(-1.0,zc);
-    double TOTerror2 = cErr->norm();
-    *outStream << "    Value-At-Risk (1.e-4) = " << x2c.getStatistic() << "\n";
+    double TOTerror2 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
+    *outStream << "    Value-At-Risk (1.e-4) = " << optProb2.getSolutionStatistic() << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror2 << "\n";
     *outStream << "  ---------------------------------------------\n";
-    VARerror  = std::abs(zc.getStatistic()-x3c.getStatistic());
+    VARerror  = std::abs(optProb.getSolutionStatistic()-optProb3.getSolutionStatistic());
     cErr = x3.clone();
     cErr->set(x3); cErr->axpy(-1.0,z);
     CTRLerror = cErr->norm();
-    cErr = x3c.clone();
-    cErr->set(x3c); cErr->axpy(-1.0,zc);
-    double TOTerror3 = cErr->norm();
-    *outStream << "    Value-At-Risk (1.e-6) = " << x3c.getStatistic() << "\n";
+    double TOTerror3 = std::sqrt(std::pow(VARerror,2)+std::pow(CTRLerror,2));
+    *outStream << "    Value-At-Risk (1.e-6) = " << optProb3.getSolutionStatistic() << "\n";
     *outStream << "    Value-At-Risk Error   = " <<  VARerror << "\n";
     *outStream << "    Control Error         = " << CTRLerror << "\n";
     *outStream << "    Total Error           = " << TOTerror3 << "\n";

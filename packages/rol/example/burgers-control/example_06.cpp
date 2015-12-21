@@ -142,10 +142,10 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new DualControlVector(gz_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > yzp
       = Teuchos::rcp(new PrimalControlVector(yz_rcp,fem));
-    RealT zvar = 0.0*random<RealT>(comm);
-    RealT gvar = random<RealT>(comm);
-    RealT yvar = random<RealT>(comm);
-    ROL::RiskVector<RealT> z(zp,true,zvar), g(gzp,true,gvar), y(yzp,true,yvar);
+    std::vector<RealT> zvar(1,0.0*random<RealT>(comm));
+    std::vector<RealT> gvar(1,random<RealT>(comm));
+    std::vector<RealT> yvar(1,random<RealT>(comm));
+    ROL::RiskVector<RealT> z(zp,zvar,true), g(gzp,gvar,true), y(yzp,yvar,true);
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
