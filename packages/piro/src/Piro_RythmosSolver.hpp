@@ -55,6 +55,8 @@
 #include "Piro_RythmosStepperFactory.hpp"
 #include "Piro_RythmosStepControlFactory.hpp"
 
+#include "Kokkos_DefaultNode.hpp"
+
 #include <map>
 #include <string>
 
@@ -63,7 +65,8 @@ namespace Piro {
 /** \brief Thyra-based Model Evaluator for Rythmos solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal, 
+          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class RythmosSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
@@ -172,8 +175,9 @@ private:
 };
 
 /** \brief Non-member constructor function */
-template <typename Scalar>
-Teuchos::RCP<RythmosSolver<Scalar> >
+template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+Teuchos::RCP<RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 rythmosSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,

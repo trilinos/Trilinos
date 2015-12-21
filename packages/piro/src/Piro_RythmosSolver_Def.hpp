@@ -91,16 +91,16 @@
 #include <stdexcept>
 #include <iostream>
 
-template <typename Scalar>
-Piro::RythmosSolver<Scalar>::RythmosSolver() :
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver() :
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized(false)
 {
 }
 
 
-template <typename Scalar>
-Piro::RythmosSolver<Scalar>::RythmosSolver(
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer) :
@@ -110,8 +110,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   initialize(appParams,in_model,observer);
 }
 
-template <typename Scalar>
-void Piro::RythmosSolver<Scalar>::initialize(
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::initialize(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP< Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > &observer)
@@ -329,11 +329,11 @@ void Piro::RythmosSolver<Scalar>::initialize(
 
 #ifdef Piro_ENABLE_Ifpack2
      typedef Thyra::PreconditionerFactoryBase<double> Base;
-     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
+     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 #ifdef Piro_ENABLE_MueLu
-     Stratimikos::enableMueLu(linearSolverBuilder);
+     Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
 #endif
 
      linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
@@ -400,8 +400,8 @@ else {
 }
 
 
-template <typename Scalar>
-Piro::RythmosSolver<Scalar>::RythmosSolver(
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -427,8 +427,8 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
   }
 }
 
-template <typename Scalar>
-Piro::RythmosSolver<Scalar>::RythmosSolver(
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RythmosSolver(
     const Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > &stateIntegrator,
     const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stateStepper,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
@@ -456,16 +456,16 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 }
 
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> >
-Piro::RythmosSolver<Scalar>::getRythmosIntegrator() const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRythmosIntegrator() const
 {
   return fwdStateIntegrator;
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::RythmosSolver<Scalar>::get_p_space(int l) const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       l >= num_p || l < 0,
@@ -478,9 +478,9 @@ Piro::RythmosSolver<Scalar>::get_p_space(int l) const
   return model->get_p_space(l);
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Piro::RythmosSolver<Scalar>::get_g_space(int j) const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       j > num_g || j < 0,
@@ -498,9 +498,9 @@ Piro::RythmosSolver<Scalar>::get_g_space(int j) const
   }
 }
 
-template<typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
-Piro::RythmosSolver<Scalar>::getNominalValues() const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
 {
   Thyra::ModelEvaluatorBase::InArgs<Scalar> result = this->createInArgs();
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> modelNominalValues = model->getNominalValues();
@@ -510,8 +510,9 @@ Piro::RythmosSolver<Scalar>::getNominalValues() const
   return result;
 }
 
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> Piro::RythmosSolver<Scalar>::createInArgs() const
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
@@ -519,8 +520,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> Piro::RythmosSolver<Scalar>::createInA
   return inArgs;
 }
 
-template <typename Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOutArgsImpl() const
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar> 
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
 {
   Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
@@ -590,8 +592,8 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::RythmosSolver<Scalar>::createOu
   return outArgs;
 }
 
-template <typename Scalar>
-void Piro::RythmosSolver<Scalar>::evalModelImpl(
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {
@@ -909,9 +911,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   }
 }
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_DgDp_op_impl(int j, int l) const
 {
   TEUCHOS_ASSERT(j != num_g);
   const Teuchos::Array<Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > > dummy =
@@ -919,9 +921,9 @@ Piro::RythmosSolver<Scalar>::create_DgDp_op_impl(int j, int l) const
   return Teuchos::rcp(new Thyra::DefaultAddedLinearOp<Scalar>(dummy));
 }
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidRythmosParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
      Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));
@@ -961,9 +963,9 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   return validPL;
 }
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Teuchos::ParameterList>
-Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidRythmosSolverParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosSolverParams"));;
@@ -976,23 +978,23 @@ Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
   return validPL;
 }
 
-template <typename Scalar>
-void Piro::RythmosSolver<Scalar>::
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStepperFactory<Scalar> > & factory)
 {
   stepperFactories[stepperName] = factory;
 }
 
-template <typename Scalar>
-void Piro::RythmosSolver<Scalar>::
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 addStepControlFactory(const std::string & stepControlName,
                       const Teuchos::RCP<RythmosStepControlFactory<Scalar>> & step_control_strategy)
 {
   stepControlFactories[stepControlName] = step_control_strategy;
 }
 
-template <typename Scalar>
-Teuchos::RCP<Piro::RythmosSolver<Scalar> >
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 Piro::rythmosSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
@@ -1004,6 +1006,6 @@ Piro::rythmosSolver(
         new ObserverToRythmosIntegrationObserverAdapter<Scalar>(piroObserver));
   }
 
-  return Teuchos::rcp(new RythmosSolver<Scalar>(appParams, in_model, observer));
+  return Teuchos::rcp(new RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(appParams, in_model, observer));
 }
 

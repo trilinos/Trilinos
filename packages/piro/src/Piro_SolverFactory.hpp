@@ -50,6 +50,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Kokkos_DefaultNode.hpp"
+
 namespace Piro {
 
 /*! \brief Factory for creating Thyra-based %Piro solvers
@@ -72,7 +74,8 @@ public:
    *
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
-  template <typename Scalar>
+  template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,

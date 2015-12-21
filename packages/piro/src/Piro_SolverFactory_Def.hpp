@@ -60,7 +60,7 @@
 
 namespace Piro {
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::createSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
@@ -86,7 +86,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #endif /* Piro_ENABLE_NOX */
 #ifdef Piro_ENABLE_Rythmos
   if (solverType == "Rythmos") {
-    result = rythmosSolver(piroParams, model, observer);
+    result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* Piro_ENABLE_Rythmos */
   {
