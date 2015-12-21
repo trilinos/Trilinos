@@ -168,6 +168,34 @@
         </ParameterList>
       </ParameterList>
 
+      <!-- ===========  MIXED-QUANTILE QUADRANGLE SUBLIST  =========== -->
+      <ParameterList name="Mixed-Quantile Quadrangle">
+        <Parameter name="Probability Array"   type="string" value="{ 0.1, 0.5, 0.9 }" />
+        <Parameter name="Coefficient Array"   type="string" value="{ 0.2, 0.3, 0.5 }" />
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="0.0" />
+            <Parameter name="Upper Bound" type="double" value="1.0" />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  CVAR SUBLIST  =========== -->
+      <ParameterList name="Quantile-Radius Quadrangle">
+        <Parameter name="Confidence Level"    type="double" value="0.8"   />
+        <Parameter name="Coefficient"         type="double" value="2.0"   />
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="-0.5" />
+            <Parameter name="Upper Bound" type="double" value="0.5"  />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <!-- ===========  TRUNCATED MEAN QUADRANGLE SUBLIST  =========== -->
       <ParameterList name="Truncated Mean Quadrangle">
         <Parameter name="Threshold" type="double" value="1.e-2" />

@@ -86,9 +86,14 @@ public:
       Teuchos::ParameterList &list
         = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed-Quantile Quadrangle");
       Teuchos::Array<Real> prob
-        = Teuchos::getArrayFromStringParameter<Real>(list,"Probabilities");
+        = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
       augmented_ = true;
       nStat_     = prob.size();
+      stat_.resize(nStat_,stat);
+    }
+    else if ( type == "Quantile-Radius Quadrangle" ) {
+      augmented_ = true;
+      nStat_     = 2;
       stat_.resize(nStat_,stat);
     }
   }
