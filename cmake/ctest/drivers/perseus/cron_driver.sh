@@ -28,6 +28,7 @@ module load python/2.7.9
 module load cmake/2.8.11
 module load git/2.1.3
 
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 export CUDA_LAUNCH_BLOCKING=1
