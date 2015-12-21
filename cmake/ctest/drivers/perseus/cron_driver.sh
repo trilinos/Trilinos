@@ -25,7 +25,7 @@ source /projects/modulefiles/utils/sems-modules-init.sh
 source /projects/modulefiles/utils/kokkos-modules-init.sh
 
 module load python/2.7.9
-module load cmake/2.8.11
+module load cmake/2.8.12
 module load git/2.1.3
 
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
@@ -40,7 +40,6 @@ export OMP_NUM_THREADS=2
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 
-module load cmake/2.8.12
 if [ "${CUDA}" == 'ON' ]; then
   module load ${CUDA_SUFFIX}
   module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
