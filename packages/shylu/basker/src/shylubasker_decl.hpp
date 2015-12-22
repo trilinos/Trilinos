@@ -458,6 +458,8 @@ namespace BaskerNS
     int copy_schedule(INT_2DARRAY &s, INT_2DARRAY &ls, 
 		      Int l, Int sl, Int t);
     BASKER_INLINE
+    int nfactor_domain_error(INT_1DARRAY);
+    BASKER_INLINE
     int nfactor_diag_error(INT_1DARRAY );
     
    

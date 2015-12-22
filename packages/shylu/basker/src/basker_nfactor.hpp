@@ -89,28 +89,61 @@ namespace BaskerNS
     //Spit into Domain and Sep
     //----------------------Domain-------------------------//
     #ifdef BASKER_KOKKOS
-    Kokkos::Impl::Timer       timer;
 
+    //====TIMER==
+    #ifdef BASKER_TIME
+    Kokkos::Impl::Timer       timer;
+    #endif
+    //===TIMER===
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
 
     if(btf_tabs_offset != 0)
       {
-    #ifdef BASKER_NO_LAMBDA
-    printf("Nfactor, NoToken, Kokkos, NoLambda \n");
+
     kokkos_nfactor_domain <Int,Entry,Exe_Space>
       domain_nfactor(this);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), domain_nfactor);
+    Kokkos::parallel_for(TeamPolicy(num_threads,1), 
+			 domain_nfactor);
     Kokkos::fence();
-    #else //else no_lambda
-    typedef typename TeamPolicy::member_type     MemberType;
-    //Note: To be added
-    #endif //end basker_no_lambda
     
+
+    //=====Check for error======
+    while(true)
+      {
+	INT_1DARRAY thread_start;
+	MALLOC_INT_1DARRAY(thread_start, num_threads+1);
+	init_value(thread_start, num_threads+1, 
+		   (Int) BASKER_MAX_IDX);
+	int nt = nfactor_domain_error(thread_start);
+	if(nt == BASKER_SUCCESS)
+	  {
+	    break;
+	  }
+	else
+	  {
+	    printf("restart \n");
+	    kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
+	      diag_nfactor_remalloc(this, thread_start);
+	    Kokkos::parallel_for(TeamPolicy(num_threads,1),
+				 diag_nfactor_remalloc);
+	    Kokkos::fence();
+	  }
+      }//end while
+    
+
+
+
+    
+
+
+    //====TIMER===
     #ifdef BASKER_TIME
     printf("Time DOMAIN: %f \n", timer.seconds());
-    #endif
     timer.reset();
+    #endif
+    //====TIMER====
+    
 
     #else// else basker_kokkos
     #pragma omp parallel
@@ -227,6 +260,106 @@ namespace BaskerNS
     
     return 0;
   }//end factor_notoken()
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::nfactor_domain_error
+  (
+   INT_1DARRAY threads_start
+   )
+  {
+    Int nthread_remalloc = 0;
+    for(Int ti = 0; ti < num_threads; ti++)
+      {
+
+	//Note: jdb we can make this into a switch
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_NOERROR)
+	  {
+	    threads_start(ti) = BASKER_MAX_IDX;
+	    continue;
+	  }//end if NOERROR
+
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_SINGULAR)
+	  {
+	    printf("ERROR THREAD: %d DOMBLK SINGULAR: %d\n",
+		   ti,
+		   thread_array(ti).error_blk);
+	    return BASKER_ERROR;
+	  }//end if SINGULAR
+	
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_NOMALLOC)
+	  {
+	    printf("ERROR THREADS: %d DOMBLK NOMALLOC: %d\n",
+		   ti,
+		   thread_array(ti).error_blk);
+	    return BASKER_ERROR;
+	  }//end if NOMALLOC
+	
+	if(thread_array(ti).error_type ==
+	   BASKER_ERROR_REMALLOC)
+	  {
+
+	    BASKER_ASSERT(thread_array(ti).error_blk > 0,
+			  "nfactor_dom_error error_blk");
+
+	    printf("ERROR THREADS: %d DOMBLK MALLOC: %d \n",
+		   ti,
+		   thread_array(ti).error_blk);
+	    
+
+	    //Resize L
+	    BASKER_MATRIX &L = LL(thread_array(ti).error_blk)(0);
+	    RESIZE_INT_1DARRAY(L.row_idx,
+			       L.nnz,
+			       thread_array(ti).error_info);
+	    RESIZE_ENTRY_1DARRAY(L.val,
+				 L.nnz,
+				 thread_array(ti).error_info);
+	    L.nnz = thread_array(ti).error_info;
+	    
+	    //Resize U
+	    BASKER_MATRIX &U = LU(thread_array(ti).error_blk)(0);
+	    RESIZE_INT_1DARRAY(U.row_idx,
+			       U.nnz,
+			       thread_array(ti).error_info);
+	    RESIZE_ENTRY_1DARRAY(U.val,
+				 U.nnz,
+				 thread_array(ti).error_info);
+	    U.nnz = thread_array(ti).error_info;
+	    
+	    threads_start(ti) = thread_array(ti).error_blk;
+	
+
+	    //Reset 
+	    thread_array(ti).error_type = BASKER_ERROR_NOERROR;
+	    thread_array(ti).error_blk  = BASKER_MAX_IDX;
+	    thread_array(ti).error_info = BASKER_MAX_IDX;
+
+	    nthread_remalloc++;
+    
+	  }//if REMALLOC
+
+      }//for all threads
+    
+    if(nthread_remalloc == 0)
+      {
+	return BASKER_SUCCESS;
+      }
+    else
+      {
+	return nthread_remalloc;
+      }
+
+    //Should never be here
+    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    return BASKER_SUCCESS;
+  }//end nfactor_domain_error
+
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
