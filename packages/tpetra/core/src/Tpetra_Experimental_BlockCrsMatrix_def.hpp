@@ -373,18 +373,17 @@ namespace Experimental {
     }
     const impl_scalar_type* const vIn =
       reinterpret_cast<const impl_scalar_type*> (vals);
-
     const size_t absRowBlockOffset = this->ptr_[localRowInd];
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    const LO perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
         // mfh 21 Dec 2015: Here we encode the assumption that blocks
         // are stored contiguously, with no padding.  "Contiguously"
         // means that all memory between the first and last entries
@@ -815,19 +814,19 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
     const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
         little_block_type A_old =
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
@@ -861,18 +860,17 @@ namespace Experimental {
     //const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn =
       reinterpret_cast<const impl_scalar_type*> (vals);
-
     const size_t absRowBlockOffset = this->ptr_[localRowInd];
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    const LO perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
         // mfh 21 Dec 2015: Here we encode the assumption that blocks
         // are stored contiguously, with no padding.  "Contiguously"
         // means that all memory between the first and last entries
@@ -967,15 +965,15 @@ namespace Experimental {
       return static_cast<LO> (0);
     }
 
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    LO hint = 0; // Guess for the relative offset into the current row
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
-        offsets[k] = relBlockOffset;
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
+        offsets[k] = static_cast<ptrdiff_t> (relBlockOffset);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -1319,47 +1317,49 @@ namespace Experimental {
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  size_t
+  LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   findRelOffsetOfColumnIndex (const LO localRowIndex,
                               const LO colIndexToFind,
-                              const size_t hint) const
+                              const LO hint) const
   {
     const size_t absStartOffset = ptr_[localRowIndex];
     const size_t absEndOffset = ptr_[localRowIndex+1];
-    const size_t numEntriesInRow = absEndOffset - absStartOffset;
+    const LO numEntriesInRow = static_cast<LO> (absEndOffset - absStartOffset);
+    // Amortize pointer arithmetic over the search loop.
+    const LO* const curInd = ind_ + absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
-    if (hint < numEntriesInRow && ind_[absStartOffset+hint] == colIndexToFind) {
+    if (hint < numEntriesInRow && curInd[hint] == colIndexToFind) {
       // Always return the offset relative to the current row.
       return hint;
     }
 
     // The hint was wrong, so we must search for the given column
     // index in the column indices for the given row.
-    size_t relOffset = Teuchos::OrdinalTraits<size_t>::invalid ();
+    LO relOffset = Teuchos::OrdinalTraits<LO>::invalid ();
 
     // We require that the graph have sorted rows.  However, binary
     // search only pays if the current row is longer than a certain
     // amount.  We set this to 32, but you might want to tune this.
-    const size_t maxNumEntriesForLinearSearch = 32;
+    const LO maxNumEntriesForLinearSearch = 32;
     if (numEntriesInRow > maxNumEntriesForLinearSearch) {
       // Use binary search.  It would probably be better for us to
       // roll this loop by hand.  If we wrote it right, a smart
       // compiler could perhaps use conditional loads and avoid
       // branches (according to Jed Brown on May 2014).
-      const LO* beg = ind_ + absStartOffset;
-      const LO* end = ind_ + absEndOffset;
+      const LO* beg = curInd;
+      const LO* end = curInd + numEntriesInRow;
       std::pair<const LO*, const LO*> p =
         std::equal_range (beg, end, colIndexToFind);
       if (p.first != p.second) {
         // offset is relative to the current row
-        relOffset = static_cast<size_t> (p.first - beg);
+        relOffset = static_cast<LO> (p.first - beg);
       }
     }
     else { // use linear search
-      for (size_t k = 0; k < numEntriesInRow; ++k) {
-        if (colIndexToFind == ind_[absStartOffset + k]) {
+      for (LO k = 0; k < numEntriesInRow; ++k) {
+        if (colIndexToFind == curInd[k]) {
           relOffset = k; // offset is relative to the current row
           break;
         }
@@ -1465,12 +1465,10 @@ namespace Experimental {
   getLocalBlock (const LO localRowInd, const LO localColInd) const
   {
     const size_t absRowBlockOffset = ptr_[localRowInd];
+    const LO relBlockOffset =
+      this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
 
-    size_t hint = 0;
-    const size_t relBlockOffset =
-      findRelOffsetOfColumnIndex (localRowInd, localColInd, hint);
-
-    if (relBlockOffset != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+    if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
       return getNonConstLocalBlockFromAbsOffset (absBlockOffset);
     }

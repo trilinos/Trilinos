@@ -849,38 +849,45 @@ private:
   ///
   /// \param localRowIndex [in] Local index of the entry's row.
   /// \param colIndexToFind [in] Local index of the entry's column.
-  /// \param hint [in] Relative offset hint.
+  /// \param hint [in] Relative offset hint (MUST be nonnegative).
   ///
-  /// An offset may be either relative or absolute.  <i>Absolute</i>
-  /// offsets are just direct indices into an array.  <i>Relative</i>
-  /// offsets are relative to the current row.  For example, if
-  /// <tt>k_abs</tt> is an absolute offset into the array of column
-  /// indices <tt>ind_</tt>, then one can use <tt>k_abs</tt> directly
-  /// as <tt>ind_[k_abs]</tt>.  If <tt>k_rel</tt> is a relative offset
-  /// into <tt>ind_</tt>, then one must know the current local row
-  /// index in order to use <tt>k_rel</tt>.  For example:
+  /// <i>Relative</i> offsets are relative to the current row, while
+  /// <i>absolute</i> offsets are just direct indices into an array.
+  /// For example, if <tt>k_abs</tt> is an absolute offset into the
+  /// array of column indices <tt>ind_</tt>, then one can use
+  /// <tt>k_abs</tt> directly as <tt>ind_[k_abs]</tt>.  If
+  /// <tt>k_rel</tt> is a relative offset into <tt>ind_</tt>, then one
+  /// must know the current local row index in order to use
+  /// <tt>k_rel</tt>.  For example:
   /// \code
   /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
   /// LO colInd = ind_[k_abs];
   /// \endcode
   ///
   /// This method returns a relative block offset.  A <i>block</i>
-  /// offset means a graph or mesh offset.  It's suitable for use in
-  /// <tt>ind_</tt>, but not in <tt>val_</tt>.  One must multiply it
-  /// by the result of offsetPerBlock() in order to get the
-  /// <i>point</i> offset into <tt>val_</tt>.
+  /// offset means a graph or mesh offset, vs. the <i>point</i> offset
+  /// into the array of values \c val_.  A block offset is suitable
+  /// for use in \c ind_, but not in \c val_.  One must multiply a
+  /// block offset by offsetPerBlock() in order to get the
+  /// <i>point</i> offset into \c val_.
   ///
   /// The given "hint" is a relative block offset.  It can help avoid
   /// searches, for the common case of accessing several consecutive
   /// entries in the same row.
   ///
+  /// Relative offsets may have type \c LO, since a row may not have
+  /// more entries than the number of columns in the graph.  Absolute
+  /// offsets <i>must</i> have type \c size_t or \c ptrdiff_t, since
+  /// the total number of graph or matrix entries on a process may
+  /// exceed the total number of rows and columns.
+  ///
   /// \return Teuchos::OrdinalTraits<size_t>::invalid() if there is no
   ///   block at the given index pair; otherwise, the "absolute"
   ///   block offset of that block.
-  size_t
+  LO
   findRelOffsetOfColumnIndex (const LO localRowIndex,
                               const LO colIndexToFind,
-                              const size_t hint) const;
+                              const LO hint = 0) const;
 
   /// \brief Number of entries consumed by each block in the matrix,
   ///   including padding; the stride between blocks.
