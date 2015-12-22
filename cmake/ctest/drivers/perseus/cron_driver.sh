@@ -40,7 +40,7 @@ export OMP_NUM_THREADS=2
 
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 
-if [ "${CUDA}" == 'ON' ]; then
+if [ "${JENKINS_DO_CUDA}" == 'ON' ]; then
   module load ${CUDA_SUFFIX}
   module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
   export OMPI_CXX=$WORKSPACE/Trilinos/packages/kokkos/config/nvcc_wrapper
