@@ -169,20 +169,24 @@ namespace BaskerNS
 	//printf("kid: %d current_chunk: %d size: %d \n",
 	//     kid, c, c_size);
 
+	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
 	  {
 	    //call single
-	    t_single_nfactor(kid, c);
+	    err = t_single_nfactor(kid, c);
 	  }
 	else
 	  {
 	    //call GP alg.
-	    t_blk_nfactor(kid, c);
+	    err = t_blk_nfactor(kid, c);
 	  }
-
+	if(err != BASKER_SUCCESS)
+	  {
+	    
+	    return BASKER_ERROR;
+	  }
       }//over all chunks 
-
-    return 0;
+    return BASKER_SUCCESS;
   }//end t_nfactor_diag
 
   template <class Int, class Entry, class Exe_Space>
@@ -205,10 +209,7 @@ namespace BaskerNS
     Int j = M.col_ptr(k+1-bcol)-1;
     //Int j = M.row_idx[i];
     
-
     //will have to make a c and c'
-    
-
 
     //printf("kid: %d chunk: %d col: %d bcol: %d j: %d\n",
     //	   kid, c, k, bcol, j);
@@ -231,7 +232,7 @@ namespace BaskerNS
     gpermi(k)= k;
 
     
-    return 0;
+    return BASKER_SUCCESS;
   }//end t_single_factor
 
   template <class Int, class Entry, class Exe_Space>
@@ -419,7 +420,11 @@ namespace BaskerNS
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
                    << pivot << endl;
-              return 2;
+	      thread_array(kid).error_type = 
+		BASKER_ERROR_SINGULAR;
+	      thread_array(kid).error_blk  = c;
+	      thread_array(kid).error_info = k;
+	      return BASKER_ERROR;
             }          
 
           //printf("----------------PIVOT------------blk: %d %d \n", 
@@ -428,7 +433,6 @@ namespace BaskerNS
 	  gpermi(k)             = maxindex+brow2;
 
 
-	  //printf("TAG1 r  maxindex = %d k= %d \n", maxindex, k);
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
           if((maxindex+brow) != k)
             {
@@ -444,13 +448,29 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("----------------------\n");
 
-              newsize = lnnz * 1.1 + 2 *A.nrow + 1;
+              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
 	      printf("Columns in blks: %d %d %d \n",
 		     btf_tabs(c), btf_tabs(c+1), 
 		     (btf_tabs(c+1)-btf_tabs(c)));
+	      
+	      if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = c;
+		  thread_array(kid).error_info = newsize;
+		  return BASKER_ERROR;
+		}
+
             }
           if(unnz+ucnt > uunnz)
             {
@@ -458,9 +478,25 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*A.nrow+1;
+              newsize = uunnz*1.1 + 2*M.nrow+1;
               printf("Diag blk: %d Reallocing U oldsize: %d newsize: %d \n",
                      c, uunnz, newsize);
+	   
+	      if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = c;
+		  thread_array(kid).error_info = newsize;
+		  return BASKER_ERROR;
+		}
+
             }
 
           //L.row_idx[lnnz] = maxindex;
