@@ -163,7 +163,7 @@ public:
   }
 
   const Real getStatistic(const int i = 0) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > nStat_-1),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > (int)nStat_-1),std::invalid_argument,
       ">>> ERROR (ROL::RiskVector): index out-of-bounds in getStatistic!");
     return stat_[i];
   }
