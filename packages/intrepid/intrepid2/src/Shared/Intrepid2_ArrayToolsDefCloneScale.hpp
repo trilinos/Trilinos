@@ -168,7 +168,7 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
 				      ">>> ERROR (ArrayTools::cloneFields): Input fields container must have rank 2, 3, or 4.");
 	  TEUCHOS_TEST_FOR_EXCEPTION( (getrank(outputFields) != getrank(inputFields)+1), std::invalid_argument,
 				      ">>> ERROR (ArrayTools::cloneFields): The rank of the input fields container must be one less than the rank of the output fields container.");
-	  for (size_t i=0; i<getrank(inputFields); i++) {
+	  for (index_type i=0; i<getrank(inputFields); i++) {
 	    std::string errmsg  = ">>> ERROR (ArrayTools::cloneFields): Dimensions ";
 	    errmsg += (char)(48+i);
 	    errmsg += " and ";
@@ -182,7 +182,7 @@ void ArrayTools::cloneFields(ArrayOutFields &       outputFields,
 
 
   // get sizes
-  size_t invalRank      = getrank(inputFields);
+  index_type invalRank      = getrank(inputFields);
   int numCells       = outputFields.dimension(0);
 
 
@@ -226,7 +226,7 @@ void ArrayTools::cloneScaleFields(ArrayOutFields &        outputFields,
                       ">>> ERROR (ArrayTools::cloneScaleFields): Zeroth dimensions of input factors container and output fields container (numbers of integration domains) must agree!");
   TEUCHOS_TEST_FOR_EXCEPTION( ( inputFactors.dimension(1) != outputFields.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (ArrayTools::cloneScaleFields): First dimensions of input factors container and output fields container (numbers of fields) must agree!");
-  for (size_t i=0; i<getrank(inputFields); i++) {
+  for (index_type i=0; i<getrank(inputFields); i++) {
     std::string errmsg  = ">>> ERROR (ArrayTools::cloneScaleFields): Dimensions ";
     errmsg += (char)(48+i);
     errmsg += " and ";
@@ -240,8 +240,8 @@ void ArrayTools::cloneScaleFields(ArrayOutFields &        outputFields,
    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);
    
   // get sizes
-  size_t invalRank      = getrank(inputFields);
-  size_t outvalRank     = getrank(outputFields);
+  index_type invalRank      = getrank(inputFields);
+  index_type outvalRank     = getrank(outputFields);
   int numCells       = outputFields.dimension(0);
   int numFields      = outputFields.dimension(1);
   int numPoints      = outputFields.dimension(2);
@@ -319,7 +319,7 @@ void ArrayTools::scaleFields(ArrayInOutFields &      inoutFields,
    ArrayWrapper<Scalar,ArrayInOutFields, Rank<ArrayInOutFields >::value,false>inoutFieldsWrap(inoutFields);
    ArrayWrapper<Scalar,ArrayInFactors, Rank<ArrayInFactors >::value,true>inputFactorsWrap(inputFactors);
   // get sizes
-  size_t inoutRank      = getrank(inoutFields);
+  index_type inoutRank      = getrank(inoutFields);
   int numCells       = inoutFields.dimension(0);
   int numFields      = inoutFields.dimension(1);
   int numPoints      = inoutFields.dimension(2);

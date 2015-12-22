@@ -807,14 +807,14 @@ void getAnalytic(Scalar * testMat,
 template<class Array>
 bool requireRankRange(std::string&   errmsg,
                       const Array&   array,
-                      const int      lowerBound,
-                      const int      upperBound){
+                      const index_type      lowerBound,
+                      const index_type      upperBound){
 
   TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireRankRange): lowerBound <= upperBound required!");
 
   bool OK = true;
-  if( (lowerBound == upperBound) && !(getrank(array) == (size_t)lowerBound) ) {
+  if( (lowerBound == upperBound) && !(getrank(array) == (index_type)lowerBound) ) {
     errmsg += "\n>>> Array rank = ";
     errmsg += (char)(48 + getrank(array) );
     errmsg += " while rank-";
@@ -822,7 +822,7 @@ bool requireRankRange(std::string&   errmsg,
     errmsg += " array required.";
     OK = false;
   }
-  else if ( (lowerBound < upperBound) &&  !( ((size_t)lowerBound <= getrank(array) ) && (getrank(array) <= (size_t)upperBound)  ) ){
+  else if ( (lowerBound < upperBound) &&  !( ((index_type)lowerBound <= getrank(array) ) && (getrank(array) <= (index_type)upperBound)  ) ){
     errmsg += "\n>>> Array rank = ";
     errmsg += (char)(48 + getrank(array) );
     errmsg += " while a rank between ";
@@ -852,22 +852,22 @@ bool requireRankMatch(std::string&   errmsg,
 template<class Array>
 bool requireDimensionRange(std::string&  errmsg,
                            const Array&  array,
-                           const int     dim,
-                           const int     lowerBound,
-                           const int     upperBound){
+                           const index_type     dim,
+                           const index_type     lowerBound,
+                           const index_type     upperBound){
 
   TEUCHOS_TEST_FOR_EXCEPTION( (lowerBound > upperBound) , std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): lowerBound <= upperBound required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= dim) && ((size_t)dim < getrank(array) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= dim) && ((index_type)dim < getrank(array) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionRange): 0 <= dim < array.rank() required!");
 
   bool OK = true;
-  if( (lowerBound > upperBound) || ( (size_t)dim >= getrank(array) ) ) {
+  if( (lowerBound > upperBound) || ( (index_type)dim >= getrank(array) ) ) {
     errmsg += "\n>>> Unexpected error: ";
     OK = false;
   }
-  if( (lowerBound == upperBound) && !(static_cast<int>(array.dimension(dim)) == lowerBound) ) {
+  if( (lowerBound == upperBound) && !(static_cast<index_type>(array.dimension(dim)) == lowerBound) ) {
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
     errmsg += ") = ";
@@ -880,7 +880,7 @@ bool requireDimensionRange(std::string&  errmsg,
     OK = false;
   }
   else if( (lowerBound < upperBound) &&
-           !( ((size_t)lowerBound <= (size_t)array.dimension(dim) ) && (static_cast<size_t>(array.dimension(dim)) <= (size_t)upperBound) ) ){
+           !( ((index_type)lowerBound <= (index_type)array.dimension(dim) ) && (static_cast<index_type>(array.dimension(dim)) <= (index_type)upperBound) ) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + dim);
     errmsg += ") = ";
@@ -902,19 +902,19 @@ bool requireDimensionRange(std::string&  errmsg,
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
-                           const int      a1_dim0,
+                           const index_type      a1_dim0,
                            const Array2&  array2,
-                           const int      a2_dim0){
+                           const index_type      a2_dim0){
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((size_t)a1_dim0 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((index_type)a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((size_t)a2_dim0 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((index_type)a2_dim0 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
 
   bool OK = true;
-  if(static_cast<int>(array1.dimension(a1_dim0)) != static_cast<int>(array2.dimension(a2_dim0)) ){
+  if(static_cast<index_type>(array1.dimension(a1_dim0)) != static_cast<index_type>(array2.dimension(a2_dim0)) ){
     errmsg += "\n>>> dimension(";
     errmsg += (char)(48 + a1_dim0);
     errmsg += ") of 1st array and dimension(";
@@ -930,20 +930,20 @@ bool requireDimensionMatch(std::string&   errmsg,
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
-                           const int      a1_dim0, const int a1_dim1,
+                           const index_type      a1_dim0, const index_type a1_dim1,
                            const Array2&  array2,
-                           const int      a2_dim0, const int a2_dim1){
+                           const index_type      a2_dim0, const index_type a2_dim1){
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((size_t)a1_dim0 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((index_type)a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((size_t)a1_dim1 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((index_type)a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((size_t)a2_dim0 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((index_type)a2_dim0 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((size_t)a2_dim1 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((index_type)a2_dim1 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
 
@@ -962,26 +962,26 @@ bool requireDimensionMatch(std::string&   errmsg,
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
-                           const int      a1_dim0, const int a1_dim1, const int a1_dim2,
+                           const index_type      a1_dim0, const index_type a1_dim1, const index_type a1_dim2,
                            const Array2&  array2,
-                           const int      a2_dim0, const int a2_dim1, const int a2_dim2){
+                           const index_type a2_dim0, const index_type a2_dim1, const index_type a2_dim2){
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((size_t)a1_dim0 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((index_type)a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((size_t)a1_dim1 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((index_type)a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((size_t)a1_dim2 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((index_type)a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((size_t)a2_dim0 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((index_type)a2_dim0 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((size_t)a2_dim1 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((index_type)a2_dim1 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((size_t)a2_dim2 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((index_type)a2_dim2 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
 
@@ -1004,36 +1004,36 @@ bool requireDimensionMatch(std::string&   errmsg,
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
-                           const int      a1_dim0, const int a1_dim1, const int a1_dim2, const int a1_dim3,
+                           const index_type      a1_dim0, const index_type a1_dim1, const index_type a1_dim2, const index_type a1_dim3,
                            const Array2&  array2,
-                           const int      a2_dim0, const int a2_dim1, const int a2_dim2, const int a2_dim3){
+                           const index_type      a2_dim0, const index_type a2_dim1, const index_type a2_dim2, const index_type a2_dim3){
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((size_t)a1_dim0 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((index_type)a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((size_t)a1_dim1 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((index_type)a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((size_t)a1_dim2 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((index_type)a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && ((size_t)a1_dim3 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && ((index_type)a1_dim3 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((size_t)a2_dim0 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((index_type)a2_dim0 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((size_t)a2_dim1 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((index_type)a2_dim1 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((size_t)a2_dim2 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((index_type)a2_dim2 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && ((size_t)a2_dim3 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && ((index_type)a2_dim3 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim3 < array2.rank() required!");
   bool OK = true;
-  if( !requireDimensionMatch(errmsg, array1, static_cast<int>(a1_dim0), array2, static_cast<int>(a2_dim0)) ){
+  if( !requireDimensionMatch(errmsg, array1, static_cast<index_type>(a1_dim0), array2, static_cast<index_type>(a2_dim0)) ){
     OK = false;
   }
   if( !requireDimensionMatch(errmsg, array1, a1_dim1, array2, a2_dim1) ){
@@ -1053,40 +1053,40 @@ bool requireDimensionMatch(std::string&   errmsg,
 template<class Array1, class Array2>
 bool requireDimensionMatch(std::string&   errmsg,
                            const Array1&  array1,
-                           const int      a1_dim0, const int a1_dim1, const int a1_dim2,
-                           const int      a1_dim3, const int a1_dim4,
+                           const index_type      a1_dim0, const index_type a1_dim1, const index_type a1_dim2,
+                           const index_type      a1_dim3, const index_type a1_dim4,
                            const Array2&  array2,
-                           const int      a2_dim0, const int a2_dim1, const int a2_dim2,
-                           const int      a2_dim3, const int a2_dim4){
+                           const index_type      a2_dim0, const index_type a2_dim1, const index_type a2_dim2,
+                           const index_type      a2_dim3, const index_type a2_dim4){
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((size_t)a1_dim0 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim0) && ((index_type)a1_dim0 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim0 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((size_t)a1_dim1 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim1) && ((index_type)a1_dim1 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim1 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((size_t)a1_dim2 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim2) && ((index_type)a1_dim2 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim2 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && ((size_t)a1_dim3 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim3) && ((index_type)a1_dim3 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim3 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && ((size_t)a1_dim4 < getrank(array1) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a1_dim4) && ((index_type)a1_dim4 < getrank(array1) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a1_dim4 < array1.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((size_t)a2_dim0 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim0) && ((index_type)a2_dim0 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim0 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((size_t)a2_dim1 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim1) && ((index_type)a2_dim1 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim1 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((size_t)a2_dim2 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim2) && ((index_type)a2_dim2 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim2 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && ((size_t)a2_dim3 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim3) && ((index_type)a2_dim3 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim3 < array2.rank() required!");
-  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim4) && ((size_t)a2_dim4 < getrank(array2) ) ),
+  TEUCHOS_TEST_FOR_EXCEPTION( !( (0 <= a2_dim4) && ((index_type)a2_dim4 < getrank(array2) ) ),
                       std::invalid_argument,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): 0 <= a2_dim4 < array2.rank() required!");
 
@@ -1120,7 +1120,7 @@ bool requireDimensionMatch(std::string&   errmsg,
                       ">>> ERROR (Intrepid_Utils::requireDimensionMatch): Arrays with equal ranks are required to test for all dimensions match." )
 
   bool OK = true;
-  for(size_t dim = 0; dim < getrank(array1); dim++){
+  for(index_type dim = 0; dim < getrank(array1); dim++){
     if( !requireDimensionMatch(errmsg, array1, dim, array2, dim) ){
       OK = false;
       break;
