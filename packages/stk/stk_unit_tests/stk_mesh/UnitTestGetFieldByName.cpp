@@ -31,17 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for ostream, operator<<, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, string, etc
-#include <vector>                       // for vector
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
+#include <iostream>                     // for ostream
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
-#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 
 namespace {
 

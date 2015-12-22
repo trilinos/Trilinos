@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include <vector>
 #include <mpi.h>
-#include <stk_mesh/base/GraphEdgeData.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
-#include <stk_mesh/base/ElemGraphShellConnections.hpp>
+#include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemGraphShellConnections.hpp>
 
 namespace
 {
@@ -19,10 +19,10 @@ class GraphWithShells : public ::testing::Test
 {
 protected:
     GraphWithShells() :
+            procRank(stk::parallel_machine_rank(comm)),
             parGraphInfo(procRank),
             graphInfo(graph, parGraphInfo, elementTopologies)
     {
-        procRank = stk::parallel_machine_rank(comm);
     }
 
     void run_test_on_num_procs(int numProcs)

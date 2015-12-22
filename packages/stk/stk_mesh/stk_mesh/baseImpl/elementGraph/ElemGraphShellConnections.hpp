@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <mpi.h>
-#include <stk_mesh/base/GraphEdgeData.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
+#include "GraphEdgeData.hpp"
+#include "ElemElemGraphImpl.hpp"
 
 namespace stk
 {

@@ -41,7 +41,7 @@
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 #include "BucketTester.hpp"
 
@@ -434,6 +434,8 @@ protected:
             std::vector<shared_entity_type>& shared_entities);
     void mark_entities_as_shared(const std::vector<shared_entity_type>& entities);
 };
+
+
 
 } } } // namespace stk mesh unit_test
 

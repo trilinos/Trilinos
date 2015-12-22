@@ -31,26 +31,30 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, TEST, etc
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, unique
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/BulkModification.hpp>  // for find_closure
 #include <stk_mesh/base/Entity.hpp>     // for Entity, EntityEqual
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for operator|, Selector
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, BucketIterator
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/EntityLess.hpp"  // for EntityLess
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBroadcast, etc
+#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
 
 
 

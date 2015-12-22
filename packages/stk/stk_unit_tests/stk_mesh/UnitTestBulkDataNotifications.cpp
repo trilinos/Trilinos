@@ -1,25 +1,20 @@
-#include <iostream>                     // for ostringstream, etc
-#include <algorithm>                    // for sort
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
-#include <string>                       // for string, basic_string, etc
-#include <vector>                       // for vector, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_io/StkMeshIoBroker.hpp"
-#include <stk_mesh/base/Comm.hpp>
-#include <unit_tests/BulkDataTester.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/ModificationObserver.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
+#include <string>                       // for string
+#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
 namespace {
 

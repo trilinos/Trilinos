@@ -3,8 +3,6 @@
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/ElemElemGraph.hpp>  // for ElemElemGraph
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequire
@@ -14,6 +12,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for ElemElemGraph
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 namespace stk { namespace mesh { class Part; } }
 
 struct GraphEdgeMock

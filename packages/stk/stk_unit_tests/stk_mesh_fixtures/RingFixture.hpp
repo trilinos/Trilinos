@@ -35,11 +35,13 @@
 #define STK_MESH_FIXTURES_RING_FIXTURE_HPP
 
 #include <stddef.h>                     // for size_t
-#include <unit_tests/BulkDataTester.hpp>   // for BulkData
+#include <map>                          // for multimap, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <unit_tests/BulkDataTester.hpp>  // for BulkDataTester
 #include <vector>                       // for vector
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 namespace stk { namespace mesh { class Part; } }
 
 

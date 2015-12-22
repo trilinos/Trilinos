@@ -32,12 +32,13 @@
 // 
 
 #include <stk_mesh/fixtures/TetFixture.hpp>
-#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include <stk_mesh/base/Types.hpp>      // for EntityId
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
+#include <stk_mesh/fixtures/FixtureNodeSharing.hpp>
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
-#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field

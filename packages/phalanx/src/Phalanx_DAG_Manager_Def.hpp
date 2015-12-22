@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
-#define PHX_FIELD_EVALUATOR_MANAGER_DEF_HPP
+#ifndef PHX_DAG_MANAGER_DEF_HPP
+#define PHX_DAG_MANAGER_DEF_HPP
 
 #include <cstddef>
 #include <iostream>
@@ -62,8 +62,8 @@
 
 //=======================================================================
 template<typename Traits>
-PHX::EvaluatorManager<Traits>::
-EvaluatorManager(const std::string& evaluation_type_name) :
+PHX::DagManager<Traits>::
+DagManager(const std::string& evaluation_type_name) :
   graphviz_filename_for_errors_("error.dot"),
   write_graphviz_file_on_error_(true),
   evaluation_type_name_(evaluation_type_name),
@@ -77,12 +77,12 @@ EvaluatorManager(const std::string& evaluation_type_name) :
 
 //=======================================================================
 template<typename Traits>
-PHX::EvaluatorManager<Traits>::~EvaluatorManager()
+PHX::DagManager<Traits>::~DagManager()
 { }
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 requireField(const PHX::FieldTag& t)
 {
   FTPredRef pred(t);
@@ -95,7 +95,7 @@ requireField(const PHX::FieldTag& t)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
@@ -118,7 +118,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
       TEUCHOS_TEST_FOR_EXCEPTION(check.second == false,
 				 PHX::multiple_evaluator_for_field_exception,
 				 *this
-				 << "\n\nError: PHX::EvaluatorManager::registerEvaluator() - The field \"" 
+				 << "\n\nError: PHX::DagManager::registerEvaluator() - The field \"" 
 				 << (*i)->identifier() 
 				 << "\" that is evaluated by the evaluator named \"" 
 				 << p->getName() 
@@ -134,7 +134,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 setDefaultGraphvizFilenameForErrors(const std::string& file_name)
 {
   graphviz_filename_for_errors_ = file_name;
@@ -142,7 +142,7 @@ setDefaultGraphvizFilenameForErrors(const std::string& file_name)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 setWriteGraphvizFileOnError(bool write_file)
 {
   write_graphviz_file_on_error_ = write_file;
@@ -150,7 +150,7 @@ setWriteGraphvizFileOnError(bool write_file)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 sortAndOrderEvaluators()
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
@@ -201,7 +201,7 @@ sortAndOrderEvaluators()
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 dfsVisit(PHX::DagNode<Traits>& node, int& time)
 {
   node.setColor(PHX::Color::GREY);
@@ -232,7 +232,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
 				   << "\" does not have an evaluator. Current "
 				   << "list of Evaluators are printed above this "
 				   << "error message.\n\n"
-				   << "\nPlease inspect the EvaluatorManager output above, or \n"
+				   << "\nPlease inspect the DagManager output above, or \n"
 				   << "visually inspect the error graph that was dumped by \n"
 				   << "running the graphviz dot program on the file\n" 
 				   << graphviz_filename_for_errors_ << ": \n\n"
@@ -272,7 +272,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
 				 << os_adj_node.str() 
 				 << "\n back to node\n\n" 
 				 << os_node.str() 
-				 << "\nPlease inspect the EvaluatorManager output above, or \n"
+				 << "\nPlease inspect the DagManager output above, or \n"
 				 << "visually inspect the error graph that was dumped by \n"
 				 << "running the graphviz dot program on the file\n" 
 				 << graphviz_filename_for_errors_ << ": \n\n"
@@ -290,7 +290,7 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 {
   os << "Name=" << e.getName() << "\n";
@@ -309,7 +309,7 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& vm)
 {
@@ -320,20 +320,27 @@ postRegistrationSetup(typename Traits::SetupData d,
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
+
+    using clock = std::chrono::steady_clock;
+    std::chrono::time_point<clock> start = clock::now();
+
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
+
+    nodes_[topoSortEvalIndex[n]].setExecutionTime(clock::now()-start);
   }
 }
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 preEvaluate(typename Traits::PreEvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
@@ -342,7 +349,7 @@ preEvaluate(typename Traits::PreEvalData d)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 postEvaluate(typename Traits::PostEvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
@@ -351,7 +358,7 @@ postEvaluate(typename Traits::PostEvalData d)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 setEvaluationTypeName(const std::string& evaluation_type_name)
 {
   evaluation_type_name_ = evaluation_type_name;
@@ -359,7 +366,7 @@ setEvaluationTypeName(const std::string& evaluation_type_name)
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 writeGraphvizFile(const std::string filename,
 		  bool writeEvaluatedFields,
 		  bool writeDependentFields,
@@ -370,7 +377,7 @@ writeGraphvizFile(const std::string filename,
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 writeGraphvizFileNew(const std::string filename,
 		     bool writeEvaluatedFields,
 		     bool writeDependentFields) const
@@ -417,7 +424,7 @@ writeGraphvizFileNew(const std::string filename,
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::
+void PHX::DagManager<Traits>::
 writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 		      std::vector<PHX::DagNode<Traits>>& nodes_copy,
 		      std::ostream& ofs,
@@ -493,14 +500,14 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 //=======================================================================
 template<typename Traits>
 const std::vector< Teuchos::RCP<PHX::FieldTag> >& 
-PHX::EvaluatorManager<Traits>::getFieldTags()
+PHX::DagManager<Traits>::getFieldTags()
 {
   return fields_;
 }
 
 //=======================================================================
 template<typename Traits>
-bool PHX::EvaluatorManager<Traits>::sortingCalled() const
+bool PHX::DagManager<Traits>::sortingCalled() const
 {
   return sorting_called_;
 }
@@ -508,15 +515,23 @@ bool PHX::EvaluatorManager<Traits>::sortingCalled() const
 //=======================================================================
 template<typename Traits>
 const std::vector<int>& 
-PHX::EvaluatorManager<Traits>::getEvaluatorInternalOrdering() const
+PHX::DagManager<Traits>::getEvaluatorInternalOrdering() const
 {return topoSortEvalIndex;}
 
 //=======================================================================
 template<typename Traits>
-void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
+const std::vector<PHX::DagNode<Traits>>&
+PHX::DagManager<Traits>::getDagNodes() const
+{
+  return nodes_;
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::print(std::ostream& os) const
 {
   os << "******************************************************" << std::endl;
-  os << "PHX::EvaluatorManager" << std::endl;
+  os << "PHX::DagManager" << std::endl;
   os << "Evaluation Type = " << evaluation_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
 
@@ -546,7 +561,7 @@ void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
   os << "** Finished Provider Evaluation Order" << std::endl;
 
   os << "******************************************************" << std::endl;
-  os << "Finished PHX::EvaluatorManager" << std::endl;
+  os << "Finished PHX::DagManager" << std::endl;
   os << "Evaluation Type = " << evaluation_type_name_ << std::endl;
   os << "******************************************************" << std::endl;
 
@@ -554,8 +569,44 @@ void PHX::EvaluatorManager<Traits>::print(std::ostream& os) const
 
 //=======================================================================
 template<typename Traits>
+void PHX::DagManager<Traits>::
+analyzeGraph(double& speedup, double& parallelizability) const
+{
+  using std::vector;
+  using duration = std::chrono::duration<double>;
+
+  duration T_1 = duration(0.0);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    T_1 += node.executionTime();
+
+    duration t_data_ready(0.0);
+    const auto& adjacencies = node.adjacencies();
+    for (const auto& adj_node_index : adjacencies) {
+      t_data_ready = std::max(t_data_ready, nodes_[adj_node_index].finishTime());
+    }
+    const_cast<PHX::DagNode<Traits>&>(node).setStartTime(t_data_ready); 
+    const_cast<PHX::DagNode<Traits>&>(node).setFinishTime(t_data_ready + node.executionTime());
+
+  }
+
+  duration T_inf = duration(0.0);
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    T_inf = std::max(T_inf,node.finishTime());
+  }
+
+  speedup = T_1.count() / T_inf.count();
+  parallelizability = ( 1.0 - (1.0/speedup) )
+    / ( 1.0 - (1.0 / static_cast<double>(topoSortEvalIndex.size())) );
+
+}
+
+//=======================================================================
+template<typename Traits>
 std::ostream&
-PHX::operator<<(std::ostream& os, const PHX::EvaluatorManager<Traits>& m)
+PHX::operator<<(std::ostream& os, const PHX::DagManager<Traits>& m)
 {
   m.print(os);
   return os;

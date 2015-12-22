@@ -40,6 +40,10 @@
 
 
 #include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
+#include <utility>                      // for pair
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityId
 
 
 namespace stk {

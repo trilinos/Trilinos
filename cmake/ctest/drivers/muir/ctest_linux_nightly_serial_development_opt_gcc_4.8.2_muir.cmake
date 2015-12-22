@@ -71,14 +71,13 @@ SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
 #implicitly enabled.  Sundance depends on Stokhos.
-SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance Zoltan2 Panzer PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance Zoltan2 Panzer PyTrilinos STK)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/boost_1_49_0"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/compilers/gcc/4.8.2/bin/g++"
   "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/compilers/gcc/4.8.2/bin/gcc"

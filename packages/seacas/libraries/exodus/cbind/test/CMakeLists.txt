@@ -60,7 +60,6 @@ ENDIF()
 
 # ===============================================
 
-
 IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
   SET( cbind_OLDTESTS
@@ -97,6 +96,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
     create_mesh
     rd_wt_mesh
     test-empty
+    testwt-compress
   )
 
   CONFIGURE_FILE(

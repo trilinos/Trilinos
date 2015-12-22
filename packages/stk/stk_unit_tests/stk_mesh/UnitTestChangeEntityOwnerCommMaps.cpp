@@ -31,45 +31,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <stdlib.h>                     // for exit
-#include <exception>                    // for exception
-#include <iostream>                     // for ostringstream, etc
-#include <iterator>                     // for distance
-#include <map>                          // for _Rb_tree_const_iterator, etc
-#include <stdexcept>                    // for logic_error, runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
-#include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <string.h>                     // for memcpy
+#include <unistd.h>                     // for unlink
+#include <iostream>                     // for operator<<, etc
+#include <map>                          // for map, etc
+#include <set>                          // for set, operator==, etc
+#include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <string>                       // for string, basic_string, etc
-#include <unit_tests/UnitTestModificationEndWrapper.hpp>
-#include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
-#include <unit_tests/Setup8Quad4ProcMesh.hpp>
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include <utility>                      // for make_pair, pair
+#include <vector>                       // for vector
+#include "BulkDataTester.hpp"           // for BulkDataTester
+#include "UnitTestCEOCommonUtils.hpp"   // for add_nodes_to_move, etc
+#include "mpi.h"                        // for MPI_Comm_size, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_io/IossBridge.hpp"        // for is_part_io_part, etc
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
-#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, field_data, etc
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator|, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityProc, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "stk_io/StkMeshIoBroker.hpp"
-#include <stk_mesh/base/Comm.hpp>
-#include "UnitTestCEOCommonUtils.hpp"
-#include "BulkDataTester.hpp"
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
+namespace stk { namespace mesh { namespace fixtures { class RingFixture; } } }
+namespace stk { namespace mesh { struct EntityKey; } }
 
 namespace stk
 {

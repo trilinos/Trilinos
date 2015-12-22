@@ -34,10 +34,12 @@
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include <string>                       // for string
+#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
