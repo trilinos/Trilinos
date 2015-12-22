@@ -17,17 +17,21 @@ class MeshFixture : public ::testing::Test
 {
 protected:
     MeshFixture()
-    : communicator(MPI_COMM_WORLD), metaData(3), bulkData(nullptr)
+    : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
     {
-
+        allocate_meta();
     }
 
     MeshFixture(unsigned spatial_dim)
-    : communicator(MPI_COMM_WORLD), metaData(spatial_dim), bulkData(nullptr) {}
+    : communicator(MPI_COMM_WORLD), metaData(nullptr), bulkData(nullptr)
+    {
+        allocate_meta(spatial_dim);
+    }
 
     virtual ~MeshFixture()
     {
         delete bulkData;
+        delete metaData;
     }
 
     void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -51,9 +55,19 @@ protected:
         return communicator;
     }
 
+    void initialize_mesh()
+    {
+        delete bulkData;
+        delete metaData;
+
+        bulkData = nullptr;
+        metaData = nullptr;
+    }
+
     virtual stk::mesh::MetaData& get_meta()
     {
-        return metaData;
+        ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
+        return *metaData;
     }
 
     stk::mesh::BulkData& get_bulk()
@@ -64,12 +78,28 @@ protected:
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
+        if(nullptr == metaData)
+            allocate_meta();
+
+        bulkData = new stk::mesh::BulkData(get_meta(), communicator, auraOption);
     }
 
+    virtual void allocate_meta(unsigned spatial_dim = 3)
+    {
+        ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
+        metaData = new stk::mesh::MetaData(spatial_dim);
+    }
+
+    void set_bulk(stk::mesh::BulkData *inBulkData)
+    {
+        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
+        bulkData = inBulkData;
+    }
+
+private:
     MPI_Comm communicator;
-    stk::mesh::MetaData metaData;
-    stk::mesh::BulkData *bulkData;
+    stk::mesh::MetaData *metaData = nullptr;
+    stk::mesh::BulkData *bulkData = nullptr;
 };
 
 class MeshTestFixture : public MeshFixture
