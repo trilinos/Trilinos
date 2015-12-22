@@ -67,7 +67,7 @@ SET(CTEST_PARALLEL_LEVEL 1)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2)
+SET(Trilinos_PACKAGES Kokkos Tpetra Belos Ifpack2 MueLu Amesos Amesos2 Ifpack Epetra EpetraExt Zoltan Zoltan2 Xpetra Panzer Intrepid STK Seacas Anasazi Phalanx Sacado Stokhos Shylu Stratimikos Thyra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU=OFF"
