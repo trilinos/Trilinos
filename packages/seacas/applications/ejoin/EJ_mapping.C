@@ -177,7 +177,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
     size_t max_id = global_node_map[output_node_count-1];
 
     bool is_contiguous = max_id == output_node_count;
-    std::cerr  << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    std::cout  << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map that maps from a local part node to the
     // global map. This combines the mapping local part node to
@@ -228,7 +228,7 @@ template void eliminate_omitted_nodes(RegionVector &part_mesh,
 	}
       }
       if (repeat_found) {
-	std::cerr  << "Duplicate node ids were found. Their ids have been renumbered to remove duplicates.\n";
+	std::cout  << "Duplicate node ids were found. Their ids have been renumbered to remove duplicates.\n";
       }
     }
   }
