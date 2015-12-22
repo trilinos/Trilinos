@@ -363,7 +363,6 @@ namespace MueLuTests {
           lclColInds[0] = lclRowInd;
           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
         }
-        bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
         RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
