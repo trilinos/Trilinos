@@ -90,6 +90,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/SRC"
     "-DSuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.4.4/SuperLU_4.3/lib"
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+    "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/boostlib_1_55_0/include"
+    "-DBoostLib_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/boostlib_1_55_0/include"
+    "-DBoostLib_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/boostlib_1_55_0/lib"
     "-DTrilinos_ENABLE_CXX11=ON"
     )
 
