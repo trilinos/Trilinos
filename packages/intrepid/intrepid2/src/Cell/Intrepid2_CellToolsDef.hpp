@@ -999,7 +999,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type pt) const {
-        for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
+        for(index_type dm = 0; dm < static_cast<index_type>(points.dimension(1)) ; dm++){
               tempPoints(pt, dm) = points(pt, dm);
             }//dm
    }
@@ -1011,7 +1011,7 @@ struct setJacref2WhichNeg1 {
   ArrayCellWrap cellWorkset;
   FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
 int spaceDim;
-size_t numPoints;
+index_type numPoints;
 int basisCardinality;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
@@ -1019,7 +1019,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2WhichNeg1 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref2WhichNeg1 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, index_type numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_)
  {}
 
@@ -1027,7 +1027,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cellOrd) const {
-             for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+             for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
                   for(int col = 0; col < spaceDim; col++){
 
@@ -1050,7 +1050,7 @@ struct setJacref2Which {
   ArrayCellWrap cellWorkset;
   FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
   int spaceDim;
-  size_t numPoints;
+  index_type numPoints;
   int basisCardinality;
   int whichCell;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
@@ -1059,7 +1059,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref2Which (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, size_t numPoints_, int basisCardinality_,int whichCell_) :
+  setJacref2Which (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads_,int spaceDim_, index_type numPoints_, int basisCardinality_,int whichCell_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),basisGrads(basisGrads_), spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_), whichCell(whichCell_)
  {}
 
@@ -1067,7 +1067,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cellOrd) const {
-              for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
                   for(int col = 0; col < spaceDim; col++){
 
@@ -1090,7 +1090,7 @@ struct setJacref3 {
   ArrayPointWrap points;
 //  FieldContainer_Kokkos<Scalar,void, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads;
 int spaceDim;
-size_t numPoints;
+index_type numPoints;
 int basisCardinality;
 Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
@@ -1099,7 +1099,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // operator= only do shallow copies.  Thus, you can pass View
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
-  setJacref3 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis_,int spaceDim_, size_t numPoints_, int basisCardinality_) :
+  setJacref3 (ArrayJacWrap jacobian_, ArrayCellWrap cellWorkset_, ArrayPointWrap points_,Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> > > HGRAD_Basis_,int spaceDim_, index_type numPoints_, int basisCardinality_) :
   jacobian(jacobian_), cellWorkset(cellWorkset_),points(points_),spaceDim(spaceDim_),numPoints(numPoints_),basisCardinality(basisCardinality_),HGRAD_Basis(HGRAD_Basis_)
  {}
 
@@ -1107,10 +1107,11 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // over the View's first dimension N.
   KOKKOS_INLINE_FUNCTION
   void operator () (const index_type cellOrd) const {
-FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(1)), static_cast<index_type>(points.dimension(2)) );
+
 FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> basisGrads(basisCardinality, numPoints, spaceDim);
-            for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
-              for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
+            for(index_type pt = 0; pt < static_cast<index_type>(points.dimension(1)); pt++){
+              for(index_type dm = 0; dm < static_cast<index_type>(points.dimension(2)) ; dm++){
                 tempPoints(pt, dm) = points(cellOrd, pt, dm);
               }//dm
             }//pt
@@ -1119,7 +1120,7 @@ FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<A
             HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
 
             // Compute jacobians for the point set corresponding to the current cellordinal
-            for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
               for(int row = 0; row < spaceDim; row++){
                 for(int col = 0; col < spaceDim; col++){
 
@@ -1147,9 +1148,9 @@ FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<A
    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
     int spaceDim  = HGRAD_Basis->getBaseCellTopology().getDimension();
-    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    index_type numCells  = static_cast<index_type>(cellWorkset.dimension(0));
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
-    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+    index_type numPoints = (getrank(points) == 2) ? static_cast<index_type>(points.dimension(0)) : static_cast<index_type>(points.dimension(1));
   
     // Temp (F,P,D) array for the values of basis functions gradients at the reference points
     int basisCardinality = HGRAD_Basis -> getCardinality();
@@ -1171,7 +1172,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
       case 2:
         {
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
-          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
 Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
@@ -1179,7 +1180,7 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
           // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
-          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          index_type cellLoop = (whichCell == -1) ? numCells : 1 ;
           
           if(whichCell == -1) {
             
@@ -1223,9 +1224,9 @@ Kokkos::parallel_for (cellLoop, setJacref2WhichNeg1<Scalar,ArrayWrapper<Scalar,A
    ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>pointsWrap(points);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value, true>cellWorksetWrap(cellWorkset);    
     int spaceDim  = cellTopo.getDimension();
-    size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+    index_type numCells  = static_cast<index_type>(cellWorkset.dimension(0));
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
-    size_t numPoints = (getrank(points) == 2) ? static_cast<size_t>(points.dimension(0)) : static_cast<size_t>(points.dimension(1));
+    index_type numPoints = (getrank(points) == 2) ? static_cast<index_type>(points.dimension(0)) : static_cast<index_type>(points.dimension(1));
     
     // Jacobian is computed using gradients of an appropriate H(grad) basis function: define RCP to the base class
     Teuchos::RCP< Basis< Scalar, FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayJac>::execution_space> > > HGRAD_Basis;
@@ -1343,7 +1344,7 @@ Kokkos::parallel_for (jacobian.dimension(0), setJacZeros3<ArrayWrapper<Scalar,Ar
       case 2:
         {
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
-          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
 Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Scalar,ArrayPoint, Rank<ArrayPoint >::value, true>, ArrayPoint > (tempPoints,pointsWrap));
          
@@ -1351,7 +1352,7 @@ Kokkos::parallel_for (points.dimension(0), copyTempPoints<Scalar,ArrayWrapper<Sc
           
           // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
           // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
-          size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+          index_type cellLoop = (whichCell == -1) ? numCells : 1 ;
           
           if(whichCell == -1) {
             
@@ -1417,10 +1418,10 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
 
-  size_t spaceDim  = (size_t)HGRAD_Basis->getTopology().getDimension();
-  size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+  index_type spaceDim  = (index_type)HGRAD_Basis->getTopology().getDimension();
+  index_type numCells  = static_cast<index_type>(cellWorkset.dimension(0));
   //points can be rank-2 (P,D), or rank-3 (C,P,D)
-  size_t numPoints = (getrank(refPoints) == 2) ? static_cast<size_t>(refPoints.dimension(0)) : static_cast<size_t>(refPoints.dimension(1));
+  index_type numPoints = (getrank(refPoints) == 2) ? static_cast<index_type>(refPoints.dimension(0)) : static_cast<index_type>(refPoints.dimension(1));
 
   // Temp (F,P) array for the values of nodal basis functions at the reference points
   int basisCardinality = HGRAD_Basis -> getCardinality();
@@ -1428,16 +1429,16 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
 
   // Initialize physPoints
   if(getrank(physPoints)==3){
-for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
- for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){
-	for(size_t k = 0; k < static_cast<size_t>(physPoints.dimension(2)); k++){ 
+for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++) {
+ for(index_type j = 0; j < static_cast<index_type>(physPoints.dimension(1)); j++){
+	for(index_type k = 0; k < static_cast<index_type>(physPoints.dimension(2)); k++){ 
   physPointsWrap(i,j,k) = 0.0;
     }
    }
 }
  }else if(getrank(physPoints)==2){
-	  for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++){
-	for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){ 
+	  for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++){
+	for(index_type j = 0; j < static_cast<index_type>(physPoints.dimension(1)); j++){ 
   physPointsWrap(i,j) = 0.0;
     }
    }
@@ -1452,22 +1453,22 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
     case 2:
       {
         // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
-        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(0)), static_cast<size_t>(refPoints.dimension(1)) );
+        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(0)), static_cast<index_type>(refPoints.dimension(1)) );
         // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-        for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(0)); pt++){
-          for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(1)) ; dm++){
+        for(index_type pt = 0; pt < static_cast<index_type>(refPoints.dimension(0)); pt++){
+          for(index_type dm = 0; dm < static_cast<index_type>(refPoints.dimension(1)) ; dm++){
             tempPoints(pt, dm) = refPointsWrap(pt, dm);
           }//dm
         }//pt
         HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
 
         // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
-        size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+        index_type cellLoop = (whichCell == -1) ? numCells : 1 ;
 
         // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
-        for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
-          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-            for(size_t dim = 0; dim < spaceDim; dim++){
+        for(index_type cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(index_type dim = 0; dim < spaceDim; dim++){
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
                 if(whichCell == -1){
@@ -1488,14 +1489,14 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
     case 3:
       {
         // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
-        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(1)), static_cast<size_t>(refPoints.dimension(2)) );
+        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(1)), static_cast<index_type>(refPoints.dimension(2)) );
         
         // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
-        for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+        for(index_type cellOrd = 0; cellOrd < numCells; cellOrd++) {
           
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-          for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(1)); pt++){
-            for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(2)) ; dm++){
+          for(index_type pt = 0; pt < static_cast<index_type>(refPoints.dimension(1)); pt++){
+            for(index_type dm = 0; dm < static_cast<index_type>(refPoints.dimension(2)) ; dm++){
               tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
             }//dm
           }//pt
@@ -1503,8 +1504,8 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
           // Compute basis values for this set of ref. points
           HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
           
-          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-            for(size_t dim = 0; dim < spaceDim; dim++){
+          for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(index_type dim = 0; dim < spaceDim; dim++){
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
                 physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
@@ -1535,10 +1536,10 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
 
-  size_t spaceDim  = (size_t)cellTopo.getDimension();
-  size_t numCells  = static_cast<size_t>(cellWorkset.dimension(0));
+  index_type spaceDim  = (index_type)cellTopo.getDimension();
+  index_type numCells  = static_cast<index_type>(cellWorkset.dimension(0));
   //points can be rank-2 (P,D), or rank-3 (C,P,D)
-  size_t numPoints = (getrank(refPoints) == 2) ? static_cast<size_t>(refPoints.dimension(0)) : static_cast<size_t>(refPoints.dimension(1));
+  index_type numPoints = (getrank(refPoints) == 2) ? static_cast<index_type>(refPoints.dimension(0)) : static_cast<index_type>(refPoints.dimension(1));
 
   // Mapping is computed using an appropriate H(grad) basis function: define RCP to the base class
   Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis;
@@ -1641,16 +1642,16 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
 
   // Initialize physPoints
   if(getrank(physPoints)==3){
-for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
- for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){
-	for(size_t k = 0; k < static_cast<size_t>(physPoints.dimension(2)); k++){ 
+for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++) {
+ for(index_type j = 0; j < static_cast<index_type>(physPoints.dimension(1)); j++){
+	for(index_type k = 0; k < static_cast<index_type>(physPoints.dimension(2)); k++){ 
   physPointsWrap(i,j,k) = 0.0;
     }
    }
 }
  }else if(getrank(physPoints)==2){
-	  for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++){
-	for(size_t j = 0; j < static_cast<size_t>(physPoints.dimension(1)); j++){ 
+	  for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++){
+	for(index_type j = 0; j < static_cast<index_type>(physPoints.dimension(1)); j++){ 
   physPointsWrap(i,j) = 0.0;
     }
    }
@@ -1665,22 +1666,22 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
     case 2:
       {
         // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
-        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(0)), static_cast<size_t>(refPoints.dimension(1)) );
+        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(0)), static_cast<index_type>(refPoints.dimension(1)) );
         // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-        for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(0)); pt++){
-          for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(1)) ; dm++){
+        for(index_type pt = 0; pt < static_cast<index_type>(refPoints.dimension(0)); pt++){
+          for(index_type dm = 0; dm < static_cast<index_type>(refPoints.dimension(1)) ; dm++){
             tempPoints(pt, dm) = refPointsWrap(pt, dm);
           }//dm
         }//pt
         HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
 
         // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
-        size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
+        index_type cellLoop = (whichCell == -1) ? numCells : 1 ;
 
         // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
-        for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
-          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-            for(size_t dim = 0; dim < spaceDim; dim++){
+        for(index_type cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+          for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(index_type dim = 0; dim < spaceDim; dim++){
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
                 if(whichCell == -1){
@@ -1701,14 +1702,14 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
     case 3:
       {
         // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
-        FieldContainer<Scalar> tempPoints( static_cast<size_t>(refPoints.dimension(1)), static_cast<size_t>(refPoints.dimension(2)) );
+        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(1)), static_cast<index_type>(refPoints.dimension(2)) );
         
         // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
-        for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
+        for(index_type cellOrd = 0; cellOrd < numCells; cellOrd++) {
           
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-          for(size_t pt = 0; pt < static_cast<size_t>(refPoints.dimension(1)); pt++){
-            for(size_t dm = 0; dm < static_cast<size_t>(refPoints.dimension(2)) ; dm++){
+          for(index_type pt = 0; pt < static_cast<index_type>(refPoints.dimension(1)); pt++){
+            for(index_type dm = 0; dm < static_cast<index_type>(refPoints.dimension(2)) ; dm++){
               tempPoints(pt, dm) = refPointsWrap(cellOrd, pt, dm);
             }//dm
           }//pt
@@ -1716,8 +1717,8 @@ for(size_t i = 0; i < static_cast<size_t>(physPoints.dimension(0)); i++) {
           // Compute basis values for this set of ref. points
           HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
           
-          for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-            for(size_t dim = 0; dim < spaceDim; dim++){
+          for(index_type pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+            for(index_type dim = 0; dim < spaceDim; dim++){
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
                 physPointsWrap(cellOrd, pointOrd, dim) += cellWorksetWrap(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
@@ -1743,9 +1744,9 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
 {
   INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell) );
   
-  size_t spaceDim  = (size_t)cellTopo.getDimension();
-  size_t numPoints;
-  size_t numCells;
+  index_type spaceDim  = (index_type)cellTopo.getDimension();
+  index_type numPoints;
+  index_type numCells;
 
   // Define initial guesses to be  the Cell centers of the reference cell topology
   FieldContainer<Scalar> cellCenter(spaceDim);
@@ -1811,13 +1812,13 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
   
   // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
   if(whichCell == -1){
-    numPoints = static_cast<size_t>(physPoints.dimension(1));
-    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(1));
+    numCells = static_cast<index_type>(cellWorkset.dimension(0));
     initGuess.resize(numCells, numPoints, spaceDim);
     // Set initial guess:
-    for(size_t c = 0; c < numCells; c++){
-      for(size_t p = 0; p < numPoints; p++){
-        for(size_t d = 0; d < spaceDim; d++){
+    for(index_type c = 0; c < numCells; c++){
+      for(index_type p = 0; p < numPoints; p++){
+        for(index_type d = 0; d < spaceDim; d++){
           initGuess(c, p, d) = cellCenter(d);
         }// d
       }// p
@@ -1825,11 +1826,11 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoi
   }
   // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) initial guess.
   else {
-    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(0));
     initGuess.resize(numPoints, spaceDim);
     // Set initial guess:
-    for(size_t p = 0; p < numPoints; p++){
-      for(size_t d = 0; d < spaceDim; d++){
+    for(index_type p = 0; p < numPoints; p++){
+      for(index_type d = 0; d < spaceDim; d++){
         initGuess(p, d) = cellCenter(d);
       }// d
     }// p
@@ -1852,9 +1853,9 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
 ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
 ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
 // INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
-  size_t spaceDim  = (size_t)HGRAD_Basis->cellTopology().getDimension();
-  size_t numPoints;
-  size_t numCells=0;
+  index_type spaceDim  = (index_type)HGRAD_Basis->cellTopology().getDimension();
+  index_type numPoints;
+  index_type numCells=0;
   
   // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
   FieldContainer<Scalar> xOld;
@@ -1866,17 +1867,17 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
   
   // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
   if(whichCell == -1){
-    numPoints = static_cast<size_t>(physPoints.dimension(1));
-    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(1));
+    numCells = static_cast<index_type>(cellWorkset.dimension(0));
     xOld.resize(numCells, numPoints, spaceDim);
     xTem.resize(numCells, numPoints, spaceDim);  
     jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
     jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
     error.resize(numCells,numPoints); 
     // Set initial guess to xOld
-    for(size_t c = 0; c < numCells; c++){
-      for(size_t p = 0; p < numPoints; p++){
-        for(size_t d = 0; d < spaceDim; d++){
+    for(index_type c = 0; c < numCells; c++){
+      for(index_type p = 0; p < numPoints; p++){
+        for(index_type d = 0; d < spaceDim; d++){
           xOld(c, p, d) = initGuessWrap(c, p, d);
         }// d
       }// p
@@ -1884,15 +1885,15 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
   }
   // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
   else {
-    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(0));
     xOld.resize(numPoints, spaceDim);
     xTem.resize(numPoints, spaceDim);  
     jacobian.resize(numPoints, spaceDim, spaceDim);
     jacobInv.resize(numPoints, spaceDim, spaceDim);
     error.resize(numPoints); 
     // Set initial guess to xOld
-    for(size_t p = 0; p < numPoints; p++){
-      for(size_t d = 0; d < spaceDim; d++){
+    for(index_type p = 0; p < numPoints; p++){
+      for(index_type d = 0; d < spaceDim; d++){
         xOld(p, d) = initGuessWrap(p, d);
       }// d
     }// p
@@ -1945,16 +1946,16 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
 //    xOld = refPoints;
 int refPointsRank=getrank(refPoints);
 if (refPointsRank==3){
-   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
-      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
-         for(size_t k=0;k<static_cast<size_t>(refPoints.dimension(2));k++){
+   for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
+      for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
+         for(index_type k=0;k<static_cast<index_type>(refPoints.dimension(2));k++){
             xOld(i,j,k) = refPointsWrap(i,j,k);
          }
       }
    }
 }else if(refPointsRank==2){
-   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
-      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+   for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
+      for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
          xOld(i,j) = refPointsWrap(i,j);
       }
    }
@@ -1979,9 +1980,9 @@ void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &     
 ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
 ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
  INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
-  size_t spaceDim  = (size_t)cellTopo.getDimension();
-  size_t numPoints;
-  size_t numCells=0;
+  index_type spaceDim  = (index_type)cellTopo.getDimension();
+  index_type numPoints;
+  index_type numCells=0;
   
   // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
   FieldContainer<Scalar> xOld;
@@ -1993,17 +1994,17 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
   
   // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
   if(whichCell == -1){
-    numPoints = static_cast<size_t>(physPoints.dimension(1));
-    numCells = static_cast<size_t>(cellWorkset.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(1));
+    numCells = static_cast<index_type>(cellWorkset.dimension(0));
     xOld.resize(numCells, numPoints, spaceDim);
     xTem.resize(numCells, numPoints, spaceDim);  
     jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
     jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
     error.resize(numCells,numPoints); 
     // Set initial guess to xOld
-    for(size_t c = 0; c < numCells; c++){
-      for(size_t p = 0; p < numPoints; p++){
-        for(size_t d = 0; d < spaceDim; d++){
+    for(index_type c = 0; c < numCells; c++){
+      for(index_type p = 0; p < numPoints; p++){
+        for(index_type d = 0; d < spaceDim; d++){
           xOld(c, p, d) = initGuessWrap(c, p, d);
         }// d
       }// p
@@ -2011,15 +2012,15 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
   }
   // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
   else {
-    numPoints = static_cast<size_t>(physPoints.dimension(0));
+    numPoints = static_cast<index_type>(physPoints.dimension(0));
     xOld.resize(numPoints, spaceDim);
     xTem.resize(numPoints, spaceDim);  
     jacobian.resize(numPoints, spaceDim, spaceDim);
     jacobInv.resize(numPoints, spaceDim, spaceDim);
     error.resize(numPoints); 
     // Set initial guess to xOld
-    for(size_t p = 0; p < numPoints; p++){
-      for(size_t d = 0; d < spaceDim; d++){
+    for(index_type p = 0; p < numPoints; p++){
+      for(index_type d = 0; d < spaceDim; d++){
         xOld(p, d) = initGuessWrap(p, d);
       }// d
     }// p
@@ -2072,16 +2073,16 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
 //    xOld = refPoints;
 int refPointsRank=getrank(refPoints);
 if (refPointsRank==3){
-   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
-      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
-         for(size_t k=0;k<static_cast<size_t>(refPoints.dimension(2));k++){
+   for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
+      for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
+         for(index_type k=0;k<static_cast<index_type>(refPoints.dimension(2));k++){
             xOld(i,j,k) = refPointsWrap(i,j,k);
          }
       }
    }
 }else if(refPointsRank==2){
-   for(size_t i=0;i<static_cast<size_t>(refPoints.dimension(0));i++){
-      for(size_t j=0;j<static_cast<size_t>(refPoints.dimension(1));j++){
+   for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
+      for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
          xOld(i,j) = refPointsWrap(i,j);
       }
    }
@@ -2104,7 +2105,7 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refS
                                               const shards::CellTopology &  parentCell){
   
   int cellDim = parentCell.getDimension();
-  size_t numPts  = static_cast<size_t>(paramPoints.dimension(0));
+  index_type numPts  = static_cast<index_type>(paramPoints.dimension(0));
 
 #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
@@ -2135,7 +2136,7 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refS
 
   // Apply the parametrization map to every point in parameter domain
   if(subcellDim == 2) {
-    for(size_t pt = 0; pt < numPts; pt++){
+    for(index_type pt = 0; pt < numPts; pt++){
       double u = paramPoints(pt,0);
       double v = paramPoints(pt,1);
       
@@ -2148,7 +2149,7 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refS
     }
   }
   else if(subcellDim == 1) {    
-    for(size_t pt = 0; pt < numPts; pt++){
+    for(index_type pt = 0; pt < numPts; pt++){
       for(int dim = 0; dim < cellDim; dim++) {
         refSubcellPoints(pt, dim) = subcellMap(subcellOrd, dim, 0) + subcellMap(subcellOrd, dim, 1)*paramPoints(pt,0);
       }
@@ -2294,7 +2295,7 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayFaceNormal &             ref
   TEUCHOS_TEST_FOR_EXCEPTION( !( getrank(refFaceNormal) == 1 ), std::invalid_argument,  
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
     
-  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<size_t>(refFaceNormal.dimension(0)) == static_cast<size_t>(spaceDim) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<index_type>(refFaceNormal.dimension(0)) == static_cast<index_type>(spaceDim) ), std::invalid_argument,
 			      ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
 
@@ -2313,8 +2314,8 @@ void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            ed
                                                 const ArrayJac &              worksetJacobians,
                                                 const int &                   worksetEdgeOrd,
                                                 const shards::CellTopology &  parentCell){
-  size_t worksetSize = static_cast<size_t>(worksetJacobians.dimension(0));
-  size_t edgePtCount = static_cast<size_t>(worksetJacobians.dimension(1)); 
+  index_type worksetSize = static_cast<index_type>(worksetJacobians.dimension(0));
+  index_type edgePtCount = static_cast<index_type>(worksetJacobians.dimension(1)); 
   int pCellDim    = parentCell.getDimension();
   #ifdef HAVE_INTREPID_DEBUG
   std::string errmsg = ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents):";
@@ -2341,8 +2342,8 @@ void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            ed
   getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
   
   // Loop over workset faces and edge points
-  for(size_t pCell = 0; pCell < worksetSize; pCell++){
-    for(size_t pt = 0; pt < edgePtCount; pt++){
+  for(index_type pCell = 0; pCell < worksetSize; pCell++){
+    for(index_type pt = 0; pt < edgePtCount; pt++){
       
       // Apply parent cell Jacobian to ref. edge tangent
       for(int i = 0; i < pCellDim; i++){
@@ -2361,8 +2362,8 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayFaceTangentU &           fa
                                                 const ArrayJac &              worksetJacobians,
                                                 const int &                   worksetFaceOrd,
                                                 const shards::CellTopology &  parentCell){
-  size_t worksetSize = static_cast<size_t>(worksetJacobians.dimension(0));
-  size_t facePtCount = static_cast<size_t>(worksetJacobians.dimension(1)); 
+  index_type worksetSize = static_cast<index_type>(worksetJacobians.dimension(0));
+  index_type facePtCount = static_cast<index_type>(worksetJacobians.dimension(1)); 
   int pCellDim    = parentCell.getDimension();
   #ifdef HAVE_INTREPID_DEBUG
   std::string errmsg = ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents):";
@@ -2395,8 +2396,8 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayFaceTangentU &           fa
   getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
   // Loop over workset faces and face points
-  for(size_t pCell = 0; pCell < worksetSize; pCell++){
-    for(size_t pt = 0; pt < facePtCount; pt++){
+  for(index_type pCell = 0; pCell < worksetSize; pCell++){
+    for(index_type pt = 0; pt < facePtCount; pt++){
       
       // Apply parent cell Jacobian to ref. face tangents
       for(int dim = 0; dim < pCellDim; dim++){
@@ -2423,8 +2424,8 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArraySideNormal &             sid
                                                const ArrayJac &              worksetJacobians,
                                                const int &                   worksetSideOrd,
                                                const shards::CellTopology &  parentCell){
-  size_t worksetSize = static_cast<size_t>(worksetJacobians.dimension(0));
-  size_t sidePtCount = static_cast<size_t>(worksetJacobians.dimension(1));   
+  index_type worksetSize = static_cast<index_type>(worksetJacobians.dimension(0));
+  index_type sidePtCount = static_cast<index_type>(worksetJacobians.dimension(1));   
   int spaceDim  = parentCell.getDimension();
    #ifdef HAVE_INTREPID_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
@@ -2441,8 +2442,8 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArraySideNormal &             sid
     getPhysicalEdgeTangents(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
     
     // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
-    for(size_t cell = 0; cell < worksetSize; cell++){
-      for(size_t pt = 0; pt < sidePtCount; pt++){
+    for(index_type cell = 0; cell < worksetSize; cell++){
+      for(index_type pt = 0; pt < sidePtCount; pt++){
         Scalar temp = sideNormals(cell, pt, 0);
         sideNormals(cell, pt, 0) = sideNormals(cell, pt, 1);
         sideNormals(cell, pt, 1) = -temp;
@@ -2462,8 +2463,8 @@ void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             fac
                                                const ArrayJac &              worksetJacobians,
                                                const int &                   worksetFaceOrd,
                                                const shards::CellTopology &  parentCell){
-  size_t worksetSize = static_cast<size_t>(worksetJacobians.dimension(0));
-  size_t facePtCount = static_cast<size_t>(worksetJacobians.dimension(1)); 
+  index_type worksetSize = static_cast<index_type>(worksetJacobians.dimension(0));
+  index_type facePtCount = static_cast<index_type>(worksetJacobians.dimension(1)); 
   int pCellDim    = parentCell.getDimension();
   #ifdef HAVE_INTREPID_DEBUG
   std::string errmsg = ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals):";
@@ -2604,7 +2605,7 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
                       ">>> ERROR (Intrepid2::CellTools::checkPointsetInclusion): rank-1, 2 or 3 required for input points array. ");
 
   // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
-  TEUCHOS_TEST_FOR_EXCEPTION( !((size_t) points.dimension(rank - 1) == (size_t)cellTopo.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !((index_type) points.dimension(rank - 1) == (index_type)cellTopo.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::checkPointsetInclusion): Point and cell dimensions do not match. ");
 #endif
   
@@ -2612,8 +2613,8 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
   FieldContainer<int> inRefCell;
   switch(rank) {
     case 1: inRefCell.resize(1); break;
-    case 2: inRefCell.resize( static_cast<size_t>(points.dimension(0)) ); break;
-    case 3: inRefCell.resize( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) ); break;
+    case 2: inRefCell.resize( static_cast<index_type>(points.dimension(0)) ); break;
+    case 3: inRefCell.resize( static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) ); break;
   }
 
   // Call the inclusion method which returns inclusion results for all points
@@ -2647,7 +2648,7 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   if(getrank(points) == 1) {
     TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(inRefCell) == 1 ), std::invalid_argument, 
                         ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): rank-1 input array requires rank-1 output array.");  
-    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(inRefCell.dimension(0)) == 1), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(inRefCell.dimension(0)) == 1), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): rank-1 input array requires dim0 = 1 for output array.");  
   }
   else if(getrank(points) == 2){
@@ -2668,7 +2669,7 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   }    
   
   // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
-  TEUCHOS_TEST_FOR_EXCEPTION( !((size_t)points.dimension(apRank - 1) == (size_t)cellTopo.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !((index_type)points.dimension(apRank - 1) == (index_type)cellTopo.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::checkPointwiseInclusion): Point and cell dimensions do not match. ");
   
 #endif
@@ -2679,16 +2680,16 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
   int pointDim = 0;
   switch(apRank) {
     case 1:
-      pointDim = static_cast<size_t>(points.dimension(0));
+      pointDim = static_cast<index_type>(points.dimension(0));
       break;
     case 2:
-      dim1     = static_cast<size_t>(points.dimension(0));
-      pointDim = static_cast<size_t>(points.dimension(1));
+      dim1     = static_cast<index_type>(points.dimension(0));
+      pointDim = static_cast<index_type>(points.dimension(1));
       break;
     case 3:
-      dim0     = static_cast<size_t>(points.dimension(0));
-      dim1     = static_cast<size_t>(points.dimension(1));
-      pointDim = static_cast<size_t>(points.dimension(2));
+      dim0     = static_cast<index_type>(points.dimension(0));
+      dim1     = static_cast<index_type>(points.dimension(1));
+      pointDim = static_cast<index_type>(points.dimension(2));
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( !( (1 <= getrank(points) ) && (getrank(points) <= 3) ), std::invalid_argument,
@@ -2758,12 +2759,12 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   in
         FieldContainer<Scalar> refPoints;
         
         if(getrank(points) == 2){
-          refPoints.resize(static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
+          refPoints.resize(static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)) );
           mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );
         }
         else if(getrank(points) == 3){
-          refPoints.resize(static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+          refPoints.resize(static_cast<index_type>(points.dimension(0)), static_cast<index_type>(points.dimension(1)), static_cast<index_type>(points.dimension(2)) );
           mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );          
         }
@@ -2800,27 +2801,27 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): rank = 3 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(1)) != (size_t)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(1)) != (index_type)cellTopo.getSubcellCount(0) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(2)) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(2)) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (static_cast<size_t>(whichCell) < static_cast<size_t>(cellWorkset.dimension(0)) ) ) || (whichCell == -1) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (static_cast<index_type>(whichCell) < static_cast<index_type>(cellWorkset.dimension(0)) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): whichCell = -1 or a valid cell ordinal is required.");
   
   
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
   // If rank-2: admissible jacobians: rank-3 (P,D,D) or rank-4 (C,P,D,D); admissible whichCell: -1 (default) or cell ordinal.
   if(getrank(points) == 2) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(points.dimension(0)) <= 0), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(points.dimension(0)) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of points) >= 1 required for points array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(points.dimension(1)) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(points.dimension(1)) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (spatial dimension) of points array does not match cell dimension");
     
     // Validate the output array for the Jacobian: if whichCell == -1 all Jacobians are computed, rank-4 (C,P,D,D) required
@@ -2828,19 +2829,19 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
       TEUCHOS_TEST_FOR_EXCEPTION( (getrank(jacobian) != 4), std::invalid_argument, 
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): rank = 4 required for jacobian array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(0)) != static_cast<size_t>(cellWorkset.dimension(0))), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(0)) != static_cast<index_type>(cellWorkset.dimension(0))), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of jacobian array must equal dim 0 of cellWorkset array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(1)) != static_cast<size_t>(points.dimension(0))), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(1)) != static_cast<index_type>(points.dimension(0))), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (number of points) of jacobian array must equal dim 0 of points array");
 
-      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(2)) != static_cast<size_t>(points.dimension(1))), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(2)) != static_cast<index_type>(points.dimension(1))), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of jacobian array must equal dim 1 of points array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobian.dimension(2)) == static_cast<size_t>(jacobian.dimension(3)) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobian.dimension(2)) == static_cast<index_type>(jacobian.dimension(3)) ), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 = dim 3 (same spatial dimensions) required for jacobian array. ");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<size_t>(jacobian.dimension(3)) ) && (static_cast<size_t>(jacobian.dimension(3)) < 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<index_type>(jacobian.dimension(3)) ) && (static_cast<index_type>(jacobian.dimension(3)) < 4) ), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 and dim 3 (spatial dimensions) must be between 1 and 3. ");
     }     
     // A single cell Jacobian is computed when whichCell != -1 (whichCell has been already validated), rank-3 (P,D,D) required
@@ -2848,29 +2849,29 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
       TEUCHOS_TEST_FOR_EXCEPTION( (getrank(jacobian) != 3), std::invalid_argument, 
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): rank = 3 required for jacobian array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(0)) != static_cast<size_t>(points.dimension(0))), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(0)) != static_cast<index_type>(points.dimension(0))), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of points) of jacobian array must equal dim 0 of points array");
 
-      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(1)) != static_cast<size_t>(points.dimension(1))), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(1)) != static_cast<index_type>(points.dimension(1))), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (spatial dimension) of jacobian array must equal dim 1 of points array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobian.dimension(1)) == static_cast<size_t>(jacobian.dimension(2)) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobian.dimension(1)) == static_cast<index_type>(jacobian.dimension(2)) ), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 = dim 2 (same spatial dimensions) required for jacobian array. ");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<size_t>(jacobian.dimension(1)) ) && (static_cast<size_t>(jacobian.dimension(1)) < 4) ), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<index_type>(jacobian.dimension(1)) ) && (static_cast<index_type>(jacobian.dimension(1)) < 4) ), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 and dim 2 (spatial dimensions) must be between 1 and 3. ");
     }
   }
   // Point array is rank-3 (C,P,D): requires whichCell = -1 and rank-4 (C,P,D,D) jacobians
   else if(getrank(points) ==3){
     std::string errmsg  = ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian):";
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(points.dimension(0)) != static_cast<size_t>(cellWorkset.dimension(0)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(points.dimension(0)) != static_cast<index_type>(cellWorkset.dimension(0)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of points array must equal dim 0 of cellWorkset array");
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(points.dimension(1)) <= 0), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(points.dimension(1)) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (number of points) >= 1 required for points array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(points.dimension(2)) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(points.dimension(2)) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of points array does not match cell dimension");
     
     TEUCHOS_TEST_FOR_EXCEPTION( (whichCell != -1), std::invalid_argument,
@@ -2879,19 +2880,19 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
     // rank-4 (C,P,D,D) jacobian required for rank-3 (C,P,D) input points
     TEUCHOS_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, jacobian,  4, 4), std::invalid_argument,errmsg);
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(0)) != static_cast<size_t>(points.dimension(0))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(0)) != static_cast<index_type>(points.dimension(0))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of jacobian array must equal dim 0 of points array");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(1)) != static_cast<size_t>(points.dimension(1))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(1)) != static_cast<index_type>(points.dimension(1))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 1 (number of points) of jacobian array must equal dim 1 of points array");
   
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(jacobian.dimension(2)) != static_cast<size_t>(points.dimension(2))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(jacobian.dimension(2)) != static_cast<index_type>(points.dimension(2))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of jacobian array must equal dim 2 of points array");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobian.dimension(2)) == static_cast<size_t>(jacobian.dimension(3)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobian.dimension(2)) == static_cast<index_type>(jacobian.dimension(3)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 = dim 3 (same spatial dimensions) required for jacobian array. ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<size_t>(jacobian.dimension(3)) ) && (static_cast<size_t>(jacobian.dimension(3)) < 4) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !( (0 < static_cast<index_type>(jacobian.dimension(3)) ) && (static_cast<index_type>(jacobian.dimension(3)) < 4) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 2 and dim 3 (spatial dimensions) must be between 1 and 3. ");
   }
   else {
@@ -2960,10 +2961,10 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
     TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(jacobianDet) == 2), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianDetArgs): rank = 2 required for jacobianDet if jacobian is rank-4. ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobianDet.dimension(0)) == static_cast<size_t>(jacobian.dimension(0)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobianDet.dimension(0)) == static_cast<index_type>(jacobian.dimension(0)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianDetArgs): dim 0 (number of cells) of jacobianDet array must equal dim 0 of jacobian array. ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobianDet.dimension(1)) == static_cast<size_t>(jacobian.dimension(1)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobianDet.dimension(1)) == static_cast<index_type>(jacobian.dimension(1)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianDetArgs): dim 1 (number of points) of jacobianDet array must equal dim 1 of jacobian array.");  
   }
   
@@ -2972,7 +2973,7 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
     TEUCHOS_TEST_FOR_EXCEPTION( !(getrank(jacobianDet) == 1), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianDetArgs): rank = 1 required for jacobianDet if jacobian is rank-3. ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<size_t>(jacobianDet.dimension(0)) == static_cast<size_t>(jacobian.dimension(0)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( !(static_cast<index_type>(jacobianDet.dimension(0)) == static_cast<index_type>(jacobian.dimension(0)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianDetArgs): dim 0 (number of points) of jacobianDet array must equal dim 0 of jacobian array.");  
   }
 }
@@ -2996,19 +2997,19 @@ std::cout <<std::endl<<"WARNING:: A Nonsupported Container is Being used with In
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(1)) != (size_t)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(1)) != (index_type)cellTopo.getSubcellCount(0) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(2)) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(2)) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
   
     
 
 
-TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell < (size_t)cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
+TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((index_type)whichCell < (index_type)cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): whichCell = -1 or a valid cell ordinal is required.");
   
   // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
@@ -3017,7 +3018,7 @@ TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell < (size
     TEUCHOS_TEST_FOR_EXCEPTION( (refPoints.dimension(0) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of points) >= 1 required for refPoints array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)refPoints.dimension(1) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)refPoints.dimension(1) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (spatial dimension) of refPoints array does not match cell dimension");
 
     // Validate output array: whichCell = -1 requires rank-3 array with dimensions (C,P,D)  
@@ -3025,13 +3026,13 @@ TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell < (size
       TEUCHOS_TEST_FOR_EXCEPTION( ( (getrank(physPoints) != 3) && (whichCell == -1) ), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for physPoints array for the default whichCell value");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)physPoints.dimension(0) != (size_t)cellWorkset.dimension(0)), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)physPoints.dimension(0) != (index_type)cellWorkset.dimension(0)), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of physPoints array must equal dim 0 of cellWorkset array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)physPoints.dimension(1) != (size_t)refPoints.dimension(0)), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)physPoints.dimension(1) != (index_type)refPoints.dimension(0)), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of points) of physPoints array must equal dim 0 of refPoints array"); 
       
-      TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)physPoints.dimension(2) != (size_t)cellTopo.getDimension()), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)physPoints.dimension(2) != (index_type)cellTopo.getDimension()), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 2 (spatial dimension) does not match cell dimension ");  
     }
     // 0 <= whichCell < num cells requires rank-2 (P,D) arrays for both refPoints and physPoints
@@ -3039,10 +3040,10 @@ TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell < (size
       TEUCHOS_TEST_FOR_EXCEPTION( (getrank(physPoints) != 2), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): rank = 2 required for physPoints array");
       
-      TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)physPoints.dimension(0) != (size_t)refPoints.dimension(0)), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)physPoints.dimension(0) != (index_type)refPoints.dimension(0)), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of points) of physPoints array must equal dim 0 of refPoints array"); 
       
-      TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)physPoints.dimension(1) != (size_t)cellTopo.getDimension()), std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)physPoints.dimension(1) != (index_type)cellTopo.getDimension()), std::invalid_argument,
                           ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (spatial dimension) does not match cell dimension ");      
     }
   }
@@ -3050,13 +3051,13 @@ TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell < (size
   else if(getrank(refPoints) == 3) {
     
     // 1. validate refPoints dimensions and rank
-    TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)refPoints.dimension(0) !=(size_t) cellWorkset.dimension(0) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)refPoints.dimension(0) !=(index_type) cellWorkset.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of refPoints and cellWorkset arraya are required to match ");
 
     TEUCHOS_TEST_FOR_EXCEPTION( (refPoints.dimension(1) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of points) >= 1 required for refPoints array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( ((size_t)refPoints.dimension(2) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( ((index_type)refPoints.dimension(2) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToPhysicalFrame): dim 2 (spatial dimension) of refPoints array does not match cell dimension");
     
     // 2. whichCell  must be -1
@@ -3088,17 +3089,17 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayRefPoin
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToReferenceFrame): rank = 3 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToReferenceFrame): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(1)) != (size_t)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(1)) != (index_type)cellTopo.getSubcellCount(0) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToReferenceFrame): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(2)) != (size_t)cellTopo.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(2)) != (index_type)cellTopo.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToReferenceFrame): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // Validate whichCell. It can be either -1 (default value) or a valid celli ordinal.
- TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((size_t)whichCell <(size_t) cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
+ TEUCHOS_TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && ((index_type)whichCell <(index_type) cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_mapToReferenceFrame): whichCell = -1 or a valid cell ordinal is required.");  
   // Admissible ranks and dimensions of refPoints and physPoints depend on whichCell value:
   // default is to map multiple sets of points to multiple sets of points. (C,P,D) arrays required
@@ -3149,13 +3150,13 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(cellWorkset) != 3), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): rank = 3 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(0)) <= 0), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(1)) != (size_t)cell.getSubcellCount(0) ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(1)) != (index_type)cell.getSubcellCount(0) ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(cellWorkset.dimension(2)) != (size_t)cell.getDimension() ), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(cellWorkset.dimension(2)) != (index_type)cell.getDimension() ), std::invalid_argument,
                       ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
   
   
@@ -3170,17 +3171,17 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
     TEUCHOS_TEST_FOR_EXCEPTION( (whichCell == -1), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): whichCell = a valid cell ordinal is required with rank-2 input array.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(physPoints.dimension(0)) <= 0), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(physPoints.dimension(0)) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of points) >= 1 required for physPoints array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(physPoints.dimension(1)) != (size_t)cell.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(physPoints.dimension(1)) != (index_type)cell.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (spatial dimension) of physPoints array does not match cell dimension");
     
     // Validate inCell
     TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inCell) != 1), std::invalid_argument, 
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): rank = 1 required for inCell array");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(inCell.dimension(0)) != static_cast<size_t>(physPoints.dimension(0))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(inCell.dimension(0)) != static_cast<index_type>(physPoints.dimension(0))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of points) of inCell array must equal dim 0 of physPoints array");
   }
   // If rank-3: admissible inCell is rank-2 (C,P); admissible whichCell = -1.
@@ -3189,23 +3190,23 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &   
     TEUCHOS_TEST_FOR_EXCEPTION( !(whichCell == -1), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 is required with rank-3 input array.");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(physPoints.dimension(0)) != static_cast<size_t>(cellWorkset.dimension(0)) ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(physPoints.dimension(0)) != static_cast<index_type>(cellWorkset.dimension(0)) ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells)  of physPoints array must equal dim 0 of cellWorkset array ");
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(physPoints.dimension(1)) <= 0), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(physPoints.dimension(1)) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of points) >= 1 required for physPoints array ");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(physPoints.dimension(2)) != (size_t)cell.getDimension() ), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(physPoints.dimension(2)) != (index_type)cell.getDimension() ), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 2 (spatial dimension) of physPoints array does not match cell dimension");
     
     // Validate inCell
     TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inCell) != 2), std::invalid_argument, 
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): rank = 2 required for inCell array");
     
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(inCell.dimension(0)) != static_cast<size_t>(physPoints.dimension(0))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(inCell.dimension(0)) != static_cast<index_type>(physPoints.dimension(0))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells) of inCell array must equal dim 0 of physPoints array");    
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<size_t>(inCell.dimension(1)) != static_cast<size_t>(physPoints.dimension(1))), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( (static_cast<index_type>(inCell.dimension(1)) != static_cast<index_type>(physPoints.dimension(1))), std::invalid_argument,
                         ">>> ERROR (Intrepid2::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of points) of inCell array must equal dim 1 of physPoints array");    
   }
   else {
@@ -3314,9 +3315,9 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
   {
 
   // get array dimensions
-   std::size_t numCells        = static_cast<std::size_t>(cellCoords.dimension(0));
-   std::size_t numNodesPerCell = static_cast<std::size_t>(cellCoords.dimension(1));
-   std::size_t spaceDim        = static_cast<std::size_t>(cellCoords.dimension(2));
+   index_type numCells        = static_cast<index_type>(cellCoords.dimension(0));
+   index_type numNodesPerCell = static_cast<index_type>(cellCoords.dimension(1));
+   index_type spaceDim        = static_cast<index_type>(cellCoords.dimension(2));
 
    // num edges per primary cell
    int numEdgesPerCell = primaryCell.getEdgeCount();
@@ -3332,12 +3333,12 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
    getBarycenter(barycenter,cellCoords);
 
    // loop over cells
-   for (std::size_t icell = 0; icell < numCells; icell++){
+   for (index_type icell = 0; icell < numCells; icell++){
 
        // get primary edge midpoints
         FieldContainer<Scalar> edgeMidpts(numEdgesPerCell,spaceDim);
         for (int iedge = 0; iedge < numEdgesPerCell; iedge++){
-          for (std::size_t idim = 0; idim < spaceDim; idim++){
+          for (index_type idim = 0; idim < spaceDim; idim++){
 
                int node0 = primaryCell.getNodeMap(1,iedge,0);
                int node1 = primaryCell.getNodeMap(1,iedge,1);
@@ -3372,7 +3373,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
            case shards::Quadrilateral<4>::key:
 
             for (int inode = 0; inode < numNodesPerCell; inode++){
-              for (std::size_t idim = 0; idim < spaceDim; idim++){
+              for (index_type idim = 0; idim < spaceDim; idim++){
 
                 // set first node to primary cell node
                  subCVCoords(icell,inode,0,idim) = cellCoords(icell,inode,idim);
@@ -3395,7 +3396,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
 
         case shards::Hexahedron<8>::key:
 
-           for (std::size_t idim = 0; idim < spaceDim; idim++){
+           for (index_type idim = 0; idim < spaceDim; idim++){
 
              // loop over the horizontal quads that define the subcontrol volume coords
               for (int icount = 0; icount < 4; icount++){
@@ -3452,7 +3453,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
 
          case shards::Tetrahedron<4>::key:
 
-           for (std::size_t idim = 0; idim < spaceDim; idim++){
+           for (index_type idim = 0; idim < spaceDim; idim++){
 
              // loop over the three bottom nodes
               for (int icount = 0; icount < 3; icount++){
@@ -3530,21 +3531,21 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
  void CellTools<Scalar>::getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords)
 {
    // get array dimensions
-   std::size_t numCells        = static_cast<std::size_t>(cellCoords.dimension(0));
-   std::size_t numVertsPerCell = static_cast<std::size_t>(cellCoords.dimension(1));
-   std::size_t spaceDim        = static_cast<std::size_t>(cellCoords.dimension(2));
+   index_type numCells        = static_cast<index_type>(cellCoords.dimension(0));
+   index_type numVertsPerCell = static_cast<index_type>(cellCoords.dimension(1));
+   index_type spaceDim        = static_cast<index_type>(cellCoords.dimension(2));
 
    if (spaceDim == 2)
    {
     // Method for general polygons
-     for (std::size_t icell = 0; icell < numCells; icell++){
+     for (index_type icell = 0; icell < numCells; icell++){
 
         FieldContainer<Scalar> cell_centroid(spaceDim);
         Scalar area = 0;
 
-        for (std::size_t inode = 0; inode < numVertsPerCell; inode++){
+        for (index_type inode = 0; inode < numVertsPerCell; inode++){
 
-            std::size_t jnode = inode + 1;
+            index_type jnode = inode + 1;
             if (jnode >= numVertsPerCell) {
                  jnode = 0;
             }
@@ -3567,16 +3568,16 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
      // This method works fine for simplices, but for other 3-d shapes
      // is not precisely accurate. Could replace with approximate integration
      // perhaps.
-     for (std::size_t icell = 0; icell < numCells; icell++){
+     for (index_type icell = 0; icell < numCells; icell++){
 
         FieldContainer<Scalar> cell_centroid(spaceDim);
 
-        for (std::size_t inode = 0; inode < numVertsPerCell; inode++){
-            for (std::size_t idim = 0; idim < spaceDim; idim++){
+        for (index_type inode = 0; inode < numVertsPerCell; inode++){
+            for (index_type idim = 0; idim < spaceDim; idim++){
                 cell_centroid(idim) += cellCoords(icell,inode,idim)/numVertsPerCell;
             }
         }
-        for (std::size_t idim = 0; idim < spaceDim; idim++){
+        for (index_type idim = 0; idim < spaceDim; idim++){
              barycenter(icell,idim) = cell_centroid(idim);
         }
      }

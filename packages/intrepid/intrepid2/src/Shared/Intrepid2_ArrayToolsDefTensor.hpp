@@ -146,9 +146,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
         
-        for(size_t cell = 0; cell < static_cast<size_t>(outputFields.dimension(0)); cell++){
-          for(size_t field = 0; field < static_cast<size_t>(outputFields.dimension(1)); field++){
-            for(size_t point = 0; point < static_cast<size_t>(outputFields.dimension(2)); point++){
+        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
+          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
+            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
               // 
               outputFieldsWrap(cell, field, point, 0) = \
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 2) - 
@@ -168,9 +168,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (F,P,D)
       else if(getrank(inputFields) == 3){
         
-        for(size_t cell = 0; cell < static_cast<size_t>(outputFields.dimension(0)); cell++){
-          for(size_t field = 0; field < static_cast<size_t>(outputFields.dimension(1)); field++){
-            for(size_t point = 0; point < static_cast<size_t>(outputFields.dimension(2)); point++){
+        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
+          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
+            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
               // 
               outputFieldsWrap(cell, field, point, 0) = \
 		inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 2) - 
@@ -198,9 +198,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (C,F,P,D)
       if(getrank(inputFields) == 4){
         
-        for(size_t cell = 0; cell < static_cast<size_t>(outputFields.dimension(0)); cell++){
-          for(size_t field = 0; field < static_cast<size_t>(outputFields.dimension(1)); field++){
-            for(size_t point = 0; point < static_cast<size_t>(outputFields.dimension(2)); point++){
+        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
+          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
+            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
               outputFieldsWrap(cell, field, point) = \
                 inputDataWrap(cell, point, 0)*inputFieldsWrap(cell, field, point, 1) - 
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(cell, field, point, 0); 
@@ -211,9 +211,9 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
       // inputFields is (F,P,D)
       else if(getrank(inputFields) == 3) {
         
-        for(size_t cell = 0; cell < static_cast<size_t>(outputFields.dimension(0)); cell++){
-          for(size_t field = 0; field < static_cast<size_t>(outputFields.dimension(1)); field++){
-            for(size_t point = 0; point < static_cast<size_t>(outputFields.dimension(2)); point++){
+        for(index_type cell = 0; cell < static_cast<index_type>(outputFields.dimension(0)); cell++){
+          for(index_type field = 0; field < static_cast<index_type>(outputFields.dimension(1)); field++){
+            for(index_type point = 0; point < static_cast<index_type>(outputFields.dimension(2)); point++){
               outputFieldsWrap(cell, field, point) = \
                 inputDataWrap(cell, point, 0)*inputFieldsWrap(field, point, 1) - 
                 inputDataWrap(cell, point, 1)*inputFieldsWrap(field, point, 0); 
@@ -333,8 +333,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       // inputDataRight is (C,P,D)
       if(getrank(inputDataRight) == 3){
         
-        for(size_t cell = 0; cell < (size_t)inputDataLeft.dimension(0); cell++){
-          for(size_t point = 0; point < (size_t)inputDataLeft.dimension(1); point++){
+        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
+          for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
             // 
             outputDataWrap(cell, point, 0) = \
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 2) - 
@@ -353,8 +353,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
        // inputDataRight is (P,D)
       else if(getrank(inputDataRight) == 2){
         
-        for(size_t cell = 0; cell < (size_t)inputDataLeft.dimension(0); cell++){
-          for(size_t point = 0; point < (size_t)inputDataLeft.dimension(1); point++){
+        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
+          for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
             // 
             outputDataWrap(cell, point, 0) = \
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 2) - 
@@ -381,8 +381,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
       // inputDataRight is (C,P,D)
       if(getrank(inputDataRight) == 3){
         
-        for(size_t cell = 0; cell < (size_t)inputDataLeft.dimension(0); cell++){
-	  for(size_t point = 0; point < (size_t)inputDataLeft.dimension(1); point++){
+        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
+	  for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
 	    outputDataWrap(cell, point) = \
 	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(cell, point, 1) - 
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(cell, point, 0); 
@@ -392,8 +392,8 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
        // inputDataRight is (P,D)
       else if(getrank(inputDataRight) == 2) {
         
-        for(size_t cell = 0; cell < (size_t)inputDataLeft.dimension(0); cell++){
-	  for(size_t point = 0; point < (size_t)inputDataLeft.dimension(1); point++){
+        for(index_type cell = 0; cell < (index_type)inputDataLeft.dimension(0); cell++){
+	  for(index_type point = 0; point < (index_type)inputDataLeft.dimension(1); point++){
 	    outputDataWrap(cell, point) = \
 	      inputDataLeftWrap(cell, point, 0)*inputDataRightWrap(point, 1) - 
 	      inputDataLeftWrap(cell, point, 1)*inputDataRightWrap(point, 0); 
@@ -488,11 +488,11 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
     // inputFields is (C,F,P,D)
  if(getrank(inputFields) == 4){
       
-      for(size_t cell = 0; cell < (size_t)outputFields.dimension(0); cell++){
-        for(size_t field = 0; field < (size_t)outputFields.dimension(1); field++){
-          for(size_t point = 0; point < (size_t)outputFields.dimension(2); point++){
-            for(size_t row = 0; row < (size_t)outputFields.dimension(3); row++){
-              for(size_t col = 0; col < (size_t)outputFields.dimension(4); col++){
+      for(index_type cell = 0; cell < (index_type)outputFields.dimension(0); cell++){
+        for(index_type field = 0; field < (index_type)outputFields.dimension(1); field++){
+          for(index_type point = 0; point < (index_type)outputFields.dimension(2); point++){
+            for(index_type row = 0; row < (index_type)outputFields.dimension(3); row++){
+              for(index_type col = 0; col < (index_type)outputFields.dimension(4); col++){
                 outputFieldsWrap(cell, field, point, row, col) = \
                   inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, col);
               }// col
@@ -504,11 +504,11 @@ ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFields
      // inputFields is (F,P,D)
  else if(getrank(inputFields) == 3){
       
-      for(size_t cell = 0; cell < (size_t)outputFields.dimension(0); cell++){
-        for(size_t field = 0; field < (size_t)outputFields.dimension(1); field++){
-          for(size_t point = 0; point < (size_t)outputFields.dimension(2); point++){
-            for(size_t row = 0; row < (size_t)outputFields.dimension(3); row++){
-              for(size_t col = 0; col < (size_t)outputFields.dimension(4); col++){
+      for(index_type cell = 0; cell < (index_type)outputFields.dimension(0); cell++){
+        for(index_type field = 0; field < (index_type)outputFields.dimension(1); field++){
+          for(index_type point = 0; point < (index_type)outputFields.dimension(2); point++){
+            for(index_type row = 0; row < (index_type)outputFields.dimension(3); row++){
+              for(index_type col = 0; col < (index_type)outputFields.dimension(4); col++){
                 outputFieldsWrap(cell, field, point, row, col) = \
                   inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, col);
               }// col
@@ -603,10 +603,10 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
     // inputDataRight is (C,P,D)
  if(getrank(inputDataRight) == 3){
       
-      for(size_t cell = 0; cell <(size_t) inputDataLeft.dimension(0); cell++){
-        for(size_t point = 0; point <(size_t) inputDataLeft.dimension(1); point++){
-          for(size_t row = 0; row <(size_t) inputDataLeft.dimension(2); row++){
-            for(size_t col = 0; col <(size_t) inputDataLeft.dimension(2); col++){
+      for(index_type cell = 0; cell <(index_type) inputDataLeft.dimension(0); cell++){
+        for(index_type point = 0; point <(index_type) inputDataLeft.dimension(1); point++){
+          for(index_type row = 0; row <(index_type) inputDataLeft.dimension(2); row++){
+            for(index_type col = 0; col <(index_type) inputDataLeft.dimension(2); col++){
               
               outputDataWrap(cell, point, row, col) = \
                 inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, col); 
@@ -618,10 +618,10 @@ ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>input
      // inputDataRight is (P,D)
  else if(getrank(inputDataRight) == 2){
       
-      for(size_t cell = 0; cell <(size_t) inputDataLeft.dimension(0); cell++){
-        for(size_t point = 0; point <(size_t) inputDataLeft.dimension(1); point++){
-          for(size_t row = 0; row <(size_t) inputDataLeft.dimension(2); row++){
-            for(size_t col = 0; col <(size_t) inputDataLeft.dimension(2); col++){
+      for(index_type cell = 0; cell <(index_type) inputDataLeft.dimension(0); cell++){
+        for(index_type point = 0; point <(index_type) inputDataLeft.dimension(1); point++){
+          for(index_type row = 0; row <(index_type) inputDataLeft.dimension(2); row++){
+            for(index_type col = 0; col <(index_type) inputDataLeft.dimension(2); col++){
               // 
               outputDataWrap(cell, point, row, col) = \
 		inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, col); 
@@ -1275,10 +1275,10 @@ typedef typename conditional_eSpace<ArrayInFields>::execution_space execution_sp
    ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>outputFieldsWrap(outputFields);
    ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData >::value, true>inputDataWrap(inputData);
    ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value,true>inputFieldsWrap(inputFields);	
-    size_t dataRank   = getrank(inputData);
-    size_t numDataPts = inputData.dimension(1);
-    size_t inRank     = getrank(inputFields);    
-    size_t numCells   = outputFields.dimension(0);
+    index_type dataRank   = getrank(inputData);
+    index_type numDataPts = inputData.dimension(1);
+    index_type inRank     = getrank(inputFields);    
+    index_type numCells   = outputFields.dimension(0);
 
     /*********************************************************************************************
      *                              inputFields is (C,F,P,D)                                     *
@@ -1551,12 +1551,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
  ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData >::value, false>outputDataWrap(outputData);
  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
-    size_t dataLeftRank   = getrank(inputDataLeft);
-    size_t numDataLeftPts = inputDataLeft.dimension(1);
-    size_t dataRightRank  = getrank(inputDataRight);    
-    size_t numCells       = outputData.dimension(0);
-    size_t numPoints      = outputData.dimension(1);
-    size_t matDim         = outputData.dimension(2);
+    index_type dataLeftRank   = getrank(inputDataLeft);
+    index_type numDataLeftPts = inputDataLeft.dimension(1);
+    index_type dataRightRank  = getrank(inputDataRight);    
+    index_type numCells       = outputData.dimension(0);
+    index_type numPoints      = outputData.dimension(1);
+    index_type matDim         = outputData.dimension(2);
     
     /*********************************************************************************************
      *                              inputDataRight is (C,P,D)                                   *
@@ -1566,9 +1566,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, point)*inputDataRightWrap(cell, point, row);
 	      } // Row-loop
@@ -1577,9 +1577,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, row);
 	      } // Row-loop
@@ -1589,11 +1589,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, point, row, col)*inputDataRightWrap(cell, point, col);
 		  }// col
@@ -1602,11 +1602,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, point, col, row)*inputDataRightWrap(cell, point, col);
 		  }// col
@@ -1628,9 +1628,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, 0)*inputDataRightWrap(cell, point, row);
 	      } // Row-loop
@@ -1639,9 +1639,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(cell, point, row);
 	      } // Row-loop
@@ -1651,11 +1651,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, 0, row, col)*inputDataRightWrap(cell, point, col);
 		  }// col
@@ -1664,11 +1664,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, 0, col, row)*inputDataRightWrap(cell, point, col);
 		  }// col
@@ -1696,9 +1696,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, point)*inputDataRightWrap(point, row);
 	      } // Row-loop
@@ -1707,9 +1707,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, row);
 	      } // Row-loop
@@ -1719,11 +1719,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, point, row, col)*inputDataRightWrap(point, col);
 		  }// col
@@ -1732,11 +1732,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, point, col, row)*inputDataRightWrap(point, col);
 		  }// col
@@ -1758,9 +1758,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, 0)*inputDataRightWrap(point, row);
 	      } // Row-loop
@@ -1769,9 +1769,9 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
 		outputDataWrap(cell, point, row) = \
                   inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(point, row);
 	      } // Row-loop
@@ -1781,11 +1781,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, 0, row, col)*inputDataRightWrap(point, col);
 		  }// col
@@ -1794,11 +1794,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
 		  outputDataWrap(cell, point, row) = 0.0;
-		  for(size_t col = 0; col < matDim; col++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row) += \
                       inputDataLeftWrap(cell, 0, col, row)*inputDataRightWrap(point, col);
 		  }// col
@@ -1966,13 +1966,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
     ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields >::value, true>inputFieldsWrap(inputFields);
 
 
-    size_t dataRank   = getrank(inputData);
-    size_t numDataPts = inputData.dimension(1);
-    size_t inRank     = getrank(inputFields);    
-    size_t numCells   = outputFields.dimension(0);
-    size_t numFields  = outputFields.dimension(1);
-    size_t numPoints  = outputFields.dimension(2);
-    size_t matDim     = outputFields.dimension(3);
+    index_type dataRank   = getrank(inputData);
+    index_type numDataPts = inputData.dimension(1);
+    index_type inRank     = getrank(inputFields);    
+    index_type numCells   = outputFields.dimension(0);
+    index_type numFields  = outputFields.dimension(1);
+    index_type numPoints  = outputFields.dimension(2);
+    index_type matDim     = outputFields.dimension(3);
     
     /*********************************************************************************************
      *                              inputFields is (C,F,P,D,D)                                     *
@@ -1982,11 +1982,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, point)*inputFieldsWrap(cell, field, point, row, col);
 		  }// Col-loop
@@ -1997,11 +1997,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, point, row)*inputFieldsWrap(cell, field, point, row, col);
 		  }// Col-loop
@@ -2013,13 +2013,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, point, row, i)*inputFieldsWrap(cell, field, point, i, col);
 		      }// i
@@ -2030,13 +2030,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, point, i, row)*inputFieldsWrap(cell, field, point, i, col);
 		      }// i
@@ -2060,11 +2060,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, 0)*inputFieldsWrap(cell, field, point, row, col);
 		  }// Col-loop
@@ -2075,11 +2075,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, 0, row)*inputFieldsWrap(cell, field, point, row, col);
 		  }// Col-loop
@@ -2091,13 +2091,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, 0, row, i)*inputFieldsWrap(cell, field, point, i, col);
 		      }// i
@@ -2108,13 +2108,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, 0, i, row)*inputFieldsWrap(cell, field, point, i, col);
 		      }// i
@@ -2144,11 +2144,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, point)*inputFieldsWrap(field, point, row, col);
 		  }// Col-loop
@@ -2159,11 +2159,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, point, row)*inputFieldsWrap(field, point, row, col);
 		  }// Col-loop
@@ -2175,13 +2175,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, point, row, i)*inputFieldsWrap(field, point, i, col);
 		      }// i
@@ -2192,13 +2192,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, point, i, row)*inputFieldsWrap(field, point, i, col);
 		      }// i
@@ -2222,11 +2222,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, 0)*inputFieldsWrap(field, point, row, col);
 		  }// Col-loop
@@ -2237,11 +2237,11 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t field = 0; field < numFields; field++) {
-	      for(size_t point = 0; point < numPoints; point++) {
-		for(size_t row = 0; row < matDim; row++) {
-		  for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type field = 0; field < numFields; field++) {
+	      for(index_type point = 0; point < numPoints; point++) {
+		for(index_type row = 0; row < matDim; row++) {
+		  for(index_type col = 0; col < matDim; col++) {
 		    outputFieldsWrap(cell, field, point, row, col) = \
                       inputDataWrap(cell, 0, row)*inputFieldsWrap(field, point, row, col);
 		  }// Col-loop
@@ -2253,13 +2253,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, 0, row, i)*inputFieldsWrap(field, point, i, col);
 		      }// i
@@ -2270,13 +2270,13 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t field = 0; field < numFields; field++){
-		for(size_t point = 0; point < numPoints; point++){
-		  for(size_t row = 0; row < matDim; row++){
-		    for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type field = 0; field < numFields; field++){
+		for(index_type point = 0; point < numPoints; point++){
+		  for(index_type row = 0; row < matDim; row++){
+		    for(index_type col = 0; col < matDim; col++){
 		      outputFieldsWrap(cell, field, point, row, col) = 0.0;
-		      for(size_t i = 0; i < matDim; i++){
+		      for(index_type i = 0; i < matDim; i++){
 			outputFieldsWrap(cell, field, point, row, col) += \
                           inputDataWrap(cell, 0, i, row)*inputFieldsWrap(field, point, i, col);
 		      }// i
@@ -2447,12 +2447,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
  ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft >::value, true>inputDataLeftWrap(inputDataLeft);
  ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight >::value, true>inputDataRightWrap(inputDataRight);
 
-    size_t dataLeftRank   = getrank(inputDataLeft);
-    size_t numDataLeftPts = inputDataLeft.dimension(1);
-    size_t dataRightRank  = getrank(inputDataRight);    
-    size_t numCells       = outputData.dimension(0);
-    size_t numPoints      = outputData.dimension(1);
-    size_t matDim         = outputData.dimension(2);
+    index_type dataLeftRank   = getrank(inputDataLeft);
+    index_type numDataLeftPts = inputDataLeft.dimension(1);
+    index_type dataRightRank  = getrank(inputDataRight);    
+    index_type numCells       = outputData.dimension(0);
+    index_type numPoints      = outputData.dimension(1);
+    index_type matDim         = outputData.dimension(2);
     
     /*********************************************************************************************
      *                              inputDataRight is (C,P,D,D)                                 *
@@ -2462,10 +2462,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, point)*inputDataRightWrap(cell, point, row, col);
 		}// Col-loop
@@ -2475,10 +2475,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, point, row)*inputDataRightWrap(cell, point, row, col);
 		}// Col-loop
@@ -2489,12 +2489,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, point, row, i)*inputDataRightWrap(cell, point, i, col);
 		    }// i
@@ -2504,12 +2504,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, point, i, row)*inputDataRightWrap(cell, point, i, col);
 		    }// i
@@ -2532,10 +2532,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, 0)*inputDataRightWrap(cell, point, row, col);
 		}// Col-loop
@@ -2545,10 +2545,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(cell, point, row, col);
 		}// Col-loop
@@ -2559,12 +2559,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, 0, row, i)*inputDataRightWrap(cell, point, i, col);
 		    }// i
@@ -2574,12 +2574,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, 0, i, row)*inputDataRightWrap(cell, point, i, col);
 		    }// i
@@ -2608,10 +2608,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
         
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, point)*inputDataRightWrap(point, row, col);
 		}// Col-loop
@@ -2621,10 +2621,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, point, row)*inputDataRightWrap(point, row, col);
 		}// Col-loop
@@ -2635,12 +2635,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, point, row, i)*inputDataRightWrap(point, i, col);
 		    }// i
@@ -2650,12 +2650,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, point, i, row)*inputDataRightWrap(point, i, col);
 		    }// i
@@ -2678,10 +2678,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
       else{  // constant data case
         switch(dataLeftRank){
 	case 2:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, 0)*inputDataRightWrap(point, row, col);
 		}// Col-loop
@@ -2691,10 +2691,10 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	  break;
             
 	case 3:
-	  for(size_t cell = 0; cell < numCells; cell++) {
-	    for(size_t point = 0; point < numPoints; point++) {
-	      for(size_t row = 0; row < matDim; row++) {
-		for(size_t col = 0; col < matDim; col++) {
+	  for(index_type cell = 0; cell < numCells; cell++) {
+	    for(index_type point = 0; point < numPoints; point++) {
+	      for(index_type row = 0; row < matDim; row++) {
+		for(index_type col = 0; col < matDim; col++) {
 		  outputDataWrap(cell, point, row, col) = \
 		    inputDataLeftWrap(cell, 0, row)*inputDataRightWrap(point, row, col);
 		}// Col-loop
@@ -2705,12 +2705,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
             
 	case 4:
 	  if ((transpose == 'n') || (transpose == 'N')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, 0, row, i)*inputDataRightWrap(point, i, col);
 		    }// i
@@ -2720,12 +2720,12 @@ Kokkos::parallel_for (numCells, matvecProductDataField_3_4_t_const<Scalar,ArrayW
 	    }// cell
 	  } // no transpose
 	  else if ((transpose == 't') || (transpose == 'T')) {
-	    for(size_t cell = 0; cell < numCells; cell++){
-	      for(size_t point = 0; point < numPoints; point++){
-		for(size_t row = 0; row < matDim; row++){
-		  for(size_t col = 0; col < matDim; col++){
+	    for(index_type cell = 0; cell < numCells; cell++){
+	      for(index_type point = 0; point < numPoints; point++){
+		for(index_type row = 0; row < matDim; row++){
+		  for(index_type col = 0; col < matDim; col++){
 		    outputDataWrap(cell, point, row, col) = 0.0;
-		    for(size_t i = 0; i < matDim; i++){
+		    for(index_type i = 0; i < matDim; i++){
 		      outputDataWrap(cell, point, row, col) += \
 			inputDataLeftWrap(cell, 0, i, row)*inputDataRightWrap(point, i, col);
 		    }// i

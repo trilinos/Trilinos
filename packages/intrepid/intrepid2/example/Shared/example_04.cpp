@@ -168,13 +168,13 @@ struct blasOpenMPBatchRight {
 
 //#pragma loop(ivdep)
 
-for (std::size_t i = 0u; i != static_cast<std::size_t>(msize); ++i) {
+for (index_type i = 0u; i != static_cast<index_type>(msize); ++i) {
   
-    for (std::size_t k = 0u; k != static_cast<std::size_t>(ksize); ++k) {
+    for (index_type k = 0u; k != static_cast<index_type>(ksize); ++k) {
 
         const Scalar r = subA(i,k);
 
-        for (std::size_t j = 0u; j != static_cast<std::size_t>(nsize); ++j) {
+        for (index_type j = 0u; j != static_cast<index_type>(nsize); ++j) {
 
 		subC(i,j)=beta*subC(i,j)+alpha*r*subB(k,j);
 
