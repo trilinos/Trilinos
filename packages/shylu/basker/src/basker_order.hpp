@@ -78,6 +78,11 @@ namespace BaskerNS
     // Gets estimate of work on all blocks
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
+
+
+    printf("outter num_threads:%d \n", num_threads);
+    MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
+    init_value(btf_schedule, num_threads+1, 0);
     find_btf(A); 
 
    
@@ -232,6 +237,10 @@ namespace BaskerNS
     //2. BTF ordering on whole matrix
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
+    //printf("outter num_threads:%d \n", num_threads);
+    MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
+    init_value(btf_schedule, num_threads+1, (Int)0);
+  
     find_btf2(A); 
     sort_matrix(BTF_C);
 

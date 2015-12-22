@@ -51,6 +51,8 @@ namespace BaskerNS
     num_threads = 1;
     global_nnz  = 0;
 
+    btf_total_work = 0;
+
   }//end Basker()
   
   template <class Int, class Entry, class Exe_Space>
@@ -302,7 +304,7 @@ namespace BaskerNS
       }
     else
       {
-	//printf("btf_order called \n");
+	printf("btf_order called \n");
 	//btf_order();
 	btf_order2();
 	if(btf_tabs_offset != 0)

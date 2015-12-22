@@ -3,6 +3,8 @@
 
 #define BASKER_DEBUG_NFACTOR 
 
+#define BASKER_TIME
+
 /*Basker Includes*/
 //#include "basker_decl.hpp"
 #include "basker_types.hpp"
@@ -170,7 +172,7 @@ namespace BaskerNS
 	#endif
       }//end over each level
 
-    #ifdef BASKER_KOKKOS
+    #ifdef BASKER_TIME
     printf("Time SEP: %f \n", timer.seconds());
     #endif
       }

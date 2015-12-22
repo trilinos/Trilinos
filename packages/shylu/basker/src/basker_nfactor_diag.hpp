@@ -41,33 +41,55 @@ namespace BaskerNS
     BASKER_INLINE
     void operator()(const TeamMember &thread) const
     {
-            Int kid = (Int)(thread.league_rank()*
-			    thread.team_size()+
-			    thread.team_rank());
-	    Int total_threads = thread.league_size()*
-	                    thread.team_size();
+      Int kid = (Int)(thread.league_rank()*
+		      thread.team_size()+
+		      thread.team_rank());
+      Int total_threads = thread.league_size()*
+	thread.team_size();
 
-	    //divide equally and launch
-	    Int nchunks = (basker->btf_nblks - 
-			   basker->btf_tabs_offset);
-	    Int chunk_size = nchunks/total_threads;
-	    Int chunks_left_over = nchunks - 
-	      (chunk_size*total_threads);
-	    Int chunk_start = kid*chunk_size;
-	    
-	    //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
 
-	    basker->t_nfactor_diag(kid, chunk_start, 
-				  chunk_size);
-	    
-	    //extra
-	    if(kid == 0)
-	      {
-		Int extra_start=chunk_size*total_threads;
-		basker->t_nfactor_diag(kid, extra_start,
-				       chunks_left_over);
+      //================OLD EQ BLK=================//
 
-	      }
+      //divide equally and launch
+      //Int nchunks = (basker->btf_nblks - 
+      //			   basker->btf_tabs_offset);
+      //Int chunk_size = nchunks/total_threads;
+      //	    Int chunks_left_over = nchunks - 
+      //	      (chunk_size*total_threads);
+      //	    Int chunk_start = kid*chunk_size;
+
+      //Divid into chunks based on work
+     
+ 	    
+      //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
+      
+      //basker->t_nfactor_diag(kid, chunk_start, 
+      //			     chunk_size);
+      
+      //extra
+      //if(kid == 0)
+      //{
+      //	  Int extra_start=chunk_size*total_threads;
+      //	  basker->t_nfactor_diag(kid, extra_start,
+      //				 chunks_left_over);
+	  
+      //	}
+
+
+      //============= NEW EQ  =============//
+
+      Int chunk_start = basker->btf_schedule(kid);
+      Int chunk_size  = basker->btf_schedule(kid+1) - 
+	basker->btf_schedule(kid);
+      
+
+      printf("Chunk start: %d size: %d \n", 
+	     chunk_start, chunk_size);
+      basker->t_nfactor_diag(kid, chunk_start,
+			     chunk_size);
+
+
+
 
     }//end operator()
     

@@ -50,6 +50,8 @@ int main(int argc, char* argv[])
   cout << "-------------- USING OMP---------------" << endl;
   #endif
 
+  {
+
   #ifdef BASKER_KOKKOS
   cout << "true: " << true << endl;
   cout << "hwloc aval: " << Kokkos::hwloc::available()<<endl;
@@ -202,8 +204,8 @@ int main(int argc, char* argv[])
   cout << "--------------Done SFactor------------------" << endl;
   mybasker.Factor(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done NFactor-----------------" << endl;
-  //mybasker.DEBUG_PRINT();
-  //cout << "--------------Done Print----------------------"<<endl;
+  mybasker.DEBUG_PRINT();
+  cout << "--------------Done Print----------------------"<<endl;
   mybasker.SolveTest();
   //mybasker.Solve(y,x);
   cout << "--------------Done Solve----------------------"<<endl;
@@ -213,6 +215,7 @@ int main(int argc, char* argv[])
   //}//After
   //Kokkos::fence();
 
+  }
   //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
   //#endif

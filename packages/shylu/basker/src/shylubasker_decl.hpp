@@ -164,6 +164,10 @@ namespace BaskerNS
     //These are temp arrys that are used for ordering and sfator
     INT_1DARRAY btf_blk_work;
     INT_1DARRAY btf_blk_nnz;
+    INT_1DARRAY btf_schedule;
+    
+
+    Int btf_total_work;
  
   private:
 
@@ -295,6 +299,13 @@ namespace BaskerNS
     int break_into_parts2(BASKER_MATRIX &M,
 			  Int nblks,
 			  INT_1DARRAY btf_tabs);
+    
+    BASKER_INLINE
+    void find_btf_schedule(BASKER_MATRIX &M,
+			   Int nblks, 
+			   INT_1DARRAY btf_tabs);
+   
+
     /*
     BASKER_INLINE
     int strong_component(BASKER_MATRIX &M,
