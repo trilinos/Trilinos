@@ -8,7 +8,7 @@ echo
 # TrilinosDriver settings:
 #
 
-export TDD_PARALLEL_LEVEL=2
+export TDD_PARALLEL_LEVEL=1
 
 # Trilinos settings:
 #
@@ -32,6 +32,7 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
 export http_proxy="http://sonproxy.sandia.gov:80"
 export CUDA_LAUNCH_BLOCKING=1
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 export OMP_NUM_THREADS=2
 
 # Machine independent cron_driver:
