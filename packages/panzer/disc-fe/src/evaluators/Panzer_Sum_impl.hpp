@@ -101,7 +101,10 @@ PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Sum,workset)
-{ 
+{   
+
+  sum.deep_copy(ScalarT(0.0));
+
 #if PANZER_USE_FAST_SUM 
   sum.deep_copy(ScalarT(0.0));
   for (std::size_t j = 0; j < values.size(); ++j) {
@@ -115,14 +118,82 @@ PHX_EVALUATE_FIELDS(Sum,workset)
       *sum_it += scalars[j]*(*values_it);
   }
 #else
-  sum.deep_copy(ScalarT(0.0));
-  std::size_t length = 1;
-  for (std::size_t i=0; i<sum.rank(); ++i)
-    length *= sum.dimension(i);
-  Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
-    for (std::size_t j = 0; j < values.size(); ++j)
-      sum[i] += scalars[j]*(values[j][i]);
-  });
+  size_t rank = sum.rank();
+  const size_t num_vals = values.size();
+  const size_t length = sum.dimension(0);
+  switch (rank) {
+  case 1:
+  {
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t iv = 0; iv < num_vals; ++iv)
+        sum(i) += scalars[iv]*(values[iv](i));
+    });
+  }
+  break;
+  case 2:
+  {
+    const size_t dim_1 = sum.dimension(1);
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t j = 0; j < dim_1; ++j)
+        for (std::size_t iv = 0; iv < num_vals; ++iv)
+          sum(i,j) += scalars[iv]*(values[iv](i,j));
+    });
+  }
+  break;
+  case 3:
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t j = 0; j < dim_1; ++j)
+        for (std::size_t k = 0; k < dim_2; ++k)
+          for (std::size_t iv = 0; iv < num_vals; ++iv)
+            sum(i,j,k) += scalars[iv]*(values[iv](i,j,k));
+    });
+  }
+  break;
+  case 4:
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t j = 0; j < dim_1; ++j)
+        for (std::size_t k = 0; k < dim_2; ++k)
+          for (std::size_t l = 0; l < dim_3; ++l)
+            for (std::size_t iv = 0; iv < num_vals; ++iv)
+              sum(i,j,k,l) += scalars[iv]*(values[iv](i,j,k,l));
+    });
+  }
+   break;
+  case 5:
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t j = 0; j < dim_1; ++j)
+        for (std::size_t k = 0; k < dim_2; ++k)
+          for (std::size_t l = 0; l < dim_3; ++l)
+            for (std::size_t m = 0; m < dim_4; ++m)
+              for (std::size_t iv = 0; iv < num_vals; ++iv)
+                sum(i,j,k,l,m) += scalars[iv]*(values[iv](i,j,k,l,m));
+    });
+  }
+    break;
+  case 6:
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
+    Kokkos::parallel_for (length, KOKKOS_LAMBDA (size_t i) {
+      for (std::size_t j = 0; j < dim_1; ++j)
+        for (std::size_t k = 0; k < dim_2; ++k)
+          for (std::size_t l = 0; l < dim_3; ++l)
+            for (std::size_t m = 0; m < dim_4; ++m)
+              for (std::size_t n = 0; n < dim_5; ++n)
+                for (std::size_t iv = 0; iv < num_vals; ++iv)
+                  sum(i,j,k,l,m,n) += scalars[iv]*(values[iv](i,j,k,l,m,n));
+    });
+  }
+    break;
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR: rank of sum is higher than supported");
+  }
+
 #endif
 }
 
