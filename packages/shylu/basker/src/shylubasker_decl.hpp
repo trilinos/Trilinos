@@ -369,11 +369,7 @@ namespace BaskerNS
     BASKER_INLINE
     void col_count(BASKER_MATRIX_VIEW &MV,
 		   BASKER_SYMBOLIC_TREE &ST);
-    /*moved to basker_util
-    BASKER_INLINE
-    void matrix_transpose(BASKER_MATRIX_VIEW &MV,
-			  BASKER_MATRIX &AT);
-    */
+ 
     BASKER_INLINE
     Int least_common(Int i, Int j , Int* first,
 		     Int *mfirst, Int *pleaf, 
@@ -461,7 +457,10 @@ namespace BaskerNS
     BASKER_INLINE
     int copy_schedule(INT_2DARRAY &s, INT_2DARRAY &ls, 
 		      Int l, Int sl, Int t);
+    BASKER_INLINE
+    int nfactor_diag_error(INT_1DARRAY );
     
+   
     
     //BASKER_INLINE
     inline
@@ -775,8 +774,6 @@ namespace BaskerNS
     //Int t_get_kid(const TeamMember &thread);
 
     void print_sep_bal();
-
-
 
     //Matrix helper
     BASKER_INLINE

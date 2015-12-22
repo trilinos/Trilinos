@@ -95,6 +95,63 @@ namespace BaskerNS
     
   };//end kokkos_nfactor_diag
 
+
+    template <class Int, class Entry, class Exe_Space>
+  struct kokkos_nfactor_diag_remalloc
+  {
+    //Comeback and cleanup kokkos
+    typedef Exe_Space                        execution_space;
+    typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
+    typedef typename TeamPolicy::member_type TeamMember;
+
+    Basker<Int,Entry,Exe_Space> *basker;
+    
+    INT_1DARRAY thread_start;
+
+    kokkos_nfactor_diag_remalloc()
+    {}
+
+    kokkos_nfactor_diag_remalloc
+    (
+     Basker<Int,Entry,Exe_Space> *_basker,
+     INT_1DARRAY                 _thread_start
+     )
+    {
+      basker       = _basker;
+      thread_start = _thread_start;
+    }
+
+    //comeback and fix kokkos stuff
+
+    BASKER_INLINE
+    void operator()(const TeamMember &thread) const
+    {
+      Int kid = (Int)(thread.league_rank()*
+		      thread.team_size()+
+		      thread.team_rank());
+      Int total_threads = thread.league_size()*
+	thread.team_size();
+
+
+      Int chunk_start = thread_start(kid);
+      if(chunk_start != BASKER_MAX_IDX)
+	{
+	  Int chunk_size  = basker->btf_schedule(kid+1) - 
+	    chunk_start;
+      
+	  printf("Chunk start: %d size: %d \n", 
+		 chunk_start, chunk_size);
+	  basker->t_nfactor_diag(kid, chunk_start,
+				 chunk_size);
+
+	}//end if
+
+    }//end operator()
+    
+  };//end kokkos_nfactor_diag_remalloc
+
+
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_nfactor_diag
