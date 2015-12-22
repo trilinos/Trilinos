@@ -55,7 +55,9 @@
 #include "Piro_RythmosStepperFactory.hpp"
 #include "Piro_RythmosStepControlFactory.hpp"
 
+#ifdef ALBANY_BUILD
 #include "Kokkos_DefaultNode.hpp"
+#endif
 
 #include <map>
 #include <string>
@@ -65,8 +67,12 @@ namespace Piro {
 /** \brief Thyra-based Model Evaluator for Rythmos solves
  *  \ingroup Piro_Thyra_solver_grp
  * */
+#ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal, 
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+#else
+template <typename Scalar>
+#endif
 class RythmosSolver
     : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
@@ -126,10 +132,10 @@ public:
   //@}
 
   void addStepperFactory(const std::string & stepperName,
-                         const Teuchos::RCP<RythmosStepperFactory<Scalar> > & stepperFactories);
+                         const Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > & stepperFactories);
 
   void addStepControlFactory(const std::string & stepControlName,
-                             const Teuchos::RCP<RythmosStepControlFactory<Scalar> > & step_control_strategy);
+                             const Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > & step_control_strategy);
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -167,17 +173,22 @@ private:
   Teuchos::EVerbosityLevel solnVerbLevel;
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
-  std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > > stepperFactories;
+  std::map<std::string,Teuchos::RCP<Piro::RythmosStepperFactory<Scalar> > > stepperFactories;
 
-  std::map<std::string,Teuchos::RCP<RythmosStepControlFactory<Scalar> > > stepControlFactories;
+  std::map<std::string,Teuchos::RCP<Piro::RythmosStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;
 };
 
 /** \brief Non-member constructor function */
+#ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
 Teuchos::RCP<RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+#else
+template <typename Scalar>
+Teuchos::RCP<RythmosSolver<Scalar> >
+#endif
 rythmosSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,

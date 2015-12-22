@@ -50,6 +50,9 @@
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
+// This "define" turns on the extended template interface in RythmosSolver. This should be cleaned up at some
+// point.
+#define ALBANY_BUILD
 #include "Piro_RythmosSolver.hpp"
 #endif /* Piro_ENABLE_Rythmos */
 
