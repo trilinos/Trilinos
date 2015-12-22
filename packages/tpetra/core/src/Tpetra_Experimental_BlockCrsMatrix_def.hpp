@@ -371,25 +371,39 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
 
-    const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t absRowBlockOffset = this->ptr_[localRowInd];
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    const LO perBlockSize = static_cast<LO> (offsetPerBlock ());
+    LO validCount = 0; // number of valid column indices in colInds
     size_t hint = 0; // Guess for the relative offset into the current row
     size_t pointOffset = 0; // Current offset into input values
-    LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
+        // mfh 21 Dec 2015: Here we encode the assumption that blocks
+        // are stored contiguously, with no padding.  "Contiguously"
+        // means that all memory between the first and last entries
+        // belongs to the block (no striding).  "No padding" means
+        // that getBlockSize() * getBlockSize() is exactly the number
+        // of entries that the block uses.  For another place where
+        // this assumption is encoded, see sumIntoLocalValues.
+
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-        little_block_type A_old =
-          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        const_little_block_type A_new =
-          getConstLocalBlockFromInput (vIn, pointOffset);
-        COPY (A_new, A_old);
+        // little_block_type A_old =
+        //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        // const_little_block_type A_new =
+        //   getConstLocalBlockFromInput (vIn, pointOffset);
+        const impl_scalar_type* const A_new = vIn + pointOffset;
+        // COPY (A_new, A_old);
+        for (LO i = 0; i < perBlockSize; ++i) {
+          A_old[i] = A_new[i];
+        }
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -844,27 +858,40 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
+    //const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
 
-    const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t absRowBlockOffset = this->ptr_[localRowInd];
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    const LO perBlockSize = static_cast<LO> (offsetPerBlock ());
+    LO validCount = 0; // number of valid column indices in colInds
     size_t hint = 0; // Guess for the relative offset into the current row
     size_t pointOffset = 0; // Current offset into input values
-    LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
+        // mfh 21 Dec 2015: Here we encode the assumption that blocks
+        // are stored contiguously, with no padding.  "Contiguously"
+        // means that all memory between the first and last entries
+        // belongs to the block (no striding).  "No padding" means
+        // that getBlockSize() * getBlockSize() is exactly the number
+        // of entries that the block uses.  For another place where
+        // this assumption is encoded, see replaceLocalValues.
+
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-        little_block_type A_old =
-          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        const_little_block_type A_new =
-          getConstLocalBlockFromInput (vIn, pointOffset);
-        //A_old.update (ONE, A_new);
-        AXPY (ONE, A_new, A_old);
+        // little_block_type A_old =
+        //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        // const_little_block_type A_new =
+        //   getConstLocalBlockFromInput (vIn, pointOffset);
+        const impl_scalar_type* const A_new = vIn + pointOffset;
+        // AXPY (ONE, A_new, A_old);
+        for (LO i = 0; i < perBlockSize; ++i) {
+          A_old[i] += A_new[i];
+        }
         hint = relBlockOffset + 1;
         ++validCount;
       }
