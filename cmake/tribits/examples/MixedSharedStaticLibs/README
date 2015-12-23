@@ -1,0 +1,25 @@
+======================
+MixedSharedStaticLibs
+======================
+
+The purpose of this package is to demonstrate and test the usage of the the
+arguments SHARED and STATIC with TRIBITS_ADD_LIBRARY().
+
+This package has to three subpackages:
+
+* SharedOnly:
+  - Depends on nothing
+  - Creates a library shared_only_lib and a test executable
+
+* StaticOnly:
+  - Depends on SharedOnly
+  - Creates a library shared_only_lib
+  - Purpose: shows you can link a shared lib against an upstream static lib
+
+* StaticExec:
+  - Depends on StaticOnly
+  - Creates a test executable 
+  - Purpose: Shows that static libs are linked into targets in downstream
+    packages
+
+See GitHub TriBITS Issue #95 for more details.

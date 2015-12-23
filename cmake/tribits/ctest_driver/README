@@ -140,7 +140,6 @@ overridding CTEST_DASHBOARD_ROOT for example as:
      CTEST_TEST_TYPE=Experimental \
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
      CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
      ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
@@ -172,7 +171,6 @@ you can avoid pulling commits by creating a symbolic link and running as:
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      <Project>_IGNORE_MISSING_EXTRA_REPOSITORIES=ON CTEST_DO_UPDATES=OFF \
      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=FALSE \
      CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=FALSE \
      ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
@@ -194,7 +192,6 @@ submit works, you can run a final trial build with:
      CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FALSE \
      <Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
-     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
@@ -237,7 +234,6 @@ and run from there:
       TDD_DO_SUBMIT=FALSE \
       CTEST_DO_SUBMIT=FALSE  \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
       ./cron_driver_somemachine.sh
 
 Once you are done with the initial run, you can test it out
@@ -256,7 +252,6 @@ following additionial environment variables:
       CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=0 \
       TDD_FORCE_INNER_CMAKE_INSTALL=0 \
-      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       ./cron_driver_somemachine.sh
 
@@ -271,8 +266,6 @@ NOTES:
 (*) Set TDD_FORCE_CMAKE_INSTALL=0 to skip global CMake reinstall.
 (*) Set TDD_FORCE_INNER_CMAKE_INSTALL=0 to skip tests that install
     the inner CMake/CTest used by individual builds.
-(*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
-    want to process the exact packages set with <Project>_PACKAGES
 (*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE after a first round of
     builds to speed up subsequent builds.
 

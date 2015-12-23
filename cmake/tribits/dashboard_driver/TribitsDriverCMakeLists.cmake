@@ -70,11 +70,12 @@ set(CMAKE_MODULE_PATH
 
 set(TRIBITS_PYTHON_UTILS_DIR "${TRIBITS_ROOT}/python_utils")
 
+INCLUDE(SetDefaultAndFromEnv)
 include(CTest)
 include(TribitsDriverSupport)
 include(TribitsConfigureCTestCustom)
 
-TRIBITS_CONFIGURE_CTEST_CUSTOM(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_CONFIGURE_CTEST_CUSTOM(${PROJECT_HOME_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 # Function to make exactly one add_subdirectory call based on the site
