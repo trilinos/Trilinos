@@ -18,7 +18,7 @@ TEST_F(DGTetFixture, tet)
             {2, 3, 4, 5}  // id 2
     };
 
-    std::vector<std::vector<double>> node_coords= {
+    std::vector< std::vector<double> > node_coords= {
             {0, 0, 0}, // 1
             {1, 0, 0}, // 2
             {0, 1, 0}, // 3
