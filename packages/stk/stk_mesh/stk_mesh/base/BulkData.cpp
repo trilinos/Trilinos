@@ -959,6 +959,7 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
       --j;
       if (is_valid(rel_entities[j])) {
         internal_destroy_relation(entity, rel_entities[j], rel_ordinals[j]);
+        m_check_invalid_rels = false;
       }
     }
   }
