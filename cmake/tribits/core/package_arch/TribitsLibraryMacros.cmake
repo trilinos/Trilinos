@@ -213,6 +213,7 @@ ENDFUNCTION()
 #     [SOURCES <src0> <src1> ...]
 #     [DEPLIBS <deplib0> <deplib1> ...]
 #     [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
+#     [STATIC|SHARED]
 #     [TESTONLY]
 #     [NO_INSTALL_LIB_OR_HEADERS]
 #     [CUDALIBRARY]
@@ -305,6 +306,24 @@ ENDFUNCTION()
 #     where ``IMPORTEDLIBS`` has been shown to be necessary is to pass in the
 #     standard C math library ``m``.  In every other case, a TriBITS TPL
 #     should be used instead.
+#
+#   ``STATIC`` or ``SHARED``
+#
+#     If ``STATIC`` is passed in, then a static library will be created
+#     independent of the value of ``BUILD_SHARED_LIBS``.  If ``SHARED`` is
+#     passed in, then a shared library will be created independent of the
+#     value of ``BUILD_SHARED_LIBS``.  If neither ``STATIC`` or ``SHARED`` are
+#     passed in, then a shared library will be created if
+#     ``BUILD_SHARED_LIBS`` evaluates to true, otherwise and a static library
+#     will be created.  If both ``STATIC`` and ``SHARED`` are passed in (which
+#     is obviously a mistake), then a shared library will be created.
+#     WARNING: Once you mark a library with ``STATIC``, then all of the
+#     downstream libraries in the current SE package and all downstream SE
+#     packages must also be also be marked with ``STATIC``.  That is because,
+#     generally, one can not link a link a static lib against a downstream
+#     shared lib since that is not portable (but can be done on some platforms
+#     if, for example, ``-fPIC`` is specified).  So be careful to use
+#     ``STATIC`` in all downstream libraries!
 #
 #   ``TESTONLY``
 #
@@ -432,7 +451,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
   PARSE_ARGUMENTS(
     PARSE #prefix
     "HEADERS;HEADERS_INSTALL_SUBDIR;NOINSTALLHEADERS;SOURCES;DEPLIBS;IMPORTEDLIBS;DEFINES;ADDED_LIB_TARGET_NAME_OUT" # Lists
-    "TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
+    "STATIC;SHARED;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY" #Options
     ${ARGN} # Remaining arguments passed in
     )
 
@@ -696,9 +715,23 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
       ADD_DEFINITIONS(${PARSE_DEFINES})
     ENDIF()
 
+    If (PARSE_STATIC)
+      SET(STATIC_KEYWORD "STATIC")
+    ELSE()
+      SET(STATIC_KEYWORD)
+    ENDIF()
+
+    If (PARSE_SHARED)
+      SET(SHARED_KEYWORD "SHARED")
+    ELSE()
+      SET(SHARED_KEYWORD)
+    ENDIF()
+
     IF (NOT PARSE_CUDALIBRARY)
       ADD_LIBRARY(
         ${LIBRARY_NAME}
+        ${STATIC_KEYWORD}
+        ${SHARED_KEYWORD}
         ${PARSE_HEADERS}
         ${PARSE_NOINSTALLHEADERS}
         ${PARSE_SOURCES}

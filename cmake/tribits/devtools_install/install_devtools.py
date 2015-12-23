@@ -59,13 +59,12 @@ sourceGitUrlBase_default = "https://github.com/tribitsdevtools/"
 
 # tool default versions
 autoconf_version_default = "2.69"
-cmake_version_default = "3.4.0"
-git_version_default = "1.7.0.4"
+cmake_version_default = "3.3.2"
 gcc_version_default = "4.8.3"
 mpich_version_default = "3.1.3"
 
 # Common (compile independent) tools
-commonToolsArray = [ "gitdist", "autoconf", "cmake", "git" ]
+commonToolsArray = [ "gitdist", "autoconf", "cmake" ]
 commonToolsChoices = (["all"] + commonToolsArray + [""])
 
 # Compiler toolset
@@ -98,7 +97,6 @@ directory:
     common_tools/
       autoconf-<autoconf-version>/
       cmake-<cmake-version>/
-      git-<git-version>/
       gitdist
     gcc-<gcc-version>/
       load_dev_env.[sh,csh]
@@ -110,7 +108,6 @@ The default versions of the tools installed are:
 
 * autoconf-"""+autoconf_version_default+"""
 * cmake-"""+cmake_version_default+"""
-* git-"""+git_version_default+"""
 * gcc-"""+gcc_version_default+"""
 * mpich-"""+mpich_version_default+"""
 
@@ -168,16 +165,24 @@ The informational arguments to this function are:
     Specifies the tools to download and install under common_tools/.  One can
     pick specific tools with:
   
-      --common-tools=git,cmake,...
+      --common-tools=autoconf,cmake,...
   
     This will download and install the default versions of these tools.  To
     select specific versions, use:
   
-      --common-tools=git:"""+git_version_default+""",cmake:"""+cmake_version_default+""",...
+      --common-tools=autoconf:"""+autoconf_version_default+""",cmake:"""+cmake_version_default+""",...
 
     The default is 'all'.  To install none of these, pass in empty:
 
       --common-tools=''
+
+    (NOTE: A version of 'git' is *not* installed using this script but can be
+    installed using the script install-git.py.  But note the extra packages
+    that must be installed on a system in order to fully install git and its
+    documentation.  All of the git-related TriBITS tools can use any recent
+    version of git and most systems will already have a current-enough version
+    of git so there is no need to install one to be effective doing
+    development.)
   
   --compiler-toolset=all
   
@@ -220,6 +225,20 @@ him/her-self and customize it as needed.
 If the user needs more customization, then they can just run with --do-all
 --no-op and see what commands are run to install things and then they can run
 the commands themselves manually and make whatever modifications they need.
+
+NOTE: The actual tool installs are performed using the scripts:
+
+* install-autoconf.py
+* install-cmake.py
+* install-gcc.py
+* install-git.py
+* install-mpich.py
+* install-openmpi.py
+
+More information about what versions are installed, how they are installed,
+etc. is found in these scripts.  Note that some of these scripts apply patches
+for certain versions.  For details, look at the --help output from these
+scripts and look at the implementaion of these scripts.
 """        
 
 
@@ -432,7 +451,6 @@ def writeLoadDevEnvFiles(devEnvBaseDir, compilersToolsetBaseDir, inOptions):
   subPairArray = [
     ("@DEV_ENV_BASE@", devEnvBaseDir),
     ("@CMAKE_VERSION@", cmake_version_default),
-    ("@GIT_VERSION@", git_version_default),
     ("@AUTOCONF_VERSION@", autoconf_version_default),
     ("@GCC_VERSION@", gcc_version_default),
     ("@MPICH_VERSION@", mpich_version_default)
@@ -614,8 +632,6 @@ def main(cmndLineArgs):
       downloadToolSource("autoconf", autoconf_version_default,
         inOptions.sourceGitUrlBase, inOptions)
 
-    # ToDo: Download git
-
     if "gcc" in compilerToolsetSelectedSet:
       downloadToolSource("gcc", gcc_version_default,
         inOptions.sourceGitUrlBase, inOptions)
@@ -648,8 +664,6 @@ def main(cmndLineArgs):
     if "autoconf" in commonToolsSelectedSet:
       installToolFromSource("autoconf", autoconf_version_default,
         common_tools_dir, None, inOptions )
-
-    # ToDo: Install git
 
     if "gcc" in compilerToolsetSelectedSet:
       installToolFromSource("gcc", gcc_version_default,
