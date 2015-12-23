@@ -31,23 +31,23 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE, etc
 #include <map>                          // for map, operator==, etc
 #include <set>                          // for set, operator==
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Selector.hpp>   // for Selector, operator&
+#include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include "mpi.h"                        // for ompi_communicator_t, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
+#include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
+namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Bucket; } }
 
 

@@ -41,37 +41,116 @@ namespace BaskerNS
     BASKER_INLINE
     void operator()(const TeamMember &thread) const
     {
-            Int kid = (Int)(thread.league_rank()*
-			    thread.team_size()+
-			    thread.team_rank());
-	    Int total_threads = thread.league_size()*
-	                    thread.team_size();
+      Int kid = (Int)(thread.league_rank()*
+		      thread.team_size()+
+		      thread.team_rank());
+      Int total_threads = thread.league_size()*
+	thread.team_size();
 
-	    //divide equally and launch
-	    Int nchunks = (basker->btf_nblks - 
-			   basker->btf_tabs_offset);
-	    Int chunk_size = nchunks/total_threads;
-	    Int chunks_left_over = nchunks - 
-	      (chunk_size*total_threads);
-	    Int chunk_start = kid*chunk_size;
-	    
-	    //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
 
-	    basker->t_nfactor_diag(kid, chunk_start, 
-				  chunk_size);
-	    
-	    //extra
-	    if(kid == 0)
-	      {
-		Int extra_start=chunk_size*total_threads;
-		basker->t_nfactor_diag(kid, extra_start,
-				       chunks_left_over);
+      //================OLD EQ BLK=================//
 
-	      }
+      //divide equally and launch
+      //Int nchunks = (basker->btf_nblks - 
+      //			   basker->btf_tabs_offset);
+      //Int chunk_size = nchunks/total_threads;
+      //	    Int chunks_left_over = nchunks - 
+      //	      (chunk_size*total_threads);
+      //	    Int chunk_start = kid*chunk_size;
+
+      //Divid into chunks based on work
+     
+ 	    
+      //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
+      
+      //basker->t_nfactor_diag(kid, chunk_start, 
+      //			     chunk_size);
+      
+      //extra
+      //if(kid == 0)
+      //{
+      //	  Int extra_start=chunk_size*total_threads;
+      //	  basker->t_nfactor_diag(kid, extra_start,
+      //				 chunks_left_over);
+	  
+      //	}
+
+
+      //============= NEW EQ  =============//
+
+      Int chunk_start = basker->btf_schedule(kid);
+      Int chunk_size  = basker->btf_schedule(kid+1) - 
+	basker->btf_schedule(kid);
+      
+
+      printf("Chunk start: %d size: %d \n", 
+	     chunk_start, chunk_size);
+      basker->t_nfactor_diag(kid, chunk_start,
+			     chunk_size);
+
+
+
 
     }//end operator()
     
   };//end kokkos_nfactor_diag
+
+
+    template <class Int, class Entry, class Exe_Space>
+  struct kokkos_nfactor_diag_remalloc
+  {
+    //Comeback and cleanup kokkos
+    typedef Exe_Space                        execution_space;
+    typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
+    typedef typename TeamPolicy::member_type TeamMember;
+
+    Basker<Int,Entry,Exe_Space> *basker;
+    
+    INT_1DARRAY thread_start;
+
+    kokkos_nfactor_diag_remalloc()
+    {}
+
+    kokkos_nfactor_diag_remalloc
+    (
+     Basker<Int,Entry,Exe_Space> *_basker,
+     INT_1DARRAY                 _thread_start
+     )
+    {
+      basker       = _basker;
+      thread_start = _thread_start;
+    }
+
+    //comeback and fix kokkos stuff
+
+    BASKER_INLINE
+    void operator()(const TeamMember &thread) const
+    {
+      Int kid = (Int)(thread.league_rank()*
+		      thread.team_size()+
+		      thread.team_rank());
+      Int total_threads = thread.league_size()*
+	thread.team_size();
+
+
+      Int chunk_start = thread_start(kid);
+      if(chunk_start != BASKER_MAX_IDX)
+	{
+	  Int chunk_size  = basker->btf_schedule(kid+1) - 
+	    chunk_start;
+      
+	  printf("Chunk start: %d size: %d \n", 
+		 chunk_start, chunk_size);
+	  basker->t_nfactor_diag(kid, chunk_start,
+				 chunk_size);
+
+	}//end if
+
+    }//end operator()
+    
+  };//end kokkos_nfactor_diag_remalloc
+
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -90,20 +169,24 @@ namespace BaskerNS
 	//printf("kid: %d current_chunk: %d size: %d \n",
 	//     kid, c, c_size);
 
+	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
 	  {
 	    //call single
-	    t_single_nfactor(kid, c);
+	    err = t_single_nfactor(kid, c);
 	  }
 	else
 	  {
 	    //call GP alg.
-	    t_blk_nfactor(kid, c);
+	    err = t_blk_nfactor(kid, c);
 	  }
-
+	if(err != BASKER_SUCCESS)
+	  {
+	    
+	    return BASKER_ERROR;
+	  }
       }//over all chunks 
-
-    return 0;
+    return BASKER_SUCCESS;
   }//end t_nfactor_diag
 
   template <class Int, class Entry, class Exe_Space>
@@ -126,10 +209,7 @@ namespace BaskerNS
     Int j = M.col_ptr(k+1-bcol)-1;
     //Int j = M.row_idx[i];
     
-
     //will have to make a c and c'
-    
-
 
     //printf("kid: %d chunk: %d col: %d bcol: %d j: %d\n",
     //	   kid, c, k, bcol, j);
@@ -152,7 +232,7 @@ namespace BaskerNS
     gpermi(k)= k;
 
     
-    return 0;
+    return BASKER_SUCCESS;
   }//end t_single_factor
 
   template <class Int, class Entry, class Exe_Space>
@@ -340,7 +420,11 @@ namespace BaskerNS
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
                    << pivot << endl;
-              return 2;
+	      thread_array(kid).error_type = 
+		BASKER_ERROR_SINGULAR;
+	      thread_array(kid).error_blk  = c;
+	      thread_array(kid).error_info = k;
+	      return BASKER_ERROR;
             }          
 
           //printf("----------------PIVOT------------blk: %d %d \n", 
@@ -349,7 +433,6 @@ namespace BaskerNS
 	  gpermi(k)             = maxindex+brow2;
 
 
-	  //printf("TAG1 r  maxindex = %d k= %d \n", maxindex, k);
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
           if((maxindex+brow) != k)
             {
@@ -365,13 +448,29 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("----------------------\n");
 
-              newsize = lnnz * 1.1 + 2 *A.nrow + 1;
+              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
 	      printf("Columns in blks: %d %d %d \n",
 		     btf_tabs(c), btf_tabs(c+1), 
 		     (btf_tabs(c+1)-btf_tabs(c)));
+	      
+	      if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = c;
+		  thread_array(kid).error_info = newsize;
+		  return BASKER_ERROR;
+		}
+
             }
           if(unnz+ucnt > uunnz)
             {
@@ -379,9 +478,25 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*A.nrow+1;
+              newsize = uunnz*1.1 + 2*M.nrow+1;
               printf("Diag blk: %d Reallocing U oldsize: %d newsize: %d \n",
                      c, uunnz, newsize);
+	   
+	      if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type = 
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = c;
+		  thread_array(kid).error_info = newsize;
+		  return BASKER_ERROR;
+		}
+
             }
 
           //L.row_idx[lnnz] = maxindex;

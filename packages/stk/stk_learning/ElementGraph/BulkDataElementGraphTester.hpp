@@ -17,8 +17,8 @@
 
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
@@ -34,7 +34,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
-#include "ElemGraphTestUtils.hpp"
+#include "stk_unit_test_utils/ElemGraphTestUtils.hpp"
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 

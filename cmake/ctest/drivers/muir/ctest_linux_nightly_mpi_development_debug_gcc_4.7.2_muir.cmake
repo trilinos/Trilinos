@@ -75,7 +75,6 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/boost_1_49_0"
   "-DTPL_ENABLE_HDF5:BOOL=ON"
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/include"
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/lib"

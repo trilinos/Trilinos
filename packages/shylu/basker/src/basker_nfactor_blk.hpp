@@ -67,6 +67,70 @@ namespace BaskerNS
 	}
     }//end operator
   };//end kokkos_nfactor_domain struct
+
+
+  template <class Int, class Entry, class Exe_Space>
+  struct kokkos_nfactor_domain_remalloc
+  {
+    #ifdef BASKER_KOKKOS
+    typedef Exe_Space                        execution_space;
+    typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
+    typedef typename TeamPolicy::member_type TeamMember;
+    #endif
+
+    Basker<Int,Entry,Exe_Space> *basker;
+    INT_1DARRAY                 thread_start;
+
+    kokkos_nfactor_domain_remalloc()
+    {}
+
+    kokkos_nfactor_domain_remalloc
+    (
+     Basker<Int,Entry,Exe_Space> *_basker, 
+     INT_1DARRAY                 _thread_start
+     )
+    {
+      basker       = _basker;
+      thread_start = _thread_start;
+    }
+
+    BASKER_INLINE
+    #ifdef BASKER_KOKKOS
+    void operator()(const TeamMember &thread) const
+    #else
+    void operator()(Int kid) const
+    #endif
+    {
+      #ifdef BASKER_KOKKOS
+      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
+      //	      thread.team_rank());
+      Int kid = basker->t_get_kid(thread);
+      #endif
+
+
+      if(thread_start(kid) != BASKER_MAX_IDX)
+	{
+
+      #ifdef BASKER_DEBUG_NFACTOR_BLK
+      printf("\n-----------BLK---Kid: %d -------------\n",
+	     kid);
+      #endif
+
+      //No longer needed, added in sfactor
+      //printf("before workspace init\n");
+      //basker->t_init_workspace(kid);
+      //printf("after workspace init\n");
+      
+      //if(kid == 8)
+	{
+      basker->t_nfactor_blk(kid);
+	}
+
+
+	}
+
+    }//end operator
+  };//end kokkos_nfactor_domain_remalloc struct
  
 
   //use local number on local blks (Crazy idea)
@@ -306,9 +370,12 @@ namespace BaskerNS
               cout << "MaxIndex: " << maxindex << " pivot " 
                    << pivot << endl;
               cout << "lcnt: " << lcnt << endl;
-              return 2;
+	      thread_array(kid).error_type =
+		BASKER_ERROR_SINGULAR;
+	      thread_array(kid).error_blk  = b;
+	      thread_array(kid).error_info = k;
+	      return BASKER_ERROR;
             }          
-
 
 	  gperm(maxindex+brow) = k+brow;
 	  gperm(k+brow) = maxindex+brow;
@@ -328,9 +395,24 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("----------------------\n");
 
-              newsize = lnnz * 1.1 + 2 *A.nrow + 1;
+              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
               printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      b, llnnz, lnnz, lcnt, newsize);
+
+	      if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type =
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type =
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = b;
+		  thread_array(kid).error_info = newsize;
+		}
+
             }
           if(unnz+ucnt > uunnz)
             {
@@ -338,9 +420,24 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*A.nrow+1;
+              newsize = uunnz*1.1 + 2*M.nrow+1;
               printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
                      b, uunnz, newsize);
+
+	       if(Options.realloc == BASKER_FALSE)
+		{
+		  thread_array(kid).error_type =
+		    BASKER_ERROR_NOMALLOC;
+		  return BASKER_ERROR;
+		}
+	      else
+		{
+		  thread_array(kid).error_type =
+		    BASKER_ERROR_REMALLOC;
+		  thread_array(kid).error_blk = b;
+		  thread_array(kid).error_info = newsize;
+		}
+
             }
 
           L.row_idx(lnnz) = maxindex;

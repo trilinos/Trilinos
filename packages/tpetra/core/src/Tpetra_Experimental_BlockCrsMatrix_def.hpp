@@ -73,11 +73,9 @@ namespace Experimental {
     ind_ (NULL),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (0),
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
   }
 
@@ -93,11 +91,9 @@ namespace Experimental {
     val_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -153,11 +149,9 @@ namespace Experimental {
     ind_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
-    columnPadding_ (0), // no padding by default
-    rowMajor_ (true), // row major blocks by default
+    offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
-    errs_ (new Teuchos::RCP<std::ostringstream> ()), // ptr to a null ptr
-    computedDiagonalGraph_(false)
+    errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -377,25 +371,38 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-
-    const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
+    const size_t absRowBlockOffset = this->ptr_[localRowInd];
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
+        // mfh 21 Dec 2015: Here we encode the assumption that blocks
+        // are stored contiguously, with no padding.  "Contiguously"
+        // means that all memory between the first and last entries
+        // belongs to the block (no striding).  "No padding" means
+        // that getBlockSize() * getBlockSize() is exactly the number
+        // of entries that the block uses.  For another place where
+        // this assumption is encoded, see sumIntoLocalValues.
+
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-        little_block_type A_old =
-          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        const_little_block_type A_new =
-          getConstLocalBlockFromInput (vIn, pointOffset);
-        COPY (A_new, A_old);
+        // little_block_type A_old =
+        //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        // const_little_block_type A_new =
+        //   getConstLocalBlockFromInput (vIn, pointOffset);
+        const impl_scalar_type* const A_new = vIn + pointOffset;
+        // COPY (A_new, A_old);
+        for (LO i = 0; i < perBlockSize; ++i) {
+          A_old[i] = A_new[i];
+        }
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -561,58 +568,6 @@ namespace Experimental {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, os.str());
     }
 #endif // HAVE_TPETRA_DEBUG
-  }
-
-  template <class Scalar, class LO, class GO, class Node>
-  void
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  computeDiagonalGraph ()
-  {
-    using Teuchos::rcp;
-
-    if (computedDiagonalGraph_) {
-      // FIXME (mfh 12 Aug 2014) Consider storing the "diagonal graph"
-      // separately from the matrix.  It should really go in the
-      // preconditioner, not here.  We could do this by adding a
-      // method that accepts a nonconst diagonal graph, and updates
-      // it.  btw it would probably be a better idea to use a
-      // BlockMultiVector to store the diagonal, not a graph.
-      return;
-    }
-
-    const size_t maxDiagEntPerRow = 1;
-    // NOTE (mfh 12 Aug 2014) We could also pass in the column Map
-    // here.  However, we still would have to do LID->GID lookups to
-    // make sure that we are using the correct diagonal column
-    // indices, so it probably wouldn't help much.
-    diagonalGraph_ =
-      rcp (new crs_graph_type (graph_.getRowMap (), maxDiagEntPerRow,
-                               Tpetra::StaticProfile));
-    const map_type& meshRowMap = * (graph_.getRowMap ());
-
-    Teuchos::Array<GO> diagGblColInds (maxDiagEntPerRow);
-
-    for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
-         lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      diagGblColInds[0] = gblRowInd;
-      diagonalGraph_->insertGlobalIndices (gblRowInd, diagGblColInds ());
-    }
-    diagonalGraph_->fillComplete (graph_.getDomainMap (),
-                                  graph_.getRangeMap ());
-    computedDiagonalGraph_ = true;
-  }
-
-  template <class Scalar, class LO, class GO, class Node>
-  Teuchos::RCP<CrsGraph<LO, GO, Node> >
-  BlockCrsMatrix<Scalar,LO,GO,Node>::
-  getDiagonalGraph () const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! computedDiagonalGraph_, std::runtime_error, "Tpetra::Experimental::"
-      "BlockCrsMatrix::getDiagonalGraph: You must call computeDiagonalGraph() "
-      "before calling this method.");
-    return diagonalGraph_;
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -859,19 +814,19 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
     const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
         little_block_type A_old =
           getNonConstLocalBlockFromAbsOffset (absBlockOffset);
@@ -902,27 +857,39 @@ namespace Experimental {
       // advantage of returning the number of valid indices.
       return static_cast<LO> (0);
     }
-    const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
-    const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-
-    const size_t absRowBlockOffset = ptr_[localRowInd];
-    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
-    size_t pointOffset = 0; // Current offset into input values
+    //const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
+    const impl_scalar_type* const vIn =
+      reinterpret_cast<const impl_scalar_type*> (vals);
+    const size_t absRowBlockOffset = this->ptr_[localRowInd];
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO perBlockSize = this->offsetPerBlock ();
+    LO hint = 0; // Guess for the relative offset into the current row
+    LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
+        // mfh 21 Dec 2015: Here we encode the assumption that blocks
+        // are stored contiguously, with no padding.  "Contiguously"
+        // means that all memory between the first and last entries
+        // belongs to the block (no striding).  "No padding" means
+        // that getBlockSize() * getBlockSize() is exactly the number
+        // of entries that the block uses.  For another place where
+        // this assumption is encoded, see replaceLocalValues.
+
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-        little_block_type A_old =
-          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        const_little_block_type A_new =
-          getConstLocalBlockFromInput (vIn, pointOffset);
-        //A_old.update (ONE, A_new);
-        AXPY (ONE, A_new, A_old);
+        // little_block_type A_old =
+        //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        // const_little_block_type A_new =
+        //   getConstLocalBlockFromInput (vIn, pointOffset);
+        const impl_scalar_type* const A_new = vIn + pointOffset;
+        // AXPY (ONE, A_new, A_old);
+        for (LO i = 0; i < perBlockSize; ++i) {
+          A_old[i] += A_new[i];
+        }
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -998,15 +965,15 @@ namespace Experimental {
       return static_cast<LO> (0);
     }
 
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the relative offset into the current row
+    const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
+    LO hint = 0; // Guess for the relative offset into the current row
     LO validCount = 0; // number of valid column indices in colInds
 
     for (LO k = 0; k < numColInds; ++k) {
-      const size_t relBlockOffset =
-        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (relBlockOffset != STINV) {
-        offsets[k] = relBlockOffset;
+      const LO relBlockOffset =
+        this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != LINV) {
+        offsets[k] = static_cast<ptrdiff_t> (relBlockOffset);
         hint = relBlockOffset + 1;
         ++validCount;
       }
@@ -1350,47 +1317,49 @@ namespace Experimental {
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  size_t
+  LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   findRelOffsetOfColumnIndex (const LO localRowIndex,
                               const LO colIndexToFind,
-                              const size_t hint) const
+                              const LO hint) const
   {
     const size_t absStartOffset = ptr_[localRowIndex];
     const size_t absEndOffset = ptr_[localRowIndex+1];
-    const size_t numEntriesInRow = absEndOffset - absStartOffset;
+    const LO numEntriesInRow = static_cast<LO> (absEndOffset - absStartOffset);
+    // Amortize pointer arithmetic over the search loop.
+    const LO* const curInd = ind_ + absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
-    if (hint < numEntriesInRow && ind_[absStartOffset+hint] == colIndexToFind) {
+    if (hint < numEntriesInRow && curInd[hint] == colIndexToFind) {
       // Always return the offset relative to the current row.
       return hint;
     }
 
     // The hint was wrong, so we must search for the given column
     // index in the column indices for the given row.
-    size_t relOffset = Teuchos::OrdinalTraits<size_t>::invalid ();
+    LO relOffset = Teuchos::OrdinalTraits<LO>::invalid ();
 
     // We require that the graph have sorted rows.  However, binary
     // search only pays if the current row is longer than a certain
     // amount.  We set this to 32, but you might want to tune this.
-    const size_t maxNumEntriesForLinearSearch = 32;
+    const LO maxNumEntriesForLinearSearch = 32;
     if (numEntriesInRow > maxNumEntriesForLinearSearch) {
       // Use binary search.  It would probably be better for us to
       // roll this loop by hand.  If we wrote it right, a smart
       // compiler could perhaps use conditional loads and avoid
       // branches (according to Jed Brown on May 2014).
-      const LO* beg = ind_ + absStartOffset;
-      const LO* end = ind_ + absEndOffset;
+      const LO* beg = curInd;
+      const LO* end = curInd + numEntriesInRow;
       std::pair<const LO*, const LO*> p =
         std::equal_range (beg, end, colIndexToFind);
       if (p.first != p.second) {
         // offset is relative to the current row
-        relOffset = static_cast<size_t> (p.first - beg);
+        relOffset = static_cast<LO> (p.first - beg);
       }
     }
     else { // use linear search
-      for (size_t k = 0; k < numEntriesInRow; ++k) {
-        if (colIndexToFind == ind_[absStartOffset + k]) {
+      for (LO k = 0; k < numEntriesInRow; ++k) {
+        if (colIndexToFind == curInd[k]) {
           relOffset = k; // offset is relative to the current row
           break;
         }
@@ -1405,16 +1374,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   offsetPerBlock () const
   {
-    const LO numRows = blockSize_;
-
-    LO numCols = blockSize_;
-    if (columnPadding_ > 0) { // Column padding == 0 means no padding.
-      const LO numColsRoundedDown = (blockSize_ / columnPadding_) * columnPadding_;
-      numCols = (numColsRoundedDown < numCols) ?
-        (numColsRoundedDown + columnPadding_) :
-        numColsRoundedDown;
-    }
-    return numRows * numCols;
+    return offsetPerBlock_;
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1423,13 +1383,9 @@ namespace Experimental {
   getConstLocalBlockFromInput (const impl_scalar_type* val,
                                const size_t pointOffset) const
   {
-    if (rowMajor_) {
-      const size_t rowStride = (columnPadding_ == 0) ?
-        static_cast<size_t> (blockSize_) : static_cast<size_t> (columnPadding_);
-      return const_little_block_type (val + pointOffset, blockSize_, rowStride, 1);
-    } else {
-      return const_little_block_type (val + pointOffset, blockSize_, 1, blockSize_);
-    }
+    // Row major blocks
+    const LO rowStride = blockSize_;
+    return const_little_block_type (val + pointOffset, blockSize_, rowStride, 1);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1438,13 +1394,9 @@ namespace Experimental {
   getNonConstLocalBlockFromInput (impl_scalar_type* val,
                                   const size_t pointOffset) const
   {
-    if (rowMajor_) {
-      const size_t rowStride = (columnPadding_ == 0) ?
-        static_cast<size_t> (blockSize_) : static_cast<size_t> (columnPadding_);
-      return little_block_type (val + pointOffset, blockSize_, rowStride, 1);
-    } else {
-      return little_block_type (val + pointOffset, blockSize_, 1, blockSize_);
-    }
+    // Row major blocks
+    const LO rowStride = blockSize_;
+    return little_block_type (val + pointOffset, blockSize_, rowStride, 1);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1513,12 +1465,10 @@ namespace Experimental {
   getLocalBlock (const LO localRowInd, const LO localColInd) const
   {
     const size_t absRowBlockOffset = ptr_[localRowInd];
+    const LO relBlockOffset =
+      this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
 
-    size_t hint = 0;
-    const size_t relBlockOffset =
-      findRelOffsetOfColumnIndex (localRowInd, localColInd, hint);
-
-    if (relBlockOffset != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+    if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
       return getNonConstLocalBlockFromAbsOffset (absBlockOffset);
     }
@@ -3128,6 +3078,7 @@ namespace Experimental {
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
     }
 
+#if 0
     Teuchos::RCP<Teuchos::FancyOStream> wrappedStream = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
     diag.describe (*wrappedStream, Teuchos::VERB_EXTREME);
 
@@ -3135,6 +3086,7 @@ namespace Experimental {
     int nnz = getNodeNumEntries()*bs*bs;
     for(int i=0; i<nnz; i++)
       std::cout << "val[" << i << "] = " << val_[i] << std::endl;
+#endif // 0
   }
 
   template<class Scalar, class LO, class GO, class Node>

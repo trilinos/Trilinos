@@ -35,14 +35,16 @@
 #define STK_MESH_FIXTURES_TET_MESH_FIXTURE_HPP
 
 #include <stddef.h>                     // for size_t, NULL
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <map>                          // for multimap, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId
+#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
 #include <stk_mesh/fixtures/CoordinateMapping.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire

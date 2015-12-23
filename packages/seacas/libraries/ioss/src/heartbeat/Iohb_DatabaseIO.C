@@ -47,6 +47,7 @@
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
@@ -120,11 +121,17 @@ namespace {
       // something better here if we want to share streams among
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
+      std::ofstream *tmp = NULL;
       if(append_file)
-        log_stream = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
+        tmp = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
       else
-        log_stream = new std::ofstream(filename.c_str());
-      *needs_delete = true;
+        tmp = new std::ofstream(filename.c_str());
+      if (tmp != NULL && !tmp->is_open()) {
+	delete tmp;
+      } else {
+	log_stream = tmp;
+	*needs_delete = true;
+      }
     }
     return log_stream;
   }
@@ -193,12 +200,15 @@ namespace Iohb {
       bool append = open_create_behavior() == Ioss::DB_APPEND;
 
       if (util().parallel_rank() == 0) {
-        new_this->logStream = open_stream(get_filename().c_str(),
+
+        new_this->logStream = open_stream(get_filename(),
             &(new_this->streamNeedsDelete),
             append);
-        if (*new_this->logStream == 0){
-          Ioss::Utils::create_path(get_filename().c_str());
-          new_this->logStream = open_stream(get_filename().c_str(),
+
+        if (new_this->logStream == NULL) {
+	  Ioss::FileInfo path = Ioss::FileInfo(get_filename());
+	  Ioss::Utils::create_path(path.pathname());
+	  new_this->logStream = open_stream(get_filename(),
               &(new_this->streamNeedsDelete),
               append);
         }

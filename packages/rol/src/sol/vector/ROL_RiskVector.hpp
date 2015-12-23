@@ -86,9 +86,14 @@ public:
       Teuchos::ParameterList &list
         = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed-Quantile Quadrangle");
       Teuchos::Array<Real> prob
-        = Teuchos::getArrayFromStringParameter<Real>(list,"Probabilities");
+        = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
       augmented_ = true;
       nStat_     = prob.size();
+      stat_.resize(nStat_,stat);
+    }
+    else if ( type == "Quantile-Radius Quadrangle" ) {
+      augmented_ = true;
+      nStat_     = 2;
       stat_.resize(nStat_,stat);
     }
   }
@@ -158,7 +163,7 @@ public:
   }
 
   const Real getStatistic(const int i = 0) const {
-    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > nStat_-1),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((i < 0 || i > (int)nStat_-1),std::invalid_argument,
       ">>> ERROR (ROL::RiskVector): index out-of-bounds in getStatistic!");
     return stat_[i];
   }

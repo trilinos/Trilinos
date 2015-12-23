@@ -342,7 +342,6 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_TPETRA)
         // TAW: Oct 11 2015: The following code only works if GO=LO=int is enabled in Tpetra
-        //                   The computeDiagonalGraph routine is not contained in the Xpetra::CrsMatrix interface!
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
         // Thanks for the code, Travis!
         int blocksize = 3;
@@ -369,7 +368,6 @@ namespace MueLuTests {
           lclColInds[0] = lclRowInd;
           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
         }
-        bcrsmatrix->computeDiagonalGraph(); // Needs to get done to smooth for some reason
 
         RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>(bcrsmatrix));
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));

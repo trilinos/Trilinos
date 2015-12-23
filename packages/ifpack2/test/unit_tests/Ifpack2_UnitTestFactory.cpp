@@ -205,7 +205,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
 
   RCP<block_crs_matrix_type> bcrsmatrix =
     Teuchos::rcp_const_cast<block_crs_matrix_type, const block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
-  bcrsmatrix->computeDiagonalGraph();
 
   RCP<const row_matrix_type> rowmatrix = bcrsmatrix;
 

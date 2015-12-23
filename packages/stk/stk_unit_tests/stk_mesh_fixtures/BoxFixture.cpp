@@ -33,8 +33,11 @@
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector, etc
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/fixtures/FixtureNodeSharing.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
 namespace stk { namespace mesh { class Part; } }
 
 

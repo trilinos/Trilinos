@@ -75,7 +75,7 @@
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace stk {
 namespace mesh {

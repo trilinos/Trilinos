@@ -335,6 +335,41 @@ public:
     }
   }
 
+  Real getSolutionStatistic(Teuchos::ParameterList &parlist) {
+    try {
+      const RiskVector<Real> x = Teuchos::dyn_cast<const RiskVector<Real> >(
+        Teuchos::dyn_cast<const Vector<Real> >(*vec_));
+      std::string type = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
+      Real val = 0.0;
+      if ( type == "Risk Averse" ) {
+        Teuchos::ParameterList &list
+          = parlist.sublist("SOL").sublist("Risk Measure");
+        std::string risk = list.get("Name","CVaR");
+        if ( risk == "Mixed-Quantile Quadrangle" ) {
+          Teuchos::ParameterList &MQQlist = list.sublist("Mixed-Quantile Quadrangle");
+          Teuchos::Array<Real> coeff
+            = Teuchos::getArrayFromStringParameter<Real>(MQQlist,"Coefficient Array");
+          for (int i = 0; i < coeff.size(); i++) {
+            val += coeff[i]*x.getStatistic(i);
+          }
+        }
+        else if ( risk == "Quantile-Radius Quadrangle" ) {
+          val = 0.5*(x.getStatistic(0) + x.getStatistic(1));
+        }
+        else {
+          val = x.getStatistic();
+        }
+      }
+      else {
+        val = x.getStatistic();
+      }
+      return val;
+    }
+    catch (std::exception &e) {
+      return 0.;
+    }
+  }
+
 private:
   std::vector<Real> computeSampleMean(Teuchos::RCP<SampleGenerator<Real> > &sampler) {
     // Compute mean value of inputs and set parameter in objective

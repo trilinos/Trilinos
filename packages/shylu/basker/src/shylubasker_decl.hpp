@@ -164,6 +164,10 @@ namespace BaskerNS
     //These are temp arrys that are used for ordering and sfator
     INT_1DARRAY btf_blk_work;
     INT_1DARRAY btf_blk_nnz;
+    INT_1DARRAY btf_schedule;
+    
+
+    Int btf_total_work;
  
   private:
 
@@ -295,6 +299,13 @@ namespace BaskerNS
     int break_into_parts2(BASKER_MATRIX &M,
 			  Int nblks,
 			  INT_1DARRAY btf_tabs);
+    
+    BASKER_INLINE
+    void find_btf_schedule(BASKER_MATRIX &M,
+			   Int nblks, 
+			   INT_1DARRAY btf_tabs);
+   
+
     /*
     BASKER_INLINE
     int strong_component(BASKER_MATRIX &M,
@@ -358,11 +369,7 @@ namespace BaskerNS
     BASKER_INLINE
     void col_count(BASKER_MATRIX_VIEW &MV,
 		   BASKER_SYMBOLIC_TREE &ST);
-    /*moved to basker_util
-    BASKER_INLINE
-    void matrix_transpose(BASKER_MATRIX_VIEW &MV,
-			  BASKER_MATRIX &AT);
-    */
+ 
     BASKER_INLINE
     Int least_common(Int i, Int j , Int* first,
 		     Int *mfirst, Int *pleaf, 
@@ -450,7 +457,12 @@ namespace BaskerNS
     BASKER_INLINE
     int copy_schedule(INT_2DARRAY &s, INT_2DARRAY &ls, 
 		      Int l, Int sl, Int t);
+    BASKER_INLINE
+    int nfactor_domain_error(INT_1DARRAY);
+    BASKER_INLINE
+    int nfactor_diag_error(INT_1DARRAY );
     
+   
     
     //BASKER_INLINE
     inline
@@ -764,8 +776,6 @@ namespace BaskerNS
     //Int t_get_kid(const TeamMember &thread);
 
     void print_sep_bal();
-
-
 
     //Matrix helper
     BASKER_INLINE

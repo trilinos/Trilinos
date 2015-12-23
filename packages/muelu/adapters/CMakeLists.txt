@@ -178,15 +178,13 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
     "${MUELUADAPTERS_ETI_CLASSES}"
     ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
-    "HAVE_TPETRA_INST_SERIAL"
-    "Kokkos_Compat_KokkosSerialWrapperNode"
-    "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+    "ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLuAdapters_SRCS)
   LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
   MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
     "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
     ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
-    "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+    "ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLuAdapters_SRCS)
   LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
 

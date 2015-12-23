@@ -16,6 +16,72 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::find_btf_schedule
+  (
+   BASKER_MATRIX &M,
+   Int           nblks,
+   INT_1DARRAY   btf_tabs
+   )
+  {
+    //Find total work estimate
+    Int total_work_estimate = 0;
+    for(Int b = btf_tabs_offset; b < nblks; b++)
+      {
+	total_work_estimate += btf_blk_work(b);
+      }
+   
+    //Int break_size    = ceil((double)total_work_estimate*(
+    //			      ((double)1/num_threads)));
+
+    Int break_size    = ceil((double)total_work_estimate*(
+			   ((double)1/num_threads) + 
+	      		     ((double)BASKER_BTF_IMBALANCE)));
+
+
+    #ifdef BASKER_DEBUG_ORDER_BTF
+    printf("Total schedul size: %d \n", total_work_estimate);
+    printf("Break schedule size: %d \n", break_size);
+    printf("Total num blks: %d \n", btf_nblks);
+    #endif
+    
+    Int t_size            = 0;
+    Int t_loc             = 0;
+    btf_schedule(0) = btf_tabs_offset;
+    BASKER_BOOL  move_fwd = BASKER_TRUE;
+
+    for(Int b = btf_tabs_offset; b < btf_nblks;
+	b++)
+      {
+	Int blk_work = btf_blk_work(b);
+	t_size += blk_work;
+	
+	#ifdef BASKER_DEBUG_ORDER_BTF
+	printf("t: %d blk: %d work: %d twork: %d \n", 
+	       t_loc,b, blk_work, t_size);
+	#endif
+
+	if(((t_size > break_size) && (t_loc < num_threads-1)) ||
+	   (b == btf_nblks-1))
+	  {
+	    #ifdef BASKER_DEBUG_ORDER_BTF
+	    printf("New Schedule BLK: thread: %d size: %d blk: %d %d \n", t_loc, t_size, btf_schedule(t_loc), b); 
+	    #endif
+
+	    t_loc++;
+	    btf_schedule(t_loc) = b+1;
+	    t_size = blk_work;
+
+
+	  }
+
+
+      }
+
+  }//end find_btf_schedule()
+
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
   int Basker<Int,Entry, Exe_Space>::find_btf(BASKER_MATRIX &M)
   {
     Int          nblks = 0;
@@ -154,6 +220,12 @@ namespace BaskerNS
     sort_matrix(M);
        
     break_into_parts2(M, nblks, btf_tabs);
+
+
+
+    //find schedule
+    find_btf_schedule(M, nblks, btf_tabs);
+
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 
@@ -504,6 +576,8 @@ namespace BaskerNS
       {
 	total_work_estimate += btf_blk_work(b);
       }
+    //Set a class variable to use later
+    btf_total_work = total_work_estimate;
     //printf("Total work estimate: %d \n",
     //	   total_work_estimate);
     //printf("num_threads: %d epsilon: %f \n",
@@ -521,7 +595,6 @@ namespace BaskerNS
     Int blk_idx           = nblks;
     BASKER_BOOL  move_fwd = BASKER_TRUE;
 
-
     while(move_fwd==BASKER_TRUE)
       {
 
@@ -530,6 +603,7 @@ namespace BaskerNS
 	Int blk_work = btf_blk_work(blk_idx-1);
 	Int blk_size  = btf_tabs(blk_idx) - 
 	                        btf_tabs(blk_idx-1);
+
 
 	#ifdef BASKER_DEBUG_ORDER_BTF
 	printf(" \n move_fwd loop \n");
@@ -540,8 +614,12 @@ namespace BaskerNS
 	       blk_idx, blk_work, blk_size);
 	#endif
 
+
+
+
+	//Should be end
 	if(((blk_work < break_size) ||
-	    (blk_work < BASKER_BTF_SMALL)) &&
+	    (blk_size < BASKER_BTF_SMALL)) &&
 	   (blk_idx > 1))
 	  {
 	    #ifdef BASKER_DEBUG_ORDER_BTF
@@ -576,7 +654,7 @@ namespace BaskerNS
 	  }
       }//end while(move_fwd)
 
-    #ifdef BASKER_DEBUG_ORDER_BTF
+    //#ifdef BASKER_DEBUG_ORDER_BTF
     printf("Done finding BTF cut.  Cut size: %d scol: %d \n",
 	   t_size, scol);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
@@ -584,7 +662,7 @@ namespace BaskerNS
 
     
     BASKER_ASSERT((scol >= 0) && (scol < M.ncol), "SCOL\n");
-    #endif
+    //#endif
     
     //Comeback and change
     btf_tabs_offset = blk_idx;
@@ -775,6 +853,9 @@ namespace BaskerNS
     return 0;
 
   }//end break_into_parts2 (based on imbalance)
+
+  
+ 
 
 #ifdef HAVE_AMESOS
   

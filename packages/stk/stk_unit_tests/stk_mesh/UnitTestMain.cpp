@@ -31,12 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <gtest/gtest.h>                // for TestInfo, etc
+#include <gtest/gtest.h>                // for InitGoogleTest, etc
 #include <mpi.h>                        // for MPI_Comm_rank, MPI_Finalize, etc
-#include <stdarg.h>                     // for va_end, va_list, va_start
-#include <stdio.h>                      // for printf, vprintf, fflush, etc
-#include "gtest/gtest-test-part.h"      // for TestPartResult
-#include <stk_util/stk_config.h>
+#include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 
 int gl_argc = 0;

@@ -2,6 +2,8 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "ElemGraphShellConnections.hpp"
+#include "BulkDataIdMapper.hpp"
+#include "SideConnector.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -14,7 +16,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/BulkDataIdMapper.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
@@ -1973,19 +1974,6 @@ bool ElemElemGraph::is_connected_element_in_body_to_be_skinned(const stk::mesh::
     return (!impl::is_local_element(graphEdge.elem2) && is_remote_element_in_body_to_be_skinned(m_parallelInfoForGraphEdges, graphEdge));
 }
 
-void ElemElemGraph::connect_side_entity_to_other_element(stk::mesh::Entity sideEntity, const stk::mesh::GraphEdge &graphEdge, stk::mesh::EntityVector skinned_elements)
-{
-    stk::mesh::Entity other_element = m_local_id_to_element_entity[graphEdge.elem2];
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(m_bulk_data.bucket(other_element).topology().num_positive_permutations());
-    m_bulk_data.declare_relation(other_element, sideEntity, graphEdge.side2, perm);
-    skinned_elements.push_back(other_element);
-}
-
-bool do_sides_match_and_elem2_is_local(const stk::mesh::GraphEdge &graphEdge, int side)
-{
-    return graphEdge.side1 == side && impl::is_local_element(graphEdge.elem2);
-}
-
 void ElemElemGraph::add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides)
 {
     std::vector<int> exposedSidesDueToAirSelector;
@@ -2036,6 +2024,32 @@ std::vector<int> ElemElemGraph::get_sides_exposed_on_other_procs(stk::mesh::impl
     return exposedSides;
 }
 
+std::vector<SideSetEntry> ElemElemGraph::extract_skinned_sideset(  )
+{
+    std::vector<SideSetEntry> skinnedSideSet;
+
+    const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
+
+    for(size_t i=0;i<buckets.size();++i)
+    {
+        const stk::mesh::Bucket &bucket = *buckets[i];
+        for(size_t j=0;j<bucket.size();++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+
+            stk::mesh::impl::LocalId localId = get_local_element_id(element);
+            std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
+
+            for(size_t k=0; k<exposedSides.size(); ++k)
+            {
+                skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
+            }
+        }
+    }
+
+    return skinnedSideSet;
+}
+
 std::vector<int> ElemElemGraph::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                                        stk::mesh::Entity element,
                                                        stk::mesh::impl::LocalId localId)
@@ -2072,6 +2086,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
         for(size_t j=0;j<bucket.size();++j)
         {
             stk::mesh::Entity element = bucket[j];
+
             stk::mesh::impl::LocalId localId = get_local_element_id(element);
             std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
             stk::util::sort_and_unique(exposedSides);
@@ -2088,6 +2103,7 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          std::vector<stk::mesh::sharing_info> &sharedModified,
                                          stk::mesh::EntityVector &skinnedElements)
 {
+    SideConnector sideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_local_id_to_element_entity, m_entity_to_local_id);
     stk::mesh::Entity element = m_local_id_to_element_entity[localId];
     for(size_t i=0;i<exposedSides.size();++i)
     {
@@ -2116,7 +2132,7 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
         skinnedElements.push_back(element);
         stk::mesh::Entity sideEntity = add_side_to_mesh({localId, exposedSides[i]}, skinParts, newFaceId);
 
-        connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]}, skinnedElements);
+        sideConnector.connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]}, skinnedElements);
     }
 }
 
@@ -2138,35 +2154,6 @@ stk::mesh::EntityId ElemElemGraph::add_side_for_remote_edge(const GraphEdge & gr
     }
     return newFaceId;
 }
-
-void ElemElemGraph::connect_side_to_all_elements(stk::mesh::Entity sideEntity,
-                                                 impl::ElementSidePair skinnedElemSidePair,
-                                                 stk::mesh::EntityVector &skinned_elements)
-{
-    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(skinnedElemSidePair.first))
-    {
-        if(do_sides_match_and_elem2_is_local(graphEdge, skinnedElemSidePair.second))
-        {
-            connect_side_entity_to_other_element(sideEntity, graphEdge, skinned_elements);
-            connect_side_to_coincident_elements(sideEntity, {graphEdge.elem2, graphEdge.side2}, skinned_elements);
-        }
-    }
-    connect_side_to_coincident_elements(sideEntity, skinnedElemSidePair, skinned_elements);
-}
-
-void ElemElemGraph::connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
-                                                        impl::ElementSidePair skinnedElemSidePair,
-                                                        stk::mesh::EntityVector &skinned_elements)
-{
-    auto iter = m_coincidentGraph.find(skinnedElemSidePair.first);
-    if(iter != m_coincidentGraph.end())
-        for(const stk::mesh::GraphEdge &graphEdge : iter->second)
-            if(do_sides_match_and_elem2_is_local(graphEdge, skinnedElemSidePair.second))
-                connect_side_entity_to_other_element(sideEntity, graphEdge, skinned_elements);
-}
-
-
-
 
 }} // end namespaces stk mesh
 

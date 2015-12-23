@@ -31,26 +31,33 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BoundaryAnalysis.hpp>  // for EntitySideComponent, etc
-#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for get_entity_subcell_id, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <gtest/gtest.h>
+#include <string>                       // for string
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/EntityLess.hpp"  // for EntityLess
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_util/parallel/Parallel.hpp"
-#include <stk_mesh/base/FEMHelpers.hpp>
-
+#include "stk_topology/topology.hpp"    // for topology::num_faces
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include "stk_util/util/NamedPair.hpp"
 namespace stk { namespace mesh { class Part; } }
+
 
 
 

@@ -42,13 +42,14 @@
 // @HEADER
 
 
-#ifndef PHX_FIELD_EVALUATOR_MANAGER_HPP
-#define PHX_FIELD_EVALUATOR_MANAGER_HPP
+#ifndef PHX_DAG_MANAGER_HPP
+#define PHX_DAG_MANAGER_HPP
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <tuple>
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag.hpp"
@@ -62,16 +63,16 @@ namespace PHX {
   
   template<typename Traits> class FieldManager;
 
-  /*! @brief Class to sort which Evaluators should be called and the order in which to call them such that all dependencies are met.
+  /*! @brief Class to generate the directed acyclic graph (DAG) for evaluation.  Determined which Evaluators should be called and the order in which to call them such that all dependencies are met with consistency.
    */
   template<typename Traits>
-  class EvaluatorManager {
+  class DagManager {
 
   public:
 
-    EvaluatorManager(const std::string& evaluator_type_name = "???");
+    DagManager(const std::string& evaluator_type_name = "???");
     
-    ~EvaluatorManager();
+    ~DagManager();
     
     //! Require a variable to be evaluated.
     void requireField(const PHX::FieldTag& v);
@@ -140,7 +141,19 @@ namespace PHX {
     //! Printing
     void print(std::ostream& os) const;
 
+    //! Returns the Topological sort ordering. Used for unit testing.
     const std::vector<int>& getEvaluatorInternalOrdering() const;
+
+    //! Returns the intrenally registered nodes. Used for unit testing.
+    const std::vector<PHX::DagNode<Traits>>& getDagNodes() const;
+
+    /** \brief Returns the speedup and parallelizability of the graph.
+
+	Estimates are based on execution times.  This will return
+	garbage if the evaluateFields() call has not been made to log
+	execution times.
+     */
+    void analyzeGraph(double& speedup, double& parallelizability) const;
 
   protected:
 
@@ -202,10 +215,10 @@ namespace PHX {
   
   template<typename Traits>
   std::ostream& operator<<(std::ostream& os, 
-			   const PHX::EvaluatorManager<Traits>& m);
+			   const PHX::DagManager<Traits>& m);
 
 }
 
-#include "Phalanx_Evaluator_Manager_Def.hpp"
+#include "Phalanx_DAG_Manager_Def.hpp"
 
 #endif

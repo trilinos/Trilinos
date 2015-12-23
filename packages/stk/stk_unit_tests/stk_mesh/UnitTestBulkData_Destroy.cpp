@@ -31,21 +31,26 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stddef.h>                     // for size_t
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <gtest/gtest.h>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityCommListInfo.hpp"
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "unit_tests/BulkDataTester.hpp"  // for BulkDataTester
 
 
 

@@ -4,9 +4,6 @@
 #include <ostream>                      // for basic_ostream::operator<<, etc
 #include <stdexcept>                    // for logic_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <stk_mesh/base/ElemElemGraph.hpp>  // for change_entity_owner, etc
-#include <stk_mesh/base/ElemElemGraphImpl.hpp>  // for parallel_info
-#include <stk_mesh/base/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
@@ -20,7 +17,6 @@
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
 #include "ElementGraphTester.hpp"       // for ElemElemGraphTester
-#include "gtest/gtest-message.h"        // for Message
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -28,6 +24,9 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>  // for change_entity_owner, etc
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>  // for parallel_info
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 
 namespace stk { namespace mesh { class Part; } }
 

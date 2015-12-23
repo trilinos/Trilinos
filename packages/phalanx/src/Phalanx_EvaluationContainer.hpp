@@ -98,6 +98,8 @@ namespace PHX {
 
     void print(std::ostream& os) const;
 
+    void analyzeGraph(double& speedup, double& parallelizability) const;
+
   protected:
 
     bool post_registration_setup_called_;

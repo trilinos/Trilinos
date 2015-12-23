@@ -1,7 +1,19 @@
-#include <gtest/gtest.h>
-#include <mpi.h>
+#include <gtest/gtest.h>                // for TEST
+#include <mpi.h>                        // for MPI_COMM_WORLD, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/ModificationSummary.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
+#include <string>                       // for string
+#include <utility>                      // for make_pair
+#include <vector>                       // for vector
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Ghosting; } }
 
 TEST(ModificationSummary, testString)
 {

@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include <mpi.h>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/ElemElemGraph.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace

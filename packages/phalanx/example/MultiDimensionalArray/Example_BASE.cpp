@@ -349,7 +349,16 @@ int main(int argc, char *argv[])
        }
       fm.postEvaluate<MyTraits::Jacobian>(NULL);
 
-
+      double scalability = 0.0;
+      double parallelizability = 1.0;
+      fm.analyzeGraph<MyTraits::Residual>(scalability,parallelizability);
+      std::cout << "Residual Scalability = " << scalability << std::endl;
+      std::cout << "Residual Parallelizability = " 
+		<< parallelizability << std::endl;
+      fm.analyzeGraph<MyTraits::Jacobian>(scalability,parallelizability);
+      std::cout << "Residual Scalability = " << scalability << std::endl;
+      std::cout << "Residual Parallelizability = " 
+		<< parallelizability << std::endl;
     }
     
     // *********************************************************************
