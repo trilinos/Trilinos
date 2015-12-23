@@ -649,7 +649,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       try{
 	quality = new psq_t(this->envConst_, problemCommConst_,
-			    this->inputAdapter_, solutionConst, false);
+			    this->baseInputAdapter_, solutionConst, false);
       }
       Z2_FORWARD_EXCEPTIONS
 
@@ -667,7 +667,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
       try{
 	quality = new psq_t(this->envConst_, problemCommConst_,
-			    this->inputAdapter_, solutionConst, false);
+			    this->baseInputAdapter_, solutionConst, false);
       }
       Z2_FORWARD_EXCEPTIONS
     }

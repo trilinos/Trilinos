@@ -97,9 +97,9 @@ public:
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia, 
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln,
-    bool useDegreeAsWeight = false,
+    bool useDegreeAsWeight,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null);
 
@@ -208,7 +208,7 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const /*typename*/ Adapter/*::base_adapter_t*/> &ia, 
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln,
   bool useDegreeAsWeight,
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
