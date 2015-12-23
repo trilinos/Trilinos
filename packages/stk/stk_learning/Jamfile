@@ -1,0 +1,281 @@
+#--------------------------------------------------------------- #    Copyright 2008 - 2008 Sandia Corporation.  #    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_learning-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_learning-root-inc = $(stk_learning-root)/include ;
+} else {
+  stk_learning-root-inc = $(stk_learning-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_learning-root-inc)
+  : usage-requirements
+    <include>$(stk_learning-root-inc)
+    <define>STK_BUILT_IN_SIERRA
+  : build-dir $(stk_learning-builddir)
+  ;
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  :
+    stk_learning_dgelement_utest
+    stk_learning_openmp_utest
+    stk_learning_mpi_openmp_utest
+#    stk_learning_kokkos_utest
+    stk_learning_element_graph_utest
+    stk_learning_diffing_tool_utest
+    stk_learning_game_of_life_utest
+    stk_learning_mesh_builder_utest
+#    stk_learning_sphere_utest
+;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-bin install-user-include install-user-lib ;
+
+explicit install-user-bin ;
+install install-user-bin
+  :
+  : <location>$(install-root)/bin
+  ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_learning-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_learning/include <install-source-root>$(stk_learning-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_learning_diffing_tool
+  : <location>$(install-root)/stk/stk_learning/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+exe stk_learning_dgelement_utest
+  :
+    [ glob $(stk_learning-root)/DGElement/*.cpp ]
+    /tpl/gtest//gtest
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_learning_openmp_utest
+  :
+    $(gtest-root)/src/gtest_main.cc
+    [ glob $(stk_learning-root)/OpenMP/*.C ]
+    /tpl/gtest//gtest
+    /sierra/stk_util//stk_util_environment
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_learning_mpi_openmp_utest
+  :
+    [ glob $(stk_learning-root)/MpiPlusOpenMp/*.C ]
+    [ glob $(stk_learning-root)/ForEachEntityLoops/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_util//stk_util_environment
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_learning_element_graph_utest 
+  :
+    [ glob $(stk_learning-root)/ElementGraph/*.C ]
+    [ glob $(stk_learning-root)/ElementGraph/*.cpp ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_mesh//stk_mesh_fixtures
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+lib stk_learning_diffing_tool
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_learning-root)/DiffingToolLib/*.cpp ]
+    ]
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
+    /tpl/trilinos//shards
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_learning-root)/lib/libstk_learning_diffing_tool.a
+    ]
+  ;
+exe stk_learning_diffing_tool_utest 
+  :
+    [ glob $(stk_learning-root)/DiffingTool/*.cpp ]
+    stk_learning_diffing_tool
+    /sierra/stk_util//stk_util_parallel
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+lib stk_learning_game_of_life
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_learning-root)/GameOfLife/*.cpp ]
+    ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_learning-root)/lib/libstk_learning_game_of_life.a
+    ]
+  ;
+
+exe stk_learning_game_of_life_utest
+  :
+    [ glob $(stk_learning-root)/GameOfLife/UnitTest/*.cpp ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    stk_learning_game_of_life
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+lib stk_learning_mesh_builder
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_learning-root)/MeshBuilder/*.cpp ]
+    ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_learning-root)/lib/libstk_learning_mesh_builder.a
+    ]
+  ;
+
+exe stk_learning_mesh_builder_utest
+  :
+    [ glob $(stk_learning-root)/MeshBuilder/UnitTest/*.cpp ]
+    /tpl/gtest//gtest
+    /mpi//mpi
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    stk_learning_game_of_life
+    stk_learning_mesh_builder
+    /sierra/stk_topology//stk_topology
+    /sierra/stk_util//stk_util_environment
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+#exe stk_learning_sphere_utest
+#  :
+#    [ glob $(stk_learning-root)/Sphere/UnitTest/*.cpp ]
+#    /tpl/gtest//gtest
+#    /mpi//mpi
+#    /sierra/stk_unit_test_utils//stk_unit_test_utils
+#    /sierra/stk_mesh//stk_mesh_base
+#    /sierra/stk_topology//stk_topology
+#    /sierra/stk_util//stk_util_environment
+#  :
+#    <tag>@sierra-exec-tag
+#  ;
+
+#exe stk_learning_kokkos_utest
+#  :
+#    $(gtest-root)/src/gtest_main.cc
+#    [ glob $(stk_learning-root)/Kokkos/*.C ]
+#    /tpl/trilinos-kokkoscore//kokkoscore
+#    /tpl/gtest//gtest
+#    /sierra/stk_util//stk_util_environment
+#  :
+#    <tag>@sierra-exec-tag
+#  ;
+

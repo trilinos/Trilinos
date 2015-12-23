@@ -1,0 +1,144 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2013 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+#
+# http://www.boost.org/doc/libs/1_47_0/doc/html/bbv2/overview.html#bbv2.overview.targets
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_transfer-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_transfer-root-inc = $(stk_transfer-root)/include ;
+} else {
+  stk_transfer-root-inc = $(stk_transfer-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_transfer-root-inc)
+  : usage-requirements
+    <include>$(stk_transfer-root-inc)
+  : build-dir $(stk_transfer-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_transfer_utest
+    stk_transfer_docs_tests
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-include install-user-lib ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_transfer-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_transfer/include <install-source-root>$(stk_transfer-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : 
+  : 
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+local xml-files =
+  ;
+
+# This is currently a header-only library, so it must not use the lib rule.
+# http://www.boost.org/boost-build2/doc/html/bbv2/faq/header-only-libraries.html
+# If sources are added to this library change this target to use the lib rule instead.
+alias stk_transfer
+  : # No sources defined for header-only libraries.
+    /sierra/stk_search//stk_search
+    /mpi//mpi
+  : # No build requirements
+  : # No default build
+  : <include>$(stk_transfer-root-inc)
+  ;
+
+lib stk_transfer_base
+  :
+    [ ifdevbuild
+      [ glob $(stk_transfer-root)/stk_transfer/*.cpp ]
+    ]
+    /sierra/stk_search//stk_search
+    /sierra/stk_util//stk_util_parallel
+    /mpi//mpi
+  :
+    [ ifuserbuild
+        <file>$(stk_transfer-root)/lib/libstk_transfer_base.a
+    ]
+  ;
+
+exe stk_transfer_utest
+  :
+    $(stk_transfer-root)/unit_tests/TransferUnitTestMain.cpp
+    [ glob $(stk_transfer-root)/unit_tests/*.cpp ]
+    stk_transfer
+    stk_transfer_base
+    /sierra/stk_io//stk_io
+    /tpl/gtest//gtest
+    /sierra/stk_mesh//stk_mesh_base
+    /tpl/trilinos//teuchos
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_transfer_docs_tests
+  :
+    $(stk_transfer-root)/testsForDocumentation/testMain.cpp
+    [ glob $(stk_transfer-root)/testsForDocumentation/*.cpp ]
+    stk_transfer
+    stk_transfer_base
+    /sierra/stk_io//stk_io
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
