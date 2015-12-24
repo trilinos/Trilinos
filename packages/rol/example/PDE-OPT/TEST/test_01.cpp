@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
 
     std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
     basisPtrs[0] = basisPtrQ2;
-    basisPtrs[1] = basisPtrQ2;
-    basisPtrs[2] = basisPtrQ1;
+    basisPtrs[1] = basisPtrQ1;
+    basisPtrs[2] = basisPtrQ2;
 
     Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
 

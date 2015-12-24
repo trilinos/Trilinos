@@ -44,7 +44,7 @@
 /*! \file  dofmanager.hpp
     \brief Given a mesh with connectivity information, sets up data
            structures for the indexing of the global degrees of
-           freedom (Dof's).
+           freedom (Dofs).
 */
 
 #ifndef DOFMANAGER_HPP
@@ -70,24 +70,32 @@ private:
   Intrepid::FieldContainer<int> meshCellToNodeMap_;
   Intrepid::FieldContainer<int> meshCellToEdgeMap_;
 
-  int numBases_;
-  int numLocalNodeDofs_;
-  int numLocalEdgeDofs_;
-  int numLocalFaceDofs_;
-  int numLocalDofs_;
-  std::vector<int> numDofsPerNode_;
-  std::vector<int> numDofsPerEdge_;
-  std::vector<int> numDofsPerFace_;
+  // Local dof information.
+  int numBases_;                                  // number of bases (fields)
+  int numLocalNodes_;                             // number of nodes in the basic cell topology
+  int numLocalEdges_;                             // number of edges in the basic cell topology
+  int numLocalFaces_;                             // number of faces in the basic cell topology
+  int numLocalNodeDofs_;                          // number of local (single-cell) node dofs for all bases
+  int numLocalEdgeDofs_;                          // number of local (single-cell) edge dofs for all bases
+  int numLocalFaceDofs_;                          // number of local (single-cell) face dofs for all bases
+  int numLocalDofs_;                              // total number of local (single-cell) face dofs for all bases
+  std::vector<int> numDofsPerNode_;               // number of dofs per node in a cell (assumed constant), per basis
+  std::vector<int> numDofsPerEdge_;               // number of dofs per edge in a cell (assumed constant), per basis
+  std::vector<int> numDofsPerFace_;               // number of dofs per face in a cell (assumed constant), per basis
+  std::vector<std::vector<int> > fieldPattern_;   // local indexing of fields into the array [0,1,...,numLocalDofs-1];
+                                                  // contains (number of bases) index vectors, where each index vector
+                                                  // is of size (basis cardinality)
+  // Global dof information. 
+  int numNodeDofs_;  // number of global node dofs
+  int numEdgeDofs_;  // number of global edge dofs
+  int numFaceDofs_;  // number of global face dofs
+  int numDofs_;      // total number of global dofs
 
-  int numNodeDofs_;
-  int numEdgeDofs_;
-  int numFaceDofs_;
-  int numDofs_;
-
-  Intrepid::FieldContainer<int> nodeDofs_;
-  Intrepid::FieldContainer<int> edgeDofs_;
-  Intrepid::FieldContainer<int> faceDofs_;
-  Intrepid::FieldContainer<int> cellDofs_;
+  Intrepid::FieldContainer<int> nodeDofs_;  // global node dofs, of size numNodes_ x numLocalNodeDofs_
+  Intrepid::FieldContainer<int> edgeDofs_;  // global edge dofs, of size numEdges_ x numLocalEdgeDofs_
+  Intrepid::FieldContainer<int> faceDofs_;  // global face dofs, of size numFaces_ x numLocalFaceDofs_
+  Intrepid::FieldContainer<int> cellDofs_;  // global cell dofs, of size numCells_ x numLocalDofs_;
+                                            // ordered by subcell (node, then edge, then face) and basis index
 
 public:
 
@@ -99,9 +107,11 @@ public:
     numNodes_ = meshManager_->getNumNodes();
     numEdges_ = meshManager_->getNumEdges();
     numMeshEntities_ = numCells_ + numNodes_ + numEdges_;
+
     // Mesh data structures.
     meshManager_->getCellToNodeMap(meshCellToNodeMap_);
     meshManager_->getCellToEdgeMap(meshCellToEdgeMap_);
+
     // Local degree-of-freedom footprint.
     numBases_ = static_cast<int>(intrepidBasis.size());
     numDofsPerNode_.resize(numBases_, 0);
@@ -144,7 +154,16 @@ public:
       std::cout << numDofsPerFace_[i] << "   ";
     }
     std::cout << std::endl;
-
+    numLocalNodes_ = static_cast<int>( (intrepidBasis[0])->getBaseCellTopology().getVertexCount() );
+    numLocalEdges_ = static_cast<int>( (intrepidBasis[0])->getBaseCellTopology().getEdgeCount() );
+    numLocalFaces_ = 1;
+    getFieldPattern(fieldPattern_);
+    for (int i=0; i<numBases_; ++i) {
+      std::cout << "\nBasis " << i << ":   "; 
+      for (int j=0; j<(intrepidBasis[i])->getCardinality(); ++j) {
+        std::cout << fieldPattern_[i][j] << " ";
+      }
+    }
 
     getDofArrays(nodeDofs_, numNodeDofs_, edgeDofs_, numEdgeDofs_, faceDofs_, numFaceDofs_, numDofs_);
 
@@ -157,12 +176,14 @@ public:
 
     std::cout << cellDofs_;
 
-/*
-    computeCellDofs(cellDofs_, dofArray_, meshCellToNodeMap_, meshCellToEdgeMap_);
-    computeCellPres(cellPres_, cellDofs_);
-    computeCellVelX(cellVelX_, cellDofs_);
-    computeCellVelY(cellVelY_, cellDofs_);
-*/
+    Intrepid::FieldContainer<int> fdofs;
+    getFieldDofs(fdofs, 0);
+    std::cout << fdofs;
+    getFieldDofs(fdofs, 1);
+    std::cout << fdofs;
+    getFieldDofs(fdofs, 2);
+    std::cout << fdofs;
+
   }
 
 
@@ -241,22 +262,19 @@ public:
 
     cdofs.resize(numCells_, numLocalDofs_);
 
-    int numLocalNodes = ctn.dimension(1);
-    int numLocalEdges = cte.dimension(1);
-    int numLocalFaces = 1;
     for (int i=0; i<numCells_; ++i) {
       int ct = -1;
-      for (int j=0; j<numLocalNodes; ++j) {
+      for (int j=0; j<numLocalNodes_; ++j) {
         for (int k=0; k<numLocalNodeDofs_; ++k) {
           cdofs(i,++ct) = nodeDofs(ctn(i,j), k);
         }
       }
-      for (int j=0; j<numLocalEdges; ++j) {
+      for (int j=0; j<numLocalEdges_; ++j) {
         for (int k=0; k<numLocalEdgeDofs_; ++k) {
           cdofs(i,++ct) = edgeDofs(cte(i,j), k);
         }
       }
-      for (int j=0; j<numLocalFaces; ++j) {
+      for (int j=0; j<numLocalFaces_; ++j) {
         for (int k=0; k<numLocalFaceDofs_; ++k) {
           cdofs(i,++ct) = faceDofs(i, k);
         }
@@ -265,21 +283,53 @@ public:
   } // computeCellDofs
 
 
-/*
-
-  void getFieldDofs(Intrepid::FieldContainer<int> &fdofs, int fieldNumber) {
+  void getFieldPattern(std::vector<std::vector<int> > &fieldPattern) {
     
-    int basisCard = (intrepidBasis_[fieldNumber])->getCardinality();
-    fdofs.resize(numCells_, basisCard);
+    fieldPattern.resize(numBases_);
 
-    for (int i=0; i<numCells_; ++i) {
-      for (int j=0; j<basisCard; ++j) {
-        fdofs(i,j) = cellDofs_(i, j*)
+    int dofCt = -1;
+
+    // count node dofs
+    for (int i=0; i<numLocalNodes_; ++i) {
+      for (int j=0; j<numBases_; ++j) {
+        for (int k=0; k<numDofsPerNode_[j]; ++k) {
+          fieldPattern[j].push_back(++dofCt);
+        }
       }
     }
-    
+
+    // count edge dofs
+    for (int i=0; i<numLocalEdges_; ++i) {
+      for (int j=0; j<numBases_; ++j) {
+        for (int k=0; k<numDofsPerEdge_[j]; ++k) {
+          fieldPattern[j].push_back(++dofCt);
+        }
+      }
+    }
+
+    // count face dofs
+    for (int i=0; i<numLocalFaces_; ++i) {
+      for (int j=0; j<numBases_; ++j) {
+        for (int k=0; k<numDofsPerFace_[j]; ++k) {
+          fieldPattern[j].push_back(++dofCt);
+        }
+      }
+    }
+
+  } // getFieldPattern
+
+
+  void getFieldDofs(Intrepid::FieldContainer<int> & fdofs, const int & fieldNumber) {
+    int basisCard = intrepidBasis_[fieldNumber]->getCardinality();
+    fdofs.resize(numCells_, basisCard);
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<basisCard; ++j) {
+        fdofs(i,j) = cellDofs_(i, fieldPattern_[fieldNumber][j]);
+      }
+    }  
   }
 
+/*
 
   void computeCellPres(FCI &cpres, const FCI &cdofs) {
     cpres.resize(numCells_, numLocalPres_);
