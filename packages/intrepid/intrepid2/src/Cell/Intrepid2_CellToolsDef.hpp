@@ -983,8 +983,8 @@ typedef typename conditional_eSpace<ArrayJac>::execution_space execution_space;
 
 template <class Scalar,class ArrayPointWrap,class ArrayPoint>
 struct copyTempPoints {
-  ArrayPointWrap points;
   FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints;
+  ArrayPointWrap points;
 typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
@@ -992,7 +992,7 @@ typedef typename conditional_eSpace<ArrayPoint>::execution_space execution_space
   // objects around by "value"; they won't do a deep copy unless you
   // explicitly ask for a deep copy.
   copyTempPoints (FieldContainer_Kokkos<Scalar, Kokkos::LayoutRight, typename conditional_eSpace<ArrayPoint>::execution_space> tempPoints_, ArrayPointWrap points_) :
-     tempPoints(tempPoints_),points(points_)
+    tempPoints(tempPoints_), points(points_)
   {}
 
   // Fill the View with some data.  The parallel_for loop will iterate

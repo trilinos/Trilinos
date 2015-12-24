@@ -69,6 +69,63 @@ INCLUDE(SetDefaultAndFromEnv)
 
 INCLUDE(${CMAKE_CURRENT_LIST_DIR}/../ctest_driver/TribitsUpdateExtraRepo.cmake)
 
+
+#
+# Override CTEST_SUBMIT to drive multiple submits and to detect failed
+# submissions and track them as queued errors.
+#
+
+MACRO(TDD_CTEST_SUBMIT)
+
+  # Cache the original CTEST_DROP_SITE and CTEST_DROP_LOCATION
+  IF ("${TDD_CTEST_DROP_SITE_ORIG}" STREQUAL "")
+    SET(TDD_CTEST_DROP_SITE_ORIG ${CTEST_DROP_SITE})
+    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+      PRINT_VAR(TDD_CTEST_DROP_SITE_ORIG)
+    ENDIF()
+  ENDIF()
+  IF ("${TDD_CTEST_DROP_LOCATION_ORIG}" STREQUAL "")
+    SET(TDD_CTEST_DROP_LOCATION_ORIG ${CTEST_DROP_LOCATION})
+    IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+      PRINT_VAR(TDD_CTEST_DROP_LOCATION_ORIG)
+    ENDIF()
+  ENDIF()
+
+  # Do the first submit
+  SET(CTEST_DROP_SITE ${TDD_CTEST_DROP_SITE_ORIG})
+  SET(CTEST_DROP_LOCATION ${TDD_CTEST_DROP_LOCATION_ORIG})
+  IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+    PRINT_VAR(CTEST_DROP_SITE)
+    PRINT_VAR(CTEST_DROP_LOCATION)
+  ENDIF()
+
+  CTEST_SUBMIT(${ARGN})
+
+  # Do the second submit if requested!
+  IF (TDD_2ND_CTEST_DROP_SITE OR TDD_2ND_CTEST_DROP_LOCATION)
+
+    MESSAGE("\nDoing submit to second CDash site ...\n")
+
+    IF (NOT "${TDD_2ND_CTEST_DROP_SITE}" STREQUAL "")
+      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+        PRINT_VAR(TDD_2ND_CTEST_DROP_SITE)
+      ENDIF()
+      SET(CTEST_DROP_SITE ${TDD_2ND_CTEST_DROP_SITE})
+    ENDIF()
+
+    IF (NOT "${TDD_2ND_CTEST_DROP_LOCATION}" STREQUAL "")
+      IF (TRIBITS_CTEST_SUBMIT_DEBUG_DUMP)
+        PRINT_VAR(TDD_2ND_CTEST_DROP_LOCATION)
+      ENDIF()
+      SET(CTEST_DROP_LOCATION ${TDD_2ND_CTEST_DROP_LOCATION})
+    ENDIF()
+
+    CTEST_SUBMIT(${ARGN})
+
+  ENDIF()
+
+ENDMACRO()
+
 #
 # A) Set up the environment get options
 #
@@ -221,7 +278,7 @@ if (TDD_DO_SUBMIT)
   if(NOT "$ENV{TDD_CTEST_DROP_LOCATION}" STREQUAL "")
     set(CTEST_DROP_LOCATION "$ENV{TDD_CTEST_DROP_LOCATION}")
   endif()
-  ctest_submit(PARTS update configure notes build)
+  TDD_CTEST_SUBMIT(PARTS update configure notes build)
 else()
   message("\nSkipping submit on request!")
 endif()
@@ -231,7 +288,7 @@ ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" PARALLEL_LEVEL ${parallel_level})
 
 message("\nG) Submitting Test ...")
 if (TDD_DO_SUBMIT)
-  ctest_submit(PARTS Test)
+  TDD_CTEST_SUBMIT(PARTS Test)
 else()
   message("\nSkipping submit on request!")
 endif()

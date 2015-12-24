@@ -1,0 +1,9 @@
+================
+TargetDefinesPkg
+================
+
+The purpose of this package is to demonstrate and test the usage of the
+TRIBITS_ADD_EXECUTABLE() TARGET_DEFINES argument and to show the bad behavior
+of the old DEFINES argument.
+
+See GitHub TriBITS Issue #90 for more details.
