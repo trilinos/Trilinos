@@ -147,8 +147,11 @@ namespace Tpetra {
 
   void
   Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    this->out_ = out.is_null () ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out;
     if (! plist.is_null ()) {
       this->setParameterList (plist);
     }
@@ -172,7 +175,6 @@ namespace Tpetra {
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : comm_ (comm)
-    , out_  (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
@@ -188,13 +190,12 @@ namespace Tpetra {
     , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    init (comm, Teuchos::null);
+    init (comm, Teuchos::null, Teuchos::null);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_ (comm)
-    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
@@ -210,13 +211,12 @@ namespace Tpetra {
     , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    init (comm, Teuchos::null);
+    init (comm, out, Teuchos::null);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
-    , out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
@@ -232,14 +232,13 @@ namespace Tpetra {
     , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    init (comm, plist);
+    init (comm, Teuchos::null, plist);
   }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
-    , out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
@@ -255,7 +254,7 @@ namespace Tpetra {
     , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
-    init (comm, plist);
+    init (comm, out, plist);
   }
 
   Distributor::Distributor (const Distributor & distributor)
