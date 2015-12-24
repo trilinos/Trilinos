@@ -1206,10 +1206,12 @@ template <typename scalar_t, typename part_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param modelType the model type
+ *   \param useDegreeAsWeight whether vertex degree is ever used as vertex
+ *           weight.
  *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
+ *   \param graphModel the graph model.
  *   \param numParts on return is the global number of parts in the solution
  *   \param numNonemptyParts on return is the global number of parts to which 
  *                                objects are assigned.
@@ -1283,21 +1285,23 @@ template <typename Adapter>
   }
   else{
     if (useDegreeAsWeight) {
+      ArrayView<const gno_t> Ids;
+      ArrayView<sdata_t> vwgts;
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
 	RCP<GraphModel<base_adapter_t> > graph;
+	graph = rcp(new GraphModel<base_adapter_t>(ia, env, comm, modelFlags));
+	graph->getVertexList(Ids, vwgts);
       } else {
-	ArrayView<const gno_t> Ids;
-	ArrayView<sdata_t> vwgts;
 	graphModel->getVertexList(Ids, vwgts);
-	scalar_t *wgt = new scalar_t[numLocalObjects];
-	for (int i=0; i < nWeights; i++){
-	  for (size_t j=0; j < numLocalObjects; j++) {
-	    wgt[j] = vwgts[i][j];
-	  }
-	  ArrayRCP<const scalar_t> wgtArray(wgt,0,numLocalObjects,false);
-	  weights[i] = sdata_t(wgtArray, 1);
+      }
+      scalar_t *wgt = new scalar_t[numLocalObjects];
+      for (int i=0; i < nWeights; i++){
+	for (size_t j=0; j < numLocalObjects; j++) {
+	  wgt[j] = vwgts[i][j];
 	}
+	ArrayRCP<const scalar_t> wgtArray(wgt,0,numLocalObjects,false);
+	weights[i] = sdata_t(wgtArray, 1);
       }
     } else {
       for (int i=0; i < nWeights; i++){

@@ -90,7 +90,8 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
-      \param modelType the model type
+      \param useDegreeAsWeight whether to use vertex degree as vertex weight
+      \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
