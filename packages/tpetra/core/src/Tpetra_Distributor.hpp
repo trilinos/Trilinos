@@ -185,8 +185,7 @@ namespace Tpetra {
   ///   open a file, but write to the default output stream.
   class Distributor :
     public Teuchos::Describable,
-    public Teuchos::ParameterListAcceptorDefaultBase,
-    public Teuchos::VerboseObject<Distributor> {
+    public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     //! @name Constructors and destructor
     //@{

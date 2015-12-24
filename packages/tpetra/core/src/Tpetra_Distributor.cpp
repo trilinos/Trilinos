@@ -1,4 +1,3 @@
-// @HEADER
 // ***********************************************************************
 //
 //          Tpetra: Templated Linear Algebra Services Package
@@ -150,11 +149,7 @@ namespace Tpetra {
   Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    this->setVerbLevel (debug_ ? Teuchos::VERB_EXTREME : Teuchos::VERB_NONE);
-    this->setOStream (out_);
     if (! plist.is_null ()) {
-      // The input parameters may override the above verbosity level
-      // setting, if there is a "VerboseObject" sublist.
       this->setParameterList (plist);
     }
 
@@ -163,6 +158,10 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
+         "is true but out_ (pointer to the output stream) is NULL.  Please "
+         "report this bug to the Tpetra developers.");
       Teuchos::OSTab tab (out_);
       std::ostringstream os;
       os << comm_->getRank ()
@@ -291,11 +290,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    this->setVerbLevel (distributor.getVerbLevel ());
-    this->setOStream (out_);
-    // The input parameters may override the above verbosity level
-    // setting, if there is a "VerboseObject" sublist.
-    //
     // Clone the right-hand side's ParameterList, so that this' list
     // is decoupled from the right-hand side's list.  We don't need to
     // do validation, since the right-hand side already has validated
@@ -312,6 +306,10 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
     if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
+         "is true but out_ (pointer to the output stream) is NULL.  Please "
+         "report this bug to the Tpetra developers.");
       Teuchos::OSTab tab (out_);
       std::ostringstream os;
       os << comm_->getRank ()
@@ -350,17 +348,6 @@ namespace Tpetra {
     std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
     std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
     std::swap (useDistinctTags_, rhs.useDistinctTags_);
-
-    // Swap verbosity levels.
-    const Teuchos::EVerbosityLevel lhsVerb = this->getVerbLevel ();
-    const Teuchos::EVerbosityLevel rhsVerb = rhs.getVerbLevel ();
-    this->setVerbLevel (rhsVerb);
-    rhs.setVerbLevel (lhsVerb);
-
-    // Swap output streams.  We've swapped out_ above, but we have to
-    // tell the parent class VerboseObject about the swap.
-    this->setOStream (out_);
-    rhs.setOStream (rhs.out_);
 
     // Swap parameter lists.  If they are the same object, make a deep
     // copy first, so that modifying one won't modify the other one.
@@ -427,13 +414,6 @@ namespace Tpetra {
       "require that their corresponding receives have already been posted, "
       "and the only way to guarantee that in general is with a barrier.");
 
-    if (plist->isSublist ("VerboseObject")) {
-      // Read the "VerboseObject" sublist for (optional) verbosity
-      // settings.  We've set defaults already in Distributor's
-      // constructor, so we don't need this sublist to exist.
-      Teuchos::readVerboseObjectSublist (&*plist, this);
-    }
-
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
@@ -485,6 +465,12 @@ namespace Tpetra {
                 "CUDA GPUs.  Only enable this if you know for sure your MPI "
                 "library supports it.");
 
+    // mfh 24 Dec 2015: Tpetra no longer inherits from
+    // Teuchos::VerboseObject, so it doesn't need the "VerboseObject"
+    // sublist.  However, we retain the "VerboseObject" sublist
+    // anyway, for backwards compatibility (otherwise the above
+    // validation would fail with an invalid parameter name, should
+    // the user still want to provide this list).
     Teuchos::setupVerboseObjectSublist (&*plist);
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
   }
