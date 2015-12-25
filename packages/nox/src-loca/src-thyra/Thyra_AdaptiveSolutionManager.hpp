@@ -36,25 +36,82 @@
 //
 // Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
+//
 //@HEADER
 
-#ifndef LOCA_ADAPTIVESOLUTIONMANAGER
-#define LOCA_ADAPTIVESOLUTIONMANAGER
+#ifndef THYRA_ADAPTIVESOLUTIONMANAGER
+#define THYRA_ADAPTIVESOLUTIONMANAGER
 
 #include "LOCA.H"
 #include "LOCA_Thyra.H"
 #include "LOCA_Thyra_GroupWrapper.H"
 
 
-namespace LOCA {
 namespace Thyra {
+
+class AdaptiveStateBase
+{
+public:
+
+  AdaptiveStateBase(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model);
+  virtual ~AdaptiveStateBase () {}
+
+  virtual void buildSolutionGroup() = 0;
+
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > getModel(){ return model_; }
+
+protected:
+
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > model_;
+
+};
+
+class LOCAAdaptiveState : public AdaptiveStateBase
+{
+public:
+
+  LOCAAdaptiveState(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+                  const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
+                  const Teuchos::RCP<LOCA::GlobalData>& global_data,
+                  const Teuchos::RCP<LOCA::ParameterVector>& p,
+                  int p_index);
+
+  virtual ~LOCAAdaptiveState () {}
+
+  //! Build the LOCA solution group
+  void buildSolutionGroup();
+
+  //! Accessor for the LOCA solution group
+  Teuchos::RCP<LOCA::Thyra::Group>
+       getSolutionGroup(){ return grp_; }
+
+
+private:
+
+  Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy_;
+  Teuchos::RCP<LOCA::GlobalData> globalData_;
+  Teuchos::RCP<LOCA::ParameterVector> paramVector_;
+  int p_index_;
+
+  //! The solution group
+  Teuchos::RCP<LOCA::Thyra::GroupWrapper> grp_;
+
+
+};
+
+class TransAdaptiveState : public AdaptiveStateBase
+{
+public:
+
+  TransAdaptiveState(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model);
+
+  virtual ~TransAdaptiveState () {}
+
+  void buildSolutionGroup(){}
+
+private:
+
+};
 
 class AdaptiveSolutionManager
 {
@@ -64,27 +121,14 @@ public:
 
   virtual ~AdaptiveSolutionManager () {}
 
-  virtual Teuchos::RCP<const ::Thyra::VectorBase<double> > updateSolution(){
-           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
+  void initialize(const Teuchos::RCP<Thyra::AdaptiveStateBase>& state){
+        base = state;
   }
 
-  void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-                  const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
-                  const Teuchos::RCP<LOCA::GlobalData>& global_data,
-                  const Teuchos::RCP<LOCA::ParameterVector>& p,
-                  int p_index);
-
-  //! Build the LOCA solution group
-  void buildSolutionGroup();
-
-  //! Accessor for the LOCA solution group
-  Teuchos::RCP<LOCA::Thyra::Group>
-       getSolutionGroup(){ return grp_; }
+  Teuchos::RCP<Thyra::AdaptiveStateBase> getState(){ return base; }
 
   //! Remap "old" solution into new data structures
-  virtual void projectCurrentSolution(){
-           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
-        }
+  virtual void projectCurrentSolution() = 0;
 
   //! Accessor functions
 
@@ -102,19 +146,12 @@ public:
 
   //! Method called by Piro NOXSolver to determine if the mesh needs adapting
   // A return type of true means that the mesh should be adapted
-  virtual bool queryAdaptationCriteria(){
-           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
-        }
+  virtual bool queryAdaptationCriteria() = 0;
 
   //! Apply adaptation method to mesh and problem. Returns true if adaptation is performed successfully.
-  virtual bool adaptProblem(){
-           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
-        }
+  virtual bool adaptProblem() = 0;
 
 protected:
-
-  //! The solution group
-  Teuchos::RCP<LOCA::Thyra::GroupWrapper> grp_;
 
   //! The adaptation parameter list
   // These are set by the top-level adaptive solution manager
@@ -128,15 +165,10 @@ protected:
   double time_;
   int iter_;
 
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > model_;
-  Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy_;
-  Teuchos::RCP<LOCA::GlobalData> globalData_;
-  Teuchos::RCP<LOCA::ParameterVector> paramVector_;
-  int p_index_;
+  Teuchos::RCP<Thyra::AdaptiveStateBase> base;
 
 };
 
 }
-}
 
-#endif //LOCA_EPETRA_ADAPTIVESOLUTIONMANAGER
+#endif //THYRA_ADAPTIVESOLUTIONMANAGER

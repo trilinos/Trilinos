@@ -60,7 +60,7 @@
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
-#include "LOCA_Thyra_AdaptiveSolutionManager.H"
+#include "Thyra_AdaptiveSolutionManager.hpp"
 
 namespace LOCA {
 
@@ -79,7 +79,7 @@ namespace LOCA {
   public:
 
     AdaptiveStepper(const Teuchos::RCP<Teuchos::ParameterList>& pList,
-      const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager>& mgr,
+      const Teuchos::RCP<::Thyra::AdaptiveSolutionManager>& mgr,
       const Teuchos::RCP<LOCA::GlobalData>& global_data,
       const Teuchos::RCP<NOX::StatusTest::Generic>& nt);
 
@@ -205,7 +205,7 @@ namespace LOCA {
   protected:
 
     //! Adaptive solution manager provides interface to remesh/resize functions
-    Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> mgr;
+    Teuchos::RCP<::Thyra::AdaptiveSolutionManager> mgr;
 
     //! Global data
     Teuchos::RCP<LOCA::GlobalData> globalData;

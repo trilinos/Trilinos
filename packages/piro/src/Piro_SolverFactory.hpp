@@ -70,7 +70,7 @@ public:
    *  - Piro::LOCASolver (<tt>"LOCA"</tt>)
    *  - Piro::RythmosSolver (<tt>"Rythmos"</tt>)
    *  - Piro::VelocityVerletSolver (<tt>"Velocity Verlet"</tt>)
-   *  - Piro::Epetra::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
+   *  - Piro::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
    *
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
@@ -79,7 +79,17 @@ public:
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
+
+  template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
+          typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
+TEUCHOS_DEPRECATED
+  Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
+      const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
+
 };
 
 } // namespace Piro

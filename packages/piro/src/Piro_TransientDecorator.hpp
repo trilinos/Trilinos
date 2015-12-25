@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -51,7 +51,7 @@
 
 namespace Piro {
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class TransientDecorator
     : public Thyra::ModelEvaluatorDefaultBase<Scalar> {
 
@@ -89,7 +89,7 @@ class TransientDecorator
   private:
 
    mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot;
-   mutable Scalar omega; 
+   mutable Scalar omega;
    mutable Teuchos::Array<Thyra::ModelEvaluatorBase::Derivative<Scalar> > DgDx_dotdot_;
 
 };

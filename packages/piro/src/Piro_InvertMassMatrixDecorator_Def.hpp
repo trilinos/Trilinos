@@ -63,8 +63,13 @@
 #endif
 
 
-template<typename Scalar>
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::InvertMassMatrixDecorator(
+#else
+template <typename Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
+#endif
                           Teuchos::RCP<Teuchos::ParameterList> stratParams,
                           Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
                           bool massMatrixIsConstant_, bool lumpMassMatrix_,
@@ -93,6 +98,16 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
 
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
+#ifdef ALBANY_BUILD
+#ifdef HAVE_PIRO_IFPACK2
+  typedef Thyra::PreconditionerFactoryBase<double> Base;
+  typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
+  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
+#ifdef HAVE_PIRO_MUELU
+  Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
+#endif
+#else
 #ifdef HAVE_PIRO_IFPACK2
   typedef Thyra::PreconditionerFactoryBase<double> Base;
   typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
@@ -100,6 +115,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
 #endif
 #ifdef HAVE_PIRO_MUELU
   Stratimikos::enableMueLu(linearSolverBuilder);
+#endif
 #endif
 
    linearSolverBuilder.setParameterList(stratParams);
@@ -113,56 +129,103 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~InvertMassMatrixDecorator()
+#else
 template<typename Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::~InvertMassMatrixDecorator()
+#endif
 {
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_x_space() const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_x_space() const
+#endif
 {
   return model->get_x_space();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_f_space() const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_f_space() const
+#endif
 {
   return model->get_f_space();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_space(int l) const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_p_space(int l) const
+#endif
 {
   return model->get_p_space(l);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Teuchos::Array<std::string> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_p_names(int l) const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_p_names(int l) const
+#endif
 {
   return model->get_p_names(l);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_space(int j) const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
+#endif
 {
   return model->get_g_space(j);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::ArrayView<const std::string>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_g_names(int j) const
+#else
 template<typename Scalar>
 Teuchos::ArrayView<const std::string>
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_names(int j) const
+#endif
 {
   return model->get_g_names(j);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNominalValues() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::getNominalValues() const
+#endif
 {
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = this->createInArgsImpl();
   nominalValues.setArgs(
@@ -172,46 +235,82 @@ Piro::InvertMassMatrixDecorator<Scalar>::getNominalValues() const
   return nominalValues;
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP< Thyra::LinearOpBase< Scalar > >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_W_op () const
+#else
 template<typename Scalar>
 Teuchos::RCP< Thyra::LinearOpBase< Scalar > >
 Piro::InvertMassMatrixDecorator<Scalar>::create_W_op () const
+#endif
 {
   return model->create_W_op();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_W_factory() const
+#else
 template<typename Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_W_factory() const
+#endif
 {
   return model->get_W_factory();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::create_W_prec() const
+#else
 template<typename Scalar>
 Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::create_W_prec() const
+#endif
 {
   return model->create_W_prec();
 }
 
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLowerBounds() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::getLowerBounds() const
+#endif
 {
   return Thyra::ModelEvaluatorBase::InArgs<Scalar>(); // Default value
 }
 
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getUpperBounds() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::getUpperBounds() const
+#endif
 {
   return Thyra::ModelEvaluatorBase::InArgs<Scalar>(); // Default value
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reportFinalPoint(
+#else
 template<typename Scalar>
 void
 Piro::InvertMassMatrixDecorator<Scalar>::reportFinalPoint(
+#endif
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
     const bool wasSolved)
 {
@@ -221,29 +320,54 @@ Piro::InvertMassMatrixDecorator<Scalar>::reportFinalPoint(
          "Calling reportFinalPoint in Piro_InvertMassMatrixDecorator_Def.hpp line 215" << std::endl);
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgs() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::createInArgs() const
+#endif
 {
   return this->createInArgsImpl();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createInArgsImpl() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::createInArgsImpl() const
+#endif
 {
   return model->createInArgs();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createOutArgsImpl() const
+#else
 template<typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::createOutArgsImpl() const
+#endif
 {
   return model->createOutArgs();
 }
 
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelImpl(
+#else
 template<typename Scalar>
-void Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
+void
+Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
+#endif
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
 {

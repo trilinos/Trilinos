@@ -72,7 +72,7 @@
 
 LOCA::AdaptiveStepper::AdaptiveStepper(
           const Teuchos::RCP<Teuchos::ParameterList>& pList,
-          const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager>& solnManager_,
+          const Teuchos::RCP<::Thyra::AdaptiveSolutionManager>& solnManager_,
           const Teuchos::RCP<LOCA::GlobalData>& global_data,
           const Teuchos::RCP<NOX::StatusTest::Generic>& nt) :
 
@@ -189,7 +189,7 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
   bifurcationParams =
     parsedParams->getSublist("Bifurcation");
 
-  setSolutionGroup(mgr->getSolutionGroup(), startValue);
+  setSolutionGroup(Teuchos::rcp_dynamic_cast<::Thyra::LOCAAdaptiveState>(mgr->getState())->getSolutionGroup(), startValue);
 
   printInitializationInfo();
 
@@ -524,7 +524,8 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 // The new solution group is created by the solution manager, using the new adapted discretization
 // Get a pointer to it
 
-  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> newSolnGroup = mgr->getSolutionGroup();
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> newSolnGroup = 
+        Teuchos::rcp_dynamic_cast<::Thyra::LOCAAdaptiveState>(mgr->getState())->getSolutionGroup();
 
 // Re-build the LOCA factory that creates the stepping criteria for the adapted problem
 
