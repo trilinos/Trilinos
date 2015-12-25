@@ -1,13 +1,12 @@
 <ParameterList name="Inputs">
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="Width"             type="double"  value="3.0"  />
+    <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="1"    />
-    <Parameter name="NY"                type="int"     value="3"    />
-    <Parameter name="Store mesh data"   type="bool"    value="true" />
+    <Parameter name="NX"                type="int"     value="3"    />
+    <Parameter name="NY"                type="int"     value="1"    />
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->

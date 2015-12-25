@@ -46,22 +46,14 @@
            full-space methods.
 */
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_BoundConstraint_SimOpt.hpp"
-#include "ROL_Vector_SimOpt.hpp"
-
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-
 #include <iostream>
 #include <algorithm>
 
-#include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/dofmanager.hpp"
+#include "poissondata.hpp"
 
 typedef double RealT;
 
@@ -88,45 +80,8 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-    /*** Initialize mesh / degree-of-freedom manager. ***/
-    MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    Intrepid::FieldContainer<RealT> nodes;
-    Intrepid::FieldContainer<int>   cellToNodeMap;
-    Intrepid::FieldContainer<int>   cellToEdgeMap;
-    meshmgr.getNodes(nodes);
-    meshmgr.getCellToNodeMap(cellToNodeMap);
-    meshmgr.getCellToEdgeMap(cellToEdgeMap);
-    *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
-    *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
-    *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
-    // Print mesh to file.
-    std::ofstream meshfile;
-    meshfile.open("mesh.txt");
-    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,3), 0) << "  " << nodes(cellToNodeMap(i,3), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-    }
-    meshfile.close();
-
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ1 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> >);
-
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ2 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >);
-
-    std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
-    basisPtrs[0] = basisPtrQ2;
-    basisPtrs[1] = basisPtrQ2;
-    basisPtrs[2] = basisPtrQ1;
-
-    Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
-
-    DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
+    /*** Initialize main data structure. ***/
+    PoissonData<RealT> pdata(*parlist);
 
   }
   catch (std::logic_error err) {
