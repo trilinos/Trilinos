@@ -351,7 +351,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
   int      status;
   int      varid;
   size_t   start[1], count[1];
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
   long long varidx[2];
 #else
   int varidx[2];
@@ -380,7 +380,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
       count[0] = 2;
     }
 
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
     status = nc_get_vara_longlong(exoid, varid, start, count, varidx);
 #else
     status = nc_get_vara_int(exoid, varid, start, count, varidx);

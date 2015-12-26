@@ -54,7 +54,7 @@ int ex_get_group_id (int parent_id, const char *group_name, int *group_id)
    
   exerrval = 0; /* clear error code */
 
-#if !defined(NC_NETCDF4)
+#if !defined(ENABLE_NETCDF4)
   exerrval = NC_ENOTNC4;
   sprintf(errmsg,
 	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
