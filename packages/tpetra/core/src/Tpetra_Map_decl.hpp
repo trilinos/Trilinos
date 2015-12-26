@@ -1379,7 +1379,17 @@ namespace Tpetra {
       mapOut.uniform_           = mapIn.uniform_;
       mapOut.contiguous_        = mapIn.contiguous_;
       mapOut.distributed_       = mapIn.distributed_;
-      mapOut.lgMap_             = mapIn.lgMap_;
+      {
+        // mfh 25 Dec 2015: We really only need to make a deep copy if
+        // the two Map types have different memory spaces.  However,
+        // if you're calling clone(), it is likely the case that the
+        // memory spaces differ, so it doesn't hurt to make a deep
+        // copy here.
+        typedef decltype (mapOut.lgMap_) out_lgmap_type;
+        out_lgmap_type lgMap ("lgMap", mapIn.lgMap_.dimension_0 ());
+        Kokkos::deep_copy (lgMap, mapIn.lgMap_);
+        mapOut.lgMap_ = lgMap;
+      }
       // This makes a deep copy only if necessary.  We could have
       // defined operator= to do this, but that would violate
       // expectations.  (Kokkos::View::operator= only does a shallow
