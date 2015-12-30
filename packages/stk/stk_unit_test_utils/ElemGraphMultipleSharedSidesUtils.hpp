@@ -166,7 +166,7 @@ inline void remove_element_from_part(stk::mesh::BulkData& bulkData, stk::mesh::E
     bulkData.modification_end();
 }
 
-void test_skinned_mesh(stk::mesh::BulkData& bulkData, size_t expectedNumFacesPerElement)
+inline void test_skinned_mesh(stk::mesh::BulkData& bulkData, size_t expectedNumFacesPerElement)
 {
     ElemGraphTestUtils::test_num_faces_per_element(bulkData, {expectedNumFacesPerElement, expectedNumFacesPerElement});
     std::vector<size_t> global_mesh_counts;
