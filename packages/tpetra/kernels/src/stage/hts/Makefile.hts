@@ -3,10 +3,10 @@ CXX=g++
 CXXFLAGS=$(opt) -Wall -pedantic -fopenmp -DNO_BLAS
 LDFLAGS=-fopenmp
 # If using MKL:
-# CXXFLAGS=-DUSE_MKL
-# LDFLAGS=-mkl
+# CXXFLAGS=$(opt) -Wall -pedantic -fopenmp -DUSE_MKL -mkl
+# LDFLAGS=-fopenmp -mkl
 
-SOURCES=hts.cpp hts_test_util.cpp
+SOURCES=hts_test.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 .cpp.o:
@@ -14,11 +14,10 @@ OBJECTS=$(SOURCES:.cpp=.o)
 
 all: hts_test
 
-hts_test: $(OBJECTS) hts_test.o
-	$(CXX) hts_test.o $(OBJECTS) $(LDFLAGS) -o hts_test
+hts_test: $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LDFLAGS) -o hts_test
 
 clean:
 	rm -f *.o hts_test
 
-hts_test.o: hts_test_util.hpp hts.hpp hts_impl.hpp hts_test_util.o
-hts.o: hts_impl.hpp hts.hpp hts_impl.hpp
+hts_test.o: hts_test_util.hpp hts.hpp hts_impl.hpp hts_impl_def.hpp
