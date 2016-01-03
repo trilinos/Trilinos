@@ -2676,6 +2676,7 @@ namespace Tpetra {
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
     const char tfecfFuncName[] = "getLocalDiagOffsets";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2688,9 +2689,9 @@ namespace Tpetra {
     const map_type& rowMap = * (this->getRowMap ());
     const map_type& colMap = * (this->getColMap ());
 
-    const size_t myNumRows = getNodeNumRows ();
-    if (static_cast<size_t> (offsets.size ()) != myNumRows) {
-      offsets.resize (static_cast<size_t> (myNumRows));
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    if (static_cast<LO> (offsets.size ()) != myNumRows) {
+      offsets.resize (myNumRows);
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -2700,17 +2701,17 @@ namespace Tpetra {
 
     // FIXME (mfh 16 Dec 2015) It's easy to thread-parallelize this
     // setup, at least on the host.
-    for (size_t r = 0; r < myNumRows; ++r) {
+    for (LO r = 0; r < myNumRows; ++r) {
       const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
-      const LocalOrdinal rlid = colMap.getLocalElement (rgid);
+      const LO rlid = colMap.getLocalElement (rgid);
 
 #ifdef HAVE_TPETRA_DEBUG
-      if (rlid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+      if (rlid == Teuchos::OrdinalTraits<LO>::invalid ()) {
         allRowMapDiagEntriesInColMap = false;
       }
 #endif // HAVE_TPETRA_DEBUG
 
-      if (rlid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
+      if (rlid != Teuchos::OrdinalTraits<LO>::invalid ()) {
         const RowInfo rowinfo = staticGraph_->getRowInfo (r);
         if (rowinfo.numEntries > 0) {
           offsets[r] = staticGraph_->findLocalIndex (rowinfo, rlid);
@@ -2814,8 +2815,9 @@ namespace Tpetra {
       Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
-    const size_t myNumRows = getNodeNumRows ();
-    for (size_t r = 0; r < myNumRows; ++r) {
+    const LocalOrdinal myNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal r = 0; r < myNumRows; ++r) {
       lclVecHost1d(r) = STS::zero (); // default value if no diag entry
       const GlobalOrdinal rgid = rowMap.getGlobalElement (r);
       const LocalOrdinal rlid = colMap.getLocalElement (rgid);
@@ -2882,18 +2884,20 @@ namespace Tpetra {
     Kokkos::View<const size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       h_offsets(&offsets[0],offsets.size());
     // Find the diagonal entries and put them in lclVecHost1d.
-    const size_t myNumRows = getNodeNumRows ();
-    Kokkos::parallel_for ( Kokkos::RangePolicy<host_execution_space>( 0, myNumRows), [&] (const size_t& i) {
-      lclVecHost1d(i) = STS::zero (); // default value if no diag entry
-      if (h_offsets[i] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+    const LocalOrdinal myNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
+    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LocalOrdinal& lclRow) {
+      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+      if (h_offsets[lclRow] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
         //ArrayView<const LocalOrdinal> ind;
         //ArrayView<const Scalar> val;
         // NOTE (mfh 02 Jan 2015) This technically does not assume
         // UVM, since the get{Global,Local}RowView methods are
         // supposed to return views of host data.
         //this->getLocalRowView (i, ind, val);
-        auto row_i = lclMatrix_.template rowConst<size_t>(i);
-        lclVecHost1d(i) = static_cast<impl_scalar_type> (row_i.value(h_offsets[i]));
+        auto curRow = lclMatrix_.template rowConst<size_t>(lclRow);
+        lclVecHost1d(lclRow) = static_cast<impl_scalar_type> (curRow.value(h_offsets[lclRow]));
       }
     });
     lclVec.template sync<execution_space> (); // sync changes back to device
@@ -2946,9 +2950,10 @@ namespace Tpetra {
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<impl_scalar_type> rowValues = null;
 
-    const size_t lclNumRows = this->getNodeNumRows ();
-    for (size_t i = 0; i < lclNumRows; ++i) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
+    const LocalOrdinal lclNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
+      const RowInfo rowinfo = staticGraph_->getRowInfo (i);
       rowValues = this->getViewNonConst (rowinfo);
       const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
@@ -3000,12 +3005,13 @@ namespace Tpetra {
     ArrayRCP<const Scalar> vectorVals = xp->getData (0);
     ArrayView<impl_scalar_type> rowValues = null;
 
-    const size_t lclNumRows = this->getNodeNumRows ();
-    for (size_t i = 0; i < lclNumRows; ++i) {
-      const RowInfo rowinfo = staticGraph_->getRowInfo (static_cast<LocalOrdinal> (i));
+    const LocalOrdinal lclNumRows =
+      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+    for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
+      const RowInfo rowinfo = staticGraph_->getRowInfo (i);
       rowValues = this->getViewNonConst (rowinfo);
       ArrayView<const LocalOrdinal> colInds;
-      getCrsGraph ()->getLocalRowView (static_cast<LocalOrdinal> (i), colInds);
+      getCrsGraph ()->getLocalRowView (i, colInds);
       for (size_t j = 0; j < rowinfo.numEntries; ++j) {
         rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
       }
@@ -3047,9 +3053,10 @@ namespace Tpetra {
           }
         }
         else {
-          const size_t numRows = getNodeNumRows ();
-          for (size_t r = 0; r < numRows; ++r) {
-            RowInfo rowInfo = myGraph_->getRowInfo (r);
+          const LocalOrdinal numRows =
+            static_cast<LocalOrdinal> (this->getNodeNumRows ());
+          for (LocalOrdinal r = 0; r < numRows; ++r) {
+            const RowInfo rowInfo = myGraph_->getRowInfo (r);
             const size_type numEntries =
               static_cast<size_type> (rowInfo.numEntries);
             ArrayView<const impl_scalar_type> A_r =
@@ -3114,9 +3121,10 @@ namespace Tpetra {
       // We can't just call sortEntries() here, because that fails if
       // the matrix has a const graph.  We want to use the given graph
       // in that case.
-      const size_t lclNumRows = theGraph.getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = theGraph.getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = theGraph.getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         theGraph.template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
@@ -3760,9 +3768,10 @@ namespace Tpetra {
       isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::sortEntries: "
       "Cannot sort with static graph.");
     if (! myGraph_->isSorted ()) {
-      const size_t lclNumRows = this->getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = myGraph_->getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (this->getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = myGraph_->getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         myGraph_->template sortRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
@@ -3780,9 +3789,10 @@ namespace Tpetra {
       isStaticGraph (), std::runtime_error, "Tpetra::CrsMatrix::"
       "mergeRedundantEntries: Cannot merge with static graph.");
     if (! myGraph_->isMerged ()) {
-      const size_t lclNumRows = this->getNodeNumRows ();
-      for (size_t row = 0; row < lclNumRows; ++row) {
-        RowInfo rowInfo = myGraph_->getRowInfo (row);
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (this->getNodeNumRows ());
+      for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
+        const RowInfo rowInfo = myGraph_->getRowInfo (row);
         Teuchos::ArrayView<impl_scalar_type> rv = this->getViewNonConst (rowInfo);
         myGraph_->template mergeRowIndicesAndValues<impl_scalar_type> (rowInfo, rv);
       }
