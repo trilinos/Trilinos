@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT ROL ALGORITHM ********************************************/
     /**********************************************************************************************/
     // Get ROL parameterlist
-    std::string filename = "input.xml";
+    std::string filename = "input_01.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     Teuchos::ParameterList list = *parlist;
@@ -301,6 +301,24 @@ int main(int argc, char* argv[]) {
     *outStream << "\nQUANTILE-BASED QUADRANGLE RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* MIXED-QUANTILE QUADRANGLE ******************************************/
+    /**********************************************************************************************/
+    *outStream << "\nMIXED-QUANTILE QUADRANGLE RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Mixed-Quantile Quadrangle");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* QUANTILE-RANGE QUADRANGLE ******************************************/
+    /**********************************************************************************************/
+    *outStream << "\nQUANTILE-RADIUS QUADRANGLE RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Radius Quadrangle");
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

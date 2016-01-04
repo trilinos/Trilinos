@@ -56,12 +56,11 @@
 #include "ROL_Algorithm.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
-#include "ROL_RiskVector.hpp"
 // ROL objective functions and constraints
 #include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
-#include "ROL_RiskAverseObjective.hpp"
+#include "ROL_StochasticProblem.hpp"
 // ROL sample generators
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"

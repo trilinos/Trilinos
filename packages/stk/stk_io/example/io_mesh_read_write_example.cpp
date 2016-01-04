@@ -47,7 +47,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
 namespace {

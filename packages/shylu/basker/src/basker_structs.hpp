@@ -3,16 +3,11 @@
 
 #include "basker_types.hpp"
 #include "basker_vector.hpp"
-//#include "basker_thread.hpp"
-
-#include <assert.h>
 
 namespace BaskerNS
 {
-  
-  //-----------------------------basker - thread-----------------------------------//
 
-      //-----------------------------basker - thread-----------------------------------//
+  //-------------basker - thread------------//
   template <class Int, class Entry, class Exe_Space>
   struct basker_thread
   {
@@ -23,6 +18,13 @@ namespace BaskerNS
       ews_size = 0;
       iws_mult = 5; //Note:come back and reduce
       ews_mult = 2; //Note:come back and reduce
+
+
+      error_type   = BASKER_ERROR_NOERROR;
+      error_blk    = BASKER_MAX_IDX;
+      error_subblk = BASKER_MAX_IDX;
+      error_info   = BASKER_MAX_IDX;
+      
 
       init_ops();
     }//end basker_thread
@@ -36,7 +38,8 @@ namespace BaskerNS
     BASKER_INLINE
     void Finalize()
     {
-      //Note, that basker thread is always used in a array so not need.
+      //Note,
+      //basker thread is always used in a array so not need.
       //Added for completeness/OpenMP
       #ifndef BASKER_KOKKOS
       FREE_INT_1DARRAY(iws);
@@ -56,6 +59,12 @@ namespace BaskerNS
 
     //Each thread gets a column matrix
     BASKER_MATRIX C;
+    
+    //Manage realloc 
+    Int error_type; //Remalloc, pivot, etc
+    Int error_blk;
+    Int error_subblk;
+    Int error_info; //number 
 
 
     //----------------Depracted----------

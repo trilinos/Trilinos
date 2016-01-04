@@ -143,8 +143,15 @@ public:
     PROPER_RIGID
   };
 
+  struct SelectorMapping {
+    SelectorMapping(const stk::mesh::Selector & domain, const stk::mesh::Selector & range) : m_domain(domain), m_range(range) {}
+    stk::mesh::Selector m_domain;
+    stk::mesh::Selector m_range;
+    stk::mesh::Selector m_unique_range;
+  };
+
   typedef double Scalar;
-  typedef std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector> > SelectorPairVector;
+  typedef std::vector<SelectorMapping> SelectorMappingVector;
   typedef stk::search::IdentProc<stk::mesh::EntityKey> SearchId;
   typedef stk::search::Point<Scalar> Point;
   typedef stk::search::Sphere<Scalar> Sphere;
@@ -216,7 +223,7 @@ public:
                           const CoordinateFunctor & getCoordinates )
     : m_bulk_data(bulk_data),
       m_get_coordinates(getCoordinates),
-      m_periodic_pairs(),
+      m_periodic_mappings(),
       m_search_results(),
       m_periodic_ghosts(NULL),
       m_firstCallToFindPeriodicNodes(true),
@@ -228,9 +235,9 @@ public:
   stk::mesh::Selector get_domain_selector() const
   {
     stk::mesh::Selector result;
-    for (SelectorPairVector::const_iterator it = m_periodic_pairs.begin(); it != m_periodic_pairs.end(); ++it)
+    for (typename SelectorMappingVector::const_iterator it = m_periodic_mappings.begin(); it != m_periodic_mappings.end(); ++it)
     {
-      result |= it->first;
+      result |= it->m_domain;
     }
     return result;
   }
@@ -238,9 +245,9 @@ public:
   stk::mesh::Selector get_range_selector() const
   {
     stk::mesh::Selector result;
-    for (SelectorPairVector::const_iterator it = m_periodic_pairs.begin(); it != m_periodic_pairs.end(); ++it)
+    for (typename SelectorMappingVector::const_iterator it = m_periodic_mappings.begin(); it != m_periodic_mappings.end(); ++it)
     {
-      result |= it->second;
+      result |= it->m_range;
     }
     return result;
   }
@@ -255,19 +262,16 @@ public:
     {
       m_firstCallToFindPeriodicNodes = false;
       resolve_multi_periodicity();
-
-      for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
-      {
-        populate_transform(parallel, m_periodic_pairs[i].first, m_periodic_pairs[i].second, m_transforms[i]);
-      }
-
-      //here we need to alter the selectors as to remove the redundant entries
-      remove_redundant_nodes();
     }
 
-    for (size_t i = 0; i < m_periodic_pairs.size(); ++i)
+    for (size_t i = 0; i < m_periodic_mappings.size(); ++i)
     {
-      find_periodic_nodes_for_given_pair(m_periodic_pairs[i].first, m_periodic_pairs[i].second, parallel,
+      populate_transform(parallel, m_periodic_mappings[i].m_domain, m_periodic_mappings[i].m_range, m_transforms[i]);
+    }
+
+    for (size_t i = 0; i < m_periodic_mappings.size(); ++i)
+    {
+      find_periodic_nodes_for_given_pair(m_periodic_mappings[i].m_domain, m_periodic_mappings[i].m_unique_range, parallel,
                                          m_transforms[i], m_search_tolerances[i]);
     }
 
@@ -300,7 +304,7 @@ public:
                                 const double search_tol = 1.e-10)
   {
     ThrowErrorIf(m_hasRotationalPeriodicity);
-    m_periodic_pairs.push_back(std::make_pair(domain, range));
+    m_periodic_mappings.push_back(SelectorMapping(domain, range));
     m_transforms.push_back( TransformHelper() );
     m_search_tolerances.push_back(search_tol);
   }
@@ -312,11 +316,11 @@ public:
       const double point[],
       const double search_tol = 1.e-10)
   {
-    m_periodic_pairs.push_back(std::make_pair(domain, range));
+    m_periodic_mappings.push_back(SelectorMapping(domain, range));
     m_search_tolerances.push_back(search_tol);
 
     //only one periodic BC can exist with rotational periodicity
-    ThrowRequire(m_periodic_pairs.size() == 1);
+    ThrowRequire(m_periodic_mappings.size() == 1);
 
     m_hasRotationalPeriodicity = true;
 
@@ -388,7 +392,7 @@ public:
 private:
   stk::mesh::BulkData & m_bulk_data;
   CoordinateFunctor m_get_coordinates;
-  SelectorPairVector m_periodic_pairs;
+  SelectorMappingVector m_periodic_mappings;
   SearchPairVector m_search_results;
   SearchPairSet m_unique_search_results;
 
@@ -401,11 +405,12 @@ private:
 
   void resolve_multi_periodicity()
   {
-    switch (m_periodic_pairs.size())
+    switch (m_periodic_mappings.size())
     {
       case 0:
+        break;
       case 1:
-        //nothing to do here
+        m_periodic_mappings[0].m_unique_range = m_periodic_mappings[0].m_range;
         break;
       case 2:
       {
@@ -413,18 +418,23 @@ private:
             || (m_transforms[1].m_transform_type != TRANSLATION)) {
           ThrowErrorMsg("Rotation not supported when there are 2 periodic conditions.");
         }
-        const stk::mesh::Selector & domainA = m_periodic_pairs[0].first;
-        const stk::mesh::Selector & domainB = m_periodic_pairs[1].first;
+        const stk::mesh::Selector & domainA = m_periodic_mappings[0].m_domain;
+        const stk::mesh::Selector & domainB = m_periodic_mappings[1].m_domain;
         const stk::mesh::Selector domainIntersection = domainA & domainB;
 
-        const stk::mesh::Selector & rangeA = m_periodic_pairs[0].second;
-        const stk::mesh::Selector & rangeB = m_periodic_pairs[1].second;
+        const stk::mesh::Selector & rangeA = m_periodic_mappings[0].m_range;
+        const stk::mesh::Selector & rangeB = m_periodic_mappings[1].m_range;
         const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
 
         //now add new pair with this
-        m_periodic_pairs.push_back(std::make_pair(domainIntersection, rangeIntersection));
+        m_periodic_mappings.push_back(SelectorMapping(domainIntersection, rangeIntersection));
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
+
+        //remove redundant entries from unique range
+        m_periodic_mappings[0].m_unique_range = m_periodic_mappings[0].m_range - rangeIntersection;
+        m_periodic_mappings[1].m_unique_range = m_periodic_mappings[1].m_range - rangeIntersection;
+        m_periodic_mappings[2].m_unique_range = m_periodic_mappings[2].m_range;
         break;
       }
       case 3:
@@ -435,27 +445,47 @@ private:
             ) {
           ThrowErrorMsg("Rotation not supported when there are 3 periodic conditions.");
         }
-        const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
-        const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
-        const stk::mesh::Selector domainC = m_periodic_pairs[2].first;
+        const stk::mesh::Selector & domainA = m_periodic_mappings[0].m_domain;
+        const stk::mesh::Selector & domainB = m_periodic_mappings[1].m_domain;
+        const stk::mesh::Selector & domainC = m_periodic_mappings[2].m_domain;
 
-        const stk::mesh::Selector rangeA = m_periodic_pairs[0].second;
-        const stk::mesh::Selector rangeB = m_periodic_pairs[1].second;
-        const stk::mesh::Selector rangeC = m_periodic_pairs[2].second;
+        const stk::mesh::Selector & rangeA = m_periodic_mappings[0].m_range;
+        const stk::mesh::Selector & rangeB = m_periodic_mappings[1].m_range;
+        const stk::mesh::Selector & rangeC = m_periodic_mappings[2].m_range;
 
-        //edges
-        m_periodic_pairs.push_back(std::make_pair(domainA & domainB, rangeA & rangeB));
+        //point selector
+        const stk::mesh::Selector domainABC = domainA & domainB & domainC;
+        const stk::mesh::Selector rangeABC = rangeA & rangeB & rangeC;
+        //edge selectors
+        const stk::mesh::Selector domainAB = domainA & domainB;
+        const stk::mesh::Selector domainAC = domainA & domainC;
+        const stk::mesh::Selector domainBC = domainB & domainC;
+        const stk::mesh::Selector rangeAB = rangeA & rangeB;
+        const stk::mesh::Selector rangeAC = rangeA & rangeC;
+        const stk::mesh::Selector rangeBC = rangeB & rangeC;
+
+        //edges and point
+        m_periodic_mappings.push_back(SelectorMapping(domainAB, rangeAB));
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
-        m_periodic_pairs.push_back(std::make_pair(domainB & domainC, rangeB & rangeC));
+        m_periodic_mappings.push_back(SelectorMapping(domainBC, rangeBC));
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
-        m_periodic_pairs.push_back(std::make_pair(domainA & domainC, rangeA & rangeC));
+        m_periodic_mappings.push_back(SelectorMapping(domainAC, rangeAC));
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
-        m_periodic_pairs.push_back(std::make_pair(domainA & domainB & domainC, rangeA & rangeB & rangeC));
+        m_periodic_mappings.push_back(SelectorMapping(domainABC, rangeABC));
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
+
+        //remove redundant entries from unique range
+        m_periodic_mappings[0].m_unique_range = m_periodic_mappings[0].m_range - (rangeAB | rangeAC);
+        m_periodic_mappings[1].m_unique_range = m_periodic_mappings[1].m_range - (rangeAB | rangeBC);
+        m_periodic_mappings[2].m_unique_range = m_periodic_mappings[2].m_range - (rangeAC | rangeBC);
+        m_periodic_mappings[3].m_unique_range = m_periodic_mappings[3].m_range - rangeABC;
+        m_periodic_mappings[4].m_unique_range = m_periodic_mappings[4].m_range - rangeABC;
+        m_periodic_mappings[5].m_unique_range = m_periodic_mappings[5].m_range - rangeABC;
+        m_periodic_mappings[6].m_unique_range = m_periodic_mappings[6].m_range;
         break;
       }
       default:
@@ -477,6 +507,9 @@ private:
     populate_search_vector(side1, side_1_vector, search_tolerance);
 
     populate_search_vector(side2, side_2_vector, search_tolerance);
+
+    std::cout << "Doing search for " << side_1_vector.size() << " " << side_2_vector.size() << " " << transform.m_translation[0] << " " << transform.m_translation[1] << " " << transform.m_translation[2] << std::endl;
+
 
     switch (transform.m_transform_type)
     {
@@ -501,63 +534,6 @@ private:
     stk::search::coarse_search(side_1_vector, side_2_vector, stk::search::BOOST_RTREE, parallel, search_results);
 
     m_search_results.insert(m_search_results.end(), search_results.begin(), search_results.end());
-  }
-
-  void remove_redundant_nodes()
-  {
-    switch (m_periodic_pairs.size())
-    {
-      case 1:
-        //do nothing
-        break;
-      case 3: //2 periodic pairs plus intersections
-      {
-        const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
-        const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
-
-        const stk::mesh::Selector rangeA = m_periodic_pairs[0].second;
-        const stk::mesh::Selector rangeB = m_periodic_pairs[1].second;
-        const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
-
-        m_periodic_pairs[0].second = rangeA - rangeIntersection;
-        m_periodic_pairs[1].second = rangeB - rangeIntersection;
-
-        break;
-      }
-      case 7:
-      {
-        const stk::mesh::Selector domainA = m_periodic_pairs[0].first;
-        const stk::mesh::Selector domainB = m_periodic_pairs[1].first;
-        const stk::mesh::Selector domainC = m_periodic_pairs[2].first;
-
-        const stk::mesh::Selector rangeA = m_periodic_pairs[0].second;
-        const stk::mesh::Selector rangeB = m_periodic_pairs[1].second;
-        const stk::mesh::Selector rangeC = m_periodic_pairs[2].second;
-
-        //point selector
-        const stk::mesh::Selector rangeABC = rangeA & rangeB & rangeC;
-        //edge selectors
-        const stk::mesh::Selector rangeAB = rangeA & rangeB;
-        const stk::mesh::Selector rangeAC = rangeA & rangeC;
-        const stk::mesh::Selector rangeBC = rangeB & rangeC;
-
-        //now we redefine the periodic pairs to remove redundancies
-        m_periodic_pairs[0].second = rangeA - (rangeAB | rangeAC);
-        m_periodic_pairs[1].second = rangeB - (rangeAB | rangeBC);
-        m_periodic_pairs[2].second = rangeC - (rangeAC | rangeBC);
-
-        //edges
-        m_periodic_pairs[3].second = rangeAB - rangeABC;
-        m_periodic_pairs[4].second = rangeBC - rangeABC;
-        m_periodic_pairs[5].second = rangeAC - rangeABC;
-
-        break;
-      }
-      default:
-        ThrowErrorMsg("Cannot handle this number of periodic pairs");
-        break;
-    }
-
   }
 
   void populate_search_vector(stk::mesh::Selector side_selector,

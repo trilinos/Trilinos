@@ -31,9 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <gtest/gtest.h>
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
 namespace stk { namespace mesh { class Part; } }
 

@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: felcen.f,v 1.3 1999/01/25 16:38:38 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE FELCEN (NUMCOL, NEROW, IELROW, IXROW, IELCEN)
 C=======================================================================

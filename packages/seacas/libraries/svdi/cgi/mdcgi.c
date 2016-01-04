@@ -217,4 +217,34 @@ void xcact_ (void (*device_fn)(), anything **p_surface_id)
 /*	xcsol - set solicitation surface				      */
 /*									      */
 /******************************************************************************/
+void xcsol_ (anything **surface_id)
+{
+   /* does surface_id point to a valid surface? */
+      /* if not, do error action */
+   /* set the solicitation surface to surface_id */
+
+   short	dev;			/* which device to look at now */
+   short	dev_found;		/* which device was it found on */
+   short	surf;			/* which surface on device to look at */
+
+
+   /* search devices for this surface */
+   dev_found = -1;
+   for (dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
+      for (surf = 0; surf < devices [dev]. num_active_surfaces; ++surf) {
+         if (*surface_id == devices[dev]. statelist [surf]) {
+            dev_found = dev; break;
+         } /* end if found on list */
+      } /* end for */
+   } /* end for all devices */
+
+   /* does surface_id point to a valid surface? */
+   if (dev_found < 0) {
+      fprintf (stderr, "xcsol: surface id not a valid surface\n");
+      return;
+   } /* end if surface not found */
+
+   sol_surf = *surface_id;
+
+} /* end xcsol */
 

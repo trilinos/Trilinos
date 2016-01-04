@@ -31,12 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, TEST, etc
 #include <stddef.h>                     // for size_t, NULL
 #include <algorithm>                    // for count
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stdexcept>                    // for runtime_error, logic_error
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
-#include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include "Shards_BasicTopologies.hpp"   // for getCellTopologyData, etc
 #include "Shards_CellTopology.hpp"      // for operator==, CellTopology

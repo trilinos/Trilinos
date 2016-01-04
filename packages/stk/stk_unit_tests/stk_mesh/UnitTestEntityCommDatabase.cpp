@@ -33,11 +33,15 @@
 
 
 
-#include <stk_topology/topology.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stk_mesh/base/CommListUpdater.hpp>  // for CommListUpdater
+#include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/EntityCommListInfo.hpp>
-#include <stk_mesh/base/CommListUpdater.hpp>
-#include <stk_mesh/base/EntityCommDatabase.hpp>
-#include <gtest/gtest.h>
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityCommInfo
+#include "stk_util/util/NamedPair.hpp"
 
 TEST(EntityCommDatabase, testCommMapChangeListener)
 {

@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: proxyz.f,v 1.4 1999/01/25 16:38:46 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE PROXYZ (XN, YN, XN3, YN3, ZN3, IXNP, NRNP, ZCORD,
      *   SINANG, COSANG)

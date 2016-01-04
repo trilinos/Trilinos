@@ -195,7 +195,6 @@ median (
 	/* Select a half to discard. */
 	/* And remove discarded vertices from active list. */
 	removed = 0;
-/*	if (wlow + wbelow - lweight > whigh + wabove - uweight) {*/
 	if (wlow + wbelow - lweight > whigh + wabove - uweight &&
 	    whigh + wabove + wexact < uweight ) {
 	    /* Discard upper set. */
@@ -206,8 +205,6 @@ median (
 	    for (i = 0; i < myactive; i++) {
 		if (vals[*aptr] >= guess) {
 		    ++removed;
-		    if (vals[*aptr] == guess) 
-		        nearup = guess;
 		}
 		else
 		    *aptr2++ = *aptr;
@@ -216,7 +213,6 @@ median (
 	    myactive -= removed;
 	    if (myactive == 0) done = TRUE;
 	}
-/*	else if ( whigh + wabove - uweight > wlow + wbelow - lweight) {*/
 	else if ( whigh + wabove - uweight > wlow + wbelow - lweight &&
 	    wlow + wbelow + wexact < lweight ) {
 	    /* Discard lower set. */
@@ -227,8 +223,6 @@ median (
 	    for (i = 0; i < myactive; i++) {
 		if (vals[*aptr] <= guess) {
 		    ++removed;
-		    if (vals[*aptr] == guess) 
-		        neardown = guess;
 		}
 		else
 		    *aptr2++ = *aptr;
@@ -240,11 +234,6 @@ median (
 	else {			/* Perfect partition! */
 	    wlow += wbelow;
 	    whigh += wabove;
-	    /*
-	    minval = nearup;
-	    maxval = neardown;
-	    myactive = 0;
-	    */
 	    done = TRUE;
 	}
 

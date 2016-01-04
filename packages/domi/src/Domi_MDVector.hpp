@@ -2766,10 +2766,10 @@ startUpdateCommPad(int axis)
   if (_sendMessages.empty())
     initializeMessages();
 
+#ifdef HAVE_MPI
   int rank    = _teuchosComm->getRank();
   int numProc = _teuchosComm->getSize();
   int tag;
-#ifdef HAVE_MPI
   // Since HAVE_MPI is defined, we know that _teuchosComm points to a
   // const Teuchos::MpiComm< int >.  We downcast, extract and
   // dereference so that we can get access to the MPI_Comm used to
@@ -3226,7 +3226,7 @@ writeBinary(const std::string & filename,
 #else
 
   // Get the number of dimensions
-  int ndims = _mdMap->numDims();
+  // int ndims = _mdMap->numDims();
 
   // Initialize the data file
   datafile = fopen(filename.c_str(), "w");

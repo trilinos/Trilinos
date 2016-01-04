@@ -340,21 +340,36 @@ public:
                             const int numSweeps,
                             const bool zeroInitialGuess) const;
 
-
-  /// \brief Local Gauss-Seidel solve given a factorized diagonal
+  /// \brief Local Gauss-Seidel solve, given a factorized diagonal
   ///
-  /// This method computes the smoothing of A*X = B, where A is *this
-  /// (the block matrix), B is the residual and X is the approximate solution. It
-  /// requires a factorized diagonal and pivots (partial pivoting in LAPACK coming
-  /// from GETRF) to be passed in. It takes an SOR relaxation factor. Valid
-  /// sweep directions are Forward, Backward, or Symmetric.
+  /// \param Residual [in] The "residual" (right-hand side) block
+  ///   (multi)vector
+  /// \param Solution [in/out] On input: the initial guess / current
+  ///   approximate solution.  On output: the new approximate
+  ///   solution.
+  /// \param factoredDiagonal [in] Block diagonal, whose blocks have
+  ///   been factored using LU with partial pivoting, and have the
+  ///   same format as that produced by LAPACK's _GETRF routine.
+  /// \param factorizationPivots [in] Pivots from the block
+  ///   factorizations
+  /// \param omega [in] (S)SOR relaxation coefficient
+  /// \param direction [in] Forward, Backward, or Symmetric.
+  ///
+  /// One may access block i in \c factoredDiagonal using the
+  /// following code:
+  /// \code
+  /// auto D_ii = Kokkos::subview(factoredDiagonal, j, Kokkos::ALL(), Kokkos::ALL());
+  /// \endcode
+  /// The resulting block is b x b, where <tt>b = this->getBlockSize()</tt>.
   void
   localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
                           BlockMultiVector<Scalar, LO, GO, Node>& Solution,
-                          BlockCrsMatrix<Scalar, LO, GO, Node> & factorizedDiagonal,
-                          const int * factorizationPivots,
-                          const Scalar omega,
-                          const ESweepDirection direction) const;
+                    const Kokkos::View<impl_scalar_type***, device_type,
+                          Kokkos::MemoryUnmanaged>& factoredDiagonal,
+                    const Kokkos::View<int**, device_type,
+                          Kokkos::MemoryUnmanaged>& factorizationPivots,
+                    const Scalar& omega,
+                    const ESweepDirection direction) const;
 
   /// \brief Replace values at the given (mesh, i.e., block) column
   ///   indices, in the given (mesh, i.e., block) row.
@@ -614,14 +629,23 @@ public:
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
-
-  //! Computes the DiagonalGraph
-  void computeDiagonalGraph ();
-
-  //! Reports on whether the DiagonalGraph has been Computed
-  bool isComputedDiagonalGraph() const { return computedDiagonalGraph_;}
-
-  Teuchos::RCP<crs_graph_type> getDiagonalGraph () const;
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed
+  ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
+  ///
+  /// \param diag [out] On input: Must be preallocated, with
+  ///   dimensions at least (number of diagonal blocks on the calling
+  ///   process) x getBlockSize() x getBlockSize(). On output: the
+  ///   diagonal blocks.  Leftmost index is "which block," then the
+  ///   row index within a block, then the column index within a
+  ///   block.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  void
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const;
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -748,17 +772,8 @@ private:
   /// See the documentation of X_colMap_ above.
   Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
 
-  /// \brief Padding to use for "little blocks" in the matrix.
-  ///
-  /// If this is nonzero, we pad the number of columns in each little
-  /// block up to a multiple of the padding value.  This will let us
-  /// potentially do explicit short-vector SIMD in the dense little
-  /// block matrix-vector multiply.  We got this idea from Kendall
-  /// Pierson's FETI code (thanks Kendall!).
-  LO columnPadding_;
-
-  //! Whether "little blocks" are stored in row-major (or column-major) order.
-  bool rowMajor_;
+  /// \brief Offset between blocks in the matrix.
+  LO offsetPerBlock_;
 
   /// \brief Whether this object on the calling process is in an error state.
   ///
@@ -830,45 +845,49 @@ private:
                           const Scalar alpha,
                           const Scalar beta);
 
-  Teuchos::RCP<crs_graph_type> diagonalGraph_;
-  bool computedDiagonalGraph_;
-
   /// \brief Get the relative block offset of the given block.
   ///
   /// \param localRowIndex [in] Local index of the entry's row.
   /// \param colIndexToFind [in] Local index of the entry's column.
-  /// \param hint [in] Relative offset hint.
+  /// \param hint [in] Relative offset hint (MUST be nonnegative).
   ///
-  /// An offset may be either relative or absolute.  <i>Absolute</i>
-  /// offsets are just direct indices into an array.  <i>Relative</i>
-  /// offsets are relative to the current row.  For example, if
-  /// <tt>k_abs</tt> is an absolute offset into the array of column
-  /// indices <tt>ind_</tt>, then one can use <tt>k_abs</tt> directly
-  /// as <tt>ind_[k_abs]</tt>.  If <tt>k_rel</tt> is a relative offset
-  /// into <tt>ind_</tt>, then one must know the current local row
-  /// index in order to use <tt>k_rel</tt>.  For example:
+  /// <i>Relative</i> offsets are relative to the current row, while
+  /// <i>absolute</i> offsets are just direct indices into an array.
+  /// For example, if <tt>k_abs</tt> is an absolute offset into the
+  /// array of column indices <tt>ind_</tt>, then one can use
+  /// <tt>k_abs</tt> directly as <tt>ind_[k_abs]</tt>.  If
+  /// <tt>k_rel</tt> is a relative offset into <tt>ind_</tt>, then one
+  /// must know the current local row index in order to use
+  /// <tt>k_rel</tt>.  For example:
   /// \code
   /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
   /// LO colInd = ind_[k_abs];
   /// \endcode
   ///
   /// This method returns a relative block offset.  A <i>block</i>
-  /// offset means a graph or mesh offset.  It's suitable for use in
-  /// <tt>ind_</tt>, but not in <tt>val_</tt>.  One must multiply it
-  /// by the result of offsetPerBlock() in order to get the
-  /// <i>point</i> offset into <tt>val_</tt>.
+  /// offset means a graph or mesh offset, vs. the <i>point</i> offset
+  /// into the array of values \c val_.  A block offset is suitable
+  /// for use in \c ind_, but not in \c val_.  One must multiply a
+  /// block offset by offsetPerBlock() in order to get the
+  /// <i>point</i> offset into \c val_.
   ///
   /// The given "hint" is a relative block offset.  It can help avoid
   /// searches, for the common case of accessing several consecutive
   /// entries in the same row.
   ///
+  /// Relative offsets may have type \c LO, since a row may not have
+  /// more entries than the number of columns in the graph.  Absolute
+  /// offsets <i>must</i> have type \c size_t or \c ptrdiff_t, since
+  /// the total number of graph or matrix entries on a process may
+  /// exceed the total number of rows and columns.
+  ///
   /// \return Teuchos::OrdinalTraits<size_t>::invalid() if there is no
   ///   block at the given index pair; otherwise, the "absolute"
   ///   block offset of that block.
-  size_t
+  LO
   findRelOffsetOfColumnIndex (const LO localRowIndex,
                               const LO colIndexToFind,
-                              const size_t hint) const;
+                              const LO hint = 0) const;
 
   /// \brief Number of entries consumed by each block in the matrix,
   ///   including padding; the stride between blocks.
@@ -885,6 +904,13 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
+
+  /// \c Block at the given local mesh row and relative (mesh) offset.
+  ///
+  /// Use this for 2-argument getLocalDiagCopy that writes to Kokkos::View.
+  const_little_block_type
+  getConstLocalBlockFromRelOffset (const LO lclMeshRow,
+                                   const size_t relMeshOffset) const;
 
 public:
   //! The communicator over which this matrix is distributed.

@@ -368,12 +368,12 @@ namespace Thyra {
     }
 #endif
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
     if (bIsEpetra) {
-      RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > epetraH =
-          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> >(H);
+      RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> > epetraH =
+          rcp_dynamic_cast<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >(H);
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(epetraH), MueLu::Exceptions::RuntimeError,
-                                 "Thyra::MueLuPreconditionerFactory: Failed to cast Hierarchy to Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode>. Epetra runs only on the Serial node.");
+                                 "Thyra::MueLuPreconditionerFactory: Failed to cast Hierarchy to Hierarchy<double,int,int,Xpetra::EpetraNode>. Epetra runs only on the Serial node.");
       RCP<MueEpOp> muelu_epetraOp = rcp(new MueEpOp(epetraH));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_epetraOp));
       // attach fwdOp to muelu_epetraOp to guarantee that it will not go away

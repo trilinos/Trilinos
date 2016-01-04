@@ -52,7 +52,6 @@ namespace BaskerNS
     #else
     //Comeback
     #endif
-
    
   }//end user_order
 
@@ -64,9 +63,6 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::btf_order()
   {
-
-    //printMTX("odd_matrix.mtx", A);
-
     //1. Matching ordering on whole matrix
     //currently finds matching and permutes
     //found bottle-neck to work best with circuit problems
@@ -79,15 +75,18 @@ namespace BaskerNS
     //printMTX("A_match.mtx", A);
    
     //2. BTF ordering on whole matrix
+    // Gets estimate of work on all blocks
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
+
+
+    printf("outter num_threads:%d \n", num_threads);
+    MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
+    init_value(btf_schedule, num_threads+1, 0);
     find_btf(A); 
 
-    sort_matrix(BTF_C);
-    //printf("DEBUG2: done sort C\n");
-
-    //printf("TEst btf_offset %d \n", btf_tabs_offset);
-
+   
+    
     if(btf_tabs_offset != 0)
       {
 
@@ -186,20 +185,7 @@ namespace BaskerNS
 	sort_matrix(BTF_C);
 	//printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
-	/* not used
-	INT_1DARRAY cmember;
-	MALLOC_INT_1DARRAY(cmember, BTF_C.ncol+1);
-	init_value(cmember, BTF_C.ncol+1, (Int) 0);
-	printf("cmember size: %d \n", BTF_C.ncol+1);
-	for(Int i = 0; i < btf_nblks; ++i)
-	  {
-	    for(Int j = (btf_tabs(i)-btf_tabs_offset); 
-		j < (btf_tabs(i+1)-btf_tabs_offset); ++j)
-	      {
-		cmember(j) = i;
-	      }
-	  }
-	*/
+
 	MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
 	init_value(order_c_csym_array, BTF_C.ncol+1,(Int) 0);
 	
@@ -227,11 +213,174 @@ namespace BaskerNS
 
       }
   
-
-    printf("Done with ordering\n");
+    
+    //printf("Done with ordering\n");
     
     return 0;
   }//end btf_order
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::btf_order2()
+  {
+    
+    //printf("-----------BTF2-------------\n");
+
+    //1. Matching ordering on whole matrix
+    //currently finds matching and permutes
+    //found bottle-neck to work best with circuit problems
+    sort_matrix(A); //May want to remove ?
+    match_ordering(0);
+    sort_matrix(A); //May want to remove?
+
+   
+    //2. BTF ordering on whole matrix
+    //currently finds btf-hybrid and permutes
+    //A -> [BTF_A, BTF_C; 0 , BTF B]
+    //printf("outter num_threads:%d \n", num_threads);
+    MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
+    init_value(btf_schedule, num_threads+1, (Int)0);
+  
+    find_btf2(A); 
+    sort_matrix(BTF_C);
+
+    
+
+    if(btf_tabs_offset != 0)
+      {
+
+        //  printf("A/B block stuff called\n");
+	//3. ND on BTF_A
+	//currently finds ND and permute BTF_A
+	//Would like to change so finds permuation, 
+	//and move into 2D-Structure
+	//printMTX("A_BTF_FROM_A.mtx", BTF_A);
+	sort_matrix(BTF_A);
+	scotch_partition(BTF_A);
+    
+	//need to do a row perm on BTF_B too
+	if(btf_nblks > 1)
+	  {
+	    permute_row(BTF_B, part_tree.permtab);
+	  }
+	//needed because  moving into 2D-Structure,
+	//assumes sorted columns
+	sort_matrix(BTF_A);
+	if(btf_nblks > 1)
+	  {
+	    sort_matrix(BTF_B);
+	    sort_matrix(BTF_C);
+	  }
+	//For debug
+	//printMTX("A_BTF_PART_AFTER.mtx", BTF_A);
+	
+	//4. Init tree structure
+	//This reduces the ND ordering into that fits,
+	//thread counts
+	init_tree_thread();
+	
+
+	//5. Permute BTF_A
+	//Constrained symamd on A
+	INT_1DARRAY cmember;
+	MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+	init_value(cmember,BTF_A.ncol+1,(Int) 0);
+	for(Int i = 0; i < tree.nblks; ++i)
+	  {
+	    for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j)
+	      {
+		cmember(j) = i;
+	      }
+	  }
+	//INT_1DARRAY csymamd_perm = order_csym_array;
+	MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
+	//MALLOC_INT_1DARRAY(csymamd_perm, BTF_A.ncol+1);
+	init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+	//init_value(csymamd_perm, BTF_A.ncol+1,(Int) 0);
+	
+	csymamd_order(BTF_A, order_csym_array, cmember);
+	//csymamd_order(BTF_A, csymamd_perm, cmember);
+	
+	//permute(BTF_A, csymamd_perm, csymamd_perm);
+	permute_col(BTF_A, order_csym_array);
+	sort_matrix(BTF_A);
+	permute_row(BTF_A, order_csym_array);
+	sort_matrix(BTF_A);
+	//printMTX("A_BTF_AMD.mtx", BTF_A);
+	
+	
+	if(btf_nblks > 1)
+	  {
+	    permute_row(BTF_B, order_csym_array);
+	    sort_matrix(BTF_B);
+	    //printMTX("B_BTF_AMD.mtx", BTF_B);
+	    sort_matrix(BTF_C);
+	    //printMTX("C_BTF_AMD.mtx", BTF_C);
+	  }
+    
+    
+	//6. Move to 2D Structure
+	//finds the shapes for both view and submatrices,
+	//need to be changed over to just submatrices
+	matrix_to_views_2D(BTF_A);
+	//finds the starting point of A for submatrices
+	find_2D_convert(BTF_A);
+	//now we can fill submatrices
+        #ifdef BASKER_KOKKOS
+	kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+	Kokkos::fence();
+        #else
+	//Comeback
+        #endif
+
+	//printMTX("BTF_A.mtx", BTF_A); 
+	
+      }//if btf_tab_offset == 0
+
+    
+    if(btf_nblks > 1)
+      {
+	sort_matrix(BTF_C);
+	//printMTX("C_TEST.mtx", BTF_C);
+	//Permute C
+
+
+	/*
+	MALLOC_INT_1DARRAY(order_c_csym_array, BTF_C.ncol+1);
+	init_value(order_c_csym_array, BTF_C.ncol+1,(Int) 0);
+	
+	printf("BEFORE \n");
+
+	//csymamd_order(BTF_C, order_c_csym_array, cmember);
+
+	blk_amd(BTF_C, order_c_csym_array);
+
+	printf("After perm\n");
+	
+	permute_col(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+	permute_row(BTF_C, order_c_csym_array);
+	sort_matrix(BTF_C);
+
+	if(btf_tabs_offset != 0)
+	  {
+	    permute_col(BTF_B, order_c_csym_array);
+	    sort_matrix(BTF_B);
+	    printMTX("BTF_B.mtx", BTF_B);
+	  }
+
+	printMTX("BTF_C.mtx", BTF_C);
+	*/
+      }
+	
+  
+
+    //printf("Done with ordering\n");
+    
+    return 0;
+  }//end btf_order2
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

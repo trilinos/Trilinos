@@ -38,6 +38,7 @@
 #include <cxxabi.h>
 #include <stk_util/stk_config.h>
 #include <string>
+#include <iostream>
 #include <mpi.h>
 
 

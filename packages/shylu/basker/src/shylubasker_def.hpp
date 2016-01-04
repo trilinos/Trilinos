@@ -51,6 +51,8 @@ namespace BaskerNS
     num_threads = 1;
     global_nnz  = 0;
 
+    btf_total_work = 0;
+
   }//end Basker()
   
   template <class Int, class Entry, class Exe_Space>
@@ -81,8 +83,6 @@ namespace BaskerNS
     FREE_MATRIX_VIEW_2DARRAY(AL, tree.nblks);
     FREE_MATRIX_2DARRAY(AVM, tree.nblks);
     FREE_MATRIX_2DARRAY(ALM, tree.nblks);
-
-
     
     FREE_MATRIX_2DARRAY(LL, tree.nblks);
     FREE_MATRIX_2DARRAY(LU, tree.nblks);
@@ -92,8 +92,11 @@ namespace BaskerNS
     
     //BTF structure
     FREE_INT_1DARRAY(btf_tabs);
+    FREE_INT_1DARRAY(btf_blk_work);
+    FREE_INT_1DARRAY(btf_blk_nnz);
     FREE_MATRIX_1DARRAY(LBTF);
     FREE_MATRIX_1DARRAY(UBTF);
+   
 
     
     //Thread Array
@@ -301,8 +304,9 @@ namespace BaskerNS
       }
     else
       {
-	//printf("btf_order called \n");
-	btf_order();
+	printf("btf_order called \n");
+	//btf_order();
+	btf_order2();
 	if(btf_tabs_offset != 0)
 	  {
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
@@ -347,7 +351,6 @@ namespace BaskerNS
     Kokkos::Impl::Timer timer;
     #endif
     
-    //factor_tree(option);
     factor_notoken(option);
     
     #ifdef BASKER_KOKKOS_TIME
@@ -369,7 +372,8 @@ namespace BaskerNS
       {
 	return BASKER_ERROR;
       }
-    err = sfactor_copy();
+    //err = sfactor_copy();
+    err = sfactor_copy2();
     //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {

@@ -1,17 +1,17 @@
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
-#include <gtest/gtest.h>
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
+#include <stddef.h>                     // for NULL
+#include <algorithm>                    // for lower_bound
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <vector>                       // for vector
+#include "BulkDataTester.hpp"           // for BulkDataTester
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
-#include "stk_util/util/PairIter.hpp"   // for PairIter
+#include "stk_mesh/base/EntityCommListInfo.hpp"
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "BulkDataTester.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_mesh/base/Types.hpp"
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace CEOUtils
 {

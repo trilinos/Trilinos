@@ -74,8 +74,7 @@ namespace MueLu {
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
+  class Amesos2Smoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 #undef MUELU_AMESOS2SMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -145,36 +144,37 @@ namespace MueLu {
 
   }; // class Amesos2Smoother
 
-#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-  /*!
-    @class Amesos2Smoother
-    @ingroup MueLuSmootherClasses
-    @brief Class that encapsulates Amesos2 direct solvers.
-    */
+#ifdef HAVE_MUELU_EPETRA
 
-  // TAW: Oct 16 2015: we need the specialization of Amesos2Smoother since it is a object living in the Tpetra stack only.
-  //                   It creates some Amesos2 objects which are templated on GO and need GO instantiations in Tpetra.
-  //                   If Tpetra is not compiled with GO=int enabled we need dummy implementations here.
-  template <class Scalar, class Node>
-  class Amesos2Smoother<Scalar, int, int, Node> : public SmootherPrototype<Scalar,int,int,Node>
-  {
-    typedef Xpetra::MultiVector<Scalar, int, int, Node> MultiVector;
+# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+  // Stub specialization for missing Epetra template args
+  template<>
+  class Amesos2Smoother<double,int,int,Xpetra::EpetraNode> : public SmootherPrototype<double,int,int,Xpetra::EpetraNode> {
+    typedef double              Scalar;
+    typedef int                 LocalOrdinal;
+    typedef int                 GlobalOrdinal;
+    typedef Xpetra::EpetraNode  Node;
+#undef MUELU_AMESOS2SMOOTHER_SHORT
+#include "MueLu_UseShortNames.hpp"
+
   public:
-    Amesos2Smoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList()) {MUELU_TPETRA_ETI_EXCEPTION("Amesos2Smoother<int,int>","Amesos2Smoother<int,int>","int"); };
+    Amesos2Smoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList()) {
+      MUELU_TPETRA_ETI_EXCEPTION("Amesos2Smoother<double,int,int,EpetraNode>","Amesos2Smoother<double,int,int,EpetraNode>","int");
+    }
     virtual ~Amesos2Smoother() {};
     void DeclareInput(Level& currentLevel) const {};
     void Setup(Level& currentLevel) {};
     void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {};
-    RCP<SmootherPrototype<Scalar,int,int,Node> > Copy() const { return Teuchos::null; };
+    RCP<SmootherPrototype> Copy() const { return Teuchos::null; };
     std::string description() const { return std::string(""); };
     void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const {};
-  }; // class Amesos2Smoother (specialization on LO=GO=int)
-#endif // #ifndef HAVE_MUELU_TPETRA_INST_INT_INT
+  };
+# endif
+#endif // HAVE_MUELU_EPETRA
 
 } // namespace MueLu
 
 #define MUELU_AMESOS2SMOOTHER_SHORT
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
 #endif // MUELU_AMESOS2SMOOTHER_DECL_HPP
-
-// TODO: PARAMETER LIST NOT TAKE INTO ACCOUNT !!!

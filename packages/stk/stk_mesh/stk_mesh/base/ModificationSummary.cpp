@@ -9,7 +9,7 @@ namespace stk
 static int modificationSummaryNumber = 0;
 
 ModificationSummary::ModificationSummary(stk::mesh::BulkData& bulkData) :
-m_bulkData(bulkData), m_stringTracker(), m_lastModCycle(-1), m_modCounter(0), m_proc_id(-1)
+m_bulkData(bulkData), m_stringTracker(), m_lastModCycle(-1), m_modCounter(0)
 {
     m_modificationSummaryNumber = modificationSummaryNumber++;
 }
@@ -92,17 +92,15 @@ void ModificationSummary::track_declare_entity(stk::mesh::EntityRank rank, stk::
     addEntityKeyAndStringToTracker(key, os.str());
 }
 
-void ModificationSummary::track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+void ModificationSummary::track_set_global_id(stk::mesh::Entity entity, uint32_t newId)
 {
     if (isValid(entity)) {
         stk::mesh::EntityKey oldKey = getEntityKey(entity);
         std::ostringstream os;
         os << "Changing Fmwk global id for entity " << oldKey << " to " << "(" << oldKey.rank() << "," << newId << ")" << std::endl;
         addEntityKeyAndStringToTracker(oldKey, os.str());
-        if (newId < stk::mesh::EntityKey::MAX_ID && oldKey.id() != newId) {
-            stk::mesh::EntityKey newKey(oldKey.rank(),newId);
-            addEntityKeyAndStringToTracker(newKey, os.str());
-        }
+        stk::mesh::EntityKey newKey(oldKey.rank(),newId);
+        addEntityKeyAndStringToTracker(newKey, os.str());
     }
 }
 
@@ -306,18 +304,12 @@ std::string ModificationSummary::get_filename(int mod_cycle_count) const
     return os.str();
 }
 
-void ModificationSummary::set_proc_id(int proc_id)
-{
-    m_proc_id = proc_id;
-}
-
 int ModificationSummary::my_proc_id() const
 {
-    if (-1 == m_proc_id) {
+    if (-1 == m_procId)  {
         return m_bulkData.parallel_rank();
-    } else {
-        return m_proc_id;
     }
+    return m_procId;
 }
 
 void ModificationSummary::writeParts(std::ostringstream& os, const std::string &label, const stk::mesh::PartVector& parts)

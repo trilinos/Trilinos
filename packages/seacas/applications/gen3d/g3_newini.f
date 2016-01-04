@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: newini.f,v 1.4 1999/01/25 16:38:44 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE NEWINI (IDNSUR, IDESUR, NSSUR, NESUR, BLKTYP, IBPARM)
 C=======================================================================

@@ -53,11 +53,11 @@ Entity declare_element( BulkData & mesh ,
 
 inline
 Entity declare_element( BulkData & mesh ,
-                        Part & part ,
+                        Part & partWithTopology ,
                         const EntityId elem_id ,
                         const EntityIdVector & node_ids )
 {
-  PartVector vec(1, &part);
+  PartVector vec(1, &partWithTopology);
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
@@ -131,7 +131,7 @@ OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mes
  *
  *
  */
-stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, stk::mesh::EntityVector &sub_topology_nodes,
+stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
 		        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part);
 
 /**

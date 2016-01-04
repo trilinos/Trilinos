@@ -90,18 +90,19 @@ public:
       \param problemComm  the problem communicator
       \param ia the problem input adapter
       \param soln  the solution
-      \param modelType the model type
-      \param model the model
+      \param useDegreeAsWeight whether to use vertex degree as vertex weight
+      \param graphModel the graph model
 
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
   EvaluatePartition(const RCP<const Environment> &env,
     const RCP<const Comm<int> > &problemComm,
-    const RCP<const Adapter> &ia, 
+    const RCP<const typename Adapter::base_adapter_t> &ia, 
     const RCP<const PartitioningSolution<Adapter> > &soln,
-    enum ModelType modelType = MAX_NUM_MODEL_TYPES,
-    const RCP<const Model<Adapter> > &model = Teuchos::null);
+    bool useDegreeAsWeight,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null);
 
   /*! \brief Constructor
       \param env   the problem environment
@@ -208,10 +209,10 @@ template <typename Adapter>
   EvaluatePartition<Adapter>::EvaluatePartition(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const Adapter> &ia, 
+  const RCP<const typename Adapter::base_adapter_t> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln,
-  enum ModelType modelType,
-  const RCP<const Model<Adapter> > &model):
+  bool useDegreeAsWeight,
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
     env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
@@ -237,8 +238,9 @@ template <typename Adapter>
   } 
 
   try{
-    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, modelType,
-			   model, numGlobalParts_, numNonEmpty_, metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
+			   useDegreeAsWeight, graphModel, numGlobalParts_,
+			   numNonEmpty_,metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
 

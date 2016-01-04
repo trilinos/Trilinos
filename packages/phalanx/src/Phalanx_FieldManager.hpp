@@ -141,6 +141,9 @@ namespace PHX {
 
     void print(std::ostream& os) const;
 
+    template<typename EvalT>
+    void analyzeGraph(double& speedup, double& parallelizability) const;
+
   private:
 
     typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;

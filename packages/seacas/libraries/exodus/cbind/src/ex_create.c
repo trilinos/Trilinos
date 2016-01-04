@@ -257,6 +257,14 @@ int ex_create_int (const char *path,
     mode_name = "NOCLOBBER";
   }
 
+#if defined NC_IGNORE_MAX_DIMS
+  mode |= NC_IGNORE_MAX_DIMS;
+#endif
+
+#if defined NC_IGNORE_MAX_VARS 
+  mode |= NC_IGNORE_MAX_VARS;
+#endif
+
   if ((status = nc_create (path, mode, &exoid)) != NC_NOERR) {
     exerrval = status;
 #if !defined(NC_HAS_HDF5)	  

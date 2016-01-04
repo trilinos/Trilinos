@@ -26,6 +26,8 @@ APPEND_SET(HEADERS
   Phalanx.hpp
   Phalanx_any.hpp
   Phalanx_DAG_Node.hpp
+  Phalanx_DAG_Manager_Def.hpp
+  Phalanx_DAG_Manager.hpp
   Phalanx_DataLayout_MDALayout_Def.hpp
   Phalanx_DataLayout_MDALayout.hpp
   Phalanx_DataLayout.hpp
@@ -44,8 +46,6 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_Factory_UFO.hpp
   Phalanx_Evaluator.hpp
   Phalanx_Evaluator_Macros.hpp
-  Phalanx_Evaluator_Manager_Def.hpp
-  Phalanx_Evaluator_Manager.hpp
   Phalanx_Evaluator_TemplateBuilder.hpp
   Phalanx_Evaluator_TemplateManager.hpp
   Phalanx_Evaluator_Utilities.hpp

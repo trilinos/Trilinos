@@ -160,6 +160,14 @@ namespace BaskerNS
     Int           btf_top_tabs_offset;
     Int           btf_top_nblks;
 
+
+    //These are temp arrys that are used for ordering and sfator
+    INT_1DARRAY btf_blk_work;
+    INT_1DARRAY btf_blk_nnz;
+    INT_1DARRAY btf_schedule;
+    
+
+    Int btf_total_work;
  
   private:
 
@@ -214,6 +222,8 @@ namespace BaskerNS
 		    Int *tree_tabs);
     BASKER_INLINE
     int btf_order();
+    BASKER_INLINE
+    int btf_order2();
     BASKER_INLINE
     int partition(int option);
     BASKER_INLINE
@@ -280,6 +290,8 @@ namespace BaskerNS
     BASKER_INLINE
     int find_btf(BASKER_MATRIX &M);
     BASKER_INLINE
+    int find_btf2(BASKER_MATRIX &M);
+    BASKER_INLINE
     int break_into_parts(BASKER_MATRIX &M,
 			 Int nblks,
 			 INT_1DARRAY btf_tabs);
@@ -287,6 +299,13 @@ namespace BaskerNS
     int break_into_parts2(BASKER_MATRIX &M,
 			  Int nblks,
 			  INT_1DARRAY btf_tabs);
+    
+    BASKER_INLINE
+    void find_btf_schedule(BASKER_MATRIX &M,
+			   Int nblks, 
+			   INT_1DARRAY btf_tabs);
+   
+
     /*
     BASKER_INLINE
     int strong_component(BASKER_MATRIX &M,
@@ -316,6 +335,8 @@ namespace BaskerNS
 		Int ata_option);
     BASKER_INLINE
     int sfactor_copy();
+    BASKER_INLINE
+    int sfactor_copy2();
 
 
     //old
@@ -348,11 +369,7 @@ namespace BaskerNS
     BASKER_INLINE
     void col_count(BASKER_MATRIX_VIEW &MV,
 		   BASKER_SYMBOLIC_TREE &ST);
-    /*moved to basker_util
-    BASKER_INLINE
-    void matrix_transpose(BASKER_MATRIX_VIEW &MV,
-			  BASKER_MATRIX &AT);
-    */
+ 
     BASKER_INLINE
     Int least_common(Int i, Int j , Int* first,
 		     Int *mfirst, Int *pleaf, 
@@ -440,7 +457,12 @@ namespace BaskerNS
     BASKER_INLINE
     int copy_schedule(INT_2DARRAY &s, INT_2DARRAY &ls, 
 		      Int l, Int sl, Int t);
+    BASKER_INLINE
+    int nfactor_domain_error(INT_1DARRAY);
+    BASKER_INLINE
+    int nfactor_diag_error(INT_1DARRAY );
     
+   
     
     //BASKER_INLINE
     inline
@@ -755,8 +777,6 @@ namespace BaskerNS
 
     void print_sep_bal();
 
-
-
     //Matrix helper
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX &, 
@@ -916,10 +936,13 @@ namespace BaskerNS
     INT_1DARRAY order_scotch_array;
     INT_1DARRAY order_csym_array;
     INT_1DARRAY order_c_csym_array;
+    //for experimental 
+    INT_1DARRAY order_blk_amd_array;
 
 
-    void blk_amd(BASKER_MATRIX &x, INT_1DARRAY p);
-
+    void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
+    void btf_blk_amd(BASKER_MATRIX &M, INT_1DARRAY p,
+		     INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
 
     //basker_order_amd

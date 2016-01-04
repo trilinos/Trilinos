@@ -45,17 +45,12 @@
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_AggregationPhase2bAlgorithm_kokkos_def.hpp"
 
-#include "TpetraCore_ETIHelperMacros.h"
+#define MUELU_ETI_GROUP(LO,GO,NO) \
+  template class MueLu::AggregationPhase2bAlgorithm_kokkos<LO,GO,NO>;
 
-#define MUELU_LOCAL_INSTANT(LO,GO,N) \
-        template class MueLu::AggregationPhase2bAlgorithm_kokkos<LO,GO,N>;
-
-TPETRA_ETI_MANGLING_TYPEDEFS()
-
-TPETRA_INSTANTIATE_LGN(MUELU_LOCAL_INSTANT)
+#include "MueLu_ETI_3arg.hpp"
 
 #endif

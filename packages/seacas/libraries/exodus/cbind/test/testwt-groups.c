@@ -104,8 +104,6 @@ int main (int argc, char **argv)
   printf ("after ex_create for test-groups.exo, exoid = %d\n", exoid);
   printf (" cpu word size: %d io word size: %d\n",CPU_word_size,IO_word_size);
 
-  /* ncopts = NC_VERBOSE; */
-
   group_names[0] = "Group_0";
   group_names[1] = "Group_1";
   

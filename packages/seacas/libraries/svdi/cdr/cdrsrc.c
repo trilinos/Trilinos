@@ -177,8 +177,8 @@ struct job
   int KSZROU;
   int KJROUT[4];
   int KSECUR;
-  int KJTIME[3];
-  int KJDATE[3];
+  int KJTIME[4];
+  int KJDATE[4];
   int MACHIN[3];
   int MACLEN;
   }vcjob_;
@@ -483,8 +483,9 @@ unsigned ibuf[], *next;
 {
     int idx, i;
     unsigned temp, mask;
+#if defined(DEC) || defined(linux) || defined(interix)
     unsigned char *p_temp, ctemp;
-
+#endif
     /* check boundries */
     if (*iwidth > cdrcom_.KWRDSZ) return;
 
@@ -511,7 +512,7 @@ unsigned ibuf[], *next;
       ctemp = *(p_temp+1); *(p_temp+1) = *(p_temp+2); *(p_temp+2) = ctemp;
 #endif
       temp = temp << (i = *iwidth + *ibitlc - cdrcom_.KWRDSZ);
-      mask = ~(~0 << cdrcom_.KWRDSZ - *ibitlc ) << i;
+      mask = ~(~0 << (cdrcom_.KWRDSZ - *ibitlc) ) << i;
       *next = (mask & temp);   
       *ibitlc = i;
       (*iword)++;
@@ -891,8 +892,9 @@ int *ifilcd;
 {
   int fd;
   int errnum, errsev;
-  char symbol[80];
+  char symbol[1024];
   char err[50];
+  char *env;
 
   int i = 0;
   int j = 0;
@@ -913,8 +915,9 @@ int *ifilcd;
     sprintf(symbol,"file%d",*ifilcd );
 
   /* check the environment to see if a file name has been assigned */
-  if(getenv(symbol) != 0)
-    sprintf(symbol,"%s",getenv(symbol));
+ env = getenv(symbol);
+ if(env != 0 && strlen(env) < 1024)
+   sprintf(symbol,"%s",env);
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
   if (( fd = open(symbol,(O_CREAT | O_RDWR ),0664)) == -1)  

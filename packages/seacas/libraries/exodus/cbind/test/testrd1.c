@@ -125,7 +125,6 @@ int main (int argc, char **argv)
    printf ("EXODUSII API; version %4.2f\n", version);
 
 
-/*   ncopts = NC_VERBOSE; */
 /*   ex_opts (EX_VERBOSE); */
 
 /* read database parameters */

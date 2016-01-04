@@ -45,7 +45,6 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
-#include <tokenize.h>
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
@@ -94,7 +93,6 @@
 namespace {
   const size_t max_line_length   = MAX_LINE_LENGTH;
 
-  const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
   const std::string SCALAR()     {return std::string("scalar");}
   const std::string VECTOR3D()   {return std::string("vector_3d");}
   const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
@@ -976,7 +974,7 @@ namespace Ioex {
 
 	for (int i=0; i < nvar; i++) {
 	  // Verify that all names were used for a field...
-	  assert(names[i][0] == '\0' || local_truth[i] == 0);
+	  assert(names[i][0] == '\0' || (local_truth && local_truth[i] == 0));
 	  delete [] names[i];
 	}
 	delete [] names;

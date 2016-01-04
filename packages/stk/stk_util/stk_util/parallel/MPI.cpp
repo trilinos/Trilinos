@@ -94,7 +94,7 @@ short_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_SHORT, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_short_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_short_int64);
     MPI_Type_commit(&s_mpi_short_int64);
   }
   return s_mpi_short_int64;
@@ -113,7 +113,7 @@ int_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_INT, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_int_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_int_int64);
     MPI_Type_commit(&s_mpi_int_int64);
   }
   return s_mpi_int_int64;
@@ -132,7 +132,7 @@ long_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_LONG, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_long_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_long_int64);
     MPI_Type_commit(&s_mpi_long_int64);
   }
   return s_mpi_long_int64;
@@ -151,7 +151,7 @@ unsigned_long_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_unsigned_long_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_unsigned_long_int64);
     MPI_Type_commit(&s_mpi_unsigned_long_int64);
   }
   return s_mpi_unsigned_long_int64;
@@ -170,7 +170,7 @@ float_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_FLOAT, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_float_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_float_int64);
     MPI_Type_commit(&s_mpi_float_int64);
   }
   return s_mpi_float_int64;
@@ -189,7 +189,7 @@ double_int64_type()
     BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
     MPI_Datatype types[] = {MPI_DOUBLE, MPI_LONG_LONG};
 
-    MPI_Type_struct(2, blocks, displacements, types, &s_mpi_double_int64);
+    MPI_Type_create_struct(2, blocks, displacements, types, &s_mpi_double_int64);
     MPI_Type_commit(&s_mpi_double_int64);
   }
   return s_mpi_double_int64;
@@ -210,7 +210,7 @@ double_double_int_type()
   if (!initialized) {
     initialized = true;
 
-    MPI_Type_struct(2, B, D, T, &s_mpi_double_double_int);
+    MPI_Type_create_struct(2, B, D, T, &s_mpi_double_double_int);
     MPI_Type_commit(&s_mpi_double_double_int);
   }
   return s_mpi_double_double_int;

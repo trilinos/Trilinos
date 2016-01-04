@@ -37,12 +37,12 @@
 # following line. Can also define other prefixes if wanted.
 
 #set PREFIX = "valgrind --tool=memcheck"
-set PREFIX = ""
-set SUFFIX = ""
-set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
-set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @NETCDF_NCDUMP@
-set DIFF = "diff -w"
+PREFIX=""
+SUFFIX=""
+BINDIR=@CMAKE_CURRENT_BINARY_DIR@
+SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
+NCDUMP=@NETCDF_NCDUMP@
+DIFF="diff -w"
 
 echo "************************************************************************"
 echo "************************************************************************"
@@ -231,6 +231,17 @@ echo "test_nemesis - read long name file..."
 echo "begin test_nemesis" >> test.output
 ${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
 echo "end test_nemesis" >> test.output
+
+echo "test-empty - read an empty (only ex_create called) exodus file..."
+echo "begin test-empty" >> test.output
+${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
+echo "end test-empty" >> test.output
+
+echo "testwt-compress - verify can create compressed netcdf-4 files..."
+echo "begin testwt-compress" > test.output
+${PREFIX} ${BINDIR}/testwt-compress${SUFFIX} >> test.output
+echo "end testwt-compress" >> test.output
+${NCDUMP} -h -s test-compress.exo | grep -v version | ${DIFF} - ${SRCDIR}/test-compress.dmp | tee test-compress.res
 
 echo "************************************************************************"
 echo "************************************************************************"

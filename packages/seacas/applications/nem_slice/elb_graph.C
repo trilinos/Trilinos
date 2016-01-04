@@ -182,8 +182,8 @@ namespace {
     
     INT *pt_list=NULL;
     INT *hold_elem=NULL;
-    INT side_nodes[MAX_SIDE_NODES];
-    INT mirror_nodes[MAX_SIDE_NODES];
+    INT side_nodes[MAX_SIDE_NODES+2];
+    INT mirror_nodes[MAX_SIDE_NODES+2];
 
     static int count = 0;
 
@@ -193,7 +193,7 @@ namespace {
     /* Allocate memory necessary for the adjacency */
     graph->start.resize(problem->num_vertices+1);
     
-    for (int i=0; i < MAX_SIDE_NODES; i++) {
+    for (int i=0; i < MAX_SIDE_NODES+2; i++) {
       side_nodes[i]=-999;
       mirror_nodes[i]=-999;
     }

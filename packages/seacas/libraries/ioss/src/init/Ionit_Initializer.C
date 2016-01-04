@@ -30,7 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 
 #if !defined(NO_EXODUS_SUPPORT)
 #include <exo_fac/Ioex_IOFactory.h>
@@ -39,6 +39,10 @@
 #include <generated/Iogn_DatabaseIO.h>
 #if !defined(NO_PAMGEN_SUPPORT)
 #include <pamgen/Iopg_DatabaseIO.h>
+#endif
+
+#if defined(USE_CGNS)
+#include <cgns/Iocgns_IOFactory.h>
 #endif
 
 // DO NOT REMOVE THE IF !DEFINED UNLESS GREG SJAARDEMA SAYS IT IS OK!!!!
@@ -82,6 +86,9 @@ namespace Ioss {
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Iovs::IOFactory::factory(); // Visualization
 #endif      
+#if defined(USE_CGNS)
+      Iocgns::IOFactory::factory();
+#endif
       Ioss::StorageInitializer();
       Ioss::Initializer();
       Iotr::Initializer();

@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: newxyz.f,v 1.10 1999/08/24 17:38:01 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE NEWXYZ (XN, YN, XN3, YN3, ZN3, IXNP, NRNP, NPCEN,
      &   ZCORD, SINANG, COSANG, A)

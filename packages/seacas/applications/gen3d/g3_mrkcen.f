@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: mrkcen.f,v 1.3 1999/01/25 16:38:43 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE MRKCEN (LINK, XN, NUMCOL, NEROW, IELCEN,
      &   ICOL1, ALLCEN)

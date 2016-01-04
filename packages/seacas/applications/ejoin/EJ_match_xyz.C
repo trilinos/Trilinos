@@ -275,7 +275,7 @@ namespace {
 	  break;
       }
 
-      if (dmin <= epsilon) {
+      if (dmin <= epsilon && node_dmin >= 0) {
 	INT jnod = j_inrange[node_dmin] + j_offset;
 	INT inod = ii+i_offset;
 	match++;

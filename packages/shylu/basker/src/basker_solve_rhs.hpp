@@ -277,7 +277,8 @@ namespace BaskerNS
 	//printVec("btf.txt", order_btf_array, gn);
 	permute_inv(y,order_btf_array, gn);
         //printVec("btf_amd.txt", order_c_csym_array, gn);
-        permute_inv(y,order_c_csym_array, gn);
+        permute_inv(y,order_blk_amd_array, gn);
+
       }
     if(nd_flag == BASKER_TRUE)
       {

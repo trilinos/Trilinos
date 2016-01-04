@@ -46,7 +46,7 @@ int ex_create_group (int parent_id, const char *group_name)
    
   exerrval = 0; /* clear error code */
 
-#if defined(NOT_NETCDF4)
+#if !defined(NC_NETCDF4)
   exerrval = NC_ENOTNC4;
   sprintf(errmsg,
 	  "Error: Group capabilities are not available in this netcdf version--not netcdf4");
@@ -77,6 +77,6 @@ int ex_create_group (int parent_id, const char *group_name)
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
-#endif
   return (exoid);
+#endif
 }

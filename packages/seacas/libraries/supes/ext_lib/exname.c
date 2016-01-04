@@ -90,7 +90,11 @@ void exname( FTNINT *iunit, char *name, FTNINT *ln, long int nlen )
 
  char *darg;
 
+#if Build64
+ sprintf( string, "%02ld", labs(*iunit) );
+#else
  sprintf( string, "%02d", abs(*iunit) );
+#endif
 
  if(*iunit > 0) {
    ExtSymbol = FALSE;
@@ -112,7 +116,11 @@ void exname( FTNINT *iunit, char *name, FTNINT *ln, long int nlen )
    strncpy(name, darg, DargLen );
    *ln = DargLen;
  } else if ( !ExtSymbol ) {
+#if Build64
+   sprintf(name,"fort.%ld", labs( *iunit ) );
+#else
    sprintf(name,"fort.%d", abs( *iunit ) );
+#endif
    *ln = strlen(name);
  } else {
    /* Then I have referenced an external symbol that has not been

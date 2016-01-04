@@ -1,3 +1,6 @@
+#ifndef UNITTEST_MESHFIXTURE_HPP
+#define UNITTEST_MESHFIXTURE_HPP
+
 #include <mpi.h>
 #include <gtest/gtest.h>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -14,21 +17,29 @@ class MeshFixture : public ::testing::Test
 {
 protected:
     MeshFixture()
-    : communicator(MPI_COMM_WORLD), metaData(), bulkData(nullptr)
+    : communicator(MPI_COMM_WORLD), metaData(3), bulkData(nullptr)
     {
 
     }
+
+    MeshFixture(unsigned spatial_dim)
+    : communicator(MPI_COMM_WORLD), metaData(spatial_dim), bulkData(nullptr) {}
 
     virtual ~MeshFixture()
     {
         delete bulkData;
     }
 
+    void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        allocate_bulk(auraOption);
+    }
     void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
         stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
     }
+
     void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
@@ -40,7 +51,7 @@ protected:
         return communicator;
     }
 
-    stk::mesh::MetaData& get_meta()
+    virtual stk::mesh::MetaData& get_meta()
     {
         return metaData;
     }
@@ -51,8 +62,7 @@ protected:
         return *bulkData;
     }
 
-private:
-    void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         bulkData = new stk::mesh::BulkData(metaData, communicator, auraOption);
     }
@@ -77,3 +87,6 @@ protected:
 };
 
 }}
+
+#endif
+

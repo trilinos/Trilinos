@@ -31,16 +31,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <vector>                         // for vector
-#include <stk_mesh/base/BulkData.hpp>     // for BulkData
-#include <stk_util/parallel/Parallel.hpp> // for ParallelMachine
-#include "stk_mesh/base/Selector.hpp"     // for Selector
-#include "stk_mesh/base/Entity.hpp"       // for Entity
-#include "stk_mesh/base/MetaData.hpp"     // for MetaData, entity_rank_names
-#include "stk_mesh/base/Types.hpp"        // for EntityProc, EntityId, etc
-#include "stk_topology/topology.hpp"      // for topology, etc
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <iostream>                     // for basic_ostream::operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string, operator<<, etc
+#include <vector>                       // for vector, allocator
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/EntityKey.hpp"  // for operator<<, etc
 #include "stk_mesh/base/GetEntities.hpp"  // for count_entities
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityId, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

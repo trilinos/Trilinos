@@ -185,15 +185,15 @@ namespace Tpetra {
   ///   open a file, but write to the default output stream.
   class Distributor :
     public Teuchos::Describable,
-    public Teuchos::ParameterListAcceptorDefaultBase,
-    public Teuchos::VerboseObject<Distributor> {
+    public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     //! @name Constructors and destructor
     //@{
 
     /// \brief Construct using the specified communicator and default parameters.
     ///
-    /// \param comm [in] Communicator used by the Distributor.
+    /// \param comm [in] Communicator used by the Distributor.  MUST
+    ///   be nonnull.
     ///
     /// The constructor doesn't actually set up the distribution
     /// pattern.  You need to call one of the "gather / scatter
@@ -203,8 +203,10 @@ namespace Tpetra {
     /// \brief Construct using the specified communicator and default
     ///   parameters, with an output stream
     ///
-    /// \param comm [in] Communicator used by the Distributor.
-    /// \param out [in/out] Output stream (for debugging output).
+    /// \param comm [in] Communicator used by the Distributor.  MUST
+    ///   be nonnull.
+    /// \param out [in/out] Output stream (for debugging output).  If
+    ///   null, the default is \c std::cerr.
     ///
     /// The constructor doesn't actually set up the distribution
     /// pattern.  You need to call one of the "gather / scatter
@@ -214,10 +216,11 @@ namespace Tpetra {
 
     /// \brief Construct using the specified communicator and ParameterList.
     ///
-    /// \param comm [in] Communicator used by the Distributor.
-    ///
+    /// \param comm [in] Communicator used by the Distributor.  MUST
+    ///   be nonnull.
     /// \param plist [in/out] List of parameters controlling how the
-    ///   Distributor performs communication.  Must be nonnull.
+    ///   Distributor performs communication, and specifying debug
+    ///   options.  If null, all parameters take their default values.
     ///   Please see the class documentation for a list of all
     ///   accepted parameters and their default values.
     ///
@@ -230,11 +233,13 @@ namespace Tpetra {
     /// \brief Construct using the specified communicator and
     ///   ParameterList, with an output stream
     ///
-    /// \param comm [in] Communicator used by the Distributor.
-    /// \param out [in/out] Output stream (for debugging output).
-    ///
+    /// \param comm [in] Communicator used by the Distributor.  MUST
+    ///   be nonnull.
+    /// \param out [in/out] Output stream (for debugging output).  If
+    ///   null, the default is \c std::cerr.
     /// \param plist [in/out] List of parameters controlling how the
-    ///   Distributor performs communication.  Must be nonnull.
+    ///   Distributor performs communication, and specifying debug
+    ///   options.  If null, all parameters take their default values.
     ///   Please see the class documentation for a list of all
     ///   accepted parameters and their default values.
     ///
@@ -246,7 +251,7 @@ namespace Tpetra {
                  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //! Copy constructor.
-    Distributor (const Distributor &distributor);
+    Distributor (const Distributor& distributor);
 
     //! Destructor (virtual for memory safety).
     virtual ~Distributor ();
@@ -974,9 +979,13 @@ namespace Tpetra {
     ///
     /// This method is only meant to be called by the constructor.
     ///
-    /// \param comm [in] Communicator used by the Distributor.
+    /// \param comm [in] Communicator used by the Distributor.  MUST
+    ///   be nonnull.
+    /// \param out [in/out] Output stream (for debugging output).  If
+    ///   null, the default is \c std::cerr.
     /// \param plist [in/out] List of parameters controlling how the
-    ///   Distributor performs communication.  Must be nonnull.
+    ///   Distributor performs communication, and specifying debug
+    ///   options.  If null, all parameters take their default values.
     ///   Please see the class documentation for a list of all
     ///   accepted parameters and their default values.
     ///
@@ -985,6 +994,7 @@ namespace Tpetra {
     /// to do that.
     void
     init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute receive info from sends.

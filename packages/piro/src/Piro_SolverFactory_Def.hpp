@@ -50,6 +50,9 @@
 #endif /* Piro_ENABLE_NOX */
 
 #ifdef Piro_ENABLE_Rythmos
+// This "define" turns on the extended template interface in RythmosSolver. This should be cleaned up at some
+// point.
+#define ALBANY_BUILD
 #include "Piro_RythmosSolver.hpp"
 #endif /* Piro_ENABLE_Rythmos */
 
@@ -60,7 +63,7 @@
 
 namespace Piro {
 
-template <typename Scalar>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::createSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
@@ -86,7 +89,7 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #endif /* Piro_ENABLE_NOX */
 #ifdef Piro_ENABLE_Rythmos
   if (solverType == "Rythmos") {
-    result = rythmosSolver(piroParams, model, observer);
+    result = rythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>(piroParams, model, observer);
   } else
 #endif /* Piro_ENABLE_Rythmos */
   {

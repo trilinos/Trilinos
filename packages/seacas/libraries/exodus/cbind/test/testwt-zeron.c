@@ -92,8 +92,6 @@ int main (int argc, char **argv)
    printf ("after ex_create for test.exo, exoid = %d\n", exoid);
    printf (" cpu word size: %d io word size: %d\n",CPU_word_size,IO_word_size);
 
-   /* ncopts = NC_VERBOSE; */
-
 /* initialize file with parameters */
 
    num_dim = 1;

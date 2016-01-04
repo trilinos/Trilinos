@@ -63,9 +63,8 @@ int ex_get_side_set_node_count(int exoid,
                                ex_entity_id side_set_id,
                                int *side_set_node_cnt_list)
 {
-  size_t m;
   int ii, i, j; 
-  int  num_side_sets, num_elem_blks, num_df, ndim;
+  int  num_side_sets, num_elem_blks, ndim;
   size_t tot_num_ss_elem = 0;
   int64_t side, elem;
   void_int *elem_blk_ids = NULL;
@@ -150,13 +149,11 @@ int ex_get_side_set_node_count(int exoid,
     int64_t ss_df   = 0;
     err = ex_get_side_set_param(exoid,side_set_id,&ss_elem,&ss_df);
     tot_num_ss_elem = ss_elem;
-    num_df = ss_df;
   } else {
     int ss_elem = 0;
     int ss_df   = 0;
     err = ex_get_side_set_param(exoid,side_set_id,&ss_elem,&ss_df);
     tot_num_ss_elem = ss_elem;
-    num_df = ss_df;
   }
 
   if (err == -1) {

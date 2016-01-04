@@ -1,5 +1,9 @@
 #include "MetaDataTester.hpp"
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_FALSE, etc
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/baseImpl/PartRepository.hpp"
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace stk { namespace mesh { namespace unit_test {
 

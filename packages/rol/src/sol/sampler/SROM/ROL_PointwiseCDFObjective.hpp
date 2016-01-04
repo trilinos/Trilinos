@@ -62,10 +62,10 @@ private:
   const Real sqrt2_;
   const Real sqrtpi_;
 
-  Real valueCDF(const size_t dim, const Real loc, const SROMVector<Real> &x) const {
-    const size_t numSamples = x.getNumSamples();
+  Real valueCDF(const int dim, const Real loc, const SROMVector<Real> &x) const {
+    const int numSamples = x.getNumSamples();
     Real val = 0., hs = 0., xpt = 0., xwt = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
@@ -74,11 +74,11 @@ private:
   }
 
   Real gradientCDF(std::vector<Real> &gradx, std::vector<Real> &gradp,
-             const size_t dim, const Real loc, const SROMVector<Real> &x) const {
-    const size_t numSamples = x.getNumSamples();
+             const int dim, const Real loc, const SROMVector<Real> &x) const {
+    const int numSamples = x.getNumSamples();
     gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
     Real val = 0., hs = 0., xpt = 0., xwt = 0.;
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
@@ -90,11 +90,11 @@ private:
   }
 
   Real hessVecCDF(std::vector<Real> &hvx,
-            const size_t dim, const Real loc, const SROMVector<Real> &x, const SROMVector<Real> &v) const {
-    const size_t numSamples = x.getNumSamples();
+            const int dim, const Real loc, const SROMVector<Real> &x, const SROMVector<Real> &v) const {
+    const int numSamples = x.getNumSamples();
     hvx.resize(numSamples,0.);
     Real val = 0., hs = 0., xpt = 0., xwt = 0., scale3 = std::pow(scale_,3);
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       xpt = (*x.getPoint(k))[dim]; xwt = x.getWeight(k);
       hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
@@ -113,11 +113,11 @@ public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
-    const size_t dimension  = ex.getDimension();
-    const size_t numSamples = ex.getNumSamples();
+    const int dimension  = ex.getDimension();
+    const int numSamples = ex.getNumSamples();
     Real val = 0., diff = 0., xpt = 0., sum = 0.;
-    for (size_t d = 0; d < dimension; d++) {
-      for (size_t k = 0; k < numSamples; k++) {
+    for (int d = 0; d < dimension; d++) {
+      for (int k = 0; k < numSamples; k++) {
         xpt = (*ex.getPoint(k))[d];
         diff = (valueCDF(d,xpt,ex)-dist_[d]->evaluateCDF(xpt));
         val += std::pow(diff,2);
@@ -130,19 +130,19 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     SROMVector<Real> &eg = Teuchos::dyn_cast<SROMVector<Real> >(g);
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
-    const size_t dimension  = ex.getDimension();
-    const size_t numSamples = ex.getNumSamples();
+    const int dimension  = ex.getDimension();
+    const int numSamples = ex.getNumSamples();
     std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
     Real diff = 0., xpt = 0., val = 0., sum = 0.;
     std::vector<Real> val_wt(numSamples,0.), tmp(dimension,0.);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
-    for (size_t d = 0; d < dimension; d++) {
-      for (size_t k = 0; k < numSamples; k++) {
+    for (int d = 0; d < dimension; d++) {
+      for (int k = 0; k < numSamples; k++) {
         xpt = (*ex.getPoint(k))[d];
         val = gradientCDF(gradx,gradp,d,xpt,ex);
         diff = (val-dist_[d]->evaluateCDF(xpt));
         sum = 0.;
-        for (size_t j = 0; j < numSamples; j++) {
+        for (int j = 0; j < numSamples; j++) {
           (val_pt[j])[d] += diff * gradx[j];
           val_wt[j]      += diff * gradp[j];
           sum            -= gradx[j]; 
@@ -150,7 +150,7 @@ public:
         (val_pt[k])[d] += diff * (sum - dist_[d]->evaluatePDF(xpt));
       }
     }
-    for (size_t k = 0; k < numSamples; k++) {
+    for (int k = 0; k < numSamples; k++) {
       eg.setPoint(k,val_pt[k]);
       eg.setWeight(k,val_wt[k]);
     }

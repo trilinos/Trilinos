@@ -280,7 +280,6 @@ namespace SEAMS {
     bool parse_file(const std::string& filename);
 
     void statistics(std::ostream *out = NULL) const;
-    void copyright(std::ostream *out = NULL) const;
     
     aprepro_options ap_options;
     std::stack<file_rec> ap_file_list;
@@ -295,7 +294,7 @@ namespace SEAMS {
     std::vector<std::string> get_variable_names(bool doInternal = false);
     void remove_variable(const std::string &sym_name);
 
-    bool set_option(const std::string &option);
+    int set_option(const std::string &option, const std::string &optional_value=std::string(""));
     
     std::fstream *open_file(const std::string &file, const char *mode);
     std::fstream *check_open_file(const std::string &file, const char *mode);

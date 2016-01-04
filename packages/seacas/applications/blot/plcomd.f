@@ -212,8 +212,8 @@ C         --Set display options
 
 C         --DOQA, DOAXIS, and DOLEG are not changed
 
-            CALL INISTR (3, ' ', CAPTN(1,1))
-            CALL INISTR (3, ' ', CAPTN(1,2))
+c            CALL INISTR (3, ' ', CAPTN(1,1))
+c            CALL INISTR (3, ' ', CAPTN(1,2))
          END IF
 
 C      --Initialize for program change or program reset (part 2)
@@ -256,8 +256,10 @@ C         --Set display options
             DOLEG(2) = .TRUE.
             DOBOX    = .TRUE.
 
-            CALL INISTR (3, ' ', CAPTN(1,1))
-            CALL INISTR (3, ' ', CAPTN(1,2))
+            if (verb .EQ. 'reset') then
+              CALL INISTR (3, ' ', CAPTN(1,1))
+              CALL INISTR (3, ' ', CAPTN(1,2))
+            end if
 
 C              reset background color
 

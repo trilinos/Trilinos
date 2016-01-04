@@ -1,5 +1,4 @@
 INCLUDE(TribitsLibraryMacros)
-INCLUDE(CheckIncludeFile)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -38,6 +37,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Pamgen)
   ADD_SUBDIRECTORY(pamgen)
+ENDIF()
+
+IF (TPL_ENABLE_CGNS)
+  ADD_SUBDIRECTORY(cgns)
 ENDIF()
 
 ADD_SUBDIRECTORY(generated)

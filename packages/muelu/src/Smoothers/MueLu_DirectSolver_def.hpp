@@ -83,6 +83,8 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
     } catch (Exceptions::RuntimeError& e) {
       errorTpetra_ = e.what();
+    } catch (Exceptions::BadCast& e) {
+      errorTpetra_ = e.what();
     }
     triedTpetra_ = true;
 #endif

@@ -130,22 +130,49 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
 }
 
 inline
+size_t get_max_hwm_across_procs(MPI_Comm comm)
+{
+    size_t now = 0, localHwm = 0, maxHwm = 0;
+    stk::get_memory_usage(now, localHwm);
+    stk::all_reduce_max(comm, &localHwm, &maxHwm, 1);
+    return maxHwm;
+}
+
+inline
+double get_max_time_across_procs(double time_on_this_proc, MPI_Comm comm)
+{
+    double maxTime = 0.0;
+    stk::all_reduce_max(comm, &time_on_this_proc, &maxTime, 1);
+    return maxTime;
+}
+
+template <typename VALUETYPE>
+void print_tagged_stat(std::ostream& out, const std::string &tag, VALUETYPE value)
+{
+    out << std::setw(6) << std::fixed << std::setprecision(1) << tag << value << std::endl;
+}
+
+inline
+void print_stats(std::ostream& out, double maxTime, size_t maxHwm, unsigned numSteps)
+{
+    print_tagged_stat(out, "### Total Wall Clock Run Time Used ###: ", maxTime);
+    print_tagged_stat(out, "### Total Number of Steps Taken ###: ", numSteps);
+    print_tagged_stat(out, "Total Memory In Use ", maxHwm);
+}
+
+inline
+void print_stats_for_performance_compare(std::ostream& out, double maxTime, size_t maxHwm, unsigned numSteps, MPI_Comm comm)
+{
+    if (stk::parallel_machine_rank(comm) == 0)
+        print_stats(out, maxTime, maxHwm, numSteps);
+}
+
+inline
 void parallel_print_time_for_performance_compare(MPI_Comm comm, double time_on_this_proc, std::ostream&out = std::cout)
 {
-  size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
-  get_memory_high_water_mark_across_processors(comm, hwm_max, hwm_min, hwm_avg);
-
-  double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
-  get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
-
-  int rank = stk::parallel_machine_rank(comm);
-
-  if (rank == 0) {
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "### Total Wall Clock Run Time Used ###: " << max_time << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "### Total Number of Steps Taken ###: " << 1 << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Total Memory In Use " << hwm_max << std::endl;
-  }
-
+    double maxTime = get_max_time_across_procs(time_on_this_proc, comm);
+    size_t maxHwm = get_max_hwm_across_procs(comm);
+    print_stats_for_performance_compare(out, maxTime, maxHwm, 1, comm);
 }
 
 }

@@ -108,19 +108,21 @@ namespace Xpetra {
 
   };
 
-  // Specializations for Serial Node (mainly used for Epetra)
-#ifdef HAVE_XPETRA_SERIAL
+
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES))
+
 
   // Specialization for Scalar=double, LO=GO=int and Serial node
   // Used both for Epetra and Tpetra
   // For any other node definition the general default implementation is used which allows Tpetra only
   template <>
-  class MultiVectorFactory<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class MultiVectorFactory<double, int, int, EpetraNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -132,20 +134,12 @@ namespace Xpetra {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, zeroOut) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MultiVectorFactory<int,int>", "TpetraMultiVector<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraMultiVectorT<int,Node>(map, NumVectors, zeroOut) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -155,37 +149,28 @@ namespace Xpetra {
       XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
       if (map->lib() == UseTpetra)
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
-#else
-      XPETRA_TPETRA_ETI_EXCEPTION("MultiVectorFactory<int,int>", "TpetraMultiVector<int,int>", "int");
-#endif
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraMultiVectorT<int,Node>(map, ArrayOfPtrs, NumVectors) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
 
   };
 
-  // Specialization for Scalar=double, LO=int, GO=long long and Serial node
-  // Used both for Epetra and Tpetra
-  // For any other node definition the general default implementation is used which allows Tpetra only
-#ifdef HAVE_XPETRA_INT_LONG_LONG
+// we need the Epetra specialization only if Epetra is enabled
+#if (defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES))
+
   template <>
-  class MultiVectorFactory<double, int, long long, Kokkos::Compat::KokkosSerialWrapperNode> {
+  class MultiVectorFactory<double, int, long long, EpetraNode> {
 
     typedef double Scalar;
     typedef int LocalOrdinal;
     typedef long long GlobalOrdinal;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+    typedef EpetraNode Node;
 
   private:
     //! Private constructor. This is a static class.
@@ -201,12 +186,8 @@ namespace Xpetra {
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, NumVectors, zeroOut) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraMultiVectorT<long long,Node>(map, NumVectors, zeroOut) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }
@@ -220,12 +201,8 @@ namespace Xpetra {
         return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
       if (map->lib() == UseEpetra)
         return rcp( new EpetraMultiVectorT<long long,Node>(map, ArrayOfPtrs, NumVectors) );
-#endif
-#endif
 
       XPETRA_FACTORY_END;
     }

@@ -5,7 +5,7 @@
 #include <Ioss_DBUsage.h>
 #include <Ioss_PropertyManager.h>
 #include <string>
-#include <init/Ionit_Initializer.h>
+#include <Ionit_Initializer.h>
 
 #include <Ioss_ElementBlock.h>
 

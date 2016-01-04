@@ -63,7 +63,7 @@ simple_part (
     int      *order;		/* random ordering of vertices */
     int       weight;		/* sum of vertex weights in a partition */
     int       wgts[MAXSETS];	/* weight assigned to given set so far */
-    int       set=-1;		/* set vertex is assigned to */
+    int       set=0;		/* set vertex is assigned to */
     int       i, j;		/* loop counters */
 
     void      randomize();

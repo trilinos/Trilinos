@@ -655,8 +655,16 @@ private:
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
+  ///
+  /// The power method should never return a nonpositive result with a
+  /// real SPD matrix.  If it did, this method returns early.  The
+  /// calling method is responsible for checking the return value's
+  /// sign and handling this error condition.
   static ST
-  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
+  powerMethodWithInitGuess (const op_type& A,
+                            const V& D_inv,
+                            const int numIters,
+                            V& x);
 
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv.

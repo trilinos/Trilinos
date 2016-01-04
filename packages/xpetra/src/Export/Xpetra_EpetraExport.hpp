@@ -80,7 +80,8 @@ namespace Xpetra {
     //@{
 
     //! Construct a Export object from the source and target Map.
-    EpetraExportT(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target);
+    EpetraExportT(const Teuchos::RCP<const map_type> & source, const Teuchos::RCP<const map_type> & target)
+      : export_(rcp(new Epetra_Export(toEpetra<GlobalOrdinal,Node>(source), toEpetra<GlobalOrdinal,Node>(target)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
 
     ////! Constructor (with list of parameters).
 	// Definition not in cpp, so comment out
@@ -105,25 +106,43 @@ namespace Xpetra {
     size_t getNumPermuteIDs() const { XPETRA_MONITOR("EpetraExportT::getNumPermuteIDs"); return export_->NumPermuteIDs(); }
 
     //! List of local IDs in the source Map that are permuted.
-    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const;
+    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const {
+      XPETRA_MONITOR("EpetraExportT::getPermuteFromLIDs");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getExportImageIDs not implemented"); }
+
 
     //! List of local IDs in the target Map that are permuted.
-    ArrayView< const LocalOrdinal > getPermuteToLIDs() const;
+    ArrayView< const LocalOrdinal > getPermuteToLIDs() const {
+      XPETRA_MONITOR("EpetraExportT::getPermuteToLIDs");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getPermuteToLIDs not implemented"); }
+
 
     //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
+    size_t getNumRemoteIDs() const {
+      XPETRA_MONITOR("EpetraExportT::getNumRemoteIDs");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getNumRemoteIDs not implemented"); }
+
 
     //! List of entries in the target Map to receive from other processes.
-    ArrayView< const LocalOrdinal > getRemoteLIDs() const;
+    ArrayView< const LocalOrdinal > getRemoteLIDs() const {
+      XPETRA_MONITOR("EpetraExportT::getRemoteLIDs");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getRemoteLIDs not implemented"); }
+
 
     //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
+    size_t getNumExportIDs() const {
+      XPETRA_MONITOR("EpetraExportT::getNumExportIDs");
+      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getNumExportIDs not implemented"); }
+
 
     //! List of entries in the source Map that will be sent to other processes.
-    ArrayView< const LocalOrdinal > getExportLIDs() const;
+    ArrayView< const LocalOrdinal > getExportLIDs() const {
+        XPETRA_MONITOR("EpetraExportT::getExportLIDs");
+        TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraExportT<EpetraGlobalOrdinal>::getExportLIDs not implemented"); }
+
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportPIDs() const;
+    ArrayView< const int > getExportPIDs() const { XPETRA_MONITOR("EpetraExportT::getExportImageIDs"); return ArrayView<const int> (export_->ExportPIDs(),export_->NumExportIDs()); }
 
     //! The source Map used to construct this Export.
     Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraExportT::getSourceMap"); return toXpetra<GlobalOrdinal, Node>(export_->SourceMap()); }
@@ -137,7 +156,7 @@ namespace Xpetra {
     //@{
 
     //! Print the Export's data to the given output stream.
-    void print(std::ostream &os) const;
+    void print(std::ostream &os) const { XPETRA_MONITOR("EpetraExportT::");  export_->Print(os); }
 
     //@}
 

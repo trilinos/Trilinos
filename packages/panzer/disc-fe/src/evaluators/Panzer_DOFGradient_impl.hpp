@@ -63,8 +63,7 @@ void evaluateGrad_withSens(int numCells,
     int numFields = grad_basis.dimension(1);
     int numPoints = grad_basis.dimension(2);
     int spaceDim  = grad_basis.dimension(3);
-
-    for (int cell=0; cell<numCells; cell++) {
+    Kokkos::parallel_for (numCells,  KOKKOS_LAMBDA (size_t cell) {
       for (int pt=0; pt<numPoints; pt++) {
         for (int d=0; d<spaceDim; d++) {
           // first initialize to the right thing (prevents over writing with 0)
@@ -74,7 +73,7 @@ void evaluateGrad_withSens(int numCells,
             dof_grad(cell,pt,d) += dof_value(cell, bf) * grad_basis(cell, bf, pt, d);
         }
       }
-    }
+    });
   }
 }
 

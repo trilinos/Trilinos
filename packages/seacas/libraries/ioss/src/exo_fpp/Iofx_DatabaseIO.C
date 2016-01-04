@@ -46,6 +46,9 @@
 #include <stddef.h>
 #include <sys/select.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <tokenize.h>
 #include <algorithm>
 #include <cctype>
@@ -86,10 +89,6 @@
 #include "Ioss_State.h"
 #include "Ioss_VariableType.h"
 
-#ifdef HAVE_MPI    
-#include "Ioss_FileInfo.h"
-#endif
-
 // ========================================================================
 // Static internal helper functions
 // ========================================================================
@@ -98,8 +97,6 @@ namespace {
 
   const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
   const std::string SCALAR()     {return std::string("scalar");}
-  const std::string VECTOR3D()   {return std::string("vector_3d");}
-  const std::string SYM_TENSOR() {return std::string("sym_tensor_33");}
 
   const char *complex_suffix[] = {".re", ".im"};
 
@@ -307,11 +304,23 @@ namespace Iofx {
           exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
                                     &cpu_word_size, &dbRealWordSize);
           if (exodusFilePtr < 0) {
-            dbState = Ioss::STATE_INVALID;
-            // NOTE: Code will not continue past this call...
-            std::ostringstream errmsg;
-            errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
-            IOSS_ERROR(errmsg);
+            if (myProcessor == 0){
+              Ioss::FileInfo path = Ioss::FileInfo(decoded_filename);
+              Ioss::Utils::create_path(path.pathname());
+            }
+#ifdef HAVE_MPI
+            if (dbUsage != Ioss::WRITE_HISTORY) {
+              MPI_Barrier(util().communicator());
+            }
+#endif
+            exodusFilePtr = ex_create(decoded_filename.c_str(), mode, &cpu_word_size, &dbRealWordSize);
+            if (exodusFilePtr < 0) {
+              dbState = Ioss::STATE_INVALID;
+              // NOTE: Code will not continue past this call...
+              std::ostringstream errmsg;
+              errmsg << "ERROR: Cannot create specified file '" << decoded_filename << "'";
+              IOSS_ERROR(errmsg);
+            }
           }
         }
       }

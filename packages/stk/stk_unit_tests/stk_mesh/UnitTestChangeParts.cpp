@@ -31,10 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include "stk_mesh/base/MetaData.hpp"
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_THROW, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
+#include <string>                       // for string
+#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include <stk_unit_test_utils/ioUtils.hpp>
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace
 {

@@ -31,27 +31,29 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
-#include <stk_mesh/fixtures/degenerate_mesh.hpp>  // for VectorFieldType, etc
+#include <stk_mesh/fixtures/degenerate_mesh.hpp>
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <gtest/gtest.h>
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size
 #include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator&, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
 using stk::mesh::MetaData;
 
@@ -475,165 +477,6 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   if (fixture.m_bulk_data.parallel_size() > 1)
     EXPECT_LE(1u, num_ghosted_faces);
 
-
-}
-
-TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
-{
-  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
-  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
-  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
-
-  const size_t NX = 3;
-  const size_t NY = 3;
-  const size_t NZ = 3;
-
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
-
-  fixture.m_meta.commit();
-  fixture.generate_mesh();
-
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::skin_mesh(fixture.m_bulk_data);
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( 64u, counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u,  counts[edge_rank] );  // edges
-    EXPECT_EQ( 54u, counts[face_rank] );  // faces
-    EXPECT_EQ( 27u, counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::create_faces(fixture.m_bulk_data);
-
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
-  for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
-  {
-    stk::mesh::Bucket & b = **b_itr;
-    for ( size_t i = 0; i< b.size(); ++i) {
-      unsigned elem_ordinal = i;
-      EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
-      EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
-    }
-  }
-
-  stk::mesh::BucketVector  face_buckets = fixture.m_bulk_data.buckets(face_rank);
-  for ( stk::mesh::BucketVector::iterator b_itr = face_buckets.begin();
-      b_itr != face_buckets.end();
-      ++b_itr
-  )
-  {
-    stk::mesh::Bucket & b = **b_itr;
-    for ( size_t i = 0; i< b.size(); ++i) {
-      unsigned face_ordinal = i;
-      EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
-      EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
-    }
-  }
-
-}
-
-TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
-{
-  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
-  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
-  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
-
-  const size_t NX = 3;
-  const size_t NY = 3;
-  const size_t NZ = 3;
-
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
-
-  fixture.m_meta.commit();
-  fixture.generate_mesh();
-
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::create_faces(fixture.m_bulk_data);
-
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::skin_mesh(fixture.m_bulk_data);
-
-  {
-    std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
-
-    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
-  }
-
-  stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
-  for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
-  {
-    stk::mesh::Bucket & b = **b_itr;
-    for ( size_t i = 0; i< b.size(); ++i) {
-      unsigned elem_ordinal = i;
-      EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
-      EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
-    }
-  }
-
-  stk::mesh::BucketVector  face_buckets = fixture.m_bulk_data.buckets(face_rank);
-  for ( stk::mesh::BucketVector::iterator b_itr = face_buckets.begin();
-      b_itr != face_buckets.end();
-      ++b_itr
-  )
-  {
-    stk::mesh::Bucket & b = **b_itr;
-    for ( size_t i = 0; i< b.size(); ++i) {
-      unsigned face_ordinal = i;
-      EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
-      EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
-    }
-  }
 
 }
 

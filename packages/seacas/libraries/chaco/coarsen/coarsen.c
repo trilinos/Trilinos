@@ -86,15 +86,14 @@ coarsen (
     float    *cterm_wgts[MAXSETS];	/* coarse graph terminal weights */
     float    *new_term_wgts[MAXSETS];	/* terminal weights for Bui's method*/
     float   **real_term_wgts;	/* one of the above */
-    float    *twptr;		/* loops through term_wgts */
-    float    *twptr_save;	/* copy of twptr */
+    float    *twptr = NULL;	/* loops through term_wgts */
+    float    *twptr_save = NULL;/* copy of twptr */
     float    *ctwptr;		/* loops through cterm_wgts */
     double   *vwsqrt = NULL;	/* square root of vertex weights */
     double    norm, alpha;	/* values used for orthogonalization */
     double    initshift;	/* initial shift for RQI */
     double    total_vwgt;	/* sum of all the vertex weights */
     double    w1, w2;		/* weights of two sets */
-    double    sigma;		/* norm of rhs in extended eigenproblem */
     double    term_tot;		/* sum of all terminal weights */
     int    *space;		/* room for assignment in Lanczos */
     int      *morespace;	/* room for assignment in Lanczos */
@@ -181,19 +180,18 @@ coarsen (
 	if (real_term_wgts != term_wgts && new_term_wgts[1] != NULL) {
 	    sfree(real_term_wgts[1]);
 	}
-	sfree(space);
-	if (vwsqrt != NULL)
-	    sfree(vwsqrt);
+	sfree(space); space = NULL;
+	sfree(vwsqrt); vwsqrt = NULL;
+	sfree(twptr_save); twptr_save = NULL;
 	return;
     }
 
     /* Otherwise I have to coarsen. */
-
     if (coords != NULL) {
-	ccoords = smalloc(igeom * sizeof(float *));
+        ccoords = smalloc(igeom * sizeof(float *));
     }
     else {
-	ccoords = NULL;
+        ccoords = NULL;
     }
     coarsen1(graph, nvtxs, nedges, &cgraph, &cnvtxs, &cnedges,
 	     &v2cv, igeom, coords, ccoords, using_ewgts);
@@ -251,8 +249,8 @@ coarsen (
 
     ch_interpolate(yvecs, cyvecs, ndims, graph, nvtxs, v2cv, using_ewgts);
 
-    sfree(cterm_wgts[1]);
-    sfree(v2cv);
+    sfree(twptr_save); twptr_save = NULL;
+    sfree(v2cv); v2cv = NULL;
 
     /* I need to do Rayleigh Quotient Iteration each nstep stages. */
     time = seconds();
@@ -355,9 +353,7 @@ coarsen (
 	    /* Following only works for bisection. */
 	    w1 = goal[0];
 	    w2 = goal[1];
-	    sigma = sqrt(4*w1*w2/(w1+w2));
 	    gvec = smalloc((nvtxs+1)*sizeof(double));
-	    term_tot = sigma;	/* Avoids lint warning for now. */
 	    term_tot = 0;
 	    for (j=1; j<=nvtxs; j++) term_tot += (real_term_wgts[1])[j];
 	    term_tot /= (w1+w2);
@@ -374,9 +370,10 @@ coarsen (
 
 	    rqi_ext();
 
-	    sfree(gvec);
+	    sfree(gvec); gvec = NULL;
 	    if (real_term_wgts != term_wgts && new_term_wgts[1] != NULL) {
 		sfree(new_term_wgts[1]);
+		new_term_wgts[1] = NULL;
 	    }
 	}
 	else {
@@ -395,13 +392,14 @@ coarsen (
 	    orthlist = newlink;
 	}
 	sfree(r1);
-	if (vwsqrt != NULL)
-	    sfree(vwsqrt);
+	sfree(vwsqrt); vwsqrt = NULL;
 	PERTURB = oldperturb;
     }
     if (DEBUG_COARSEN > 0) {
 	printf(" Leaving coarsen, step=%d\n", step);
     }
+
+    sfree(twptr_save); twptr_save = NULL;
 
     /* Free the space that was allocated. */
     if (ccoords != NULL) {

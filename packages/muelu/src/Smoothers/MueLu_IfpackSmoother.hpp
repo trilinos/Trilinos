@@ -51,7 +51,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Matrix.hpp>
-#include "Xpetra_MultiVectorFactory_fwd.hpp"
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 class Ifpack_Preconditioner;
 
@@ -210,15 +210,11 @@ namespace MueLu {
   }
 
   // Specialization for serial node (used for Epetra)
-#if defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)
   template <>
-  inline RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> >
-  GetIfpackSmoother<double, int, int, Kokkos::Compat::KokkosSerialWrapperNode> (const std::string& type,
-                                       const Teuchos::ParameterList& paramList,
-                                       const int& overlap)
-  {
-    typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-    return rcp (new MueLu::IfpackSmoother<Node> (type, paramList, overlap));
+  inline RCP<MueLu::SmootherPrototype<double, int, int, Xpetra::EpetraNode> >
+  GetIfpackSmoother<double, int, int, Xpetra::EpetraNode> (const std::string& type, const Teuchos::ParameterList& paramList, const int& overlap) {
+    return rcp(new MueLu::IfpackSmoother<Xpetra::EpetraNode>(type, paramList, overlap));
   }
 #endif
 

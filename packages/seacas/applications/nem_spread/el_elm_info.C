@@ -46,44 +46,12 @@
 *  NAME				TYPE		CALL_BY
 * ---------------		-------		------------------------
 *  elem_info ()			int		"rf_fill.c" matrix_fill
-*  in_list   ()                 int              multiple routines
 *  get_type  ()			int
 *  calc_elem_vol()              double          multiple routines
 *
 ******************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-
-namespace {
-  int in_list(int ivalue, int ibegin, int iend, int ivector[])
-
-  /*
-   * This function searches an integer vector, ivector(ibegin:iend), for the
-   * presence of a number, ivalue.  It returns the index of the value, or -1, if
-   * the number, ivalue, is not found in the list.
-   *
-   * The function is used (amongst other purposes) to see if a local node number
-   * is in the adjacency list of an element and to return its position if so.
-   *
-   * Author:          Scott Hutchinson (1421)
-   * Date:            15 May 1992
-   */
-
-  {
-
-    int i;
-
-    ivector += ibegin;
-    for (i = ibegin; i < iend; ivector++, i++)
-      if (*ivector == ivalue) {
-	return i;
-      }
-
-    /* ivalue not found in ivector */
-    return -1;
-
-  } /* in_list */
-}
 
 int elem_info(int info, int ielem_type, int supp)
 

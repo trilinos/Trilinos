@@ -31,8 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <gtest/gtest.h>
-#include <stk_mesh/base/MetaData.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <algorithm>                    // for find
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
+#include <string>                       // for allocator, operator+, etc
+#include <vector>                       // for vector
+#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace {
 static const unsigned num_test_topologies = 30;

@@ -318,8 +318,15 @@ public:
 
   //@}
 
-  /** \name MDComm pass-through methods */
+  /** \name MDComm accessor and pass-through methods */
   //@{
+
+  /** \brief Access the underlying MDComm object
+   *
+   * Return a reference counted pointer to the Domi::MDComm object
+   * upon which this MDMap is built.
+   */
+  inline Teuchos::RCP< const MDComm > getMDComm() const;
 
   /** \brief Query whether this processor is on the sub-communicator
    *
@@ -327,7 +334,7 @@ public:
    * using the (parent,ordinal) or (parent,slices) constructor.  For a
    * full communicator, this method will always return true.
    */
-  bool onSubcommunicator() const;
+  inline bool onSubcommunicator() const;
 
   /** \brief Get the Teuchos communicator
    *
@@ -335,7 +342,7 @@ public:
    * sub-communicator, that the underlying Comm pointer may be NULL,
    * depending on this processor's rank.
    */
-  Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
+  inline Teuchos::RCP< const Teuchos::Comm< int > > getTeuchosComm() const;
 
   /** \brief Get the number of dimensions
    *
@@ -343,7 +350,7 @@ public:
    * sub-communicator and this processor does not belong to the
    * sub-communicator.
    */
-  int numDims() const;
+  inline int numDims() const;
 
   /** \brief Get the size along the given axis
    *
@@ -354,7 +361,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getCommDim(int axis) const;
+  inline int getCommDim(int axis) const;
 
   /** \brief Return the periodic flag for the given axis.
    *
@@ -365,7 +372,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  bool isPeriodic(int axis) const;
+  inline bool isPeriodic(int axis) const;
 
   /** \brief Get the axis rank of this processor
    *
@@ -376,7 +383,7 @@ public:
    * communicator is a sub-communicator and this processor does not
    * belong to the sub-communicator.
    */
-  int getCommIndex(int axis) const;
+ inline  int getCommIndex(int axis) const;
 
   /** \brief Get the rank of the lower neighbor
    *
@@ -394,7 +401,7 @@ public:
    * of the calling processor is the highest axis rank processor along
    * this axis, then the returned lower neighbor will be zero.
    */
-  int getLowerNeighbor(int axis) const;
+  inline int getLowerNeighbor(int axis) const;
 
   /** \brief Get the rank of the upper neighbor
    *
@@ -413,12 +420,17 @@ public:
    * of the calling processor is zero, then the returned lower
    * neighbor will be the highest axis rank processor along this axis.
    */
-  int getUpperNeighbor(int axis) const;
+  inline int getUpperNeighbor(int axis) const;
 
   //@}
 
   /** \name Dimensions and looping bounds */
   //@{
+
+  /** \brief Get an array of the the global dimensions, including
+   *         boundary padding
+    */
+  Teuchos::Array< dim_type > getGlobalDims() const;
 
   /** \brief Get the global dimension along the specified axis
    *
@@ -454,6 +466,10 @@ public:
    * value.
    */
   Slice getGlobalRankBounds(int axis, bool withBndryPad=false) const;
+
+  /** \brief Get an array of the local dimensions, including padding
+   */
+  Teuchos::Array< dim_type > getLocalDims() const;
 
   /** \brief Get the local dimension along the specified axis
    *
@@ -1873,6 +1889,15 @@ MDMap< Node >::operator=(const MDMap< Node > & source)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+Teuchos::RCP< const MDComm >
+MDMap< Node >::getMDComm() const
+{
+  return _mdComm;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 bool
 MDMap< Node >::onSubcommunicator() const
 {
@@ -1945,6 +1970,16 @@ MDMap< Node >::getUpperNeighbor(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+Teuchos::Array< dim_type >
+MDMap< Node >::
+getGlobalDims() const
+{
+  return _globalDims;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 dim_type
 MDMap< Node >::
 getGlobalDim(int axis,
@@ -2007,6 +2042,16 @@ getLocalDim(int axis,
     return _localDims[axis];
   else
     return _localDims[axis] - _pad[axis][0] - _pad[axis][1];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::Array< dim_type >
+MDMap< Node >::
+getLocalDims() const
+{
+  return _localDims;
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C   $Id: mirss.f,v 1.3 1999/01/27 15:08:25 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE MIRSS (IDFRO, IDBCK,
      &   NESUR, NESFRO, NESBCK, LTSSS3)

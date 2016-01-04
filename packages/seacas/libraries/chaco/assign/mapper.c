@@ -107,6 +107,7 @@ mapper (
 	    for (j = 1; j <= nvtxs; j++)
 		sets[j] = (sets[j] << 1) + temp_sets[j];
 	}
+	sfree(temp_sets);
     }
 
     else if (mediantype == 1) {	/* Divide using min-cost assignment. */

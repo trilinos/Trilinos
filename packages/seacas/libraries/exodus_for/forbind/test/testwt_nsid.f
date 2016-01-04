@@ -39,7 +39,7 @@ c
       include 'exodusII.inc'
 
       integer iin, iout
-      integer exoid, num_dim,num_nodes,elem_map(5),num_elem,num_elem_blk
+      integer exoid, num_dim,num_nodes,elem_map(7),num_elem,num_elem_blk
       integer num_elem_in_block(10), num_nodes_per_elem(10),numattr(10)
       integer num_node_sets, num_side_sets
       integer i, connect(37), nnpe(10)

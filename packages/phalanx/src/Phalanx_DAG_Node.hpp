@@ -3,6 +3,7 @@
 
 #include "Phalanx_Evaluator.hpp"
 #include <unordered_set>
+#include <chrono>
 
 namespace PHX {
 
@@ -21,12 +22,18 @@ namespace PHX {
     PHX::Color c_;
     //! Node data.
     Teuchos::RCP<PHX::Evaluator<Traits>> e_;
-    //! DAG discovery time.
+    //! DAG depth first search discovery time.
     int discovery_time_;
-    //! DAG final time.
+    //! DAG depth first search final time.
     int final_time_;
     //! Out-edge node adjacency indices. Use a set to avoid duplicate edges.
     std::unordered_set<int> adjacencies_;
+    //! Execution time
+    std::chrono::duration<double> exec_time_;
+    //! Graph analysis node start time
+    std::chrono::duration<double> t_start_;
+    //! Graph analysis node finish time
+    std::chrono::duration<double> t_finish_;
 
   public:
     DagNode(const int index,
@@ -35,7 +42,10 @@ namespace PHX {
       c_(PHX::Color::WHITE),
       e_(e),
       discovery_time_(-1),
-      final_time_(-1)
+      final_time_(-1),
+      exec_time_(0.0),
+      t_start_(0.0),
+      t_finish_(0.0)
     {}
     DagNode(const DagNode<Traits>& ) = default;
     DagNode(DagNode<Traits>&& ) = default;
@@ -59,6 +69,18 @@ namespace PHX {
     {adjacencies_.insert(node_index);}
     const std::unordered_set<int>& adjacencies() const
     {return adjacencies_;}
+    void setExecutionTime(const std::chrono::duration<double>& exec_time)
+    {exec_time_ = exec_time;}
+    const std::chrono::duration<double>& executionTime() const
+    {return exec_time_;}
+    void setStartTime(const std::chrono::duration<double>& t)
+    {t_start_ = t;}
+    const std::chrono::duration<double>& startTime() const
+    {return t_start_;}
+    void setFinishTime(const std::chrono::duration<double>& t)
+    {t_finish_ = t;}
+    const std::chrono::duration<double>& finishTime() const
+    {return t_finish_;}
   };
 
 }

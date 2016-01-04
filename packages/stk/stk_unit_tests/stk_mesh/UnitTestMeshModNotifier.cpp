@@ -33,15 +33,18 @@
 
 
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/ModificationObserver.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
+#include <ostream>                      // for operator<<, ostream
 #include <stk_mesh/base/ModificationNotifier.hpp>
-#include <gtest/gtest.h>
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
+#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t, etc
 
 namespace {
 

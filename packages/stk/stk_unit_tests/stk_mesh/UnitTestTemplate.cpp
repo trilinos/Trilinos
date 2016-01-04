@@ -31,10 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <ostream>                      // for basic_ostream::operator<<
-#include <gtest/gtest.h>
-#include "gtest/gtest.h"                // for AssertHelper
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include "gtest/gtest.h"                // for ASSERT_TRUE, TEST
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 TEST(UnitTestTemplate, testUnit)
 {

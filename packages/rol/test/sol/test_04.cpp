@@ -85,20 +85,20 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Distribution<double> > dist;
     std::vector<Teuchos::RCP<ROL::Distribution<double> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
-    Dlist.sublist("Distribution").set("Name","Beta");
+    Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     double alpha = 1., beta = 4.;
     // Fill moment vector and initial guess
     for (size_t d = 0; d < dimension; d++) {
       // Build distribution for dimension d
       alpha++; beta++;
-      Dlist.sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
-      Dlist.sublist("Distribution").sublist("Beta").set("Shape 2",beta);
+      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 1",alpha);
+      Dlist.sublist("SOL").sublist("Distribution").sublist("Beta").set("Shape 2",beta);
       dist = ROL::DistributionFactory<double>(Dlist);
       distVec[d] = ROL::DistributionFactory<double>(Dlist);
     }
 
     // Get ROL parameterlist
-    std::string filename = "input.xml";
+    std::string filename = "input_04.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
@@ -140,15 +140,25 @@ int main(int argc, char* argv[]) {
       }
     }
     *outStream << std::endl;
-/*
-    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
-      for (size_t d = 0; d < dimension; d++) {
-        *outStream << std::setw(20) << (sampler->getMyPoint(k))[d] << "  ";
-      }
-      *outStream << std::setw(20) << sampler->getMyWeight(k) << std::endl;
-    }
-    *outStream << std::endl;
-*/
+
+//    std::ofstream file;
+//    std::stringstream name;
+//    name << "samples." << commptr->getRank() << ".txt";
+//    file.open(name.str().c_str()); 
+//    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
+//      for (size_t d = 0; d < dimension; d++) {
+//        file << std::setprecision(std::numeric_limits<double>::digits10)
+//             << std::scientific
+//             << (sampler->getMyPoint(k))[d];
+//        file << "  ";
+//      }
+//      file << std::setprecision(std::numeric_limits<double>::digits10)
+//           << std::scientific
+//           << sampler->getMyWeight(k) << std::endl;
+//    }
+//    file.close();
+//    commptr->barrier();
+
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
