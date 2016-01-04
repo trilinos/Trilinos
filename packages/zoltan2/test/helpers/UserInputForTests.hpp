@@ -355,7 +355,7 @@ private:
   
   // Chaco coordinate reader:  copied from zoltan/ch
   int chaco_input_geom(FILE *fingeom, const char *geomname, int nvtxs,
-                       int  *igeom, float **x, float **y, float **z);
+                       int  *igeom, double **x, double **y, double **z);
   
   // Chaco coordinate reader:  copied from zoltan/ch
   int chaco_input_assign(FILE *finassign, const char *assignname, int nvtxs,
@@ -1771,7 +1771,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
 {
   int rank = tcomm_->getRank();
   int ndim=0;
-  float *x=NULL, *y=NULL, *z=NULL;
+  double *x=NULL, *y=NULL, *z=NULL;
   int fail = 0;
   
   size_t globalNumVtx = M_->getGlobalNumRows();
@@ -1808,7 +1808,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
       if (!v)
         throw std::bad_alloc();
       coords[dim] = arcp<const zscalar_t>(v, 0, globalNumVtx, true);
-      float *val = (dim==0 ? x : (dim==1 ? y : z));
+      double *val = (dim==0 ? x : (dim==1 ? y : z));
       for (size_t i=0; i < globalNumVtx; i++)
         v[i] = zscalar_t(val[i]);
       
@@ -2298,12 +2298,12 @@ int UserInputForTests::chaco_input_geom(
   const char *geomname,        /* name of geometry file */
   int     nvtxs,        /* number of coordinates to read */
   int    *igeom,        /* dimensionality of geometry */
-  float   **x,             /* coordinates of vertices */
-  float   **y,
-  float   **z
+  double   **x,             /* coordinates of vertices */
+  double   **y,
+  double   **z
 )
 {
-  float   xc, yc, zc =0;    /* first x, y, z coordinate */
+  double  xc, yc, zc =0;    /* first x, y, z coordinate */
   int     nread;        /* number of lines of coordinates read */
   int     flag;        /* any bad data at end of file? */
   int     line_num;        /* counts input lines in file */
@@ -2346,27 +2346,27 @@ int UserInputForTests::chaco_input_geom(
   
   *igeom = ndims;
   
-  *x = (float *) malloc((unsigned) nvtxs * sizeof(float));
+  *x = (double *) malloc((unsigned) nvtxs * sizeof(double));
   (*x)[0] = xc;
   if (ndims > 1) {
-    *y = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    *y = (double *) malloc((unsigned) nvtxs * sizeof(double));
     (*y)[0] = yc;
   }
   if (ndims > 2) {
-    *z = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    *z = (double *) malloc((unsigned) nvtxs * sizeof(double));
     (*z)[0] = zc;
   }
   
   for (nread = 1; nread < nvtxs; nread++) {
     ++line_num;
     if (ndims == 1) {
-      i = fscanf(fingeom, "%f", &((*x)[nread]));
+      i = fscanf(fingeom, "%lf", &((*x)[nread]));
     }
     else if (ndims == 2) {
-      i = fscanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
+      i = fscanf(fingeom, "%lf%lf", &((*x)[nread]), &((*y)[nread]));
     }
     else if (ndims == 3) {
-      i = fscanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
+      i = fscanf(fingeom, "%lf%lf%lf", &((*x)[nread]), &((*y)[nread]),
                  &((*z)[nread]));
     }
     
