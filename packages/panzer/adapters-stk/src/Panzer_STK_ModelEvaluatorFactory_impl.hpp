@@ -181,6 +181,7 @@ namespace panzer_stk_classic {
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
         p.set<std::string>("Excluded Blocks","");
+        p.sublist("ALE").disableRecursiveValidation();
       }
 
       pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
