@@ -94,6 +94,7 @@ struct PartStorage;
 enum class FaceCreationBehavior;
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
+void communicate_field_data_old(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
@@ -490,6 +491,7 @@ public:
       const Entity side , unsigned local_side_id ) const;
 
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
+  inline const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const { return m_all_sharing_procs[rank]; }
 
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
@@ -1242,6 +1244,7 @@ private:
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
+  friend void communicate_field_data_old(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
@@ -1352,6 +1355,7 @@ protected: //data
 private: // data
   Parallel m_parallel;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
+  std::vector<std::vector<int> > m_all_sharing_procs;
   PartVector m_ghost_parts;
   std::list<size_t> m_deleted_entities;
   int m_num_fields;

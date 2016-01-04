@@ -460,6 +460,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_meshModification(*this),
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
+    m_all_sharing_procs(),
     m_ghost_parts(),
     m_deleted_entities(),
     m_num_fields(-1), // meta data not necessarily committed yet
@@ -5018,6 +5019,16 @@ void BulkData::internal_resolve_send_ghost_membership()
     // StkTransitionBulkData derived class in Framework.
 }
 
+void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, std::vector<BucketIndices>& bktIndicesVec)
+{
+  if (bktIndicesVec.empty() || bktIndicesVec.back().bucket_id != bucket_id) {
+    bktIndicesVec.push_back(BucketIndices());
+    bktIndicesVec.back().bucket_id = bucket_id;
+  }
+
+  bktIndicesVec.back().ords.push_back(bucket_ord);
+}
+
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {
@@ -5025,8 +5036,10 @@ void BulkData::internal_update_fast_comm_maps()
 
     // Flush previous map
     const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+    m_all_sharing_procs.resize(num_ranks);
     m_volatile_fast_shared_comm_map.resize(num_ranks);
     for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+      m_all_sharing_procs[r].clear();
       m_volatile_fast_shared_comm_map[r].resize(parallel_size());
       for (int proc = 0; proc < parallel_size(); ++proc) {
         m_volatile_fast_shared_comm_map[r][proc].clear();
@@ -5043,14 +5056,14 @@ void BulkData::internal_update_fast_comm_maps()
 
       EntityRank const rank = key.rank();
 
-      FastMeshIndex fast_idx;
-      fast_idx.bucket_id  = idx.bucket->bucket_id();
-      fast_idx.bucket_ord = idx.bucket_ordinal;
+      unsigned bucket_id  = idx.bucket->bucket_id();
+      unsigned bucket_ord = idx.bucket_ordinal;
 
       if (all_comm[i].entity_comm != nullptr) {
           PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
           for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-              m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
+              add_bucket_and_ord(bucket_id, bucket_ord, m_volatile_fast_shared_comm_map[rank][ec->proc]);
+              stk::util::insert_keep_sorted_and_unique(ec->proc, m_all_sharing_procs[rank]);
           }
       }
     }
