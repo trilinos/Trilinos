@@ -2050,24 +2050,27 @@ std::vector<SideSetEntry> ElemElemGraph::extract_skinned_sideset(  )
     return skinnedSideSet;
 }
 
+std::vector<int> ElemElemGraph::get_exposed_sides(stk::mesh::impl::LocalId localId, int numElemSides)
+{
+    std::vector<int> exposedSides;
+    impl::add_exposed_sides(localId, numElemSides, m_graph, exposedSides);
+    if(m_air_selector != nullptr)
+        add_exposed_sides_due_to_air_selector(localId, exposedSides);
+    return exposedSides;
+}
+
 std::vector<int> ElemElemGraph::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                                        stk::mesh::Entity element,
                                                        stk::mesh::impl::LocalId localId)
 {
     int numElemSides = m_element_topologies[localId].num_sides();
     std::vector<int> exposedSides;
-    if(m_skinned_selector(bucket) && impl::does_element_have_side(m_bulk_data, element))
+    if(impl::does_element_have_side(m_bulk_data, element))
     {
-        if(m_graph.is_valid(localId))
-        {
-            impl::add_exposed_sides(localId, numElemSides, m_graph, exposedSides);
-            if(m_air_selector != nullptr)
-                add_exposed_sides_due_to_air_selector(localId, exposedSides);
-        }
-    }
-    else if(m_air_selector != nullptr && (*m_air_selector)(bucket) && impl::does_element_have_side(m_bulk_data, element))
-    {
-        exposedSides = get_sides_exposed_on_other_procs(localId, numElemSides);
+        if(m_skinned_selector(bucket))
+            exposedSides = get_exposed_sides(localId, numElemSides);
+        else if(m_air_selector != nullptr && (*m_air_selector)(bucket))
+            exposedSides = get_sides_exposed_on_other_procs(localId, numElemSides);
     }
     return exposedSides;
 }

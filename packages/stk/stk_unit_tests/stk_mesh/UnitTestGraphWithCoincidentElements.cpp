@@ -81,16 +81,9 @@ TEST(CoincidentElements, ExtractCoincidentHex8s)
     test_extracting_coincident_hex8s(graph, elemDescs);
 }
 
-void expect_graph_edge_validity_per_element(const stk::mesh::Graph &graph, const std::vector<bool> &goldValidityPerElem)
-{
-    for(size_t elem = 0; elem < goldValidityPerElem.size(); elem++)
-        EXPECT_EQ(goldValidityPerElem[elem], graph.is_valid(elem)) << elem;
-}
-
 void expect_coincident_edges_removed_others_remain(const stk::mesh::Graph &graph, stk::mesh::impl::SparseGraph &extractedCoincidentElements)
 {
     expect_num_edges_remaining_per_element(graph, {1, 1, 2});
-    expect_graph_edge_validity_per_element(graph, {true, true, true});
     expect_coincident_elements_edges_were_extracted(extractedCoincidentElements, {6, 0, 1});
 //    EXPECT_TRUE(extractedCoincidentElements.find(1) == extractedCoincidentElements.end());
 }
