@@ -2458,12 +2458,12 @@ int UserInputForTests::chaco_input_assign(
     }
 
     /* Check for spurious extra stuff in file. */
-    flag = FALSE;
+    flag = 0;
     end_flag = 0;
     while (!flag && end_flag != -1) {
 	chaco_read_int(finassign, &end_flag);
 	if (!end_flag)
-	    flag = TRUE;
+	    flag = 1;
     }
     if (flag) {
 	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
