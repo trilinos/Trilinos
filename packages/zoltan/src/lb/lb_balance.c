@@ -299,8 +299,7 @@ static int Zoltan_LB(
  */
 
 char *yo = "Zoltan_LB";
-int gmax;    /* Maximum number of imported/exported objects 
-                over all processors.                       */
+int gmax = 0; /* Maximum number of imported/exported objects over all procs. */
 int error = ZOLTAN_OK;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
@@ -378,125 +377,127 @@ struct OVIS_parameters ovisParameters;
               yo);
 
     error = ZOLTAN_WARN;
-    goto End;
+    gmax = 0;
   }
+  else {
 
-  /*
-   *  Sync the random number generator across processors.
-   */
+    /*
+     *  Sync the random number generator across processors.
+     */
 
-  Zoltan_Srand_Sync(Zoltan_Rand(NULL), NULL, zz->Communicator);
+    Zoltan_Srand_Sync(Zoltan_Rand(NULL), NULL, zz->Communicator);
 
-  /* Since generating a new partition, need to free old mapping vector */
-  zz->LB.OldRemap = zz->LB.Remap;
-  zz->LB.Remap = NULL;
+    /* Since generating a new partition, need to free old mapping vector */
+    zz->LB.OldRemap = zz->LB.Remap;
+    zz->LB.Remap = NULL;
 
-  error = Zoltan_LB_Build_PartDist(zz);
-  if (error != ZOLTAN_OK && error != ZOLTAN_WARN)
-    goto End;
+    error = Zoltan_LB_Build_PartDist(zz);
+    if (error != ZOLTAN_OK && error != ZOLTAN_WARN)
+      goto End;
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-    int np, fp;
-    for (i = 0; i < zz->Num_Proc; i++) {
-      Zoltan_LB_Proc_To_Part(zz, i, &np, &fp);
-      printf("%d Proc_To_Part Proc %d NParts %d FPart %d\n", 
-             zz->Proc, i, np, fp);
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+      int np, fp;
+      for (i = 0; i < zz->Num_Proc; i++) {
+        Zoltan_LB_Proc_To_Part(zz, i, &np, &fp);
+        printf("%d Proc_To_Part Proc %d NParts %d FPart %d\n", 
+               zz->Proc, i, np, fp);
+      }
     }
-  }
 
-  /*
-   * Generate parts sizes.
-   */
+    /*
+     * Generate parts sizes.
+     */
 
 #ifdef ZOLTAN_OVIS
-  /* set part sizes computed by OVIS, if requested. Processes set only their own value */
-  {
-    float part_sizes[1];
-    int part_ids[1], wgt_idx[1];
-
-    wgt_idx[0] = 0;
-    part_ids[0] = 0;
-    ovis_getPartsize(&(part_sizes[0])); 
-    printf("Rank %d ps %f\n",zz->Proc, part_sizes[0]);
-    /* clear out old part size info first */
-    Zoltan_LB_Set_Part_Sizes(zz, 0, -1, NULL, NULL, NULL);
-    Zoltan_LB_Set_Part_Sizes(zz, 0, 1, part_ids, wgt_idx, part_sizes);
-  }
+    /* set part sizes computed by OVIS, if requested. Processes set only their own value */
+    {
+      float part_sizes[1];
+      int part_ids[1], wgt_idx[1];
+  
+      wgt_idx[0] = 0;
+      part_ids[0] = 0;
+      ovis_getPartsize(&(part_sizes[0])); 
+      printf("Rank %d ps %f\n",zz->Proc, part_sizes[0]);
+      /* clear out old part size info first */
+      Zoltan_LB_Set_Part_Sizes(zz, 0, -1, NULL, NULL, NULL);
+      Zoltan_LB_Set_Part_Sizes(zz, 0, 1, part_ids, wgt_idx, part_sizes);
+    }
 #endif
 
-  wgt_dim = zz->Obj_Weight_Dim;
-  part_dim = ((wgt_dim > 0) ? wgt_dim : 1);
+    wgt_dim = zz->Obj_Weight_Dim;
+    part_dim = ((wgt_dim > 0) ? wgt_dim : 1);
 
-  part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
+    part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
                                      * zz->LB.Num_Global_Parts);
-  if (part_sizes == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-    error = ZOLTAN_MEMERR;
-    goto End;
-  }
+    if (part_sizes == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      error = ZOLTAN_MEMERR;
+      goto End;
+    }
 
-  /* Get part sizes. */
-  Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
+    /* Get part sizes. */
+    Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
 
 
 #ifdef ZOLTAN_OVIS
-  /*  if (ovisParameters.outputlevel > 3) */
-  {
-    int myRank = zz->Proc;
-    if (myRank == 0){
-      int j;
-      for (i = 0; i < zz->LB.Num_Global_Parts; i++){
-        for (j = 0; j < part_dim; j++){
-          printf("Rank %d AG: part_sizes[%d] = %f "
-                 "(Num_Global_Parts = %d, part_dim = %d)\n", zz->Proc,
-                 (i*part_dim+j), part_sizes[i*part_dim+j],
-                 zz->LB.Num_Global_Parts, part_dim);
+    /*  if (ovisParameters.outputlevel > 3) */
+    {
+      int myRank = zz->Proc;
+      if (myRank == 0){
+        int j;
+        for (i = 0; i < zz->LB.Num_Global_Parts; i++){
+          for (j = 0; j < part_dim; j++){
+            printf("Rank %d AG: part_sizes[%d] = %f "
+                   "(Num_Global_Parts = %d, part_dim = %d)\n", zz->Proc,
+                   (i*part_dim+j), part_sizes[i*part_dim+j],
+                   zz->LB.Num_Global_Parts, part_dim);
+          }
         }
       }
     }
-  }
 #endif
 
 
-  /*
-   * Call the actual load-balancing function.
-   */
+    /*
+     * Call the actual load-balancing function.
+     */
 
-  error = zz->LB.LB_Fn(zz, part_sizes,
-                       num_import_objs, import_global_ids, import_local_ids,
-                       import_procs, import_to_part, 
-                       num_export_objs, export_global_ids, export_local_ids, 
-                       export_procs, export_to_part);
+    error = zz->LB.LB_Fn(zz, part_sizes,
+                         num_import_objs, import_global_ids, import_local_ids,
+                         import_procs, import_to_part, 
+                         num_export_objs, export_global_ids, export_local_ids, 
+                         export_procs, export_to_part);
 
-  ZOLTAN_FREE(&part_sizes);
+    ZOLTAN_FREE(&part_sizes);
 
-  if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
-    sprintf(msg, "Partitioning routine returned code %d.", error);
+    if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
+      sprintf(msg, "Partitioning routine returned code %d.", error);
 
 #ifdef HOST_LINUX
-    if ((error == ZOLTAN_MEMERR) && (Zoltan_Memory_Get_Debug() > 0)){
-      Zoltan_write_linux_meminfo(0, "State of /proc/meminfo after malloc failure\n", 0);
-    }
+      if ((error == ZOLTAN_MEMERR) && (Zoltan_Memory_Get_Debug() > 0)){
+        Zoltan_write_linux_meminfo(0, "State of /proc/meminfo after malloc failure\n", 0);
+      }
 #endif
 
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    goto End;
-  }
-  else if (error){
-    if (zz->Debug_Level >ZOLTAN_DEBUG_NONE) {
-      sprintf(msg, "Partitioning routine returned code %d.", error);
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+      goto End;
     }
+    else if (error){
+      if (zz->Debug_Level >ZOLTAN_DEBUG_NONE) {
+        sprintf(msg, "Partitioning routine returned code %d.", error);
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+      }
+    }
+  
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Done partitioning");
+  
+    if (*num_import_objs >= 0)
+      MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
+                  zz->Communicator);
+    else /* use export data */
+      MPI_Allreduce(num_export_objs, &gmax, 1, MPI_INT, MPI_MAX, 
+                  zz->Communicator);
   }
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done partitioning");
-
-  if (*num_import_objs >= 0)
-    MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
-                zz->Communicator);
-  else /* use export data */
-    MPI_Allreduce(num_export_objs, &gmax, 1, MPI_INT, MPI_MAX, 
-                zz->Communicator);
 
   if (gmax == 0) {
 

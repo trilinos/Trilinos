@@ -328,7 +328,8 @@ private:
                           bool distributeInput);
   
   // Read Zoltan data that is in a .graph file.
-  void getUIChacoGraph(FILE *fptr, string name, bool distributeInput);
+  void getUIChacoGraph(FILE *fptr, bool haveAssign, FILE *assignFile,
+                       string name, bool distributeInput);
   
   // Read Zoltan data that is in a .coords file.
   void getUIChacoCoords(FILE *fptr, string name);
@@ -348,13 +349,17 @@ private:
   void chaco_flush_line(FILE*);
   
   // Chaco graph reader:  copied from zoltan/ch
-  int chaco_input_graph(FILE *fin, char *inname, int **start,
+  int chaco_input_graph(FILE *fin, const char *inname, int **start,
                         int **adjacency, int  *nvtxs, int  *nVwgts,
                         float **vweights, int  *nEwgts, float **eweights);
   
   // Chaco coordinate reader:  copied from zoltan/ch
-  int chaco_input_geom(FILE *fingeom, char *geomname, int nvtxs,
-                       int  *igeom, float **x, float **y, float **z);
+  int chaco_input_geom(FILE *fingeom, const char *geomname, int nvtxs,
+                       int  *igeom, double **x, double **y, double **z);
+  
+  // Chaco coordinate reader:  copied from zoltan/ch
+  int chaco_input_assign(FILE *finassign, const char *assignname, int nvtxs,
+                         short *assignments);
   
   
   // Read a GeomGen.txt file into M_
@@ -1377,7 +1382,8 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
   FILE *coordFile = NULL;
-  int fileInfo[2];
+  FILE *assignFile = NULL;
+  int fileInfo[3];
   
   if (rank == 0){
     // set chacho graph file name
@@ -1388,6 +1394,10 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
     std::ostringstream chCoordFileName;
     chCoordFileName << path << "/" << testData << ".coords";
     
+    // set chaco graph
+    std::ostringstream chAssignFileName;
+    chAssignFileName << path << "/" << testData << ".assign";
+
     // open file
     graphFile = fopen(chGraphFileName.str().c_str(), "r");
     
@@ -1398,12 +1408,13 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
       // try constructing zoltan1 paths
       chGraphFileName << path << "/ch_" << testData << "/" << testData << ".graph";
       chCoordFileName << path << "/ch_" << testData << "/" << testData << ".coords";
+      chAssignFileName << path << "/ch_" << testData << "/" << testData << ".assign";
       // try to open the graph file again, if this doesn't open
       // the user has not provided a valid path to the file
       graphFile = fopen(chGraphFileName.str().c_str(), "r");
     }
     
-    memset(fileInfo, 0, sizeof(int) * 2); // set fileinfo to 0's
+    memset(fileInfo, 0, sizeof(int) * 3); // set fileinfo to 0's
     if (graphFile){
       fileInfo[0] = 1;
       if (verbose_ && tcomm_->getRank() == 0)
@@ -1417,6 +1428,14 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
           std::cout << "UserInputForTests, open " <<
           chCoordFileName.str () << std::endl;
       }
+
+      assignFile = fopen(chAssignFileName.str().c_str(), "r");
+      if (assignFile){
+        fileInfo[2] = 1;
+        if (verbose_ && tcomm_->getRank() == 0)
+          std::cout << "UserInputForTests, open " <<
+          chAssignFileName.str () << std::endl;
+      }
     }else{
       if (verbose_ && tcomm_->getRank() == 0){
         std::cout << "UserInputForTests, unable to open file: ";
@@ -1426,20 +1445,22 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   }
   
   // broadcast whether we have graphs and coords to all processes
-  Teuchos::broadcast<int, int>(*tcomm_, 0, 2, fileInfo);
+  Teuchos::broadcast<int, int>(*tcomm_, 0, 3, fileInfo);
   
   bool haveGraph = (fileInfo[0] == 1);
   bool haveCoords = (fileInfo[1] == 1);
+  bool haveAssign = (fileInfo[2] == 1);
   
   if (haveGraph){
-    // Writes M_, vtxWeights_, and edgWeights_ and closes file.
+    // builds M_, vtxWeights_, and edgWeights_ and closes file.
     try{
-      getUIChacoGraph(graphFile, testData, distributeInput);
+      getUIChacoGraph(graphFile, haveAssign, assignFile, 
+                      testData, distributeInput);
     }
     Z2_FORWARD_EXCEPTIONS
     
     if (haveCoords){
-      // Writes xyz_ and closes the file.
+      // builds xyz_ and closes the file.
       try{
         getUIChacoCoords(coordFile, testData);
       }
@@ -1450,7 +1471,8 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 }
 
-void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
+void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
+                                        FILE *assignFile, string fname,
                                         bool distributeInput)
 {
   int rank = tcomm_->getRank();
@@ -1473,12 +1495,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     // This function is in the Zoltan C-library.
     
     // Reads in the file and closes it when done.
-    char *nonConstName = new char [fname.size() + 1];
-    strcpy(nonConstName, fname.c_str());
-    
-    fail = chaco_input_graph(fptr, nonConstName,
-                             &start, &adj, &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
-    delete [] nonConstName;
+    fail = chaco_input_graph(fptr, fname.c_str(), &start, &adj,
+                             &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
     
     // There are Zoltan2 test graphs that have no edges.
     
@@ -1617,8 +1635,31 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
   RCP<import_t> importer;
   
   if (distributeInput) {
-    // Create a Tpetra::CrsMatrix with default row distribution.
-    toMap = rcp(new map_t(nvtxs, base, tcomm_));
+    if (haveAssign) {
+      // Read assignments from Chaco assignment file
+      short *assignments = new short[nvtxs];
+      if (rank == 0) {
+        fail = chaco_input_assign(assignFile, fname.c_str(), nvtxs, assignments);
+      }
+      // Broadcast coordinate dimension
+      Teuchos::broadcast<int, short>(*tcomm_, 0, nvtxs, assignments);
+    
+      // Build map with my vertices
+      Teuchos::Array<zgno_t> mine;
+      for (int i = 0; i < nvtxs; i++) {
+        if (assignments[i] == rank) 
+          mine.push_back(i);
+      }
+    
+      Tpetra::global_size_t dummy = 
+              Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      toMap = rcp(new map_t(dummy, mine(), base, tcomm_));
+      delete [] assignments;
+    }
+    else {
+      // Create a Tpetra::Map with default row distribution.
+      toMap = rcp(new map_t(nvtxs, base, tcomm_));
+    }
     toMatrix = rcp(new tcrsMatrix_t(toMap, maxRowLen));
     
     // Import the data.
@@ -1730,22 +1771,18 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
 {
   int rank = tcomm_->getRank();
   int ndim=0;
-  float *x=NULL, *y=NULL, *z=NULL;
+  double *x=NULL, *y=NULL, *z=NULL;
   int fail = 0;
   
-  size_t localNumVtx = M_->getNodeNumRows();
   size_t globalNumVtx = M_->getGlobalNumRows();
   
   if (rank == 0){
     
-    // This function is in the Zoltan C-library.
+    // This function is from the Zoltan C-library.
     
     // Reads in the file and closes it when done.
-    char *nonConstName = new char [fname.size() + 1];
-    strcpy(nonConstName, fname.c_str());
-    fail = chaco_input_geom(fptr, nonConstName, (int)globalNumVtx,
+    fail = chaco_input_geom(fptr, fname.c_str(), (int)globalNumVtx,
                             &ndim, &x, &y, &z);
-    delete [] nonConstName;
     
     if (fail)
       ndim = 0;
@@ -1771,7 +1808,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
       if (!v)
         throw std::bad_alloc();
       coords[dim] = arcp<const zscalar_t>(v, 0, globalNumVtx, true);
-      float *val = (dim==0 ? x : (dim==1 ? y : z));
+      double *val = (dim==0 ? x : (dim==1 ? y : z));
       for (size_t i=0; i < globalNumVtx; i++)
         v[i] = zscalar_t(val[i]);
       
@@ -1782,7 +1819,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
   }
   
   RCP<const map_t> fromMap = rcp(new map_t(globalNumVtx, len, 0, tcomm_));
-  RCP<const map_t> toMap = rcp(new map_t(globalNumVtx, localNumVtx, 0, tcomm_));
+  RCP<const map_t> toMap = M_->getRowMap();
   RCP<import_t> importer = rcp(new import_t(fromMap, toMap));
   
   Array<ArrayView<const zscalar_t> > coordData;
@@ -1996,15 +2033,15 @@ void UserInputForTests::chaco_flush_line(
 }
 
 int UserInputForTests::chaco_input_graph(
-                                         FILE *fin,            /* input file */
-                                         char   *inname,        /* name of input file */
-                                         int   **start,        /* start of edge list for each vertex */
-                                         int   **adjacency,        /* edge list data */
-                                         int    *nvtxs,        /* number of vertices in graph */
-                                         int    *nVwgts,        /* # of vertex weights per node */
-                                         float   **vweights,        /* vertex weight list data */
-                                         int    *nEwgts,        /* # of edge weights per edge */
-                                         float   **eweights         /* edge weight list data */
+  FILE *fin,            /* input file */
+  const char *inname,        /* name of input file */
+  int **start,        /* start of edge list for each vertex */
+  int **adjacency,        /* edge list data */
+  int *nvtxs,        /* number of vertices in graph */
+  int *nVwgts,        /* # of vertex weights per node */
+  float **vweights,        /* vertex weight list data */
+  int *nEwgts,        /* # of edge weights per edge */
+  float **eweights         /* edge weight list data */
 )
 {
   int    *adjptr;        /* loops through adjacency data */
@@ -2257,16 +2294,16 @@ int UserInputForTests::chaco_input_graph(
 
 
 int UserInputForTests::chaco_input_geom(
-                                        FILE *fingeom,        /* geometry input file */
-                                        char   *geomname,        /* name of geometry file */
-                                        int     nvtxs,        /* number of coordinates to read */
-                                        int    *igeom,        /* dimensionality of geometry */
-                                        float   **x,             /* coordinates of vertices */
-                                        float   **y,
-                                        float   **z
-                                        )
+  FILE *fingeom,        /* geometry input file */
+  const char *geomname,        /* name of geometry file */
+  int     nvtxs,        /* number of coordinates to read */
+  int    *igeom,        /* dimensionality of geometry */
+  double   **x,             /* coordinates of vertices */
+  double   **y,
+  double   **z
+)
 {
-  float   xc, yc, zc =0;    /* first x, y, z coordinate */
+  double  xc, yc, zc =0;    /* first x, y, z coordinate */
   int     nread;        /* number of lines of coordinates read */
   int     flag;        /* any bad data at end of file? */
   int     line_num;        /* counts input lines in file */
@@ -2309,27 +2346,27 @@ int UserInputForTests::chaco_input_geom(
   
   *igeom = ndims;
   
-  *x = (float *) malloc((unsigned) nvtxs * sizeof(float));
+  *x = (double *) malloc((unsigned) nvtxs * sizeof(double));
   (*x)[0] = xc;
   if (ndims > 1) {
-    *y = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    *y = (double *) malloc((unsigned) nvtxs * sizeof(double));
     (*y)[0] = yc;
   }
   if (ndims > 2) {
-    *z = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    *z = (double *) malloc((unsigned) nvtxs * sizeof(double));
     (*z)[0] = zc;
   }
   
   for (nread = 1; nread < nvtxs; nread++) {
     ++line_num;
     if (ndims == 1) {
-      i = fscanf(fingeom, "%f", &((*x)[nread]));
+      i = fscanf(fingeom, "%lf", &((*x)[nread]));
     }
     else if (ndims == 2) {
-      i = fscanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
+      i = fscanf(fingeom, "%lf%lf", &((*x)[nread]), &((*y)[nread]));
     }
     else if (ndims == 3) {
-      i = fscanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
+      i = fscanf(fingeom, "%lf%lf%lf", &((*x)[nread]), &((*y)[nread]),
                  &((*z)[nread]));
     }
     
@@ -2359,6 +2396,82 @@ int UserInputForTests::chaco_input_geom(
   fclose(fingeom);
   
   return (0);
+}
+
+// Chaco input assignments from filename.assign; copied from Zoltan
+
+int UserInputForTests::chaco_input_assign(
+  FILE *finassign,		/* input assignment file */
+  const char *inassignname,		/* name of input assignment file */
+  int nvtxs,		/* number of vertices to output */
+  short *assignment)		/* values to be printed */
+{
+    int       flag;		/* logical conditional */
+    int       end_flag;		/* return flag from read_int() */
+    int       i, j;		/* loop counter */
+
+    /* Get the assignment vector one line at a time, checking as you go. */
+    /* First read past any comments at top. */
+    end_flag = 1;
+    while (end_flag == 1) {
+	assignment[0] = chaco_read_int(finassign, &end_flag);
+    }
+
+    if (assignment[0] < 0) {
+	printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
+	       1, inassignname, assignment[0]);
+	fclose(finassign);
+	return (1);
+    }
+
+    if (end_flag == -1) {
+	printf("ERROR: No values found in assignment file `%s'\n", inassignname);
+	fclose(finassign);
+	return (1);
+    }
+
+    flag = 0;
+    if (assignment[0] > nvtxs)
+	flag = assignment[1];
+    for (i = 1; i < nvtxs; i++) {
+	j = fscanf(finassign, "%hd", &(assignment[i]));
+	if (j != 1) {
+	    printf("ERROR: Too few values in assignment file `%s'.\n", inassignname);
+	    fclose(finassign);
+	    return (1);
+	}
+	if (assignment[i] < 0) {
+	    printf("ERROR: Entry %d in assignment file `%s' less than zero (%d)\n",
+		   i+1, inassignname, assignment[i]);
+	    fclose(finassign);
+	    return (1);
+	}
+	if (assignment[i] > nvtxs) {	/* warn since probably an error */
+	    if (assignment[i] > flag)
+		flag = assignment[i];
+	}
+    }
+
+    if (flag) {
+	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
+	printf("         More assignment sets (%d) than vertices (%d)\n", flag, nvtxs);
+    }
+
+    /* Check for spurious extra stuff in file. */
+    flag = 0;
+    end_flag = 0;
+    while (!flag && end_flag != -1) {
+	chaco_read_int(finassign, &end_flag);
+	if (!end_flag)
+	    flag = 1;
+    }
+    if (flag) {
+	printf("WARNING: Possible error in assignment file `%s'\n", inassignname);
+	printf("         Numerical data found after expected end of file\n");
+    }
+
+    fclose(finassign);
+    return (0);
 }
 
 // Pamgen Reader

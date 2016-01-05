@@ -81,8 +81,9 @@ namespace BaskerNS
 	gn = A.ncol;
 	gm = A.nrow;
 	A = BTF_A; 
-	//printf("\n\n Switching A, newsize: %d \n",
-        //     A.ncol);
+	printf("\n\n Switching A, newsize: %d \n",
+             A.ncol);
+	printMTX("A_FACTOR.mtx", A);
       }
    
 
@@ -239,6 +240,7 @@ namespace BaskerNS
 	      }
 	    else
 	      {
+		break;
 		printf("restart \n");
 		kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
 		  diag_nfactor_remalloc(this, thread_start);

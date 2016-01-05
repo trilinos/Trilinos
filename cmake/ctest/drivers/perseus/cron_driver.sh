@@ -14,7 +14,7 @@ export TDD_PARALLEL_LEVEL=1
 #
 
 # Submission mode for the *TrilinosDriver* dashboard
-export TDD_CTEST_TEST_TYPE=Nightly
+export TDD_CTEST_TEST_TYPE=${JENKINS_JOB_TYPE}
 
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE

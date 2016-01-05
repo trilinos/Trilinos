@@ -162,12 +162,14 @@ namespace BaskerNS
    )
   {
 
-    for(Int c = schunk+btf_tabs_offset;
-	c < schunk+nchunk+btf_tabs_offset; ++c)
+    //for(Int c = schunk+btf_tabs_offset;
+    //	c < schunk+nchunk+btf_tabs_offset; ++c)
+    for(Int c = schunk;
+	c < schunk+nchunk; ++c)
       {
 	Int c_size = btf_tabs(c+1)-btf_tabs(c);
 	//printf("kid: %d current_chunk: %d size: %d \n",
-	//     kid, c, c_size);
+	//   kid, c, c_size);
 
 	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
@@ -252,14 +254,18 @@ namespace BaskerNS
     BASKER_MATRIX  &L = LBTF(c-btab);
     
     //JDB: brow hack: fix.
-    Int brow2 = L.srow;
+    Int brow2 = L.srow - btf_tabs(btab);
 
-    /*
+    
+    #ifdef BASKER_DEBUG_NFACTOR_DIAG
     printf("CURRENT BLK: %d \n", c);
+    printf("btab: %d %d\n", btab, c-btab);
+    printf("brow2: %d \n", brow2);
     printf("col_start: %d \n", btf_tabs(c));
     printf("BLK size %d \n",
 	   btf_tabs(c+1)-btf_tabs(c));
-    */
+    #endif
+    
 
     //workspace
     Int ws_size       = thread_array(kid).iws_size;
@@ -324,8 +330,6 @@ namespace BaskerNS
 	     i < M.col_ptr(k-bcol+1); ++i)
 	  {
 
-	   
-
 	    j = M.row_idx(i);
 	    j = j - brow2;
 	    
@@ -371,7 +375,7 @@ namespace BaskerNS
         #endif
              
 	//add custom local_solve
-	t_back_solve(kid, L, 0,0,  k, top, xnnz);
+	t_back_solve(kid, L, 0, 0, k, top, xnnz);
 	
 	//Future add
 	//t_locate_pivot(kid, top)	  
@@ -382,10 +386,13 @@ namespace BaskerNS
 	    j = pattern[i];
 	    //t = gperm[j];
 	    //t = gperm(j+brow);
-	    t = gperm(j+brow2);
+	    t = gperm(j+L.srow);
 
 	    //value = X[j-brow];
 	    value = X(j);
+
+	    //printf("consider, %d %d %g \n", 
+	    //	   j, t, value);
 	    
 	    absv = abs(value);
 	    //if(t == L.max_idx)
@@ -401,20 +408,28 @@ namespace BaskerNS
 	      }
 	  }//for (i = top; i < ws_size)
           //printf("b: %d lcnt: %d after \n", b, lcnt);
+	
+	//printf("pivot: %g maxindex: %d \n",
+	//     pivot, maxindex);
+	
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
-	      maxindex = k - brow2;
+	      maxindex = (Int) k-L.scol;
 	      pivot    = X(maxindex);
 	    }
-	  
+	
+	  //printf("pivot: %g maxindex: %d \n",
+	  //   pivot, maxindex);
+	
+  
           ucnt = ws_size - top - lcnt +1;
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
 	      cout << endl << endl;
 	      cout << "---------------------------"
-		   <<endl;
+		   << endl;
               cout << "Error: Matrix is singular, blk"
 		   << endl;
               cout << "MaxIndex: " << maxindex 
@@ -429,8 +444,14 @@ namespace BaskerNS
 
           //printf("----------------PIVOT------------blk: %d %d \n", 
           //      c, btf_tabs(c+1)-btf_tabs(c));
-	  gperm(maxindex+brow2) = k;
-	  gpermi(k)             = maxindex+brow2;
+	  //gperm(maxindex+brow2) = k;
+	  gperm(maxindex+L.scol) = k;
+	  //gpermi(k)              = maxindex+brow2;
+	  gpermi(k)              = maxindex + L.srow;
+
+	  //printf("gperm(%d) %d gpermi(%d) %d \n",
+	  //	 maxindex+L.scol, k ,
+	  //	 k, maxindex+L.srow);
 
 
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
@@ -513,7 +534,8 @@ namespace BaskerNS
 	      j = pattern[i];
               //t = gperm[j];
 	      //t = gperm(j+brow);
-	      t = gperm(j+brow2);
+	      //t = gperm(j+brow2);
+	      t = gperm(j+L.srow);
             
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
               printf("j: %d t: %d \n", j, t);
@@ -534,7 +556,8 @@ namespace BaskerNS
                         {
                           //U.row_idx[unnz] = gperm[j];
 			  //U.row_idx(unnz)   = t-brow;
-			  U.row_idx(unnz) = t - brow2;
+			  //U.row_idx(unnz) = t - brow2;
+			  U.row_idx(unnz) = t - L.srow;
 			  #ifdef BASKER_2DL
 			  //U.val[unnz] = X[j-brow];
 			  U.val(unnz)       = X(j);
@@ -592,7 +615,8 @@ namespace BaskerNS
           //Fill in last element of U
           //U.row_idx[unnz] = k;
 	  //U.row_idx(unnz)   = k-brow;
-	  U.row_idx(unnz) = k - brow2;
+	  //U.row_idx(unnz) = k - brow2;
+	  U.row_idx(unnz) = k - L.scol;
           //U.val[unnz]     = lastU;
 	  U.val(unnz)       = lastU;
           ++unnz;
@@ -609,15 +633,19 @@ namespace BaskerNS
 	  */
 		 
           //L.col_ptr[k-bcol] = cu_ltop;
-	  L.col_ptr(k-brow2) = cu_ltop;
+	  //L.col_ptr(k-brow2) = cu_ltop;
+	  L.col_ptr(k-L.srow) = cu_ltop;
           //L.col_ptr[k+1-bcol] = lnnz;
-	  L.col_ptr(k+1-brow2) = lnnz;
+	  //L.col_ptr(k+1-brow2) = lnnz;
+	  L.col_ptr(k+1-L.srow) = lnnz;
           cu_ltop = lnnz;
           
           //U.col_ptr[k-bcol] = cu_utop;
-	  U.col_ptr(k-brow2)   = cu_utop;
+	  //U.col_ptr(k-brow2)   = cu_utop;
+	  U.col_ptr(k-L.srow) = cu_utop;
           //U.col_ptr[k+1-bcol] = unnz;
-	  U.col_ptr(k+1-brow2)      = unnz;
+	  //U.col_ptr(k+1-brow2)      = unnz;
+	  U.col_ptr(k+1-L.srow) = unnz;
           cu_utop = unnz;
 
 
