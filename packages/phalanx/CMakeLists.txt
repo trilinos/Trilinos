@@ -98,7 +98,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors wrapped around each evaluator."
   "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
-IF(${PACKAGE_NAME}_ENABLE_IntrepidIntrepid2)
+IF(${PACKAGE_NAME}_ENABLE_Intrepid2)
   MESSAGE(STATUS "Build MDField support for Intrepid: ON")
 ELSE()
   MESSAGE(STATUS "Build MDField support for Intrepid: OFF")
