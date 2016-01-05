@@ -19,9 +19,14 @@ public:
 protected:
     virtual void run_algorithm_to_time()
     {
-        const unsigned numParts = 1e5;
+        const unsigned numParts = 1e6;
         for(unsigned i=0; i<numParts; i++)
-            bulkData.mesh_meta_data().declare_part("part_" + sierra::to_string(i));
+        {
+            const std::string name = "part_" + sierra::to_string(i);
+            bulkData.mesh_meta_data().declare_part(name);
+            const stk::mesh::Part *part = bulkData.mesh_meta_data().get_part(name);
+            EXPECT_TRUE(part != nullptr);
+        }
     }
     virtual size_t get_value_to_output_as_iteration_count()
     {
@@ -44,7 +49,7 @@ protected:
 TEST_F(GetPartsByName, test_get_parts)
 {
 
-    setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+    setup_mesh("generated:1x1x16", stk::mesh::BulkData::AUTO_AURA);
     run_get_parts_perf_test();
 }
 
