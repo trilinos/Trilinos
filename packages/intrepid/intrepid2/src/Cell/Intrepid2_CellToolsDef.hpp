@@ -1418,7 +1418,8 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, true>refPointsWrap(refPoints);
    ArrayWrapper<Scalar,ArrayCell, Rank<ArrayCell >::value,true>cellWorksetWrap(cellWorkset);
 
-  index_type spaceDim  = (index_type)HGRAD_Basis->getTopology().getDimension();
+  //index_type spaceDim  = (index_type)HGRAD_Basis->getTopology().getDimension();
+  index_type spaceDim  = (index_type)HGRAD_Basis->getBaseCellTopology().getDimension();
   index_type numCells  = static_cast<index_type>(cellWorkset.dimension(0));
   //points can be rank-2 (P,D), or rank-3 (C,P,D)
   index_type numPoints = (getrank(refPoints) == 2) ? static_cast<index_type>(refPoints.dimension(0)) : static_cast<index_type>(refPoints.dimension(1));
