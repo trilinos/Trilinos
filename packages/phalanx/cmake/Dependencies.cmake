@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES TeuchosCore TeuchosParameterList TeuchosComm KokkosCore Sacado)
-SET(LIB_OPTIONAL_DEP_PACKAGES IntrepidIntrepid2 IntrepidCore)
+SET(LIB_OPTIONAL_DEP_PACKAGES Intrepid2 IntrepidCore)
 SET(TEST_REQUIRED_DEP_PACKAGES Shards)
 #SET(TEST_OPTIONAL_DEP_PACKAGES Belos Epetra Ifpack ML Amesos)
 SET(TEST_OPTIONAL_DEP_PACKAGES )

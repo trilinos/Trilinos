@@ -54,7 +54,7 @@
 #include "Phalanx_Print_Utilities.hpp"
 
 #ifndef BUILD_PHALANX_FOR_ALBANY
-#ifdef Phalanx_ENABLE_IntrepidIntrepid2
+#ifdef Phalanx_ENABLE_Intrepid2
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
 #endif
@@ -1143,7 +1143,7 @@ std::ostream& PHX::operator<<(std::ostream& os,
 //template<class A>
 //struct Rank{static const int value = -1;};
 #ifndef BUILD_PHALANX_FOR_ALBANY
-#ifdef Phalanx_ENABLE_IntrepidIntrepid2
+#ifdef Phalanx_ENABLE_Intrepid2
 
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"

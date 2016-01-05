@@ -370,6 +370,8 @@ namespace BaskerNS
 		else
 		  {
 		    //printf("Using BTF AL \n");
+		    printf("ALM alloc: %d %d \n",
+			   b, row);
 		    ALM(b)(row).convert2D(BTF_A, alloc);
 		  }
 
@@ -725,7 +727,7 @@ namespace BaskerNS
               for(Int j = myL.col_ptr[k]; 
 		  j < myL.col_ptr[k+1]; j++)
                 {
-                  fprintf(fp, "(%d , %d , %d) %f , ",
+                  fprintf(fp, "(%d , %d , %d) %g , ",
                           k+myL.scol, myL.row_idx[j], 
 			  myL.row_idx[j]+myL.srow,
                           myL.val[j]);
@@ -774,7 +776,7 @@ namespace BaskerNS
 		    	    myL.val[j]);
 		    */
 		    
-		    fprintf(fp, "(%d , %d , %d) %f , ", 
+		    fprintf(fp, "(%d , %d , %d) %g , ", 
 			    k+myL.scol, myL.row_idx[j], 
 			    myL.row_idx[j]+myL.srow, 
 			    myL.val[j]);
@@ -1174,13 +1176,7 @@ namespace BaskerNS
 
       }//over all blks
     
-    fclose(fp2);
-
-   
-
-
-
-    
+    fclose(fp2);    
   }//end print_sep_bal()
 
 
@@ -1415,7 +1411,7 @@ namespace BaskerNS
     //printf("updated trans \n");
  
     
-    FREE(ws);
+    FREE_INT_1DARRAY(ws);
 
   }//end matrix_transpose
 
@@ -1486,10 +1482,8 @@ namespace BaskerNS
 
           }
       }
-    
 
-
-    FREE(ws);
+    FREE_INT_1DARRAY(ws);
   }//end matrix_transpose
 
 
@@ -1511,9 +1505,9 @@ namespace BaskerNS
     fclose(fp);
   }//end printVec(file,Int);
 
-    template <class Int, class Entry, class Exe_Space>
+  template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-    void Basker<Int, Entry,Exe_Space>::printVec
+  void Basker<Int, Entry,Exe_Space>::printVec
   (
    std::string fname, 
    ENTRY_1DARRAY x, 

@@ -114,7 +114,9 @@ namespace BaskerNS
     //   printf("i: %d x: %f y: %f \n", 24, x_known(24), y(24));
     //  }
     
-        //pivot permuation
+    //pivot permuation
+    //printVec("gperm.csc", gpermi, gn);
+
     for(Int i = 0; i < gn; i++)
       {
         x(gpermi(i)) = y(i);
@@ -779,6 +781,8 @@ namespace BaskerNS
     const Int bcol = M.scol;
     const Int brow = M.scol;
     
+    //M.info();
+
     //printf("Lower-Tri-Solve-Test, [%d %d %d %d] \n",
     //	  M.srow, M.nrow, M.scol, M.ncol);
 
@@ -817,6 +821,8 @@ namespace BaskerNS
 	    #endif
 	    
 	    //x[j] -= M.val[i]*y[k+bcol];
+	    //printf("gperm: %d x(%d) y(i)  \n",
+	    //	   M.row_idx(i) + brow, j, k+bcol);
 	    x(j) -= M.val(i)*y(k+bcol);
 
 	  }//over all nnz in a column

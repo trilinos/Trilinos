@@ -150,10 +150,10 @@ namespace BaskerNS
 
     btf_flag = BASKER_TRUE;
 
-    #ifdef BASKER_DEBUG_ORDER_BTF
+    //#ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF nblks returned: %d \n", nblks);
     BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
-    #endif
+    //#endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     if(nblks<2)
@@ -172,7 +172,6 @@ namespace BaskerNS
 	//printf("%d, ", btf_perm(i));
       }
     */
-
     printf("num_threads: %d \n", num_threads);
     printf("\n\nBTF tabs: \n");
     for(Int i=0; i < nblks+1; i++)
@@ -215,13 +214,20 @@ namespace BaskerNS
     printf("\n");
     #endif
 
+    //printMTX("A_BEFORE.mtx", M);
+    //printVec("AMD.txt", order_blk_amd_array, M.ncol);
+    
+
     permute_col(M, order_blk_amd_array);
-    permute_col(M, order_blk_amd_array);
+    permute_row(M, order_blk_amd_array);
     sort_matrix(M);
+
+    //changed col to row, error.
+    //print to see issue
+    //printMTX("A_AMD.mtx", M);
+    
        
     break_into_parts2(M, nblks, btf_tabs);
-
-
 
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
@@ -588,7 +594,7 @@ namespace BaskerNS
 		((double)1/num_threads) + 
 		((double)BASKER_BTF_IMBALANCE)));
 
-    // printf("Break size: %d \n", break_size);
+    printf("Break size: %d \n", break_size);
 
     Int t_size            = 0;
     Int scol              = M.ncol;
@@ -610,56 +616,58 @@ namespace BaskerNS
 	BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
 	BASKER_ASSERT(blk_work>=0, "btk_work wrong");
 	BASKER_ASSERT(blk_size>0, "btf blk size wrong");
-	printf("blk_idx: %d blk_work: %d blk_size: %d \n",
-	       blk_idx, blk_work, blk_size);
+	printf("blk_idx: %d blk_work: %d break_size: %d \n",
+	       blk_idx, blk_work, break_size);
 	#endif
 
-
-
-
 	//Should be end
-	if(((blk_work < break_size) ||
-	    (blk_size < BASKER_BTF_SMALL)) &&
-	   (blk_idx > 1))
+	//if(((blk_work < break_size) ||
+	//  (blk_size < BASKER_BTF_SMALL)) &&
+	//  (blk_idx > 1))
+       
+	//Continue to be in btf
+	if(((blk_work < break_size) &&
+	    (blk_idx > 1)))
 	  {
 	    #ifdef BASKER_DEBUG_ORDER_BTF
 	    printf("first choice \n");
 	    #endif
 
-	      
-	      t_size = t_size+blk_size;
-	      blk_idx = blk_idx-1;
-	      scol   = btf_tabs[blk_idx];
+	    t_size = t_size+blk_size;
+	    blk_idx = blk_idx-1;
+	    scol   = btf_tabs[blk_idx];
 	   
 	  }
+	//break due to size
+	else if(blk_work >= break_size)
+	  {
+	    printf("break due to size\n");
+	    move_fwd = BASKER_FALSE;
+	  }
+	//break due to end
+	else if(blk_idx == 1)
+	  {
+	    printf("break last blk\n");
+	    blk_idx = 0;
+	    t_size = t_size + blk_size;
+	    scol = btf_tabs[blk_idx];	
+	    move_fwd = BASKER_FALSE;
+
+	  }
+	//should not be called
 	else
 	  {
-	    //printf("second choice \n");
-	    #ifdef BASKER_DEBUG_ORDER_BTF
-	    printf("Cut: blk_size: %d percent: %f \n",
-		   blk_size, 
-		((double)t_size+blk_size)/(double)M.ncol);
-	    #endif
-	    if((((double)t_size+blk_size)/(double)M.ncol)
-	       == 1.0)
-	      {
-		blk_idx = 0;
-		t_size = t_size + blk_size;
-		scol = btf_tabs[blk_idx];
-		
-	      }
-
-	   
+	    BASKER_ASSERT(1==0, "btf order break");
 	    move_fwd = BASKER_FALSE;
 	  }
       }//end while(move_fwd)
 
     //#ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Done finding BTF cut.  Cut size: %d scol: %d \n",
+    printf("Done finding BTF2 cut.  Cut size: %d scol: %d \n",
 	   t_size, scol);
+    printf("Done finding BTF2 cut. blk_idx: %d \n", 
+	   blk_idx);
     //BASKER_ASSERT(t_size > 0, "BTF CUT SIZE NOT BIG ENOUGH\n");
-
-
     
     BASKER_ASSERT((scol >= 0) && (scol < M.ncol), "SCOL\n");
     //#endif
