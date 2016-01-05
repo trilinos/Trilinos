@@ -5,7 +5,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   ctest_linux_nightly_mpi_release_downstream_ETI_generic_perseus.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
-  TIMEOUT_MINUTES 300
+  TIMEOUT_MINUTES 420
 )
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
