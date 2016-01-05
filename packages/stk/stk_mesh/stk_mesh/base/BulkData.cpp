@@ -3068,6 +3068,9 @@ void BulkData::internal_verify_inputs_and_change_ghosting(
 
 void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& entitiesToGhostOntoOtherProcessors)
 {
+    //------------------------------------
+    // Push newly ghosted entities to the receivers and update the comm list.
+
     const size_t record_entity_comm_size_before_changing_it = m_entity_comm_list.size();
     const int p_size = parallel_size() ;
 
@@ -3116,6 +3119,12 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
     const MetaData & meta = m_mesh_meta_data ;
     const unsigned rank_count = meta.entity_rank_count();
+
+    // Unpacking must proceed in entity-rank order so that higher ranking
+    // entities that have relations to lower ranking entities will have
+    // the lower ranking entities unpacked first.  The higher and lower
+    // ranking entities may be owned by different processes,
+    // as such unpacking must be performed in rank order.
 
     for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
       for ( int p = 0 ; p < p_size ; ++p ) {
@@ -3215,7 +3224,14 @@ void BulkData::conditionally_add_entity_to_ghosting_set(const stk::mesh::Ghostin
     const bool notOwnedByRecvGhostProc = toProc != parallel_owner_rank(entity);
     const bool entityIsShared = in_shared( entity_key(entity) , toProc );
     const bool alreadyGhostedToProc = in_send_ghost(ghosting, entity_key(entity), toProc);
-    if (notOwnedByRecvGhostProc && !entityIsShared && !alreadyGhostedToProc)
+    const bool ghostingIsAura = ghosting.ordinal() == BulkData::AURA;
+
+    bool shouldAddToGhostingSet = notOwnedByRecvGhostProc && !alreadyGhostedToProc;
+    if (ghostingIsAura && entityIsShared) {
+        shouldAddToGhostingSet = false;
+    }
+
+    if (shouldAddToGhostingSet)
     {
         entitiesWithClosure.insert(EntityProc(entity , toProc));
     }
@@ -3425,14 +3441,6 @@ void BulkData::internal_change_ghosting(
   if ( removed ) {
     delete_unneeded_entries_from_the_comm_list();
   }
-
-  //------------------------------------
-  // Push newly ghosted entities to the receivers and update the comm list.
-  // Unpacking must proceed in entity-rank order so that higher ranking
-  // entities that have relations to lower ranking entities will have
-  // the lower ranking entities unpacked first.  The higher and lower
-  // ranking entities may be owned by different processes,
-  // as such unpacking must be performed in rank order.
 
   ghost_entities_and_fields(ghosting, entitiesToGhostOntoOtherProcessors);
 }
@@ -6228,14 +6236,27 @@ bool BulkData::ordered_comm(const Entity entity )
 
 void printConnectivityOfRank(BulkData& M, Entity entity, stk::topology::rank_t connectedRank, std::ostream & error_log)
 {
+    if (M.is_valid(entity)) {
     error_log << connectedRank << "-connectivity(";
     const Entity* connectedEntities = M.begin(entity, connectedRank);
     unsigned numConnected = M.num_connectivity(entity, connectedRank);
     for(unsigned i=0; i<numConnected; ++i) {
-      error_log<<"{"<<M.identifier(connectedEntities[i])<<",topo="<<M.bucket(connectedEntities[i]).topology()
-              <<",owned="<<M.bucket(connectedEntities[i]).owned()<<",shared="<<M.bucket(connectedEntities[i]).shared()<<",in_aura="<<M.bucket(connectedEntities[i]).in_aura()<<"}";
+        if (M.is_valid(connectedEntities[i])) {
+            error_log<<"{"<<M.identifier(connectedEntities[i])<<",topo="<<M.bucket(connectedEntities[i]).topology()
+                  <<",owned="<<M.bucket(connectedEntities[i]).owned()<<",shared="<<M.bucket(connectedEntities[i]).shared()
+                  <<",in_aura="<<M.bucket(connectedEntities[i]).in_aura()
+                  <<",custom-recv-ghost="<<M.in_receive_custom_ghost(M.entity_key(entity))
+                  <<"}";
+        }
+        else {
+            error_log << "{invalid entity!}";
+        }
     }
     error_log<<"), ";
+    }
+    else {
+        error_log << "invalid entity!";
+    }
 }
 
 bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std::ostream & error_log, size_t& comm_count )
@@ -6347,7 +6368,10 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
       result = false ;
       error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "P" << parallel_rank() << ": " << " entity " << this->entity_key(entity) << " " << this->bucket(entity).topology();
-      error_log << " details: owner(" << p_owner<<"), shared=" << (bucket.shared() ? "true, " : "false, ");
+      error_log << " details: owner(" << p_owner<<"), shared=" << (bucket.shared() ? "true" : "false");
+      error_log << ", aura=" << (bucket.in_aura() ? "true" : "false");
+      error_log <<", custom-recv-ghost="<<this->in_receive_custom_ghost(this->entity_key(entity));
+      error_log << std::endl;
 
       for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
       {

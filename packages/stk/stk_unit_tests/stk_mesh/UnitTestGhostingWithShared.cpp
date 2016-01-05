@@ -99,6 +99,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
 
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
@@ -146,6 +150,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
     else if (procId==1)
     {
         std::vector<stk::mesh::EntityKey> gold_keys;
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
         ASSERT_EQ(gold_keys.size(), entitiesWithClosure.size());
@@ -186,6 +194,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 6), 2));
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 7), 2));
         EXPECT_FALSE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 8), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 9), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 10), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 11), 2));
+        EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::NODE_RANK, 12), 2));
         EXPECT_TRUE(bulk.my_in_send_ghost(ghosting, stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2), 2));
     }
     else if (procId == 2)
@@ -195,6 +207,10 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 9));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 10));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 11));
+        gold_keys.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, 12));
         gold_keys.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2));
 
         for (size_t i=0;i<gold_keys.size();++i)
