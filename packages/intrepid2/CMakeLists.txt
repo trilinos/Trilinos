@@ -17,22 +17,22 @@ ELSE()
 ENDIF()
 
 
-#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK
-#  HAVE_INTREPID2_AMESOS_UMFPACK
-#  "Enable Amesos with UmfPack functionality."
-#  ${Intrepid2_ENABLE_AMESOS_UMFPACK_DEFAULT} )
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AMESOS_UMFPACK
+  HAVE_INTREPID2_AMESOS_UMFPACK
+  "Enable Amesos with UmfPack functionality."
+  ${Intrepid2_ENABLE_AMESOS_UMFPACK_DEFAULT} )
 
-#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
-#  HAVE_INTREPID2_DEBUG
-#  "Enable a host of runtime debug checking."
-#  ${${PROJECT_NAME}_ENABLE_DEBUG}
-#  )
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_INTREPID2_DEBUG
+  "Enable a host of runtime debug checking."
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
+  )
 
-#TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
-#  HAVE_INTREPID2_DEBUG_INF_CHECK
-#  "Enable a host of runtime debug checking for infs and nans."
-#  ${${PROJECT_NAME}_ENABLE_DEBUG}
-#  )
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+  HAVE_INTREPID2_DEBUG_INF_CHECK
+  "Enable a host of runtime debug checking for infs and nans."
+  ${${PROJECT_NAME}_ENABLE_DEBUG}
+  )
 
 #
 # C) Add the libraries, tests, and examples
