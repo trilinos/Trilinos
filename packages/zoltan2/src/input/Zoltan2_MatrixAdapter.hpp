@@ -424,7 +424,6 @@ public:
            << " error:  getIDsView not yet supported for matrix nonzeros."
            << std::endl;
       throw std::runtime_error(emsg.str());
-      break;
       }
     default:   // Shouldn't reach default; just making compiler happy
       break;
@@ -463,7 +462,6 @@ public:
            << " error:  getWeightsView not yet supported for matrix nonzeros."
            << std::endl;
       throw std::runtime_error(emsg.str());
-      break;
       }
     default:   // Shouldn't reach default; just making compiler happy
       break;
