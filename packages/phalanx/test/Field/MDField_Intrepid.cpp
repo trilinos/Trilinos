@@ -83,7 +83,6 @@ namespace phalanx_test {
     PHX::InitializeKokkosDevice();
 
     RCP<DataLayout> dl = rcp(new MDALayout<Cell,Point,Dim>(10,4,3));
-#ifndef BUILD_PHALANX_FOR_ALBANY
     // runtime non-const
     {
       PHX::MDField<double> a("density a",dl);
@@ -119,7 +118,6 @@ namespace phalanx_test {
       Intrepid2::ArrayWrapper<double, const PHX::MDField<double,Cell,Point,Dim>, Intrepid2::Rank<const PHX::MDField<double,Cell,Point,Dim> >::value, false> 
 	d_wrap(d);
     }
-#endif
 
     // NOTE: Need to add a call to an intrepid function here.
 
