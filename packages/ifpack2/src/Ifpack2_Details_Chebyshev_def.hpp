@@ -1234,6 +1234,7 @@ powerMethodWithInitGuess (const op_type& A,
   ST lambdaMax = zero;
   ST RQ_top, RQ_bottom, norm;
 
+  V y (A.getRangeMap ());
   norm = x.norm2 ();
   TEUCHOS_TEST_FOR_EXCEPTION(
     norm == zero, std::runtime_error,
@@ -1242,27 +1243,19 @@ powerMethodWithInitGuess (const op_type& A,
     "Vector::randomize() filled the vector with zeros (if that was used to "
     "compute the initial guess), or because the norm2 method has a bug.  The "
     "first is not impossible, but unlikely.");
-  V y (A.getRangeMap ());
 
   //std::cerr << "Original norm1(x): " << x.norm1 () << ", norm2(x): " << norm << std::endl;
   x.scale (one / norm);
   //std::cerr << "norm1(x.scale(one/norm)): " << x.norm1 () << std::endl;
   for (int iter = 0; iter < numIters; ++iter) {
     A.apply (x, y);
+    //std::cerr << "norm1(y) before: " << y.norm1 ();
     solve (y, D_inv, y);
+    //std::cerr << ", norm1(y) after: " << y.norm1 () << std::endl;
     RQ_top = y.dot (x);
-
-    //RQ_bottom = x.dot (x);
-    const ST x_norm = x.norm2 ();
-    RQ_bottom = x_norm * x_norm;
-
+    RQ_bottom = x.dot (x);
+    //std::cerr << "RQ_top: " << RQ_top << ", RQ_bottom: " << RQ_bottom << std::endl;
     lambdaMax = RQ_top / RQ_bottom;
-    if (STS::real (lambdaMax) < STS::real (zero)) {
-      // The power method should never go negative with a real SPD
-      // matrix.  If it did, ditch out early.  The calling method is
-      // responsible for handling this error condition.
-      return lambdaMax;
-    }
     norm = y.norm2 ();
     if (norm == zero) { // Return something reasonable.
       return zero;
@@ -1277,14 +1270,6 @@ typename Chebyshev<ScalarType, MV>::ST
 Chebyshev<ScalarType, MV>::
 powerMethod (const op_type& A, const V& D_inv, const int numIters)
 {
-  using Teuchos::outArg;
-  using Teuchos::REDUCE_MIN;
-  using Teuchos::reduceAll;
-  using std::cerr;
-  using std::endl;
-  typedef typename MV::local_ordinal_type LO;
-  typedef typename MV::dual_view_type::t_host::memory_space HS;
-
   const ST zero = Teuchos::as<ST> (0);
   V x (A.getDomainMap ());
   x.randomize ();
@@ -1298,72 +1283,13 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   // specialization for ScalarType = std::complex<T> with a stub
   // implementation (that builds, but whose constructor throws).
   if (STS::real (lambdaMax) < STS::real (zero)) {
-#ifdef HAVE_IFPACK2_DEBUG
-    const auto& comm = * (D_inv.getMap ()->getComm ());
-    const int myRank = comm.getRank ();
-    if (myRank == 0) {
-      cerr << "Ifpack2::Chebyshev: Max eigenvalue estimate " << lambdaMax
-           << " is negative, after one run of the power method.  "
-           << "Let's try again with a different initial guess." << endl;
-    }
-#endif // HAVE_IFPACK2_DEBUG
-
     // Max eigenvalue estimate is negative.  Perhaps we got unlucky
     // with the random initial guess.  Try again with a different (but
     // still random) initial guess.  Only try again once, so that the
     // run time is bounded.
-
-    // FIXME (mfh 25 Dec 2015) See Trilinos Github Issue #64.
-
-    //x.randomize ();
-    x.putScalar (STS::one ());
-    V x2 (A.getDomainMap ());
-    x2.randomize ();
-    x.update (STS::one (), x2, STS::one ());
+    x.randomize ();
     lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
   }
-
-  // Our Chebyshev implementation is only for real SPD matrices, so a
-  // persistently negative max eigenvalue estimate is an error
-  // condition.  Thus, we can afford to do some diagnostics.
-  if (STS::real (lambdaMax) < STS::real (zero)) {
-    const auto& comm = * (D_inv.getMap ()->getComm ());
-    const int myRank = comm.getRank ();
-    if (myRank == 0) {
-      cerr << "Ifpack2::Chebyshev: Max eigenvalue estimate " << lambdaMax
-           << " is negative, after two runs of the power method with different "
-           << "initial guesses." << endl;
-    }
-
-    // Are any diagonal entries nonpositive?
-    //
-    // FIXME (mfh 25 Dec 2015) D_inv might not have been sync'd to host yet.
-    //D_inv.template sync<HS> ();
-    auto D_inv_2d = D_inv.template getLocalView<HS> ();
-    auto D_inv_1d = Kokkos::subview (D_inv_2d, Kokkos::ALL (), 0);
-    const LO lclNumRows = static_cast<LO> (D_inv.getLocalLength ());
-    int lclAllPos = 1;
-    for (LO i = 0; i < lclNumRows; ++i) {
-      if (STS::real (D_inv_1d (i)) < STS::real (STS::zero ())) {
-        lclAllPos = 0;
-        break;
-      }
-    }
-
-    int gblAllPos = 0;
-    reduceAll<int, int> (comm, REDUCE_MIN, lclAllPos, outArg (gblAllPos));
-    if (myRank == 0) {
-      if (gblAllPos != 1) {
-        cerr << "Ifpack2::Chebyshev: The diagonal of the matrix contains at "
-          "least one nonpositive entry." << endl;
-      }
-      else {
-        cerr << "Ifpack2::Chebyshev: The diagonal of the matrix is positive.  "
-          "Something else must have gone wrong." << endl;
-      }
-    }
-  }
-
   return lambdaMax;
 }
 
