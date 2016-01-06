@@ -62,7 +62,7 @@ index_type count_=1;
 index_type rankValue=0;
 index_type sizeValue=0;
 public:
-
+FieldContainer_Kokkos()= default;
 
 
 template <class ScalarPointer>
@@ -297,6 +297,8 @@ FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
 typedef Kokkos::Cuda execution_space;
 
+Scalar& operator[] (const index_type i0);
+
 Scalar& operator() (const index_type i0);
 
 Scalar& operator() (const index_type i0, const index_type i1);
@@ -319,6 +321,8 @@ Scalar& operator() (const index_type i0, const index_type i1, const index_type i
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6, const index_type i7);
+
+Scalar& operator[] (const index_type i0)const;
 
 Scalar& operator() (const index_type i0)const;
 
@@ -533,6 +537,10 @@ cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 
 
 
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator[] (const index_type i0){
+return containerMemory[i0];
+}
 
 template <class Scalar>
 inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const index_type i0){
@@ -569,6 +577,11 @@ return containerMemory[(((((dim5*i6+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0
 template <class Scalar>
 inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7){
 return containerMemory[((((((dim6*i7+i6)*dim5+i5)*dim4+i4)*dim3+i3)*dim2+i2)*dim1+i1)*dim0+i0];
+}
+
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Cuda>::operator[] (const index_type i0)const{
+return containerMemory[i0];
 }
 
 template <class Scalar>
