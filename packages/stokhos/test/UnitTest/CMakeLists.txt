@@ -411,6 +411,7 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
+        RUN_SERIAL
         )
     ENDIF()
 
@@ -433,6 +434,7 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
+        RUN_SERIAL
         )
     ENDIF()
 
@@ -458,6 +460,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -480,6 +483,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -495,7 +499,7 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+      IF (Stokhos_ENABLE_Tpetra)
 
         IF (HAVE_TPETRA_PTHREAD)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -505,6 +509,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
+            RUN_SERIAL
             )
         ENDIF()
 
@@ -527,6 +532,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
+            RUN_SERIAL
             )
         ENDIF()
 
@@ -583,6 +589,7 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
+        RUN_SERIAL
         )
     ENDIF()
 
@@ -605,6 +612,7 @@ IF(Stokhos_ENABLE_Sacado)
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
+        RUN_SERIAL
         )
     ENDIF()
 
@@ -630,6 +638,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -652,6 +661,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
 
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -661,6 +671,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -676,7 +687,7 @@ IF(Stokhos_ENABLE_Sacado)
           )
       ENDIF()
 
-      IF (Stokhos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+      IF (Stokhos_ENABLE_Tpetra)
 
         IF (HAVE_TPETRA_PTHREAD)
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -686,6 +697,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
+            RUN_SERIAL
             )
         ENDIF()
 
@@ -708,6 +720,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
+            RUN_SERIAL
             )
         ENDIF()
 
@@ -756,6 +769,7 @@ IF (Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
+      RUN_SERIAL
       )
   ENDIF()
 
@@ -769,6 +783,7 @@ IF (Stokhos_ENABLE_EpetraExt)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       NUM_MPI_PROCS 1
+      RUN_SERIAL
       )
   ENDIF()
 
@@ -793,5 +808,7 @@ IF (Stokhos_ENABLE_Tpetra)
     SOURCES tpetra_mat_vec.cpp
     COMM serial mpi
     STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    RUN_SERIAL
     )
 ENDIF()
