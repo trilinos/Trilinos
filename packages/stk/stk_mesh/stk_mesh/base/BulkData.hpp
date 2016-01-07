@@ -114,6 +114,7 @@ struct sharing_info
         m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
 };
 
+
 class BulkData {
 
 public:
@@ -235,6 +236,8 @@ public:
       notifier.notify_started_modification_end();
       return m_meshModification.modification_end();
   }
+
+  void sort_entities(const EntitySorterBase& sorter);
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *

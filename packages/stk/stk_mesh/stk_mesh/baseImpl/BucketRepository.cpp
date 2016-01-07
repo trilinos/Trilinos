@@ -40,6 +40,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -50,6 +51,8 @@
 namespace stk {
 namespace mesh {
 namespace impl {
+
+
 
 BucketRepository::BucketRepository(BulkData & mesh,
                                    unsigned entity_rank_count,
@@ -118,19 +121,22 @@ void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool ne
     bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);
 }
 
-void BucketRepository::internal_sort_bucket_entities()
+void BucketRepository::internal_default_sort_bucket_entities()
 {
-  for (std::vector<std::vector<Partition *> >::const_iterator
-         i = m_partitions.begin() ; i != m_partitions.end() ; ++i  )
-  {
-    const std::vector<Partition *> & pset = *i ;
-    for ( std::vector<Partition*>::const_iterator
-            ip = pset.begin() ; ip != pset.end() ; ++ip )
-    {
-      (*ip)->sort();
-    }
-  }
+    for(std::vector<Partition*>& partitionVector : m_partitions)
+        for(Partition* partition : partitionVector)
+            partition->default_sort_if_needed();
 }
+
+void BucketRepository::internal_custom_sort_bucket_entities(const EntitySorterBase& sorter)
+{
+    for(std::vector<Partition*>& partitionVector : m_partitions)
+        for(Partition* partition : partitionVector)
+            partition->sort(sorter);
+}
+
+
+
 
 void BucketRepository::optimize_buckets()
 {

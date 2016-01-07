@@ -41,6 +41,7 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class FieldBase; } }
 
@@ -287,7 +288,8 @@ void Partition::compress(bool force)
   }
 
   //sort entities
-  std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
+  std::sort(entities.begin(),entities.end(),EntityLess(m_mesh));
+
   m_updated_since_sort = false;
 
   // ceiling
@@ -326,13 +328,16 @@ void Partition::compress(bool force)
   internal_check_invariants();
 }
 
-void Partition::sort(bool force)
+void Partition::default_sort_if_needed()
 {
-  if (!force && (empty() || !m_updated_since_sort))
+  if (!empty() && m_updated_since_sort)
   {
-    return;
+      sort(GlobalIdEntitySorter(m_mesh));
   }
+}
 
+void Partition::sort(const EntitySorterBase& sorter)
+{
   std::vector<unsigned> partition_key = get_legacy_partition_id();
   //index of bucket in partition
   partition_key[ partition_key[0] ] = 0;
@@ -353,7 +358,7 @@ void Partition::sort(bool force)
     new_i += b_size;
   }
 
-  std::sort( entities.begin(), entities.end(), EntityLess(m_mesh) );
+  sorter.sort(entities);
 
   // Make sure that there is a vacancy somewhere.
   //

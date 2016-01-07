@@ -114,7 +114,14 @@ alias install-exe-targets : ;
 exe stk_mesh_utest
   :
     $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
-    [ glob $(stk_mesh-root)/unit_tests/*.cpp $(stk_mesh-root)/unit_tests/face_creation/*.cpp $(stk_mesh-root)/unit_tests/change_parts/*.cpp $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp ]
+    [ glob $(stk_mesh-root)/unit_tests/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/*.cpp 
+           $(stk_mesh-root)/unit_tests/change_parts/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp 
+           $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp 
+           $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp 
+           $(stk_mesh-root)/unit_tests/entity_sorting/*.cpp 
+    ]
     stk_mesh_base
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_io//stk_io

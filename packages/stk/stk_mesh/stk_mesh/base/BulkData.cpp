@@ -4138,7 +4138,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
 {
     internal_resolve_send_ghost_membership();
 
-    m_bucket_repository.internal_sort_bucket_entities();
+    m_bucket_repository.internal_default_sort_bucket_entities();
 
     m_modSummary.write_summary(m_meshModification.synchronized_count());
     if(parallel_size() > 1)
@@ -4171,7 +4171,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     }
     m_modSummary.write_summary(m_meshModification.synchronized_count());
 
-    m_bucket_repository.internal_sort_bucket_entities();
+    m_bucket_repository.internal_default_sort_bucket_entities();
 
     m_bucket_repository.internal_modification_end();
     internal_update_fast_comm_maps();
@@ -4516,7 +4516,7 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
     }
     else
     {
-        m_bucket_repository.internal_sort_bucket_entities();
+        m_bucket_repository.internal_default_sort_bucket_entities();
     }
 
     m_bucket_repository.internal_modification_end();
@@ -7065,6 +7065,19 @@ void BulkData::de_induce_parts_from_nodes(const stk::mesh::EntityVector & deacti
 unsigned BulkData::num_sides(Entity entity) const
 {
     return num_connectivity(entity, mesh_meta_data().side_rank());
+}
+
+void BulkData::sort_entities(const EntitySorterBase& sorter)
+{
+    ThrowRequireMsg(synchronized_count()>0,"Error, sort_entities must be called after at least one modification cycle.");
+    ThrowRequireMsg(in_synchronized_state(), "Error, sort_entities cannot be called from inside a modification cycle.");
+    m_bucket_repository.internal_custom_sort_bucket_entities(sorter);
+
+    m_bucket_repository.internal_modification_end();
+    internal_update_fast_comm_maps();
+
+    if(parallel_size() > 1)
+        check_mesh_consistency();
 }
 
 #ifdef SIERRA_MIGRATION

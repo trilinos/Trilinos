@@ -479,7 +479,7 @@ TEST( UnitTestPartition, Partition_testSort)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
     // check_test_partition_invariant(fix, partition);
-    partition.sort(true);
+    partition.sort(stk::mesh::impl::GlobalIdEntitySorter(fix.m_bulk_data));
     check_test_partition_invariant(fix, partition);
   }
 
@@ -528,7 +528,7 @@ TEST( UnitTestPartition, Partition_testRemove)
     ++num_removed;
 
     // Need to sort before checking whether the invariant holds.
-    partition.sort();
+    partition.default_sort_if_needed();
 
     EXPECT_EQ(old_size,  partition.size() + num_removed);
     check_test_partition_invariant(fix, partition);
@@ -615,7 +615,7 @@ TEST( UnitTestPartition, Partition_testAdd)
   for (size_t i = 0; i < num_partitions; ++i)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
-    partition.sort();
+    partition.default_sort_if_needed();
     EXPECT_EQ(old_sizes[i], partition.size());
     check_test_partition_invariant(fix, partition);
   }
@@ -672,7 +672,7 @@ TEST( UnitTestPartition, Partition_testMoveTo)
   for (size_t i = 0; i < num_data_partitions; ++i)
   {
     stk::mesh::impl::Partition &partition = *data_partitions[i];
-    partition.sort();
+    partition.default_sort_if_needed();
 
     EXPECT_EQ(old_sizes[i], partition.size());
     check_test_partition_invariant(fix, partition);
@@ -788,7 +788,7 @@ TEST( UnitTestPartition, Partition_testMoveToBetter)
   for (size_t i = 0; i < num_data_partitions; ++i)
   {
     stk::mesh::impl::Partition &partition = *data_partitions[i];
-    partition.sort();
+    partition.default_sort_if_needed();
 
     EXPECT_EQ(partition.size(), old_sizes[i]);
 

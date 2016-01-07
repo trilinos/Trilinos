@@ -378,6 +378,13 @@ enum Permutation
 #  endif
 #endif
 
+class EntitySorterBase
+{
+public:
+    virtual ~EntitySorterBase() {}
+    virtual void sort(stk::mesh::EntityVector& entityVector) const = 0;
+};
+
 
 
 } // namespace mesh
