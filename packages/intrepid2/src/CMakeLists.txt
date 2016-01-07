@@ -78,7 +78,7 @@ APPEND_SET(HEADERS
 #
 # MiniTensor headers
 #
-IF (Intrepid_ENABLE_Boost)
+IF (Intrepid2_ENABLE_Boost)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared/MiniTensor)
   APPEND_SET(HEADERS ${HEADERS}
     Shared/MiniTensor/Intrepid2_MiniTensor.h
