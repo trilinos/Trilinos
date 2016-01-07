@@ -71,6 +71,13 @@ PANZER_EVALUATOR_CLASS(Sum)
 
   std::size_t cell_data_size;
 
+public:
+  template<unsigned int RANK>
+  struct PanzerSumTag{};
+
+  template<unsigned int RANK>
+  void operator() (PanzerSumTag<RANK>, const int &i) const;
+
 PANZER_EVALUATOR_CLASS_END
 
 /** A template version of Sum that specializes on the
