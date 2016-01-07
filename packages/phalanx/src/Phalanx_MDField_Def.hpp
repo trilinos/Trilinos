@@ -1032,67 +1032,86 @@ deep_copy(const MDFieldType& source)
   }
 }
 //******************************************************************************
+
+template<typename DataT>
+template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
+void
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind1) const
+{
+  if (RANK == 1){
+    base_.m_field_data1(ind1) = base_.m_field_data1(ind1)*source_(ind1);
+  }
+  else if (RANK == 2){
+    for (int ind2=0; ind2<base_.m_field_data2.dimension(1); ind2++)
+      base_.m_field_data2(ind1,ind2) = base_.m_field_data2(ind1,ind2)*source_(ind1,ind2);
+  }
+   else if (RANK == 3){
+     for (int ind2=0; ind2<base_.m_field_data3.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data3.dimension(2); ind3++)
+         base_.m_field_data3(ind1,ind2,ind3) = base_.m_field_data3(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
+   }
+   else if (RANK == 4){
+     for (int ind2=0; ind2<base_.m_field_data4.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data4.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data4.dimension(3); ind4++)
+           base_.m_field_data4(ind1,ind2,ind3,ind4) = base_.m_field_data4(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
+   }
+   else if (RANK == 5){
+     for (int ind2=0; ind2<base_.m_field_data5.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data5.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data5.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data5.dimension(4); ind5++)
+             base_.m_field_data5(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data5(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
+   }
+   else if (RANK == 6){
+     for (int ind2=0; ind2<base_.m_field_data6.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data6.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data6.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data6.dimension(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data6.dimension(5); ind6++)
+               base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
+   }
+   else if (RANK == 7){
+     for (int ind2=0; ind2<base_.m_field_data7.dimension(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data7.dimension(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data7.dimension(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data7.dimension(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data7.dimension(5); ind6++)
+               for (int ind7=0; ind7<base_.m_field_data7.dimension(6); ind7++)
+                 base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
+   }
+ }
+
+//******************************************************************************
 template<typename DataT>
 template<typename MDFieldType>
 void
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 V_Multiply(const MDFieldType& source)
 {
+  typedef PHX::MDField<DataT,void,void,void,void,void,void,void,void> ThisType;
+  const auto length = m_tag.dataLayout().dimension(0);
   if (m_tag.dataLayout().rank() == 1){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      m_field_data1(ind1) = m_field_data1(ind1)*source(ind1);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 1>(*this, source) );
   }
   else if (m_tag.dataLayout().rank() == 2){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-        m_field_data2(ind1,ind2) = m_field_data2(ind1,ind2)*source(ind1,ind2);
-    });
-  }
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 2>(*this, source) );
+ }
   else if (m_tag.dataLayout().rank() == 3){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            m_field_data3(ind1,ind2,ind3) = m_field_data3(ind1,ind2,ind3)*source(ind1,ind2,ind3);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 3>(*this, source) );
   }
   else if (m_tag.dataLayout().rank() == 4){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                m_field_data4(ind1,ind2,ind3,ind4) = m_field_data4(ind1,ind2,ind3,ind4)*source(ind1,ind2,ind3,ind4);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 4>(*this, source) );
   }
   else if (m_tag.dataLayout().rank() == 5){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   m_field_data5(ind1,ind2,ind3,ind4,ind5) = m_field_data5(ind1,ind2,ind3,ind4,ind5)*source(ind1,ind2,ind3,ind4,ind5);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 5>(*this, source) );
   }
   else if (m_tag.dataLayout().rank() == 6){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
-                      m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6)*source(ind1,ind2,ind3,ind4,ind5,ind6);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 6>(*this, source) );
   }
   else if (m_tag.dataLayout().rank() == 7){
-    Kokkos::parallel_for( m_tag.dataLayout().dimension(0), KOKKOS_LAMBDA (const int ind1){
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
-                      for (int ind7=0; ind7<m_tag.dataLayout().dimension(6); ind7++)
-                          m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
-    });
+    Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 7>(*this, source) );
   }
 }
 
