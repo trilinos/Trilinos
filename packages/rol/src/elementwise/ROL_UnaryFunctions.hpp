@@ -84,7 +84,7 @@ public:
   Power( const Real &exponent ) : exponent_(exponent) {}
 
   Real apply( const Real &x ) const {
-    return std::power(x,exponent_);
+    return std::pow(x,exponent_);
   } 
 
 

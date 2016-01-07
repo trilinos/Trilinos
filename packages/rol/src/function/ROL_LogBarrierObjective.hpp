@@ -72,11 +72,7 @@ public:
     
     g.set(x);
      
-    struct Reciprocal : public Elementwise::UnaryFunction<Real> {
-      Real apply( const Real &xc ) const {
-        return 1.0/xc;
-      }
-    } reciprocal;
+    Elementwise::Reciprocal<Real> reciprocal;
    
     g.applyUnary(reciprocal);
     g.scale(-1.0);
