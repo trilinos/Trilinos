@@ -111,11 +111,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-
-    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
-
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
-
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
@@ -132,7 +129,11 @@ namespace MueLuTests {
 #if 0
   TEUCHOS_UNIT_TEST(Aggregates, GetNumUncoupledAggregates)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
+
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     RCP<const Map> rowmap = A->getRowMap();
@@ -372,15 +373,9 @@ namespace MueLuTests {
   } //UncoupledPhase3
 #endif
 
-#define UNIT_TEST_GROUP(SC,LO,GO,NO) \
+#define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO)
 
-#ifdef HAVE_MUELU_TPETRA
-  #include <TpetraCore_config.h>
-  #include <TpetraCore_ETIHelperMacros.h>
+#include <MueLu_ETI_4arg.hpp>
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP)
-#endif
 } // namespace MueLuTests
