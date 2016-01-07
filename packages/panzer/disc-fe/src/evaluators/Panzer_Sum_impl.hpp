@@ -106,57 +106,56 @@ template<unsigned int RANK>
 void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   const size_t num_vals = values.size();
 
-  for (std::size_t iv = 0; iv < num_vals; ++iv) {
 
-    if (RANK == 1 )
-    {
+  if (RANK == 1 )
+  {
+    for (std::size_t iv = 0; iv < num_vals; ++iv)
       sum(i) += scalars[iv]*(values[iv](i));
-    }
-    else if (RANK == 2)
-    {
-      const size_t dim_1 = sum.dimension(1);
-      for (std::size_t j = 0; j < dim_1; ++j)
+  }
+  else if (RANK == 2)
+  {
+    const size_t dim_1 = sum.dimension(1);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t iv = 0; iv < num_vals; ++iv)
+        sum(i,j) += scalars[iv]*(values[iv](i,j));
+  }
+  else if (RANK == 3)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t iv = 0; iv < num_vals; ++iv)
-          sum(i,j) += scalars[iv]*(values[iv](i,j));
-    }
-    else if (RANK == 3)
-    {
-      const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2);
-      for (std::size_t j = 0; j < dim_1; ++j)
-        for (std::size_t k = 0; k < dim_2; ++k)
+          sum(i,j,k) += scalars[iv]*(values[iv](i,j,k));
+  }
+  else if (RANK == 4)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
           for (std::size_t iv = 0; iv < num_vals; ++iv)
-            sum(i,j,k) += scalars[iv]*(values[iv](i,j,k));
-    }
-    else if (RANK == 4)
-    {
-      const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3);
-      for (std::size_t j = 0; j < dim_1; ++j)
-        for (std::size_t k = 0; k < dim_2; ++k)
-          for (std::size_t l = 0; l < dim_3; ++l)
+            sum(i,j,k,l) += scalars[iv]*(values[iv](i,j,k,l));
+  }
+  else if (RANK == 5)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
+          for (std::size_t m = 0; m < dim_4; ++m)
             for (std::size_t iv = 0; iv < num_vals; ++iv)
-              sum(i,j,k,l) += scalars[iv]*(values[iv](i,j,k,l));
-    }
-    else if (RANK == 5)
-    {
-      const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4);
-      for (std::size_t j = 0; j < dim_1; ++j)
-        for (std::size_t k = 0; k < dim_2; ++k)
-          for (std::size_t l = 0; l < dim_3; ++l)
-            for (std::size_t m = 0; m < dim_4; ++m)
+              sum(i,j,k,l,m) += scalars[iv]*(values[iv](i,j,k,l,m));
+  }
+  else if (RANK == 6)
+  {
+    const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
+    for (std::size_t j = 0; j < dim_1; ++j)
+      for (std::size_t k = 0; k < dim_2; ++k)
+        for (std::size_t l = 0; l < dim_3; ++l)
+          for (std::size_t m = 0; m < dim_4; ++m)
+            for (std::size_t n = 0; n < dim_5; ++n)
               for (std::size_t iv = 0; iv < num_vals; ++iv)
-                sum(i,j,k,l,m) += scalars[iv]*(values[iv](i,j,k,l,m));
-    }
-    else if (RANK == 6)
-    {
-      const size_t dim_1 = sum.dimension(1),dim_2 = sum.dimension(2),dim_3 = sum.dimension(3),dim_4 = sum.dimension(4),dim_5 = sum.dimension(5);
-      for (std::size_t j = 0; j < dim_1; ++j)
-        for (std::size_t k = 0; k < dim_2; ++k)
-          for (std::size_t l = 0; l < dim_3; ++l)
-            for (std::size_t m = 0; m < dim_4; ++m)
-              for (std::size_t n = 0; n < dim_5; ++n)
-                for (std::size_t iv = 0; iv < num_vals; ++iv)
-                  sum(i,j,k,l,m,n) += scalars[iv]*(values[iv](i,j,k,l,m,n));
-    }
+                sum(i,j,k,l,m,n) += scalars[iv]*(values[iv](i,j,k,l,m,n));
   }
 }
 

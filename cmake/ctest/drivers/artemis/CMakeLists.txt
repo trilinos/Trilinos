@@ -2,7 +2,7 @@ TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_Downstream_ETI_SERIAL-${Tpetra_INST_SERIAL}_OPENMP-${Tpetra_INST_OPENMP}_PTHREAD-${Tpetra_INST_PTHREAD}_CUDA-${Tpetra_INST_CUDA}_COMPLEX-${Teuchos_ENABLE_COMPLEX}
-  ctest_linux_nightly_mpi_release_downstream_ETI_generic_perseus.cmake
+  ctest_linux_nightly_mpi_release_downstream_ETI_generic_artemis.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 420
