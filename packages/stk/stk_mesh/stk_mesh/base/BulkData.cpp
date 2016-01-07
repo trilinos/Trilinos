@@ -899,7 +899,6 @@ bool BulkData::internal_destroy_entity_with_notification(Entity entity, bool was
 bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 {
   require_ok_to_modify();
-  m_modSummary.track_destroy_entity(entity);
 
   const stk::mesh::EntityKey key = entity_key(entity);
 
@@ -922,6 +921,8 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
       return false;
     }
   }
+
+  m_modSummary.track_destroy_entity(entity);
 
   //------------------------------
   // Immediately remove it from relations and buckets.
@@ -1293,8 +1294,15 @@ void BulkData::internal_change_owner_in_comm_data(const EntityKey& key, int new_
     EntityCommListInfoVector::iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
                                                                         m_entity_comm_list.end(),
                                                                         key);
-    if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
-      lb_itr->owner = new_owner;
+    if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key)
+    {
+      if(lb_itr->owner != new_owner)
+      {
+          m_modSummary.track_change_owner_in_comm_data(key, lb_itr->owner, new_owner);
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+          lb_itr->owner = new_owner;
+      }
+
     }
   }
 }

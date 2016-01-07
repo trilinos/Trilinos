@@ -878,48 +878,48 @@ protected: //functions
 
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
-      m_modSummary.track_comm_map_insert(entity, val);
       EntityKey key = entity_key(entity);
       bool didInsert = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
       if(didInsert)
       {
+          m_modSummary.track_comm_map_insert(entity, val);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didInsert;
   }
   bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
   {
-      m_modSummary.track_comm_map_erase(key, val);
       bool didErase = m_entity_comm_map.erase(key, val);
       if(didErase)
       {
+          m_modSummary.track_comm_map_erase(key, val);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didErase;
   }
   bool entity_comm_map_erase(const EntityKey &key, const Ghosting &ghost)
   {
-      m_modSummary.track_comm_map_erase(key, ghost);
       bool didErase = m_entity_comm_map.erase(key, ghost);
       if(didErase)
       {
+          m_modSummary.track_comm_map_erase(key, ghost);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didErase;
   }
   void entity_comm_map_clear_ghosting(const EntityKey & key)
   {
-      m_modSummary.track_comm_map_clear_ghosting(key);
       bool didClear = m_entity_comm_map.comm_clear_ghosting(key);
       if (didClear) {
+          m_modSummary.track_comm_map_clear_ghosting(key);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
   }
   void entity_comm_map_clear(const EntityKey & key)
   {
-      m_modSummary.track_comm_map_clear(key);
       bool didClear = m_entity_comm_map.comm_clear(key);
       if (didClear){
+          m_modSummary.track_comm_map_clear(key);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
   }

@@ -210,6 +210,27 @@ void ModificationSummary::track_comm_map_clear(stk::mesh::EntityKey key)
     }
 }
 
+void ModificationSummary::track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner)
+{
+    stk::mesh::EntityKey key = getEntityKey(entity);
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Changing owner (in bucket data) of entity with key " << key << " from processor " << old_owner << " to " << new_owner << std::endl;
+        addEntityKeyAndStringToTracker(key, os.str());
+    }
+}
+
+void ModificationSummary::track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner)
+{
+    if(key != stk::mesh::EntityKey())
+    {
+        std::ostringstream os;
+        os << "Changing owner (in comm data) of entity with key " << key << " from processor " << old_owner << " to " << new_owner << std::endl;
+        addEntityKeyAndStringToTracker(key, os.str());
+    }
+}
+
 void ModificationSummary::write_summary(int mod_cycle_count, bool sort)
 {
     if(mod_cycle_count > m_lastModCycle)
