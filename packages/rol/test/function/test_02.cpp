@@ -42,13 +42,16 @@
 // @HEADER
 
 /*! \file  test_02.cpp
-    \brief Test derivative checks for log barrier objective.
+    \brief Test derivative checks for log barrier objectives.
 */
 
+#include "ROL_RandomVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_LogBarrierObjective.hpp"
+#include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
 
 typedef double RealT; 
 
@@ -57,9 +60,9 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef std::vector<RealT>                vector;
-  typedef ROL::StdVector<RealT>             StdVector;
-  typedef Teuchos::RCP<ROL::Vector<RealT> > PVector;
+  typedef std::vector<RealT>    vector;
+  typedef ROL::Vector<RealT>    V;
+  typedef ROL::StdVector<RealT> SV;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -76,10 +79,12 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
+  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD);
+
   int errorFlag  = 0;
 
   // Specify interval on which to generate uniform random numbers.
-  RealT left = 0.1, right = 1.1;
+  RealT left = 0.01, right = 0.9;
 
   // *** Test body.
 
@@ -87,6 +92,8 @@ int main(int argc, char *argv[]) {
 
     int dim = 1;
     RCP<vector>  x_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  l_rcp = rcp( new vector(dim,0.0) );  // Lower bound
+    RCP<vector>  u_rcp = rcp( new vector(dim,1.0) );  // Upper bound
     RCP<vector>  y_rcp = rcp( new vector(dim,0.0) );
     RCP<vector>  v_rcp = rcp( new vector(dim,0.0) );
     RCP<vector>  d_rcp = rcp( new vector(dim,0.0) );
@@ -94,62 +101,78 @@ int main(int argc, char *argv[]) {
     RCP<vector> gy_rcp = rcp( new vector(dim,0.0) );
     RCP<vector> hv_rcp = rcp( new vector(dim,0.0) );
 
-    for( int i=0; i<dim; ++i ) {
-      (*x_rcp)[i] = 2+( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }
+    SV x( x_rcp);  
+    SV y( y_rcp);
+    SV v( v_rcp);
+    SV d( d_rcp);
+    SV gx(gx_rcp);
+    SV gy(gy_rcp); 
+    SV hv(hv_rcp);
 
-    StdVector  x( x_rcp);
-    StdVector  y( y_rcp);
-    StdVector  v( v_rcp);
-    StdVector  d( d_rcp);
-    StdVector gx(gx_rcp);
-    StdVector gy(gy_rcp); 
-    StdVector hv(hv_rcp);
+    RandomizeVector(x,left,right);
+    RandomizeVector(v,left,right);
+    RandomizeVector(d,left,right);
+
+    RCP<V> l = rcp( new SV(l_rcp) );
+    RCP<V> u = rcp( new SV(u_rcp) );
+
+    ROL::BoundConstraint<RealT> bc(l,u);
+
+    ROL::ObjectiveFromBoundConstraint<RealT> bc_obj(bc);
 
     // Fixed difference step size
-    RealT delta = 1.e-7; 
+    RealT delta = 1.e-8; 
 
     y.set(x);         // y = x
     y.axpy(delta,d);  // y = x+delta*d
 
-    ROL::LogBarrierObjective<RealT> obj;
+    ROL::LogBarrierObjective<RealT> log_obj;
  
     // Do step size sweep
-    obj.checkGradient(x, d, true, *outStream);                             *outStream << "\n"; 
-    obj.checkHessVec(x, v, true, *outStream);                              *outStream << "\n";
+    *outStream << "Test of single logarithmic penalty objective" << std::endl;
+    log_obj.checkGradient(x, d, true, *outStream);          *outStream << "\n"; 
+    log_obj.checkHessVec(x, v, true, *outStream);           *outStream << "\n";
 
+    *outStream << "Test of bound constraint as logarithmic penalty objective" << std::endl;
+    bc_obj.checkGradient(x, d, true, *outStream);          *outStream << "\n"; 
+    bc_obj.checkHessVec(x, v, true, *outStream);           *outStream << "\n";
+
+    
 
 
     RealT tol = 0;
 
     // Compute objective at x and y
-    RealT fx = obj.value(x,tol);
-    RealT fy = obj.value(y,tol);
+    RealT fx = log_obj.value(x,tol);
+    RealT fy = log_obj.value(y,tol);
     
     // Compute gradient at x and y
-    obj.gradient(gx,x,tol);
-    obj.gradient(gy,y,tol);
+    log_obj.gradient(gx,x,tol);
+    log_obj.gradient(gy,y,tol);
 
     // Compute action of Hessian on v at x
-    obj.hessVec(hv,v,x,tol);
+    log_obj.hessVec(hv,v,x,tol);
 
     // FD gradient error 
     RealT graderr = (fy - fx)/delta - gx.dot(d);
 
     // FD Hessian error
-    PVector dg = gx.clone();
+    RCP<V> dg = gx.clone();
     dg->set(gy);
     dg->axpy(-1.0,gx);
     
     RealT hesserr = ( dg->dot(v) )/delta - hv.dot(d);
 
-    if( std::abs(graderr) > 1e-8 ) {
+    
+
+  
+
+
+    if( std::abs(graderr) > errtol ) {
       ++errorFlag;
     }
 
-    if( std::abs(hesserr) > 1e-8 ) {
+    if( std::abs(hesserr) > errtol ) {
       ++errorFlag;
     }
 
