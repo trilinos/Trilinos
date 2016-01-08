@@ -65,24 +65,31 @@ private:
   const static size_type SLACK = 1;
 
   Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<Objective<Real> > barrier_;
+  Teuchos::RCP<Objective<Real> > slack_barrier_;
+  Teuchos::RCP<Objective<Real> > bc_barrier_;
   Teuchos::RCP<PV>    x_;
   Teuchos::RCP<PV>    g_;
+  Teuchos::RCP<V>     scratch_;
+
 
   Real mu_;
   int nfval_;
   int ngval_;
   Real fval_; 
   Real gnorm_;
+  bool hasBoundConstraint_;
 
 public:
 
+  // Constructor without BoundConstraint
   PenalizedObjective( Teuchos::RCP<Objective<Real> > &obj, 
-                      Teuchos::RCP<Objective<Real> > &barrier, 
+                      Teuchos::RCP<Objective<Real> > &slack_barrier, 
                       const Vector<Real> &x,
                       Real mu ) :
-    obj_(obj), barrier_(barrier),x_(Teuchos::null), g_(Teuchos::null), 
-    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0)  { 
+    obj_(obj), slack_barrier_(slack_barrier), bc_barrier_(Teuchos::null), 
+    x_(Teuchos::null), g_(Teuchos::null), scratch_(Teuchos::null),
+    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0),
+    hasBoundConstraint_(false)  { 
 
     const PV &xpv = Teuchos::dyn_cast<const PV>(x);
     
@@ -90,6 +97,29 @@ public:
     g_ = Teuchos::rcp_static_cast<PV>(xpv.dual().clone());
   }
  
+
+  // Constructor with BoundConstraint
+  PenalizedObjective( Teuchos::RCP<Objective<Real> > &obj,
+                      Teuchos::RCP<Objective<Real> > &slack_barrier,
+                      Teuchos::RCP<Objective<Real> > &bc_barrier,
+                      const Vector<Real> &x, 
+                      Real mu ) :
+    obj_(obj), slack_barrier_(slack_barrier), bc_barrier_(bc_barrier), 
+    x_(Teuchos::null), g_(Teuchos::null), scratch_(Teuchos::null),
+    mu_(mu), nfval_(0), ngval_(0), fval_(0.0), gnorm_(0.0),
+    hasBoundConstraint_(true)  { 
+
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    
+    x_ = Teuchos::rcp_static_cast<PV>(xpv.clone());
+    g_ = Teuchos::rcp_static_cast<PV>(xpv.dual().clone());
+   
+    scratch_ = g_->get(OPT).clone();
+  }
+ 
+                      
+
+
   void updatePenalty( Real mu ) {
     mu_ = mu;
   }
@@ -122,7 +152,11 @@ public:
     Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
     obj_->update(*xo,flag,iter);
-    barrier_->update(*xs,flag,iter);
+    slack_barrier_->update(*xs,flag,iter);
+
+    if(hasBoundConstraint_) {
+      bc_barrier_->update(*xo,flag,iter); 
+    } 
 
   }
 
@@ -139,13 +173,22 @@ public:
     Teuchos::RCP<const V> xo = xpv.get(OPT);    
     Teuchos::RCP<const V> xs = xpv.get(SLACK);
 
+    Real val = 0;
+
     // Compute objective function value
     fval_ = obj_->value(*xo,tol);  
-    Real pval = barrier_->value(*xs,tol);
+    Real pval = slack_barrier_->value(*xs,tol);
+
+    val = fval_ + mu_*pval;
+
+    if( hasBoundConstraint_ ) {
+      Real bval = bc_barrier_->value(*xo,tol);
+      val += mu_*bval;
+    }
 
     ++nfval_;
 
-    return fval_+mu_*pval; 
+    return val; 
   }
 
   Real getObjectiveValue() {
@@ -173,7 +216,14 @@ public:
       Teuchos::RCP<V> gs = gpv.get(SLACK); 
  
       obj_->gradient(*go,*xo,tol);
-      barrier_->gradient(*gs,*xs,tol);
+
+      if( hasBoundConstraint_ ) {
+        bc_barrier_->gradient(*scratch_,*xo,tol);
+        scratch_->scale(mu_);
+        go->plus(*scratch_);
+      }
+
+      slack_barrier_->gradient(*gs,*xs,tol);
       gs->scale(mu_);
       
       g_->set(g);
@@ -221,7 +271,15 @@ public:
     RCP<V> hvs = hvpv.get(SLACK);
 
     obj_->hessVec(*hvo, *vo, *xo, tol);
-    barrier_->hessVec(*hvs, *vs, *xs, tol);
+
+    if( hasBoundConstraint_ ) {
+      bc_barrier_->hessVec(*scratch_,*vo,*xo,tol);
+      scratch_->scale(mu_);
+      hvo->plus(*scratch_);
+  
+    }
+
+    slack_barrier_->hessVec(*hvs, *vs, *xs, tol);
     hvs->scale(mu_);
    
   }
