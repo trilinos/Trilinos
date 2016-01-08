@@ -6775,65 +6775,80 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
 }
 
 
-bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
+void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
                                                                  const stk::mesh::EntityVector& deletedSides,
                                                                  stk::mesh::ElemElemGraph &elementGraph,
                                                                  const stk::mesh::EntityVector &killedElements,
                                                                  stk::mesh::Part* activePart)
 {
-    if(this->in_synchronized_state())
+    if(!in_synchronized_state())
     {
-        return false;
-    }
-
-    for(size_t i = 0; i < deletedSides.size(); ++i)
-    {
-        ThrowAssertMsg(this->entity_rank(deletedSides[i]) == mesh_meta_data().side_rank(), "ERROR, modification_end_for_face_deletion only handles faces");
-    }
-
-    ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
-
-    ThrowAssertMsg(this->add_fmwk_data() || stk::mesh::impl::check_no_shared_elements_or_higher(*this)==0,
-            "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
-
-    if(parallel_size() > 1)
-    {
-        delete_sides_on_all_procs(deletedSides);
-        set_shared_owned_parts_and_ownership_on_comm_data(shared_modified);
-
-        if(activePart!=nullptr)
+        for(size_t i = 0; i < deletedSides.size(); ++i)
         {
-            de_induce_parts_from_nodes(killedElements, *activePart);
-            remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
+            ThrowAssertMsg(entity_rank(deletedSides[i]) == mesh_meta_data().side_rank(), "ERROR, modification_end_for_face_deletion only handles faces");
         }
 
-        internal_resolve_shared_modify_delete();
-        internal_resolve_shared_part_membership_for_element_death();
+        ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-        if(is_automatic_aura_on())
+        ThrowAssertMsg(add_fmwk_data() || stk::mesh::impl::check_no_shared_elements_or_higher(*this)==0,
+                "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+
+        if(parallel_size() > 1)
         {
-            bool connectFacesToPreexistingGhosts = false;
-            resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
+            delete_sides_on_all_procs(deletedSides);
+            set_shared_owned_parts_and_ownership_on_comm_data(shared_modified);
+        }
+
+        de_induce_parts_from_nodes(killedElements, *activePart);
+        remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
+
+        if(parallel_size() > 1)
+        {
+            bool connectFacesToPreexistingGhosts = true;
+            internal_resolve_sharing_and_ghosting_for_sides(connectFacesToPreexistingGhosts);
         }
 
         m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
-        check_mesh_consistency();
-    }
-    else
-    {
-        if(activePart!=nullptr)
-        {
-            this->de_induce_parts_from_nodes(killedElements, *activePart);
-            this->remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
-        }
-        m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
-    }
 
-    // -----------------------
-    this->internal_finish_modification_end(impl::MeshModification::MOD_END_SORT);
-    return true;
+        if(parallel_size() > 1)
+            check_mesh_consistency();
+
+        internal_finish_modification_end(impl::MeshModification::MOD_END_SORT);
+    }
 }
 
+void BulkData::internal_resolve_sharing_and_ghosting_for_sides(bool connectFacesToPreexistingGhosts)
+{
+    internal_resolve_shared_modify_delete();
+    internal_resolve_shared_part_membership_for_element_death();
+    if(is_automatic_aura_on())
+        resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(),
+                                                                      mesh_meta_data().universal_part(),
+                                                                      connectFacesToPreexistingGhosts);
+}
+
+void BulkData::make_mesh_parallel_consistent_after_skinning(const std::vector<sharing_info>& sharedModified)
+{
+    if(!in_synchronized_state())
+    {
+        ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+
+        if(parallel_size() > 1)
+        {
+            set_shared_owned_parts_and_ownership_on_comm_data(sharedModified);
+
+            bool connectFacesToPreexistingGhosts = false;
+            internal_resolve_sharing_and_ghosting_for_sides(connectFacesToPreexistingGhosts);
+        }
+
+        m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
+
+        if(parallel_size() > 1)
+            check_mesh_consistency();
+
+        internal_finish_modification_end(impl::MeshModification::MOD_END_SORT);
+    }
+}
 
 void BulkData::remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart)
 {

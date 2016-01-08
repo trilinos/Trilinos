@@ -2098,8 +2098,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
             create_side_entities(exposedSides, localId, skinParts, sharedModified, skinnedElements);
         }
     }
-    stk::mesh::EntityVector deletedEntities;
-    m_bulk_data.make_mesh_parallel_consistent_after_element_death(sharedModified, deletedEntities, *this, skinnedElements);
+    m_bulk_data.make_mesh_parallel_consistent_after_skinning(sharedModified);
 }
 
 void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,

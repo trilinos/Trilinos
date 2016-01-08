@@ -722,12 +722,13 @@ public:
 
 protected: //functions
 
-  bool make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
+  void make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
                                                          stk::mesh::Part* activePart = nullptr);
 
+  void make_mesh_parallel_consistent_after_skinning(const std::vector<sharing_info>& sharedModified);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
                                              stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
@@ -1048,6 +1049,8 @@ private: //functions
                                         const std::vector<EntityKey> & remove_receive);
 
   void delete_unneeded_entries_from_the_comm_list();
+
+  void internal_resolve_sharing_and_ghosting_for_sides(bool connectFacesToPreexistingGhosts);
 
 #ifdef __CUDACC__
 public:
