@@ -99,17 +99,20 @@ namespace Xpetra {
 
     //! Basic MultiVector constuctor.
     EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! MultiVector copy constructor.
     EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! MultiVector destructor.
@@ -261,7 +264,10 @@ namespace Xpetra {
     //@{
 
     //! EpetraMultiVectorT constructor to wrap a Epetra_MultiVector object
-    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) { } //TODO removed const
+    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) { //TODO removed const
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+    }
 
     //! Get the underlying Epetra multivector
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return Teuchos::null; }

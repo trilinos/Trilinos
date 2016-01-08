@@ -178,7 +178,10 @@ public:
   //@{
 
   //! EpetraMultiVectorT constructor to wrap a Epetra_Vector object
-  EpetraVectorT(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVectorT<GlobalOrdinal, Node>(vec) { } // TODO: removed const of Epetra::Vector
+  EpetraVectorT(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVectorT<GlobalOrdinal, Node>(vec) { // TODO: removed const of Epetra::Vector
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
 
   //! Get the underlying Epetra vector
   Epetra_Vector * getEpetra_Vector() const { return NULL; /*return (*this->EpetraMultiVectorT<GlobalOrdinal, Node>::getEpetra_MultiVector())(0);*/ }

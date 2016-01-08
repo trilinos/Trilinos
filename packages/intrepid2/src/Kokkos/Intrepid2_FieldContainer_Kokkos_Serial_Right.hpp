@@ -62,7 +62,7 @@ index_type sizeValue=0;
 index_type count_=1;
 bool intepidManaged=true;
 public:
-
+FieldContainer_Kokkos()= default;
 
 
 FieldContainer_Kokkos(index_type dim_0);
@@ -283,6 +283,8 @@ containerMemory=InContainer.ptr_on_device();
 
 typedef Kokkos::Serial execution_space;
 
+Scalar& operator[] (const index_type i0);
+
 Scalar& operator() (const index_type i0);
 
 Scalar& operator() (const index_type i0, const index_type i1);
@@ -305,6 +307,8 @@ Scalar& operator() (const index_type i0, const index_type i1, const index_type i
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6, const index_type i7);
+
+Scalar& operator[] (const index_type i0)const;
 
 Scalar& operator() (const index_type i0)const;
 
@@ -516,6 +520,11 @@ containerMemory=new Scalar[sizeValue];
 
 
 template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::operator[] (const index_type i0){
+return containerMemory[i0];
+}
+
+template <class Scalar>
 inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::operator() (const index_type i0){
 return containerMemory[i0];
 }
@@ -550,6 +559,11 @@ return containerMemory[(((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6
 template <class Scalar>
 inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7){
 return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6)*dim7+i7];
+}
+
+template <class Scalar>
+inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::operator[] (const index_type i0)const{
+return containerMemory[i0];
 }
 
 template <class Scalar>

@@ -85,12 +85,14 @@ public:
   //@{
   //! Constructor specifying fixed number of entries for each row.
   EpetraCrsGraphT(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
 
   //! Constructor specifying column Map and fixed number of entries for each row.
   EpetraCrsGraphT(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=null) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
 
   ////! Constructor specifying column Map and number of entries in each row.
@@ -264,7 +266,8 @@ public:
 
   //! EpetraCrsGraphT constructor to wrap a Epetra_CrsGraph object
   EpetraCrsGraphT(const Teuchos::RCP<Epetra_CrsGraph> &graph) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with Node=EpetraNode.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
 
   //! Get the underlying Epetra graph
