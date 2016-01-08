@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid2 Package
+//                           Intrepid Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -46,8 +46,8 @@
 \author Created by P. Bochev and D. Ridzal.
 */
 
-#include "Intrepid2_RealSpaceTools.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Intrepid_RealSpaceTools.hpp"
+#include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -55,12 +55,12 @@
 
 
 using namespace std;
-using namespace Intrepid2;
+using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- Kokkos::initialize();
+
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -96,10 +96,10 @@ int main(int argc, char *argv[]) {
 
 
   int errorFlag = 0;
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 49;
-#ifndef HAVE_INTREPID2_DEBUG_INF_CHECK
+#ifndef HAVE_INTREPID_DEBUG_INF_CHECK
   endThrowNumber = beginThrowNumber + 44;
 #endif
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> a_10_2_3(10, 2, 3);
     FieldContainer<double> a_10_2_2_3(10, 2, 2, 3);
 
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
 
     *outStream << "-> vector norm with multidimensional arrays:\n";
 
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> b_10_15_3(10, 15, 3);
     
    
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
 
     *outStream << "-> inverse with multidimensional arrays:\n";
 
@@ -614,7 +614,7 @@ int main(int argc, char *argv[]) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-#ifdef HAVE_INTREPID2_DEBUG
+#ifdef HAVE_INTREPID_DEBUG
   if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
 #endif
@@ -999,6 +999,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
- Kokkos::finalize();
+
   return errorFlag;
 }

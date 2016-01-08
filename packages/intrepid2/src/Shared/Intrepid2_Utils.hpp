@@ -338,8 +338,8 @@ void getAnalytic(Scalar * testMat,
   template<class Array>
   bool requireRankRange(std::string&   errmsg,
                         const Array&   array,
-                        const int      lowerBound,
-                        const int      upperBound);
+                        const index_type      lowerBound,
+                        const index_type      upperBound);
 
 
 
@@ -371,9 +371,9 @@ void getAnalytic(Scalar * testMat,
   template<class Array>
   bool requireDimensionRange(std::string&  errmsg,
                              const Array&  array,
-                             const int     dim,
-                             const int     lowerBound,
-                             const int     upperBound);
+                             const index_type     dim,
+                             const index_type     lowerBound,
+                             const index_type     upperBound);
 
 
 
@@ -390,9 +390,9 @@ void getAnalytic(Scalar * testMat,
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
                              const Array1&  array1,
-                             const int      a1_dim0,
+                             const index_type      a1_dim0,
                              const Array2&  array2,
-                             const int      a2_dim0);
+                             const index_type      a2_dim0);
 
 
 
@@ -411,9 +411,9 @@ void getAnalytic(Scalar * testMat,
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
                              const Array1&  array1,
-                             const int      a1_dim0, const int a1_dim1,
+                             const index_type      a1_dim0, const index_type a1_dim1,
                              const Array2&  array2,
-                             const int      a2_dim0, const int a2_dim1);
+                             const index_type      a2_dim0, const index_type a2_dim1);
 
 
 
@@ -434,9 +434,9 @@ void getAnalytic(Scalar * testMat,
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
                              const Array1&  array1,
-                             const int      a1_dim0, const int a1_dim1, const int a1_dim2,
+                             const index_type      a1_dim0, const index_type a1_dim1, const index_type a1_dim2,
                              const Array2&  array2,
-                             const int      a2_dim0, const int a2_dim1, const int a2_dim2);
+                             const index_type      a2_dim0, const index_type a2_dim1, const index_type a2_dim2);
 
 
 
@@ -459,9 +459,9 @@ void getAnalytic(Scalar * testMat,
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
                              const Array1&  array1,
-                             const int      a1_dim0, const int a1_dim1, const int a1_dim2, const int a1_dim3,
+                             const index_type      a1_dim0, const index_type a1_dim1, const index_type a1_dim2, const index_type a1_dim3,
                              const Array2&  array2,
-                             const int      a2_dim0, const int a2_dim1, const int a2_dim2, const int a2_dim3);
+                             const index_type      a2_dim0, const index_type a2_dim1, const index_type a2_dim2, const index_type a2_dim3);
 
 
 
@@ -486,11 +486,11 @@ void getAnalytic(Scalar * testMat,
   template<class Array1, class Array2>
   bool requireDimensionMatch(std::string&   errmsg,
                              const Array1&  array1,
-                             const int      a1_dim0, const int a1_dim1,
-                             const int      a1_dim2, const int a1_dim3, const int a1_dim4,
+                             const index_type      a1_dim0, const index_type a1_dim1,
+                             const index_type      a1_dim2, const index_type a1_dim3, const index_type a1_dim4,
                              const Array2&  array2,
-                             const int      a2_dim0, const int a2_dim1,
-                             const int      a2_dim2, const int a2_dim3, const int a2_dim4);
+                             const index_type      a2_dim0, const index_type a2_dim1,
+                             const index_type      a2_dim2, const index_type a2_dim3, const index_type a2_dim4);
 
 
 

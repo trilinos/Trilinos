@@ -64,7 +64,7 @@ struct Void {
 };
 
 
-typedef int index_type;
+typedef Kokkos::DefaultExecutionSpace::size_type index_type;
 
 template<class T, class U = void>
 struct conditional_eSpace {

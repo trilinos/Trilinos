@@ -393,7 +393,8 @@ Kokkos::initialize();
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
-    try {
+std::cout <<"hello"<<std::endl;    
+try {
       rst::inverse(b_1_1, a_1_1);
     }
     catch (std::logic_error err) {
@@ -401,6 +402,7 @@ Kokkos::initialize();
       *outStream << err.what() << '\n';
       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     };
+std::cout <<"hello2"<<std::endl;
     try {
       rst::inverse(b_2_2, a_2_2);
     }

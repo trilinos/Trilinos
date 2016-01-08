@@ -48,7 +48,73 @@
 struct foo {
   typedef Kokkos::DefaultExecutionSpace execution_space ;
 };
+
+
+
 namespace Intrepid2 {
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldScalar_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldScalar_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ 
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+              } // P-loop
+              outputFields(cl, lbf, rbf) += tmpVal;
+            } // R-loop
+          } // L-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldScalar_no_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldScalar_no_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += leftFields(cl, lbf, qp)*rightFields(cl, rbf, qp);
+              } // P-loop
+              outputFields(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+
+   }
+};
+
+
 template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
 void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFields,
                                           const ArrayInFieldsLeft &   leftFields,
@@ -56,7 +122,6 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
                                           const ECompEngine           compEngine,                                          
                                           const bool                  sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 3 ), std::invalid_argument,
@@ -83,39 +148,87 @@ void ArrayTools::contractFieldFieldScalar(ArrayOutFields &            outputFiel
   ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>leftFieldsWrap(leftFields);
   ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
   // get sizes
-  int numCells        = leftFields.dimension(0);
-  int numLeftFields   = leftFields.dimension(1);
-  int numRightFields  = rightFields.dimension(1);
-  int numPoints       = leftFields.dimension(2);
+  index_type numCells        = leftFields.dimension(0);
 
 
       if (sumInto) {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
-              } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
-            } // R-loop
-          } // L-loop
-        }); // C-loop
+
+Kokkos::parallel_for (numCells, contractFieldFieldScalar_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));
       }
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
+  Kokkos::parallel_for (numCells, contractFieldFieldScalar_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));    
+}
+} // end contractFieldFieldScalar
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldVector_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldVector_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+  index_type dimVec          = leftFields.dimension(3);
+
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += leftFieldsWrap(cl, lbf, qp)*rightFieldsWrap(cl, rbf, qp);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                } //D-loop
               } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
+              outputFields(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        }); // C-loop
-      }
-} // end contractFieldFieldScalar
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldVector_no_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldVector_no_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+  index_type dimVec          = leftFields.dimension(3);
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                  tmpVal += leftFields(cl, lbf, qp, iVec)*rightFields(cl, rbf, qp, iVec);
+                } //D-loop
+              } // P-loop
+              outputFields(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+
+
+   }
+};
 
 
 template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
@@ -125,7 +238,6 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
                                           const ECompEngine           compEngine,
                                           const bool                  sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 4 ), std::invalid_argument,
@@ -155,44 +267,95 @@ void ArrayTools::contractFieldFieldVector(ArrayOutFields &            outputFiel
   ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
-  int numCells        = leftFields.dimension(0);
-  int numLeftFields   = leftFields.dimension(1);
-  int numRightFields  = rightFields.dimension(1);
-  int numPoints       = leftFields.dimension(2);
-  int dimVec          = leftFields.dimension(3);
+  index_type numCells        = leftFields.dimension(0);
 
 
       if (sumInto) {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
-                } //D-loop
-              } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
-            } // R-loop
-          } // L-loop
-        }); // C-loop
+Kokkos::parallel_for (numCells, contractFieldFieldVector_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));
       }
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
+Kokkos::parallel_for (numCells, contractFieldFieldVector_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));      
+
+}
+} // end contractFieldFieldVector
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldTensor_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldTensor_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+  index_type dim1Tensor      = leftFields.dimension(3);
+  index_type dim2Tensor      = leftFields.dimension(4);
+
+
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
               Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                for (int iVec = 0; iVec < dimVec; iVec++) {
-                  tmpVal += leftFieldsWrap(cl, lbf, qp, iVec)*rightFieldsWrap(cl, rbf, qp, iVec);
-                } //D-loop
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                for (index_type iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+                  for (index_type iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                  } // D2-loop
+                } // D1-loop
               } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
+              outputFields(cl, lbf, rbf) += tmpVal;
             } // R-loop
           } // L-loop
-        }); // C-loop
-      }
-} // end contractFieldFieldVector
+
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInFieldsLeftWrap,class ArrayInFieldsRightWrap,class ArrayOutFields>
+struct contractFieldFieldTensor_no_suminto {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInFieldsLeftWrap leftFields;
+  ArrayInFieldsRightWrap rightFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractFieldFieldTensor_no_suminto (ArrayOutFieldsWrap outputFields_, ArrayInFieldsLeftWrap leftFields_, ArrayInFieldsRightWrap rightFields_) :
+    outputFields (outputFields_),leftFields (leftFields_),rightFields(rightFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numLeftFields   = leftFields.dimension(1);
+  index_type numRightFields  = rightFields.dimension(1);
+  index_type numPoints       = leftFields.dimension(2);
+  index_type dim1Tensor      = leftFields.dimension(3);
+  index_type dim2Tensor      = leftFields.dimension(4);
+
+          for (index_type lbf = 0; lbf < numLeftFields; lbf++) {
+            for (index_type rbf = 0; rbf < numRightFields; rbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                for (index_type iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+                  for (index_type iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                    tmpVal += leftFields(cl, lbf, qp, iTens1, iTens2)*rightFields(cl, rbf, qp, iTens1, iTens2);
+                  } // D2-loop
+                } // D1-loop
+              } // P-loop
+              outputFields(cl, lbf, rbf) = tmpVal;
+            } // R-loop
+          } // L-loop
+
+
+   }
+};
 
     
 template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
@@ -202,7 +365,6 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
                                           const ECompEngine           compEngine,
                                           const bool                  sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(leftFields)  != 5 ), std::invalid_argument,
@@ -234,49 +396,132 @@ void ArrayTools::contractFieldFieldTensor(ArrayOutFields &            outputFiel
   ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>rightFieldsWrap(rightFields);
 
   // get sizes
-  int numCells        = leftFields.dimension(0);
-  int numLeftFields   = leftFields.dimension(1);
-  int numRightFields  = rightFields.dimension(1);
-  int numPoints       = leftFields.dimension(2);
-  int dim1Tensor      = leftFields.dimension(3);
-  int dim2Tensor      = leftFields.dimension(4);
+  index_type numCells        = leftFields.dimension(0);
 
       if (sumInto) {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
-                  for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
-                  } // D2-loop
-                } // D1-loop
-              } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) += tmpVal;
-            } // R-loop
-          } // L-loop
-        }); // C-loop
-      }
+      
+Kokkos::parallel_for (numCells, contractFieldFieldTensor_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));
+}
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          for (int lbf = 0; lbf < numLeftFields; lbf++) {
-            for (int rbf = 0; rbf < numRightFields; rbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
-                  for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                    tmpVal += leftFieldsWrap(cl, lbf, qp, iTens1, iTens2)*rightFieldsWrap(cl, rbf, qp, iTens1, iTens2);
-                  } // D2-loop
-                } // D1-loop
-              } // P-loop
-              outputFieldsWrap(cl, lbf, rbf) = tmpVal;
-            } // R-loop
-          } // L-loop
-        }); // C-loop
-      }
+      Kokkos::parallel_for (numCells, contractFieldFieldTensor_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInFieldsLeft, Rank<ArrayInFieldsLeft>::value, true>, ArrayWrapper<Scalar,ArrayInFieldsRight, Rank<ArrayInFieldsRight>::value, true>,  ArrayOutFields> (outputFieldsWrap,leftFieldsWrap, rightFieldsWrap));
+
+}
 } // end contractFieldFieldTensor
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldScalar_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldScalar_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+          for (index_type lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+              } // P-loop
+              outputFields(cl, lbf) += tmpVal;
+            } // F-loop
+
+
+   }
+};
     
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldScalar_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldScalar_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+
+            for (index_type lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+              } // P-loop
+              outputFields(cl, lbf) += tmpVal;
+            } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldScalar_no_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldScalar_no_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+
+            for (index_type lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, qp);
+              } // P-loop
+              outputFields(cl, lbf) = tmpVal;
+            } // F-loop
+
+   }
+};
+    
+ template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldScalar_no_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldScalar_no_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+            for (index_type lbf = 0; lbf < numFields; lbf++) {
+              Scalar tmpVal(0);
+              for (index_type qp = 0; qp < numPoints; qp++) {
+                tmpVal += inputFields(cl, lbf, qp)*inputData(cl, 0);
+              } // P-loop
+              outputFields(cl, lbf) = tmpVal;
+            } // F-loop
+
+
+   }
+};
+
+
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
 void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
@@ -286,7 +531,6 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
                                          const bool             sumInto) {
 
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 3 ), std::invalid_argument,
@@ -312,62 +556,166 @@ void ArrayTools::contractDataFieldScalar(ArrayOutFields &       outputFields,
   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
-  int numCells       = inputFields.dimension(0);
-  int numFields      = inputFields.dimension(1);
-  int numPoints      = inputFields.dimension(2);
-  int numDataPoints  = inputData.dimension(1);
-
+  index_type numCells       = inputFields.dimension(0);
+  index_type numDataPoints  = inputData.dimension(1);
 
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-            for (int lbf = 0; lbf < numFields; lbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
-              } // P-loop
-              outputFieldsWrap(cl, lbf) += tmpVal;
-            } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldScalar_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-            for (int lbf = 0; lbf < numFields; lbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
-              } // P-loop
-              outputFieldsWrap(cl, lbf) += tmpVal;
-            } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldScalar_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-            for (int lbf = 0; lbf < numFields; lbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, qp);
-              } // P-loop
-              outputFieldsWrap(cl, lbf) = tmpVal;
-            } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldScalar_no_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-            for (int lbf = 0; lbf < numFields; lbf++) {
-              Scalar tmpVal(0);
-              for (int qp = 0; qp < numPoints; qp++) {
-                tmpVal += inputFieldsWrap(cl, lbf, qp)*inputDataWrap(cl, 0);
-              } // P-loop
-              outputFieldsWrap(cl, lbf) = tmpVal;
-            } // F-loop
-          }); // C-loop
-        } // numDataPoints
+Kokkos::parallel_for (numCells, contractDataFieldScalar_no_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+       } // numDataPoints
       }
     
 } // end contractDataFieldScalar
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldVector_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldVector_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dimVec         = inputFields.dimension(3);
+
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                  } // D-loop
+                } // P-loop
+                outputFields(cl, lbf) += tmpVal;
+              } // F-loop
+
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldVector_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldVector_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dimVec         = inputFields.dimension(3);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                  } //D-loop
+                } // P-loop
+                outputFields(cl, lbf) += tmpVal;
+              } // F-loop
+
+
+
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldVector_no_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldVector_no_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dimVec         = inputFields.dimension(3);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, qp, iVec);
+                  } // D-loop
+                } // P-loop
+                outputFields(cl, lbf) = tmpVal;
+              } // F-loop
+
+
+   }
+};
+
+ template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldVector_no_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldVector_no_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+            
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dimVec         = inputFields.dimension(3);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iVec = 0; iVec < dimVec; iVec++) {
+                    tmpVal += inputFields(cl, lbf, qp, iVec)*inputData(cl, 0, iVec);
+                  } //D-loop
+                } // P-loop
+                outputFields(cl, lbf) = tmpVal;
+              } // F-loop
+
+
+
+   }
+};
+
 
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
@@ -377,7 +725,6 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
                                          const ECompEngine      compEngine,
                                          const bool             sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 4 ), std::invalid_argument,
@@ -406,69 +753,173 @@ void ArrayTools::contractDataFieldVector(ArrayOutFields &      outputFields,
   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
-  int numCells       = inputFields.dimension(0);
-  int numFields      = inputFields.dimension(1);
-  int numPoints      = inputFields.dimension(2);
-  int dimVec         = inputFields.dimension(3);
-  int numDataPoints  = inputData.dimension(1);
-
+  index_type numCells       = inputFields.dimension(0);
+  index_type numDataPoints  = inputData.dimension(1);
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
-                  } // D-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) += tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldVector_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
-                  } //D-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) += tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldVector_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, qp, iVec);
-                  } // D-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) = tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldVector_no_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iVec = 0; iVec < dimVec; iVec++) {
-                    tmpVal += inputFieldsWrap(cl, lbf, qp, iVec)*inputDataWrap(cl, 0, iVec);
-                  } //D-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) = tmpVal;
-              } // F-loop
-          }); // C-loop
-        } // numDataPoints
+Kokkos::parallel_for (numCells, contractDataFieldVector_no_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+       } // numDataPoints
       }
+
+
+
  } // end contractDataFieldVector
+
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldTensor_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldTensor_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dim1Tens       = inputFields.dimension(3);
+  index_type dim2Tens       = inputFields.dimension(4);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (index_type iTens2 =0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputFields(cl, lbf) += tmpVal;
+              } // F-loop
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldTensor_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldTensor_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dim1Tens       = inputFields.dimension(3);
+  index_type dim2Tens       = inputFields.dimension(4);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputFields(cl, lbf) += tmpVal;
+              } // F-loop
+
+
+
+   }
+};
+
+template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldTensor_no_suminto_nonconst {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldTensor_no_suminto_nonconst (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dim1Tens       = inputFields.dimension(3);
+  index_type dim2Tens       = inputFields.dimension(4);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (index_type iTens2 =0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, qp, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputFields(cl, lbf) = tmpVal;
+              } // F-loop
+
+
+   }
+};
+
+ template <class Scalar,class ArrayOutFieldsWrap,class ArrayInDataWrap,class ArrayInFieldsWrap,class ArrayOutFields>
+struct contractDataFieldTensor_no_suminto_const {
+  ArrayOutFieldsWrap outputFields;
+  ArrayInDataWrap inputData;
+  ArrayInFieldsWrap inputFields;
+typedef typename conditional_eSpace<ArrayOutFields>::execution_space execution_space;
+  contractDataFieldTensor_no_suminto_const (ArrayOutFieldsWrap outputFields_, ArrayInDataWrap inputData_, ArrayInFieldsWrap inputFields_) :
+    outputFields (outputFields_),inputData (inputData_),inputFields(inputFields_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+  index_type numFields      = inputFields.dimension(1);
+  index_type numPoints      = inputFields.dimension(2);
+  index_type dim1Tens       = inputFields.dimension(3);
+  index_type dim2Tens       = inputFields.dimension(4);
+
+              for (index_type lbf = 0; lbf < numFields; lbf++) {
+                Scalar tmpVal(0);
+                for (index_type qp = 0; qp < numPoints; qp++) {
+                  for (index_type iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
+                    for (index_type iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
+                      tmpVal += inputFields(cl, lbf, qp, iTens1, iTens2)*inputData(cl, 0, iTens1, iTens2);
+                    } // D2-loop
+                  } // D1-loop
+                } // P-loop
+                outputFields(cl, lbf) = tmpVal;
+              } // F-loop
+
+
+
+   }
+};
 
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
@@ -478,7 +929,6 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
                                          const ECompEngine           compEngine,
                                          const bool             sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutFields>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputFields)  != 5 ), std::invalid_argument,
@@ -508,79 +958,78 @@ void ArrayTools::contractDataFieldTensor(ArrayOutFields &       outputFields,
   ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>inputFieldsWrap(inputFields);
 
   // get sizes
-  int numCells       = inputFields.dimension(0);
-  int numFields      = inputFields.dimension(1);
-  int numPoints      = inputFields.dimension(2);
-  int dim1Tens       = inputFields.dimension(3);
-  int dim2Tens       = inputFields.dimension(4);
-  int numDataPoints  = inputData.dimension(1);
-
-
+  index_type numCells       = inputFields.dimension(0);
+  index_type numDataPoints  = inputData.dimension(1);
       if (sumInto) {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
-                    } // D2-loop
-                  } // D1-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) += tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldTensor_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
-                    } // D2-loop
-                  } // D1-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) += tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldTensor_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         } // numDataPoints
       }
       else {
         if (numDataPoints != 1) { // nonconstant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for (int iTens2 =0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, qp, iTens1, iTens2);
-                    } // D2-loop
-                  } // D1-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) = tmpVal;
-              } // F-loop
-          }); // C-loop
+Kokkos::parallel_for (numCells, contractDataFieldTensor_no_suminto_nonconst<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+
         }
         else { // constant data
-          Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-              for (int lbf = 0; lbf < numFields; lbf++) {
-                Scalar tmpVal(0);
-                for (int qp = 0; qp < numPoints; qp++) {
-                  for (int iTens1 = 0; iTens1 < dim1Tens; iTens1++) {
-                    for (int iTens2 = 0; iTens2 < dim2Tens; iTens2++) {
-                      tmpVal += inputFieldsWrap(cl, lbf, qp, iTens1, iTens2)*inputDataWrap(cl, 0, iTens1, iTens2);
-                    } // D2-loop
-                  } // D1-loop
-                } // P-loop
-                outputFieldsWrap(cl, lbf) = tmpVal;
-              } // F-loop
-          }); // C-loop
-        } // numDataPoints
+Kokkos::parallel_for (numCells, contractDataFieldTensor_no_suminto_const<Scalar,ArrayWrapper<Scalar,ArrayOutFields, Rank<ArrayOutFields >::value, false>, ArrayWrapper<Scalar,ArrayInData, Rank<ArrayInData>::value, true>, ArrayWrapper<Scalar,ArrayInFields, Rank<ArrayInFields>::value, true>,  ArrayOutFields> (outputFieldsWrap,inputData, inputFields));
+       } // numDataPoints
       }
+
+
+
 } // end contractDataFieldTensor
+
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataScalar_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataScalar_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ 
+  index_type numPoints     = inputDataLeft.dimension(1);
+          Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+          } // P-loop
+          outputData(cl) += tmpVal;
+   }
+};
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataScalar_no_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataScalar_no_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ 
+  index_type numPoints     = inputDataLeft.dimension(1);
+          Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            tmpVal += inputDataLeft(cl, qp)*inputDataRight(cl, qp);
+          } // P-loop
+          outputData(cl) = tmpVal;
+   }
+};
 
 
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
@@ -590,7 +1039,6 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 2 ), std::invalid_argument,
@@ -613,31 +1061,71 @@ void ArrayTools::contractDataDataScalar(ArrayOutData &            outputData,
   ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>inputDataLeftWrap(inputDataLeft);
   ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
  // get sizes
-  int numCells      = inputDataLeft.dimension(0);
-  int numPoints     = inputDataLeft.dimension(1);
+  index_type numCells      = inputDataLeft.dimension(0);
 
       if (sumInto) {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
-          } // P-loop
-          outputDataWrap(cl) += tmpVal;
-        }); // C-loop
+ Kokkos::parallel_for (numCells, contractDataDataScalar_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            tmpVal += inputDataLeftWrap(cl, qp)*inputDataRightWrap(cl, qp);
-          } // P-loop
-          outputDataWrap(cl) = tmpVal;
-        }); // C-loop
+ Kokkos::parallel_for (numCells, contractDataDataScalar_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
     
 
 } // end contractDataDataScalar
 
+
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataVector_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataVector_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+ 
+  index_type numPoints       = inputDataLeft.dimension(1);
+  index_type dimVec          = inputDataLeft.dimension(2);
+
+          Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            for (index_type iVec = 0; iVec < dimVec; iVec++) {
+              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+            } // D-loop
+          } // P-loop
+          outputData(cl) += tmpVal;
+   }
+};
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataVector_no_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataVector_no_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+   index_type numPoints       = inputDataLeft.dimension(1);
+  index_type dimVec          = inputDataLeft.dimension(2);
+          Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            for (index_type iVec = 0; iVec < dimVec; iVec++) {
+              tmpVal += inputDataLeft(cl, qp, iVec)*inputDataRight(cl, qp, iVec);
+            } // D-loop
+          } // P-loop
+          outputData(cl) = tmpVal;
+   }
+};
 
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
 void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
@@ -646,7 +1134,7 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
+
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 3 ), std::invalid_argument,
@@ -673,35 +1161,73 @@ void ArrayTools::contractDataDataVector(ArrayOutData &            outputData,
   ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
 
   // get sizes
-  int numCells        = inputDataLeft.dimension(0);
-  int numPoints       = inputDataLeft.dimension(1);
-  int dimVec          = inputDataLeft.dimension(2);
+  index_type numCells        = inputDataLeft.dimension(0);
 
 
       if (sumInto) {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
-            } // D-loop
-          } // P-loop
-          outputDataWrap(cl) += tmpVal;
-        }); // C-loop
+ Kokkos::parallel_for (numCells, contractDataDataVector_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            for (int iVec = 0; iVec < dimVec; iVec++) {
-              tmpVal += inputDataLeftWrap(cl, qp, iVec)*inputDataRightWrap(cl, qp, iVec);
-            } // D-loop
-          } // P-loop
-          outputDataWrap(cl) = tmpVal;
-        }); // C-loop
+ Kokkos::parallel_for (numCells, contractDataDataVector_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
  } // end contractDataDataVector
 
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataTensor_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataTensor_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+   index_type numPoints       = inputDataLeft.dimension(1);
+   index_type dim1Tensor      = inputDataLeft.dimension(2);
+   index_type dim2Tensor      = inputDataLeft.dimension(3);
+           Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            for (index_type iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+              for (index_type iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+              } // D2-loop
+            } // D1-loop
+          } // P-loop
+          outputData(cl) += tmpVal;
+   }
+};
+template <class Scalar,class ArrayOutDataWrap,class ArrayInDataLeftWrap,class ArrayInDataRightWrap,class ArrayOutData>
+struct contractDataDataTensor_no_suminto {
+  ArrayOutDataWrap outputData;
+  ArrayInDataLeftWrap inputDataLeft;
+  ArrayInDataRightWrap inputDataRight;
+typedef typename conditional_eSpace<ArrayOutData>::execution_space execution_space;
+  contractDataDataTensor_no_suminto (ArrayOutDataWrap outputData_, ArrayInDataLeftWrap inputDataLeft_, ArrayInDataRightWrap inputDataRight_) :
+    outputData (outputData_),inputDataLeft (inputDataLeft_),inputDataRight(inputDataRight_)
+  {}
+
+  // Fill the View with some data.  The parallel_for loop will iterate
+  // over the View's first dimension N.
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const index_type cl) const {
+   index_type numPoints       = inputDataLeft.dimension(1);
+   index_type dim1Tensor      = inputDataLeft.dimension(2);
+   index_type dim2Tensor      = inputDataLeft.dimension(3);
+          Scalar tmpVal(0);
+          for (index_type qp = 0; qp < numPoints; qp++) {
+            for (index_type iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
+              for (index_type iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
+                tmpVal += inputDataLeft(cl, qp, iTens1, iTens2)*inputDataRight(cl, qp, iTens1, iTens2);
+              } // D2-loop
+            } // D1-loop
+          } // P-loop
+          outputData(cl) = tmpVal;
+   }
+};
     
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
 void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
@@ -710,7 +1236,7 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
                                         const ECompEngine           compEngine,
                                         const bool                sumInto) {
 
-  typedef Kokkos::RangePolicy<typename conditional_eSpace<ArrayOutData>::execution_space> range_policy;
+
 
 #ifdef HAVE_INTREPID2_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inputDataLeft)  != 4 ), std::invalid_argument,
@@ -739,37 +1265,15 @@ void ArrayTools::contractDataDataTensor(ArrayOutData &            outputData,
   ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>inputDataRightWrap(inputDataRight);
 
   // get sizes
-  int numCells        = inputDataLeft.dimension(0);
-  int numPoints       = inputDataLeft.dimension(1);
-  int dim1Tensor      = inputDataLeft.dimension(2);
-  int dim2Tensor      = inputDataLeft.dimension(3);
+  index_type numCells        = inputDataLeft.dimension(0);
 
 
-      if (sumInto) { 
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
-              for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
-              } // D2-loop
-            } // D1-loop
-          } // P-loop
-          outputDataWrap(cl) += tmpVal;
-        }); // C-loop
+
+         if (sumInto) {
+ Kokkos::parallel_for (numCells, contractDataDataTensor_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
       else {
-        Kokkos::parallel_for( range_policy(0,numCells), KOKKOS_LAMBDA (const int cl) {
-          Scalar tmpVal(0);
-          for (int qp = 0; qp < numPoints; qp++) {
-            for (int iTens1 = 0; iTens1 < dim1Tensor; iTens1++) {
-              for (int iTens2 = 0; iTens2 < dim2Tensor; iTens2++) {
-                tmpVal += inputDataLeftWrap(cl, qp, iTens1, iTens2)*inputDataRightWrap(cl, qp, iTens1, iTens2);
-              } // D2-loop
-            } // D1-loop
-          } // P-loop
-          outputDataWrap(cl) = tmpVal;
-        }); // C-loop
+ Kokkos::parallel_for (numCells, contractDataDataTensor_no_suminto<Scalar,ArrayWrapper<Scalar,ArrayOutData, Rank<ArrayOutData>::value, false>, ArrayWrapper<Scalar,ArrayInDataLeft, Rank<ArrayInDataLeft>::value, true>, ArrayWrapper<Scalar,ArrayInDataRight, Rank<ArrayInDataRight>::value, true>,  ArrayOutData> (outputDataWrap,inputDataLeftWrap, inputDataRightWrap));
       }
 
  } // end contractDataDataTensor  
