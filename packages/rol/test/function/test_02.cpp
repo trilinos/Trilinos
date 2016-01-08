@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
 
   // Specify interval on which to generate uniform random numbers.
-  RealT left = 0.01, right = 0.9;
+  RealT left = 0.1, right = 0.9;
 
   // *** Test body.
 
