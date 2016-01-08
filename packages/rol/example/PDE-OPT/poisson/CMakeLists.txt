@@ -1,13 +1,18 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
-   ${PROJECT_NAME}_ENABLE_Epetra )
+   ${PROJECT_NAME}_ENABLE_Epetra   AND
+   ${PROJECT_NAME}_ENABLE_Amesos   AND
+   ${PROJECT_NAME}_ENABLE_Tpetra )
+
+  # Need ROL_TpetraMultiVector.hpp
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )

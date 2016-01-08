@@ -41,33 +41,45 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
-    \brief Shows how to solve a steady Burgers' optimal control problem using
-           full-space methods.
+/*! \file  example_01.cpp
+    \brief Shows how to solve the mother problem of PDE-constrained optimization:
 */
 
+#include "Teuchos_Comm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Version.hpp"
+
+#include "ROL_TpetraMultiVector.hpp"
+
 #include <iostream>
 #include <algorithm>
 
-#include "poissondata.hpp"
+#include "data.hpp"
+#include "objective.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
+
+  /*** Initialize communicator. ***/
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank();
+  if ((iprint > 0) && (myRank == 0)) {
     outStream = Teuchos::rcp(&std::cout, false);
-  else
+  }
+  else {
     outStream = Teuchos::rcp(&bhs, false);
+  }
 
   int errorFlag  = 0;
 
@@ -76,12 +88,39 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    PoissonData<RealT> pdata(*parlist);
+    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
+
+    /*** Build vectors and dress them up as ROL vectors. ***/
+    Teuchos::RCP<const Tpetra::Map<> > vecmap = data->getMatA()->getRowMap();
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    // Set all values to 1 in u and z.
+    u_rcp->putScalar(1.0);
+    z_rcp->putScalar(1.0);
+    // Randomize d vectors.
+    du_rcp->randomize();
+    dz_rcp->randomize();
+    // Create ROL::TpetraMultiVectors.
+    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    // Create ROL SimOpt vectors.
+    ROL::Vector_SimOpt<RealT> x(up,zp);
+    ROL::Vector_SimOpt<RealT> d(dup,dzp);
+
+    /*** Build objective function and constraint. ***/
+    Objective_PDEOPT_Poisson<RealT> obj(data, parlist);
+
+    /*** Check functional interface. ***/
+    obj.checkGradient(x,d,true,*outStream);
+    obj.checkHessVec(x,d,true,*outStream);
 
   }
   catch (std::logic_error err) {
