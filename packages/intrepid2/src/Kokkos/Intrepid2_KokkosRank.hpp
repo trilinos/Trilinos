@@ -135,7 +135,7 @@ struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,Kokkos::Impl::ViewSpecializ
 };
 */
 
-template<class DataT,index_type leftrank>
+template<class DataT,int leftrank>
 struct RankSpec{};
 
 template<class DataT>
@@ -212,7 +212,7 @@ inline index_type getrank(DataT& leftvalue){
 //   container (implements operator(), and has view semantics)
 // ArrayRank: -1 if run-time rank, else the compile-time rank
 // isconstant: whether the array is constant
-template<class Scalar,class ArrayType,index_type ArrayRank,bool isconstant>
+template<class Scalar,class ArrayType,int ArrayRank,bool isconstant>
 struct ArrayWrapper;
 
 // -1 means rank is determined at run time.
