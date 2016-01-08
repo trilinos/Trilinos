@@ -982,7 +982,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
         }
     }
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-    bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, &active);
+    bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, active);
     return remote_death_boundary.get_topology_modification_status();
 }
 

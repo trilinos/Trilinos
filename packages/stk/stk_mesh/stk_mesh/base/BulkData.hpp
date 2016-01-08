@@ -726,7 +726,7 @@ protected: //functions
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         stk::mesh::Part* activePart = nullptr);
+                                                         stk::mesh::Part &activePart);
 
   void make_mesh_parallel_consistent_after_skinning(const std::vector<sharing_info>& sharedModified);
 

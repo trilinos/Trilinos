@@ -6775,11 +6775,11 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
 }
 
 
-void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
-                                                                 const stk::mesh::EntityVector& deletedSides,
+void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info> &shared_modified,
+                                                                 const stk::mesh::EntityVector &deletedSides,
                                                                  stk::mesh::ElemElemGraph &elementGraph,
                                                                  const stk::mesh::EntityVector &killedElements,
-                                                                 stk::mesh::Part* activePart)
+                                                                 stk::mesh::Part &activePart)
 {
     if(!in_synchronized_state())
     {
@@ -6799,8 +6799,8 @@ void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
             set_shared_owned_parts_and_ownership_on_comm_data(shared_modified);
         }
 
-        de_induce_parts_from_nodes(killedElements, *activePart);
-        remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
+        de_induce_parts_from_nodes(killedElements, activePart);
+        remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
 
         if(parallel_size() > 1)
         {
