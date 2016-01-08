@@ -30,17 +30,14 @@ public:
     {
     }
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
-                                      impl::ElementSidePair skinnedElemSidePair,
-                                      stk::mesh::EntityVector &skinned_elements);
+                                      impl::ElementSidePair skinnedElemSidePair);
 private:
     stk::mesh::Entity get_entity_for_local_id(stk::mesh::impl::LocalId localId) const;
 
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
-                                              const stk::mesh::GraphEdge &graphEdge,
-                                              stk::mesh::EntityVector skinned_elements);
+                                              const stk::mesh::GraphEdge &graphEdge);
     void connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
-                                             impl::ElementSidePair skinnedElemSidePair,
-                                             stk::mesh::EntityVector &skinned_elements);
+                                             impl::ElementSidePair skinnedElemSidePair);
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Graph &m_graph;
     const stk::mesh::impl::SparseGraph &m_coincidentGraph;

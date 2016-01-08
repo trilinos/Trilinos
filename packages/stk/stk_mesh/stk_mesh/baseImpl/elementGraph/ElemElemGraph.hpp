@@ -225,8 +225,7 @@ private:
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
-                              std::vector<stk::mesh::sharing_info> &shared_modified,
-                              stk::mesh::EntityVector &skinned_elements);
+                              std::vector<stk::mesh::sharing_info> &shared_modified);
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,

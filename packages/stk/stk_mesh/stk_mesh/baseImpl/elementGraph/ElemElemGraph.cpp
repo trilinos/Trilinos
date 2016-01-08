@@ -2081,8 +2081,6 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
     const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
 
     std::vector<stk::mesh::sharing_info> sharedModified;
-    stk::mesh::EntityVector skinnedElements;
-
 
     m_bulk_data.modification_begin();
     for(size_t i=0;i<buckets.size();++i)
@@ -2095,7 +2093,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
             stk::mesh::impl::LocalId localId = get_local_element_id(element);
             std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
             stk::util::sort_and_unique(exposedSides);
-            create_side_entities(exposedSides, localId, skinParts, sharedModified, skinnedElements);
+            create_side_entities(exposedSides, localId, skinParts, sharedModified);
         }
     }
     m_bulk_data.make_mesh_parallel_consistent_after_skinning(sharedModified);
@@ -2104,8 +2102,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
 void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          impl::LocalId localId,
                                          const stk::mesh::PartVector& skinParts,
-                                         std::vector<stk::mesh::sharing_info> &sharedModified,
-                                         stk::mesh::EntityVector &skinnedElements)
+                                         std::vector<stk::mesh::sharing_info> &sharedModified)
 {
     stk::mesh::SideConnector sideConnector = get_side_connector();
     stk::mesh::Entity element = m_local_id_to_element_entity[localId];
@@ -2133,10 +2130,9 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
             newFaceId = m_sideIdPool.get_available_id();
         }
 
-        skinnedElements.push_back(element);
         stk::mesh::Entity sideEntity = add_side_to_mesh({localId, exposedSides[i]}, skinParts, newFaceId);
 
-        sideConnector.connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]}, skinnedElements);
+        sideConnector.connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]});
     }
 }
 
