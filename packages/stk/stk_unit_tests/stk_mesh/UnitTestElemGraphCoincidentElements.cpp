@@ -180,7 +180,7 @@ TEST_F(HexShellShell, Hex0Shell0Shell1Parallel )
     }
 }
 
-TEST_F(HexShellShell, DISABLED_Skin)
+TEST_F(HexShellShell, Skin)
 {
     if(stk::parallel_machine_size(get_comm()) == 2u)
     {

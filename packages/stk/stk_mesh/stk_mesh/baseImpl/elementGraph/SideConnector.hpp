@@ -32,13 +32,8 @@ public:
     void connect_side_to_all_elements(stk::mesh::Entity sideEntity,
                                       impl::ElementSidePair skinnedElemSidePair,
                                       stk::mesh::EntityVector &skinned_elements);
-    bool has_remote_graph_edge(stk::mesh::Entity localEntity,
-                               int side,
-                               stk::mesh::Entity remoteEntity);
-
-
 private:
-    impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id) const;
+    stk::mesh::Entity get_entity_for_local_id(stk::mesh::impl::LocalId localId) const;
 
     void connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
                                               const stk::mesh::GraphEdge &graphEdge,

@@ -981,10 +981,8 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
             }
         }
     }
-
-    stk::mesh::SideConnector sideConnector = elementGraph.get_side_connector();
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-    bulkData.make_mesh_parallel_consistent_after_element_death(sideConnector, shared_modified, deletedEntities, elementGraph, killedElements, &active);
+    bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, &active);
     return remote_death_boundary.get_topology_modification_status();
 }
 
@@ -2085,7 +2083,6 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
     std::vector<stk::mesh::sharing_info> sharedModified;
     stk::mesh::EntityVector skinnedElements;
 
-    stk::mesh::SideConnector sideConnector = get_side_connector();
 
     m_bulk_data.modification_begin();
     for(size_t i=0;i<buckets.size();++i)
@@ -2098,20 +2095,20 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
             stk::mesh::impl::LocalId localId = get_local_element_id(element);
             std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
             stk::util::sort_and_unique(exposedSides);
-            create_side_entities(sideConnector, exposedSides, localId, skinParts, sharedModified, skinnedElements);
+            create_side_entities(exposedSides, localId, skinParts, sharedModified, skinnedElements);
         }
     }
     stk::mesh::EntityVector deletedEntities;
-    m_bulk_data.make_mesh_parallel_consistent_after_element_death(sideConnector, sharedModified, deletedEntities, *this, skinnedElements);
+    m_bulk_data.make_mesh_parallel_consistent_after_element_death(sharedModified, deletedEntities, *this, skinnedElements);
 }
 
-void ElemElemGraph::create_side_entities(stk::mesh::SideConnector &sideConnector,
-                                         const std::vector<int> &exposedSides,
+void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          impl::LocalId localId,
                                          const stk::mesh::PartVector& skinParts,
                                          std::vector<stk::mesh::sharing_info> &sharedModified,
                                          stk::mesh::EntityVector &skinnedElements)
 {
+    stk::mesh::SideConnector sideConnector = get_side_connector();
     stk::mesh::Entity element = m_local_id_to_element_entity[localId];
     for(size_t i=0;i<exposedSides.size();++i)
     {

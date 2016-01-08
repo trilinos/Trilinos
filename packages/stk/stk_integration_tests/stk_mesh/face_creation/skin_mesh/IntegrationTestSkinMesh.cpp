@@ -131,71 +131,10 @@ void filter_test_case(TestCaseData& test_cases, const std::string& filename)
 
 void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
-    if(stk::mesh::BulkData::AUTO_AURA == auraOption)
-    {
-        filter_test_case(test_cases, "ADe.e");
-        filter_test_case(test_cases, "ADeRA.e");
-        filter_test_case(test_cases, "ADReB.e");
-        filter_test_case(test_cases, "ADeRB.e");
-        filter_test_case(test_cases, "ALA.e");
-        filter_test_case(test_cases, "ALB.e");
-        filter_test_case(test_cases, "ALJ.e");
-        filter_test_case(test_cases, "ALReB.e");
-        filter_test_case(test_cases, "ALe.e");
-        filter_test_case(test_cases, "ALeRA.e");
-        filter_test_case(test_cases, "ARA.e");
-        filter_test_case(test_cases, "ARB.e");
-        filter_test_case(test_cases, "ARReB.e");
-        filter_test_case(test_cases, "ARe.e");
-        filter_test_case(test_cases, "AReLB.e");
-        filter_test_case(test_cases, "AReRA.e");
-        filter_test_case(test_cases, "AReRB.e");
-        filter_test_case(test_cases, "Aef.e");
-        return;
-
-
-
-        filter_test_case(test_cases, "Aef.e");
-
-        filter_test_case(test_cases, "ALefRA.e");
-        filter_test_case(test_cases, "ARefLA.e");
-        filter_test_case(test_cases, "AeDfA.e");
-        filter_test_case(test_cases, "ADReA.e");
-
-        // Fails with 3+ procs
-        filter_test_case(test_cases, "ADeLB.e");
-        filter_test_case(test_cases, "ALeDfRA.e");
-        filter_test_case(test_cases, "ALeDfRB.e");
-        filter_test_case(test_cases, "ALeLB.e");
-        filter_test_case(test_cases, "AReDA.e");
-        filter_test_case(test_cases, "AReDB.e");
-
-        filter_test_case(test_cases, "ADReB.e");
-        filter_test_case(test_cases, "ADe.e");
-        filter_test_case(test_cases, "ADeLA.e");
-        filter_test_case(test_cases, "ADeRA.e");
-        filter_test_case(test_cases, "ADeRB.e");
-        filter_test_case(test_cases, "ALA.e");
-        filter_test_case(test_cases, "ALB.e");
-        filter_test_case(test_cases, "ALJ.e");
-        filter_test_case(test_cases, "ALReA.e");
-        filter_test_case(test_cases, "ALReB.e");
-        filter_test_case(test_cases, "ALe.e");
-        filter_test_case(test_cases, "ALeLA.e");
-        filter_test_case(test_cases, "ALeRA.e");
-        filter_test_case(test_cases, "ARA.e");
-        filter_test_case(test_cases, "ARB.e");
-
-        // These fail with AURA in debug
-        filter_test_case(test_cases, "ARReA.e");
-        filter_test_case(test_cases, "ARReB.e");
-        filter_test_case(test_cases, "ARe.e");
-        filter_test_case(test_cases, "AReLA.e");
-        filter_test_case(test_cases, "AReLB.e");
-        filter_test_case(test_cases, "AReRA.e");
-        filter_test_case(test_cases, "AReRB.e");
-        filter_test_case(test_cases, "Ae.e");
-    }
+//    if(stk::mesh::BulkData::AUTO_AURA == auraOption)
+//    {
+//        filter_test_case(test_cases, "Aef.e");
+//    }
 }
 
 class SkinnedMesh: public stk::unit_test_util::MeshTestFixture
@@ -230,6 +169,7 @@ protected:
         EXPECT_NO_FATAL_FAILURE(input_from_file(testCase.first, auraOption));
         stk::mesh::Part &skin = run_skin_mesh(get_skin_block_selector());
         EXPECT_EQ(testCase.second, get_global_number_of_skinned_faces(skin));
+        expect_aura_correct(auraOption, testCase.second, skin);
         EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(get_bulk(), get_skin_block_selector(), skin));
     }
 
@@ -254,6 +194,34 @@ private:
         return globalSkinnedCount;
     }
 
+    void expect_ghost_sides_connected_to_ghost_elements(stk::mesh::Part& skin)
+    {
+        stk::mesh::EntityVector ghostSides;
+        stk::mesh::get_selected_entities((get_meta().aura_part() & skin), get_bulk().buckets(get_meta().side_rank()), ghostSides);
+        for(stk::mesh::Entity ghostSide : ghostSides)
+            expect_ghost_side_connected(ghostSide);
+    }
+
+    void expect_aura_correct(stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                             unsigned numGlobalFaces,
+                             stk::mesh::Part& skin)
+    {
+        if(auraOption == stk::mesh::BulkData::AUTO_AURA && stk::mesh::count_selected_entities(get_meta().universal_part(),
+                                                                                              get_bulk().buckets(stk::topology::ELEM_RANK)))
+        {
+            EXPECT_EQ(numGlobalFaces, stk::mesh::count_selected_entities(skin, get_bulk().buckets(get_meta().side_rank())));
+            expect_ghost_sides_connected_to_ghost_elements(skin);
+        }
+    }
+
+    void expect_ghost_side_connected(stk::mesh::Entity ghostSide)
+    {
+        unsigned numConnectedElems = get_bulk().num_elements(ghostSide);
+        EXPECT_TRUE(numConnectedElems > 0);
+        const stk::mesh::Entity* connectedElems = get_bulk().begin_elements(ghostSide);
+        for(unsigned i = 0; i < numConnectedElems; i++)
+            EXPECT_TRUE(get_bulk().bucket(connectedElems[i]).in_aura());
+    }
 };
 
 class ReadMesh: public SkinnedMesh

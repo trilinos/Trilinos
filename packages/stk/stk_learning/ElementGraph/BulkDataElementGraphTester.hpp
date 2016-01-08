@@ -110,7 +110,8 @@ public:
 
             if ( is_automatic_aura_on() )
             {
-              this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part());
+                bool connectFacesToPreexistingGhosts = true;
+                resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
             }
 
             check_mesh_consistency();
