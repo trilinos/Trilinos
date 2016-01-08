@@ -88,6 +88,7 @@ namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk {
 namespace mesh {
 
+class SideConnector;
 class BulkData;
 struct PartStorage;
 enum class FaceCreationBehavior;
@@ -721,7 +722,8 @@ public:
 
 protected: //functions
 
-  bool make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
+  bool make_mesh_parallel_consistent_after_element_death(stk::mesh::SideConnector &sideConnector,
+                                                         const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
@@ -1005,7 +1007,7 @@ protected: //functions
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
 
-  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin, stk::mesh::SideConnector *sideConnector = nullptr);
 
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
@@ -1293,7 +1295,9 @@ private:
 
   void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
                                                                      std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
-                                                                     EntityRank entity_rank, stk::mesh::Selector selected);
+                                                                     EntityRank entity_rank,
+                                                                     stk::mesh::Selector selected,
+                                                                     stk::mesh::SideConnector *sideConnector = nullptr);
 
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
 

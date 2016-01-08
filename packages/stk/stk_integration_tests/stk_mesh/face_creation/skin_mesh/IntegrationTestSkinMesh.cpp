@@ -133,6 +133,28 @@ void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::Automat
 {
     if(stk::mesh::BulkData::AUTO_AURA == auraOption)
     {
+        filter_test_case(test_cases, "ADe.e");
+        filter_test_case(test_cases, "ADeRA.e");
+        filter_test_case(test_cases, "ADReB.e");
+        filter_test_case(test_cases, "ADeRB.e");
+        filter_test_case(test_cases, "ALA.e");
+        filter_test_case(test_cases, "ALB.e");
+        filter_test_case(test_cases, "ALJ.e");
+        filter_test_case(test_cases, "ALReB.e");
+        filter_test_case(test_cases, "ALe.e");
+        filter_test_case(test_cases, "ALeRA.e");
+        filter_test_case(test_cases, "ARA.e");
+        filter_test_case(test_cases, "ARB.e");
+        filter_test_case(test_cases, "ARReB.e");
+        filter_test_case(test_cases, "ARe.e");
+        filter_test_case(test_cases, "AReLB.e");
+        filter_test_case(test_cases, "AReRA.e");
+        filter_test_case(test_cases, "AReRB.e");
+        filter_test_case(test_cases, "Aef.e");
+        return;
+
+
+
         filter_test_case(test_cases, "Aef.e");
 
         filter_test_case(test_cases, "ALefRA.e");

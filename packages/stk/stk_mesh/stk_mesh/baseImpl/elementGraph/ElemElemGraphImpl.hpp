@@ -19,6 +19,7 @@ namespace impl
 {
 
 typedef int64_t LocalId;
+static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 struct graphEdgeProc
 {

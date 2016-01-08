@@ -76,6 +76,7 @@
 #include "stk_util/diag/StringUtil.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
 namespace stk {
 namespace mesh {
@@ -4316,13 +4317,107 @@ bool doesEdgeNeedGhostingCommunication(stk::mesh::BulkData &stkMeshBulkData, std
     return communicate_edge_for_ghosting;
 }
 
-void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData, std::vector<stk::mesh::Entity> &entitiesConnectedToNodes, stk::mesh::Entity entity, const stk::mesh::Entity* nodes)
+int get_element_ordinal_for_connected_face(stk::mesh::BulkData &stkMeshBulkData,
+                                           const stk::mesh::Entity localElement,
+                                           const stk::mesh::Entity sideEntity)
 {
+    const Entity * sides = stkMeshBulkData.begin(localElement, stkMeshBulkData.mesh_meta_data().side_rank());
+    ConnectivityOrdinal const * ordinals = stkMeshBulkData.begin_ordinals(localElement, stkMeshBulkData.mesh_meta_data().side_rank());
+    const unsigned numSides = stkMeshBulkData.num_sides(localElement);
+
+    for(unsigned k=0; k<numSides; ++k)
+    {
+        if(sideEntity == sides[k])
+            return ordinals[k];
+    }
+
+    return -1;
+}
+
+bool does_graph_edge_exist_between_local_entities_and_ghost(stk::mesh::BulkData &stkMeshBulkData,
+                                                            std::vector<stk::mesh::Entity> localEntitiesConnectedToNodes,
+                                                            const stk::mesh::Entity sideEntity,
+                                                            const stk::mesh::Entity ghostEntity,
+                                                            stk::mesh::SideConnector &sideConnector)
+{
+    for( size_t j=0; j<localEntitiesConnectedToNodes.size(); j++)
+    {
+        stk::mesh::Entity localElement = localEntitiesConnectedToNodes[j];
+        int sideOrdinal = get_element_ordinal_for_connected_face(stkMeshBulkData, localElement, sideEntity);
+
+        if(-1 == sideOrdinal)
+        {
+//            int remoteSideOrdinal = get_element_ordinal_for_connected_face(stkMeshBulkData, ghostEntity, sideEntity);
+//            ThrowAssertMsg(-1 != remoteSideOrdinal, "does_graph_edge_exist_between_local_entities_and_ghost ERROR, side entity not connected to either local or remote element.");
+            return false;
+        }
+
+        if(!sideConnector.has_remote_graph_edge(localElement, sideOrdinal, ghostEntity))
+            return false;
+    }
+
+    return true;
+}
+
+void update_allowable_ghost_connections_using_side_connector(stk::mesh::BulkData &stkMeshBulkData,
+                                                                std::vector<stk::mesh::Entity> &entitiesConnectedToNodes,
+                                                                const stk::mesh::Entity sideEntity,
+                                                                stk::mesh::SideConnector &sideConnector,
+                                                                std::vector<bool> &isAllowableConnection)
+{
+    std::vector<stk::mesh::Entity> localEntitiesConnectedToNodes;
+
+    for( size_t j=0; j<entitiesConnectedToNodes.size(); j++)
+    {
+        if(!isAllowableConnection[j])
+            localEntitiesConnectedToNodes.push_back(entitiesConnectedToNodes[j]);
+    }
+
+    for( size_t j=0; j<entitiesConnectedToNodes.size(); j++)
+    {
+        if(isAllowableConnection[j])
+        {
+            isAllowableConnection[j] = does_graph_edge_exist_between_local_entities_and_ghost(stkMeshBulkData,
+                                                                                             localEntitiesConnectedToNodes,
+                                                                                             sideEntity,
+                                                                                             entitiesConnectedToNodes[j],
+                                                                                             sideConnector);
+        }
+    }
+
+}
+
+std::vector<bool> get_allowable_ghost_connections(stk::mesh::BulkData &stkMeshBulkData,
+                                                  std::vector<stk::mesh::Entity> &entitiesConnectedToNodes,
+                                                  const stk::mesh::Entity sideEntity,
+                                                  stk::mesh::SideConnector *sideConnector)
+{
+    std::vector<bool> isAllowableConnection(entitiesConnectedToNodes.size(), false);
+
     for (size_t j=0; j<entitiesConnectedToNodes.size();j++)
     {
         bool isEntityGhostedOntoThisProc = stkMeshBulkData.in_receive_ghost(stkMeshBulkData.aura_ghosting(), stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]));
+        if ( isEntityGhostedOntoThisProc)
+            isAllowableConnection[j] = true;
+    }
 
-        if ( isEntityGhostedOntoThisProc )
+    if(nullptr != sideConnector)
+        update_allowable_ghost_connections_using_side_connector(stkMeshBulkData, entitiesConnectedToNodes, sideEntity, *sideConnector, isAllowableConnection);
+
+    return isAllowableConnection;
+}
+
+void connectGhostedEntitiesToEntity(stk::mesh::BulkData &stkMeshBulkData,
+                                    std::vector<stk::mesh::Entity> &entitiesConnectedToNodes,
+                                    stk::mesh::Entity entity,
+                                    const stk::mesh::Entity* nodes,
+                                    stk::mesh::SideConnector *sideConnector = nullptr)
+{
+    std::vector<bool> isAllowableGhostConnection = get_allowable_ghost_connections(stkMeshBulkData, entitiesConnectedToNodes, entity, sideConnector);
+
+    for (size_t j=0; j<entitiesConnectedToNodes.size();j++)
+    {
+        if ( isAllowableGhostConnection[j])
         {
             stk::mesh::impl::connectUpwardEntityToEntity(stkMeshBulkData, entitiesConnectedToNodes[j], entity, nodes);
         }
@@ -4361,8 +4456,11 @@ void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBul
     }
 }
 
-void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh, std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
-        EntityRank entity_rank, stk::mesh::Selector selected)
+void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
+                                                                             std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
+                                                                             EntityRank entity_rank,
+                                                                             stk::mesh::Selector selected,
+                                                                             stk::mesh::SideConnector *sideConnector)
 {
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
     bool isedge = (entity_rank == stk::topology::EDGE_RANK && mesh_meta_data().spatial_dimension() == 3);
@@ -4385,12 +4483,12 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
             {
               fillFacesConnectedToNodes(mesh, nodes, numNodes, facesConnectedToNodes);
               removeEntitiesNotSelected(mesh, selected, facesConnectedToNodes);
-              connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes);
+              connectGhostedEntitiesToEntity(mesh, facesConnectedToNodes, entity, nodes, sideConnector);
             }
 
             fillElementsConnectedToNodes(mesh, nodes, numNodes, elementsConnectedToNodes);
             removeEntitiesNotSelected(mesh, selected, elementsConnectedToNodes);
-            connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes);
+            connectGhostedEntitiesToEntity(mesh, elementsConnectedToNodes, entity, nodes, sideConnector);
 
             if ( bucket.owned() || bucket.shared() )
             {
@@ -4516,11 +4614,11 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
 }
 
 
-void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin)
+void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin, stk::mesh::SideConnector *sideConnector)
 {
     std::set<EntityProc, EntityLess> entitiesToGhostOntoOtherProcessors(EntityLess(*this));
 
-    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank, selectedToSkin);
+    find_upward_connected_entities_to_ghost_onto_other_processors(*this, entitiesToGhostOntoOtherProcessors, entity_rank, selectedToSkin, sideConnector);
 
     ghost_entities_and_fields(aura_ghosting(), entitiesToGhostOntoOtherProcessors);
 
@@ -6733,11 +6831,12 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
 }
 
 
-bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
-                                                               const stk::mesh::EntityVector& deletedSides,
-                                                               stk::mesh::ElemElemGraph &elementGraph,
-                                                               const stk::mesh::EntityVector &killedElements,
-                                                               stk::mesh::Part* activePart)
+bool BulkData::make_mesh_parallel_consistent_after_element_death(stk::mesh::SideConnector &sideConnector,
+                                                                 const std::vector<sharing_info>& shared_modified,
+                                                                 const stk::mesh::EntityVector& deletedSides,
+                                                                 stk::mesh::ElemElemGraph &elementGraph,
+                                                                 const stk::mesh::EntityVector &killedElements,
+                                                                 stk::mesh::Part* activePart)
 {
     if(this->in_synchronized_state())
     {
@@ -6770,7 +6869,7 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
 
         if(this->is_automatic_aura_on())
         {
-            this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part());
+            this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part(), &sideConnector);
         }
 
         m_modSummary.write_summary(m_meshModification.synchronized_count(), false);

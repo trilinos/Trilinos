@@ -13,6 +13,7 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
+#include "SideConnector.hpp"
 
 namespace stk { class CommBuffer; }
 
@@ -111,6 +112,7 @@ public:
     stk::mesh::EntityId get_available_side_id();
 
     std::vector<SideSetEntry> extract_skinned_sideset( );
+    stk::mesh::SideConnector get_side_connector();
 
 protected:
     void fill_graph();
@@ -220,7 +222,8 @@ private:
     bool is_connected_element_air(const stk::mesh::GraphEdge &graphEdge);
     bool is_connected_element_in_body_to_be_skinned(const stk::mesh::GraphEdge &graphEdge);
     bool is_element_selected_and_can_have_side(const stk::mesh::BulkData &bulkData, const stk::mesh::Selector &selector, stk::mesh::Entity otherElement);
-    void create_side_entities(const std::vector<int> &exposedSides,
+    void create_side_entities(stk::mesh::SideConnector &sideConnector,
+                              const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
                               std::vector<stk::mesh::sharing_info> &shared_modified,

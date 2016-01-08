@@ -50,5 +50,34 @@ void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEn
                 connect_side_entity_to_other_element(sideEntity, graphEdge, skinned_elements);
 }
 
+impl::LocalId SideConnector::get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id) const
+{
+    ThrowRequireMsg(m_entity_to_local_id.size() > local_element.local_offset(),"Program error. Contact sierra-help@sandia.gov for support.");
+    impl::LocalId local_id = m_entity_to_local_id[local_element.local_offset()];
+    if (require_valid_id)
+    {
+        ThrowRequireMsg(local_id != impl::INVALID_LOCAL_ID, "Program error. Contact sierra-help@sandia.gov for support.");
+    }
+    return local_id;
+}
+
+bool SideConnector::has_remote_graph_edge(stk::mesh::Entity localEntity,
+                                          int side,
+                                          stk::mesh::Entity remoteEntity)
+{
+    impl::LocalId localIdForLocalEntity = get_local_element_id(localEntity, true);
+    stk::mesh::EntityId remoteEntityId = m_bulk_data.identifier(remoteEntity);
+    std::vector<GraphEdge> graphEdges = m_graph.get_edges_for_element_side(localIdForLocalEntity, side);
+
+    for(const GraphEdge &graphEdge : graphEdges)
+    {
+        impl::LocalId localIdForRemoteEntity = -remoteEntityId;
+        if(!impl::is_local_element(graphEdge.elem2) && (graphEdge.elem2 == localIdForRemoteEntity))
+            return true;
+    }
+
+    return false;
+}
+
 }
 }
