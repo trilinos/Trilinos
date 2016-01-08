@@ -48,9 +48,9 @@
 #include "Teuchos_VerboseObject.hpp"
 
 #include "Piro_ConfigDefs.hpp"
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
 #include "Stokhos_Epetra.hpp"
 #include "Piro_Epetra_StokhosSolverFactory.hpp"
 #include "MockModelEval_C.hpp"
@@ -70,7 +70,7 @@
 
 namespace {
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 
 void setOStream(const Teuchos::RCP<Teuchos::FancyOStream>& out,
                 Teuchos::ParameterList& params) 
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST( Piro, AdjointOperatorSensitivities )
   testSensitivities(inputFile, false, true, out, success);
 }
 
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
 TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
 {
   using Teuchos::RCP;
@@ -612,7 +612,7 @@ TEUCHOS_UNIT_TEST( Piro, SGCoupled )
   Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
 }
 
-#ifdef Piro_ENABLE_TriKota
+#ifdef HAVE_PIRO_TRIKOTA
 TEUCHOS_UNIT_TEST( Piro, SGAnalysis )
 {
   using Teuchos::RCP;

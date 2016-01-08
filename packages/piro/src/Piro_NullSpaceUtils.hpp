@@ -43,20 +43,24 @@
 #ifndef PIRO_NULLSPACEUTILS_HPP
 #define PIRO_NULLSPACEUTILS_HPP
 
+#include "Piro_ConfigDefs.hpp"
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-#ifdef PIRO_HAS_TPETRA
+#ifdef HAVE_PIRO_TPETRA
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#else
-#include "Epetra_MultiVector.h"
-#include "Epetra_Map.h"
 #endif
+//#ifdef HAVE_PIRO_EPETRA
+//#include "Epetra_MultiVector.h"
+//#include "Epetra_Map.h"
+//#endif
+
 
 
 namespace Piro {
@@ -100,14 +104,15 @@ public:
    void informML();
 
    //! Pass coordinate arrays to MueLu
-#ifdef PIRO_HAS_TPETRA
+#ifdef HAVE_PIRO_TPETRA
    template<class ST, class LO, class GO, class Node>
    void informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates,
                     Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > soln_map);
-#else
-   void informMueLu(Teuchos::RCP<Epetra_MultiVector> Coordinates,
-                    Teuchos::RCP<const Epetra_Map> soln_map);
 #endif
+//#ifdef HAVE_PIRO_EPETRA
+//   void informMueLu(Teuchos::RCP<Epetra_MultiVector> Coordinates,
+//                    Teuchos::RCP<const Epetra_Map> soln_map);
+//#endif
 
 private:
 
@@ -131,7 +136,7 @@ private:
 
 };
 
-#ifdef PIRO_HAS_TPETRA
+#ifdef HAVE_PIRO_TPETRA
   template<class ST, class LO, class GO, class Node>
   void
     MLRigidBodyModes::informMueLu(Teuchos::RCP<Tpetra::MultiVector<ST,LO,GO,Node> > Coordinates,

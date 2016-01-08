@@ -44,7 +44,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "Piro_NOXSolver.hpp"
 
 #include "MockModelEval_A.hpp"
@@ -742,4 +742,4 @@ TEUCHOS_UNIT_TEST(Piro_NOXSolver, SensitivityMvGradWithSolutionSensitivityMvJac_
   }
 }
 
-#endif /*Piro_ENABLE_NOX*/
+#endif /*HAVE_PIRO_NOX*/
