@@ -68,7 +68,7 @@ namespace Intrepid2 {
 
     // construct lattice
 
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts ,
+    PointTools::getLattice<Scalar,ArrayScalar >( latticePts ,
                                                             this->getBaseCellTopology() ,
                                                             n ,
                                                             0 ,
@@ -273,7 +273,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( numBf , numPts );
+          ArrayScalar phisCur( numBf , numPts );
           Phis.getValues( phisCur , inputPoints , operatorType );
           for (int i=0;i<outputValues.dimension(0);i++) {
             for (int j=0;j<outputValues.dimension(1);j++) {
@@ -300,7 +300,7 @@ namespace Intrepid2 {
           const int dkcard = 
             (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,3): getDkCardinality(operatorType,3);
           
-          FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
+          ArrayScalar phisCur( numBf , numPts , dkcard );
           Phis.getValues( phisCur , inputPoints , operatorType );
 
           for (int i=0;i<outputValues.dimension(0);i++) {

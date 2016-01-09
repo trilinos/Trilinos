@@ -136,13 +136,13 @@ namespace Intrepid2 {
 
     switch(pointType) {
     case POINTTYPE_EQUISPACED:
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
+      PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
       break;
     case POINTTYPE_SPECTRAL: 
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
+      PointTools::getLattice<Scalar,ArrayScalar >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
       break;
     case POINTTYPE_SPECTRAL_OPEN: 
-      PointTools::getGaussPoints<Scalar,FieldContainer<Scalar> >( latticePts_ , n );
+      PointTools::getGaussPoints<Scalar,ArrayScalar >( latticePts_ , n );
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument , "Basis_HGRAD_LINE_Cn_FEM:: invalid point type" );
@@ -265,7 +265,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( numBf , numPts );
+          ArrayScalar phisCur( numBf , numPts );
           Phis_.getValues( phisCur , inputPoints , operatorType );
           for (int i=0;i<outputValues.dimension(0);i++) {
             for (int j=0;j<outputValues.dimension(1);j++) {
@@ -292,7 +292,7 @@ namespace Intrepid2 {
           const int dkcard = 
             (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,1): getDkCardinality(operatorType,1);
           
-          FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
+          ArrayScalar phisCur( numBf , numPts , dkcard );
           Phis_.getValues( phisCur , inputPoints , operatorType );
 
           for (int i=0;i<outputValues.dimension(0);i++) {

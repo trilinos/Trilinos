@@ -78,8 +78,8 @@ private:
   Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> closedBasis_;
   Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> openBasis_;
 
-  FieldContainer<double> closedPts_;
-  FieldContainer<double> openPts_; 
+  ArrayScalar closedPts_;
+  ArrayScalar openPts_; 
 
 public:
   /** \brief Destructor */

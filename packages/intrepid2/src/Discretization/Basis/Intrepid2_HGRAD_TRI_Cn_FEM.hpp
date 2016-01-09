@@ -90,17 +90,17 @@ private:
 
   /** \brief  The orthogonal basis on triangles, out of which the nodal basis is constructed
    */
-  Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis;
+  Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,ArrayScalar > Phis;
   /** \brief  The Vandermonde matrix with V_{ij} = phi_i(x_j), where x_j is the j_th point in the lattice
    */
-  FieldContainer<Scalar> V;
+  ArrayScalar V;
   /** \brief  The inverse of V.  The columns of Vinv express the Lagrange basis in terms of the
       orthogonal basis
    */
-  FieldContainer<Scalar> Vinv;
+  ArrayScalar Vinv;
   /** \brief stores the points at which degrees of freedom are located. 
    */
-  FieldContainer<Scalar> latticePts;
+  ArrayScalar latticePts;
 
 public:
   

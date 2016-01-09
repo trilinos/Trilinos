@@ -91,13 +91,13 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y) phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTriDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
-    FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 2 );
-    FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
+    CubatureDirectTriDefault<Scalar,ArrayScalar > myCub( 2 * n );
+    ArrayScalar cubPoints( myCub.getNumPoints() , 2 );
+    ArrayScalar cubWeights( myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );
 
     // tabulate the scalar orthonormal basis at cubature points
-    FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
+    ArrayScalar phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
     Phis.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
     // now do the integration
@@ -130,23 +130,23 @@ namespace Intrepid2 {
 
     // first 3 * degree nodes are normals at each edge
     // get the points on the line
-    FieldContainer<Scalar> linePts( n , 1 );
+    ArrayScalar linePts( n , 1 );
     if (pointType == POINTTYPE_WARPBLEND) {
       CubatureDirectLineGauss<Scalar> edgeRule( n );
-      FieldContainer<Scalar> edgeCubWts( n );
+      ArrayScalar edgeCubWts( n );
       edgeRule.getCubature( linePts , edgeCubWts );
     }
     else if (pointType == POINTTYPE_EQUISPACED ) {
       shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
 
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( linePts , 
+      PointTools::getLattice<Scalar,ArrayScalar >( linePts , 
                                                               linetop ,
                                                               n+1 , 1 ,
                                                               POINTTYPE_EQUISPACED );
     }
     // holds the image of the line points 
-    FieldContainer<Scalar> edgePts( n , 2 );
-    FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , n );
+    ArrayScalar edgePts( n , 2 );
+    ArrayScalar phisAtEdgePoints( scalarBigN , n );
 
     // these are scaled by the appropriate edge lengths.
     const Scalar nx[] = {0.0,1.0,-1.0};
@@ -185,14 +185,14 @@ namespace Intrepid2 {
                                                               1 );
 
     if (numInternalPoints > 0) {
-      FieldContainer<Scalar> internalPoints( numInternalPoints , 2 );
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
+      ArrayScalar internalPoints( numInternalPoints , 2 );
+      PointTools::getLattice<Scalar,ArrayScalar >( internalPoints ,
                                                               this->getBaseCellTopology() , 
                                                               n + 1 ,
                                                               1 ,
                                                               pointType );
       
-      FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
+      ArrayScalar phisAtInternalPoints( scalarBigN , numInternalPoints );
       Phis.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
       
       // copy values into right positions of V2
@@ -305,7 +305,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          ArrayScalar phisCur( scalarBigN , numPts );
           Phis.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
           for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
@@ -322,7 +322,7 @@ namespace Intrepid2 {
         break;
       case OPERATOR_DIV:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 2 );
+          ArrayScalar phisCur( scalarBigN , numPts , 2 );
           Phis.getValues( phisCur , inputPoints , OPERATOR_GRAD );
           for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
             for (int j=0;j<outputValues.dimension(1);j++) { // point loop

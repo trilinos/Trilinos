@@ -68,8 +68,8 @@ class Basis_HGRAD_QUAD_Cn_FEM :
     public DofCoordsInterface<ArrayScalar> 
 {
 private:
-  FieldContainer<double> ptsx_;
-  FieldContainer<double> ptsy_;
+  ArrayScalar ptsx_;
+  ArrayScalar ptsy_;
 
   /** \brief Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
    */

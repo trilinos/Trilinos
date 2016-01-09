@@ -96,13 +96,13 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y,z) phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTetDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
-    FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 3 );
-    FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
+    CubatureDirectTetDefault<Scalar,ArrayScalar > myCub( 2 * n );
+    ArrayScalar cubPoints( myCub.getNumPoints() , 3 );
+    ArrayScalar cubWeights( myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );
 
     // tabulate the scalar orthonormal basis at cubature points
-    FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
+    ArrayScalar phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
     Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
 
@@ -130,16 +130,16 @@ namespace Intrepid2 {
                                                           n+2 ,
                                                           1 );
 
-    FieldContainer<Scalar> twoDPts( numPtsPerFace , 2 );
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( twoDPts ,
+    ArrayScalar twoDPts( numPtsPerFace , 2 );
+    PointTools::getLattice<Scalar,ArrayScalar >( twoDPts ,
                                                             faceTop ,
                                                             n+2 ,
                                                             1 ,
                                                             pointType );
 
     // holds the image of the triangle points on each face.
-    FieldContainer<Scalar> facePts( numPtsPerFace , 3 );
-    FieldContainer<Scalar> phisAtFacePoints( scalarBigN , 
+    ArrayScalar facePts( numPtsPerFace , 3 );
+    ArrayScalar phisAtFacePoints( scalarBigN , 
                                             numPtsPerFace );
     
     
@@ -181,14 +181,14 @@ namespace Intrepid2 {
                                                                 n + 2 ,
                                                                 1 );
 
-      FieldContainer<Scalar> internalPoints( numInternalPoints , 3 );
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
+      ArrayScalar internalPoints( numInternalPoints , 3 );
+      PointTools::getLattice<Scalar,ArrayScalar >( internalPoints ,
                                                               this->getBaseCellTopology() , 
                                                               n + 2 ,
                                                               1 ,
                                                               pointType );
     
-      FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
+      ArrayScalar phisAtInternalPoints( scalarBigN , numInternalPoints );
       Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
 
       // copy values into right positions of V2
@@ -299,7 +299,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          ArrayScalar phisCur( scalarBigN , numPts );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
           for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
@@ -318,7 +318,7 @@ namespace Intrepid2 {
         break;
       case OPERATOR_DIV:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 3 );
+          ArrayScalar phisCur( scalarBigN , numPts , 3 );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
           for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
             for (int j=0;j<outputValues.dimension(1);j++) { // point loop

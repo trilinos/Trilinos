@@ -151,32 +151,32 @@ public:
   /** \brief  Returns FieldContainer of local integration weights
 
   */
-  Intrepid2::FieldContainer<Scalar> getWeights(const ArrayScalar &) const;
+  ArrayScalar getWeights(const ArrayScalar &) const;
 
   /** \brief  Returns FieldContainer of local sub-tet gradients
 
   */
-  Intrepid2::FieldContainer<Scalar> getSubTetGrads() const;
+  ArrayScalar getSubTetGrads() const;
 
   /** \brief  Returns FieldContainer of local sub-tet detF
 
   */
-  Intrepid2::FieldContainer<Scalar> getSubTetDetF() const;
+  ArrayScalar getSubTetDetF() const;
 
   /** \brief  Returns FieldContainer of Barycentric Coordinates for the input points
 
   */
-  Intrepid2::FieldContainer<Scalar> getBarycentricCoords(const ArrayScalar &) const;
+  ArrayScalar getBarycentricCoords(const ArrayScalar &) const;
 
   /** \brief  Returns FieldContainer of Barycentric Coordinates for the input points
 
   */
-  Scalar det44(const Intrepid2::FieldContainer<Scalar>) const;
+  Scalar det44(const ArrayScalar) const;
 
   /** \brief  Returns FieldContainer of Barycentric Coordinates for the input points
 
   */
-  Intrepid2::FieldContainer<Scalar> inverse44(const Intrepid2::FieldContainer<Scalar>) const;
+  ArrayScalar inverse44(const ArrayScalar) const;
 
 
 };

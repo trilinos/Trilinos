@@ -89,7 +89,7 @@ namespace Intrepid2 {
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
 
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( closedPts_ ,
+    PointTools::getLattice<Scalar,ArrayScalar >( closedPts_ ,
                                                             shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
                                                             order ,
                                                             0 ,
@@ -97,12 +97,12 @@ namespace Intrepid2 {
 
     if (pointType == POINTTYPE_SPECTRAL)
       {
-	PointTools::getGaussPoints<Scalar,FieldContainer<Scalar> >( openPts_ ,
+	PointTools::getGaussPoints<Scalar,ArrayScalar >( openPts_ ,
 								    order - 1 );
       }
     else
       {
-	PointTools::getLattice<Scalar,FieldContainer<Scalar> >( openPts_ ,
+	PointTools::getLattice<Scalar,ArrayScalar >( openPts_ ,
 								shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
 								order + 1,
 								1 ,
@@ -229,8 +229,8 @@ namespace Intrepid2 {
     int dim0 = inputPoints.dimension(0);
     
     // separate out points
-    FieldContainer<Scalar> xPoints(dim0,1);
-    FieldContainer<Scalar> yPoints(dim0,1);
+    ArrayScalar xPoints(dim0,1);
+    ArrayScalar yPoints(dim0,1);
     
     for (int i=0;i<dim0;i++) {
       xPoints(i,0) = inputPoints(i,0);
@@ -240,10 +240,10 @@ namespace Intrepid2 {
     switch (operatorType) {
     case OPERATOR_VALUE:
       {
-	FieldContainer<Scalar> closedBasisValsXPts( closedBasis_.getCardinality() , dim0 );
-	FieldContainer<Scalar> closedBasisValsYPts( closedBasis_.getCardinality() , dim0 );
-	FieldContainer<Scalar> openBasisValsXPts( openBasis_.getCardinality() , dim0 );
-	FieldContainer<Scalar> openBasisValsYPts( openBasis_.getCardinality() , dim0 );
+	ArrayScalar closedBasisValsXPts( closedBasis_.getCardinality() , dim0 );
+	ArrayScalar closedBasisValsYPts( closedBasis_.getCardinality() , dim0 );
+	ArrayScalar openBasisValsXPts( openBasis_.getCardinality() , dim0 );
+	ArrayScalar openBasisValsYPts( openBasis_.getCardinality() , dim0 );
 	
 	closedBasis_.getValues( closedBasisValsXPts , xPoints , OPERATOR_VALUE );
 	closedBasis_.getValues( closedBasisValsYPts , yPoints , OPERATOR_VALUE );
@@ -282,10 +282,10 @@ namespace Intrepid2 {
       break;
     case OPERATOR_CURL:
       {
-	FieldContainer<Scalar> closedBasisDerivsXPts( closedBasis_.getCardinality() , dim0 , 1 );
-	FieldContainer<Scalar> closedBasisDerivsYPts( closedBasis_.getCardinality() , dim0 , 1 );
-	FieldContainer<Scalar> openBasisValsXPts( openBasis_.getCardinality() , dim0 );
-	FieldContainer<Scalar> openBasisValsYPts( openBasis_.getCardinality() , dim0 );
+	ArrayScalar closedBasisDerivsXPts( closedBasis_.getCardinality() , dim0 , 1 );
+	ArrayScalar closedBasisDerivsYPts( closedBasis_.getCardinality() , dim0 , 1 );
+	ArrayScalar openBasisValsXPts( openBasis_.getCardinality() , dim0 );
+	ArrayScalar openBasisValsYPts( openBasis_.getCardinality() , dim0 );
 	
 	closedBasis_.getValues( closedBasisDerivsXPts , xPoints , OPERATOR_D1 );
 	closedBasis_.getValues( closedBasisDerivsYPts , yPoints , OPERATOR_D1 );

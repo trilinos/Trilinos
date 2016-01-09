@@ -97,11 +97,11 @@ private:
 
   /** \brief Orthogonal basis out of which the nodal basis is
       constructed */
-  Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis_;
+  Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar > Phis_;
 
   /** \brief expansion coefficients of the nodal basis in terms of the
       orthgonal one */
-  FieldContainer<Scalar> coeffs_;
+  ArrayScalar coeffs_;
 
 
 public:

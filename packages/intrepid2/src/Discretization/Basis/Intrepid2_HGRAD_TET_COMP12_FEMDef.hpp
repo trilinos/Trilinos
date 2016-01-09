@@ -235,7 +235,7 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
       // initialize to 0.0 since we will be accumulating
       outputValues.initialize(0.0);
 
-      FieldContainer<Scalar> Lopt(10,3);
+      ArrayScalar Lopt(10,3);
       for (int pt=0; pt < dim0; ++pt) {
 
         Scalar r = inputPoints(pt, 0);
@@ -456,11 +456,11 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x,
 
 
 template<class Scalar, class ArrayScalar>
-Intrepid2::FieldContainer<Scalar>
+ArrayScalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & inPts) const
 {
   int numPoints = inPts.dimension(0);
-  Intrepid2::FieldContainer<Scalar> w(numPoints, 12);
+  ArrayScalar w(numPoints, 12);
   w.initialize(0.0);
   Teuchos::Array< Teuchos::Array<int> > pt_tets;
 
@@ -487,11 +487,11 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
 
 
 template<class Scalar, class ArrayScalar>
-Intrepid2::FieldContainer<Scalar>
+ArrayScalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getBarycentricCoords(const ArrayScalar & inPts) const
 {
   int numPoints = inPts.dimension(0);
-  Intrepid2::FieldContainer<Scalar> lambda(numPoints, 4);
+  ArrayScalar lambda(numPoints, 4);
 
   for (int pt = 0; pt < numPoints; ++pt)
   {
@@ -506,7 +506,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getBarycentricCoords(const Arra
 
 template<class Scalar, class ArrayScalar>
 Scalar
-Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::det44(const Intrepid2::FieldContainer<Scalar> a) const
+Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::det44(const ArrayScalar a) const
 {
   Scalar det = a(0,3) * a(1,2) * a(2,1) * a(3,0)
     - a(0,2) * a(1,3) * a(2,1) * a(3,0)
@@ -537,10 +537,10 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::det44(const Intrepid2::FieldCon
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid2::FieldContainer<Scalar>
-Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid2::FieldContainer<Scalar> a) const
+ArrayScalar
+Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const ArrayScalar a) const
 {
-  Intrepid2::FieldContainer<Scalar> ai(4,4);
+  ArrayScalar ai(4,4);
   Scalar xj = det44(a);
 
   ai(0,0) = (1/xj) * (-a(1,3) * a(2,2) * a(3,1) + a(1,2) * a(2,3) * a(3,1) + a(1,3) * a(2,1) * a(3,2) - a(1,1) * a(2,3) * a(3,2) - a(1,2) * a(2,1) * a(3,3) + a(1,1) * a(2,2) * a(3,3));
@@ -567,10 +567,10 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::inverse44(const Intrepid2::Fiel
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid2::FieldContainer<Scalar>
+ArrayScalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 {
-  Intrepid2::FieldContainer<Scalar> dx(3,11,12);
+  ArrayScalar dx(3,11,12);
   dx.initialize(0.0);
   // fill in dx
   dx(0,0,0)   = -2.0;
@@ -666,10 +666,10 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetGrads() const
 }
 
 template<class Scalar, class ArrayScalar>
-Intrepid2::FieldContainer<Scalar>
+ArrayScalar
 Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getSubTetDetF() const
 {
-  Intrepid2::FieldContainer<Scalar> xJ(12);
+  ArrayScalar xJ(12);
   // set sub-elem jacobians
   xJ(0) = 1./48.; xJ(1) = 1./48.; xJ(2) = 1./48.; xJ(3) = 1./48.;
   xJ(4) = 1./96.; xJ(5) = 1./96.; xJ(6) = 1./96.; xJ(7) = 1./96.;

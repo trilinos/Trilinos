@@ -101,9 +101,9 @@ private:
 
 
   /** \brief Orthogonal basis of ofder n, in terms of which the H(curl) basis functions are expressed */
-  Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis_;
+  Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar > Phis_;
   /** \brief Array holding the expansion coefficients of the nodal basis in terms of Phis_ */
-  FieldContainer<Scalar> coeffs_;
+  ArrayScalar coeffs_;
 
 
 public:

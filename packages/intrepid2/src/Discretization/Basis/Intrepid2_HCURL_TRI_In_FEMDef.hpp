@@ -91,13 +91,13 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y) \times phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTriDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
-    FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 2 );
-    FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
+    CubatureDirectTriDefault<Scalar,ArrayScalar > myCub( 2 * n );
+    ArrayScalar cubPoints( myCub.getNumPoints() , 2 );
+    ArrayScalar cubWeights( myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );
 
     // tabulate the scalar orthonormal basis at cubature points
-    FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
+    ArrayScalar phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
     Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
     // now do the integration
@@ -130,25 +130,25 @@ namespace Intrepid2 {
 
     // first 3 * degree nodes are normals at each edge
     // get the points on the line
-    FieldContainer<Scalar> linePts( n , 1 );
+    ArrayScalar linePts( n , 1 );
     if (pointType == POINTTYPE_WARPBLEND) {
       CubatureDirectLineGauss<Scalar> edgeRule( 2*n - 1 );
-      FieldContainer<Scalar> edgeCubWts( n );
+      ArrayScalar edgeCubWts( n );
       edgeRule.getCubature( linePts , edgeCubWts );
     }
     else if (pointType == POINTTYPE_EQUISPACED ) {
       shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
 
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( linePts , 
+      PointTools::getLattice<Scalar,ArrayScalar >( linePts , 
                                                               linetop ,
                                                               n+1 , 1 ,
                                                               POINTTYPE_EQUISPACED );
     }
 
 
-    FieldContainer<Scalar> edgePts( n , 2 );
-    FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , n );
-    FieldContainer<Scalar> edgeTan(2);
+    ArrayScalar edgePts( n , 2 );
+    ArrayScalar phisAtEdgePoints( scalarBigN , n );
+    ArrayScalar edgeTan(2);
     
     for (int i=0;i<3;i++) {  // loop over edges
       CellTools<Scalar>::getReferenceEdgeTangent( edgeTan , 
@@ -185,14 +185,14 @@ namespace Intrepid2 {
                                                               1 );
 
     if (numInternalPoints > 0) {
-      FieldContainer<Scalar> internalPoints( numInternalPoints , 2 );
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
+      ArrayScalar internalPoints( numInternalPoints , 2 );
+      PointTools::getLattice<Scalar,ArrayScalar >( internalPoints ,
                                                               this->getBaseCellTopology() , 
                                                               n + 1 ,
                                                               1 ,
                                                               pointType );
       
-      FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
+      ArrayScalar phisAtInternalPoints( scalarBigN , numInternalPoints );
       Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
 
       // copy values into right positions of V2
@@ -305,7 +305,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          ArrayScalar phisCur( scalarBigN , numPts );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
           for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
@@ -322,7 +322,7 @@ namespace Intrepid2 {
         break;
       case OPERATOR_CURL:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 2 );
+          ArrayScalar phisCur( scalarBigN , numPts , 2 );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
           for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
             for (int j=0;j<outputValues.dimension(1);j++) { // point loop

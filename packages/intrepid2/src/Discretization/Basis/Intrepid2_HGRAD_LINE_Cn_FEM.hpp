@@ -80,17 +80,17 @@ class Basis_HGRAD_LINE_Cn_FEM:
     public DofCoordsInterface<ArrayScalar> {
 private:
   /** \brief Holds the points defining the Lagrange basis */
-  FieldContainer<Scalar> latticePts_;
+  ArrayScalar latticePts_;
 
   /** \brief orthogonal basis */
-  Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, FieldContainer<Scalar> > Phis_;
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar > Phis_;
   
   /** \brief Generalized Vandermonde matrix V_{ij} = phis_i(x_j) */
-  FieldContainer<Scalar> V_;
+  ArrayScalar V_;
 
   /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
       coefficients of the nodal basis in terms of phis_ */
-  FieldContainer<Scalar> Vinv_;
+  ArrayScalar Vinv_;
 
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
   */

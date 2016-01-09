@@ -71,7 +71,7 @@ namespace Intrepid2 {
 
     shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
 
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts ,
+    PointTools::getLattice<Scalar,ArrayScalar >( latticePts ,
                                                             myTri_3 ,
                                                             n ,
                                                             0 ,
@@ -205,7 +205,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( numBf , numPts );
+          ArrayScalar phisCur( numBf , numPts );
           Phis.getValues( phisCur , inputPoints , operatorType );
           for (int i=0;i<outputValues.dimension(0);i++) {
             for (int j=0;j<outputValues.dimension(1);j++) {
@@ -232,7 +232,7 @@ namespace Intrepid2 {
           const int dkcard = 
             (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,2): getDkCardinality(operatorType,2);
           
-          FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
+          ArrayScalar phisCur( numBf , numPts , dkcard );
           Phis.getValues( phisCur , inputPoints , operatorType );
 
           for (int i=0;i<outputValues.dimension(0);i++) {
@@ -249,7 +249,7 @@ namespace Intrepid2 {
         break;
       case OPERATOR_CURL:  // only works in 2d. first component is -d/dy, second is d/dx
         {
-          FieldContainer<Scalar> phisCur( numBf , numPts , getDkCardinality( OPERATOR_D1 , 2 ) );
+          ArrayScalar phisCur( numBf , numPts , getDkCardinality( OPERATOR_D1 , 2 ) );
           Phis.getValues( phisCur , inputPoints , OPERATOR_D1 );
 
           for (int i=0;i<outputValues.dimension(0);i++) {

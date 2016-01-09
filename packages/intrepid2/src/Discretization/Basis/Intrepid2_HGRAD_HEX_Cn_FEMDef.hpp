@@ -124,7 +124,7 @@ namespace Intrepid2 {
 
     // get points
     EPointType pt = (pointType==POINTTYPE_EQUISPACED)?pointType:POINTTYPE_WARPBLEND;
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( ptsx_ ,
+    PointTools::getLattice<Scalar,ArrayScalar >( ptsx_ ,
 							    shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
 							    order ,
 							    0 ,
@@ -263,9 +263,9 @@ namespace Intrepid2 {
     Basis<Scalar,ArrayScalar> &zBasis_ = *this->bases_[0][2];
 
 
-    FieldContainer<Scalar> xInputPoints(inputPoints.dimension(0),1);
-    FieldContainer<Scalar> yInputPoints(inputPoints.dimension(0),1);
-    FieldContainer<Scalar> zInputPoints(inputPoints.dimension(0),1);
+    ArrayScalar xInputPoints(inputPoints.dimension(0),1);
+    ArrayScalar yInputPoints(inputPoints.dimension(0),1);
+    ArrayScalar zInputPoints(inputPoints.dimension(0),1);
 
     for (int i=0;i<inputPoints.dimension(0);i++) {
       xInputPoints(i,0) = inputPoints(i,0);
@@ -276,9 +276,9 @@ namespace Intrepid2 {
     switch (operatorType) {
     case OPERATOR_VALUE:
       {
-	FieldContainer<Scalar> xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	FieldContainer<Scalar> yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-	FieldContainer<Scalar> zBasisValues(zBasis_.getCardinality(),zInputPoints.dimension(0));
+	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
+	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
+	ArrayScalar zBasisValues(zBasis_.getCardinality(),zInputPoints.dimension(0));
 
 	xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
 	yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
@@ -300,12 +300,12 @@ namespace Intrepid2 {
     case OPERATOR_D1:
     case OPERATOR_GRAD:
       {
-        FieldContainer<Scalar> xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-        FieldContainer<Scalar> yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-        FieldContainer<Scalar> zBasisValues(zBasis_.getCardinality(),zInputPoints.dimension(0));
-        FieldContainer<Scalar> xBasisDerivs(xBasis_.getCardinality(),xInputPoints.dimension(0),1);
-        FieldContainer<Scalar> yBasisDerivs(yBasis_.getCardinality(),yInputPoints.dimension(0),1);
-        FieldContainer<Scalar> zBasisDerivs(zBasis_.getCardinality(),zInputPoints.dimension(0),1);
+        ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
+        ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
+        ArrayScalar zBasisValues(zBasis_.getCardinality(),zInputPoints.dimension(0));
+        ArrayScalar xBasisDerivs(xBasis_.getCardinality(),xInputPoints.dimension(0),1);
+        ArrayScalar yBasisDerivs(yBasis_.getCardinality(),yInputPoints.dimension(0),1);
+        ArrayScalar zBasisDerivs(zBasis_.getCardinality(),zInputPoints.dimension(0),1);
 
         xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
         yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
@@ -339,9 +339,9 @@ namespace Intrepid2 {
     case OPERATOR_D9:
     case OPERATOR_D10:
       {
-        FieldContainer<Scalar> xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-        FieldContainer<Scalar> yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-        FieldContainer<Scalar> zBasisValues(yBasis_.getCardinality(),zInputPoints.dimension(0));
+        ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
+        ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
+        ArrayScalar zBasisValues(yBasis_.getCardinality(),zInputPoints.dimension(0));
 
         Teuchos::Array<int> partialMult;
 	

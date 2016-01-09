@@ -88,13 +88,13 @@ namespace Intrepid2 {
 
      // now I need to integrate { (x,y,z) \times } against the big basis
      // first, get a cubature rule.
-     CubatureDirectTetDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
-     FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 3 );
-     FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
+     CubatureDirectTetDefault<Scalar,ArrayScalar > myCub( 2 * n );
+     ArrayScalar cubPoints( myCub.getNumPoints() , 3 );
+     ArrayScalar cubWeights( myCub.getNumPoints() );
      myCub.getCubature( cubPoints , cubWeights );
 
      // tabulate the scalar orthonormal basis at cubature points
-     FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
+     ArrayScalar phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
      Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
 
@@ -230,36 +230,36 @@ namespace Intrepid2 {
                                                            1 );
     
      // these hold the reference domain points that will be mapped to each edge or face
-     FieldContainer<Scalar> oneDPts( numPtsPerEdge , 1 );
-     FieldContainer<Scalar> twoDPts( numPtsPerFace , 2 );
+     ArrayScalar oneDPts( numPtsPerEdge , 1 );
+     ArrayScalar twoDPts( numPtsPerFace , 2 );
 
      if (pointType == POINTTYPE_WARPBLEND) {
        CubatureDirectLineGauss<Scalar> edgeRule( numPtsPerEdge );
-       FieldContainer<Scalar> edgeCubWts( numPtsPerEdge );
+       ArrayScalar edgeCubWts( numPtsPerEdge );
        edgeRule.getCubature( oneDPts , edgeCubWts );
      }
      else if (pointType == POINTTYPE_EQUISPACED ) {
-       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( oneDPts , 
+       PointTools::getLattice<Scalar,ArrayScalar >( oneDPts , 
                                                                edgeTop ,
                                                                n+1 , 
                                                                1 ,
                                                                pointType );
      }
 
-     PointTools::getLattice<Scalar,FieldContainer<Scalar> >( twoDPts ,
+     PointTools::getLattice<Scalar,ArrayScalar >( twoDPts ,
                                                              faceTop ,
                                                              n+1 ,
                                                              1 ,
                                                              pointType );
 
-     FieldContainer<Scalar> edgePts( numPtsPerEdge , 3 );
-     FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , numPtsPerEdge );
+     ArrayScalar edgePts( numPtsPerEdge , 3 );
+     ArrayScalar phisAtEdgePoints( scalarBigN , numPtsPerEdge );
 
-     FieldContainer<Scalar> facePts( numPtsPerFace , 3 );
-     FieldContainer<Scalar> phisAtFacePoints( scalarBigN , 
+     ArrayScalar facePts( numPtsPerFace , 3 );
+     ArrayScalar phisAtFacePoints( scalarBigN , 
                                              numPtsPerFace );   
 
-     FieldContainer<Scalar> edgeTan( 3 );
+     ArrayScalar edgeTan( 3 );
     
      // loop over the edges
      for (int edge=0;edge<6;edge++) {
@@ -292,8 +292,8 @@ namespace Intrepid2 {
 
    // handle the faces, if needed
     if (n > 1) {
-      FieldContainer<Scalar> refFaceTanU(3);
-      FieldContainer<Scalar> refFaceTanV(3);
+      ArrayScalar refFaceTanU(3);
+      ArrayScalar refFaceTanV(3);
       for (int face=0;face<4;face++) {
         CellTools<Scalar>::getReferenceFaceTangents( refFaceTanU ,
                                                     refFaceTanV ,
@@ -320,13 +320,13 @@ namespace Intrepid2 {
 
      // internal dof, if needed
      if (n > 2) {
-       FieldContainer<Scalar> cellPoints( numPtsPerCell , 3 );
-       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( cellPoints ,
+       ArrayScalar cellPoints( numPtsPerCell , 3 );
+       PointTools::getLattice<Scalar,ArrayScalar >( cellPoints ,
 							       this->getBaseCellTopology() , 
 							       n + 1 ,
 							       1 ,
 							       pointType );
-       FieldContainer<Scalar> phisAtCellPoints( scalarBigN , numPtsPerCell );
+       ArrayScalar phisAtCellPoints( scalarBigN , numPtsPerCell );
        Phis_.getValues( phisAtCellPoints , cellPoints , OPERATOR_VALUE );
        for (int i=0;i<numPtsPerCell;i++) {
 	 for (int j=0;j<scalarBigN;j++) {
@@ -450,7 +450,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          ArrayScalar phisCur( scalarBigN , numPts );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
           for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
@@ -469,7 +469,7 @@ namespace Intrepid2 {
         break;
       case OPERATOR_CURL:
         {
-          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 3 );
+          ArrayScalar phisCur( scalarBigN , numPts , 3 );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
           for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
             for (int j=0;j<outputValues.dimension(1);j++) { // point loop
