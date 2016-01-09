@@ -73,17 +73,17 @@
 
 #include "Piro_InvertMassMatrixDecorator.hpp"
 
-#ifdef Piro_ENABLE_Ifpack2
+#ifdef HAVE_PIRO_IFPACK2
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #endif
 
-#ifdef Piro_ENABLE_MueLu
+#ifdef HAVE_PIRO_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #endif
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #  include "Thyra_NonlinearSolver_NOX.hpp"
 #endif
 
@@ -184,7 +184,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdTimeStepSolver = rythmosTimeStepSolver;
   }
   else if (rythmosPL->get<std::string>("Nonlinear Solver Type") == "NOX") {
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
     Teuchos::RCP<Thyra::NOXNonlinearSolver> nox_solver =  Teuchos::rcp(new Thyra::NOXNonlinearSolver);
     Teuchos::RCP<Teuchos::ParameterList> nox_params = Teuchos::rcp(new Teuchos::ParameterList);
     *nox_params = appParams->sublist("NOX");
@@ -341,7 +341,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
      //
      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-#ifdef Piro_ENABLE_Ifpack2
+#ifdef HAVE_PIRO_IFPACK2
      typedef Thyra::PreconditionerFactoryBase<double> Base;
 #ifdef ALBANY_BUILD
      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, LocalOrdinal, GlobalOrdinal, Node> > Impl;
@@ -350,7 +350,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
 #endif
      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
-#ifdef Piro_ENABLE_MueLu
+#ifdef HAVE_PIRO_MUELU
 #ifdef ALBANY_BUILD
      Stratimikos::enableMueLu<LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
 #else

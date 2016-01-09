@@ -51,9 +51,9 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "SaveEigenData_Epetra.hpp"
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Assert.hpp"
@@ -84,12 +84,12 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
   solverFactory.setSource<LOCA::SaveEigenData::AbstractStrategy>(
       Piro::providerFromReferenceAcceptingConstructor<SaveEigenData_Epetra>());
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
   int numTests=5;
 #else
   int numTests=3;

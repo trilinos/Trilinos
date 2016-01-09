@@ -49,7 +49,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "NOX_Epetra_Observer.H"
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 #include "NOX_Epetra_LinearSystem.H"
@@ -58,11 +58,11 @@
 #include "LOCA_StatusTest_Abstract.H"
 
 #include "Piro_Epetra_AdaptiveSolutionManager.hpp"
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 #include "Rythmos_IntegrationObserverBase.hpp"
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -126,18 +126,18 @@ private:
   template <typename T>
   Provider<T> &getSource();
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
   Provider<NOX::Epetra::Observer> noxObserverSource_;
   Provider<NOX::Epetra::ModelEvaluatorInterface> noxInterfaceSource_;
   Provider<NOX::Epetra::LinearSystem> noxLinearSystemSource_;
   Provider<LOCA::SaveEigenData::AbstractStrategy> saveEigSource_;
   Provider<LOCA::StatusTest::Abstract> statusTestSource_;
   Provider<Piro::Epetra::AdaptiveSolutionManager> adaptSolMgrSource_;
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
   Provider<Rythmos::IntegrationObserverBase<double> > rythmosObserverSource_;
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */
 };
 
 template <typename T>

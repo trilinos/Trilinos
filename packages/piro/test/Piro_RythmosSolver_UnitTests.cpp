@@ -44,14 +44,14 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 #include "Piro_RythmosSolver.hpp"
 #include "Piro_RythmosStepperFactory.hpp"
 #include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "Piro_NOXSolver.hpp"
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
 #include "Piro_Test_ThyraSupport.hpp"
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
@@ -747,7 +747,7 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, ExternalStepper_Interface)
   }
 }
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_SolutionSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
@@ -904,6 +904,6 @@ TEUCHOS_UNIT_TEST(Piro_RythmosSolver, SteadyState_ResponseSensitivityOp_NoDgDpMv
   }
 }
 
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */
