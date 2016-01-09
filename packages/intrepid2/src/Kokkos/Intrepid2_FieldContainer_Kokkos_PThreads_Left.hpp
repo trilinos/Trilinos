@@ -226,6 +226,15 @@ delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
 }
 
+void resize(const Teuchos::Array<int>& newDimensions);
+
+template<class Vector>
+    void dimensions(Vector& dimensions) const{
+ dimensions.resize(rankValue);
+ for (index_type i=0; i<rankValue;i++)
+   dimensions[i]=dim[i];
+}
+
 
 FieldContainer_Kokkos(FieldContainer_Kokkos& inContainer);
 FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
@@ -369,8 +378,159 @@ Scalar initValue=Scalar(0.0);
 Kokkos::parallel_for(sizeValue,initFieldContKokkos<Scalar>(initValue,containerMemory));
 }
 
-
 };
+
+template <class Scalar>
+void FieldContainer_Kokkos<Scalar,Kokkos::LayoutLeft,Kokkos::Threads>::resize(const Teuchos::Array<int>& newDimensions){
+// First handle the trivial case of zero dimensions
+  if(!intepidManaged){
+   std::cerr <<"Resizing Unmanaged FieldContainer_Kokkos Potential Memory Issues"<<std::endl;
+   }
+  if( newDimensions.size() == 0){
+   dim0=dim[0]=0;
+   dim1=dim[1]=0;
+   dim2=dim[2]=0;
+   dim3=dim[3]=0;
+   dim4=dim[4]=0;
+   dim5=dim[5]=0;
+   dim6=dim[6]=0;
+   dim7=dim[7]=0;
+   rankValue=1;
+   sizeValue=0;
+   delete[] containerMemory;
+   containerMemory=new Scalar[sizeValue];
+  }
+  else {
+
+    // Copy first 5 dimensions for faster access
+    unsigned int theRank = newDimensions.size();
+    switch (theRank) {
+      case 1:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=0;
+        dim2=dim[2]=0;
+        dim3=dim[3]=0;
+        dim4=dim[4]=0;
+        dim5=dim[5]=0;
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 1 ;
+        sizeValue=dim0;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+      case 2:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=0;
+        dim3=dim[3]=0;
+        dim4=dim[4]=0;
+        dim5=dim[5]=0;
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 2 ;
+        sizeValue=dim0*dim1;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+      case 3:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=0;
+        dim4=dim[4]=0;
+        dim5=dim[5]=0;
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 3 ;
+        sizeValue=dim0*dim1*dim2;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+      case 4:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=newDimensions[3];
+        dim4=dim[4]=0;
+        dim5=dim[5]=0;
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 4 ;
+        sizeValue=dim0*dim1*dim2*dim3;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+      case 5:
+       dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=newDimensions[3];
+        dim4=dim[4]=newDimensions[4];
+        dim5=dim[5]=0;
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 5 ;
+        sizeValue=dim0*dim1*dim2*dim3*dim4;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+      case 6:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=newDimensions[3];
+        dim4=dim[4]=newDimensions[4];
+        dim5=dim[5]=newDimensions[5];
+        dim6=dim[6]=0;
+        dim7=dim[7]=0;
+        rankValue= 6 ;
+        sizeValue=dim0*dim1*dim2*dim3*dim4*dim5;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+       case 7:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=newDimensions[3];
+        dim4=dim[4]=newDimensions[4];
+        dim5=dim[5]=newDimensions[5];
+        dim6=dim[6]=newDimensions[6];
+        dim7=dim[7]=0;
+        rankValue= 7 ;
+        sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+        case 8:
+        dim0=dim[0]=newDimensions[0];
+        dim1=dim[1]=newDimensions[1];
+        dim2=dim[2]=newDimensions[2];
+        dim3=dim[3]=newDimensions[3];
+        dim4=dim[4]=newDimensions[4];
+        dim5=dim[5]=newDimensions[5];
+        dim6=dim[6]=newDimensions[6];
+        dim7=dim[7]=newDimensions[7];
+        rankValue= 8 ;
+        sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6*dim7;
+        delete[] containerMemory;
+        containerMemory=new Scalar[sizeValue];
+        break;
+
+
+      default:
+       std::cerr <<"FieldContainer_Kokkos can't have more than 8 dimentions"<<std::endl;
+    }
+  }
+}
 
 
 template <class Scalar>
