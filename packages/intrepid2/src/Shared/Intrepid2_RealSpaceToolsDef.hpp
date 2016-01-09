@@ -756,7 +756,7 @@ template <class Scalar,class ArrayInverseWrap,class ArrayInWrap,class ArrayInver
 struct inverse4_3 {
   ArrayInverseWrap inverseMats;
   ArrayInWrap inMats;
-typedef typename conditional_eSpace<ArrayInverse>::execution_space execution_space;
+typedef typename Intrepid2::conditional_eSpace<ArrayInverse>::execution_space execution_space;
   // Views have "view semantics."  This means that they behave like
   // pointers, not like std::vector.  Their copy constructor and
   // operator= only do shallow copies.  Thus, you can pass View

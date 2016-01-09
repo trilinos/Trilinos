@@ -735,7 +735,7 @@ namespace Intrepid2 {
       }
       
       /* get warp tangential to face */
-      warpShiftFace3D<Scalar,ArrayType>(order,alpha,La,Lb,Lc,Ld,warp);
+      warpShiftFace3D<Scalar,FieldContainer<Scalar> >(order,alpha,La,Lb,Lc,Ld,warp);
       
       for (int k=0;k<N;k++) {
         blend(k) = Lb(k) * Lc(k) * Ld(k);

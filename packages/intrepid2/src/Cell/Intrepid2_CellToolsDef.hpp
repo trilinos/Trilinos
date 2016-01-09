@@ -1409,7 +1409,7 @@ template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
 void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
                                            const ArrayRefPoint &        refPoints,
                                            const ArrayCell     &        cellWorkset,
-                                           const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
+                                           const Teuchos::RCP<Basis<Scalar, ArrayRefPoint > > HGRAD_Basis,
                                            const int &                  whichCell)
 {
 //  INTREPID2_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
@@ -1425,7 +1425,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoin
 
   // Temp (F,P) array for the values of nodal basis functions at the reference points
   int basisCardinality = HGRAD_Basis -> getCardinality();
-  FieldContainer<Scalar> basisVals(basisCardinality, numPoints);
+  ArrayRefPoint basisVals(basisCardinality, numPoints);
 
   // Initialize physPoints
   if(getrank(physPoints)==3){
@@ -1453,7 +1453,7 @@ for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++)
     case 2:
       {
         // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
-        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(0)), static_cast<index_type>(refPoints.dimension(1)) );
+        ArrayRefPoint tempPoints( static_cast<index_type>(refPoints.dimension(0)), static_cast<index_type>(refPoints.dimension(1)) );
         // Copy point set corresponding to this cell oridinal to the temp (P,D) array
         for(index_type pt = 0; pt < static_cast<index_type>(refPoints.dimension(0)); pt++){
           for(index_type dm = 0; dm < static_cast<index_type>(refPoints.dimension(1)) ; dm++){
@@ -1489,7 +1489,7 @@ for(index_type i = 0; i < static_cast<index_type>(physPoints.dimension(0)); i++)
     case 3:
       {
         // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
-        FieldContainer<Scalar> tempPoints( static_cast<index_type>(refPoints.dimension(1)), static_cast<index_type>(refPoints.dimension(2)) );
+        ArrayRefPoint tempPoints( static_cast<index_type>(refPoints.dimension(1)), static_cast<index_type>(refPoints.dimension(2)) );
         
         // Compute the map F(refPoints) = sum node_coordinate*basis(refPoints)
         for(index_type cellOrd = 0; cellOrd < numCells; cellOrd++) {
