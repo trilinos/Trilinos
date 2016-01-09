@@ -78,10 +78,8 @@
 
 // end of undoing autoconf's work section
 
-#include <TpetraCore_config.h>
-#include <Teuchos_ConfigDefs.hpp>
-#include <Kokkos_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#include "TpetraCore_config.h"
+#include "Kokkos_DefaultNode.hpp"
 
 //! %Tpetra namespace
 namespace Tpetra {
@@ -122,11 +120,9 @@ namespace Tpetra {
 
 //#ifndef __CUDACC__
 // mem management
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_Array.hpp>
+#include <Teuchos_Array.hpp> // includes ArrayRCP
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp>
+#include <Teuchos_Tuple.hpp> // includes ArrayView
 // traits classes
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -134,8 +130,7 @@ namespace Tpetra {
 #include <Teuchos_NullIteratorTraits.hpp>
 #include <Teuchos_SerializationTraits.hpp>
 // comm
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_CommHelpers.hpp>
+#include "Teuchos_CommHelpers.hpp"
 // misc
 #include <Teuchos_ParameterList.hpp>
 //#endif
