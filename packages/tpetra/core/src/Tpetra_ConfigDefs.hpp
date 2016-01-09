@@ -42,42 +42,6 @@
 #ifndef TPETRA_CONFIGDEFS_HPP
 #define TPETRA_CONFIGDEFS_HPP
 
-#ifndef __cplusplus
-#define __cplusplus
-#endif // ifndef __cplusplus
-
-/* this section undefines all the things autotools defines for us that we wish it didn't. */
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif // ifdef PACKAGE
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif // ifdef PACKAGE_NAME
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif // ifdef PACKAGE_BUGREPORT
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif // ifdef PACKAGE_STRING
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif // ifdef PACKAGE_TARNAME
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif // ifdef PACKAGE_VERSION
-
-#ifdef VERSION
-#undef VERSION
-#endif // ifdef VERSION
-
-// end of undoing autoconf's work section
-
 #include "TpetraCore_config.h"
 #include "Kokkos_DefaultNode.hpp"
 
@@ -120,19 +84,19 @@ namespace Tpetra {
 
 //#ifndef __CUDACC__
 // mem management
-#include <Teuchos_Array.hpp> // includes ArrayRCP
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Tuple.hpp> // includes ArrayView
+#include "Teuchos_Array.hpp" // includes ArrayRCP
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Tuple.hpp" // includes ArrayView
 // traits classes
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_NullIteratorTraits.hpp>
-#include <Teuchos_SerializationTraits.hpp>
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_NullIteratorTraits.hpp"
+#include "Teuchos_SerializationTraits.hpp"
 // comm
 #include "Teuchos_CommHelpers.hpp"
 // misc
-#include <Teuchos_ParameterList.hpp>
+#include "Teuchos_ParameterList.hpp"
 //#endif
 
 //! Namespace for Tpetra classes and methods
