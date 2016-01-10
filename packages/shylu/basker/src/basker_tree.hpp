@@ -826,8 +826,6 @@ namespace BaskerNS
 	BASKER_ASSERT(U_view_count(i)>0, "tree uvc2");
 	MALLOC_MATRIX_1DARRAY(AVM(i), U_view_count(i));
 	BASKER_ASSERT(L_view_count(i)>0, "tree lvv2");
-	printf("MALLOC ALM(%d) size: %d \n", 
-	       i, L_view_count(i));
 	MALLOC_MATRIX_1DARRAY(ALM(i), L_view_count(i));
 
 	//Malloc each LU and LL subarray
@@ -1021,7 +1019,7 @@ namespace BaskerNS
     Int c_idx = 0; //Col tab offset
 
 
-    M.info();
+    //M.info();
 
     for(Int k = 0; k < M.ncol; ++k)
       {

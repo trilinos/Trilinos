@@ -474,7 +474,7 @@ namespace BaskerNS
     //We assume a pre-scan has already happened
     if(alloc == BASKER_TRUE)
       {
-	printf("ALLOC\n");
+	//printf("ALLOC\n");
 	if(nnz > 0)
 	  {
 	    BASKER_ASSERT(nnz > 0, "matrix row nnz 2");
@@ -487,7 +487,7 @@ namespace BaskerNS
 	  }
       }
     //init_value(row_idx, nnz, (Int) 0);
-    printf("clear row: %d \n", nnz);
+    //printf("clear row: %d \n", nnz);
     for(Int i = 0; i < nnz; ++i)
       {
 	//printf("clear row_idx(%d) \n", i);
