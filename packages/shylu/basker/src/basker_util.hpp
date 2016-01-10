@@ -26,7 +26,7 @@ using namespace std;
 namespace BaskerNS
 {
 
-    //Kokkos struct for init 2D Structure of A
+  //Kokkos struct for init 2D Structure of A
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_order_init_2D
   {
@@ -80,9 +80,6 @@ namespace BaskerNS
     }//end operator()
 
   };//end kokkos_order_init_2D
-
-
-
 
 
 
@@ -168,6 +165,7 @@ namespace BaskerNS
       }
   }//end init_value 1d array host
 
+
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int,Entry,Exe_Space>::init_value
   (
@@ -175,6 +173,10 @@ namespace BaskerNS
    Int size, Int c, Int kid
    )
   {
+
+    printf("\n===SHOULD NOT BE CALLED\n");
+    BASKER_ASSERT(0==1, "init_int_thread");
+
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
@@ -205,8 +207,13 @@ namespace BaskerNS
 
   
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::init_value(ENTRY_1DARRAY a, Int size, Entry c, Int kid)
+  void Basker<Int,Entry,Exe_Space>::init_value
+  (ENTRY_1DARRAY a, Int size, Entry c, Int kid)
   {
+    
+    printf("\n===SHOULD NOT BE CALLED===\n");
+    BASKER_ASSERT(0==1, "INIT_VALUE_ENTRY_THREADS");
+
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
@@ -1178,6 +1185,7 @@ namespace BaskerNS
     
     fclose(fp2);    
   }//end print_sep_bal()
+  
 
 
 
