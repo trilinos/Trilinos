@@ -3562,7 +3562,6 @@ bool BulkData::pack_entity_modification( const bool packShared , stk::CommSparse
 
   for ( EntityCommListInfoVector::const_iterator
         i = entityCommList.begin() ; i != entityCommList.end() ; ++i ) {
-
     if (i->entity_comm != nullptr) {
       Entity entity = i->entity;
       EntityState status = this->is_valid(entity) ? this->state(entity) : Deleted;
@@ -3800,6 +3799,15 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       {
           const bool wasDestroyedByOwner = remotely_destroyed;
           const bool shouldDestroyGhost = wasDestroyedByOwner || (isAuraGhost && !isCustomGhost && !hasBeenPromotedToSharedOrOwned);
+          const bool shouldRemoveFromGhosting = remotely_destroyed && !isAuraGhost && hasBeenPromotedToSharedOrOwned;
+
+          if (shouldRemoveFromGhosting) {
+              for ( size_t j = ghosting_count_minus_shared ; j >=1 ; --j ) {
+                  if ( entity_comm_map_erase( key, *m_ghosting[j] ) ) {
+                      ghosting_change_flags[ j ] = true ;
+                  }
+              }
+          }
 
           if ( shouldDestroyGhost )
           {
@@ -4202,6 +4210,46 @@ bool BulkData::internal_modification_end_for_change_entity_owner( impl::MeshModi
   this->internal_finish_modification_end(opt);
 
   return true ;
+}
+
+struct KeyProcGhostId {
+  EntityKey key;
+  int proc;
+  unsigned ghostId;
+
+  bool operator<(const KeyProcGhostId& other) const {
+    if (key != other.key) {
+      return key < other.key;
+    }
+    if (proc != other.proc) {
+      return proc < other.proc;
+    }
+    if (ghostId != other.ghostId) {
+      return ghostId < other.ghostId;
+    }
+    return false;
+  }
+
+  bool operator==(const KeyProcGhostId& other) const {
+    return key == other.key && proc == other.proc && ghostId == other.ghostId;
+  }
+};
+
+void pack_key_and_ghost_ids(EntityKey key, const EntityCommInfoVector& commvec, stk::CommSparse& comm)
+{
+    for(const EntityCommInfo& ec : commvec) {
+        stk::CommBuffer& buf = comm.send_buffer(ec.proc);
+        buf.pack<EntityKey>(key);
+        buf.pack<unsigned>(ec.ghost_id);
+    }
+}
+
+void push_back_key_procs_ghost_ids(EntityKey key, const EntityCommInfoVector& commvec, std::vector<KeyProcGhostId>& key_proc_ghostid_vec)
+{
+    for(const EntityCommInfo& ec : commvec) {
+        KeyProcGhostId data = {key, ec.proc, ec.ghost_id};
+        key_proc_ghostid_vec.push_back(data);
+    }
 }
 
 void BulkData::check_mesh_consistency()

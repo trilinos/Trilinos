@@ -193,7 +193,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
 
         if(!locally_destroyed)
         {
-            const bool am_i_old_local_owner = m_bulkData.parallel_rank() == m_bulkData.parallel_owner_rank(entity);
+            const bool am_i_old_local_owner = m_bulkData.parallel_rank() == owner;
 
             if(remote_owner_destroyed)
             {
