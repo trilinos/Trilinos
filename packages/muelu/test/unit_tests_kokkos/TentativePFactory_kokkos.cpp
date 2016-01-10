@@ -164,18 +164,18 @@ namespace MueLuTests {
     out << "Test QR with user-supplied nullspace" << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     fineLevel  .SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(199);
     fineLevel.Request("A");
-    fineLevel.Set("A",A);
+    fineLevel.Set    ("A", A);
 
     // Only one NS vector -> exercises manual orthogonalization
     LO NSdim = 1;
-    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
 
@@ -211,17 +211,17 @@ namespace MueLuTests {
 
     RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
 
-    //check interpolation
-    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
-    Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS, 1.0, 0.0);
+    // Check interpolation by computing ||fineNS - P*coarseNS||
+    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(), NSdim);
+    Ptent->apply(*coarseNullSpace, *PtN, Teuchos::NO_TRANS, 1.0, 0.0);
 
-    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     diff->putScalar(0.0);
 
     coarseLevel.Release("P",         TentativePFact.get()); // release Ptent
     coarseLevel.Release("Nullspace", TentativePFact.get());
 
-    //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
+    // diff = fineNS - (P*coarseNS)
     diff->update(1.0, *nullSpace, -1.0, *PtN, 0.0);
 
     Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
@@ -231,17 +231,16 @@ namespace MueLuTests {
       TEST_EQUALITY(norms[i] < 1e-12, true);
     }
 
-    // check normalization and orthogonality of prolongator columns
+    // Check normalization and orthogonality of prolongator columns by
+    // making sure that P^T*P = I
     RCP<Matrix> PtentTPtent = MatrixMatrix::Multiply(*Ptent, true, *Ptent, false, out);
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
-    //std::cout << diagVec->norm1() << " " << diagVec->normInf() << " " << diagVec->meanValue() << std::endl;
     TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
     TEST_EQUALITY(diagVec->meanValue(),                 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
-
-  } //MakeTentative
+  }
 
 #if 0
   TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeUsingDefaultNullSpace)
