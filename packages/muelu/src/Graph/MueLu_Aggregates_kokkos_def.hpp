@@ -105,7 +105,7 @@ namespace MueLu {
 
       aggregates_sizes_type aggregateSizes("aggregates", nAggregates_);
 
-      int myPID = vertex2AggId_->getMap()->getComm()->getRank();
+      int myPID = GetMap()->getComm()->getRank();
 
       auto vertex2AggId = vertex2AggId_->template getLocalView<DeviceType>();
       auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();

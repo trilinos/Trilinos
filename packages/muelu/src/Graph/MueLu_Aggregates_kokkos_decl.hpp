@@ -193,13 +193,13 @@ namespace MueLu {
     const RCP<LOVector>& GetProcWinner() const   { return procWinner_;         }
 
     //! Returns true if node with given local node id is marked to be a root node
-    bool IsRoot(LO i) const               { return isRoot_[i];          }
+    bool IsRoot(LO i) const                      { return isRoot_[i];          }
 
     /*! @brief Set root node information.
 
     Used by aggregation methods only.
     */
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
+    void SetIsRoot(LO i, bool value = true)      { isRoot_[i] = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
