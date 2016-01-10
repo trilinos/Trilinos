@@ -122,12 +122,37 @@ namespace MueLu {
       return aggregateSizes;
     }
 
-  } //ComputeAggSizesNodes
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
-    throw Exceptions::RuntimeError("Not implemented");
+    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename local_graph_type::entries_type entries_type;
+
+    int myPID = GetMap()->getComm()->getRank();
+
+    ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+    ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+
+    typename aggregates_sizes_type::const_type sizes = ComputeAggregateSizes();
+
+    int numAggregates = nAggregates_;
+
+    typename row_map_type::non_const_type rows("row_map", numAggregates+1);       // rows(0) = 0 automatically
+    for (LO i = 0; i < nAggregates_; i++) // TODO: replace by parallel_scan
+      rows(i+1) = rows(i) + sizes(i);
+
+    aggregates_sizes_type offsets("offsets", numAggregates);
+    for (LO i = 0; i < numAggregates; i++) // TODO: replace by parallel_for
+      offsets(i) = rows(i);
+
+    typename entries_type::non_const_type cols("entries", rows(nAggregates_));
+    for (LO i = 0; i < procWinner.size(); i++)
+      if (procWinner[i] == myPID)
+        cols(offsets(vertex2AggId[i])++) = i;
+
+    return local_graph_type(cols, rows);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
