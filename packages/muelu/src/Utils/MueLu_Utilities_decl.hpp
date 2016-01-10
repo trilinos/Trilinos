@@ -757,29 +757,9 @@ In principle, however, we could allow any Epetra_RowMatrix because the Epetra tr
   bool IsParamMuemexVariable(const std::string& name);
 
 #ifdef HAVE_MUELU_EPETRA
-  //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
-  template<class SC,class LO,class GO,class NO>
-  RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
-  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB)
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
-    return Teuchos::null;
-  }
-
-  typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
-
-  //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
-  template<>
-  inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT > (RCP<Epetra_CrsMatrix> &epAB) {
-    RCP<Xpetra::EpetraCrsMatrixT<int, KDNT> > tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<int,KDNT>(epAB));
-    RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
-    RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
-    return tmpC3;
-  }
-
   /*! \fn EpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
+      @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
+      TODO move this function to an Xpetra utility file
     */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >

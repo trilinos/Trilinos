@@ -334,16 +334,16 @@ namespace MueLuTests {
           lib = TestHelpers::Parameters::getLib();
 
         // This only works for Tpetra
-        if(lib!=Xpetra::UseTpetra) return Op;
+        if (lib!=Xpetra::UseTpetra) return Op;
+
+#if defined(HAVE_MUELU_TPETRA)
+#ifdef HAVE_MUELU_BROKEN_TESTS
+        // Thanks for the code, Travis!
 
         // Make the graph
         RCP<Matrix> FirstMatrix = BuildMatrix(matrixList,lib);
         RCP<const Xpetra::CrsGraph<LO,GO,NO> > Graph = FirstMatrix->getCrsGraph();
 
-#if defined(HAVE_MUELU_TPETRA)
-        // TAW: Oct 11 2015: The following code only works if GO=LO=int is enabled in Tpetra
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
-        // Thanks for the code, Travis!
         int blocksize = 3;
         RCP<const Xpetra::TpetraCrsGraph<LO,GO,NO> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LO,GO,NO> >(Graph);
         RCP<const Tpetra::CrsGraph<LO,GO,NO> > TTGraph = TGraph->getTpetra_CrsGraph();

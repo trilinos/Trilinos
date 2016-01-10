@@ -63,7 +63,7 @@ namespace MueLu {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const LocalOrdinal i, size_t& maxLength) const {
-        size_t d = rowPointers_[i+1] - rowPointers_[i];
+        size_t d = rowPointers_(i+1) - rowPointers_(i);
 
         maxLength = (d > maxLength ? d : maxLength);
       }

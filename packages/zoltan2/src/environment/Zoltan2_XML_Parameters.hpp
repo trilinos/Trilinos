@@ -361,6 +361,7 @@
         <String value=\"natural\"/> \
         <String value=\"random\"/> \
         <String value=\"sorted_degree\"/> \
+        <String value=\"nd\"/> \
       </Validator> \
       <Validator defaultParameterName=\"compute_metrics\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"15\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
@@ -441,7 +442,6 @@
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
         <String value=\"zoltan\"/> \
-        <String value=\"nd\"/> \
         <String value=\"forTestingOnly\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \

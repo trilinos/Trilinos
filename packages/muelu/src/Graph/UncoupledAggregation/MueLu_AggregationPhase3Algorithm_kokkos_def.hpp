@@ -80,65 +80,63 @@ namespace MueLu {
       if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
-       // TODO
-       //ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(i);
-      ArrayView<const LocalOrdinal> neighOfINode;
+      typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(i);
 
-       // We don't want a singleton. So lets see if there is an unaggregated
-       // neighbor that we can also put with this point.
-       bool isNewAggregate = false;
-       for (int j = 0; j < neighOfINode.size(); j++) {
-         LO neigh = neighOfINode[j];
+      // We don't want a singleton. So lets see if there is an unaggregated
+      // neighbor that we can also put with this point.
+      bool isNewAggregate = false;
+      for (int j = 0; j < neighOfINode.size(); j++) {
+        LO neigh = neighOfINode(j);
 
-          if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
-            isNewAggregate = true;
+        if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
+          isNewAggregate = true;
 
-            aggStat     [neigh] = AGGREGATED;
-            vertex2AggId[neigh] = numLocalAggregates;
-            procWinner  [neigh] = myRank;
+          aggStat     [neigh] = AGGREGATED;
+          vertex2AggId[neigh] = numLocalAggregates;
+          procWinner  [neigh] = myRank;
 
-            numNonAggregatedNodes--;
-          }
-       }
+          numNonAggregatedNodes--;
+        }
+      }
 
-       if (isNewAggregate) {
-         // Create new aggregate (not singleton)
-         aggregates.SetIsRoot(i);
-         vertex2AggId[i] = numLocalAggregates++;
+      if (isNewAggregate) {
+        // Create new aggregate (not singleton)
+        aggregates.SetIsRoot(i);
+        vertex2AggId[i] = numLocalAggregates++;
 
-       } else {
-         // We do not want a singleton, but there are no non-aggregated
-         // neighbors. Lets see if we can connect to any other aggregates
-         // NOTE: This is very similar to phase 2b, but simplier: we stop with
-         // the first found aggregate
-         int j = 0;
-         for (; j < neighOfINode.size(); j++) {
-           LO neigh = neighOfINode[j];
+      } else {
+        // We do not want a singleton, but there are no non-aggregated
+        // neighbors. Lets see if we can connect to any other aggregates
+        // NOTE: This is very similar to phase 2b, but simplier: we stop with
+        // the first found aggregate
+        int j = 0;
+        for (; j < neighOfINode.size(); j++) {
+          LO neigh = neighOfINode(j);
 
-           // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
-           if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
-             break;
-         }
+          // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
+          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == AGGREGATED)
+            break;
+        }
 
-         if (j < neighOfINode.size()) {
-           // Assign to an adjacent aggregate
-           vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
+        if (j < neighOfINode.size()) {
+          // Assign to an adjacent aggregate
+          vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
 
-         } else {
-           // Create new aggregate (singleton)
-           this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
+        } else {
+          // Create new aggregate (singleton)
+          this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
 
-           aggregates.SetIsRoot(i);
-           vertex2AggId[i] = numLocalAggregates++;
-         }
-       }
+          aggregates.SetIsRoot(i);
+          vertex2AggId[i] = numLocalAggregates++;
+        }
+      }
 
-       // One way or another, the node is aggregated (possibly into a singleton)
-       aggStat   [i] = AGGREGATED;
-       procWinner[i] = myRank;
-       numNonAggregatedNodes--;
+      // One way or another, the node is aggregated (possibly into a singleton)
+      aggStat   [i] = AGGREGATED;
+      procWinner[i] = myRank;
+      numNonAggregatedNodes--;
 
-     }
+    }
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);

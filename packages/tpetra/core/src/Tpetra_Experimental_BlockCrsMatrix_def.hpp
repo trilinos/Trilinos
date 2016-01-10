@@ -2937,7 +2937,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalNumDiags() const
   {
-    return getGlobalNumDiags();
+    return graph_.getGlobalNumDiags();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -2945,7 +2945,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumDiags() const
   {
-    return getNodeNumDiags();
+    return graph_.getNodeNumDiags();
   }
 
   template<class Scalar, class LO, class GO, class Node>

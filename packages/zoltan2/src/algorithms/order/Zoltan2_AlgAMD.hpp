@@ -124,6 +124,7 @@ class AlgAMD : public Algorithm<Adapter>
         "BUILD ERROR: AMD requested but not compiled into Zoltan2.\n"
         "Please set CMake flag Zoltan2_ENABLE_AMD:BOOL=ON.");
 #else
+      typedef typename Adapter::gno_t gno_t;
       typedef typename Adapter::lno_t lno_t;
       typedef typename Adapter::scalar_t scalar_t;
 

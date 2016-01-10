@@ -1045,12 +1045,31 @@ partition( const View<T,L,D,M,Impl::ViewMPVectorContiguous> & src ,
            const unsigned end )
 {
   DstViewType dst ;
-  const Sacado::MP::VectorPartition part( beg , end );
+  const Sacado::MP::VectorPartition<0> part( beg , end );
   Impl::ViewAssignment<typename DstViewType::specialize,
                        Impl::ViewMPVectorContiguous>( dst , src , part );
 
   return dst ;
 }
+
+template <typename T, typename L, typename D, typename M>
+struct is_view_mp_vector< View<T,L,D,M,Impl::ViewMPVectorContiguous> > {
+  static const bool value = true;
+};
+
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_mp_vector<view_type>::value, unsigned >::type
+dimension_scalar(const view_type& view) {
+  return view.sacado_size();
+}
+
+template <typename T, typename L, typename D, typename M>
+struct FlatArrayType< View<T,L,D,M,Impl::ViewMPVectorContiguous> > {
+  typedef View<T,L,D,M,Impl::ViewMPVectorContiguous> view_type;
+  typedef typename view_type::flat_array_type type;
+};
 
 } // namespace Kokkos
 
@@ -1331,7 +1350,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     // Views have static storage
                     ( View<DT,DL,DD,DM,specialize>::is_static &&
                       View<ST,SL,SD,SM,specialize>::is_static )
-                  ), const Sacado::MP::VectorPartition & >::type part )
+                  ), const Sacado::MP::VectorPartition<0> & >::type part )
   {
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
 

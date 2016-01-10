@@ -6,6 +6,11 @@ ASSERT_DEFINED(
 
 TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
 
+IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  TRIBITS_ADD_TEST_DIRECTORIES(unit_tests_kokkos)
+  TRIBITS_ADD_TEST_DIRECTORIES(perf_tests_kokkos)
+ENDIF()
+
 IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
 # experimental data
@@ -44,15 +49,9 @@ ELSE()
   MESSAGE(STATUS "Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  TRIBITS_ADD_TEST_DIRECTORIES(unit_tests_kokkos)
-  TRIBITS_ADD_TEST_DIRECTORIES(perf_tests_kokkos)
-ENDIF()
-
 #TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)
 
 ENDIF() # IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 

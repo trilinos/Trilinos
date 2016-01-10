@@ -79,6 +79,7 @@ struct RebindStokhosStorageDevice< T[N] , Device >
 // Get Sacado size from a list of dimensions
 template <unsigned Rank> struct GetSacadoSize {};
 template <> struct GetSacadoSize<0> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 = 0 ,
                       const size_t n2 = 0 ,
@@ -91,6 +92,7 @@ template <> struct GetSacadoSize<0> {
   }
 };
 template <> struct GetSacadoSize<1> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 = 0 ,
@@ -103,6 +105,7 @@ template <> struct GetSacadoSize<1> {
   }
 };
 template <> struct GetSacadoSize<2> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -115,6 +118,7 @@ template <> struct GetSacadoSize<2> {
   }
 };
 template <> struct GetSacadoSize<3> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -127,6 +131,7 @@ template <> struct GetSacadoSize<3> {
   }
 };
 template <> struct GetSacadoSize<4> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -139,6 +144,7 @@ template <> struct GetSacadoSize<4> {
   }
 };
 template <> struct GetSacadoSize<5> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -151,6 +157,7 @@ template <> struct GetSacadoSize<5> {
   }
 };
 template <> struct GetSacadoSize<6> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -163,6 +170,7 @@ template <> struct GetSacadoSize<6> {
   }
 };
 template <> struct GetSacadoSize<7> {
+  KOKKOS_INLINE_FUNCTION
   static size_t eval( const size_t n0 ,
                       const size_t n1 ,
                       const size_t n2 ,
@@ -176,6 +184,12 @@ template <> struct GetSacadoSize<7> {
 };
 
 } // namespace Impl
+
+// Typename of flat array where sacado dimension is folded into neighbor
+template <typename view_type, typename Enabled = void>
+struct FlatArrayType {
+  typedef view_type type;
+};
 
 } // namespace Kokkos
 

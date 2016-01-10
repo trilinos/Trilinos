@@ -46,7 +46,7 @@
 #if defined(HAVE_STOKHOS_TEUCHOSKOKKOSCOMM)
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_View_MP_Vector_Contiguous.hpp"
+#include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
 
 //----------------------------------------------------------------------------
@@ -54,6 +54,91 @@
 //----------------------------------------------------------------------------
 
 namespace Teuchos {
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+//! Variant of send() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename D, typename ... P>
+typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value>::type
+send (const Kokkos::View<D,P...>& sendBuffer,
+      const Ordinal count,
+      const int destRank,
+      const int tag,
+      const Comm<Ordinal>& comm)
+{
+  typedef Kokkos::View<D,P...> view_type;
+  typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
+
+  flat_array_type array = sendBuffer;
+  Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
+  send(array, array_count, destRank, tag, comm);
+}
+
+//! Variant of ssend() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename D, typename ... P>
+typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value>::type
+ssend (const Kokkos::View<D,P...>& sendBuffer,
+       const Ordinal count,
+       const int destRank,
+       const int tag,
+       const Comm<Ordinal>& comm)
+{
+  typedef Kokkos::View<D,P...> view_type;
+  typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
+
+  flat_array_type array = sendBuffer;
+  Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
+  ssend(array, array_count, destRank, tag, comm);
+}
+
+//! Variant of readySend() that accepts a message tag.
+template<typename Ordinal, typename D, typename ... P>
+typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value>::type
+readySend (const Kokkos::View<D,P...>& sendBuffer,
+           const Ordinal count,
+           const int destRank,
+           const int tag,
+           const Comm<Ordinal>& comm)
+{
+  typedef Kokkos::View<D,P...> view_type;
+  typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
+
+  flat_array_type array = sendBuffer;
+  Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
+  readySend(array, array_count, destRank, tag, comm);
+}
+
+//! Variant of isend() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename D, typename ... P>
+typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value, RCP<CommRequest<Ordinal> > >::type
+isend (const Kokkos::View<D,P...>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<Ordinal>& comm)
+{
+  typedef Kokkos::View<D,P...> view_type;
+  typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
+
+  flat_array_type array = sendBuffer;
+  return isend(array, destRank, tag, comm);
+}
+
+//! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
+template<typename Ordinal, typename D, typename ... P>
+typename std::enable_if<Kokkos::is_view_mp_vector< Kokkos::View<D,P...> >::value, RCP<CommRequest<Ordinal> > >::type
+ireceive (const Kokkos::View<D,P...>& recvBuffer,
+          const int sourceRank,
+          const int tag,
+          const Comm<Ordinal>& comm)
+{
+  typedef Kokkos::View<D,P...> view_type;
+  typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
+
+  flat_array_type array = recvBuffer;
+  return ireceive(array, sourceRank, tag, comm);
+}
+
+#else
 
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, typename T, typename L, typename D, typename M>
@@ -135,6 +220,8 @@ ireceive (const Kokkos::View<T,L,D,M,Kokkos::Impl::ViewMPVectorContiguous>& recv
   flat_array_type array = recvBuffer;
   return ireceive(array, sourceRank, tag, comm);
 }
+
+#endif
 
 }
 

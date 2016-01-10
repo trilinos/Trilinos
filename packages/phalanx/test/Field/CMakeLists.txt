@@ -34,21 +34,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(Phalanx_ENABLE_IntrepidIntrepid2)
+IF(Phalanx_ENABLE_Intrepid2)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mdfield_intrepid
     SOURCES MDField_Intrepid.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
     TESTONLYLIBS phalanx_test_utilities
     NUM_MPI_PROCS 1
     )
-ENDIF(Phalanx_ENABLE_IntrepidIntrepid2)
+ENDIF(Phalanx_ENABLE_Intrepid2)
 
 
 # Will add this test in a later commit
 
-#ASSERT_DEFINED(Phalanx_ENABLE_IntrepidIntrepid2)
+#ASSERT_DEFINED(Phalanx_ENABLE_Intrepid2)
 #
-#IF (Phalanx_ENABLE_IntrepidIntrepid2)
+#IF (Phalanx_ENABLE_Intrepid2)
 #  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    mdfield_intrepid
 #    SOURCES MDField_Intrepid.cpp
@@ -88,4 +88,4 @@ ENDIF(Phalanx_ENABLE_IntrepidIntrepid2)
 #  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/testdata"
 #)
 #
-#ENDIF(Phalanx_ENABLE_IntrepidIntrepid2)
+#ENDIF(Phalanx_ENABLE_Intrepid2)

@@ -42,7 +42,7 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_OrderingProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
@@ -155,7 +155,8 @@ int main(int argc, char** argv)
   {
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+         << "NumProcs = " << comm->getSize() << endl
+         << "NumParts = " << numParts << endl;
   }
 
   if (origMatrix->getGlobalNumRows() < 40)
@@ -189,8 +190,8 @@ int main(int argc, char** argv)
   Teuchos::ParameterList params;
 
   params.set("num_global_parts", numParts);
-  params.set("partitioning_approach", "partition");
-  params.set("algorithm", "nd");
+  //  params.set("partitioning_approach", "partition");
+  params.set("order_method", "nd");
   //////////////////////////////////////////////////////////////////////
 
 
@@ -218,7 +219,8 @@ int main(int argc, char** argv)
   //////////////////////////////////////////////////////////////////////
   ////// Create and solve partitioning problem
   //////////////////////////////////////////////////////////////////////
-  Zoltan2::PartitioningProblem<SparseMatrixAdapter_t> problem(&matAdapter, &params);
+  Zoltan2::OrderingProblem<SparseMatrixAdapter_t> problem(&matAdapter, &params);
+
 
   try
   {

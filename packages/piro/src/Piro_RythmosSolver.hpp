@@ -43,13 +43,13 @@
 #ifndef PIRO_RYTHMOSSOLVER_H
 #define PIRO_RYTHMOSSOLVER_H
 
+#include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
-#include "Piro_config.hpp"
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_RythmosStepperFactory.hpp"

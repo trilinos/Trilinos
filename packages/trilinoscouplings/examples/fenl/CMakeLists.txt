@@ -32,23 +32,29 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND Trilinos
 
   IF( TrilinosCouplings_ENABLE_Stokhos AND
       Stokhos_ENABLE_Sacado AND
-      Stokhos_ENABLE_KokkosCore AND
       Stokhos_ENABLE_TpetraKernels AND
       Stokhos_ENABLE_Tpetra )
 
-    TRIBITS_ADD_EXECUTABLE(
-      fenl_ensemble
-      SOURCES  fenl_ensemble.hpp main_ensemble.cpp
-      COMM serial mpi
-      TESTONLYLIBS fenl
-      )
+    # The ensemble version requires the PCE scalar type too since it builds
+    # a PCE through ensembles.
+    IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND
+       Stokhos_ENABLE_PCE_Scalar_Type)
+      TRIBITS_ADD_EXECUTABLE(
+        fenl_ensemble
+        SOURCES  fenl_ensemble.hpp main_ensemble.cpp
+        COMM serial mpi
+        TESTONLYLIBS fenl
+        )
+    ENDIF()
 
-    TRIBITS_ADD_EXECUTABLE(
-      fenl_pce
-      SOURCES fenl_functors_pce.hpp fenl_pce.hpp main_pce.cpp
-      COMM serial mpi
-      TESTONLYLIBS fenl
-      )
+    IF(Stokhos_ENABLE_PCE_Scalar_Type)
+      TRIBITS_ADD_EXECUTABLE(
+        fenl_pce
+        SOURCES fenl_functors_pce.hpp fenl_pce.hpp main_pce.cpp
+        COMM serial mpi
+        TESTONLYLIBS fenl
+        )
+    ENDIF()
 
   ENDIF()
 

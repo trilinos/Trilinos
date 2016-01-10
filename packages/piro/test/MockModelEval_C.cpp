@@ -46,7 +46,7 @@
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
 
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
 #include "Stokhos_Epetra.hpp"
 #endif
 
@@ -179,7 +179,7 @@ MockModelEval_C::createInArgs() const
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x, true);
 
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
   inArgs.setSupports(IN_ARG_x_sg, true);
   inArgs.setSupports(IN_ARG_x_dot_sg, true);
   inArgs.setSupports(IN_ARG_p_sg, 0, true); // 1 SG parameter vector
@@ -206,7 +206,7 @@ MockModelEval_C::createOutArgs() const
   outArgs.setSupports(OUT_ARG_DgDx, 0, DERIV_TRANS_MV_BY_ROW);
   outArgs.setSupports(OUT_ARG_DgDp, 0, 0, DERIV_MV_BY_COL);
 
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
   outArgs.setSupports(OUT_ARG_f_sg, true);
   outArgs.setSupports(OUT_ARG_W_sg, true);
   outArgs.setSupports(OUT_ARG_g_sg, 0, true);
@@ -291,7 +291,7 @@ MockModelEval_C::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   // Stochastic calculation
   //
 
-#ifdef Piro_ENABLE_Stokhos
+#ifdef HAVE_PIRO_STOKHOS
   // Parse InArgs
   RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
     inArgs.get_sg_basis();

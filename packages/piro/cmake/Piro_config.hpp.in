@@ -1,4 +1,5 @@
-/* src/piro_Config.h.in.  Generated from configure.ac by autoheader.  */
+#ifndef PIRO_CONFIG_HPP
+#define PIRO_CONFIG_HPP
 
 /* Define if want to build examples */
 #cmakedefine HAVE_EXAMPLES
@@ -16,21 +17,44 @@
 #cmakedefine HAVE_PIRO_TESTS
 
 /* Defines for optional package dependencies */
+#cmakedefine HAVE_PIRO_NOX
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_NOX
+#cmakedefine HAVE_PIRO_RYTHMOS
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_Rythmos
+#cmakedefine HAVE_PIRO_MOOCHO
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_MOOCHO
+#cmakedefine HAVE_PIRO_STOKHOS
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_Stokhos
-#cmakedefine Piro_ENABLE_TriKota
+#cmakedefine HAVE_PIRO_OPTIPACK
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_OptiPack
+#cmakedefine HAVE_PIRO_TRIKOTA
+/* DEPRECATED */
+#cmakedefine Piro_ENABLE_TriKota
+#cmakedefine HAVE_PIRO_ROL
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_ROL
+#cmakedefine HAVE_PIRO_IFPACK2
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_Ifpack2
+#cmakedefine HAVE_PIRO_MUELU
+/* DEPRECATED */
 #cmakedefine Piro_ENABLE_MueLu
+#cmakedefine HAVE_PIRO_THYRAEPETRAADAPTERS
+#cmakedefine HAVE_PIRO_THYRAEPETRAEXTADAPTERS
+#cmakedefine HAVE_PIRO_EPETRA
+#cmakedefine HAVE_PIRO_EPETRAEXT
+#cmakedefine HAVE_PIRO_TPETRA
 
 /* Define to the address where bug reports for this package should be sent. */
 #cmakedefine PACKAGE_BUGREPORT
 
 /* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
+#cmakedefine PACKAGE_NAME Piro
 
 /* Define to the full name and version of this package. */
 #cmakedefine PACKAGE_STRING
@@ -40,3 +64,5 @@
 
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION
+
+#endif

@@ -67,13 +67,13 @@ namespace Amesos2 {
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::MP::Vector<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
-      return A->getLocalValuesView().sacado_size();
+      return Kokkos::dimension_scalar(A->getLocalValuesView());
     }
     else if (X != Teuchos::null) {
-      return X->template getLocalView<D>().sacado_size();
+      return Kokkos::dimension_scalar(X->template getLocalView<D>());
     }
     else if (B != Teuchos::null) {
-      return B->template getLocalView<D>().sacado_size();
+      return Kokkos::dimension_scalar(B->template getLocalView<D>());
     }
     return 0;
   }

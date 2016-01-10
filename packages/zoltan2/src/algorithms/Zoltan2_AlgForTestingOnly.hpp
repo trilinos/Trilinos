@@ -113,7 +113,6 @@ public:
       break;
     default:
       throw std::runtime_error("invalid forTestingOnlyFlag value");
-      break;
     }
       
     std::cout << comm->getRank() << " forTestingOnly " << forTestingOnlyFlag

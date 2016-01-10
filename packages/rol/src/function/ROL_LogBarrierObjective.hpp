@@ -48,17 +48,15 @@ template <class Real>
 class LogBarrierObjective : public Objective<Real> {
 public:
 
+    
+
   /* \brief Objective value J(x) = \f$-\sum_i \log(x_i) \f$ */
   Real value( const Vector<Real> &x, Real &tol ) {
 
     Teuchos::RCP<Vector<Real> > logx = x.clone();
     logx->set(x);
     
-    struct Logarithm : public Elementwise::UnaryFunction<Real> {
-      Real apply( const Real &xc ) const {
-        return std::log(xc);
-      }
-    } log;
+    Elementwise::Logarithm<Real> log;
 
     logx->applyUnary(log);
 
@@ -74,11 +72,7 @@ public:
     
     g.set(x);
      
-    struct Reciprocal : public Elementwise::UnaryFunction<Real> {
-      Real apply( const Real &xc ) const {
-        return 1.0/xc;
-      }
-    } reciprocal;
+    Elementwise::Reciprocal<Real> reciprocal;
    
     g.applyUnary(reciprocal);
     g.scale(-1.0);
