@@ -717,7 +717,9 @@ void Relaxation<MatrixType>::compute ()
   using Teuchos::REDUCE_SUM;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vector_type;
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type,
+                         global_ordinal_type, node_type> vector_type;
+  typedef typename vector_type::device_type device_type;
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();
 
@@ -750,11 +752,6 @@ void Relaxation<MatrixType>::compute ()
       "Please report this bug to the Ifpack2 developers.");
 
     Diagonal_ = rcp (new vector_type (A_->getRowMap ()));
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      Diagonal_.is_null (), std::logic_error,
-      "Ifpack2::Relaxation::compute: Vector of diagonal entries has not been "
-      "created yet.  Please report this bug to the Ifpack2 developers.");
 
     // Extract the diagonal entries.  The CrsMatrix static graph
     // version is faster for subsequent calls to compute(), since it
@@ -806,22 +803,13 @@ void Relaxation<MatrixType>::compute ()
       Tpetra::deep_copy (*origDiag, *Diagonal_);
     }
 
-    // "Host view" means that if the Node type is a GPU Node, the
-    // ArrayRCP points to host memory, not device memory.  It will
-    // write back to device memory (Diagonal_) at end of scope.
-    ArrayRCP<scalar_type> diagHostView = Diagonal_->get1dViewNonConst ();
-
-    // The view below is only valid as long as diagHostView is within
-    // scope.  We extract a raw pointer in release mode because we
-    // don't trust older versions of compilers (like GCC 4.4.x or
-    // Intel < 13) to optimize away ArrayView::operator[].
-#ifdef HAVE_IFPACK2_DEBUG
-    ArrayView<scalar_type> diag = diagHostView ();
-#else
-    scalar_type* KOKKOSCLASSIC_RESTRICT const diag = diagHostView.getRawPtr ();
-#endif // HAVE_IFPACK2_DEBUG
-
     const size_t numMyRows = A_->getNodeNumRows ();
+
+    // We're about to read and write diagonal entries on the host.
+    Diagonal_->template sync<Kokkos::HostSpace> ();
+    Diagonal_->template modify<Kokkos::HostSpace> ();
+    auto diag_2d = Diagonal_->template getLocalView<Kokkos::HostSpace> ();
+    auto diag = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
 
     // Setup for L1 Methods.
     // Here we add half the value of the off-processor entries in the row,
@@ -849,7 +837,6 @@ void Relaxation<MatrixType>::compute ()
           diag[i] += diagonal_boost;
         }
       }
-
     }
 
     //
@@ -945,11 +932,6 @@ void Relaxation<MatrixType>::compute ()
         }
       }
 
-      // We're done computing the inverse diagonal, so invalidate the view.
-      // This ensures that the operations below, that use methods on Vector,
-      // produce correct results even on a GPU Node.
-      diagHostView = Teuchos::null;
-
       // Count floating-point operations of computing the inverse diagonal.
       //
       // FIXME (mfh 30 Mar 2013) Shouldn't counts be global, not local?
@@ -1005,8 +987,13 @@ void Relaxation<MatrixType>::compute ()
 
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.
+      //
+      // NOTE (mfh 11 Jan 2016) We need to sync Diagonal_ back from
+      // host to device for the update kernel below, and we don't need
+      // to modify it or sync it back again here.
       vector_type diff (A_->getRowMap ());
       diff.reciprocal (*origDiag);
+      Diagonal_->template sync<device_type> ();
       diff.update (-one, *Diagonal_, one);
       globalDiagNormDiff_ = diff.norm2 ();
     }
@@ -1041,10 +1028,11 @@ void Relaxation<MatrixType>::compute ()
 
     if (IsParallel_ && (PrecType_ == Ifpack2::Details::GS ||
                         PrecType_ == Ifpack2::Details::SGS)) {
-      Importer_ = A_->getGraph ()->getImporter ();
       // mfh 21 Mar 2013: The Import object may be null, but in that
       // case, the domain and column Maps are the same and we don't
       // need to Import anyway.
+      Importer_ = A_->getGraph ()->getImporter ();
+      Diagonal_->template sync<device_type> ();
     }
   } // end TimeMonitor scope
 
