@@ -60,6 +60,7 @@
 
 #include "data.hpp"
 #include "objective.hpp"
+#include "constraint.hpp"
 
 typedef double RealT;
 
@@ -117,10 +118,15 @@ int main(int argc, char *argv[]) {
 
     /*** Build objective function and constraint. ***/
     Objective_PDEOPT_Poisson<RealT> obj(data, parlist);
+    EqualityConstraint_PDEOPT_Poisson<RealT> constr(data, parlist);
 
     /*** Check functional interface. ***/
     obj.checkGradient(x,d,true,*outStream);
     obj.checkHessVec(x,d,true,*outStream);
+    constr.checkApplyJacobian(x,d,*up,true,*outStream);
+    constr.checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
+    constr.checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+    constr.checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
   }
   catch (std::logic_error err) {
