@@ -106,7 +106,7 @@ namespace Details {
 #endif
 
     //! \brief Return a pointer to the default node.
-    static RCP<DefaultNodeType> getDefaultNode();
+    static Teuchos::RCP<DefaultNodeType> getDefaultNode();
   };
 
 } // namespace KokkosClassic

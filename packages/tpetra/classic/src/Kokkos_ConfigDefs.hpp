@@ -52,19 +52,6 @@
 
 //! Namespace for Kokkos classes and methods
 namespace KokkosClassic {
-  // import Teuchos memory management classes into Kokkos
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ArrayRCP;
-  using Teuchos::ArrayView;
-  using Teuchos::arcp;
-  using Teuchos::arcpFromArrayView;
-  using Teuchos::rcpFromRef;
-  using Teuchos::null;
-  using Teuchos::arcp_reinterpret_cast;
-  using Teuchos::Array;
-  using Teuchos::ParameterList;
-
   //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
   enum ESweepDirection {
     Forward = 0,

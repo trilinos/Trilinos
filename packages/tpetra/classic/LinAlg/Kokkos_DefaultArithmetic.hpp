@@ -117,7 +117,7 @@ namespace KokkosClassic {
     /// \pre <tt>stride >= numRows</tt>
     static void
     initializeValues (MV &A, size_t numRows, size_t numCols,
-                      const ArrayRCP<typename MV::ScalarType> &values,
+                      const Teuchos::ArrayRCP<typename MV::ScalarType> &values,
                       size_t stride);
 
     /// Tell \c A about its dimensions and original dimensions, and
@@ -148,23 +148,23 @@ namespace KokkosClassic {
     /// \pre <tt>stride >= origNumRows</tt>
     static void
     initializeValues (MV &A, size_t numRows, size_t numCols,
-                      const ArrayRCP<typename MV::ScalarType> &values,
+                      const Teuchos::ArrayRCP<typename MV::ScalarType> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols);
 
     //! Get a const pointer to A's data; the same pointer set by initializeValues().
-    static ArrayRCP<const typename MV::ScalarType> getValues (const MV &A);
+    static Teuchos::ArrayRCP<const typename MV::ScalarType> getValues (const MV &A);
 
     //! Get a const pointer to the data of column \c j of \c A.
-    static ArrayRCP<const typename MV::ScalarType>
+    static Teuchos::ArrayRCP<const typename MV::ScalarType>
     getValues (const MV &A, size_t j);
 
     //! Get a nonconst pointer to A's data; the same pointer set by initializeValues().
-    static ArrayRCP<typename MV::ScalarType> getValuesNonConst (MV &A);
+    static Teuchos::ArrayRCP<typename MV::ScalarType> getValuesNonConst (MV &A);
 
     //! Get a nonconst pointer to the data of column \c j of \c A.
-    static ArrayRCP<typename MV::ScalarType>
+    static Teuchos::ArrayRCP<typename MV::ScalarType>
     getValuesNonConst (const MV &A, size_t j);
 
     //! The number of rows in \c A.
@@ -191,7 +191,7 @@ namespace KokkosClassic {
     static size_t getOrigNumCols (const MV &A);
 
     //! The Kokkos Node instance with which \c A was created.
-    static RCP<typename MV::NodeType> getNode (const MV &A);
+    static Teuchos::RCP<typename MV::NodeType> getNode (const MV &A);
   };
 
 
@@ -245,10 +245,10 @@ namespace KokkosClassic {
     /// If for any j, <tt>A(0,j)</tt> and
     /// <tt>B(0, whichVectors[j])</tt> point to the same data,
     /// then this function skips the assignment for that column.
-    static void Assign (MV& A, const MV& B, const ArrayView<const size_t>& whichVectors);
+    static void Assign (MV& A, const MV& B, const Teuchos::ArrayView<const size_t>& whichVectors);
 
     //! Compute the inner products of corresponding columns of A and B.
-    static void Dot (const MV& A, const MV& B, const ArrayView<typename MV::ScalarType> &dots);
+    static void Dot (const MV& A, const MV& B, const Teuchos::ArrayView<typename MV::ScalarType> &dots);
 
     //! Compute the inner product of A and B (assuming each has only one column).
     static typename MV::ScalarType Dot (const MV& A, const MV& B);
@@ -267,26 +267,26 @@ namespace KokkosClassic {
            typename MV::ScalarType beta, const MV &B, typename MV::ScalarType gamma);
 
     //! Compute the one-norm of each column of \c A.
-    static void Norm1 (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+    static void Norm1 (const MV &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
 
     //! Compute the one-norm of (the first column of) \c A.
     static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType Norm1 (const MV &A);
 
     //! Compute the sum of each column of \c A.
-    static void Sum (const MV &A, const ArrayView<typename MV::ScalarType> &sums);
+    static void Sum (const MV &A, const Teuchos::ArrayView<typename MV::ScalarType> &sums);
 
     //! Compute the sum of (the first column of) \c A.
     static typename MV::ScalarType Sum (const MV& A);
 
     //! Compute the infinity norm (element of maximum magnitude) of each column of \c A.
-    static void NormInf (const MV& A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+    static void NormInf (const MV& A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
 
     //! Compute the infinity norm (element of maximum magnitude) of (the first column of) \c A.
     static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
     NormInf (const MV& A);
 
     //! Compute the square of the 2-norm of each column of \c A.
-    static void Norm2Squared (const MV &A, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+    static void Norm2Squared (const MV &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
 
     //! Compute the square of the 2-norm of (the first column of) \c A.
     static typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType
@@ -297,7 +297,7 @@ namespace KokkosClassic {
     WeightedNorm (const MV &A, const MV &weightVector);
 
     //! Compute the norm of each column of \c A, weighted by the given vector of weights.
-    static void WeightedNorm (const MV &A, const MV &weightVector, const ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
+    static void WeightedNorm (const MV &A, const MV &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<typename MV::ScalarType>::magnitudeType> &norms);
 
     //! Compute <tt>A = abs(B)</tt>, elementwise.
     static void Abs (MV &A, const MV &B);
@@ -336,12 +336,12 @@ namespace KokkosClassic {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) return;
-      RCP<Node> node = A.getNode();
-      ArrayRCP<Scalar> Adata = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<Scalar> Adata = A.getValuesNonConst();
       // we'll overwrite all data covered by the multivector, but not off-stride data
       // therefore, we are write-only only in the case that stride=nR
       ReadWriteOption rw = (stride == nR ? WriteOnly : ReadWrite);
-      ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(rw,stride*(nC-1)+nR,Adata);
+      Teuchos::ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(rw,stride*(nC-1)+nR,Adata);
       for (size_t j=0; j<nC; ++j) {
         for (size_t i=0; i<nR; ++i) {
           mvdata[j*stride + i] = SCT::random();
@@ -353,7 +353,7 @@ namespace KokkosClassic {
     inline static void
     initializeValues (MultiVector<Scalar,Node> &A,
                       size_t numRows, size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride)
     {
       A.initializeValues(numRows,numCols,values,stride);
@@ -363,7 +363,7 @@ namespace KokkosClassic {
     initializeValues (MultiVector<Scalar,Node> &A,
                       size_t numRows,
                       size_t numCols,
-                      const ArrayRCP<Scalar> &values,
+                      const Teuchos::ArrayRCP<Scalar> &values,
                       size_t stride,
                       size_t origNumRows,
                       size_t origNumCols)
@@ -371,19 +371,19 @@ namespace KokkosClassic {
       A.initializeValues(numRows,numCols,values,stride,origNumRows,origNumCols);
     }
 
-    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
+    inline static Teuchos::ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
       return A.getValues();
     }
 
-    inline static ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A, size_t j) {
+    inline static Teuchos::ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A, size_t j) {
       return A.getValues(j);
     }
 
-    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A) {
+    inline static Teuchos::ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A) {
       return A.getValuesNonConst();
     }
 
-    inline static ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A, size_t j) {
+    inline static Teuchos::ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A, size_t j) {
       return A.getValuesNonConst(j);
     }
 
@@ -407,7 +407,7 @@ namespace KokkosClassic {
       return A.getOrigNumCols ();
     }
 
-    inline static RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {
+    inline static Teuchos::RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {
       return A.getNode();
     }
   };
@@ -429,8 +429,8 @@ namespace KokkosClassic {
       const size_t nC = A.getNumCols();
       if (nR*nC == 0) return;
       const size_t stride = A.getStride();
-      RCP<Node> node = A.getNode();
-      ArrayRCP<Scalar> data = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<Scalar> data = A.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -468,9 +468,9 @@ namespace KokkosClassic {
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Recip(A,B): "
         "A and B must have the same dimensions.");
 
-      RCP<Node> node = B.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = B.getNode();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -503,10 +503,10 @@ namespace KokkosClassic {
       const size_t numRows = A.getNumRows ();
       const size_t numCols = A.getNumCols ();
       const size_t stride = A.getStride ();
-      ArrayRCP<Scalar> A_data = A.getValuesNonConst ();
+      Teuchos::ArrayRCP<Scalar> A_data = A.getValuesNonConst ();
       Scalar* const A_ptr = A_data.getRawPtr ();
 
-      RCP<Node> node = A.getNode ();
+      Teuchos::RCP<Node> node = A.getNode ();
       ReadyBufferHelper<Node> rbh (node);
       rbh.begin();
       rbh.template addNonConstBuffer<Scalar> (A_data);
@@ -554,10 +554,10 @@ namespace KokkosClassic {
         "(C,sC,sAB,A,B): A, B and C must have the same number of rows, "
         "and B and C must have the same number of columns.");
 
-      RCP<Node> node = B.getNode();
-      ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = B.getNode();
+      Teuchos::ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -613,9 +613,9 @@ namespace KokkosClassic {
       if (nC*nR == 0) {
         return; // Nothing to do!
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
 
       // If A and B are the same pointer, just return without doing
       // anything.  This can make the implementation of
@@ -653,7 +653,7 @@ namespace KokkosClassic {
     static void
     Assign (MultiVector<Scalar,Node>& A,
             const MultiVector<Scalar,Node>& B,
-            const ArrayView<const size_t>& whichVectors)
+            const Teuchos::ArrayView<const size_t>& whichVectors)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -671,7 +671,7 @@ namespace KokkosClassic {
         return; // Nothing to do!
       }
 
-      RCP<Node> node = A.getNode();
+      Teuchos::RCP<Node> node = A.getNode();
 
       // Make sure that the buffers don't go out of scope until the
       // kernels are done.
@@ -697,7 +697,7 @@ namespace KokkosClassic {
     static void
     Dot (const MultiVector<Scalar,Node> &A,
          const MultiVector<Scalar,Node> &B,
-         const ArrayView<Scalar> &dots)
+         const Teuchos::ArrayView<Scalar> &dots)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -716,9 +716,9 @@ namespace KokkosClassic {
                    Teuchos::ScalarTraits<Scalar>::zero ());
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -748,9 +748,9 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<Scalar>::zero ();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues(0);
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues(0);
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -777,9 +777,9 @@ namespace KokkosClassic {
         nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): "
         "A and B must have the same dimensions.");
-      RCP<Node> node = B.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
-      ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
+      Teuchos::RCP<Node> node = B.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -851,10 +851,10 @@ namespace KokkosClassic {
         "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM"
         "(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
 
-      RCP<Node> node = B.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<Scalar>       Cdata = C.getValuesNonConst();
+      Teuchos::RCP<Node> node = B.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<Scalar>       Cdata = C.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -918,7 +918,7 @@ namespace KokkosClassic {
 
     static void
     Norm1 (const MultiVector<Scalar,Node> &A,
-           const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms)
+           const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms)
     {
       typedef Teuchos::ScalarTraits<Scalar> STS;
       typedef typename STS::magnitudeType magnitude_type;
@@ -937,8 +937,8 @@ namespace KokkosClassic {
         std::fill (norms.begin(), norms.begin() + nC, STM::zero ());
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -964,8 +964,8 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return STM::zero ();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -978,7 +978,7 @@ namespace KokkosClassic {
 
     static void
     Sum (const MultiVector<Scalar,Node> &A,
-         const ArrayView<Scalar> &sums)
+         const Teuchos::ArrayView<Scalar> &sums)
     {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
@@ -993,8 +993,8 @@ namespace KokkosClassic {
         std::fill( sums.begin(), sums.begin() + nC, Teuchos::ScalarTraits<Scalar>::zero() );
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1014,8 +1014,8 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<Scalar>::zero();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1032,8 +1032,8 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1044,7 +1044,7 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static void NormInf(const MultiVector<Scalar,Node> &A, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+    static void NormInf(const MultiVector<Scalar,Node> &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -1054,8 +1054,8 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1069,7 +1069,7 @@ namespace KokkosClassic {
       }
     }
 
-    static void Norm2Squared(const MultiVector<Scalar,Node> &A, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+    static void Norm2Squared(const MultiVector<Scalar,Node> &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride();
@@ -1079,8 +1079,8 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1100,8 +1100,8 @@ namespace KokkosClassic {
       if (nR == 0) {
         return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0);
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1119,8 +1119,8 @@ namespace KokkosClassic {
       if (nR*nC == 0) {
         return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(0),
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0),
         Wdata = weightVector.getValues(0);
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
@@ -1134,7 +1134,7 @@ namespace KokkosClassic {
       return node->parallel_reduce(0,nR,op);
     }
 
-    static void WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector, const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+    static void WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t Astride = A.getStride(),
@@ -1145,8 +1145,8 @@ namespace KokkosClassic {
         std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
         return;
       }
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues(),
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(),
         Wdata = weightVector.getValues();
       const bool OneW = (weightVector.getNumCols() == 1);
       // prepare buffers
@@ -1183,9 +1183,9 @@ namespace KokkosClassic {
       TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                                  "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
       if (nC*nR == 0) return;
-      RCP<Node> node = A.getNode();
-      ArrayRCP<const Scalar> Bdata = B.getValues();
-      ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+      Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1219,9 +1219,9 @@ namespace KokkosClassic {
       const size_t Bstride = B.getStride();
       TEUCHOS_TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                                  "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Scale(B,alpha,A): A and B must have the same dimensions.");
-      RCP<Node> node = B.getNode();
-      ArrayRCP<const Scalar> Adata = A.getValues();
-      ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
+      Teuchos::RCP<Node> node = B.getNode();
+      Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+      Teuchos::ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
@@ -1252,8 +1252,8 @@ namespace KokkosClassic {
       const size_t nR = A.getNumRows();
       const size_t nC = A.getNumCols();
       const size_t stride = A.getStride();
-      RCP<Node> node = A.getNode();
-      ArrayRCP<Scalar> data = A.getValuesNonConst();
+      Teuchos::RCP<Node> node = A.getNode();
+      Teuchos::ArrayRCP<Scalar> data = A.getValuesNonConst();
       // prepare buffers
       ReadyBufferHelper<Node> rbh(node);
       rbh.begin();
