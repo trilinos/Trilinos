@@ -6644,7 +6644,7 @@ correctly first, before setting it as a cron job as described next.
 
 Note, if using this in a continuous sync server that runs many times in a day
 in a loop, you also want to set the option
-``--abort-gracefully-if-no-updates`` in addition to the option
+``--abort-gracefully-if-no-changes-pulled`` in addition to the option
 ``--abort-gracefully-if-no-changes-to-push``.  That is because if the updated
 repos are in a broken state such that there are always local changes at every
 CI iteration (because they have not been pushed to origin), you don't want to
