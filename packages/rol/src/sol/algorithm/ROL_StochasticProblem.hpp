@@ -292,7 +292,13 @@ public:
       con_ = con;
     }
     else if ( type == "Risk Averse" ) {
-      con_ = Teuchos::rcp(new RiskBoundConstraint<Real>(parlist,con));
+      std::string name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+      if ( name == "KL Divergence" ) {
+        con_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",con));
+      }
+      else {
+        con_ = Teuchos::rcp(new RiskBoundConstraint<Real>(parlist,con));
+      }
     }
     else if ( type == "BPOE" ) {
       con_ = Teuchos::rcp(new RiskBoundConstraint<Real>("BPOE",con));

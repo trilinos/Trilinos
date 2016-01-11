@@ -325,6 +325,15 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/
+    *outStream << "\nKL DIVERGENCE DISTRIBUTIONALLY ROBUST\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
+    /**********************************************************************************************/
     *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
