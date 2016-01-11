@@ -43,12 +43,6 @@
 #define KOKKOS_CONFIGDEFS_HPP
 
 #include "TpetraClassic_config.h"
-// mem management
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
 
 //! Namespace for Kokkos classes and methods
 namespace KokkosClassic {
@@ -58,7 +52,6 @@ namespace KokkosClassic {
     Backward
   };
 } // namespace KokkosClassic
-
 
 namespace Kokkos {
   namespace Compat {
