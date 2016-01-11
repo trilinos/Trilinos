@@ -1356,10 +1356,20 @@ namespace Tpetra {
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& nodeOut)
     {
-      typedef ::Tpetra::Directory<typename OutMapType::local_ordinal_type,
-                                  typename OutMapType::global_ordinal_type,
+      static_assert (std::is_same<typename OutMapType::local_ordinal_type,
+                                  typename InMapType::local_ordinal_type>::value,
+                     "Tpetra::Map clone: The LocalOrdinal template parameter "
+                     "of the input and output Map types must be the same.");
+      static_assert (std::is_same<typename OutMapType::global_ordinal_type,
+                                  typename InMapType::global_ordinal_type>::value,
+                     "Tpetra::Map clone: The GlobalOrdinal template parameter "
+                     "of the input and output Map types must be the same.");
+      typedef typename OutMapType::local_ordinal_type LO;
+      typedef typename OutMapType::global_ordinal_type GO;
+      typedef ::Tpetra::Directory<LO, GO,
                                   typename OutMapType::node_type> out_dir_type;
       typedef typename OutMapType::global_to_local_table_type out_table_type;
+      typedef typename OutMapType::device_type out_device_type;
 
       OutMapType mapOut; // Make an empty Map.
 
@@ -1380,23 +1390,23 @@ namespace Tpetra {
       mapOut.contiguous_        = mapIn.contiguous_;
       mapOut.distributed_       = mapIn.distributed_;
       {
-        // mfh 25 Dec 2015: We really only need to make a deep copy if
-        // the two Map types have different memory spaces.  However,
-        // if you're calling clone(), it is likely the case that the
-        // memory spaces differ, so it doesn't hurt to make a deep
-        // copy here.
-        typedef decltype (mapOut.lgMap_) out_lgmap_type;
-        out_lgmap_type lgMap ("lgMap", mapIn.lgMap_.dimension_0 ());
-        Kokkos::deep_copy (lgMap, mapIn.lgMap_);
-        mapOut.lgMap_ = lgMap;
+        // mfh 25 Dec 2015, 11 Jan 2016: We really only need to make a
+        // deep copy if the two Map types have different memory
+        // spaces.  However, if you're calling clone(), it is likely
+        // the case that the memory spaces differ, so it doesn't hurt
+        // to make a deep copy here.
+        Kokkos::DualView<GO*, out_device_type>
+          lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
+        Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
+        mapOut.lgMap_ = lgMapOut; // cast to const
       }
       // This makes a deep copy only if necessary.  We could have
       // defined operator= to do this, but that would violate
       // expectations.  (Kokkos::View::operator= only does a shallow
       // copy, EVER.)
-      mapOut.glMap_             = out_table_type (mapIn.glMap_);
+      mapOut.glMap_ = out_table_type (mapIn.glMap_);
       // New Map gets the new Node instance.
-      mapOut.node_              = nodeOut;
+      mapOut.node_ = nodeOut;
 
       // We could cleverly clone the Directory here if it is
       // initialized, but there is no harm in simply creating it
