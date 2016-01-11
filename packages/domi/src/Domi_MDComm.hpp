@@ -367,6 +367,14 @@ public:
    */
   int numDims() const;
 
+  /** \brief Get the communicator sizes along each axis
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   */
+  Teuchos::Array< int > getCommDims() const;
+
   /** \brief Get the communicator size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
@@ -439,6 +447,31 @@ public:
 
   //@}
 
+  /** \name Axis communicator methods */
+  //@{
+
+  /** \brief Return array of all axis communicators
+   *
+   * An axis communicator is a 1D MDComm sub-communicator that
+   * represents the comms on a given axis. Further, this
+   * sub-communicator will always be valid for the processor on which
+   * it was constructed.
+   */
+  Teuchos::ArrayView< Teuchos::RCP< const MDComm > > getAxisComms() const;
+
+  /** \brief Return an axis communicator for the given axis
+   *
+   * \param axis [in]  The axis of the requested axis communicator
+   *
+   * An axis communicator is a 1D MDComm sub-communicator that
+   * represents the comms on a given axis. Further, this
+   * sub-communicator will always be valid for the processor on which
+   * it was constructed.
+   */
+  Teuchos::RCP< const MDComm > getAxisComm(int axis) const;
+
+  //@}
+
 protected:
 
   // Not implemented
@@ -466,6 +499,13 @@ private:
 
   // An array of flags denoting periodic axes
   Teuchos::Array< int > _periodic;
+
+  // An array of 1D axis communicators, that represent the comm along
+  // each axis of this MDComm.  These comms are technically
+  // sub-communicators, but each one is guaranteed to exist on the
+  // processor that constructs it. This array is mutable so that its
+  // construction can be delayed until it is requested.
+  mutable Teuchos::Array< Teuchos::RCP< const MDComm > > _axisComms;
 
 };
 
