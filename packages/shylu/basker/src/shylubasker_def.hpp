@@ -12,6 +12,7 @@
 #include "basker_tree.hpp"
 #include "basker_sfactor.hpp"
 #include "basker_nfactor.hpp"
+#include "basker_nfactor_inc.hpp"
 #include "basker_solve_rhs.hpp"
 #include "basker_util.hpp"
 #include "basker_stats.hpp"
@@ -380,7 +381,15 @@ namespace BaskerNS
 	return BASKER_ERROR;
       }
     //printf("before notoken\n");
-    err = factor_notoken(0);
+
+    if(Options.incomplete == BASKER_FALSE)    
+      {
+	err = factor_notoken(0);
+      }
+    else
+      {
+	err = factor_inc_lvl(0);
+      }
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;

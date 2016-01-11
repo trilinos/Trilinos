@@ -108,6 +108,9 @@ namespace BaskerNS
  
     BASKER_INLINE
     int t_nfactor_blk(Int kid);
+    BASKER_INLINE
+    int t_nfactor_blk_inc_lvl(Int kid);
+
     int t_nfactor_blk_old(Int kid);
     BASKER_INLINE
     void t_init_workspace(Int kid);
@@ -445,6 +448,9 @@ namespace BaskerNS
 		      Int option);
     BASKER_INLINE
     void btf_last_dense();
+
+    BASKER_INLINE
+    int factor_inc_lvl(Int Option);
 
 
     /*basker_nfactor.hpp*/

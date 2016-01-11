@@ -8,7 +8,7 @@
 #include "basker_types.hpp"
 #include "basker_stats.hpp"
 
-#include "basker_nfactor_blk_inc.hpp"
+//#include "basker_nfactor_blk_inc.hpp"
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -307,11 +307,10 @@ namespace BaskerNS
           #endif
              
 
-	  #ifdef BASKER_INC_LVL
-	  t_back_solve_selective(kid, 0, 0, k, top, xnnz);
-	  #else
+	  
+	  //t_back_solve_selective(kid, 0, 0, k, top, xnnz);
           t_back_solve(kid, 0,0,  k, top, xnnz);
-	  #endif
+	  
 
 	  //Future add
 	  //t_locate_pivot(kid, top)	  
@@ -519,9 +518,9 @@ namespace BaskerNS
 		      #endif
 
 		      //Need to comeback for local convert
-		      #ifdef BASKER_INC_LVL
-		      L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
-		      #endif
+		      //#ifdef BASKER_INC_LVL
+		      //L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
+		      //#endif
 
                       lnnz++;
 
@@ -564,14 +563,14 @@ namespace BaskerNS
 	    {
 	      //Do back solve of off-diag blocks
 	      #ifdef BASKER_INC_LVL
-	      t_back_solve_offdiag_selective(kid,
-				   b, blk_row,
-				   b, blk_row,
-				   k, col_idx_offset,
-				   U.val, U.row_idx,
-		       U.col_ptr(k-bcol+1)-U.col_ptr(k-bcol),
-				  U.col_ptr(k-bcol),
-				   BASKER_TRUE);
+	      //t_back_solve_offdiag_selective(kid,
+	      //		   b, blk_row,
+	      //		   b, blk_row,
+	      //		   k, col_idx_offset,
+	      //		   U.val, U.row_idx,
+	      //       U.col_ptr(k-bcol+1)-U.col_ptr(k-bcol),
+	      //		  U.col_ptr(k-bcol),
+	      //		   BASKER_TRUE);
 	      #else
 	      
 	      //t_back_solve_offdiag(kid,
