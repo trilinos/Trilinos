@@ -179,6 +179,20 @@ PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 { return required_; }
 
 //**********************************************************************
+#ifdef PHX_ENABLE_KOKKOS_AMT
+template<typename Traits>
+Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+PHX::EvaluatorWithBaseImpl<Traits>::
+createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& ,
+	   const std::size_t& ,
+	   typename Traits::EvalData )
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+			     "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createTask() that is required when calling FieldManager::evaluateFieldsTaskParallel().  Please implement the createTask() method in this Evalautor.");
+}
+#endif
+
+//**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 preEvaluate(typename Traits::PreEvalData d)

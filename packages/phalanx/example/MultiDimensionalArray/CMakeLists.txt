@@ -22,6 +22,7 @@ SET(example_SOURCES
   evaluators/Evaluator_FEInterpolation_Def.hpp
   evaluators/Evaluator_NonlinearSource.hpp
   evaluators/Evaluator_NonlinearSource_Def.hpp
+  evaluators/Evaluator_TaskBase.hpp
   )
 
 SET(example_DFAD_SOURCES Example_DFAD.cpp TraitsDFAD.hpp ${example_SOURCES})

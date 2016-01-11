@@ -114,18 +114,25 @@ namespace PHX {
 				       PHX::FieldManager<Traits>& vm) = 0;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
-    evaluatedFields() const;
+    evaluatedFields() const override;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
-    dependentFields() const;
+    dependentFields() const override;
 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;
 
-    virtual void preEvaluate(typename Traits::PreEvalData d);
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
+    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+	       const std::size_t& num_adjacencies,
+	       typename Traits::EvalData d);
+#endif
 
-    virtual void postEvaluate(typename Traits::PostEvalData d);
+    virtual void preEvaluate(typename Traits::PreEvalData d) override;
 
-    virtual const std::string& getName() const;
+    virtual void postEvaluate(typename Traits::PostEvalData d) override;
+
+    virtual const std::string& getName() const override;
 
   private:
 

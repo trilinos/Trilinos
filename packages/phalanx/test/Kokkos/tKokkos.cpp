@@ -56,6 +56,15 @@
 #include "Sacado.hpp"
 #include "Kokkos_View_Fad.hpp"
 
+#ifdef PHX_ENABLE_KOKKOS_AMT
+#include "Kokkos_TaskPolicy.hpp"
+// amt only works with pthread and qthreads
+#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#include "Kokkos_Threads.hpp"
+#include <type_traits>
+#include <limits>
+#endif
+
 namespace phalanx_test {
 
   template <typename Scalar,typename Device>
@@ -291,5 +300,187 @@ namespace phalanx_test {
 
     PHX::FinalizeKokkosDevice();
   }
+
+
+  // EXPERIMENTATL Kokkos AMT testing
+#ifdef PHX_ENABLE_KOKKOS_AMT
+
+  // Experimental asynchronous multi-tasking
+  template< class Space >
+  struct TaskDep {
+    
+    typedef int value_type ;
+    typedef Kokkos::Experimental::TaskPolicy< Space > policy_type ;
+    const policy_type policy ;
+    const value_type value;
+    
+    TaskDep(const policy_type & arg_p, value_type v)
+      : policy( arg_p ),value(v) {}
+    
+    void apply( int & val )
+    {
+      if (policy.get_dependence(this)) {
+	Kokkos::Experimental::Future<int,Space> f = policy.get_dependence(this,0);
+	val = value + f.get();
+      } 
+      else
+	val = value;
+    }
+  };
+
+  // Tests the basic DAG dependency model
+  TEUCHOS_UNIT_TEST(kokkos, AMT)
+  { 
+    using execution_space = PHX::Device::execution_space;
+    using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+
+    PHX::InitializeKokkosDevice();
+
+    static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
+		  "ERROR: Kokkos AMT only works for pthread execution space!");
+
+    policy_type policy;
+    
+    auto f1 = policy.create(TaskDep<execution_space>(policy,2),1);
+    auto f2 = policy.create(TaskDep<execution_space>(policy,3));
+    // f1 depends on f2
+    policy.add_dependence(f1,f2);
+    
+    policy.spawn(f1);
+    policy.spawn(f2);
+    Kokkos::Experimental::wait(policy);
+    TEST_EQUALITY(f1.get(),5);
+    TEST_EQUALITY(f2.get(),3);
+
+    PHX::FinalizeKokkosDevice();
+  }
+
+  template <typename Scalar,typename Device>
+  class InitializeView {
+    Kokkos::View<Scalar**,Device> view_;
+    double k_;
+
+  public:
+    typedef PHX::Device execution_space;
+    
+    InitializeView(Kokkos::View<Scalar**,Device> &v,double k)
+      : view_(v), k_(k) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      const int ip_size = static_cast<int>(view_.dimension_1());
+      for (int ip = 0; ip < ip_size; ++ip)
+	view_(i,ip) = k_;
+    }
+  };
+
+  // Task wrapper
+  template<class Space,class Functor>
+  struct TaskWrap {
+    
+    typedef void value_type;
+    typedef Kokkos::Experimental::TaskPolicy<Space> policy_type;
+    
+    const int work_size;
+    const Functor& functor;
+
+    TaskWrap(const int ws,const Functor& f) : work_size(ws),functor(f) {}
+    
+    void apply(const typename policy_type::member_type & member)
+    {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member,work_size),functor);
+    }
+  };
+
+  // Tests hybrid parallelism in that a task is threaded.
+  TEUCHOS_UNIT_TEST(kokkos, AMT_TeamHybrid)
+  { 
+    using execution_space = PHX::Device::execution_space;
+    using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+
+    PHX::InitializeKokkosDevice();
+
+    static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
+		  "ERROR: Kokkos AMT only works for pthread execution space!");
+
+    double k=2.0;  
+    const int num_cells = 10;
+    const int num_ip = 4;
+ 
+    Kokkos::View<double**,PHX::Device> rho("rho",num_cells,num_ip);
+    Kokkos::View<double**,PHX::Device> P("P",num_cells,num_ip);
+    Kokkos::View<double**,PHX::Device> T("T",num_cells,num_ip);
+
+    Kokkos::deep_copy(P,1.0);
+    Kokkos::deep_copy(T,2.0);
+    Kokkos::deep_copy(rho,0.0);
+
+    Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
+    //PHX::Device::fence();
+    Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(T,4.0));
+    PHX::Device::fence();
+    Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
+    PHX::Device::fence();
+
+    Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
+    Kokkos::deep_copy(host_rho,rho);
+    PHX::Device::fence();
+    
+    double tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int i=0; i< num_cells; i++)
+      for (int j=0; j< num_ip; j++)
+	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
+
+    out << "Starting taksing version" << std::endl;
+
+    Kokkos::deep_copy(P,1.0);
+    Kokkos::deep_copy(T,2.0);
+    Kokkos::deep_copy(rho,0.0);
+
+    // Now repeat above with task graph
+    policy_type policy;
+
+    auto f1 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
+    auto f2 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
+    auto f3 = policy.create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
+    
+    policy.add_dependence(f3,f1);
+    policy.add_dependence(f3,f2);
+
+    policy.spawn(f3); // spawn first to make sure deps enforced
+    policy.spawn(f1);
+    policy.spawn(f2);
+    Kokkos::Experimental::wait(policy);
+
+    Kokkos::deep_copy(host_rho,rho);
+    PHX::Device::fence();
+    
+    for (int i=0; i< num_cells; i++)
+      for (int j=0; j< num_ip; j++)
+	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
+
+    PHX::FinalizeKokkosDevice();
+  }
+
+  // Tests pthreads functions
+  TEUCHOS_UNIT_TEST(kokkos, AMT_pthread_query)
+  { 
+    //using execution_space = PHX::Device::execution_space;
+    //using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
+
+    PHX::InitializeKokkosDevice();
+
+    out << "num threads total = " 
+	<< Kokkos::Threads::thread_pool_size(0) << std::endl;
+    out << "num threads per numa core = " 
+	<< Kokkos::Threads::thread_pool_size(1) << std::endl;
+    out << "num threads per core = " 
+	<< Kokkos::Threads::thread_pool_size(2) << std::endl;
+
+    PHX::FinalizeKokkosDevice();
+  }
+
+#endif // PHX_ENABLE_KOKKOS_AMT
 
 }

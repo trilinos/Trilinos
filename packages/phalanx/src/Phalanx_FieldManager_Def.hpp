@@ -194,6 +194,19 @@ evaluateFields(typename Traits::EvalData d)
 }
 
 // **************************************************************
+#ifdef PHX_ENABLE_KOKKOS_AMT
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+evaluateFieldsTaskParallel(const int& threads_per_task,
+			   typename Traits::EvalData d)
+{
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(threads_per_task,d);
+}
+#endif
+
+// **************************************************************
 template<typename Traits>
 template<typename EvalT>
 inline

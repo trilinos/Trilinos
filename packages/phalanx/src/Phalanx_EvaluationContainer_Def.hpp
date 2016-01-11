@@ -126,6 +126,22 @@ evaluateFields(typename Traits::EvalData d)
 }
 
 // *************************************************************************
+#ifdef PHX_ENABLE_KOKKOS_AMT
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+evaluateFieldsTaskParallel(const int& threads_per_task,
+			   typename Traits::EvalData d)
+{
+#ifdef PHX_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->setupCalled()) , std::logic_error,
+		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
+#endif
+
+  this->dag_manager_.evaluateFieldsTaskParallel(threads_per_task,d);
+}
+#endif
+
+// *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 preEvaluate(typename Traits::PreEvalData d)

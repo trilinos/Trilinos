@@ -59,6 +59,11 @@
 #include "Phalanx_DAG_Node.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#ifdef PHX_ENABLE_KOKKOS_AMT
+#include "Kokkos_TaskPolicy.hpp"
+#include "Threads/Kokkos_Threads_TaskPolicy.hpp"
+#endif
+
 namespace PHX {
   
   template<typename Traits> class FieldManager;
@@ -101,9 +106,19 @@ namespace PHX {
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& vm);
     
-    //! Compute the required variables for the fill on the specific element.
+    //! Evaluate the required fields using data parallel evalaution on topological sort of tasks.
     void evaluateFields(typename Traits::EvalData d);
     
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
+
+      @param threads_per_task The number of threads used for data parallelism within a single task.
+      @param d User defined data
+     */
+    void evaluateFieldsTaskParallel(const int& threads_per_task,
+				    typename Traits::EvalData d);
+#endif
+
     /*! \brief This routine is called before each residual/Jacobian fill.
       
         This routine is called ONCE on the provider before the fill
@@ -211,6 +226,11 @@ namespace PHX {
 
     //! Backwards compatibility option: set to true to disable a check that throws if multiple registered evaluators can evaluate the same field. Original DFS algortihm allowed this.  Refactor checks and throws.   
     bool allow_multiple_evaluators_for_same_field_;
+
+#ifdef PHX_ENABLE_KOKKOS_AMT
+    Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space> policy_;
+    std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
+#endif
   };
   
   template<typename Traits>
