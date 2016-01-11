@@ -807,11 +807,11 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     help="Do not enable forward packages.", default=True )
 
   clp.add_option(
-    "--continue-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_false",
+    "--continue-if-no-updates", dest="abortGracefullyIfNoChangesPulled", action="store_false",
     help="If set, then the script will continue if no updates are pulled from any repo. [default]",
     default=False )
   clp.add_option(
-    "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
+    "--abort-gracefully-if-no-changes-pulled", dest="abortGracefullyIfNoChangesPulled", action="store_true",
     help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
     default=False )
 
@@ -1091,8 +1091,8 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     print "  --enable-fwd-packages \\"
   else:
     print "  --no-enable-fwd-packages \\"
-  if options.abortGracefullyIfNoUpdates:
-    print "  --abort-gracefully-if-no-updates \\"
+  if options.abortGracefullyIfNoChangesPulled:
+    print "  --abort-gracefully-if-no-changes-pulled \\"
   else:
     print "  --continue-if-no-updates \\"
   if options.abortGracefullyIfNoChangesToPush:
