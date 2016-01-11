@@ -23,6 +23,10 @@
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
 
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#endif
+
 /* ---------------------------------- */
 /* Set label for user's defined label */
 /* ---------------------------------- */
@@ -96,6 +100,10 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   int * graph_decomposition = NULL;
   ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
   ML_Aggregate_Viz_Stats * grid_info;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int Nprocs;
   char * unamalg_bdry = NULL;
   char* label;
@@ -120,6 +128,9 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   nullspace_dim           = ml_ag->nullspace_dim;
   nullspace_vect          = ml_ag->nullspace_vect;
   Nrows                   = Amatrix->outvec_leng;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   if (mypid == 0 && 5 < ML_Get_PrintLevel()) {
     printf("%s num PDE eqns = %d\n",
