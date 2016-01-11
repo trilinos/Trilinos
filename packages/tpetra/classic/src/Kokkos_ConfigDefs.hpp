@@ -64,21 +64,12 @@ namespace KokkosClassic {
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
   using Teuchos::ParameterList;
-}
 
-//! Namespace for Kokkos example classes
-namespace KokkosExamples {
-}
-
-
-namespace KokkosClassic {
-
-//! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
-enum ESweepDirection {
-  Forward = 0,
-  Backward
-};
-
+  //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
+  enum ESweepDirection {
+    Forward = 0,
+    Backward
+  };
 } // namespace KokkosClassic
 
 
