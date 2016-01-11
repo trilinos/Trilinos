@@ -244,9 +244,6 @@ public:
       buff = Teuchos::arcp (view.ptr_on_device (), 0, size,
                             deallocator (view), false);
     }
-    if (! isHostNode) {
-      MARK_COMPUTE_BUFFER(buff);
-    }
     return buff;
   }
 
@@ -270,9 +267,6 @@ public:
                   const Teuchos::ArrayRCP<const T> &buffSrc,
                   const Teuchos::ArrayView<T> &hostDest)
   {
-    if (isHostNode == false) {
-      CHECK_COMPUTE_BUFFER(buffSrc);
-    }
     Teuchos::ArrayRCP<T> buffDest = Teuchos::arcpFromArrayView(hostDest);
     copyBuffers(size,buffSrc,buffDest);
   }
@@ -294,9 +288,6 @@ public:
                 const Teuchos::ArrayView<const T> &hostSrc,
                 const Teuchos::ArrayRCP<T> &buffDest)
   {
-    if (isHostNode == false) {
-      CHECK_COMPUTE_BUFFER(buffDest);
-    }
     Teuchos::ArrayRCP<const T> buffSrc = Teuchos::arcpFromArrayView(hostSrc);
     copyBuffers<T>(size,buffSrc,buffDest);
   }
@@ -315,10 +306,6 @@ public:
                const Teuchos::ArrayRCP<const T> &buffSrc,
                const Teuchos::ArrayRCP<T> &buffDest)
   {
-    if (isHostNode == false) {
-      CHECK_COMPUTE_BUFFER(buffSrc);
-      CHECK_COMPUTE_BUFFER(buffDest);
-    }
     Teuchos::ArrayView<const T> av_src = buffSrc(0,size);
     Teuchos::ArrayView<T>       av_dst = buffDest(0,size);
     std::copy(av_src.begin(),av_src.end(),av_dst.begin());
@@ -327,9 +314,6 @@ public:
   //! \brief Return a const view of a buffer for use on the host.
   template <class T> inline
   Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
-    if (isHostNode == false) {
-      CHECK_COMPUTE_BUFFER(buff);
-    }
     return buff.persistingView(0,size);
   }
 
@@ -343,29 +327,13 @@ public:
   Teuchos::ArrayRCP<T>
   viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
     (void) rw; // Silence "unused parameter" compiler warning
-    if (isHostNode == false) {
-      CHECK_COMPUTE_BUFFER(buff);
-    }
     return buff.persistingView(0,size);
   }
 
   inline void
-  readyBuffers (Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers,
-                Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers)
-  {
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
-    if (isHostNode == false) {
-      for (size_t i=0; i < (size_t)buffers.size(); ++i) {
-        CHECK_COMPUTE_BUFFER(buffers[i]);
-      }
-      for (size_t i=0; i < (size_t)ncBuffers.size(); ++i) {
-        CHECK_COMPUTE_BUFFER(ncBuffers[i]);
-      }
-    }
-#endif
-    (void) buffers;
-    (void) ncBuffers;
-  }
+  readyBuffers (Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > /* buffers */,
+                Teuchos::ArrayView<Teuchos::ArrayRCP<char> > /* ncBuffers */)
+  {}
 
   /// \brief Return the human-readable name of this Node.
   ///
