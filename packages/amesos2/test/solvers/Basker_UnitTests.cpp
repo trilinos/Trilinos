@@ -567,7 +567,14 @@ namespace {
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && !defined(SHYLUBASKER)
   //#ifndef SHYLUBASKER
-#pragma message("T COMPLEX");
+
+  // mfh 11 Jan 2016: Clang 3.7 doesn't like the following
+  // commented-out pragma.  It says: "error: pragma message requires
+  // parenthesized string".  I' m not sure how to fix that (the string
+  // looks parenthesized to me!), so I'll comment this out for now,
+  // just so that I can get Basker to build with Clang 3.7.
+  //
+  //#pragma message("T COMPLEX");
 
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, SCALAR)        \
   typedef std::complex<SCALAR>  Complex##SCALAR;                        \

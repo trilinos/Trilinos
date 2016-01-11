@@ -3543,8 +3543,8 @@ int Trilinos_Util::CrsMatrixGallery::WriteMatrix( const string & FileName, const
             << ") = " << Values[j] << ";\n";
         }
 
-        delete Values;
-        delete Indices;
+        delete [] Values;
+        delete [] Indices;
 
       }
 

@@ -545,13 +545,13 @@ namespace {
 
     typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
     typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
-    const IST zero = static_cast<IST> (0.0);
+    //const IST zero = static_cast<IST> (0.0); // unused
     const IST one = static_cast<IST> (1.0);
     const IST two = one + one;
     const IST three = two + one;
-    const IST five = three + two;
-    const IST six = three + three;
-    const IST ten = five + five;
+    //const IST five = three + two; // unused
+    //const IST six = three + three; // unused
+    //const IST ten = five + five; // unused
     const LO minBlkSize = 1; // 1x1 "blks" should also work
     const LO maxBlkSize = 32;
 
@@ -630,11 +630,11 @@ namespace {
     typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
     const IST zero = static_cast<IST> (0.0);
     const IST one = static_cast<IST> (1.0);
-    const IST two = one + one;
-    const IST three = two + one;
-    const IST five = three + two;
-    const IST six = three + three;
-    const IST ten = five + five;
+    //const IST two = one + one; // unused
+    //const IST three = two + one; // unused
+    //const IST five = three + two; // unused
+    //const IST six = three + three; // unused
+    //const IST ten = five + five; // unused
     const LO minBlkSize = 1; // 1x1 "blks" should also work
     const LO maxBlkSize = 32;
 
@@ -706,7 +706,7 @@ namespace {
 
     typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
     typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
-    const IST zero = static_cast<IST> (0.0);
+    //const IST zero = static_cast<IST> (0.0); // unused
     const IST one = static_cast<IST> (1.0);
     const IST two = one + one;
     const IST three = two + one;
