@@ -28,7 +28,7 @@ class HexShellShell : public stk::unit_test_util::MeshFixture
 protected:
     HexShellShell()
     {
-        setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     }
 
     void setup_hex_shell_shell_on_procs(std::vector<int> owningProcs)
@@ -195,6 +195,41 @@ TEST_F(HexShellShell, Skin)
             EXPECT_EQ(6u, stk::mesh::count_selected_entities(ownedOrShared, get_bulk().buckets(stk::topology::FACE_RANK)));
         else
             EXPECT_EQ(1u, stk::mesh::count_selected_entities(ownedOrShared, get_bulk().buckets(stk::topology::FACE_RANK)));
+    }
+}
+
+void expect_id_ord_perm(stk::mesh::BulkData &bulk,
+                        stk::mesh::Entity face,
+                        unsigned elemOffset,
+                        const stk::mesh::EntityId elemId,
+                        const stk::mesh::ConnectivityOrdinal ord,
+                        const stk::mesh::Permutation perm)
+{
+    EXPECT_EQ(elemId, bulk.identifier(bulk.begin_elements(face)[elemOffset])) << "elemOffset=" << elemOffset;
+    EXPECT_EQ(ord, bulk.begin_element_ordinals(face)[elemOffset]) << "elemOffset=" << elemOffset;
+    EXPECT_EQ(perm, bulk.begin_element_permutations(face)[elemOffset]) << "elemOffset=" << elemOffset;
+}
+
+TEST_F(HexShellShell, SideConnections)
+{
+    if(stk::parallel_machine_size(get_comm()) == 1u)
+    {
+        setup_hex_shell_shell_on_procs({0, 0, 0});
+
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::SideConnector sideConnector = elemElemGraph.get_side_connector();
+
+        get_bulk().modification_begin();
+        stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+        int shellSide = 1;
+        stk::mesh::Entity face = stk::mesh::declare_element_side(get_bulk(), 13, shell2, shellSide, {});
+        sideConnector.connect_side_to_all_elements(face, shell2, shellSide);
+        get_bulk().modification_end();
+
+        ASSERT_EQ(3u, get_bulk().num_elements(face));
+        expect_id_ord_perm(get_bulk(), face, 0, 2, stk::mesh::ConnectivityOrdinal(1), stk::mesh::Permutation(0));
+        expect_id_ord_perm(get_bulk(), face, 1, 3, stk::mesh::ConnectivityOrdinal(1), stk::mesh::Permutation(0));
+        expect_id_ord_perm(get_bulk(), face, 2, 1, stk::mesh::ConnectivityOrdinal(5), stk::mesh::Permutation(4));
     }
 }
 

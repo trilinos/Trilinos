@@ -2132,7 +2132,7 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
 
         stk::mesh::Entity sideEntity = add_side_to_mesh({localId, exposedSides[i]}, skinParts, newFaceId);
 
-        sideConnector.connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]});
+        sideConnector.connect_side_to_all_elements(sideEntity, element, exposedSides[i]);
     }
 }
 

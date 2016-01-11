@@ -9,21 +9,21 @@ namespace stk
 namespace mesh
 {
 
-void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity,
-                                                 impl::ElementSidePair skinnedElemSidePair)
+void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
-    connect_side_to_elem(sideEntity, m_local_id_to_element_entity[skinnedElemSidePair.first], skinnedElemSidePair.second);
+    connect_side_to_elem(sideEntity, elemEntity, elemSide);
 
-    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(skinnedElemSidePair.first))
+    stk::mesh::impl::LocalId elemLocalId = m_entity_to_local_id[elemEntity.local_offset()];
+    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(elemLocalId))
     {
-        int skinnedElementSide = skinnedElemSidePair.second;
+        int skinnedElementSide = elemSide;
         if(graphEdge.side1 == skinnedElementSide)
         {
             connect_side_entity_to_other_element(sideEntity, graphEdge);
-            connect_side_to_coincident_elements(sideEntity, {graphEdge.elem2, graphEdge.side2});
+            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2, graphEdge.side2);
         }
     }
-    connect_side_to_coincident_elements(sideEntity, skinnedElemSidePair);
+    connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
 }
 
 stk::mesh::Permutation SideConnector::get_permutation_for_side(stk::mesh::Entity sideEntity,
@@ -65,14 +65,14 @@ stk::mesh::Entity SideConnector::get_entity_for_local_id(stk::mesh::impl::LocalI
 }
 
 void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
-                                                        impl::ElementSidePair skinnedElemSidePair)
+                                                        stk::mesh::impl::LocalId elemLocalId,
+                                                        int elemSide)
 {
-    auto iter = m_coincidentGraph.find(skinnedElemSidePair.first);
+    auto iter = m_coincidentGraph.find(elemLocalId);
     if(iter != m_coincidentGraph.end())
         for(const stk::mesh::GraphEdge &graphEdge : iter->second)
         {
-            int skinnedElementSide = skinnedElemSidePair.second;
-            if(graphEdge.side1 == skinnedElementSide)
+            if(graphEdge.side1 == elemSide)
                 connect_side_entity_to_other_element(sideEntity, graphEdge);
         }
 }
