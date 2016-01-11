@@ -72,6 +72,9 @@ namespace Iovs {
 
     void read_meta_data ();
 
+    static int parseCatalystFile(const std::string& filepath,
+                                 std::string& json_result);
+
   private:
     // For the time being, treat vis as write only. Consider glue pipelines.
     int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
@@ -127,7 +130,8 @@ namespace Iovs {
                void *data, size_t data_size) const {return 0;}
 
     void write_meta_data();
-    void load_plugin_library();
+    static void load_plugin_library(const std::string& plugin_name,
+                                    const std::string& plugin_library_name);
 
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
@@ -144,7 +148,8 @@ namespace Iovs {
     bool doLogging; // True if logging field input/output
 
     std::string databaseTitle;
-    std::string paraview_script_filename;
+    static std::string paraview_script_filename;
+    std::string catalyst_block_file_name;
     std::string paraview_json_parse;
     std::string sierra_input_deck_name;
     std::string catalyst_output_directory;
@@ -152,6 +157,7 @@ namespace Iovs {
     int debugLevel;
     int underscoreVectors;
     int applyDisplacements;
+    int useCppPipe;
     int createSideSets;
     int createNodeSets;
     int spatialDimension;
