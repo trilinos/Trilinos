@@ -46,8 +46,8 @@
            all mesh and discretization data, matrices, etc.
 */
 
-#ifndef ROL_PDEOPT_POISSONDATA_H
-#define ROL_PDEOPT_POISSONDATA_H
+#ifndef ROL_PDEOPT_POISSON_DATA_H
+#define ROL_PDEOPT_POISSON_DATA_H
 
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -86,6 +86,7 @@ private:
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matM_;
   Teuchos::RCP<Tpetra::CrsMatrix<> >    matR_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecUd_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  vecF_;
 
   shards::CellTopology cellType_;
   int spaceDim_;
@@ -349,8 +350,11 @@ public:
     matR_ = matM_;
 
     // Assemble vectors.
-    vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRowMap(), 1, true));
+    vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
     vecUd_->putScalar(1.0);
+
+    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_->putScalar(1.0);
 
     /****************************************/
     /****************************************/
@@ -380,6 +384,11 @@ public:
 
   Teuchos::RCP<Tpetra::MultiVector<> > getVecUd() const {
     return vecUd_;
+  }
+
+
+  Teuchos::RCP<Tpetra::MultiVector<> > getVecF() const {
+    return vecF_;
   }
 
 

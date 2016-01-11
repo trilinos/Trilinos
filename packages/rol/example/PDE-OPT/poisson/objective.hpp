@@ -45,8 +45,8 @@
     \brief Defines the SimOpt objective function for the 'poisson' example.
 */
 
-#ifndef ROL_PDEOPT_POISSONOBJECTIVE_H
-#define ROL_PDEOPT_POISSONOBJECTIVE_H
+#ifndef ROL_PDEOPT_POISSON_OBJECTIVE_H
+#define ROL_PDEOPT_POISSON_OBJECTIVE_H
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
