@@ -79,14 +79,6 @@ ENDIF()
 
 IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
 
-  TRIBITS_ADD_EXECUTABLE(
-    StridedMap_UnitTests_LL
-    SOURCES
-      StridedMap_UnitTests
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    DEFINES -DXPETRA_TEST_USE_LONGLONG_GO
-  )
 
   TRIBITS_ADD_EXECUTABLE(
     StridedMapFactory_UnitTests_LL
@@ -99,13 +91,7 @@ IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
-    TRIBITS_ADD_TEST(
-      StridedMap_UnitTests_LL
-      NAME "StridedMapUnitTestsEpetraLL"
-      ARGS "--linAlgebra=Epetra"
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-    )
+
 
     TRIBITS_ADD_TEST(
       StridedMapFactory_UnitTests_LL
@@ -118,14 +104,6 @@ IF (NOT Xpetra_Epetra_NO_64BIT_GLOBAL_INDICES)
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-
-    TRIBITS_ADD_TEST(
-      StridedMap_UnitTests_LL
-      NAME "StridedMapUnitTestsTpetraLL"
-      ARGS "--linAlgebra=Tpetra"
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-    )
 
     TRIBITS_ADD_TEST(
       StridedMapFactory_UnitTests_LL
