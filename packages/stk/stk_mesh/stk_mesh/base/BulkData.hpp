@@ -237,7 +237,7 @@ public:
       return m_meshModification.modification_end();
   }
 
-  void sort_entities(const EntitySorterBase& sorter);
+  void sort_entities(const stk::mesh::EntitySorterBase& sorter);
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *

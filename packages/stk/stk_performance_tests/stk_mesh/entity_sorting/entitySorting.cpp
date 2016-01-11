@@ -41,7 +41,7 @@ private:
     {
         for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; ++rank)
             for(stk::mesh::impl::Partition* partition : bucketRepository.get_partitions(rank))
-                partition->sort(stk::mesh::impl::GlobalIdEntitySorter(bulkData));
+                partition->sort(stk::mesh::impl::GlobalIdEntitySorter());
     }
 };
 

@@ -332,7 +332,7 @@ void Partition::default_sort_if_needed()
 {
   if (!empty() && m_updated_since_sort)
   {
-      sort(GlobalIdEntitySorter(m_mesh));
+      sort(GlobalIdEntitySorter());
   }
 }
 
@@ -358,7 +358,7 @@ void Partition::sort(const EntitySorterBase& sorter)
     new_i += b_size;
   }
 
-  sorter.sort(entities);
+  sorter.sort(m_mesh, entities);
 
   // Make sure that there is a vacancy somewhere.
   //

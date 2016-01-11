@@ -90,14 +90,10 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
 class GlobalIdEntitySorter : public EntitySorterBase
 {
 public:
-    GlobalIdEntitySorter(const BulkData& bulkIn) : bulk(bulkIn) {}
-    ~GlobalIdEntitySorter() {}
-    virtual void sort(EntityVector& entityVector) const
+    virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const
     {
         std::sort(entityVector.begin(), entityVector.end(), EntityLess(bulk));
     }
-private:
-    const BulkData& bulk;
 };
 
 

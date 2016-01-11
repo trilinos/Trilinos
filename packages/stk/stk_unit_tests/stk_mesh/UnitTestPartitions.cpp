@@ -479,7 +479,7 @@ TEST( UnitTestPartition, Partition_testSort)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
     // check_test_partition_invariant(fix, partition);
-    partition.sort(stk::mesh::impl::GlobalIdEntitySorter(fix.m_bulk_data));
+    partition.sort(stk::mesh::impl::GlobalIdEntitySorter());
     check_test_partition_invariant(fix, partition);
   }
 

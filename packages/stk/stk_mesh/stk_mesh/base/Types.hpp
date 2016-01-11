@@ -382,7 +382,7 @@ class EntitySorterBase
 {
 public:
     virtual ~EntitySorterBase() {}
-    virtual void sort(stk::mesh::EntityVector& entityVector) const = 0;
+    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const = 0;
 };
 
 

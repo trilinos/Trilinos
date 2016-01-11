@@ -7067,7 +7067,7 @@ unsigned BulkData::num_sides(Entity entity) const
     return num_connectivity(entity, mesh_meta_data().side_rank());
 }
 
-void BulkData::sort_entities(const EntitySorterBase& sorter)
+void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
 {
     ThrowRequireMsg(synchronized_count()>0,"Error, sort_entities must be called after at least one modification cycle.");
     ThrowRequireMsg(in_synchronized_state(), "Error, sort_entities cannot be called from inside a modification cycle.");

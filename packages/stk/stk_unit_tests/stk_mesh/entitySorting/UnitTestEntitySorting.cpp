@@ -73,14 +73,10 @@ private:
 class EntityCoordSorter : public stk::mesh::EntitySorterBase
 {
 public:
-    EntityCoordSorter(const stk::mesh::BulkData& bulkIn) : bulk(bulkIn) {}
-    ~EntityCoordSorter() {}
-    virtual void sort(stk::mesh::EntityVector& entityVector) const
+    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const
     {
         std::sort(entityVector.begin(), entityVector.end(), EntityLessCoords(bulk));
     }
-private:
-    const stk::mesh::BulkData& bulk;
 };
 
 
@@ -96,12 +92,12 @@ protected:
     void verify_node_ordering()
     {
         EntityLessCoords entityLessCoords(get_bulk());
-        stk::mesh::impl::for_each_entity_run(get_bulk(),stk::topology::NODE_RANK,[&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
+        stk::mesh::impl::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
+            [&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
             {
-                if (meshIndex.bucket_ordinal >0)
-                {
-                    EXPECT_TRUE(entityLessCoords((*meshIndex.bucket)[meshIndex.bucket_ordinal-1],(*meshIndex.bucket)[meshIndex.bucket_ordinal]));
-                }
+                 if(meshIndex.bucket_ordinal > 0)
+                     EXPECT_TRUE(entityLessCoords((*meshIndex.bucket)[meshIndex.bucket_ordinal-1],
+                                                  (*meshIndex.bucket)[meshIndex.bucket_ordinal]));
             }
         );
     }
@@ -110,17 +106,17 @@ protected:
 
 TEST_F(EntitySortingFixture, trivial)
 {
-    get_bulk().sort_entities(EntityCoordSorter(get_bulk()));
+    get_bulk().sort_entities(EntityCoordSorter());
     verify_node_ordering();
 }
 
 TEST_F(EntitySortingFixture, skin)
 {
-    get_bulk().sort_entities(EntityCoordSorter(get_bulk()));
+    get_bulk().sort_entities(EntityCoordSorter());
     verify_node_ordering();
     stk::mesh::Part& surface1 = get_meta().declare_part("Surface 1");
     stk::mesh::create_exposed_boundary_sides(get_bulk(),get_meta().universal_part(),surface1);
-    get_bulk().sort_entities(EntityCoordSorter(get_bulk()));
+    get_bulk().sort_entities(EntityCoordSorter());
     verify_node_ordering();
 }
 
