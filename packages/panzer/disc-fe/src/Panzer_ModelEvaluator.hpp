@@ -149,7 +149,8 @@ public:
                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
                   const Teuchos::ParameterList& closure_models,
                   const Teuchos::ParameterList& user_data,
-                  bool writeGraph=false,const std::string & graphPrefix="");
+                  bool writeGraph=false,const std::string & graphPrefix="",
+                  const Teuchos::ParameterList& me_params = Teuchos::ParameterList());
 
   /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
 
@@ -202,7 +203,7 @@ public:
   /** Add a global evaluation data object that will be filled as a side
     * effect when evalModel is called. This is useful for building things
     * like auxiliary operators used in block preconditioning. This will not
-    * be used as a parameter (or response) to the model evaluator. 
+    * be used as a parameter (or response) to the model evaluator.
     *
     * \param[in] name Name to associate with global evaluation data object
     * \param[in] ged Pointer to a global evaluation data object
@@ -211,7 +212,7 @@ public:
                                            const Teuchos::RCP<GlobalEvaluationData> & ged);
 
   /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
-    * response are specified by the response factory builder. This version supports computing derivatives with 
+    * response are specified by the response factory builder. This version supports computing derivatives with
     * respect to both the state ('x') and control ('p') variables and is thus ``flexible''.
     *
     * NOTE: Response factories must use a response of type <code>ResponseMESupportBase</code>. This is
@@ -268,7 +269,7 @@ public:
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(parameters_.size(), responses_.size());
+    outArgs.set_Np_Ng(num_me_parameters_, responses_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
@@ -290,12 +291,12 @@ public:
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    outArgs.set_Np_Ng(parameters_.size(), responses_.size());
+    outArgs.set_Np_Ng(num_me_parameters_, responses_.size());
     outArgs.setSupports(MEB::OUT_ARG_f);
     outArgs.setSupports(MEB::OUT_ARG_W_op);
     prototypeOutArgs_ = outArgs; }
 
-  /** This method builds the response libraries that build the 
+  /** This method builds the response libraries that build the
     * dfdp sensitivities for the distributed parameters if requested.
     * Note that in general the user is expected to call this through
     * setupModel and not call it directly.
@@ -312,7 +313,7 @@ public:
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="");
 
-  /** This method builds the response libraries that build the 
+  /** This method builds the response libraries that build the
     * dgdp sensitivities for the distributed parameters if requested.
     * This only applies to "flexible" responses.
     * Note that in general the user is expected to call this through
@@ -339,7 +340,7 @@ public:
     */
   void setOneTimeDirichletBeta(const Scalar & beta) const;
 
-  /** Apply the dirichlet boundary conditions to the vector "f" using the 
+  /** Apply the dirichlet boundary conditions to the vector "f" using the
     * "x" values as the current solution.
     */
   void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
@@ -355,6 +356,34 @@ public:
 
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
   { return responseLibrary_; }
+
+  /** Returns the x tangent vector index for a given parameter index
+   */
+  int getXTangentVectorIndex(const int index) const {
+    int v_index = 0;
+    for (int i=0; i<index; i++) {
+      if (!parameters_[i]->is_distributed)
+        ++v_index;
+    }
+    return v_index + parameters_.size();
+  }
+
+  /** Returns the xdot tangent vector index for a given parameter index
+   */
+  int getXDotTangentVectorIndex(const int index) const {
+    int v_index = 0;
+    for (int i=0; i<index; i++) {
+      if (!parameters_[i]->is_distributed)
+        ++v_index;
+    }
+    return v_index + parameters_.size() + tangent_space_.size();
+  }
+
+  /** Initializes the given vector with current values of the parameters
+   */
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_parameter_vector(int index) const {
+    return parameters_[index]->initial_value;
+  }
 
 private:
 
@@ -402,6 +431,14 @@ private:
   void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
+   /** handles evaluation of dfdp using finite-differences
+    *
+    * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
+    *       However, for efficiency this is not checked.
+    */
+  void evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                                          const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
   /** handles evaluation of dfdp
     *
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_distro(outArgs)==false</code>.
@@ -413,20 +450,26 @@ private:
   //! Does this set of out args require a simple response?
   bool required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //! Are their required responses in the out args? DgDx 
+  //! Are their required responses in the out args? DgDx
   bool required_basic_dgdx(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //! Are their required responses in the out args? DgDp 
+  //! Are their required responses in the out args? DgDp
   bool required_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //! Are derivatives of the residual with respect to the scalar parameters in the out args? DfDp 
+  //! Are derivatives of the residual with respect to the scalar parameters in the out args? DfDp
   bool required_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
-  //! Are derivatives of the residual with respect to the distributed parameters in the out args? DfDp 
+  //! Are derivatives of the residual with respect to the distributed parameters in the out args? DfDp
   bool required_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Initialize the nominal values with good starting conditions
-  void initializeNominalValues();
+  void initializeNominalValues() const;
+
+  // Set parameters in model supplied by inArgs
+  void setParameters(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) const;
+
+  // Reset parameters back to nominal values
+  void resetParameters() const;
 
 private: // data members
 
@@ -456,7 +499,7 @@ private: // data members
         // used for delayed construction of dgdp (distributed parameter) responses
     std::vector<WorksetDescriptor> wkst_desc;
         // used for delayed construction of dgdp (distributed parameter) responses
-        
+
     struct SearchName {
       std::string name;
       SearchName(const std::string & n) : name(n) {}
@@ -484,6 +527,10 @@ private: // data members
   mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm_;     // they control and provide access to evaluate
 
   std::vector<Teuchos::RCP<ParameterObject> > parameters_;
+  std::vector<Teuchos::RCP<Thyra::VectorSpaceBase<double> > > tangent_space_;
+  int num_me_parameters_;
+  bool do_fd_dfdp_;
+  double fd_perturb_size_;
 
   mutable bool require_in_args_refresh_;
   mutable bool require_out_args_refresh_;
@@ -546,9 +593,9 @@ addResponse(const std::string & responseName,
       TEUCHOS_TEST_FOR_EXCEPTION(respBase==Teuchos::null,std::logic_error,
                                  "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
                                  "has no residual type! Not sure what is going on!");
-   
+
       // check that the response supports interactions with the model evaluator
-      Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp = 
+      Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp =
           Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Residual> >(respBase);
       TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
                                  "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << "\" "
@@ -568,10 +615,10 @@ addResponse(const std::string & responseName,
       typedef panzer::Traits::Jacobian RespEvalT;
 
       // check that the response supports interactions with the model evaluator
-      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = 
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp =
           Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
       TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
-                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName << 
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName <<
                                  "\" resulted in bad cast to panzer::ResponseMESupportBase<Jacobian>, the type "
                                  "of the response is incompatible!");
 
@@ -582,7 +629,7 @@ addResponse(const std::string & responseName,
 
    respObject->name = responseName;
    respObject->wkst_desc = wkst_desc;
- 
+
    responses_.push_back(respObject);
 
    require_in_args_refresh_ = true;
@@ -596,4 +643,4 @@ addResponse(const std::string & responseName,
 
 // #include "Panzer_ModelEvaluator_impl.hpp"
 
-#endif 
+#endif
