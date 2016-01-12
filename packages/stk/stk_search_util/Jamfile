@@ -1,0 +1,133 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2009 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_search_util-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_search_util-root-inc = $(stk_search_util-root)/include ;
+} else {
+  stk_search_util-root-inc = $(stk_search_util-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_search_util-root-inc)
+    <define>STK_BUILT_IN_SIERRA
+  : usage-requirements
+    <include>$(stk_search_util-root-inc)
+  : build-dir $(stk_search_util-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_search_util_utest
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-bin install-user-include install-user-lib ;
+
+explicit install-user-bin ;
+install install-user-bin
+  :
+  : <location>$(install-root)/bin
+  ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_search_util-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_search_util/include <install-source-root>$(stk_search_util-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_search_util_base
+  : <location>$(install-root)/stk/stk_search_util/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+local xml-files =
+  ;
+
+lib stk_search_util_base
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_search_util-root)/stk_search_util/*.cpp ]
+    ]
+    /sierra/stk_search//stk_search
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_diag
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_search_util-root)/lib/libstk_search_util_base.a
+    ]
+  ;
+
+exe stk_search_util_utest
+  :
+    $(stk_search_util-root)/unit_tests/UnitTestMain.cpp
+    [ glob $(stk_search_util-root)/unit_tests/*.cpp ]
+    stk_search_util_base
+    /sierra/stk_search//stk_search
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_diag
+    /sierra/stk_mesh//stk_mesh_fixtures
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+

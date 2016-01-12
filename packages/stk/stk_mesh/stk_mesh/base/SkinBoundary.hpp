@@ -39,17 +39,14 @@ namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk { namespace mesh {
-/**
+/*
+ *
  * API interface to skin the boundary.
  *
  */
 
-//void create_interior_block_boundary_sides(BulkData, Selector& blocksToConsider, Part& partToPutSidesInto);
-
 void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto);
 bool check_exposed_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart);
-
-//void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
 
 }} // namespace stk::mesh
 #endif

@@ -90,7 +90,7 @@ int main (int argc, char **argv)
 
    struct ex_block blocks[10];
    
-   ex_opts (EX_VERBOSE | EX_ABORT );
+   ex_opts (EX_VERBOSE );
 
 /* Specify compute and i/o word size */
 
@@ -309,6 +309,7 @@ int main (int argc, char **argv)
       yet been defined
    */
    error = ex_put_name(exoid, EX_ELEM_BLOCK, blocks[0].id, block_names[0]);
+   printf ("after ex_put_name, error = %d\n", error);
 
    error = ex_put_block_params(exoid, num_elem_blk, blocks);
    printf ("after ex_put_block_params, error = %d\n", error);

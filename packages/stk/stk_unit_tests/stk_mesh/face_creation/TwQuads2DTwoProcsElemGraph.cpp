@@ -11,9 +11,9 @@
 namespace
 {
 
-void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, stk::mesh::BulkData* bulkData)
+void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, stk::mesh::BulkData& bulkData)
 {
-    stk::mesh::fixtures::QuadFixture fixture(bulkData->parallel(), numX, numY, false);
+    stk::mesh::fixtures::QuadFixture fixture(bulkData.parallel(), numX, numY, false);
 
     stk::mesh::Field<double, stk::mesh::Cartesian2d> &coordField = fixture.m_meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(stk::topology::NODE_RANK, "model_coordinates");
     stk::mesh::put_field(coordField, fixture.m_meta.universal_part(), fixture.m_meta.spatial_dimension());
@@ -56,8 +56,8 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
 
     std::ostringstream os;
     const std::string file_temp("testadfasdasdfas.exo");
-    stk::unit_test_util::write_mesh_using_stk_io(file_temp, fixture.m_bulk_data, bulkData->parallel());
-    stk::unit_test_util::fill_mesh_using_stk_io(file_temp, *bulkData, bulkData->parallel());
+    stk::unit_test_util::write_mesh_using_stk_io(file_temp, fixture.m_bulk_data, bulkData.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io(file_temp, bulkData, bulkData.parallel());
 
     ThrowRequireMsg(fixture.m_bulk_data.parallel_size()<10, "Testing assumption violated.");
     os << file_temp << "." << fixture.m_bulk_data.parallel_size() << "." << fixture.m_bulk_data.parallel_rank();
@@ -72,9 +72,9 @@ protected:
 
     void setup_2x1_2d_mesh(stk::mesh::BulkData::AutomaticAuraOption aura_option)
     {
-        bulkData = new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(metaData, get_comm(), aura_option);
+        set_bulk(new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), aura_option));
         unsigned numX = 2, numY = 1;
-        convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, bulkData);
+        convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, get_bulk());
     }
 
     virtual stk::mesh::EntityVector get_nodes_of_face_for_this_proc()

@@ -14,7 +14,6 @@ class GraphEdgesForElement
 {
 public:
     typedef std::vector<GraphEdge>::const_iterator const_iterator;
-    GraphEdgesForElement() : isValid(true) { }
 
     const_iterator begin() const
     {
@@ -45,17 +44,8 @@ public:
     {
         graphEdges.clear();
     }
-    bool is_valid() const
-    {
-       return isValid;
-    }
-    void invalidate()
-    {
-        isValid = false;
-    }
 private:
     std::vector<GraphEdge> graphEdges;
-    bool isValid;
 };
 
 class Graph
@@ -75,9 +65,6 @@ public:
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_connections(impl::LocalId elem);
     void clear();
-
-    bool is_valid(impl::LocalId elem) const;
-    void invalidate(impl::LocalId elem);
 private:
     std::vector<GraphEdgesForElement> m_graphEdges;
     size_t m_numEdges = 0;

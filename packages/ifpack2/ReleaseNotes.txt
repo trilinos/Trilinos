@@ -2,8 +2,22 @@
 Release Notes for Trilinos Package Ifpack2
 ------------------------------------------
 
-Develement version (12.3):
---------------------------
+Trilinos 12.6:
+---------------
+
+* Fixed Ifpack2's part of Bug 6358
+
+Ifpack2, as well as its tests and examples, no longer require
+GlobalOrdinal = int to be enabled in Tpetra.
+
+* Fixed Bug 6443
+
+One unit test for RILUK had an excessively tight tolerance for Scalar
+= float.  This commit relaxes the tolerance in a principled way.  As a
+result, the test now passes.
+
+Trilinos 12.4:
+---------------
 
 * Deprecated Ifpack2::Krylov
 

@@ -166,7 +166,8 @@
 
 #ifndef FORTRAN_DISABLED
 
-#if defined(__GNUC__) || defined(_WIN32) /* standard Epetra implementation */
+#if ( defined(__GNUC__) || defined(_WIN32) ) && ! defined(FORTRAN_NO_UNDERSCORE)
+/* standard Epetra implementation */
 
 #define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
 #define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)

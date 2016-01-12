@@ -27,7 +27,7 @@ APPEND_SET(SOURCES
 
 ### Tests that require other Trilinos packages
 
-# first ensure that these cmake boolean variables are defined
+# First ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos
   ${PACKAGE_NAME}_ENABLE_Amesos2

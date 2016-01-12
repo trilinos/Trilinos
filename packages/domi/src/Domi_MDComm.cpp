@@ -537,6 +537,18 @@ MDComm::numDims() const
 
 ////////////////////////////////////////////////////////////////////////
 
+Teuchos::Array< int >
+MDComm::getCommDims() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    not onSubcommunicator(),
+    SubcommunicatorError,
+    "MDComm::getCommDim()");
+  return _commDims;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 int
 MDComm::getCommDim(int axis) const
 {
@@ -652,6 +664,55 @@ MDComm::getUpperNeighbor(int axis) const
     }
   }
   return _teuchosComm->getRank() + _commStrides[axis];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::ArrayView< Teuchos::RCP< const MDComm > >
+MDComm::getAxisComms() const
+{
+  int nd = numDims();
+  if (_axisComms.size() < nd)
+  {
+    for (int axis = 0; axis < nd; ++axis)
+    {
+      // This call will resize _axisComms if necessary, and then store
+      // the generated axis comm in _axisComms
+      getAxisComm(axis);
+    }
+  }
+  return _axisComms();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::RCP< const MDComm >
+MDComm::getAxisComm(int axis) const
+{
+  int nd = numDims();
+  if (_axisComms.size() < nd) _axisComms.resize(nd);
+  if (_axisComms[axis].is_null())
+  {
+    _axisComms[axis] = Teuchos::rcp(new MDComm(*this));
+    int myAxis = 0;
+    for (int i = 0; i < nd; ++i)
+    {
+      if (i != axis)
+      {
+        int commIndex = getCommIndex(i);
+        Teuchos::RCP< MDComm > newMdComm =
+          Teuchos::rcp(new MDComm(*_axisComms[axis],
+                                  myAxis,
+                                  commIndex));
+        _axisComms[axis] = newMdComm;
+      }
+      else
+      {
+        ++myAxis;
+      }
+    }
+  }
+  return _axisComms[axis];
 }
 
 }    // End namespace Domi

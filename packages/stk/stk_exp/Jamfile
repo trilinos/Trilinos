@@ -1,0 +1,117 @@
+#---------------------------------------------------------------
+#    Copyright 2008 - 2008 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_exp-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_exp-root-inc = $(stk_exp-root)/include ;
+} else {
+  stk_exp-root-inc = $(stk_exp-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <include>$(stk_exp-root-inc)
+    <toolset>gcc:<define>STK_EXP_BUILD_KOKKOS
+  : usage-requirements
+    <include>$(stk_exp-root-inc)
+    <include>$(stk_exp-root)
+    <define>STK_BUILT_IN_SIERRA
+  : build-dir $(stk_exp-builddir)
+  ;
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  :
+    #stk_exp_kokkos_utest
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-bin install-user-include install-user-lib ;
+ 
+explicit install-user-bin ;
+install install-user-bin
+   :
+   : <location>$(install-root)/bin
+   ;
+ 
+ explicit install-user-include ;
+ install install-user-include
+   : [ path.glob-tree $(stk_exp-root) : *.h *.hpp ]
+   : <location>$(install-root)/stk/stk_exp/include <install-source-root>$(stk_exp-root)
+   ;
+ 
+ explicit install-user-lib ;
+ install install-user-lib
+   :
+   : <location>$(install-root)/stk/stk_exp/lib
+   ;
+ 
+ explicit install-exe-targets ;
+ alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+#TODO re-enable this target after kokkos_core and kokkos_containers
+#flat header includes are fixed
+#exe stk_exp_kokkos_utest
+#  :
+#    [ glob $(stk_exp-root)/unit_tests/kokkos/*.cpp ]
+#    stk_sierra_util
+#    /mpi//mpi
+#    /tpl/gtest//gtest
+#    /tpl/trilinos-kokkoscore//kokkoscore
+#    /sierra/stk_mesh//stk_mesh_base
+#    /sierra/stk_io//stk_io
+#    /sierra/stk_io//stk_io_util
+#    /sierra/stk_util//stk_util_util
+#    /sierra/stk_util//stk_util_environment
+#  : <tag>@sierra-exec-tag
+#    <toolset>gcc
+#  ;
+

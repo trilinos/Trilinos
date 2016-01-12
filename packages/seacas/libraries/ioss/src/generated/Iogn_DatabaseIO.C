@@ -502,7 +502,7 @@ namespace Iogn {
     size_t entity_count = cs->get_property("entity_count").get_int();
 
     // Return the <entity (node or face), processor> pair
-    if (field.get_name() == "entity_processor") {
+    if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
 
       // Check type -- node or face
       std::string type = cs->get_property("entity_type").get_string();
@@ -522,6 +522,10 @@ namespace Iogn {
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
+
+	  if (field.get_name() == "entity_processor_raw") {
+	    map_global_to_local(get_node_map(), 2*entity_count, 2, entity_proc);
+	  }
         } else {
           int64_t* entity_proc = static_cast<int64_t*>(data);
 
@@ -530,7 +534,12 @@ namespace Iogn {
             entity_proc[j++] = entities[i];
             entity_proc[j++] = procs[i];
           }
+
+	  if (field.get_name() == "entity_processor_raw") {
+	    map_global_to_local(get_node_map(), 2*entity_count, 2, entity_proc);
+	  }
         }
+
       } else {
         std::ostringstream errmsg;
         errmsg << "Invalid commset type " << type;

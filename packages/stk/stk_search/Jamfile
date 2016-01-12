@@ -1,0 +1,173 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2009 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local boost-root-inc ;
+if $(RTenv-arg) = "user" {
+  boost-root-inc = $(boost-root)/include ;
+} else {
+  boost-root-inc = $(boost-root) ;
+}
+
+local stk_search-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_search-root-inc = $(stk_search-root)/include ;
+} else {
+  stk_search-root-inc = $(stk_search-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_search-root-inc)
+    <include>$(boost-root-inc)
+    <define>STK_BUILT_IN_SIERRA
+  : usage-requirements
+    <include>$(stk_search-root-inc)
+    <include>$(boost-root-inc)
+  : build-dir $(stk_search-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+# We do not want to build stk_search_integration_tester in release
+if ! $(releasable-arg) {
+explicit install-targets ;
+alias install-targets
+  : stk_search_utest
+    stk_search_integration_tester
+  ;
+}
+else {
+explicit install-targets ;
+alias install-targets
+  : stk_search_utest
+  ;
+}
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-include install-user-lib ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_search-root) : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_search/include <install-source-root>$(stk_search-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_search
+  : <location>$(install-root)/stk/stk_search/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+
+local xml-files =
+  ;
+
+lib stk_search
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_search-root)/stk_search/*.cpp ]
+    ]
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_diag
+    /sierra/stk_util//stk_util_parallel
+    /tpl/trilinos//tpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_search-root)/lib/libstk_search.a
+    ]
+  ;
+
+# We do not want to build stk_search_integration_tester in release
+if ! $(releasable-arg) {
+exe stk_search_integration_tester
+  :
+    [ glob $(stk_search-root)/integrationtest/*.cpp
+      glob $(stk_search-root)/integrationtest/*.[cC] ]
+    stk_search
+    /sierra/stk_util//stk_util_unit_test_support
+    /sierra/stk_util//stk_util_use_case
+    /sierra/stk_util//stk_util_diag
+    /sierra/geometry_toolkit//geometry_toolkit
+    /sierra/mesh//mesh
+    /sierra/acme//acme
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+}
+
+exe stk_search_utest
+  :
+    [ glob $(stk_search-root)/unit_tests/*.cpp ]
+    [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
+    stk_search
+    /sierra/stk_util//stk_util_use_case
+    /sierra/stk_util//stk_util_diag
+    /sierra/geometry_toolkit//geometry_toolkit
+    /sierra/acme//acme
+    /sierra/mesh//mesh
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+
+  : <tag>@sierra-exec-tag
+  ;
+
+
+

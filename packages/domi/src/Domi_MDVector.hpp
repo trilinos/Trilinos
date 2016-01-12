@@ -308,9 +308,27 @@ public:
    *        have to.
    */
   MDVector(const MDVector< Scalar, Node > & parent,
-           int axis,
-           const Slice & slice,
-           int bndryPad = 0);
+           int                              axis,
+           const Slice &                    slice,
+           int                              bndryPad = 0);
+
+  /** \brief Parent/array of slices sub-vector constructor
+   *
+   * \param parent [in] an MDVector, from which this sub-vector will
+   *        be derived.
+   *
+   * \param slices [in] an array of Slices of global axis indexes that
+   *        defines the sub-vector.  These slices must not include
+   *        indexes from the boundary padding along each axis.
+   *
+   * \param bndryPad [in] The boundary padding of the new sub-vector.
+   *        These may include indexes from the boundary padding of the
+   *        parent MDVector, but they do not have to.
+   */
+  MDVector(const MDVector< Scalar, Node > &    parent,
+           const Teuchos::ArrayView< Slice > & slices,
+           const Teuchos::ArrayView< int > &   bndryPad =
+             Teuchos::ArrayView< int >());
 
   /** \brief Assignment operator
    *
@@ -1544,6 +1562,41 @@ MDVector(const MDVector< Scalar, Node > & parent,
 
 template< class Scalar,
           class Node >
+MDVector< Scalar, Node >::
+MDVector(const MDVector< Scalar, Node > & parent,
+         const Teuchos::ArrayView< Slice > & slices,
+         const Teuchos::ArrayView< int > & bndryPad)
+{
+  setObjectLabel("Domi::MDVector");
+
+  // Temporarily store the number of dimensions
+  int numDims = parent.numDims();
+
+  // Sanity check on dimensions
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (slices.size() != numDims),
+    InvalidArgument,
+    "number of slices = " << slices.size() << " != parent MDVector number of "
+    "dimensions = " << numDims);
+
+  // Apply the single-Slice constructor to each axis in succession
+  MDVector< Scalar, Node > tempMDVector1(parent);
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    int bndryPadding = (axis < bndryPad.size()) ? bndryPad[axis] : 0;
+    MDVector< Scalar, Node > tempMDVector2(tempMDVector1,
+                                           axis,
+                                           slices[axis],
+                                           bndryPadding);
+    tempMDVector1 = tempMDVector2;
+  }
+  *this = tempMDVector1;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Scalar,
+          class Node >
 MDVector< Scalar, Node > &
 MDVector< Scalar, Node >::
 operator=(const MDVector< Scalar, Node > & source)
@@ -2407,7 +2460,7 @@ MDArrayView< Scalar >
 MDVector< Scalar, Node >::
 getUpperPadDataNonConst(int axis)
 {
-  dim_type n   = getLocalDim(axis,true);
+  dim_type n  = getLocalDim(axis,true);
   int     pad = getUpperPadSize(axis);
   Slice   slice;
   if (pad) slice = Slice(n-pad,n);
@@ -2426,7 +2479,7 @@ MDArrayView< const Scalar >
 MDVector< Scalar, Node >::
 getUpperPadData(int axis) const
 {
-  dim_type n   = getLocalDim(axis,true);
+  dim_type n  = getLocalDim(axis,true);
   int     pad = getUpperPadSize(axis);
   Slice   slice;
   if (pad) slice = Slice(n-pad,n);

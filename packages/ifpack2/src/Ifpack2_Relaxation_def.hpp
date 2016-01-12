@@ -809,7 +809,9 @@ void Relaxation<MatrixType>::compute ()
     Diagonal_->template sync<Kokkos::HostSpace> ();
     Diagonal_->template modify<Kokkos::HostSpace> ();
     auto diag_2d = Diagonal_->template getLocalView<Kokkos::HostSpace> ();
-    auto diag = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
+    auto diag_1d = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
+    // FIXME (mfh 12 Jan 2016) temp fix for Kokkos::complex vs. std::complex.
+    scalar_type* const diag = reinterpret_cast<scalar_type*> (diag_1d.ptr_on_device ());
 
     // Setup for L1 Methods.
     // Here we add half the value of the off-processor entries in the row,

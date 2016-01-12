@@ -236,8 +236,11 @@ int main(int argc, char *argv[]) {
 
 
   try {
-
+#ifdef KOKKOS_HAVE_CUDA //to reduce test time for CUDA
+    int max_order=1;
+#else
     int max_order = 7;                                                                  // max total order of polynomial solution
+#endif
     DefaultCubatureFactory<double>  cubFactory;                                         // create factory
     shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());  // create parent cell topology
     shards::CellTopology side(shards::getCellTopologyData< shards::Triangle<> >());     // create relevant subcell (side) topology
@@ -261,7 +264,6 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-
     /* Definition of parent cell. */
     FieldContainer<double> cell_nodes(1, 4, cellDim);
     // funky tet
@@ -307,7 +309,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> interp_points(1, numInterpPoints, cellDim);
     CellTools<double>::mapToPhysicalFrame(interp_points, interp_points_ref, cell_nodes, cell);
     interp_points.resize(numInterpPoints, cellDim);
-
     for (int x_order=0; x_order <= max_order; x_order++) {
       for (int y_order=0; y_order <= max_order-x_order; y_order++) {
         for (int z_order=0; z_order <= max_order-x_order-y_order; z_order++) {
@@ -531,13 +532,14 @@ int main(int argc, char *argv[]) {
         } // end for z_order
       } // end for y_order
     } // end for x_order
-
   }
+
   // Catch unexpected errors
   catch (std::logic_error err) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
+
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

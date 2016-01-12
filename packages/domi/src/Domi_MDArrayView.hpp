@@ -264,6 +264,11 @@ public:
    */
   inline const Teuchos::ArrayView< T > & arrayView() const;
 
+  /** \brief Return const version of the underlying
+   *         <tt>Teuchos::ArrayView</tt>
+   */
+  inline const Teuchos::ArrayView< const T > & arrayViewConst() const;
+
   /** \brief Return the storage order
    */
   inline Layout layout() const;
@@ -913,6 +918,15 @@ const Teuchos::ArrayView< T > &
 MDArrayView< T >::arrayView() const
 {
   return _array;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< typename T >
+const Teuchos::ArrayView< const T > &
+MDArrayView< T >::arrayViewConst() const
+{
+  return Teuchos::av_const_cast< const T >(_array);
 }
 
 ////////////////////////////////////////////////////////////////////////

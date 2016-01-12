@@ -352,7 +352,15 @@ public:
    */
   inline int numDims() const;
 
-  /** \brief Get the size along the given axis
+  /** \brief Get the communicator sizes along each axis
+   *
+   * This method will throw a Domi::SubcommunicatorError if the
+   * communicator is a sub-communicator and this processor does not
+   * belong to the sub-communicator.
+   */
+  inline Teuchos::Array< int > getCommDims() const;
+
+  /** \brief Get the communicator size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
    *        of dimensions - 1)
@@ -440,7 +448,8 @@ public:
    * \param withBndryPad [in] specify whether the dimension should
    *        include boundary padding or not
    */
-  dim_type getGlobalDim(int axis, bool withBndryPad=false) const;
+  dim_type getGlobalDim(int axis,
+                        bool withBndryPad=false) const;
 
   /** \brief Get the bounds of the global problem
    *
@@ -450,7 +459,8 @@ public:
    * \param withBndryPad [in] specify whether the bounds should
    *        include boundary padding or not
    */
-  Slice getGlobalBounds(int axis, bool withBndryPad=false) const;
+  Slice getGlobalBounds(int axis,
+                        bool withBndryPad=false) const;
 
   /** \brief Get the global loop bounds along the specified axis
    *
@@ -465,7 +475,8 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getGlobalRankBounds(int axis, bool withBndryPad=false) const;
+  Slice getGlobalRankBounds(int axis,
+                            bool withBndryPad=false) const;
 
   /** \brief Get an array of the local dimensions, including padding
    */
@@ -479,7 +490,17 @@ public:
    * \param withPad [in] specify whether the dimension should include
    *        padding or not
    */
-  dim_type getLocalDim(int axis, bool withPad=false) const;
+  dim_type getLocalDim(int axis,
+                       bool withPad=false) const;
+
+  /** \brief Get the local loop bounds along every axis
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.  For this method, padding is included in the bounds.
+   */
+  Teuchos::ArrayView< const Slice > getLocalBounds() const;
 
   /** \brief Get the local loop bounds along the specified axis
    *
@@ -494,11 +515,46 @@ public:
    * and the <tt>stop()</tt> method returns the non-inclusive end
    * value.
    */
-  Slice getLocalBounds(int axis, bool withPad=false) const;
+  Slice getLocalBounds(int axis,
+                       bool withPad=false) const;
+
+  /** \brief Get the local interior loop bounds along each axis
+   *
+   * Local interior loop bounds are the same as local loop bounds
+   * without padding, except that for non-periodic axes the global end
+   * points of the given axis are excluded. For periodic axes, the
+   * local interior loop bounds are exactly the same as local loop
+   * bounds without padding.
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
+  Teuchos::ArrayView< const Slice > getLocalInteriorBounds() const;
+
+  /** \brief Get the local interior loop bounds along the specified
+   *         axis
+   *
+   * \param axis [in] the index of the axis (from zero to the number
+   *        of dimensions - 1)
+   *
+   * Local interior loop bounds are the same as local loop bounds
+   * without padding, except that for non-periodic axes the global end
+   * points of the given axis are excluded. For periodic axes, the
+   * local interior loop bounds are exactly the same as local loop
+   * bounds without padding.
+   *
+   * The loop bounds are returned in the form of a <tt>Slice</tt>, in
+   * which the <tt>start()</tt> method returns the loop begin value,
+   * and the <tt>stop()</tt> method returns the non-inclusive end
+   * value.
+   */
+  Slice getLocalInteriorBounds(int axis) const;
 
   //@}
 
-  /** \name Storage order and communication and boundary padding */
+  /** \name Storage order, communication and boundary padding */
   //@{
 
   /** \brief Return true if there is any padding stored locally
@@ -560,6 +616,14 @@ public:
    */
   int getUpperBndryPad(int axis) const;
 
+  /** \brief Get the boundary padding sizes along each axis
+   *
+   * This returns an array of the boundary padding along each axis at
+   * the time of construction, regardless of whether a subsequent
+   * sub-map reduced these values.
+   */
+  Teuchos::Array< int > getBndryPadSizes() const;
+
   /** \brief Get the boundary padding size along the given axis
    *
    * \param axis [in] the index of the axis (from zero to the number
@@ -598,10 +662,27 @@ public:
    */
   Layout getLayout() const;
 
+  /** \brief Get the Kokkos node
+   */
+  Teuchos::RCP< Node > getNode() const;
+
   //@}
 
   /** \name Conversions to other Maps */
   //@{
+
+  /** \brief Return an array of axis maps
+   *
+   * An axis map is a 1D map along a given axis.
+   */
+  Teuchos::ArrayView< Teuchos::RCP< const Domi::MDMap< Node > > >
+  getAxisMaps() const;
+
+  /** \brief Return an axis map for the given axis
+   *
+   * An axis map is a 1D map along a given axis.
+   */
+  Teuchos::RCP< const Domi::MDMap< Node > > getAxisMap(int axis) const;
 
   /** \brief Return an RCP to a new MDMap that is a simple
    *         augmentation of this MDMap
@@ -881,6 +962,15 @@ private:
 
   // The storage order
   Layout _layout;
+
+  // An array of axis maps the correspond to the full MDMap.  An axis
+  // map describes the map along a single axis. This member is mutable
+  // because it is logically const but does not get constructed until
+  // requested by the user.
+  mutable Teuchos::Array< Teuchos::RCP< const MDMap< Node > > > _axisMaps;
+
+  // Kokkos node
+  Teuchos::RCP< Node > _node;
 
 #ifdef HAVE_EPETRA
   // An RCP pointing to an Epetra_Map that is equivalent to this
@@ -1925,6 +2015,15 @@ MDMap< Node >::numDims() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+Teuchos::Array< int >
+MDMap< Node >::getCommDims() const
+{
+  return _mdComm->getCommDims();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 int
 MDMap< Node >::getCommDim(int axis) const
 {
@@ -2087,6 +2186,16 @@ getGlobalRankBounds(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+Teuchos::ArrayView< const Slice >
+MDMap< Node >::
+getLocalBounds() const
+{
+  return _localBounds();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 Slice
 MDMap< Node >::
 getLocalBounds(int axis,
@@ -2110,6 +2219,45 @@ getLocalBounds(int axis,
     dim_type stop  = _localBounds[axis].stop()  - _pad[axis][1];
     return ConcreteSlice(start, stop);
   }
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::ArrayView< const Slice >
+MDMap< Node >::
+getLocalInteriorBounds() const
+{
+  // std::cout << "getLocalInteriorBounds(" << axis << "," << withPad
+  //           << "): _pad[" << axis << "] = " << _pad[axis]
+  //           << ", _localBounds[" << axis << "] = " << _localBounds[axis]
+  //           << std::endl;
+  return _localBounds();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Slice
+MDMap< Node >::
+getLocalInteriorBounds(int axis) const
+{
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= numDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    numDims() << ")");
+#endif
+  // std::cout << "getLocalInteriorBounds(" << axis << "," << withPad
+  //           << "): _pad[" << axis << "] = " << _pad[axis]
+  //           << ", _localBounds[" << axis << "] = " << _localBounds[axis]
+  //           << std::endl;
+  dim_type start = _localBounds[axis].start() + _pad[axis][0];
+  dim_type stop  = _localBounds[axis].stop()  - _pad[axis][1];
+  if (_mdComm->getLowerNeighbor(axis) == -1) ++start;
+  if (_mdComm->getUpperNeighbor(axis) == -1) --stop;
+  return ConcreteSlice(start, stop);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -2207,6 +2355,15 @@ MDMap< Node >::getUpperBndryPad(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
+Teuchos::Array< int >
+MDMap< Node >::getBndryPadSizes() const
+{
+  return _bndryPadSizes;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
 int
 MDMap< Node >::getBndryPadSize(int axis) const
 {
@@ -2299,6 +2456,55 @@ Layout
 MDMap< Node >::getLayout() const
 {
   return _layout;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::RCP< Node >
+MDMap< Node >::getNode() const
+{
+  return _node;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::ArrayView< Teuchos::RCP< const MDMap< Node > > >
+MDMap< Node >::getAxisMaps() const
+{
+  if (_axisMaps.size() == 0) _axisMaps.resize(numDims());
+  for (int axis = 0; axis < numDims(); ++axis)
+    if (_axisMaps[axis].is_null()) getAxisMap(axis);
+  return _axisMaps();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+Teuchos::RCP< const MDMap< Node > >
+MDMap< Node >::getAxisMap(int axis) const
+{
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ((axis < 0) || (axis >= numDims())),
+    RangeError,
+    "invalid axis index = " << axis << " (number of dimensions = " <<
+    numDims() << ")");
+#endif
+  if (_axisMaps.size() == 0) _axisMaps.resize(numDims());
+  if (_axisMaps[axis].is_null())
+  {
+    Teuchos::RCP< const MDComm > axisComm = _mdComm->getAxisComm(axis);
+    Domi::dim_type axisDim = _globalDims[axis] - 2*_bndryPadSizes[axis];
+    _axisMaps[axis] =
+      Teuchos::rcp(new MDMap(axisComm,
+                             Teuchos::tuple(axisDim),
+                             Teuchos::tuple(_commPadSizes[axis]),
+                             Teuchos::tuple(_bndryPadSizes[axis]),
+                             _layout));
+  }
+  return _axisMaps[axis];
 }
 
 ////////////////////////////////////////////////////////////////////////

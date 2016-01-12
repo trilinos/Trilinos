@@ -16,7 +16,7 @@ protected:
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        bulkData = new stk::mesh::unit_test::BulkDataFaceSharingTester(metaData, communicator, auraOption);
+        set_bulk(new stk::mesh::unit_test::BulkDataFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 
     void test_elem_elem_graph_for_face_connection_info()
