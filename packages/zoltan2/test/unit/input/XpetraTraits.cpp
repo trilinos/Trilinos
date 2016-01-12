@@ -87,8 +87,7 @@ ArrayRCP<zgno_t> roundRobinMap(
   zgno_t max = m->getMaxAllGlobalIndex();
   size_t globalrows = m->getGlobalNumElements();
   if (globalrows != size_t(max - base + 1)){
-    TEST_FAIL_AND_EXIT(*comm, 0,
-      string("Map is invalid for test - fix test"), 1);
+    TEST_FAIL_AND_EXIT(*comm, 0, "Map is invalid for test - fix test", 1);
   }
   RCP<Array<zgno_t> > mygids = rcp(new Array<zgno_t>);
   zgno_t firstzgno_t = proc;
@@ -113,6 +112,7 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
+  bool aok = true;
 
   Teuchos::RCP<Teuchos::FancyOStream> outStream =
     Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -137,8 +137,10 @@ int main(int argc, char *argv[])
       rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
+    aok = false;
+    std::cout << e.what() << std::endl;
   }
+  TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
   /////////////////////////////////////////////////////////////////
   //   Tpetra::CrsMatrix
@@ -155,9 +157,10 @@ int main(int argc, char *argv[])
       M = uinput->getUITpetraCrsMatrix();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getTpetraCrsMatrix ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getTpetraCrsMatrix ", 1);
 
     if (rank== 0)
       std::cout << "Original Tpetra matrix " << M->getGlobalNumRows()
@@ -177,9 +180,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<tmatrix_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<tmatrix_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Tpetra matrix" << std::endl;
@@ -195,9 +200,10 @@ int main(int argc, char *argv[])
       G = uinput->getUITpetraCrsGraph();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getTpetraCrsGraph ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getTpetraCrsGraph ", 1);
 
     if (rank== 0)
       std::cout << "Original Tpetra graph" << std::endl;
@@ -215,9 +221,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<tgraph_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<tgraph_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Tpetra graph" << std::endl;
@@ -234,9 +242,10 @@ int main(int argc, char *argv[])
       V->randomize();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getTpetraVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getTpetraVector", 1);
 
     if (rank== 0)
       std::cout << "Original Tpetra vector" << std::endl;
@@ -254,9 +263,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<tvector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<tvector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Tpetra vector" << std::endl;
@@ -273,9 +284,10 @@ int main(int argc, char *argv[])
       MV->randomize();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getTpetraMultiVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getTpetraMultiVector", 1);
 
     if (rank== 0)
       std::cout << "Original Tpetra multivector" << std::endl;
@@ -293,9 +305,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<tmvector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<tmvector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Tpetra multivector" << std::endl;
@@ -318,9 +332,10 @@ int main(int argc, char *argv[])
       M = uinput->getUIXpetraCrsMatrix();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getXpetraCrsMatrix ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getXpetraCrsMatrix ", 1);
 
     if (rank== 0)
       std::cout << "Original Xpetra matrix" << std::endl;
@@ -337,9 +352,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<xmatrix_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<xmatrix_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Xpetra matrix" << std::endl;
@@ -355,9 +372,10 @@ int main(int argc, char *argv[])
       G = uinput->getUIXpetraCrsGraph();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getXpetraCrsGraph ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getXpetraCrsGraph ", 1);
 
     if (rank== 0)
       std::cout << "Original Xpetra graph" << std::endl;
@@ -374,9 +392,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<xgraph_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<xgraph_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Xpetra graph" << std::endl;
@@ -395,9 +415,10 @@ int main(int argc, char *argv[])
       V = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(tV);
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getXpetraVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getXpetraVector", 1);
 
     if (rank== 0)
       std::cout << "Original Xpetra vector" << std::endl;
@@ -414,9 +435,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<xvector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<xvector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Xpetra vector" << std::endl;
@@ -435,9 +458,10 @@ int main(int argc, char *argv[])
       MV = Zoltan2::XpetraTraits<tmvector_t>::convertToXpetra(tMV);
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getXpetraMultiVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getXpetraMultiVector", 1);
 
     if (rank== 0)
       std::cout << "Original Xpetra multivector" << std::endl;
@@ -454,9 +478,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<xmvector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<xmvector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Xpetra multivector" << std::endl;
@@ -488,8 +514,10 @@ int main(int argc, char *argv[])
       rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
+    aok = false;
+    std::cout << e.what() << std::endl;
   }
+  TEST_FAIL_AND_EXIT(*comm, aok, "epetra input ", 1);
 
   // XpetraTraits<Epetra_CrsMatrix>
   {
@@ -499,9 +527,10 @@ int main(int argc, char *argv[])
       M = euinput->getUIEpetraCrsMatrix();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getEpetraCrsMatrix ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getEpetraCrsMatrix ", 1);
 
     if (rank== 0)
       std::cout << "Original Epetra matrix" << std::endl;
@@ -521,9 +550,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<ematrix_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<ematrix_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Epetra matrix" << std::endl;
@@ -539,9 +570,10 @@ int main(int argc, char *argv[])
       G = euinput->getUIEpetraCrsGraph();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getEpetraCrsGraph ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getEpetraCrsGraph ", 1);
 
     if (rank== 0)
       std::cout << "Original Epetra graph" << std::endl;
@@ -560,9 +592,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<egraph_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<egraph_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Epetra graph" << std::endl;
@@ -579,9 +613,10 @@ int main(int argc, char *argv[])
       V->Random();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getEpetraVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getEpetraVector", 1);
 
     if (rank== 0)
       std::cout << "Original Epetra vector" << std::endl;
@@ -600,9 +635,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<evector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<evector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Epetra vector" << std::endl;
@@ -620,9 +657,10 @@ int main(int argc, char *argv[])
       MV->Random();
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string("getEpetraMultiVector")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "getEpetraMultiVector", 1);
 
     if (rank== 0)
       std::cout << "Original Epetra multivector" << std::endl;
@@ -641,9 +679,11 @@ int main(int argc, char *argv[])
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0,
-        string(" Zoltan2::XpetraTraits<emvector_t>::doMigration ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok,
+        " Zoltan2::XpetraTraits<emvector_t>::doMigration ", 1);
 
     if (rank== 0)
       std::cout << "Migrated Epetra multivector" << std::endl;

@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int fail = 0, gfail=0;
+  bool aok = true;
 
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra matrices for testing.
@@ -155,8 +156,10 @@ int main(int argc, char *argv[])
         testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
+    aok = false;
+    std::cout << e.what() << std::endl;
   }
+  TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
   RCP<tmatrix_t> tM;     // original matrix (for checking)
   RCP<tmatrix_t> newM;   // migrated matrix
@@ -192,9 +195,10 @@ int main(int argc, char *argv[])
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t>(ctM));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixAdapter ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter ", 1);
   
     if (rank==0)
       std::cout << "Input adapter for Tpetra::CrsMatrix" << std::endl;
@@ -223,9 +227,10 @@ int main(int argc, char *argv[])
           newInput = rcp(new Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t>(cnewM));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixAdapter 2 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 2 ", 1);
   
         if (rank==0){
           std::cout << 
@@ -254,9 +259,10 @@ int main(int argc, char *argv[])
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cxM));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixAdapter 3 ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 3 ", 1);
   
     if (rank==0){
       std::cout << "Input adapter for Xpetra::CrsMatrix" << std::endl;
@@ -285,9 +291,10 @@ int main(int argc, char *argv[])
             rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cnewM));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixAdapter 4 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 4 ", 1);
   
         if (rank==0){
           std::cout << 
@@ -318,9 +325,10 @@ int main(int argc, char *argv[])
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(ceM));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraCrsMatrixAdapter 5 ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 5 ", 1);
   
     if (rank==0){
       std::cout << "Input adapter for Epetra_CrsMatrix" << std::endl;
@@ -349,9 +357,10 @@ int main(int argc, char *argv[])
             rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(cnewM));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraCrsMatrixAdapter 6 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 6 ", 1);
   
         if (rank==0){
           std::cout << 
