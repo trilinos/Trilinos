@@ -23,6 +23,13 @@ doxygen_objdb_*.tmp
 /TerminalApplication/
 /DataTransferKit/
 /TeuchosWrappersExt
+/packages/CTrilinos/
+/packages/ForTrilinos/
+/packages/Sundance/
+/packages/mesquite/
+/packages/moocho/
+/packages/optika/
+
 
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
