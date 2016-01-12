@@ -17,6 +17,12 @@
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a,
 		  int *lda, int *idigit)
 {
@@ -56,6 +62,10 @@ int ml_pdneupc__(USR_COMM *comm,
 		int *lworkl, int *ierr, ftnlen howmny_len, ftnlen bmat_len,
 		ftnlen which_len)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
     /* System generated locals */
     integer v_dim1, v_offset, i__1;
 
@@ -71,6 +81,9 @@ int ml_pdneupc__(USR_COMM *comm,
 #endif
 
     static logical *select;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
     /* Parameter adjustments */
 
