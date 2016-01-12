@@ -1002,6 +1002,10 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
         elemData.m_sideNodes.clear();
         connectedSideNodes.clear();
         stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(m_bulk_data, local_element, m_bulk_data.mesh_meta_data().side_rank(), side_nodes_received);
+        if (INVALID_CONNECTIVITY_ORDINAL == connectedOrdAndPerm.first)
+        {
+            continue;
+        }
         const stk::mesh::Bucket & connectedBucket = m_bulk_data.bucket(local_element);
         const stk::mesh::Entity* connectedElemNodes = m_bulk_data.begin_nodes(local_element);
 
@@ -1016,6 +1020,9 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
         elemData.m_sideIndex = connectedOrdAndPerm.first;
         elemData.m_suggestedFaceId = 0;
         elemData.m_sideNodes.resize(side_nodes_received.size());
+        ThrowAssertMsg(elemData.m_elementTopology.side_topology(elemData.m_sideIndex).num_nodes() == side_nodes_received.size(),
+                       "Error, number of nodes on sides of adjacent elements do not agree:  " << side_nodes_received.size() << " != " << elemData.m_elementTopology.side_topology(elemData.m_sideIndex).num_nodes());
+
         elemData.m_elementTopology.side_nodes(connectedElemNodes, elemData.m_sideIndex, elemData.m_sideNodes.begin());
         element_data_received.push_back(elemData);
 
