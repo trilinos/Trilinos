@@ -1188,17 +1188,24 @@ namespace { // (anonymous)
 #endif // KOKKOS_HAVE_PTHREAD
 
 
-#ifdef KOKKOS_HAVE_CUDA
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
+// NOTE (mfh 12 Jan 2016) Both Tpetra and the above test assume UVM.
+// Thus, it is both incorrect and unnecessary to use them with
+// Kokkos::CudaSpace as the memory space.  Furthermore, doing so
+// (correctly) raises an exception when Kokkos' bounds checking option
+// is enabled: "Kokkos::CudaSpace::access_error attempt to execute
+// Cuda function from non-Cuda space".
 
-#define UNIT_TEST_GROUP_CUDA( LO, GO ) \
-  UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )
-
-  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA )
-
-#else
-#  define UNIT_TEST_GROUP_CUDA( LO, GO )
-#endif // KOKKOS_HAVE_CUDA
+// #ifdef KOKKOS_HAVE_CUDA
+//   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
+//
+// #define UNIT_TEST_GROUP_CUDA( LO, GO ) \
+//   UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )
+//
+//   TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA )
+// #  define UNIT_TEST_GROUP_CUDA( LO, GO )
+// #else
+// #  define UNIT_TEST_GROUP_CUDA( LO, GO )
+// #endif // KOKKOS_HAVE_CUDA
 
 
 #ifdef KOKKOS_HAVE_CUDA
