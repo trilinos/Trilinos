@@ -38,6 +38,13 @@
 
 #include <boost/utility.hpp>
 
+//
+// Set some default values GPU support
+//
+#  ifndef BOOST_GPU_ENABLED
+#  define BOOST_GPU_ENABLED
+#  endif
+
 namespace stk { namespace topology_detail {
 
 #ifdef __CUDACC__

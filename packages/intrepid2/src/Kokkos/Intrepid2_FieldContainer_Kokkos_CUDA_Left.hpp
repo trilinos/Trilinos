@@ -62,7 +62,15 @@ index_type count_=1;
 index_type rankValue=0;
 index_type sizeValue=0;
 public:
-FieldContainer_Kokkos()= default;
+FieldContainer_Kokkos(){
+count_=1;
+dim0=dim[0]=1;
+rankValue=1;
+intepidManaged=true;
+sizeValue=1;
+containerMemory=new Scalar[sizeValue];
+}
+
 
 
 template <class ScalarPointer>

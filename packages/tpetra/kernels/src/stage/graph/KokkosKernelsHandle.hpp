@@ -80,6 +80,7 @@ public:
   }
 
   void create_spgemm_handle(Graph::SPGEMMAlgorithm spgemm_algo = Graph::SPGEMM_DEFAULT){
+    this->destroy_spgemm_handle();
     this->spgemmHandle = new SPGEMMHandleType(spgemm_algo);
 
   }
@@ -94,6 +95,7 @@ public:
     return this->gcHandle;
   }
   void create_graph_coloring_handle(Graph::ColoringAlgorithm coloring_type = Graph::COLORING_DEFAULT){
+    this->destroy_graph_coloring_handle();
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
   }
@@ -109,7 +111,8 @@ public:
     return this->gsHandle;
   }
   void create_gs_handle(
-      Graph::GSAlgorithm gs_algorithm = Graph::GS_DEFAULT){
+    Graph::GSAlgorithm gs_algorithm = Graph::GS_DEFAULT){
+    this->destroy_gs_handle();
     this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
   }
   void destroy_gs_handle(){

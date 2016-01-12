@@ -1131,7 +1131,10 @@ namespace Tpetra {
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
     /// describe(), may invoke getNodeElementList().
-    mutable Kokkos::DualView<GlobalOrdinal*, device_type> lgMap_;
+    ///
+    /// NOTE: With CUDA, we assume UVM, in that host code can access
+    /// the entries of this View.
+    mutable Kokkos::View<GlobalOrdinal*, device_type> lgMap_;
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
@@ -1395,7 +1398,7 @@ namespace Tpetra {
         // spaces.  However, if you're calling clone(), it is likely
         // the case that the memory spaces differ, so it doesn't hurt
         // to make a deep copy here.
-        Kokkos::DualView<GO*, out_device_type>
+        Kokkos::View<GO*, out_device_type>
           lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const

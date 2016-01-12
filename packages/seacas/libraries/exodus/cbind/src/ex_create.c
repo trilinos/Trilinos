@@ -146,7 +146,7 @@ int ex_create_int (const char *path,
   char errmsg[MAX_ERR_LENGTH];
   char *mode_name;
   int mode = 0;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
   static int netcdf4_mode = -1;
   char *option;
 #endif /* NC_NETCDF4 */
@@ -175,7 +175,7 @@ int ex_create_int (const char *path,
   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
   
   if ((int64_status & EX_ALL_INT64_DB) != 0) {
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
     /* Library DOES support netcdf4... Set modes required to use
      * netcdf-4 in non-classic mode
      */
@@ -191,7 +191,7 @@ int ex_create_int (const char *path,
 #endif
   }
 
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
   if (my_mode & EX_NETCDF4) {
     mode |= (NC_NETCDF4);
   } else {
@@ -225,7 +225,7 @@ int ex_create_int (const char *path,
   }
   if (my_mode & EX_NORMAL_MODEL)
     filesiz = 0;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
   else if (mode & NC_NETCDF4)
     filesiz = 1;
 #endif
@@ -233,7 +233,7 @@ int ex_create_int (const char *path,
     filesiz = (int)((my_mode & EX_LARGE_MODEL) || (ex_large_model(-1) == 1));
 
   if (
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       !(mode & NC_NETCDF4) &&
 #endif
       filesiz == 1) {

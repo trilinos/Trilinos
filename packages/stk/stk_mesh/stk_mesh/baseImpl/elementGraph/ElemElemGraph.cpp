@@ -3,7 +3,6 @@
 #include "ElemGraphCoincidentElems.hpp"
 #include "ElemGraphShellConnections.hpp"
 #include "BulkDataIdMapper.hpp"
-#include "SideConnector.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -22,8 +21,6 @@
 #include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk { namespace mesh {
-
-const impl::LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 impl::ElemSideToProcAndFaceId ElemElemGraph::get_element_side_ids_to_communicate() const
 {
@@ -230,7 +227,7 @@ impl::LocalId ElemElemGraph::get_local_element_id(stk::mesh::Entity local_elemen
     impl::LocalId local_id = m_entity_to_local_id[local_element.local_offset()];
     if (require_valid_id)
     {
-        ThrowRequireMsg(local_id != INVALID_LOCAL_ID, "Program error. Contact sierra-help@sandia.gov for support.");
+        ThrowRequireMsg(local_id != impl::INVALID_LOCAL_ID, "Program error. Contact sierra-help@sandia.gov for support.");
     }
     return local_id;
 }
@@ -243,7 +240,7 @@ int ElemElemGraph::size_data_members()
 
     m_graph.set_num_local_elements(numElems);
     m_local_id_to_element_entity.resize(numElems, Entity());
-    m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), INVALID_LOCAL_ID);
+    m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), impl::INVALID_LOCAL_ID);
     m_element_topologies.resize(numElems);
     m_num_parallel_edges = 0;
     m_local_id_in_pool.resize(numElems, false);
@@ -266,7 +263,7 @@ void ElemElemGraph::resize_entity_to_local_id_if_needed(size_t maxIndexOfNewlyAd
     const size_t minimumNewSize = maxIndexOfNewlyAddedEntities+1;
     const size_t oldSize = m_entity_to_local_id.size();
     const size_t newSize = std::max(minimumNewSize, oldSize);
-    m_entity_to_local_id.resize(newSize, INVALID_LOCAL_ID);
+    m_entity_to_local_id.resize(newSize, impl::INVALID_LOCAL_ID);
 }
 
 void ElemElemGraph::get_element_side_pairs(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges) const
@@ -984,10 +981,14 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
             }
         }
     }
-
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-    bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, &active);
+    bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, active);
     return remote_death_boundary.get_topology_modification_status();
+}
+
+stk::mesh::SideConnector ElemElemGraph::get_side_connector()
+{
+    return stk::mesh::SideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_local_id_to_element_entity, m_entity_to_local_id);
 }
 
 void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::EntityVector & local_elements_attached_to_side_nodes,
@@ -1006,7 +1007,7 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
 
         elemData.m_procId = m_bulk_data.parallel_rank();
         elemData.m_elementLocalId = get_local_element_id(local_element, false);
-        if (elemData.m_elementLocalId == INVALID_LOCAL_ID)
+        if (elemData.m_elementLocalId == impl::INVALID_LOCAL_ID)
         {
             continue;
         }
@@ -1030,7 +1031,7 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
 
 impl::LocalId ElemElemGraph::create_new_local_id(stk::mesh::Entity new_elem)
 {
-    if (m_entity_to_local_id.size() > new_elem.local_offset() && m_entity_to_local_id[new_elem.local_offset()] != INVALID_LOCAL_ID)
+    if (m_entity_to_local_id.size() > new_elem.local_offset() && m_entity_to_local_id[new_elem.local_offset()] != impl::INVALID_LOCAL_ID)
     {
         return m_entity_to_local_id[new_elem.local_offset()];
     }
@@ -1290,7 +1291,7 @@ void ElemElemGraph::clear_deleted_element_connections(const stk::mesh::impl::Del
         m_deleted_element_local_id_pool.push_back(elem_to_delete_id);
         m_local_id_in_pool[elem_to_delete_id] = true;
         m_element_topologies[elem_to_delete_id] = stk::topology::INVALID_TOPOLOGY;
-        m_entity_to_local_id[elem.local_offset()] = INVALID_LOCAL_ID;
+        m_entity_to_local_id[elem.local_offset()] = impl::INVALID_LOCAL_ID;
         m_local_id_to_element_entity[elem_to_delete_id] = stk::mesh::Entity::InvalidEntity;
     }
 }
@@ -1652,18 +1653,18 @@ void ElemElemGraph::pack_remote_edge_across_shell(stk::CommSparse &comm, stk::me
     for(stk::mesh::Entity &shell : addedShells)
     {
         impl::LocalId shellId = m_entity_to_local_id[shell.local_offset()];
-        impl::LocalId leftId = INVALID_LOCAL_ID;
-        impl::LocalId rightId = INVALID_LOCAL_ID;
+        impl::LocalId leftId = impl::INVALID_LOCAL_ID;
+        impl::LocalId rightId = impl::INVALID_LOCAL_ID;
         size_t numConnected = m_graph.get_num_edges_for_element(shellId);
         for(size_t i=0; i<numConnected; i++)
         {
             const GraphEdge & graphEdge = m_graph.get_edge_for_element(shellId, i);
-            if (leftId == INVALID_LOCAL_ID)
+            if (leftId == impl::INVALID_LOCAL_ID)
             {
                 leftId = graphEdge.elem2;
                 continue;
             }
-            if (rightId == INVALID_LOCAL_ID)
+            if (rightId == impl::INVALID_LOCAL_ID)
             {
                 rightId = graphEdge.elem2;
                 continue;
@@ -1672,7 +1673,7 @@ void ElemElemGraph::pack_remote_edge_across_shell(stk::CommSparse &comm, stk::me
         bool isLeftRemote = leftId < 0;
         bool isRightRemote = rightId < 0;
 
-        if (leftId == INVALID_LOCAL_ID || rightId == INVALID_LOCAL_ID)
+        if (leftId == impl::INVALID_LOCAL_ID || rightId == impl::INVALID_LOCAL_ID)
         {
             continue;
         }
@@ -2050,24 +2051,27 @@ std::vector<SideSetEntry> ElemElemGraph::extract_skinned_sideset(  )
     return skinnedSideSet;
 }
 
+std::vector<int> ElemElemGraph::get_exposed_sides(stk::mesh::impl::LocalId localId, int numElemSides)
+{
+    std::vector<int> exposedSides;
+    impl::add_exposed_sides(localId, numElemSides, m_graph, exposedSides);
+    if(m_air_selector != nullptr)
+        add_exposed_sides_due_to_air_selector(localId, exposedSides);
+    return exposedSides;
+}
+
 std::vector<int> ElemElemGraph::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                                        stk::mesh::Entity element,
                                                        stk::mesh::impl::LocalId localId)
 {
     int numElemSides = m_element_topologies[localId].num_sides();
     std::vector<int> exposedSides;
-    if(m_skinned_selector(bucket) && impl::does_element_have_side(m_bulk_data, element))
+    if(impl::does_element_have_side(m_bulk_data, element))
     {
-        if(m_graph.is_valid(localId))
-        {
-            impl::add_exposed_sides(localId, numElemSides, m_graph, exposedSides);
-            if(m_air_selector != nullptr)
-                add_exposed_sides_due_to_air_selector(localId, exposedSides);
-        }
-    }
-    else if(m_air_selector != nullptr && (*m_air_selector)(bucket) && impl::does_element_have_side(m_bulk_data, element))
-    {
-        exposedSides = get_sides_exposed_on_other_procs(localId, numElemSides);
+        if(m_skinned_selector(bucket))
+            exposedSides = get_exposed_sides(localId, numElemSides);
+        else if(m_air_selector != nullptr && (*m_air_selector)(bucket))
+            exposedSides = get_sides_exposed_on_other_procs(localId, numElemSides);
     }
     return exposedSides;
 }
@@ -2077,7 +2081,6 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
     const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, m_bulk_data.mesh_meta_data().locally_owned_part());
 
     std::vector<stk::mesh::sharing_info> sharedModified;
-    stk::mesh::EntityVector skinnedElements;
 
     m_bulk_data.modification_begin();
     for(size_t i=0;i<buckets.size();++i)
@@ -2090,20 +2093,18 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skinParts)
             stk::mesh::impl::LocalId localId = get_local_element_id(element);
             std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
             stk::util::sort_and_unique(exposedSides);
-            create_side_entities(exposedSides, localId, skinParts, sharedModified, skinnedElements);
+            create_side_entities(exposedSides, localId, skinParts, sharedModified);
         }
     }
-    stk::mesh::EntityVector deletedEntities;
-    m_bulk_data.make_mesh_parallel_consistent_after_element_death(sharedModified, deletedEntities, *this, skinnedElements);
+    m_bulk_data.make_mesh_parallel_consistent_after_skinning(sharedModified);
 }
 
 void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          impl::LocalId localId,
                                          const stk::mesh::PartVector& skinParts,
-                                         std::vector<stk::mesh::sharing_info> &sharedModified,
-                                         stk::mesh::EntityVector &skinnedElements)
+                                         std::vector<stk::mesh::sharing_info> &sharedModified)
 {
-    SideConnector sideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_local_id_to_element_entity, m_entity_to_local_id);
+    stk::mesh::SideConnector sideConnector = get_side_connector();
     stk::mesh::Entity element = m_local_id_to_element_entity[localId];
     for(size_t i=0;i<exposedSides.size();++i)
     {
@@ -2129,10 +2130,9 @@ void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
             newFaceId = m_sideIdPool.get_available_id();
         }
 
-        skinnedElements.push_back(element);
         stk::mesh::Entity sideEntity = add_side_to_mesh({localId, exposedSides[i]}, skinParts, newFaceId);
 
-        sideConnector.connect_side_to_all_elements(sideEntity, {localId, exposedSides[i]}, skinnedElements);
+        sideConnector.connect_side_to_all_elements(sideEntity, element, exposedSides[i]);
     }
 }
 

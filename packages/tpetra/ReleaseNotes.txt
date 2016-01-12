@@ -5,6 +5,15 @@ Release Notes for Trilinos Package Tpetra
 Development version (12.5)
 --------------------------
 
+* Better CUDA testing
+
+We added more nightly test builds with CUDA enabled (for running on
+NVIDIA GPUs).  The builds test various combinations of CUDA with
+different compiler versions and host thread parallelism options
+(OpenMP, Pthreads, serial).  CUDA + GCC 4.7.2 is currently the
+best-tested option, but we're using these tests to improve support for
+other options.
+
 * CrsMatrix, MultiVector, Vector: Added 'atomic' option to sumInto
 
 The sumIntoLocalValues method in Tpetra::CrsMatrix, and the

@@ -19,6 +19,12 @@ TRIBITS_ADD_EXECUTABLE(
   spemm_cusparse
   SOURCES SPMM.cpp KokkosKernelsGraphHelpers.hpp 
   )
+  
+TRIBITS_ADD_EXECUTABLE(
+  symmetrize
+  SOURCES symmetrize_test.cpp KokkosKernelsGraphHelpers.hpp experiment_space.hpp
+  )  
+  
 #
 # Make a trivial change here if you add a file either to this
 # directory, or to the impl/ subdirectory.  Keep making changes

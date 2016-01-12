@@ -95,7 +95,7 @@ int ex_put_loadbal_param_cc(int   exoid,
   char    ftype[2];
   int  oldfill;
 
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
   int64_t num_int_elem = 0, num_int_node = 0, num_bor_elem = 0;
   int64_t num_bor_node = 0, num_ext_node = 0;
   int64_t num_n_cmaps = 0, num_e_cmaps = 0;
@@ -794,7 +794,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[0] > 0) {
       /* increment to the next starting position */
       num_int_elem += nie;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[0], start, (long long*)&num_int_elem);
 #else
       status = nc_put_var1_int(exoid, varid_idx[0], start, &num_int_elem);
@@ -812,7 +812,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[1] > 0) {
       /* increment to the next starting position */
       num_bor_elem += nbe;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[1], start, (long long*)&num_bor_elem);
 #else
       status = nc_put_var1_int(exoid, varid_idx[1], start, &num_bor_elem);
@@ -830,7 +830,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[2] > 0) {
       /* increment to the next starting position */
       num_int_node += nin;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[2], start, (long long*)&num_int_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[2], start, &num_int_node);
@@ -848,7 +848,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[3] > 0) {
       /* increment to the next starting position */
       num_bor_node += nbn;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[3], start, (long long*)&num_bor_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[3], start, &num_bor_node);
@@ -866,7 +866,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[4] > 0) {
       /* increment to the next starting position */
       num_ext_node += nen;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[4], start, (long long*)&num_ext_node);
 #else
       status = nc_put_var1_int(exoid, varid_idx[4], start, &num_ext_node);
@@ -884,7 +884,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[5] > 0) {
       /* increment to the next starting position */
       num_n_cmaps += nnc;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[5], start, (long long*)&num_n_cmaps);
 #else
       status = nc_put_var1_int(exoid, varid_idx[5], start, &num_n_cmaps);
@@ -902,7 +902,7 @@ int ex_put_loadbal_param_cc(int   exoid,
     if (varid_idx[6] > 0) {
       /* increment to the next starting position */
       num_e_cmaps += nec;
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
       status = nc_put_var1_longlong(exoid, varid_idx[6], start, (long long*)&num_e_cmaps);
 #else
       status = nc_put_var1_int(exoid, varid_idx[6], start, &num_e_cmaps);

@@ -93,7 +93,35 @@ namespace ROL {
 
 template <class Real>
 class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
+private:
+  Teuchos::RCP<Vector<Real> > resid_;
+  Teuchos::RCP<Vector<Real> > unew_;
+  Teuchos::RCP<Vector<Real> > jv_;
+
+  Real rtol_;
+  Real stol_;
+  Real factor_;
+  Real decr_;
+  int maxit_;
+  bool print_;
+
+  bool firstSolve_;
+
 public:
+  EqualityConstraint_SimOpt()
+    : EqualityConstraint<Real>(),
+      resid_(Teuchos::null), unew_(Teuchos::null), jv_(Teuchos::null),
+      rtol_(0.0), stol_(0.0), factor_(0.0), decr_(0.0), maxit_(0),
+      print_(false), firstSolve_(true) {}
+
+  EqualityConstraint_SimOpt(const Vector<Real> &c)
+    : EqualityConstraint<Real>(),
+      resid_(Teuchos::null), unew_(Teuchos::null), jv_(Teuchos::null),
+      rtol_(1.e2*ROL_EPSILON), stol_(std::sqrt(ROL_EPSILON)), factor_(0.5),
+      decr_(1.e-4), maxit_(500), print_(false), firstSolve_(true) {
+    resid_ = c.clone();
+  }
+
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
                 flag = true if optimization variable is changed,
@@ -131,8 +159,51 @@ public:
   virtual void solve(Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "The method solve is used but not implemented!\n");
+    if ( resid_ != Teuchos::null ) {
+      if ( firstSolve_ ) {
+        unew_ = u.clone();
+        jv_   = u.clone();
+        firstSolve_ = false;
+      }
+      update(u,z);
+      value(*resid_,u,z,tol);
+      Real rnorm = resid_->norm(), alpha = 1.0, tmp = 0.0;
+      int cnt = 0;
+      if ( print_ ) {
+        std::cout << "iter  rnorm  alpha\n";
+      }
+      while ( rnorm > rtol_ && cnt < maxit_) {
+        // Compute Newton step
+        applyInverseJacobian_1(*jv_,*resid_,u,z,tol);
+        unew_->set(u);
+        unew_->axpy(-alpha, *jv_);
+        update(*unew_,z);
+        value(*resid_,*unew_,z,tol);
+        tmp = resid_->norm();
+        // Perform backtracking line search
+        while ( tmp > (1.0-decr_*alpha)*rnorm &&
+                alpha > stol_ ) {
+          alpha *= factor_;
+          unew_->set(u);
+          unew_->axpy(-alpha,*jv_);
+          update(*unew_,z);
+          value(*resid_,*unew_,z,tol);
+          tmp = resid_->norm();
+        }
+        if ( print_ ) {
+          std::cout << cnt << "  " << tmp << "  " << alpha << "\n";
+        }
+        // Update iterate
+        rnorm = tmp;
+        u.set(*unew_);
+        alpha = 1.0;
+        cnt++;
+      }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "The method solve is used but not implemented!\n");
+    }
   }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -679,8 +750,8 @@ public:
 
   }
 
-
-  EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}
+//
+//  EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 

@@ -321,7 +321,7 @@ void pcgsolve( //const ImportType & import,
     //gsHandler = kh.get_gs_handle();
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::gauss_seidel_numeric<KernelHandle>(&kh, A.graph.row_map, A.graph.entries, A.coeff);
+    KokkosKernels::Experimental::Graph::gauss_seidel_numeric<KernelHandle>(&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff);
 
     Space::fence();
     precond_init_time += timer.seconds();
@@ -330,7 +330,7 @@ void pcgsolve( //const ImportType & import,
     Space::fence();
     timer.reset();
 
-    KokkosKernels::Experimental::Graph::gauss_seidel_apply<KernelHandle> (&kh, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
+    KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply<KernelHandle> (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
 
     Space::fence();
     precond_time += timer.seconds();
@@ -387,7 +387,7 @@ void pcgsolve( //const ImportType & import,
     if (use_sgs){
       Space::fence();
       timer.reset();
-      KokkosKernels::Experimental::Graph::gauss_seidel_apply<KernelHandle> (&kh,  A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
+      KokkosKernels::Experimental::Graph::symmetric_gauss_seidel_apply<KernelHandle> (&kh, count_owned, count_owned, A.graph.row_map, A.graph.entries, A.coeff, z, r, true, apply_count);
 
       Space::fence();
       precond_time += timer.seconds();

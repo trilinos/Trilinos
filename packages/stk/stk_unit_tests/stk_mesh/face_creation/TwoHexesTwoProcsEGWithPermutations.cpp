@@ -22,7 +22,7 @@ protected:
 
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        bulkData = new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(metaData, communicator, auraOption);
+        set_bulk(new stk::mesh::unit_test::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
     }
 
     void set_permutations_for_both_procs(const std::vector<std::vector<int>> input_permutations)

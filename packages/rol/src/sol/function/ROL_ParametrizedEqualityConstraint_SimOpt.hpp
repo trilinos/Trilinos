@@ -63,6 +63,12 @@ protected:
   }
 
 public:
+
+  ParametrizedEqualityConstraint_SimOpt() : EqualityConstraint_SimOpt<Real>() {}
+
+  ParametrizedEqualityConstraint_SimOpt(const Vector<Real> &c)
+    : EqualityConstraint_SimOpt<Real>(c) {}
+
   virtual void setParameter(const std::vector<Real> &param) {
     this->param_ = param;
   }
@@ -73,12 +79,12 @@ public:
                      const Vector<Real> &u,
                      const Vector<Real> &z,
                      Real &tol) = 0;
-
-  virtual void solve(Vector<Real> &u, 
-                     const Vector<Real> &z,
-                     Real &tol) {
-    u.zero();
-  }
+//
+//  virtual void solve(Vector<Real> &u, 
+//                     const Vector<Real> &z,
+//                     Real &tol) {
+//    u.zero();
+//  }
 
 }; // class ParametrizedEqualityConstraint_SimOpt
 

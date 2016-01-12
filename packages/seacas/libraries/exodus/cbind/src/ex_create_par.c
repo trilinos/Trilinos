@@ -161,7 +161,7 @@ int ex_create_par_int (const char *path,
   assert(my_mode == cmode);
   exerrval = 0; /* clear error code */
 
-#if !defined(NC_NETCDF4)
+#if !defined(ENABLE_NETCDF4)
     /* Library does NOT support netcdf4 */
     exerrval = EX_BADPARAM;
     sprintf(errmsg,

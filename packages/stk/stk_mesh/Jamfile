@@ -1,0 +1,176 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2010 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_mesh-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_mesh-root-inc = $(stk_mesh-root)/include ;
+} else {
+  stk_mesh-root-inc = $(stk_mesh-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <define>STK_SHOW_DEPRECATED_WARNINGS
+    <define>STK_HIDE_DEPRECATED_CODE
+    <define>SIERRA_MIGRATION
+    <include>$(stk_mesh-root-inc)
+    <valgrind>on:<define>BOOST_POOL_VALGRIND
+    <valgrind>on:<include>/usr/netpub/valgrind/include
+  : usage-requirements
+    <define>SIERRA_MIGRATION
+    <include>$(stk_mesh-root-inc)
+    <valgrind>on:<define>BOOST_POOL_VALGRIND
+    <valgrind>on:<include>/usr/netpub/valgrind/include
+  : build-dir $(stk_mesh-builddir)
+  ;
+
+#
+# SECTION 2: Development install
+#
+
+local xml-files =
+  ;
+
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+explicit install-targets ;
+alias install-targets
+  : stk_mesh_utest
+    stk_mesh_docs_tests 
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-include install-user-lib ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_mesh-root) : *.h *.hpp *.tcc ]
+  : <location>$(install-root)/stk/stk_mesh/include <install-source-root>$(stk_mesh-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_mesh_base
+  : <location>$(install-root)/stk/stk_mesh/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+exe stk_mesh_utest
+  :
+    $(stk_mesh-root)/unit_tests/UnitTestMain.cpp
+    [ glob $(stk_mesh-root)/unit_tests/*.cpp $(stk_mesh-root)/unit_tests/face_creation/*.cpp $(stk_mesh-root)/unit_tests/change_parts/*.cpp $(stk_mesh-root)/unit_tests/face_creation/skin_mesh/*.cpp $(stk_mesh-root)/unit_tests/face_creation/integration/*.cpp $(stk_mesh-root)/unit_tests/custom_ghosting/*.cpp ]
+    stk_mesh_base
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_io//stk_io
+    stk_mesh_fixtures
+    /sierra/stk_util//stk_util_use_case
+    /tpl/trilinos//teuchos
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_mesh_docs_tests
+  :
+    $(stk_mesh-root)/testsForDocumentation/testMain.cpp
+    [ glob $(stk_mesh-root)/testsForDocumentation/*.cpp ]
+    stk_mesh_base
+    /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_use_case
+    /sierra/stk_util//stk_util_unit_test_support
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+lib stk_mesh_base
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_mesh-root)/stk_mesh/base/*.cpp ]
+        [ glob $(stk_mesh-root)/stk_mesh/baseImpl/*.cpp ]
+        [ glob $(stk_mesh-root)/stk_mesh/baseImpl/elementGraph/*.cpp ]
+    ]
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
+    /tpl/trilinos//shards
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_mesh-root)/lib/libstk_mesh_base.a
+    ]
+  ;
+
+lib stk_mesh_fixtures
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_mesh-root)/stk_mesh/fixtures/*.cpp ]
+    ]
+    stk_mesh_base
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_io//stk_io
+    /tpl/trilinos//shards
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_mesh-root)/lib/libstk_mesh_fixtures.a
+    ]
+  ;

@@ -92,16 +92,6 @@ void Graph::clear()
     m_graphEdges.clear();
 }
 
-bool Graph::is_valid(impl::LocalId elem) const
-{
-    return m_graphEdges[elem].is_valid();
-}
-
-void Graph::invalidate(impl::LocalId elem)
-{
-    m_graphEdges[elem].invalidate();
-}
-
 impl::parallel_info& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)
 {
     return const_cast<impl::parallel_info&>(get_parallel_info_iterator_for_graph_edge(graphEdge)->second);

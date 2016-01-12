@@ -338,11 +338,6 @@ enum Permutation
   INVALID_PERMUTATION = 128
 };
 
-enum ConnectivityId
-{
-  INVALID_CONNECTIVITY_ID = ~0U
-};
-
 //----------------------------------------------------------------------
 
 // Use macro below to deprecate functions (place at beginning of function or class method)
