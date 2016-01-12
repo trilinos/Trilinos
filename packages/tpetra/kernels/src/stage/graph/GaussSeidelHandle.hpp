@@ -210,12 +210,12 @@ private:
     this->old_to_new_map = old_to_new_map_;
   }
 
-  void allocate_x_y_vectors(){
-    if(permuted_y_vector.dimension_0() != permuted_xadj.dimension_0() - 1){
-      permuted_y_vector = value_persistent_work_array_type("PERMUTED Y VECTOR", permuted_xadj.dimension_0() - 1);
+  void allocate_x_y_vectors(idx num_rows, idx num_cols){
+    if(permuted_y_vector.dimension_0() != num_rows){
+      permuted_y_vector = value_persistent_work_array_type("PERMUTED Y VECTOR", num_rows);
     }
-    if(permuted_x_vector.dimension_0() != permuted_xadj.dimension_0() - 1){
-      permuted_x_vector = value_persistent_work_array_type("PERMUTED X VECTOR", permuted_xadj.dimension_0() - 1);
+    if(permuted_x_vector.dimension_0() != num_cols){
+      permuted_x_vector = value_persistent_work_array_type("PERMUTED X VECTOR", num_cols);
     }
   }
 

@@ -206,7 +206,7 @@ int read_mtx (char *fileName, idx *nv, idx *ne, idx **xadj, idx **adj, wt **ew, 
   ss >> nr >> nc >> nnz;
 
 
-  if (nr != nc) {std::cerr << "NON-SQUARE MATRIX TYPE NOT HANDLED YET"<< std::endl; return (1); }
+  //if (nr != nc) {std::cerr << "NON-SQUARE MATRIX TYPE NOT HANDLED YET"<< std::endl; return (1); }
   idx noEdges = nnz;
   if (mtx_sym == 1 || symmetrize) noEdges = 2 * nnz;
   std::cout << "nr:" << nr << " nc:" << nc << " nnz:" << nnz << " noEdges:" << noEdges << std::endl;

@@ -138,7 +138,7 @@ void run_experiment(
 
 
   kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_VB);
-  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
+  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, nv, nv, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();
@@ -168,7 +168,7 @@ void run_experiment(
 
   kh.destroy_graph_coloring_handle();
   kh.create_graph_coloring_handle(KokkosKernels::Experimental::Graph::COLORING_EB);
-  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, A.graph.row_map, A.graph.entries);
+  KokkosKernels::Experimental::Graph::graph_color_symbolic<KernelHandle> (&kh, nv, nv, A.graph.row_map, A.graph.entries);
 
   kok_x_vector = value_array_type("kok_x_vector", nv);
   timer1.reset();

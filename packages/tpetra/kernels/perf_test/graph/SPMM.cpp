@@ -70,7 +70,9 @@ int main (int argc, char ** argv){
 
 
 
-  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
+
+
+  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
   Kokkos::Impl::Timer timer1;
   KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
       &kh,
@@ -110,18 +112,41 @@ int main (int argc, char ** argv){
       );
   Kokkos::fence();
   double numeric_time = timer2.seconds();
+
+  Kokkos::Impl::Timer timer3;
+  KokkosKernels::Experimental::Graph::spgemm_apply(
+      &kh,
+      m,
+      n,
+      k,
+      kok_xadj,
+      kok_adj,
+      kok_mtx_vals,
+      false,
+
+      kok_xadj,
+      kok_adj,
+      kok_mtx_vals,
+      true,
+      row_mapC,
+      entriesC,
+      valuesC
+      );
+  Kokkos::fence();
+  double apply_time = timer3.seconds();
+
   std::cout << "mm_time:" << numeric_time + symbolic_time
             << " symbolic_time:" << symbolic_time
-            << " numeric:" << numeric_time << std::endl;
+            << " numeric:" << numeric_time
+            << " apply:" << apply_time << std::endl;
 
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
   std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-
-
-  kh.create_spgemm_handle();
+#ifdef RUNCUSP
+  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
   Kokkos::Impl::Timer timer3;
   KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
       &kh,
@@ -169,6 +194,7 @@ int main (int argc, char ** argv){
   std::cout << "entriesC:" << entriesC2.dimension_0() << std::endl;
   std::cout << "valuesC:" << valuesC2.dimension_0() << std::endl;
 
+#endif
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
   size_t map = 0, ent = 0, val = 0;
