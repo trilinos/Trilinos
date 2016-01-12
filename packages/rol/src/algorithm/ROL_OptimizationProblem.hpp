@@ -163,11 +163,11 @@ public:
         obj_ = Teuchos::rcp( new InteriorPoint::PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
       }
       else {
-        bnd_ = Teuchos::rcp(&*bnd,false);
+        bnd_ = bnd;
       }
     }
     else {
-      bnd_ = Teuchos::rcp(&*bnd,false);
+      bnd_ = bnd;
     }
   }
 
@@ -214,8 +214,52 @@ public:
 
    }
 
+   // Bound but no equality
+   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
+                       Teuchos::RCP<Vector<Real> > &sol,
+                       Teuchos::RCP<BoundConstraint<Real> > &bnd,
+                       Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       Teuchos::RCP<Vector<Real> > &inmul,
+                       Teuchos::RCP<Teuchos::ParameterList> &parlist )
+     : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(bnd),
+       con_(Teuchos::null), mul_(Teuchos::null), 
+       parlist_(Teuchos::null) {
 
-   // For interior points without equality constraint
+      using InteriorPoint::PenalizedObjective;
+      using InteriorPoint::CompositeConstraint;
+      using Elementwise::Fill;
+
+      using Teuchos::RCP;  using Teuchos::rcp;
+
+      Teuchos::ParameterList &iplist = parlist->sublist("Interior Point");
+
+      Real mu         = iplist.get("Initial Barrier Penalty",1.0);
+      Real slack_ival = iplist.get("Initial Slack Variable Value",1.0);
+
+      con_ = rcp( new CompositeConstraint<Real>(incon) );
+
+      // Create slack variables - fill with parlist value
+      RCP<Vector<Real> > slack = inmul->dual().clone();
+
+      Fill<Real> fill(slack_ival);
+ 
+      slack->applyUnary(fill);
+
+      // Form vector of optimization and slack variables 
+      sol_ = CreatePartitionedVector(sol,slack);
+
+      // Form partitioned Lagrange multiplier
+      mul_ = CreatePartitionedVector(inmul);
+
+      // Create penalty 
+      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+ 
+      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+
+   }
+
+
+   // For interior points with equality constraint
    OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
                        Teuchos::RCP<Vector<Real> > &sol,
                        Teuchos::RCP<EqualityConstraint<Real> > &eqcon, 
@@ -224,6 +268,54 @@ public:
                        Teuchos::RCP<Vector<Real> > &inmul,
                        Teuchos::RCP<Teuchos::ParameterList> &parlist )
      : obj_(Teuchos::null), sol_(Teuchos::null), 
+       con_(Teuchos::null), mul_(Teuchos::null), 
+       parlist_(parlist) {
+
+      using InteriorPoint::PenalizedObjective;
+      using InteriorPoint::CompositeConstraint;
+      using Elementwise::Fill;
+
+      using Teuchos::RCP;  using Teuchos::rcp;
+
+      Teuchos::ParameterList &iplist = parlist->sublist("Interior Point");
+
+      Real mu         = iplist.get("Initial Barrier Penalty",1.0);
+      Real slack_ival = iplist.get("Initial Slack Variable Value",1.0);
+
+      con_ = rcp( new CompositeConstraint<Real>(incon,eqcon) );
+
+      // Create slack variables - fill with parlist value
+      RCP<Vector<Real> > slack = inmul->dual().clone();
+
+      Fill<Real> fill(slack_ival);
+ 
+      slack->applyUnary(fill);
+
+      // Form vector of optimization and slack variables 
+      sol_ = CreatePartitionedVector(sol,slack);
+
+      // Form partitioned Lagrange multiplier
+      mul_ = CreatePartitionedVector(inmul,eqmul);
+
+      // Create penalty 
+      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+ 
+      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+
+         
+
+  }
+
+   // Both bound and equality constraint
+   OptimizationProblem(Teuchos::RCP<Objective<Real> > &obj,
+                       Teuchos::RCP<Vector<Real> > &sol,
+                       Teuchos::RCP<BoundConstraint<Real> > &bnd,
+                       Teuchos::RCP<EqualityConstraint<Real> > &eqcon, 
+                       Teuchos::RCP<Vector<Real> > &eqmul,
+                       Teuchos::RCP<InequalityConstraint<Real> > &incon,
+                       Teuchos::RCP<Vector<Real> > &inmul,
+                       Teuchos::RCP<Teuchos::ParameterList> &parlist )
+     : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(bnd),
        con_(Teuchos::null), mul_(Teuchos::null), 
        parlist_(parlist) {
 
