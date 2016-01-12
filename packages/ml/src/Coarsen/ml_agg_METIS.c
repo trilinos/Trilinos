@@ -28,6 +28,13 @@
 #include "ml_agg_info.h"
 #include "limits.h"
 
+
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
 #ifndef MAXWELL
 #ifndef ALEGRA
@@ -451,7 +458,14 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   int MaxNnzRow;
   indextype * xadj2 = NULL, * adjncy2 = NULL;
   indextype * perm = NULL, * iperm = NULL;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   indextype options[8];
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
   size_t used_mem;
   int bandwidth_orig, bandwidth_perm;
   int mypid = comm->ML_mypid;
@@ -748,6 +762,10 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
                                          int *total_nz)
 {
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int i, j,jj,  count, count2, count_start;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int *wgtflag=NULL, numflag;
@@ -782,6 +800,9 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int * perm = NULL;
   char str[80];
   char *ptrToBdry;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
   /* ------------------- execution begins --------------------------------- */
 
