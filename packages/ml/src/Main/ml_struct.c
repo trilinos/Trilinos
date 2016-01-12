@@ -26,6 +26,11 @@
 #include "mpi.h"
 #endif
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
 
 /* ************************************************************************* *
  * Structure to hold user-selected ML output level.                          *
@@ -40,6 +45,10 @@ ML_PrintControl ML_PrintLevel = {0};
 int ml_defines_have_printed = 0;
 int ML_Create(ML **ml_ptr, int Nlevels)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
    int             i, length;
    double          *max_eigen;
    ML_Operator     *Amat, *Rmat, *Pmat;
@@ -57,6 +66,9 @@ int ML_Create(ML **ml_ptr, int Nlevels)
 
 #ifdef ML_TIMING
    struct ML_Timing *timing;
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
    ML_memory_alloc( (void**) ml_ptr, sizeof(ML), "MLM" );
@@ -5872,6 +5884,10 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
 
 int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
    int            i, j, k, offset, N_local;
    int            reuse, coarsest_level, flag, space, *cols = NULL, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;
@@ -5888,6 +5904,9 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
    /* ----------------------------------------------------------------- */
@@ -6425,6 +6444,10 @@ int ML_Gen_Smoother_Petsc(ML *ml, int level, int pre_or_post, int ntimes, ML_Pet
 int ML_build_ggb(ML *ml, void *data)
 {
 
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   ML                    *ml_ggb=NULL;
   int                    Nrows, Ncols, Nlocal, Nnz;
   ML_Operator           *Pmat=NULL, *Qtilde=NULL;
@@ -6438,6 +6461,9 @@ int ML_build_ggb(ML *ml, void *data)
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
 
@@ -6729,6 +6755,10 @@ int ML_build_ggb(ML *ml, void *data)
 
 void ML_build_ggb_cheap(ML *ml, void *data)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   ML                    *ml_ggb;
   int                    Nrows, Ncols, Nlocal, Nnz;
   ML_Operator           *Pmat,  *Qtilde;
@@ -6738,6 +6768,9 @@ void ML_build_ggb_cheap(ML *ml, void *data)
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
+#endif
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
 #endif
 
 
