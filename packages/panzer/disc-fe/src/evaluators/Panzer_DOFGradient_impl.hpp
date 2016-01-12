@@ -59,6 +59,7 @@ struct evaluateGrad_withSens {
       const ArrayT  grad_basis) :
         dof_grad_(dof_grad),dof_value_(dof_value),grad_basis_(grad_basis)
       {}
+  KOKKOS_INLINE_FUNCTION
   void operator() (const size_t &cell) const
   {
     // evaluate at quadrature points
