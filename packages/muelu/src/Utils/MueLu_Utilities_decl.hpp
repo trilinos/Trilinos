@@ -229,7 +229,7 @@ namespace MueLu {
 
   ///////////////////////////////////////////
 
-  // This probably should be the double,int,int case
+#ifdef HAVE_MUELU_EPETRA
   /*!
     @class Utilities
     @brief MueLu utility class (specialization SC=double and LO=GO=int).
@@ -239,12 +239,13 @@ namespace MueLu {
 
   Note: this is the implementation for Epetra. Tpetra throws if TPETRA_INST_INT_INT is disabled!
   */
-  template <class Node>
-  class Utilities<double,int,int,Node> : public UtilitiesBase<double,int,int,Node> {
+  template <>
+  class Utilities<double,int,int,Xpetra::EpetraNode> : public UtilitiesBase<double,int,int,Xpetra::EpetraNode> {
   public:
-    typedef double Scalar;
-    typedef int LocalOrdinal;
-    typedef int GlobalOrdinal;
+    typedef double              Scalar;
+    typedef int                 LocalOrdinal;
+    typedef int                 GlobalOrdinal;
+    typedef Xpetra::EpetraNode  Node;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
   private:
@@ -344,54 +345,62 @@ namespace MueLu {
 #ifdef HAVE_MUELU_TPETRA
     //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
     static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2TpetraMV(RCP<MultiVector> const vec)   {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
       return tmpVec->getTpetra_MultiVector();
-#else
-      throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
     static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV(RCP<MultiVector> vec) {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("MV2NonConstTpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       RCP<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmpVec = rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(vec);
       if (tmpVec == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed");
       return tmpVec->getTpetra_MultiVector();
-#else
-      throw Exceptions::RuntimeError("MV2NonConstTpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
 
     }
     static RCP<      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MV2NonConstTpetraMV2(MultiVector& vec)    {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("MV2NonConstTpetraMV2: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return tmpVec.getTpetra_MultiVector();
-#else
-      throw Exceptions::RuntimeError("MV2NonConstTpetraMV2: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
 
     static const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2TpetraMV(const MultiVector& vec)   {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return *(tmpVec.getTpetra_MultiVector());
-#else
-      throw Exceptions::RuntimeError("MV2TpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
     static       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&      MV2NonConstTpetraMV(MultiVector& vec) {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("MV2NonConstTpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(vec);
       return *(tmpVec.getTpetra_MultiVector());
-#else
-      throw Exceptions::RuntimeError("MV2NonConstTpetraMV: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
 
     static RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraCrs(RCP<const Matrix> Op)  {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2TpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       // Get the underlying Tpetra Mtx
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if (crsOp == Teuchos::null)
@@ -400,12 +409,13 @@ namespace MueLu {
       if (tmp_ECrsMtx == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
       return tmp_ECrsMtx->getTpetra_CrsMatrix();
-#else
-      throw Exceptions::RuntimeError("Op2TpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
     static RCP<      Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2NonConstTpetraCrs(RCP<Matrix> Op){
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2NonConstTpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if (crsOp == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -413,13 +423,14 @@ namespace MueLu {
       if (tmp_ECrsMtx == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed");
       return tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
-#else
-      throw Exceptions::RuntimeError("Op2NonConstTpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     };
 
     static const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2TpetraCrs(const Matrix& Op)   {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2TpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       try {
         const CrsMatrixWrap& crsOp = dynamic_cast<const CrsMatrixWrap&>(Op);
         try {
@@ -431,12 +442,13 @@ namespace MueLu {
       } catch (std::bad_cast) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
-#else
-      throw Exceptions::RuntimeError("Op2TpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
     static       Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>&        Op2NonConstTpetraCrs(Matrix& Op) {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2NonConstTpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       try {
         CrsMatrixWrap& crsOp = dynamic_cast<CrsMatrixWrap&>(Op);
         try {
@@ -448,13 +460,14 @@ namespace MueLu {
       } catch (std::bad_cast) {
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
       }
-#else
-      throw Exceptions::RuntimeError("Op2NonConstTpetraCrs: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
 
     static RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2TpetraRow(RCP<const Matrix> Op)   {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2TpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if (crsOp == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -471,12 +484,13 @@ namespace MueLu {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
         return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
       }
-#else
-      throw Exceptions::RuntimeError("Op2TpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     }
     static RCP<      Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >   Op2NonConstTpetraRow(RCP<Matrix> Op) {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Op2NonConstTpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       RCP<const CrsMatrixWrap> crsOp = rcp_dynamic_cast<const CrsMatrixWrap>(Op);
       if (crsOp == Teuchos::null)
         throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
@@ -493,20 +507,19 @@ namespace MueLu {
           throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
         return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
       }
-#else
-      throw Exceptions::RuntimeError("Op2NonConstTpetraRow: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     };
 
 
     static const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >          Map2TpetraMap(const Map& map) {
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Map2TpetraMap: Tpetra has not been compiled with support for LO=GO=int.");
+#else
       const RCP<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>>& tmp_TMap = rcp_dynamic_cast<const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rcpFromRef(map));
       if (tmp_TMap == Teuchos::null)
         throw Exceptions::BadCast("Utilities::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
       return tmp_TMap->getTpetra_Map();
-#else
-      throw Exceptions::RuntimeError("Map2TpetraMap: Tpetra has not been compiled with support for LO=GO=int.");
 #endif
     };
 #endif
@@ -564,7 +577,10 @@ namespace MueLu {
     static void MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector,
                                         bool doFillComplete, bool doOptimizeStorage) {
 #ifdef HAVE_MUELU_TPETRA
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
+#else
       try {
         Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpOp = Op2NonConstTpetraCrs(Op);
 
@@ -635,8 +651,6 @@ namespace MueLu {
       } catch(...) {
         throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
       }
-#else
-      throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
 #endif
 #else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
@@ -670,15 +684,17 @@ namespace MueLu {
 
     /*! @brief Transpose a Xpetra::Matrix
 
-Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
-In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
-*/
+        Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
+        In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
+    */
     static RCP<Matrix> Transpose(Matrix& Op, bool optimizeTranspose = false,const std::string & label = std::string()) {
       switch (Op.getRowMap()->lib()) {
-        case Xpetra::UseTpetra:
-          {
+        case Xpetra::UseTpetra: {
 #ifdef HAVE_MUELU_TPETRA
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+            throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
+#else
             try {
               const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(Op);
 
@@ -696,8 +712,6 @@ In principle, however, we could allow any Epetra_RowMatrix because the Epetra tr
               std::cout << "threw exception '" << e.what() << "'" << std::endl;
               throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
             }
-#else
-            throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
 #endif
 #else
             throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled!");
@@ -736,7 +750,7 @@ In principle, however, we could allow any Epetra_RowMatrix because the Epetra tr
 
   }; // class Utilities (specialization SC=double LO=GO=int)
 
-  ///////////////////////////////////////////
+#endif // HAVE_MUELU_EPETRA
 
 
 
