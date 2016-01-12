@@ -32,7 +32,7 @@
 #ifdef HAVE_AMESOS_LAPACK
 #include "Amesos_Lapack.h"
 #endif
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
 #include "Amesos_Mumps.h"
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
@@ -123,7 +123,7 @@ Amesos_BaseSolver* Amesos::Create(const std::string CT,
   } 
   
   if ((CT == "Amesos_Mumps") || (CT == "Mumps")) { 
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
     return new Amesos_Mumps(LinearProblem); 
 #else
     if (verbose) std::cerr << "Amesos_Mumps is not implemented" << std::endl ; 
