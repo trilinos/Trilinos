@@ -13,6 +13,12 @@
 #include "ml_mat_formats.h"
 #include <limits.h>
 
+#ifndef GCC_VERSION
+#if (defined(__GNUC__) && defined(__GNUC_MINOR__)) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION  (__GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__)
+#endif
+#endif
+
 /* ******************************************************************** */
 /* matrix matrix multiplication                                         */
 /* Cmatrix = Amatrix * Bmatrix                                          */
@@ -27,6 +33,10 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 		       ML_Operator **Cmatrix)
 /* -------------------------------------------------------------------- */
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
   int    i,k, jj, next_nz, Ncols, N, Nnz_estimate, sub_i, accum_size, row;
   int    *Cbpntr, *Cbindx, *A_i_cols, rowi_N, *accum_col, row2_N;
   int    *Cindx, *Aindx;
@@ -66,6 +76,9 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   int hashTableIsPowerOfTwo = 0;
   int nearbyIndex;
   int blocks;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
 
 /*  printf("This is an experimental routine. It basically works but ...\n");
@@ -1572,6 +1585,10 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*Where data is being exchanged things can become more efficient with an isend though this has risks.  Only works on matrices with one submatrix*/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
    int i, j, k, kk, ii, ll, m;
    int jj = 0;
    int blockrows = 0;
@@ -1609,6 +1626,9 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    int mats = 0;
    ML_CommInfoOP *pre_comm;
    USR_COMM USR_comm;
+#if defined(GCC_VERSION) && GCC_VERSION >= 460
+#pragma GCC diagnostic pop
+#endif
 
    if(submatrix == 1)
    {
