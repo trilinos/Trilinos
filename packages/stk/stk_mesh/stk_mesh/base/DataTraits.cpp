@@ -195,8 +195,7 @@ public:
                         IsSameType<T,unsigned long>::value ;
 
     is_floating_point = IsSameType<T,double>::value ||
-                        IsSameType<T,float>::value ||
-                        IsSameType<T,long double>::value;
+                        IsSameType<T,float>::value ;
   }
 
   void construct( void * v , std::size_t n ) const
@@ -390,7 +389,6 @@ DATA_TRAITS_INTEGRAL( long long )
 DATA_TRAITS_INTEGRAL( unsigned long long )
 DATA_TRAITS_NUMERIC( float )
 DATA_TRAITS_NUMERIC( double )
-DATA_TRAITS_NUMERIC( long double )
 DATA_TRAITS_COMPLEX( std::complex<float> ) // TODO: Probably not right
 DATA_TRAITS_COMPLEX( std::complex<double> ) // TODO: Probably not right
 
@@ -474,7 +472,6 @@ DATA_TRAITS_POINTER( unsigned long )
 DATA_TRAITS_POINTER( unsigned long long )
 DATA_TRAITS_POINTER( float )
 DATA_TRAITS_POINTER( double )
-DATA_TRAITS_POINTER( long double )
 DATA_TRAITS_POINTER( void )
 DATA_TRAITS_POINTER( std::complex<float> )
 DATA_TRAITS_POINTER( std::complex<double> )

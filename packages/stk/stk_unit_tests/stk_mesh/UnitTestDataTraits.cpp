@@ -265,11 +265,6 @@ TEST(TestDataTraits, testFundamental_double)
   test_fundamental_type<double, false, false>();
 }
 
-TEST(TestDataTraits, testFundamental_long_double)
-{
-  test_fundamental_type<long double, false, false>();
-}
-
 //----------------------------------------------------------------------
 
 template< typename T >
@@ -386,11 +381,6 @@ TEST(TestDataTraits, testFundamental_float_ptr)
 TEST(TestDataTraits, testFundamental_double_ptr)
 {
   test_fundamental_pointer<double>();
-}
-
-TEST(TestDataTraits, testFundamental_long_double_ptr)
-{
-  test_fundamental_pointer<long double>();
 }
 
 }

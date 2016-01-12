@@ -73,7 +73,6 @@ template<> const DataTraits & data_traits< unsigned long >();
 template<> const DataTraits & data_traits< unsigned long long>();
 template<> const DataTraits & data_traits< float >();
 template<> const DataTraits & data_traits< double >();
-template<> const DataTraits & data_traits< long double >();
 template<> const DataTraits & data_traits< std::complex<float> >();
 template<> const DataTraits & data_traits< std::complex<double> >();
 
@@ -90,7 +89,6 @@ template<> const DataTraits & data_traits< unsigned long * >();
 template<> const DataTraits & data_traits< unsigned long long * >();
 template<> const DataTraits & data_traits< float * >();
 template<> const DataTraits & data_traits< double * >();
-template<> const DataTraits & data_traits< long double * >();
 template<> const DataTraits & data_traits< std::complex<float> * >();
 template<> const DataTraits & data_traits< std::complex<double> * >();
 
