@@ -189,7 +189,7 @@ public:
     while ( val_tr >= val_tc && itb < 8 ) {
       q = ( val_tr-val_tl ) * (tr - tc);
       r = ( val_tr-val_tc ) * (tr - tl);
-      tmp = fabs(q-r);
+      tmp = std::abs(q-r);
       tmp = (tmp > tiny ? tmp : -tmp);
       tm  = tr - (q*(tr-tc) - r*(tr-tl))/(2.0*tmp);
 

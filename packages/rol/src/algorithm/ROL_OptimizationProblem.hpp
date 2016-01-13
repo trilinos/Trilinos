@@ -52,6 +52,7 @@
 #include "ROL_LogBarrierObjective.hpp"
 #include "ROL_InequalityConstraint.hpp"
 #include "ROL_BoundInequalityConstraint.hpp"
+#include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "ROL_RandomVector.hpp"
 
 namespace ROL {

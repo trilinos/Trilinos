@@ -54,8 +54,6 @@
 #include "Xpetra_DefaultPlatform.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Tpetra_ConfigDefs.hpp" //TODO
-#include "Tpetra_DefaultPlatform.hpp" //TODO
 #include "Xpetra_TpetraMap.hpp"
 #endif
 
@@ -67,29 +65,6 @@
 // put these into test_same_as and test_is_compatible
 
 namespace {
-#ifdef HAVE_XPETRA_EPETRA
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-  typedef Xpetra::EpetraMapT<int,Node> EpetraMap;
-#else
-  typedef Xpetra::EpetraMapT<long long, Node> EpetraMap;
-#endif
-#endif
-  using Teuchos::Array;
-  using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::arcp;
-  using Teuchos::rcp;
-  using Teuchos::outArg;
-  using Teuchos::Tuple;
-  using Teuchos::tuple;
-  using Xpetra::global_size_t;
-  using Xpetra::DefaultPlatform;
-  using std::sort;
-  using std::find;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
-  using Teuchos::Comm;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -123,27 +98,53 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
         "Slack off of machine epsilon used to check test results" );
   }
 
-  RCP<const Comm<int> > getDefaultComm()
+  Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
     }
-    return rcp(new Teuchos::SerialComm<int>());
+    return Teuchos::rcp(new Teuchos::SerialComm<int>());
   }
 
   //
   // UNIT TESTS
   //
-
-#ifdef HAVE_TPETRA_DEBUG
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor1, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, validConstructor1, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+    const Xpetra::global_size_t GSTI = 100;
+
+    TEST_NOTHROW(M map(GSTI,0,comm));
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, validConstructor2, M, LO, GO, N )
+  {
+    // create a comm
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    TEST_NOTHROW(M map(numImages, Teuchos::tuple<GO>(myImageID), 0, comm));
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor1, M, LO, GO, N )
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    // create a comm
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     // bad constructor calls: (num global elements, index base)
     TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
     if (numImages > 1) {
@@ -153,20 +154,20 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
 #endif // HAVE_TPETRA_DEBUG
+  }
 
-#ifdef HAVE_TPETRA_DEBUG
   // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor2, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor2, M, LO, GO, N )
   {
+#ifdef HAVE_TPETRA_DEBUG
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     // bad constructor calls: (num global elements, num local elements, index base)
     TEST_THROW(M map(1,0,0, comm),  std::invalid_argument);
     if (numImages > 1) {
@@ -176,20 +177,21 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
 #endif // HAVE_TPETRA_DEBUG
+  }
 
+#if 0 // failing for epetra. Epetra does not throw
 #ifdef HAVE_TPETRA_DEBUG
   // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor3, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, invalidConstructor3, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     // bad constructor calls: (num global, entry list, index base)
     TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
@@ -199,23 +201,24 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 #endif // HAVE_TPETRA_DEBUG
+#endif // end if 0
 
 #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_MPI)
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, RogersUnsignedGOBugVerification, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, RogersUnsignedGOBugVerification, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     if (numImages < 2) return;
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    RCP<M> m;
-    TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    Teuchos::RCP<M> m;
+    TEST_NOTHROW( m = rcp(new M(GSTI, Teuchos::tuple<size_t>(myImageID), 0, comm)) );
     if (m != Teuchos::null) {
       TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
       TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
@@ -225,13 +228,13 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, compatabilityTests, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, compatabilityTests, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     // test isCompatible()
     // m1.isCompatible(m2) should be true if m1 and m2 have the same number of global entries and the same number of local entries on
     // corresponding nodes
@@ -287,13 +290,13 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, sameasTests, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, sameasTests, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const Xpetra::global_size_t GSTI = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
     {
       M m1(GSTI,0,0,comm),
         m2(GSTI,0,0,comm);
@@ -321,16 +324,16 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, ContigUniformMap, M, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Map, ContigUniformMap, M, LO, GO, N )
   {
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with two entries per node
     // this map will have the following entries:
-    Array<GO> myGlobal( tuple<GO>(myImageID*2, myImageID*2+1) );
-    Array<LO>  myLocal( tuple<LO>(0,1) );
+    Teuchos::Array<GO> myGlobal( Teuchos::tuple<GO>(myImageID*2, myImageID*2+1) );
+    Teuchos::Array<LO>  myLocal( Teuchos::tuple<LO>(0,1) );
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
@@ -346,21 +349,21 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[indexBase]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
     TEST_EQUALITY_CONST(map.getMinAllGlobalIndex(), indexBase);
-    TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), as<GO>(numGlobalEntries-1));
+    TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalEntries-1));
     TEST_EQUALITY( map.getLocalElement(myGlobal[0]), myLocal[0] );
     TEST_EQUALITY( map.getLocalElement(myGlobal[1]), myLocal[1] );
     TEST_EQUALITY( map.getGlobalElement(myLocal[0]), myGlobal[0] );
     TEST_EQUALITY( map.getGlobalElement(myLocal[1]), myGlobal[1] );
-    TEST_EQUALITY( map.getLocalElement(numGlobalEntries), OrdinalTraits<LO>::invalid() );
-    TEST_EQUALITY( map.getGlobalElement(2),               OrdinalTraits<GO>::invalid() );
-    TEST_EQUALITY( map.getLocalElement(numGlobalEntries-1), myImageID == numImages-1 ? 1 : OrdinalTraits<LO>::invalid() );
+    TEST_EQUALITY( map.getLocalElement(numGlobalEntries), Teuchos::OrdinalTraits<LO>::invalid() );
+    TEST_EQUALITY( map.getGlobalElement(2),               Teuchos::OrdinalTraits<GO>::invalid() );
+    TEST_EQUALITY( map.getLocalElement(numGlobalEntries-1), myImageID == numImages-1 ? 1 : Teuchos::OrdinalTraits<LO>::invalid() );
     TEST_COMPARE_ARRAYS( map.getNodeElementList(), myGlobal);
     TEST_EQUALITY_CONST( map.isNodeLocalElement(0), true );
     TEST_EQUALITY_CONST( map.isNodeLocalElement(1), true );
     TEST_EQUALITY_CONST( map.isNodeLocalElement(2), false ); // just try a couple
     TEST_EQUALITY_CONST( map.isNodeLocalElement(3), false );
-    for (GO i=0; i < as<GO>(numGlobalEntries); ++i) {
-      if (find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
+    for (GO i=0; i < Teuchos::as<GO>(numGlobalEntries); ++i) {
+      if (std::find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
         TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), false );
       }
       else {
@@ -369,7 +372,7 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -377,99 +380,57 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
   //
   // INSTANTIATIONS
   //
-
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   ifdef HAVE_TPETRA_DEBUG
-  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
-  // valid in a debug build (HAVE_TPETRA_DEBUG).
-#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
-      //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
-#   else
-#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
-#   endif // HAVE_TPETRA_DEBUG
-
-#  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
-      UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
-
-    UNIT_TEST_GROUP_ORDINAL(char , int)
-#ifdef HAVE_XPETRA_EPETRA
-      UNIT_TEST_GROUP_ORDINAL_(Xpetra::EpetraMap, int , int)
-#endif
-    UNIT_TEST_GROUP_ORDINAL(int , int)
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   ifdef HAVE_TPETRA_DEBUG
-  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
-  // valid in a debug build (HAVE_TPETRA_DEBUG).
-#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
-      //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
-#   else
-#     define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
-#   endif // HAVE_TPETRA_DEBUG
-
-#  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
-      UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
-
-    // UNIT_TEST_GROUP_ORDINAL(char , int)
-
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-#ifdef HAVE_XPETRA_EPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-      UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
-#endif
-#endif
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-      UNIT_TEST_GROUP_ORDINAL(int , int)
+
+  #define XPETRA_TPETRA_TYPES( LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N;
+
 #endif
-#endif
-#else
-    typedef long long LongLongInt;
+
 #ifdef HAVE_XPETRA_EPETRA
-      UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , LongLongInt)
+
+  #define XPETRA_EPETRA_TYPES( LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N;
+
 #endif
-#ifdef HAVE_XPETRA_TPETRA
-      UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
+
+// List of tests (which run both on Epetra and Tpetra)
+#define XP_MAP_INSTANT(LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor1, M##LO##GO##N , LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor2, M##LO##GO##N , LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, compatabilityTests, M##LO##GO##N ,  LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, sameasTests, M##LO##GO##N ,         LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, ContigUniformMap, M##LO##GO##N ,    LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor1, M##LO##GO##N,    LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, validConstructor2, M##LO##GO##N,    LO, GO, N)
+  //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Map, invalidConstructor3, M##LO##GO##N , LO, GO, N)
+
+
+#if defined(HAVE_XPETRA_TPETRA)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+// no ordinal types as scalar for testing as some tests use ScalarTraits::eps...
+TPETRA_INSTANTIATE_LGN ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_LGN ( XP_MAP_INSTANT )
+
+#endif
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+XPETRA_EPETRA_TYPES(int,int,EpetraNode)
+XP_MAP_INSTANT(int,int,EpetraNode)
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(int,LongLong,EpetraNode)
+XP_MAP_INSTANT(int,LongLong,EpetraNode)
 #endif
 #endif
-
-    // typedef short int ShortInt;
-    // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
-
-    // typedef long int LongInt;
-    // UNIT_TEST_GROUP_ORDINAL(int , LongInt)
-
-#   ifdef HAVE_XPETRA_INT_LONG_LONG
-      // typedef long long int LongLongInt;
-      // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
-      // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
-#   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
