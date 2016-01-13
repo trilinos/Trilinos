@@ -20,8 +20,10 @@
 #define BASKER_FALSE          false
 #define BASKER_NO_OP          ((void)0)
 #define BASKER_MAX_IDX        -1         //What we check against
-#define BASKER_ERROR          -1         //Retrunwith an error
+#define BASKER_ERROR          -1         //Return error no recov
+#define BASKER_ERROR_RETRY    -2
 #define BASKER_SUCCESS        0
+
 
 #define BASKER_EPSILON       1e-6
 
@@ -40,7 +42,7 @@ enum BASKER_ERROR_CODE
 #define BASKER_BTF_LARGE        500  //Made smaller for unit test
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
-#define BASKER_BTF_NNZ_OVER      1.05 
+#define BASKER_BTF_NNZ_OVER      1.20
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG

@@ -75,20 +75,20 @@ namespace BaskerNS
 
 	    //Resize L
 	    BASKER_MATRIX &L = LL(thread_array(ti).error_blk)(0);
-	    RESIZE_INT_1DARRAY(L.row_idx,
+	    REALLOC_INT_1DARRAY(L.row_idx,
 			       L.nnz,
 			       thread_array(ti).error_info);
-	    RESIZE_ENTRY_1DARRAY(L.val,
+	    REALLOC_ENTRY_1DARRAY(L.val,
 				 L.nnz,
 				 thread_array(ti).error_info);
 	    L.nnz = thread_array(ti).error_info;
 	    
 	    //Resize U
 	    BASKER_MATRIX &U = LU(thread_array(ti).error_blk)(0);
-	    RESIZE_INT_1DARRAY(U.row_idx,
+	    REALLOC_INT_1DARRAY(U.row_idx,
 			       U.nnz,
 			       thread_array(ti).error_info);
-	    RESIZE_ENTRY_1DARRAY(U.val,
+	    REALLOC_ENTRY_1DARRAY(U.val,
 				 U.nnz,
 				 thread_array(ti).error_info);
 	    U.nnz = thread_array(ti).error_info;
@@ -171,27 +171,63 @@ namespace BaskerNS
 		   ti,
 		   thread_array(ti).error_blk);
 	    
+	    	    //Clean the workspace
+	    printf("test: %d %d \n",
+		   thread_array(ti).iws_size*thread_array(ti).iws_mult,
+		   thread_array(ti).ews_size*thread_array(ti).ews_mult);
+
+	    for(Int i = 0; 
+		i < thread_array(ti).iws_size*thread_array(ti).iws_mult;
+		i++)
+	      {
+		thread_array(ti).iws(i) = (Int) 0;
+	      }
+	    for(Int i = 0;
+		i < thread_array(ti).ews_size*thread_array(ti).ews_mult;
+		i++)
+	      {
+		thread_array(ti).ews(i) = (Entry) 0;
+	      }
+
+	   
 
 	    //Resize L
 	    BASKER_MATRIX &L = LBTF(thread_array(ti).error_blk);
-	    RESIZE_INT_1DARRAY(L.row_idx,
+	    REALLOC_INT_1DARRAY(L.row_idx,
 			       L.nnz,
 			       thread_array(ti).error_info);
-	    RESIZE_ENTRY_1DARRAY(L.val,
+	    REALLOC_ENTRY_1DARRAY(L.val,
 				 L.nnz,
 				 thread_array(ti).error_info);
 	    L.nnz = thread_array(ti).error_info;
-	    
+	    for(Int i = 0; i < L.ncol; i++)
+	      {
+		L.col_ptr(i) = 0;
+	      }
+
+	    for(Int i = L.srow; i < (L.srow+L.nrow); i++)
+	      {
+		gperm(i) = BASKER_MAX_IDX;
+	      }
+
 	    //Resize U
 	    BASKER_MATRIX &U = UBTF(thread_array(ti).error_blk);
-	    RESIZE_INT_1DARRAY(U.row_idx,
+	    REALLOC_INT_1DARRAY(U.row_idx,
 			       U.nnz,
 			       thread_array(ti).error_info);
-	    RESIZE_ENTRY_1DARRAY(U.val,
+	    REALLOC_ENTRY_1DARRAY(U.val,
 				 U.nnz,
 				 thread_array(ti).error_info);
 	    U.nnz = thread_array(ti).error_info;
+	    for(Int i = 0; i < U.ncol; i++)
+	      {
+		U.col_ptr(i) = 0;
+	      }
+
 	    
+	    printf("Setting thread start(%d) %d \n",
+		   ti, thread_array(ti).error_blk);
+
 	    threads_start(ti) = thread_array(ti).error_blk;
 	
 

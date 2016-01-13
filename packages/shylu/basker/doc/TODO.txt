@@ -6,12 +6,10 @@ BASKER TODO
    ** Fix btf balance (not hard coded)
 ** Threaded solve
    ** Multivector
-** Pivot update
-** AMD on small blks
-** Kokkos Realloc segfaulting ??
-   -Issue with kokkos, will be fixed in kokkos refactor
+** Pivot update 
 ** Thread working array size (without ND)
-** Sfactor pivot option
+** Sfactor pivot option 
+   **ATA for Large BTF
 ** Sfactor for large btf serial blocks
 ** All Perms into one perm struct
 ** Move ND schedule S into tree

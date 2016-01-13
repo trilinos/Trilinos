@@ -19,7 +19,6 @@
 
 #include "basker_error_manager.hpp"
 
-
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -120,7 +119,8 @@ namespace BaskerNS
 	init_value(thread_start, num_threads+1, 
 		   (Int) BASKER_MAX_IDX);
 	int nt = nfactor_domain_error(thread_start);
-	if(nt == BASKER_SUCCESS)
+	if((nt == BASKER_SUCCESS) ||
+	   (nt == BASKER_ERROR))
 	  {
 	    break;
 	  }
@@ -237,18 +237,19 @@ namespace BaskerNS
 	    init_value(thread_start, num_threads+1, 
 		       (Int) BASKER_MAX_IDX);
 	    int nt = nfactor_diag_error(thread_start);
-	    if(nt == BASKER_SUCCESS)
+	    //printf("RETURNED: %d \n", nt);
+	    if((nt == BASKER_SUCCESS) || 
+	       (nt == BASKER_ERROR))
 	      {
 		break;
 	      }
 	    else
 	      {
-		break;
 		printf("restart \n");
 		kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
 		  diag_nfactor_remalloc(this, thread_start);
 		Kokkos::parallel_for(TeamPolicy(num_threads,1),
-				     diag_nfactor);
+				     diag_nfactor_remalloc);
 		Kokkos::fence();
 	      }
 	  }//end while

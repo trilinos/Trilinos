@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
   //----Basker - Options
   mybasker.Options.no_pivot  = true;
   mybasker.Options.symmetric = false;
-  mybasker.Options.realloc   = false;
+  mybasker.Options.realloc   = true;
   mybasker.Options.btf       = true;
  
 
