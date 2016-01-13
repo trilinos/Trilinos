@@ -53,6 +53,14 @@ TRIBITS_ADD_TEST(
 #  )
 #ENDIF()
 
+IF (${PROJECT_NAME}_ENABLE_Epetra)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    XpetraEpetraMatrix
+    SOURCES XpetraEpetraMatrix.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   teuchosCommTest
   SOURCES teuchosCommTest.cpp
