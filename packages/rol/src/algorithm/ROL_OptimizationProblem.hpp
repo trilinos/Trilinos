@@ -52,11 +52,24 @@
 #include "ROL_LogBarrierObjective.hpp"
 #include "ROL_InequalityConstraint.hpp"
 #include "ROL_BoundInequalityConstraint.hpp"
+#include "ROL_RandomVector.hpp"
 
 namespace ROL {
 
+/*
+ * Note: We may wish to consider making the get functions private and make Algorithm
+ *       a friend of OptimizationProblem as Algorithm is the only class which should 
+ *       need these functions and they may return something other than what the user 
+ *       expects (penalized instead of raw objective, solution and slack instead of 
+ *       solution, etc).
+ */
+
 template<class Real>
 class OptimizationProblem {
+
+  typedef PartitionedVector<Real> PV;
+  typedef typename PV::size_type size_type;
+
 private:
   Teuchos::RCP<Objective<Real> >            obj_;
   Teuchos::RCP<Vector<Real> >               sol_;
@@ -66,20 +79,25 @@ private:
   Teuchos::RCP<Vector<Real> >               mul_;
   Teuchos::RCP<Teuchos::ParameterList>      parlist_;
 
+  bool hasSlack_;
+
+  const static size_type OPT   = 0;
+  const static size_type SLACK = 1;
+
 public:
   virtual ~OptimizationProblem(void) {}
 
   OptimizationProblem(void)
     : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(Teuchos::null),
       con_(Teuchos::null), mul_(Teuchos::null),
-      parlist_(Teuchos::null) {}
+      parlist_(Teuchos::null), hasSlack_(false) {}
 
   OptimizationProblem(const Teuchos::RCP<Objective<Real> >       &obj,
                       const Teuchos::RCP<Vector<Real> >          &sol,
                       const Teuchos::RCP<BoundConstraint<Real> > &bnd = Teuchos::null,
                       const Teuchos::RCP<Teuchos::ParameterList> &parlist = Teuchos::null)
     : obj_(obj), sol_(sol), bnd_(Teuchos::null), con_(Teuchos::null), mul_(Teuchos::null),
-      parlist_(parlist) {
+      parlist_(parlist), hasSlack_(false) {
     if ( parlist != Teuchos::null ) {
       if ( bnd != Teuchos::null ) {
         Teuchos::ParameterList &stepList = parlist->sublist("Step");
@@ -123,7 +141,7 @@ public:
                       const Teuchos::RCP<Vector<Real> >             &mul,
                       const Teuchos::RCP<Teuchos::ParameterList>    &parlist = Teuchos::null)
     : obj_(obj), sol_(sol), bnd_(Teuchos::null), con_(con), mul_(mul),
-      parlist_(parlist) {}
+      parlist_(parlist), hasSlack_(false) {}
 
   OptimizationProblem(const Teuchos::RCP<Objective<Real> >          &obj,
                       const Teuchos::RCP<Vector<Real> >             &sol,
@@ -132,7 +150,7 @@ public:
                       const Teuchos::RCP<Vector<Real> >             &mul,
                       const Teuchos::RCP<Teuchos::ParameterList>    &parlist = Teuchos::null)
     : obj_(obj), sol_(sol), bnd_(Teuchos::null), con_(con), mul_(mul),
-      parlist_(parlist) {
+      parlist_(parlist), hasSlack_(true) {
     if ( parlist != Teuchos::null ) {
       Teuchos::ParameterList &stepList = parlist->sublist("Step");
       std::string step = stepList.get("Type","Trust Region");
@@ -179,7 +197,7 @@ public:
                        const Teuchos::RCP<Teuchos::ParameterList> &parlist )
      : obj_(Teuchos::null), sol_(Teuchos::null),
        con_(Teuchos::null), mul_(Teuchos::null),
-       parlist_(Teuchos::null) {
+       parlist_(Teuchos::null), hasSlack_(true) {
 
       using InteriorPoint::PenalizedObjective;
       using InteriorPoint::CompositeConstraint;
@@ -223,7 +241,7 @@ public:
                        const Teuchos::RCP<Teuchos::ParameterList> &parlist )
      : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(bnd),
        con_(Teuchos::null), mul_(Teuchos::null),
-       parlist_(Teuchos::null) {
+       parlist_(Teuchos::null), hasSlack_(true) {
 
       using InteriorPoint::PenalizedObjective;
       using InteriorPoint::CompositeConstraint;
@@ -251,10 +269,12 @@ public:
       // Form partitioned Lagrange multiplier
       mul_ = CreatePartitionedVector(inmul);
 
-      // Create penalty
-      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+      // Create penalties
+      RCP<Objective<Real> > slack_barrier = rcp( new LogBarrierObjective<Real> );
 
-      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+      RCP<Objective<Real> > bc_barrier = rcp( new ObjectiveFromBoundConstraint<Real>(*bnd) );
+
+      obj_ = rcp( new PenalizedObjective<Real>(obj,slack_barrier,bc_barrier,*sol_,mu) );
 
    }
 
@@ -269,7 +289,7 @@ public:
                        const Teuchos::RCP<Teuchos::ParameterList> &parlist )
      : obj_(Teuchos::null), sol_(Teuchos::null),
        con_(Teuchos::null), mul_(Teuchos::null),
-       parlist_(parlist) {
+       parlist_(parlist), hasSlack_(true) {
 
       using InteriorPoint::PenalizedObjective;
       using InteriorPoint::CompositeConstraint;
@@ -298,11 +318,9 @@ public:
       mul_ = CreatePartitionedVector(inmul,eqmul);
 
       // Create penalty
-      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+      RCP<Objective<Real> > slack_barrier = rcp( new LogBarrierObjective<Real> );
 
-      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
-
-
+      obj_ = rcp( new PenalizedObjective<Real>(obj,slack_barrier,*sol_,mu) );
 
   }
 
@@ -317,7 +335,7 @@ public:
                        const Teuchos::RCP<Teuchos::ParameterList> &parlist )
      : obj_(Teuchos::null), sol_(Teuchos::null), bnd_(bnd),
        con_(Teuchos::null), mul_(Teuchos::null),
-       parlist_(parlist) {
+       parlist_(parlist), hasSlack_(true) {
 
       using InteriorPoint::PenalizedObjective;
       using InteriorPoint::CompositeConstraint;
@@ -345,10 +363,11 @@ public:
       // Form partitioned Lagrange multiplier
       mul_ = CreatePartitionedVector(inmul,eqmul);
 
-      // Create penalty
-      RCP<Objective<Real> > barrier = rcp( new LogBarrierObjective<Real> );
+      // Create penalties
+      RCP<Objective<Real> > slack_barrier = rcp( new LogBarrierObjective<Real> );
+      RCP<Objective<Real> > bc_barrier = rcp( new ObjectiveFromBoundConstraint<Real>(*bnd) );
 
-      obj_ = rcp( new PenalizedObjective<Real>(obj,barrier,*sol_,mu) );
+      obj_ = rcp( new PenalizedObjective<Real>(obj,slack_barrier,bc_barrier,*sol_,mu) );
 
 
 
@@ -408,7 +427,15 @@ public:
                                                                   std::ostream & outStream = std::cout,
                                                                   const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                                                                   const int order = 1 ) {
-    return obj_->checkGradient(*sol_,d,printToStream,outStream,numSteps,order);
+    if(hasSlack_) {
+      Teuchos::RCP<PV> ds = Teuchos::rcp_static_cast<PV>(sol_->clone());
+      ds->set(OPT,d);
+      RandomizeVector(*(ds->get(SLACK)));
+      return obj_->checkGradient(*sol_,*ds,printToStream,outStream,numSteps,order);
+    }
+    else {
+      return obj_->checkGradient(*sol_,d,printToStream,outStream,numSteps,order);
+    }
   }
 
   virtual std::vector<std::vector<Real> > checkObjectiveHessVec( const Vector<Real> &v,
@@ -416,7 +443,15 @@ public:
                                                                  std::ostream & outStream = std::cout,
                                                                  const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                                                                  const int order = 1 ) {
-    return obj_->checkHessVec(*sol_,v,printToStream,outStream,numSteps,order);
+    if(hasSlack_) {
+      Teuchos::RCP<PV> vs = Teuchos::rcp_static_cast<PV>(sol_->clone());
+      vs->set(OPT,v);
+      RandomizeVector(*(vs->get(SLACK)));
+      return obj_->checkHessVec(*sol_,*vs,printToStream,outStream,numSteps,order);     
+    } 
+    else {
+      return obj_->checkHessVec(*sol_,v,printToStream,outStream,numSteps,order);
+    }
   }
 
 };

@@ -114,7 +114,7 @@ public:
     x_ = Teuchos::rcp_static_cast<PV>(xpv.clone());
     g_ = Teuchos::rcp_static_cast<PV>(xpv.dual().clone());
 
-    scratch_ = g_->get(OPT).clone();
+    scratch_ = g_->get(OPT)->clone();
   }
 
 
