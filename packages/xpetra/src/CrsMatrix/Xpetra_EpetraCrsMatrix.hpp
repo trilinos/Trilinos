@@ -192,7 +192,10 @@ public:
   void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) { }
 
   bool hasMatrix() const { return false; }
-  EpetraCrsMatrixT(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) {  }
+  EpetraCrsMatrixT(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
   RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return Teuchos::null; }
   RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
