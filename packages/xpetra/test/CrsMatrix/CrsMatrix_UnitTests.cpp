@@ -184,7 +184,8 @@ namespace {
        }
     }
 
-    {
+    // test only in serial
+    if(comm->getSize()==1) {
       Teuchos::ArrayView<const GO> indices;
       Teuchos::ArrayView<const Scalar> values;
 
@@ -222,7 +223,7 @@ namespace {
 
       for (size_t j = 0; j < nnz; j++) {
         if (indices[j] == i) /* diagonal term */
-          newValues[j] = values[j] * 2;
+          newValues[j] = 4;
         else
           newValues[j] = -2;
       }
@@ -232,21 +233,41 @@ namespace {
 
     A->fillComplete();
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
+  }
 
-    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec =
-        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Constructor_Epetra, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_EPETRA
 
-    vec->putScalar(1.0);
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
-    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec_sol =
-        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(A->getRangeMap());
+    {
+      typedef Xpetra::EpetraMapT<GO, Node> mm;
+      TEST_NOTHROW(mm(10, 0, comm));
+      typedef Xpetra::EpetraCrsMatrixT<GO, Node> mx;
+      TEST_NOTHROW(mx(Teuchos::rcp(new mm(10, 0, comm)), 0));
+    }
 
-    vec_sol->putScalar(25.0);
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
+    {
+      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
+    {
+      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
 
-    A->apply(*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, 0.0);
-
-    TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
-   }
+#endif
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Epetra_ReplaceLocalValues, Scalar, LO, GO, Node )
   {
@@ -1258,6 +1279,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Tpetra_ReplaceLocalValues, SC, LO, GO, Node )
 // for Epetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_EPETRAONLY( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Constructor_Epetra, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Epetra_ReplaceLocalValues, SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
 // for Kokkos-specific tests
