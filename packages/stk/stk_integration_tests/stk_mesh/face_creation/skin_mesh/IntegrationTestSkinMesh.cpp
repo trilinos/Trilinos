@@ -116,27 +116,6 @@ TestCaseData get_test_cases()
     return test_cases;
 }
 
-
-void filter_test_case(TestCaseData& test_cases, const std::string& filename)
-{
-    auto iter = test_cases.find(filename);
-    if(iter != test_cases.end())
-    {
-#if defined(VERBOSE_OUTPUT)
-        std::cerr << "***** WARNING *****: Removing test " << iter->first << " since it doesn't work for this test. Needs fixing.\n";
-#endif
-        test_cases.erase(iter);
-    }
-}
-
-void filter_failing_tests(TestCaseData &test_cases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-{
-//    if(stk::mesh::BulkData::AUTO_AURA == auraOption)
-//    {
-//        filter_test_case(test_cases, "Aef.e");
-//    }
-}
-
 class SkinnedMesh: public stk::unit_test_util::MeshTestFixture
 {
 protected:
@@ -230,7 +209,6 @@ protected:
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         TestCaseData test_cases = get_test_cases();
-        filter_failing_tests(test_cases, auraOption);
         for(const TestCaseDatum& testCase : test_cases)
         {
             test_read_file(testCase.first, auraOption);
@@ -244,7 +222,6 @@ protected:
     virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         TestCaseData test_cases = get_test_cases();
-        filter_failing_tests(test_cases, auraOption);
         for(const TestCaseDatum& testCase : test_cases)
         {
             test_skin_file(testCase, auraOption);
