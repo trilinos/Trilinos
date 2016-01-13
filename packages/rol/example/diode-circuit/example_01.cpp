@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
     
     // Generate data for plot
     if(plot){
-      (*obj).generate_plot(std::min(true_Is,init_Is),std::max(true_Is,init_Is),fabs((true_Is-init_Is)/100),
-			   std::min(true_Rs,init_Rs),std::max(true_Rs,init_Rs),fabs((true_Rs-init_Rs)/100));
+      (*obj).generate_plot(std::min(true_Is,init_Is),std::max(true_Is,init_Is),std::abs((true_Is-init_Is)/100),
+			   std::min(true_Rs,init_Rs),std::max(true_Rs,init_Rs),std::abs((true_Rs-init_Rs)/100));
     }
     
     int dim = 2;
