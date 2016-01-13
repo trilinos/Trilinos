@@ -162,7 +162,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > yu_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.) );
     for (int i=0; i<nx; i++) {
-      (*u_rcp)[i]  = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
       (*yu_rcp)[i] = 10.*(RealT)rand()/(RealT)RAND_MAX-5.;
     }
     Teuchos::RCP<ROL::Vector<RealT> > up
@@ -221,7 +220,7 @@ int main(int argc, char *argv[]) {
     ROL::Algorithm<RealT> algoMY("Moreau-Yosida Penalty",*parlist,false);
     zp->set(*zrandp);
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
-    con.solve(*up,*zp,zerotol);
+    con.solve(c,*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);
@@ -232,7 +231,7 @@ int main(int argc, char *argv[]) {
     // SOLVE USING AUGMENTED LAGRANGIAN
     ROL::Algorithm<RealT> algoAL("Augmented Lagrangian",*parlist,false);
     zp->set(*zrandp);
-    con.solve(*up,*zp,zerotol);
+    con.solve(c,*up,*zp,zerotol);
     obj.gradient_1(*gup,*up,*zp,zerotol);
     gup->scale(-1.0);
     con.applyInverseAdjointJacobian_1(l,*gup,*up,*zp,zerotol);

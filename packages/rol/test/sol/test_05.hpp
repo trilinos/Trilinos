@@ -877,10 +877,9 @@ private:
   bool useHessian_;
 
 public:
-  EqualityConstraint_BurgersControl(ROL::Vector<Real> &c,
-                                    Teuchos::RCP<BurgersFEM<Real> > &fem,
-                                    bool useHessian = true)
-   : ROL::ParametrizedEqualityConstraint_SimOpt<Real>(c), fem_(fem), useHessian_(useHessian) {}
+  EqualityConstraint_BurgersControl(const Teuchos::RCP<BurgersFEM<Real> > &fem,
+                                    const bool useHessian = true)
+   : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {

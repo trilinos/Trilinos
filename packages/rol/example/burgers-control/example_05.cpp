@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
       (*d_rcp)[i]  = random<double>(comm);
     }
     // Build state and adjoint vectors
-    Teuchos::RCP<std::vector<double> > u_rcp  = Teuchos::rcp( new std::vector<double>(nx,0.0) );
+    Teuchos::RCP<std::vector<double> > u_rcp  = Teuchos::rcp( new std::vector<double>(nx,1.0) );
     ROL::StdVector<double> u(u_rcp);
     Teuchos::RCP<std::vector<double> > p_rcp  = Teuchos::rcp( new std::vector<double>(nx,0.0) );
     ROL::StdVector<double> p(p_rcp);
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build samplers
     int dim = 4;
-    int nSamp = 1000;
+    int nSamp = 100;
     std::vector<double> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<double> > bounds(dim,tmp);
     Teuchos::RCP<ROL::BatchManager<double> > bman
