@@ -77,34 +77,74 @@ using Teuchos::Array;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-ArrayRCP<zgno_t> roundRobinMap(
-    const RCP<const Xpetra::Map<zlno_t, zgno_t, znode_t> > &m)
+ArrayRCP<zgno_t> roundRobinMapShared(
+  int proc,
+  int nprocs,
+  zgno_t basegid,
+  zgno_t maxgid,
+  size_t nglobalrows
+)
 {
-  const RCP<const Comm<int> > &comm = m->getComm();
-  int proc = comm->getRank();
-  int nprocs = comm->getSize();
-  zgno_t base = m->getMinAllGlobalIndex();
-  zgno_t max = m->getMaxAllGlobalIndex();
-  size_t globalrows = m->getGlobalNumElements();
-  if (globalrows != size_t(max - base + 1)){
-    TEST_FAIL_AND_EXIT(*comm, 0, "Map is invalid for test - fix test", 1);
+  if (nglobalrows != size_t(maxgid - basegid + 1)){
+    std::cout << "Error:  Map is invalid for test - fix test" << std::endl;
+    std::cerr << "Error:  Map is invalid for test - fix test" << std::endl;
+    std::cout << "FAIL" << std::endl;
+    exit(1);
   }
   RCP<Array<zgno_t> > mygids = rcp(new Array<zgno_t>);
   zgno_t firstzgno_t = proc;
-  if (firstzgno_t < base){
-    zgno_t n = base % proc;
+  if (firstzgno_t < basegid){
+    zgno_t n = basegid % proc;
     if (n>0)
-      firstzgno_t = base - n + proc;
+      firstzgno_t = basegid - n + proc;
     else
-      firstzgno_t = base;
+      firstzgno_t = basegid;
   }
-  for (zgno_t gid=firstzgno_t; gid <= max; gid+=nprocs){
+  for (zgno_t gid=firstzgno_t; gid <= maxgid; gid+=nprocs){
     (*mygids).append(gid);
   }
 
   ArrayRCP<zgno_t> newIdArcp = Teuchos::arcp(mygids);
 
   return newIdArcp;
+}
+
+#ifdef HAVE_EPETRA_DATA_TYPES
+ArrayRCP<zgno_t> roundRobinMap(const Epetra_BlockMap &emap)
+{
+  const Epetra_Comm &comm = emap.Comm();
+  int proc = comm.MyPID();
+  int nprocs = comm.NumProc();
+  zgno_t basegid = emap.MinAllGID();
+  zgno_t maxgid = emap.MaxAllGID();
+  size_t nglobalrows = emap.NumGlobalElements();
+
+  return roundRobinMapShared(proc, nprocs, basegid, maxgid, nglobalrows);
+}
+#endif
+
+ArrayRCP<zgno_t> roundRobinMap(const Tpetra::Map<zlno_t, zgno_t, znode_t> &tmap)
+{
+  const RCP<const Comm<int> > &comm = tmap.getComm();
+  int proc = comm->getRank();
+  int nprocs = comm->getSize();
+  zgno_t basegid = tmap.getMinAllGlobalIndex();
+  zgno_t maxgid = tmap.getMaxAllGlobalIndex();
+  size_t nglobalrows = tmap.getGlobalNumElements();
+
+  return roundRobinMapShared(proc, nprocs, basegid, maxgid, nglobalrows);
+}
+
+ArrayRCP<zgno_t> roundRobinMap(const Xpetra::Map<zlno_t, zgno_t, znode_t> &xmap)
+{
+  const RCP<const Comm<int> > &comm = xmap.getComm();
+  int proc = comm->getRank();
+  int nprocs = comm->getSize();
+  zgno_t basegid = xmap.getMinAllGlobalIndex();
+  zgno_t maxgid = xmap.getMaxAllGlobalIndex();
+  size_t nglobalrows = xmap.getGlobalNumElements();
+
+  return roundRobinMapShared(proc, nprocs, basegid, maxgid, nglobalrows);
 }
 
 int main(int argc, char *argv[])
@@ -126,7 +166,6 @@ int main(int argc, char *argv[])
   typedef Xpetra::CrsGraph<zlno_t,zgno_t,znode_t> xgraph_t;
   typedef Xpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> xvector_t;
   typedef Xpetra::MultiVector<zscalar_t,zlno_t,zgno_t,znode_t> xmvector_t;
-  typedef Xpetra::TpetraMap<zlno_t,zgno_t,znode_t> xtmap_t;
 
   // Create object that can give us test Tpetra and Xpetra input.
 
@@ -168,9 +207,7 @@ int main(int argc, char *argv[])
 
     M->describe(*outStream,v);
 
-    RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
-
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(M->getRowMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -210,8 +247,7 @@ int main(int argc, char *argv[])
 
     G->describe(*outStream,v);
 
-    RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(G->getRowMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -252,8 +288,7 @@ int main(int argc, char *argv[])
 
     V->describe(*outStream,v);
 
-    RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(V->getMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -294,8 +329,7 @@ int main(int argc, char *argv[])
 
     MV->describe(*outStream,v);
 
-    RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(MV->getMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -342,7 +376,7 @@ int main(int argc, char *argv[])
 
     M->describe(*outStream,v);
 
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(M->getRowMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(M->getRowMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -382,7 +416,7 @@ int main(int argc, char *argv[])
 
     G->describe(*outStream,v);
 
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(G->getRowMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(G->getRowMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -425,7 +459,7 @@ int main(int argc, char *argv[])
 
     V->describe(*outStream,v);
 
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(V->getMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(V->getMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -468,7 +502,7 @@ int main(int argc, char *argv[])
 
     MV->describe(*outStream,v);
 
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(MV->getMap());
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*(MV->getMap()));
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -502,7 +536,6 @@ int main(int argc, char *argv[])
   typedef Epetra_CrsGraph egraph_t;
   typedef Epetra_Vector evector_t;
   typedef Epetra_MultiVector emvector_t;
-  typedef Xpetra::EpetraMapT<zgno_t, znode_t> xemap_t;
   typedef Epetra_BlockMap emap_t;
 
   // Create object that can give us test Epetra input.
@@ -538,9 +571,7 @@ int main(int argc, char *argv[])
     M->Print(std::cout);
 
     RCP<const emap_t> emap = Teuchos::rcpFromRef(M->RowMap());
-    RCP<const xemap_t> xmap(new xemap_t(emap));
-
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*emap);
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -581,8 +612,7 @@ int main(int argc, char *argv[])
     G->Print(std::cout);
 
     RCP<const emap_t> emap = Teuchos::rcpFromRef(G->RowMap());
-    RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*emap);
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -624,8 +654,7 @@ int main(int argc, char *argv[])
     V->Print(std::cout);
 
     RCP<const emap_t> emap = Teuchos::rcpFromRef(V->Map());
-    RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*emap);
 
     zgno_t localNumRows = newRowIds.size();
 
@@ -668,8 +697,7 @@ int main(int argc, char *argv[])
     MV->Print(std::cout);
 
     RCP<const emap_t> emap = Teuchos::rcpFromRef(MV->Map());
-    RCP<const xemap_t> xmap(new xemap_t(emap));
-    ArrayRCP<zgno_t> newRowIds = roundRobinMap(xmap);
+    ArrayRCP<zgno_t> newRowIds = roundRobinMap(*emap);
 
     zgno_t localNumRows = newRowIds.size();
 

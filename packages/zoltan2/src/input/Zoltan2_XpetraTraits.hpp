@@ -184,6 +184,12 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     }
 
     // target matrix
+    //CSiefert    TODO:
+    //CSiefert    Chris Siefert proposes using the following to make migration
+    //CSiefert    more efficient.  The syntax is not yet correct, however.
+    //CSiefert    Also, may want to use importAndFillCompleteCrsMatrix helper.
+    //CSiefert    RCP<tmatrix_t> M; 
+    //CSiefert    from.importAndFillComplete(M, importer);
     RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
     M->doImport(from, importer, Tpetra::INSERT);
     M->fillComplete();
@@ -206,7 +212,25 @@ struct XpetraTraits<Epetra_CrsMatrix>
   static inline RCP<Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> >
   convertToXpetra(const RCP<Epetra_CrsMatrix> &a)
   {
-    return rcp(new Xpetra::EpetraCrsMatrixT<gno_t, node_t>(a));
+    RCP<Xpetra::EpetraCrsMatrixT<gno_t, node_t> > xa;
+    try {
+      xa = rcp(new Xpetra::EpetraCrsMatrixT<gno_t, node_t>(a));
+    }
+    catch (std::exception &e) {
+      if (std::is_same<node_t, Xpetra::EpetraNode>::value)
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_CrsMatrix to "
+                                             "Xpetra::EpetraCrsMatrixT\n")
+                               + e.what());
+      else
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_CrsMatrix to "
+                                             "Xpetra::EpetraCrsMatrixT\n"
+                                             "Use node_t that is supported by "
+                                             "Xpetra with Epetra classes\n")
+                               + e.what());
+    }
+    return xa;
   }
 
 
@@ -243,7 +267,12 @@ struct XpetraTraits<Epetra_CrsMatrix>
     }
 
     // target matrix
-    RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
+    // TODO
+    //CSiefert    Chris Siefert proposes using the following to make migration
+    //CSiefert    more efficient. 
+    //CSiefert    RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(from, importer));
+    RCP<Epetra_CrsMatrix> M = 
+        rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
     M->Import(from, importer, Insert);
     M->FillComplete();
 
@@ -437,7 +466,25 @@ struct XpetraTraits<Epetra_CrsGraph>
   static inline RCP<Xpetra::CrsGraph<lno_t,gno_t,node_t> >
   convertToXpetra(const RCP<Epetra_CrsGraph> &a)
   {
-    return rcp(new Xpetra::EpetraCrsGraphT<gno_t,node_t>(a));
+    RCP<Xpetra::EpetraCrsGraphT<gno_t, node_t> > xa;
+    try {
+      xa = rcp(new Xpetra::EpetraCrsGraphT<gno_t, node_t>(a));
+    }
+    catch (std::exception &e) {
+      if (std::is_same<node_t, Xpetra::EpetraNode>::value)
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_CrsGraph to "
+                                             "Xpetra::EpetraCrsGraphT\n")
+                               + e.what());
+      else
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_CrsGraph to "
+                                             "Xpetra::EpetraCrsGraphT\n"
+                                             "Use node_t that is supported by "
+                                             "Xpetra with Epetra classes\n")
+                               + e.what());
+    }
+    return xa;
   }
 
   static RCP<Epetra_CrsGraph> doMigration(const Epetra_CrsGraph &from,
@@ -678,7 +725,24 @@ struct XpetraTraits<Epetra_Vector>
 
   static inline RCP<x_vector_t> convertToXpetra(const RCP<Epetra_Vector> &a)
   {
-    RCP<Xpetra::EpetraVectorT<gno_t,node_t> > xev = rcp(new Xpetra::EpetraVectorT<gno_t,node_t>(a));
+    RCP<Xpetra::EpetraVectorT<gno_t, node_t> > xev;
+    try {
+      xev = rcp(new Xpetra::EpetraVectorT<gno_t,node_t>(a));
+    }
+    catch (std::exception &e) {
+      if (std::is_same<node_t, Xpetra::EpetraNode>::value)
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_Vector to "
+                                             "Xpetra::EpetraVectorT\n")
+                               + e.what());
+      else
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_Vector to "
+                                             "Xpetra::EpetraVectorT\n"
+                                             "Use node_t that is supported by "
+                                             "Xpetra with Epetra classes\n")
+                               + e.what());
+    }
     return rcp_implicit_cast<x_vector_t>(xev);
   }
 
@@ -862,7 +926,24 @@ struct XpetraTraits<Epetra_MultiVector>
   static inline RCP<x_mvector_t> convertToXpetra(
     const RCP<Epetra_MultiVector> &a)
   {
-    RCP<Xpetra::EpetraMultiVectorT<gno_t,node_t> > xemv = rcp(new Xpetra::EpetraMultiVectorT<gno_t,node_t>(a));
+    RCP<Xpetra::EpetraMultiVectorT<gno_t, node_t> > xemv;
+    try {
+      xemv = rcp(new Xpetra::EpetraMultiVectorT<gno_t,node_t>(a));
+    }
+    catch (std::exception &e) {
+      if (std::is_same<node_t, Xpetra::EpetraNode>::value)
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_MultiVector to "
+                                             "Xpetra::EpetraMultiVectorT\n")
+                               + e.what());
+      else
+        throw std::runtime_error(std::string("Cannot convert from "
+                                             "Epetra_MultiVector to "
+                                             "Xpetra::EpetraMultiVectorT\n"
+                                             "Use node_t that is supported by "
+                                             "Xpetra with Epetra classes\n")
+                               + e.what());
+    }
     return rcp_implicit_cast<x_mvector_t>(xemv);
   }
 

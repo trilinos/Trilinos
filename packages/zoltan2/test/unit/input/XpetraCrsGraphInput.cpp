@@ -190,6 +190,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph
   if (!gfail){
+    if (rank==0)
+      std::cout << "Input adapter for Tpetra::CrsGraph" << std::endl;
+
     RCP<const tgraph_t> ctG = rcp_const_cast<const tgraph_t>(tG);
     RCP<Zoltan2::XpetraCrsGraphAdapter<tgraph_t> > tGInput;
 
@@ -202,9 +205,6 @@ int main(int argc, char *argv[])
       std::cout << e.what() << std::endl;
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsGraphAdapter ", 1);
-
-    if (rank==0)
-      std::cout << "Input adapter for Tpetra::CrsGraph" << std::endl;
 
     fail = verifyInputAdapter<tgraph_t>(*tGInput, *tG);
 
@@ -252,6 +252,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::CrsGraph
   if (!gfail){
+    if (rank==0)
+      std::cout << "Input adapter for Xpetra::CrsGraph" << std::endl;
+     
     RCP<xgraph_t> xG = uinput->getUIXpetraCrsGraph();
     RCP<const xgraph_t> cxG = rcp_const_cast<const xgraph_t>(xG);
     RCP<Zoltan2::XpetraCrsGraphAdapter<xgraph_t> > xGInput;
@@ -266,9 +269,6 @@ int main(int argc, char *argv[])
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsGraphAdapter 3 ", 1);
 
-    if (rank==0){
-      std::cout << "Input adapter for Xpetra::CrsGraph" << std::endl;
-    }
     fail = verifyInputAdapter<xgraph_t>(*xGInput, *tG);
 
     gfail = globalFail(comm, fail);
@@ -317,63 +317,78 @@ int main(int argc, char *argv[])
   // User object is Epetra_CrsGraph
   typedef Epetra_CrsGraph egraph_t;
   if (!gfail){
+    if (rank==0)
+      std::cout << "Input adapter for Epetra_CrsGraph" << std::endl;
+
     RCP<egraph_t> eG = uinput->getUIEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
     RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > eGInput;
 
+    bool goodAdapter = true;
     try {
       eGInput =
         rcp(new Zoltan2::XpetraCrsGraphAdapter<egraph_t>(ceG));
     }
     catch (std::exception &e){
-      aok = false;
-      std::cout << e.what() << std::endl;
+      if (std::is_same<znode_t, Xpetra::EpetraNode>::value) {
+        aok = false;
+        goodAdapter = false;
+        std::cout << e.what() << std::endl;
+      }
+      else {
+        // We expect an error from Xpetra when znode_t != Xpetra::EpetraNode
+        // Ignore it, but skip tests using this matrix adapter.
+        std::cout << "Node type is not supported by Xpetra's Epetra interface;"
+                  << " Skipping this test." << std::endl;
+        std::cout << "FYI:  Here's the exception message: " << std::endl
+                  << e.what() << std::endl;
+        goodAdapter = false;
+      }
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsGraphAdapter 5 ", 1);
 
-    if (rank==0){
-      std::cout << "Input adapter for Epetra_CrsGraph" << std::endl;
-    }
-    fail = verifyInputAdapter<egraph_t>(*eGInput, *tG);
-
-    gfail = globalFail(comm, fail);
-
-    if (!gfail){
-      egraph_t *mMigrate =NULL;
-      try{
-        eGInput->applyPartitioningSolution( *eG, mMigrate, solution);
-      }
-      catch (std::exception &e){
-        fail = 11;
-      }
+    if (goodAdapter) {
+      fail = verifyInputAdapter<egraph_t>(*eGInput, *tG);
 
       gfail = globalFail(comm, fail);
 
       if (!gfail){
-        RCP<const egraph_t> cnewG(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > newInput;
+        egraph_t *mMigrate =NULL;
         try{
-          newInput =
-            rcp(new Zoltan2::XpetraCrsGraphAdapter<egraph_t>(cnewG));
+          eGInput->applyPartitioningSolution( *eG, mMigrate, solution);
         }
         catch (std::exception &e){
-          aok = false;
-          std::cout << e.what() << std::endl;
+          fail = 11;
         }
-        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsGraphAdapter 6 ", 1);
 
-        if (rank==0){
-          std::cout <<
-           "Input adapter for Epetra_CrsGraph migrated to proc 0" <<
-           std::endl;
-        }
-        fail = verifyInputAdapter<egraph_t>(*newInput, *newG);
-        if (fail) fail += 100;
         gfail = globalFail(comm, fail);
+
+        if (!gfail){
+          RCP<const egraph_t> cnewG(mMigrate, true);
+          RCP<Zoltan2::XpetraCrsGraphAdapter<egraph_t> > newInput;
+          try{
+            newInput =
+              rcp(new Zoltan2::XpetraCrsGraphAdapter<egraph_t>(cnewG));
+          }
+          catch (std::exception &e){
+            aok = false;
+            std::cout << e.what() << std::endl;
+          }
+          TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsGraphAdapter 6 ", 1);
+
+          if (rank==0){
+            std::cout <<
+             "Input adapter for Epetra_CrsGraph migrated to proc 0" <<
+             std::endl;
+          }
+          fail = verifyInputAdapter<egraph_t>(*newInput, *newG);
+          if (fail) fail += 100;
+          gfail = globalFail(comm, fail);
+        }
       }
-    }
-    if (gfail){
-      printFailureCode(comm, fail);
+      if (gfail){
+        printFailureCode(comm, fail);
+      }
     }
   }
 #endif

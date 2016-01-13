@@ -205,6 +205,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector, no weights
   if (!gfail){ 
+    if (rank==0)
+      std::cout << "Constructed with Tpetra::Vector" << std::endl;
+    
     RCP<const tvector_t> ctV = rcp_const_cast<const tvector_t>(tV);
     RCP<adapter_t> tVInput;
   
@@ -219,11 +222,6 @@ int main(int argc, char *argv[])
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter ", 1);
   
-    if (rank==0){
-      std::cout << "Constructed with ";
-      std::cout  << "Tpetra::Vector" << std::endl;
-    }
-    
     fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, 0, NULL, NULL);
   
     gfail = globalFail(comm, fail);
@@ -270,6 +268,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::Vector
   if (!gfail){ 
+    if (rank==0)
+      std::cout << "Constructed with Xpetra::Vector" << std::endl;
+
     RCP<tvector_t> xtV =
         rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap()));
     xtV->randomize();
@@ -288,10 +289,6 @@ int main(int argc, char *argv[])
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 3 ", 1);
   
-    if (rank==0){
-      std::cout << "Constructed with ";
-      std::cout << "Xpetra::Vector" << std::endl;
-    }
     fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, 0, NULL, NULL);
   
     gfail = globalFail(comm, fail);
@@ -340,67 +337,81 @@ int main(int argc, char *argv[])
   // User object is Epetra_Vector
   typedef Epetra_Vector evector_t;
   if (!gfail){ 
+    if (rank==0)
+      std::cout << "Constructed with Epetra_Vector" << std::endl;
+
     RCP<evector_t> eV = 
         rcp(new Epetra_Vector(uinput->getUIEpetraCrsGraph()->RowMap()));
     eV->Random();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   
+    bool goodAdapter = true;
     try {
       eVInput = 
         rcp(new Zoltan2::XpetraMultiVectorAdapter<evector_t>(ceV,
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
-      aok = false;
-      std::cout << e.what() << std::endl;
+      if (std::is_same<znode_t, Xpetra::EpetraNode>::value) {
+        aok = false;
+        goodAdapter = false;
+        std::cout << e.what() << std::endl;
+      }
+      else {
+        // We expect an error from Xpetra when znode_t != Xpetra::EpetraNode
+        // Ignore it, but skip tests using this matrix adapter.
+        std::cout << "Node type is not supported by Xpetra's Epetra interface;"
+                  << " Skipping this test." << std::endl;
+        std::cout << "FYI:  Here's the exception message: " << std::endl
+                  << e.what() << std::endl;
+        goodAdapter = false;
+      }
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 5 ", 1);
   
-    if (rank==0){
-      std::cout << "Constructed with ";
-      std::cout << "Epetra_Vector" << std::endl;
-    }
-    fail = verifyInputAdapter<evector_t>(*eVInput, *tV, 0, NULL, NULL);
-  
-    gfail = globalFail(comm, fail);
-  
-    if (!gfail){
-      evector_t *vMigrate =NULL;
-      try{
-        eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
-      }
-      catch (std::exception &e){
-        fail = 11;
-      }
+    if (goodAdapter) {
+      fail = verifyInputAdapter<evector_t>(*eVInput, *tV, 0, NULL, NULL);
   
       gfail = globalFail(comm, fail);
   
       if (!gfail){
-        RCP<const evector_t> cnewV(vMigrate, true);
-        RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > newInput;
+        evector_t *vMigrate =NULL;
         try{
-          newInput = 
-            rcp(new Zoltan2::XpetraMultiVectorAdapter<evector_t>(cnewV, 
-              emptyWeights, emptyStrides));
+          eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
         }
         catch (std::exception &e){
-          aok = false;
-          std::cout << e.what() << std::endl;
+          fail = 11;
         }
-        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 6 ", 1);
   
-        if (rank==0){
-           std::cout << "Constructed with ";
-           std::cout << "Epetra_Vector migrated to proc 0" << std::endl;
-        }
-        fail = verifyInputAdapter<evector_t>(*newInput, *newV, 0, NULL, NULL);
-        if (fail) fail += 100;
         gfail = globalFail(comm, fail);
+  
+        if (!gfail){
+          RCP<const evector_t> cnewV(vMigrate, true);
+          RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > newInput;
+          try{
+            newInput = 
+              rcp(new Zoltan2::XpetraMultiVectorAdapter<evector_t>(cnewV, 
+                emptyWeights, emptyStrides));
+          }
+          catch (std::exception &e){
+            aok = false;
+            std::cout << e.what() << std::endl;
+          }
+          TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 6 ", 1);
+    
+          if (rank==0){
+             std::cout << "Constructed with ";
+             std::cout << "Epetra_Vector migrated to proc 0" << std::endl;
+          }
+          fail = verifyInputAdapter<evector_t>(*newInput, *newV, 0, NULL, NULL);
+          if (fail) fail += 100;
+          gfail = globalFail(comm, fail);
+        }
       }
-    }
-    if (gfail){
-      printFailureCode(comm, fail);
+      if (gfail){
+        printFailureCode(comm, fail);
+      }
     }
   }
 #endif

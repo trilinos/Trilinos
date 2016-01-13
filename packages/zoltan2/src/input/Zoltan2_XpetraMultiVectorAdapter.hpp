@@ -191,9 +191,13 @@ template <typename User>
 {
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  RCP<x_mvector_t> tmp =
-           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
-  vector_ = rcp_const_cast<const x_mvector_t>(tmp);
+  try {
+    RCP<x_mvector_t> tmp =
+            XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
+    vector_ = rcp_const_cast<const x_mvector_t>(tmp);
+  }
+  Z2_FORWARD_EXCEPTIONS
+
   map_ = vector_->getMap();
   base_ = map_->getIndexBase();
 
@@ -219,9 +223,13 @@ template <typename User>
       env_(rcp(new Environment)), base_(),
       numWeights_(0), weights_()
 {
-  RCP<x_mvector_t> tmp =
-           XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
-  vector_ = rcp_const_cast<const x_mvector_t>(tmp);
+  try {
+    RCP<x_mvector_t> tmp =
+            XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(invector));
+    vector_ = rcp_const_cast<const x_mvector_t>(tmp);
+  }
+  Z2_FORWARD_EXCEPTIONS
+
   map_ = vector_->getMap();
   base_ = map_->getIndexBase();
 }
