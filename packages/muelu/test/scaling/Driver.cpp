@@ -395,9 +395,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
             eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
           else
             eH = MueLu::CreateEpetraPreconditioner(eA, mueluList);
-          RCP<MueLu::Hierarchy<double,int,int,Kokkos::Compat::KokkosSerialWrapperNode> > myH = eH->GetHierarchy();
+          RCP<MueLu::Hierarchy<double,int,int,Node> > myH = eH->GetHierarchy();
           H = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC, LO, GO, NO> >(myH);
-          TEUCHOS_TEST_FOR_EXCEPTION(H == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: ScalingDriver: Dynamic cast to Hierarchy failed. Epetra needs SC=double, LO=GO=int and Node=Serial.");
+          TEUCHOS_TEST_FOR_EXCEPTION(H == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: ScalingDriver: Dynamic cast to Hierarchy failed. Epetra needs SC=double, LO=GO=int and Node=(Serial|OpenMp).");
 #endif
         }
       }
@@ -560,6 +560,8 @@ int main(int argc, char* argv[]) {
     Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
     Xpetra::Parameters xpetraParameters(clp);
 
+    std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
@@ -569,29 +571,99 @@ int main(int argc, char* argv[]) {
 
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
+    if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+      return_code = main_<double,int,int,Xpetra::EpetraNode>(clp, argc, argv);
+#else
+      throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+    }
+
     if (lib == Xpetra::UseTpetra) {
-      typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+#ifdef HAVE_MUELU_TPETRA
+      if (node == "") {
+        typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
-      return_code = main_<double,int,long,Node>(clp, argc, argv);
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
 #else
 #  if defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
-      return_code = main_<double,int,int,Node> (clp, argc, argv);
-#elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
-      return_code = main_<double,int,long,Node>(clp, argc, argv);
-#elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
-      return_code = main_<double,int,long long,Node>(clp, argc, argv);
+        return_code = main_<double,int,int,Node> (clp, argc, argv);
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#  elif defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        return_code = main_<double,int,long long,Node>(clp, argc, argv);
+#  else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#  endif
+#endif
+      } else if (node == "serial") {
+#ifdef KOKKOS_HAVE_SERIAL
+        typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        return_code = main_<double,int,int,Node> (clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        return_code = main_<double,int,long long,Node>(clp, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
 #else
-      throw std::runtime_error("Found no suitable instantiation");
+        throw MueLu::Exceptions::RuntimeError("Serial node type is disabled");
 #endif
+      } else if (node == "openmp") {
+#ifdef KOKKOS_HAVE_OPENMP
+        typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        return_code = main_<double,int,int,Node> (clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        return_code = main_<double,int,long long,Node>(clp, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("OpenMP node type is disabled");
+#endif
+      } else if (node == "cuda") {
+#ifdef KOKKOS_HAVE_CUDA
+        typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#  else
+#    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        return_code = main_<double,int,int,Node> (clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        return_code = main_<double,int,long,Node>(clp, argc, argv);
+#    elif defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        return_code = main_<double,int,long long,Node>(clp, argc, argv);
+#    else
+        throw MueLu::Exceptions::RuntimeError("Found no suitable instantiation");
+#    endif
+#  endif
+#else
+        throw MueLu::Exceptions::RuntimeError("CUDA node type is disabled");
+#endif
+      } else {
+        throw MueLu::Exceptions::RuntimeError("Unrecognized node type");
+      }
+#else
+      throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
 #endif
     }
-
-    if (lib == Xpetra::UseEpetra) {
-      typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
-      return_code = main_<double,int,int,Node>(clp, argc, argv);
-    }
-
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
