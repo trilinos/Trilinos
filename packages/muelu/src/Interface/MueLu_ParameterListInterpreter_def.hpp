@@ -402,18 +402,20 @@ namespace MueLu {
       paramList = ParameterList(defaultList);
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-    TEUCHOS_TEST_FOR_EXCEPTION(reuseType != "none" && reuseType != "tP" && reuseType != "RP" && reuseType != "emin" && reuseType != "RAP" && reuseType != "full",
-                               Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(reuseType != "none" && reuseType != "tP" && reuseType != "RP" && reuseType != "emin" && reuseType != "RAP" && reuseType != "full" && reuseType != "S",
+       Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab", Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
-    #ifndef HAVE_MUELU_MATLAB
-      if(multigridAlgo == "matlab")
-        throw std::runtime_error("Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
-    #endif
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab",
+        Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+#ifndef HAVE_MUELU_MATLAB
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
+        "Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
+#endif
+
     // Only some combinations of reuse and multigrid algorithms are tested, all
     // other are considered invalid at the moment
-    if (reuseType == "none" || reuseType == "RP" || reuseType == "RAP") {
+    if (reuseType == "none" || reuseType == "S" || reuseType == "RP" || reuseType == "RAP") {
       // This works for all kinds of multigrid algorithms
 
     } else if (reuseType == "tP" && (multigridAlgo != "sa" && multigridAlgo != "unsmoothed")) {
@@ -532,13 +534,15 @@ namespace MueLu {
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
-        else
+        else {
 #ifdef HAVE_MUELU_MATLAB
           if(postSmootherType == "matlab")
             postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
           else
 #endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
+
+        }
       }
 
       if (preSmoother == postSmoother)
@@ -547,15 +551,6 @@ namespace MueLu {
         manager.SetFactory("PreSmoother",  preSmoother);
         manager.SetFactory("PostSmoother", postSmoother);
       }
-    }
-    if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
-      // The difference between "RAP" and "full" is keeping smoothers. However,
-      // as in both cases we keep coarse matrices, we do not need to update
-      // coarse smoothers. On the other hand, if a user changes fine level
-      // matrix, "RAP" would update the fine level smoother, while "full" would
-      // not
-      keeps.push_back(keep_pair("PreSmoother",  manager.GetFactory("PreSmoother") .get()));
-      keeps.push_back(keep_pair("PostSmoother", manager.GetFactory("PostSmoother").get()));
     }
 
     // === Coarse solver ===
@@ -603,8 +598,50 @@ namespace MueLu {
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));
     }
+
+    // The first clause is not necessary, but it is here for clarity
+    // Smoothers are reused if smoother explicitly said to reuse them, or if
+    // any other reuse option is enabled
+    bool reuseSmoothers = (reuseType == "S" || reuseType != "none");
+    if (reuseSmoothers) {
+      RCP<Factory> preSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PreSmoother")));
+      if (preSmootherFactory != Teuchos::null) {
+        ParameterList postSmootherFactoryParams;
+        postSmootherFactoryParams.set("keep smoother data", true);
+        preSmootherFactory->SetParameterList(postSmootherFactoryParams);
+
+        keeps.push_back(keep_pair("PreSmoother data",  preSmootherFactory.get()));
+      }
+
+      RCP<Factory> postSmootherFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("PostSmoother")));
+      if (postSmootherFactory != Teuchos::null) {
+        ParameterList postSmootherFactoryParams;
+        postSmootherFactoryParams.set("keep smoother data", true);
+        postSmootherFactory->SetParameterList(postSmootherFactoryParams);
+
+        keeps.push_back(keep_pair("PostSmoother data", postSmootherFactory.get()));
+      }
+
+      RCP<Factory> coarseFactory = Teuchos::rcp_const_cast<Factory>(Teuchos::rcp_dynamic_cast<const Factory>(manager.GetFactory("CoarseSolver")));
+      if (coarseFactory != Teuchos::null) {
+        ParameterList coarseFactoryParams;
+        coarseFactoryParams.set("keep smoother data", true);
+        coarseFactory->SetParameterList(coarseFactoryParams);
+
+        keeps.push_back(keep_pair("PreSmoother data", coarseFactory.get()));
+      }
+    }
+
     if ((reuseType == "RAP" && levelID) || (reuseType == "full")) {
-      // We do keep_pair("PreSmoother", // manager.GetFactory("CoarseSolver").get())
+      // The difference between "RAP" and "full" is keeping smoothers. However,
+      // as in both cases we keep coarse matrices, we do not need to update
+      // coarse smoothers. On the other hand, if a user changes fine level
+      // matrix, "RAP" would update the fine level smoother, while "full" would
+      // not
+      keeps.push_back(keep_pair("PreSmoother",  manager.GetFactory("PreSmoother") .get()));
+      keeps.push_back(keep_pair("PostSmoother", manager.GetFactory("PostSmoother").get()));
+
+      // We do keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get())
       // as the coarse solver factory is in fact a smoothing factory, so the
       // only pieces of data it generates are PreSmoother and PostSmoother
       keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
@@ -1029,7 +1066,7 @@ namespace MueLu {
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
-      if (reuseType != "none" && levelID)
+      if (reuseType != "none" && reuseType != "S" && levelID)
         keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
 
       // Rebalanced A
