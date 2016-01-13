@@ -147,12 +147,12 @@ private:
 public:
   virtual ~BPOEObjective() {}
 
-  BPOEObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                 Real order, Real threshold,
-                 Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                 Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                 Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
-                 bool storage = true )
+  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                 const Real order, const Real threshold,
+                 const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
+                 const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                 const Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+                 const bool storage = true )
     : ParametrizedObjective_(pObj), order_(order), threshold_(threshold),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       storage_(storage), initialized_(false) {
@@ -160,11 +160,11 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                 Real order, Real threshold,
-                 Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
-                 Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                 bool storage = true )
+  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                 const Real order, const Real threshold,
+                 const Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
+                 const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                 const bool storage = true )
     : ParametrizedObjective_(pObj), order_(order), threshold_(threshold),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       storage_(storage), initialized_(false) {
@@ -172,10 +172,10 @@ public:
     gradient_storage_.clear();
   }
 
-  BPOEObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                 Real order, Real threshold,
-                 Teuchos::RCP<SampleGenerator<Real> >       &sampler,
-                 bool storage = true )
+  BPOEObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                 const Real order, const Real threshold,
+                 const Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+                 const bool storage = true )
     : ParametrizedObjective_(pObj), order_(order), threshold_(threshold),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       storage_(storage), initialized_(false) {

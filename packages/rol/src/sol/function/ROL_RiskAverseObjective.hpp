@@ -123,12 +123,12 @@ private:
 public:
   virtual ~RiskAverseObjective() {}
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
-                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
-                       bool storage = true )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       const Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+                       const bool storage = true )
     : ParametrizedObjective_(pObj), RiskMeasure_(rm),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       firstUpdate_(true), storage_(storage) {
@@ -136,11 +136,11 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
-                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                       bool storage = true )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       const Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                       const bool storage = true )
     : ParametrizedObjective_(pObj), RiskMeasure_(rm),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       firstUpdate_(true), storage_(storage) {
@@ -148,10 +148,10 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
-                       Teuchos::RCP<SampleGenerator<Real> >       &sampler,
-                       bool storage = true )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       const Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+                       const bool storage = true )
     : ParametrizedObjective_(pObj), RiskMeasure_(rm),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       firstUpdate_(true), storage_(storage) {
@@ -159,11 +159,11 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::ParameterList                     &parlist,
-                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &hsampler )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                             Teuchos::ParameterList                     &parlist,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &hsampler )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       firstUpdate_(true) {
@@ -173,10 +173,10 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::ParameterList                     &parlist,
-                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
-                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                             Teuchos::ParameterList                     &parlist,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &gsampler )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       firstUpdate_(true) {
@@ -186,9 +186,9 @@ public:
     gradient_storage_.clear();
   }
 
-  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
-                       Teuchos::ParameterList                     &parlist,
-                       Teuchos::RCP<SampleGenerator<Real> >       &sampler )
+  RiskAverseObjective( const Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                             Teuchos::ParameterList                     &parlist,
+                       const Teuchos::RCP<SampleGenerator<Real> >       &sampler )
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       firstUpdate_(true) {
