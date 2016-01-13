@@ -2531,6 +2531,38 @@ namespace {
 #endif
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Constructor_Epetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
+  {
+#ifdef HAVE_XPETRA_EPETRA
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    {
+      TEST_NOTHROW(M(10, 0, comm));
+      TEST_NOTHROW(MV(Teuchos::rcp(new M(10, 0, comm)), 3));
+    }
+
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
+    {
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosThreadsWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
+    {
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
+
+#endif
+  }
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL( MultiVector, Typedefs,        M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node )
   {
@@ -2595,6 +2627,7 @@ namespace {
 // List of tests which run only with Epetra
 #define XP_EPETRA_MULTIVECTOR_INSTANT(S,LO,GO,N) \
       TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, NonMemberConstructorsEpetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT( MultiVector, Constructor_Epetra, M##LO##GO##N , MV##S##LO##GO##N , V##S##LO##GO##N , S, LO, GO, N )
 
 // list of all tests which run both with Epetra and Tpetra
 // TODO: move more lists from the upper list to this list
