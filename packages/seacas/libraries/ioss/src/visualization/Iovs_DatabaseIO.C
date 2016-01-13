@@ -121,6 +121,11 @@ namespace Iovs {
       DatabaseIO::paraview_script_filename = props.get("CATALYST_SCRIPT").get_string();
       }
 
+    if(props.exists("CATALYST_SCRIPT_EXTRA_FILE"))
+      {
+      this->paraview_script_extra_filename = props.get("CATALYST_SCRIPT_EXTRA_FILE").get_string();
+      }
+
     this->underscoreVectors = 1;
     if(props.exists("CATALYST_UNDERSCORE_VECTORS"))
       {
@@ -270,6 +275,9 @@ namespace Iovs {
           }
       }
 
+      std::vector<std::string> catalyst_sierra_data;
+      catalyst_sierra_data.push_back(this->paraview_script_extra_filename);
+
       if(this->pvcsa)
         this->pvcsa->CreateNewPipeline(DatabaseIO::paraview_script_filename.c_str(),
                                        this->paraview_json_parse.c_str(),
@@ -281,7 +289,8 @@ namespace Iovs {
                                        this->enableLogging,
                                        this->debugLevel,
                                        this->DBFilename.c_str(),
-                                       this->catalyst_output_directory.c_str());
+                                       this->catalyst_output_directory.c_str(),
+                                       catalyst_sierra_data);
       std::vector<int> element_block_id_list;
       Ioss::ElementBlockContainer const & ebc = region->get_element_blocks();
       for(int i = 0;i<ebc.size();i++)
