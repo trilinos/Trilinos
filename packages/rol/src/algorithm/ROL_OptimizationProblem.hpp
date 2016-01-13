@@ -403,19 +403,19 @@ public:
     parlist_ = parlist;
   }
 
-  std::vector<std::vector<Real> > checkObjectiveGradient( const Vector<Real> &d,
-                                                          const bool printToStream = true,
-                                                          std::ostream & outStream = std::cout,
-                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                          const int order = 1 ) {
+  virtual std::vector<std::vector<Real> > checkObjectiveGradient( const Vector<Real> &d,
+                                                                  const bool printToStream = true,
+                                                                  std::ostream & outStream = std::cout,
+                                                                  const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                                  const int order = 1 ) {
     return obj_->checkGradient(*sol_,d,printToStream,outStream,numSteps,order);
   }
 
-  std::vector<std::vector<Real> > checkObjectiveHessVec( const Vector<Real> &v,
-                                                         const bool printToStream = true,
-                                                         std::ostream & outStream = std::cout,
-                                                         const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
-                                                         const int order = 1 ) {
+  virtual std::vector<std::vector<Real> > checkObjectiveHessVec( const Vector<Real> &v,
+                                                                 const bool printToStream = true,
+                                                                 std::ostream & outStream = std::cout,
+                                                                 const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                                                                 const int order = 1 ) {
     return obj_->checkHessVec(*sol_,v,printToStream,outStream,numSteps,order);
   }
 
