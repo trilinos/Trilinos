@@ -49,15 +49,14 @@
 #include <Tpetra_Experimental_BlockVector.hpp>
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
   using Tpetra::TestingUtilities::getDefaultComm;
   using Teuchos::Array;
   using Teuchos::Comm;
   using Teuchos::outArg;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   using std::endl;
   typedef Tpetra::global_size_t GST;
 
@@ -77,7 +76,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -88,7 +86,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
 
     const LO blockSize = 4;
     //const LO numVecs = 3;
@@ -172,7 +170,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -188,7 +185,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const map_type& meshRowMap = *meshRowMapPtr;
 
     // Make a graph.  It will have two entries per global row i_gbl:
@@ -821,7 +818,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -837,7 +833,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const map_type& meshRowMap = *meshRowMapPtr;
 
     // Make a graph.  It will have two entries per global row i_gbl:
@@ -1187,7 +1183,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -1198,7 +1193,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
     const LO blockSize = 4;
 
@@ -1304,7 +1299,6 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -1315,7 +1309,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
     const LO blockSize = 4;
 
@@ -1470,7 +1464,6 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Create nonoverlapping mesh row Map" << endl;
@@ -1480,7 +1473,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const GO numGlobalMeshPoints = meshRowMapPtr->getGlobalNumElements ();
     const LO blockSize = 4;
 
@@ -1502,7 +1495,7 @@ namespace {
     }
     const size_t numOverlapMeshPoints = numLocalMeshPoints + numRemoteMeshPoints;
     RCP<const map_type> overlapMeshRowMapPtr =
-      rcp (new map_type (INVALID, numOverlapMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numOverlapMeshPoints, indexBase, comm));
 
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     if (gblSuccess != 1) {
@@ -1704,7 +1697,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -1719,7 +1711,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const map_type& meshRowMap = *meshRowMapPtr;
 
     out << "Creating mesh graph" << endl;
@@ -1881,7 +1873,6 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;
@@ -1896,7 +1887,7 @@ namespace {
     // RCP.  Later interface changes will let us pass in the Map by
     // const reference and assume view semantics.
     RCP<const map_type> meshRowMapPtr =
-      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm, node));
+      rcp (new map_type (INVALID, numLocalMeshPoints, indexBase, comm));
     const map_type& meshRowMap = *meshRowMapPtr;
 
     out << "Creating mesh graph" << endl;
@@ -2106,23 +2097,26 @@ namespace {
     ST zero = STS::zero(), one = STS::one();
 
     RCP<const Comm<int> > comm = getDefaultComm();
-    RCP<Node> node = getNode<Node>();
     std::string matrixFile;
     if (STS::isComplex)
       matrixFile = "blockA-complex.mm";
     else
       matrixFile = "blockA.mm";
     out << "reading " << matrixFile << std::endl;
-    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm, node);
+    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm);
 
     // Migrate pointMatrix to final parallel distribution.
     // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
     // must stay together.  This means the serial matrix can only be migrated to 1,2 or 4 processes.  3 processes
     // would split up dofs associate with a mesh node.
     Tpetra::global_size_t numGlobElts = pointMatrix->getRowMap()->getGlobalNumElements();
-    RCP<const map_type> parPointMap     = Tpetra::createUniformContigMapWithNode<LO,GO,Node>(numGlobElts, comm, node);
-    RCP<crs_matrix_type> parPointMatrix = rcp(new crs_matrix_type(parPointMap,pointMatrix->getGlobalMaxNumRowEntries()));
-    RCP<const import_type> importer     = Tpetra::createImport<LO,GO,Node>(pointMatrix->getRowMap(), parPointMap);
+    const GO indexBase = 0;
+    RCP<const map_type> parPointMap =
+      rcp (new map_type (numGlobElts, indexBase, comm));
+    RCP<crs_matrix_type> parPointMatrix =
+      rcp (new crs_matrix_type (parPointMap, pointMatrix->getGlobalMaxNumRowEntries ()));
+    RCP<const import_type> importer =
+      rcp (new import_type (pointMatrix->getRowMap(), parPointMap));
     parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
     parPointMatrix->fillComplete();
     pointMatrix.swap(parPointMatrix);
