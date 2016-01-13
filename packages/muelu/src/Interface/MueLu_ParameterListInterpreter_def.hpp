@@ -697,7 +697,7 @@ namespace MueLu {
 
     manager.SetFactory("Ptent",     Ptent);
 
-    if (reuseType == "tP") {
+    if (reuseType == "tP" && levelID) {
       keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Ptent").get()));
       keeps.push_back(keep_pair("P",         manager.GetFactory("Ptent").get()));
     }
@@ -932,15 +932,15 @@ namespace MueLu {
       }
     }
 
-    if (reuseType == "RP" || reuseType == "RAP" || reuseType == "full")
+    if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
       keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Nullspace").get()));
 
-    if (reuseType == "RP") {
+    if (reuseType == "RP" && levelID) {
       keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
       if (!this->implicitTranspose_)
         keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
     }
-    if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_)
+    if ((reuseType == "tP" || reuseType == "RP" || reuseType == "emin") && useCoordinates_ && levelID)
       keeps.push_back(keep_pair("Coordinates", manager.GetFactory("Coordinates").get()));
 
     // === Repartitioning ===
@@ -1029,7 +1029,7 @@ namespace MueLu {
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));
       manager.SetFactory("Importer", repartFactory);
-      if (reuseType != "none")
+      if (reuseType != "none" && levelID)
         keeps.push_back(keep_pair("Importer", manager.GetFactory("Importer").get()));
 
       // Rebalanced A
@@ -1086,7 +1086,7 @@ namespace MueLu {
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif
     }
-    if (reuseType == "RAP" || reuseType == "full") {
+    if ((reuseType == "RAP" || reuseType == "full") && levelID) {
       keeps.push_back(keep_pair("P", manager.GetFactory("P").get()));
       if (!this->implicitTranspose_)
         keeps.push_back(keep_pair("R", manager.GetFactory("R").get()));
