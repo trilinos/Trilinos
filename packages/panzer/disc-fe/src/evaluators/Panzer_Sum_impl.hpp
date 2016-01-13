@@ -103,6 +103,7 @@ PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 template<unsigned int RANK>
+KOKKOS_INLINE_FUNCTION
 void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
   const size_t num_vals = values.size();
 

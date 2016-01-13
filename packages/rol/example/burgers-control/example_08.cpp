@@ -81,13 +81,20 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  bool print = (iprint>0) && !(comm->getRank());
+  bool print = (iprint>0); // && !(comm->getRank());
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (print)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
+
+  bool print0 = print && !comm->getRank();
+  Teuchos::RCP<std::ostream> outStream0;
+  if (print0)
+    outStream0 = Teuchos::rcp(&std::cout, false);
+  else
+    outStream0 = Teuchos::rcp(&bhs, false);
 
   int errorFlag  = 0;
 
@@ -104,8 +111,8 @@ int main(int argc, char *argv[]) {
     RealT cL2   = 0.0;   // Scale for mass term in H1 norm.
     Teuchos::RCP<BurgersFEM<RealT> > fem
       = Teuchos::rcp(new BurgersFEM<RealT>(nx,nl,cH1,cL2));
-    fem->test_inverse_mass(*outStream);
-    fem->test_inverse_H1(*outStream);
+    fem->test_inverse_mass(*outStream0);
+    fem->test_inverse_H1(*outStream0);
     /*************************************************************************/
     /************* INITIALIZE SIMOPT OBJECTIVE FUNCTION **********************/
     /*************************************************************************/
@@ -132,7 +139,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > yz_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     for (int i=0; i<nx+2; i++) {
-      (*z_rcp)[i]  = 2.0*random<RealT>(comm)-1.0;
       (*yz_rcp)[i] = 2.0*random<RealT>(comm)-1.0;
     }
     Teuchos::RCP<ROL::Vector<RealT> > zp
@@ -146,9 +152,6 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     Teuchos::RCP<std::vector<RealT> > gu_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
-    for (int i=0; i<nx; i++) {
-      (*u_rcp)[i]  = 2.0*random<RealT>(comm)-1.0;
-    }
     Teuchos::RCP<ROL::Vector<RealT> > up
       = Teuchos::rcp(new PrimalStateVector(u_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gup
@@ -168,7 +171,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE SAMPLE GENERATOR *******************************/
     /*************************************************************************/
-    int dim = 4, nSamp = 10000;
+    int dim = 4, nSamp = 1000;
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(dim,tmp);
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
@@ -218,22 +221,29 @@ int main(int argc, char *argv[]) {
     // CHECK OBJECTIVE DERIVATIVES
     bool derivcheck = false;
     if (derivcheck) {
-      for (int i = sampler->start(); i < sampler->numMySamples(); i++) {
-        *outStream << "Sample " << i << "  Rank " << sampler->batchID() << "\n";
-        *outStream << "(" << sampler->getMyPoint(i)[0] << ", "
-                          << sampler->getMyPoint(i)[1] << ", "
-                          << sampler->getMyPoint(i)[2] << ", "
-                          << sampler->getMyPoint(i)[3] << ")\n";
-        pcon->setParameter(sampler->getMyPoint(i));
-        pcon->checkSolve(*up,*zp,*cp,print,*outStream);
-        robj->setParameter(sampler->getMyPoint(i));
-        robj->checkGradient(*zp,*gzp,*yzp,print,*outStream);
-        robj->checkHessVec(*zp,*gzp,*yzp,print,*outStream);
+      int nranks = sampler->numBatches();
+      for (int pid = 0; pid < nranks; pid++) {
+        if ( pid == sampler->batchID() ) {
+          for (int i = sampler->start(); i < sampler->numMySamples(); i++) {
+            *outStream << "Sample " << i << "  Rank " << sampler->batchID() << "\n";
+            *outStream << "(" << sampler->getMyPoint(i)[0] << ", "
+                              << sampler->getMyPoint(i)[1] << ", "
+                              << sampler->getMyPoint(i)[2] << ", "
+                              << sampler->getMyPoint(i)[3] << ")\n";
+            pcon->setParameter(sampler->getMyPoint(i));
+            pcon->checkSolve(*up,*zp,*cp,print,*outStream);
+            robj->setParameter(sampler->getMyPoint(i));
+            *outStream << "\n";
+            robj->checkGradient(*zp,*gzp,*yzp,print,*outStream);
+            robj->checkHessVec(*zp,*gzp,*yzp,print,*outStream);
+            *outStream << "\n\n";
+          }
+        }
+        comm->barrier();
       }
     }
-    Teuchos::RCP<ROL::Vector<RealT> > D = optProb.createVector(SOLlist,yzp);
-    optProb.checkObjectiveGradient(*D,true,*outStream);
-    optProb.checkObjectiveHessVec(*D,true,*outStream);
+    optProb.checkObjectiveGradient(*yzp,print0,*outStream0);
+    optProb.checkObjectiveHessVec(*yzp,print0,*outStream0);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
@@ -245,11 +255,11 @@ int main(int argc, char *argv[]) {
     // RUN OPTIMIZATION
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     zp->zero();
-    algo.run(optProb,print,*outStream);
+    algo.run(optProb,print0,*outStream0);
     /*************************************************************************/
     /************* PRINT CONTROL AND STATE TO SCREEN *************************/
     /*************************************************************************/
-    if ( print ) {
+    if ( print0 ) {
       std::ofstream ofs;
       ofs.open("output_example_08.txt",std::ofstream::out);
       for ( int i = 0; i < nx+2; i++ ) {
@@ -260,7 +270,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream << "Scalar Parameter: " << optProb.getSolutionStatistic(SOLlist) << "\n\n";
+    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic() << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

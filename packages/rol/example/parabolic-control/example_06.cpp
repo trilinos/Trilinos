@@ -470,7 +470,7 @@ public:
     }
   }
 
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     using Teuchos::RCP;
 
@@ -494,6 +494,7 @@ public:
       }
       uold.assign(unew.begin(),unew.end());
     }
+    value(c,u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,

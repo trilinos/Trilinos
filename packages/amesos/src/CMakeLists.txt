@@ -75,15 +75,24 @@ ENDIF()
 #
 
 IF (${PACKAGE_NAME}_ENABLE_MUMPS)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+   
+   IF(TPL_ENABLE_MPI)
 
-  SET(HEADERS ${HEADERS}
-    Amesos_Mumps.h
-    )
+     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-  SET(SOURCES ${SOURCES}
-    Amesos_Mumps.cpp
-    )
+     SET(HEADERS ${HEADERS}
+     Amesos_Mumps.h
+     )
+
+     SET(SOURCES ${SOURCES}
+     Amesos_Mumps.cpp
+     )
+  ELSE()
+
+     MESSAGE(WARNING "\n\n***Amesos with MUMPS requires MPI, MUMPS will not be available***\n\n")
+   
+   ENDIF()     
+
 ENDIF()
 
 #

@@ -79,12 +79,6 @@ public:
                      const Vector<Real> &u,
                      const Vector<Real> &z,
                      Real &tol) = 0;
-//
-//  virtual void solve(Vector<Real> &u, 
-//                     const Vector<Real> &z,
-//                     Real &tol) {
-//    u.zero();
-//  }
 
 }; // class ParametrizedEqualityConstraint_SimOpt
 

@@ -1074,19 +1074,17 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
       toMatrix = fromMatrix;
     }
   }catch (std::exception &e) {
-    //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    if (tcomm_->getRank() == 0)
+      std::cout << "UserInputForTests unable to read matrix market file:" 
+                << fname.str() << std::endl;
     aok = false;
   }
+  TEST_FAIL_AND_THROW(*tcomm_, aok, 
+                      "UserInputForTests unable to read matrix market file");
   
   M_ = toMatrix;
 
-  if (aok){
-    xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  }
-  else{
-    if (tcomm_->getRank() == 0)
-      std::cout << "UserInputForTests unable to read matrix market file:" << fname.str() << std::endl;
-  }
+  xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   
   // Open the coordinate file.
   
@@ -1296,6 +1294,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     
   }
   
+  bool aok = true;
   try{
     RCP<Galeri::Xpetra::Problem<Tpetra::Map<zlno_t, zgno_t>, Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t>, Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t> > > Pr =
     Galeri::Xpetra::BuildProblem<zscalar_t, zlno_t, zgno_t, Tpetra::Map<zlno_t, zgno_t>, Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t>, Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t> >
@@ -1303,8 +1302,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     M_ = Pr->BuildMatrix();
   }
   catch (std::exception &e) {    // Probably not enough memory
-    TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    aok = false;
   }
+  TEST_FAIL_AND_THROW(*tcomm_, aok, 
+                      "UserInputForTests Galeri::Xpetra::BuildProblem failed");
   
   xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   

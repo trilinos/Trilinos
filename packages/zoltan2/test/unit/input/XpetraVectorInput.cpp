@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int fail = 0, gfail=0;
+  bool aok = true;
 
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra vectors for testing.
@@ -170,8 +171,10 @@ int main(int argc, char *argv[])
       rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
+    aok = false;
+    std::cout << e.what() << std::endl;
   }
+  TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
   RCP<tvector_t> tV;     // original vector (for checking)
   RCP<tvector_t> newV;   // migrated vector
@@ -211,9 +214,10 @@ int main(int argc, char *argv[])
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraMultiVectorAdapter ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter ", 1);
   
     if (rank==0){
       std::cout << "Constructed with ";
@@ -244,9 +248,10 @@ int main(int argc, char *argv[])
             emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraMultiVectorAdapter 2 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 2 ", 1);
   
         if (rank==0){
           std::cout << "Constructed with ";
@@ -278,9 +283,10 @@ int main(int argc, char *argv[])
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraMultiVectorAdapter 3 ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 3 ", 1);
   
     if (rank==0){
       std::cout << "Constructed with ";
@@ -310,9 +316,10 @@ int main(int argc, char *argv[])
               emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraMultiVectorAdapter 4 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 4 ", 1);
   
         if (rank==0){
           std::cout << "Constructed with ";
@@ -345,9 +352,10 @@ int main(int argc, char *argv[])
           emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
-      TEST_FAIL_AND_EXIT(*comm, 0, 
-        string("XpetraMultiVectorAdapter 5 ")+e.what(), 1);
+      aok = false;
+      std::cout << e.what() << std::endl;
     }
+    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 5 ", 1);
   
     if (rank==0){
       std::cout << "Constructed with ";
@@ -377,9 +385,10 @@ int main(int argc, char *argv[])
               emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
-          TEST_FAIL_AND_EXIT(*comm, 0, 
-            string("XpetraMultiVectorAdapter 6 ")+e.what(), 1);
+          aok = false;
+          std::cout << e.what() << std::endl;
         }
+        TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 6 ", 1);
   
         if (rank==0){
            std::cout << "Constructed with ";

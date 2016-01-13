@@ -54,7 +54,6 @@ namespace BaskerNS
     //temp
     for(Int i = 0; i < gn; i++)
       {
-	//x_known(i) = (Entry)(i+1);
         x_known(i) = (Entry) 1.0;
       }
     //JDB: used for other test
@@ -115,11 +114,11 @@ namespace BaskerNS
     //  }
     
     //pivot permuation
-    //printVec("gperm.csc", gpermi, gn);
+    printVec("gperm.csc", gpermi, gn);
 
     for(Int i = 0; i < gn; i++)
       {
-        x(gpermi(i)) = y(i);
+        x(gperm(i)) = y(i);
       }
     for(Int i = 0; i < gn; i++)
       {
@@ -144,7 +143,7 @@ namespace BaskerNS
 	printf("%d %f,\n ", i, y(i)); 
       }
     printf("\n\n");
-    #endif
+   #endif
 
     
 
@@ -934,8 +933,13 @@ namespace BaskerNS
 	for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
 	  {
 	    //Int j = M.row_idx[i];
-	    const Int j = gperm(M.row_idx(i));
-            //printf("j: %d jp: %d \n", M.row_idx(i), j);
+	    const Int j = gperm(M.row_idx(i)+M.srow);
+	    
+	    //if(k == 111)
+	    //{
+	    //	printf("k: %d j: %d jp: %d \n", 
+	    //	       k, M.row_idx(i), j);
+	    //}
 	    if(j > erow)
 	      {
 		#ifdef BASKER_DEBUG_SOLVE_RHS
@@ -953,7 +957,14 @@ namespace BaskerNS
 	    //for now just do a single function with zero
 	    //y[j] -= M.val[i]*x[k+M.scol];
 
-	    y(j+brow) -= M.val(i)*x(k+M.scol);
+	    //y(j+brow) -= M.val(i)*x(k+M.scol);
+	    //if((j+brow) == 18)
+	    // {
+	    //	printf("ERROR: %d %d k: %d M.row_idx: %d \n",
+	    //	       j, brow, k, M.row_idx(i));
+	    // } 
+
+	    y(j) -= M.val(i)*x(k+M.scol);
 	  }//over all nnz in row
       }
     //printf("done\n");

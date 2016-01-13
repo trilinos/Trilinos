@@ -83,7 +83,7 @@ private:
       state_->set(*state_storage_[this->getParameter()]);
     }
     else {
-      con_->solve(*state_,x,tol);
+      con_->solve(*dualadjoint_,*state_,x,tol);
       // Update full objective function
       obj_->update(*state_,x,flag,iter);
       // Update equality constraint

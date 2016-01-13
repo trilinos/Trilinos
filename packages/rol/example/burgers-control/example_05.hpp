@@ -201,53 +201,13 @@ public:
     compute_residual(*cp,*up,*zp);
   }
 
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > up =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
+    //up->assign(up->size(),z.norm()/(Real)up->size());
     up->assign(up->size(),z.norm()/up->size());
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
-    // Compute residual and residual norm
-    std::vector<Real> r(up->size(),0.0);
-    compute_residual(r,*up,*zp);
-    Real rnorm = compute_norm(r);
-    // Define tolerances
-    Real rtol  = 1.e2*ROL::ROL_EPSILON;
-    Real maxit = 500;
-    // Initialize Jacobian storage
-    std::vector<Real> d(nx_,0.0);
-    std::vector<Real> dl(nx_-1,0.0);
-    std::vector<Real> du(nx_-1,0.0);
-    // Iterate Newton's method
-    Real alpha = 1.0, tmp = 0.0;
-    std::vector<Real> s(nx_,0.0);
-    std::vector<Real> utmp(nx_,0.0);
-    for (int i=0; i<maxit; i++) {
-      //std::cout << i << "  " << rnorm << "\n";
-      // Get Jacobian
-      compute_pde_jacobian(dl,d,du,*up);
-      // Solve Newton system
-      linear_solve(s,dl,d,du,r);
-      // Perform line search
-      tmp = rnorm;
-      alpha = 1.0;
-      utmp.assign(up->begin(),up->end());
-      update(utmp,s,-alpha);
-      compute_residual(r,utmp,*zp);
-      rnorm = compute_norm(r); 
-      while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON) ) {
-        alpha /= 2.0;
-        utmp.assign(up->begin(),up->end());
-        update(utmp,s,-alpha);
-        compute_residual(r,utmp,*zp);
-        rnorm = compute_norm(r); 
-      }
-      // Update iterate
-      up->assign(utmp.begin(),utmp.end());
-      if ( rnorm < rtol ) {
-        break;
-      }
-    }
+    //up->assign(up->size(),1.0);
+    ROL::ParametrizedEqualityConstraint_SimOpt<Real>::solve(c,u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 

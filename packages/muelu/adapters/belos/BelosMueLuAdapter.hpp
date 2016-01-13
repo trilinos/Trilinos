@@ -167,6 +167,7 @@ namespace Belos {
 #endif
   };
 
+#ifdef HAVE_MUELU_EPETRA
   template <>
   class MueLuOp<double, int, int, Xpetra::EpetraNode> :
     public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
@@ -282,6 +283,7 @@ namespace Belos {
     RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AMGX_;
 #endif
   };
+#endif
 
 } // namespace Belos
 

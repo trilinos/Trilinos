@@ -97,6 +97,12 @@ int main(int argc, char *argv[]) {
     fem->test_inverse_mass(*outStream);
     fem->test_inverse_H1(*outStream);
     /*************************************************************************/
+    /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
+    /*************************************************************************/
+    bool hess = true;
+    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
+      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
+    /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
     // INITIALIZE CONTROL VECTORS
@@ -115,21 +121,18 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > cp
       = Teuchos::rcp(new PrimalConstraintVector(c_rcp,fem));
     /*************************************************************************/
-    /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
-    /*************************************************************************/
-    bool hess = true;
-    Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(*cp,fem,hess));
-    /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
     RealT tol = std::sqrt(ROL::ROL_EPSILON);
-    con->solve(*up,*zp,tol);
+    con->solve(*cp,*up,*zp,tol);
+    RealT rnorm = cp->norm();
     con->value(*cp,*up,*zp,tol);
     RealT cnorm = cp->norm();
-    errorFlag += ((cnorm > tol) ? 1 : 0);
+    errorFlag += ((cnorm > tol) ? 1 : 0) + ((rnorm > tol) ? 1 : 0);
     *outStream << std::scientific << std::setprecision(8);
-    *outStream << "\nTest SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm;
+    *outStream << "\nTest SimOpt solve at feasible (u,z):\n";
+    *outStream << "  Solver Residual = " << rnorm << "\n";
+    *outStream << "       ||c(u,z)|| = " << cnorm;
     *outStream << "\n\n";
   }
   catch (std::logic_error err) {
