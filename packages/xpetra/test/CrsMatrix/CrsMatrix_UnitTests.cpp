@@ -143,6 +143,111 @@ namespace {
     TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ReplaceGlobalAndLocalValues, M, Scalar, LO, GO, Node )
+  {
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    LO NumMyElements = map->getNodeNumElements();
+    GO NumGlobalElements = map->getGlobalNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+    for (size_t i = 0; i < NumMyElements; i++) {
+       if (MyGlobalElements[i] == 0) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (2.0, -1.0));
+       }
+       else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0));
+       }
+       else {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
+       }
+    }
+
+    {
+      Teuchos::ArrayView<const GO> indices;
+      Teuchos::ArrayView<const Scalar> values;
+
+      A->getGlobalRowView(0, indices, values);
+
+      const size_t nnz = indices.size();
+      TEUCHOS_TEST_FOR_EXCEPTION(nnz!=2, std::runtime_error, "Wrong number of nonzeros in row with row gid 0.");
+      Teuchos::Array<Scalar> newValues(nnz, 0.0);
+
+      for (size_t j = 0; j < nnz; j++) {
+        newValues[j] = 42;
+      }
+
+      A->replaceGlobalValues(0, indices, newValues);
+    }
+
+    A->fillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
+
+    // edit matrix
+
+    const LO nodeNumRows = A->getNodeNumRows();
+    A->resumeFill();
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+    for (LO i = 0; i < nodeNumRows; i++) {
+      Teuchos::ArrayView<const LO> indices;
+      Teuchos::ArrayView<const Scalar> values;
+
+      A->getLocalRowView(i, indices, values);
+
+      const size_t nnz = indices.size();
+      TEUCHOS_TEST_FOR_EXCEPTION(nnz!=2 && nnz!=3, std::runtime_error, "Wrong number of nonzeros in row with row gid 0.");
+      Teuchos::Array<Scalar> newValues(nnz, 0.0);
+
+      for (size_t j = 0; j < nnz; j++) {
+        if (indices[j] == i) /* diagonal term */
+          newValues[j] = values[j] * 2;
+        else
+          newValues[j] = -2;
+      }
+
+      A->replaceLocalValues(i, indices, newValues);
+    }
+
+    A->fillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+
+    vec->putScalar(1.0);
+
+    RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec_sol =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(A->getRangeMap());
+
+    vec_sol->putScalar(25.0);
+
+    A->apply(*vec, *vec_sol, Teuchos::NO_TRANS, 1.0, 0.0);
+
+    TEUCHOS_TEST_COMPARE(vec_sol->norm2(), <, 1e-16, out, success);
+   }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Epetra_ReplaceLocalValues, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_EPETRA
@@ -944,6 +1049,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, ConstructMatrixKokkos, M, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    std::cout << "Run ConstructMatrixKokkos test" << std::endl;
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrixClass;
@@ -1121,7 +1227,6 @@ namespace {
         }
       }
     }
-
 #endif
   }
 
@@ -1146,6 +1251,7 @@ namespace {
 // for common tests (Epetra and Tpetra...)
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Apply , M##LO##GO##Node , SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, ReplaceGlobalAndLocalValues, M##LO##GO##Node , SC, LO, GO, Node )
 // for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_TPETRAONLY( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \
