@@ -1035,6 +1035,7 @@ deep_copy(const MDFieldType& source)
 
 template<typename DataT>
 template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
+KOKKOS_INLINE_FUNCTION
 void
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind1) const

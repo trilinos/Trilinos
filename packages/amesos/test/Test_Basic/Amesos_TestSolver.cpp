@@ -85,7 +85,7 @@
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
 #endif
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
 #include "Amesos_Mumps.h"
 #endif
 
@@ -344,7 +344,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( A_paraklete.Solve(  ) ); 
 
 #endif
-#ifdef HAVE_AMESOS_MUMPS
+#if defined(HAVE_AMESOS_MUMPS) && defined(HAVE_MPI)
     } else if ( SparseSolver == MUMPS ) {
 
       Teuchos::ParameterList ParamList ;
