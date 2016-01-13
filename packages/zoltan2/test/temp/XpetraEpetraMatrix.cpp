@@ -47,17 +47,17 @@ int main(int narg, char **arg)
   typedef Xpetra::EpetraCrsMatrixT<int, Tpetra::Map<>::node_type> xemat_t;
   Teuchos::RCP<const xemat_t> xmat;
 
-  bool aok = true;
+  bool aok_mat = true;
   try {
     xmat = rcp(new xemat_t(ematrcp));
   }
   catch (std::exception &e) {
     std::cout << "Xpetra::EpetraCrsMatrixT threw an error " 
               << e.what() << std::endl;
-    aok = false;
+    aok_mat = false;
   }
   
-  if (aok)
+  if (aok_mat)
     std::cout << "Building Xpetra::EpetraCrsMatrixT from Epetra_CrsMatrix: "
               << "DONE with no errors caught " << std::endl;
 
@@ -71,17 +71,17 @@ int main(int narg, char **arg)
   typedef Xpetra::EpetraMapT<int, Tpetra::Map<>::node_type> xemap_t;
   Teuchos::RCP<const xemap_t> xmap;
 
-  aok = true;
+  bool aok_map = true;
   try {
     xmap = rcp(new xemap_t(emaprcp));
   }
   catch (std::exception &e) {
     std::cout << "Xpetra::EpetraMapT threw an error " 
               << e.what() << std::endl;
-    aok = false;
+    aok_map = false;
   }
 
-  if (aok)
+  if (aok_map)
     std::cout << "Building Xpetra::EpetraMapT from Epetra_Map: "
               << "DONE with no errors caught " << std::endl;
   
@@ -97,12 +97,14 @@ int main(int narg, char **arg)
   std::cout << "Epetra_Map:                 Hello from " 
             << emaprcp->Comm().MyPID() << " of " 
             << emaprcp->Comm().NumProc() << std::endl;
-  std::cout << "Xpetra::EpetraCrsMatrixT:   Hello from " 
-            << xmat->getRowMap()->getComm()->getRank() << " of " 
-            << xmat->getRowMap()->getComm()->getSize() << std::endl;
-  std::cout << "Xpetra::EpetraMapT:         Hello from " 
-            << xmap->getComm()->getRank() << " of " 
-            << xmap->getComm()->getSize() << std::endl;
+  if (aok_mat)
+    std::cout << "Xpetra::EpetraCrsMatrixT:   Hello from " 
+              << xmat->getRowMap()->getComm()->getRank() << " of " 
+              << xmat->getRowMap()->getComm()->getSize() << std::endl;
+  if (aok_map)
+    std::cout << "Xpetra::EpetraMapT:         Hello from " 
+              << xmap->getComm()->getRank() << " of " 
+              << xmap->getComm()->getSize() << std::endl;
 
   return 0;
 }
