@@ -1199,6 +1199,19 @@ struct Return_Type < PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type>::return_type const_return_type;
  };
 
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+struct  CheckType<const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> > {
+static const bool value = true;
+};
+
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+struct CheckType<PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> > {
+static const bool value = true;
+};
 
 // ***********************
 // Runtime
@@ -1224,6 +1237,19 @@ struct Return_Type < PHX::MDField<DataT>, ScalarT> {
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type return_type;
  typedef typename PHX::MDFieldTypeTraits<typename PHX::MDField<DataT>::array_type>::return_type const_return_type;
  };
+
+template<typename DataT>
+struct CheckType<PHX::MDField<DataT> >{
+static const bool value = true;
+};
+
+template<typename DataT>
+struct CheckType<const PHX::MDField<DataT> >{
+static const bool value = true;
+};
+
+
+
 }
 
 #endif // Phalanx_ENABLE_IntrepidIntrepid2

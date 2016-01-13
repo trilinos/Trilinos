@@ -92,6 +92,17 @@ struct Return_Type<const FieldContainer_Kokkos<FadType, Layout, Device>, Scalar>
       typedef FadType  const_return_type;
 };
 
+template<class ScalarT, class  Layout,  class Device>
+struct CheckType<FieldContainer_Kokkos<ScalarT, Layout, Device> >{
+static const bool value = true;
+};
+
+template<class ScalarT, class  Layout,  class Device>
+struct CheckType<const FieldContainer_Kokkos<ScalarT, Layout, Device> >{
+static const bool value = true;
+};
+
+
 }
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp"
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp"
