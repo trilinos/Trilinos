@@ -75,10 +75,10 @@ public:
     }
   }
 
-  RiskBoundConstraint(Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null,
-                const bool augmented = false,
-                const Real lower = ROL_NINF,
-                const Real upper = ROL_INF)
+  RiskBoundConstraint(const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null,
+                      const bool augmented = false,
+                      const Real lower = ROL_NINF,
+                      const Real upper = ROL_INF)
     : bc_(bc), augmented_(augmented) {
     lower_ = std::min(lower,upper);
     upper_ = std::max(lower,upper);
@@ -88,7 +88,7 @@ public:
   }
 
   RiskBoundConstraint(const std::string name,
-                      Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
+                      const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
     : bc_(bc), augmented_(true), lower_(ROL_NINF), upper_(ROL_INF) {
     if ( name == "BPOE" ) { lower_ = 0.; }
   }
