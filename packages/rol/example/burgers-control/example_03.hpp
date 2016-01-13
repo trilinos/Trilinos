@@ -479,7 +479,7 @@ public:
     }
   }
 
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     Teuchos::RCP<std::vector<Real> > up =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<ROL::StdVector<Real> >(u)).getVector());
     up->assign(up->size(),z.norm()/up->size());
@@ -510,6 +510,7 @@ public:
       uold.assign(unew.begin(),unew.end());
       zold.assign(znew.begin(),znew.end());
     }
+    value(c,u,z,tol);
   }
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 

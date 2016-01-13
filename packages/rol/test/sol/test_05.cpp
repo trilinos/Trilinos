@@ -102,6 +102,12 @@ int main(int argc, char *argv[]) {
     fem->test_inverse_mass(*outStream);
     fem->test_inverse_H1(*outStream);
     /*************************************************************************/
+    /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
+    /*************************************************************************/
+    bool hess = true;
+    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
+      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(fem,hess));
+    /*************************************************************************/
     /************* INITIALIZE VECTOR STORAGE *********************************/
     /*************************************************************************/
     // INITIALIZE CONTROL VECTORS
@@ -119,12 +125,6 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     Teuchos::RCP<ROL::Vector<RealT> > cp
       = Teuchos::rcp(new PrimalConstraintVector(c_rcp,fem));
-    /*************************************************************************/
-    /************* INITIALIZE SIMOPT EQUALITY CONSTRAINT *********************/
-    /*************************************************************************/
-    bool hess = true;
-    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > pcon
-      = Teuchos::rcp(new EqualityConstraint_BurgersControl<RealT>(*cp,fem,hess));
     /*************************************************************************/
     /************* INITIALIZE SAMPLE GENERATOR *******************************/
     /*************************************************************************/
@@ -146,13 +146,16 @@ int main(int argc, char *argv[]) {
 //                        << sampler->getMyPoint(i)[2] << ", "
 //                        << sampler->getMyPoint(i)[3] << ")\n";
       pcon->setParameter(sampler->getMyPoint(i));
-      pcon->solve(*up,*zp,tol);
+      pcon->solve(*cp,*up,*zp,tol);
+      RealT rnorm = cp->norm();
       pcon->value(*cp,*up,*zp,tol);
       RealT cnorm = cp->norm();
-      errorFlag += ((cnorm > tol) ? 1 : 0);
+      errorFlag += ((cnorm > tol) ? 1 : 0) + ((rnorm > tol) ? 1 : 0);
       *outStream << "Sample " << i << "  Rank " << sampler->batchID() << "\n";
       *outStream << std::scientific << std::setprecision(8);
-      *outStream << "Test SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm;
+      *outStream << "Test SimOpt solve at feasible (u,z):\n";
+      *outStream << "  Solver Residual = " << rnorm << "\n";
+      *outStream << "       ||c(u,z)|| = " << cnorm;
       *outStream << "\n\n";
     }
   }
