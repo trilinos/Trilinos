@@ -44,8 +44,9 @@
 //
 // @HEADER
 #include <cstdio>
-#include <unistd.h>
+#include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -182,6 +183,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
   std::string xmlFileName       = "scaling.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
   std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone)");
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
@@ -559,8 +561,25 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         const bool writeZeroTimers  = false;
         const bool ignoreZeroTimers = true;
         const std::string filter    = "";
-        TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+        TimeMonitor::summarize(comm.ptr(), out, alwaysWriteLocal, writeGlobalStats,
                                writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+
+        RCP<ParameterList> reportParams = rcp(new ParameterList);
+        if (timingsFormat == "yaml") {
+          reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
+          reportParams->set("YAML style",                "compact");         // "spacious" or "compact"
+        }
+        reportParams->set("How to merge timer sets",   "Union");
+        reportParams->set("alwaysWriteLocal",          false);
+        reportParams->set("writeGlobalStats",          true);
+        reportParams->set("writeZeroTimers",           false);
+        // FIXME: no "ignoreZeroTimers"
+
+        std::ios_base::fmtflags ff(out.flags());
+        if (timingsFormat == "table-fixed") out << std::fixed;
+        else                                out << std::scientific;
+        TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+        out << std::setiosflags(ff);
       }
 
       TimeMonitor::clearCounters();
