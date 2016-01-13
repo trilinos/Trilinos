@@ -734,7 +734,7 @@ struct CopyVector{
 };
 template <typename from_vector, typename to_vector, typename MyExecSpace>
 void copy_vector(
-                typename from_vector::size_type num_elements,
+                size_t num_elements,
                 from_vector from, to_vector to){
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
