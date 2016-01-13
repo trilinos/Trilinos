@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
   int result = 0;
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
-  mybasker.Options.no_pivot  = false;
+  mybasker.Options.no_pivot  = true;
   mybasker.Options.symmetric = false;
   mybasker.Options.realloc   = true;
   mybasker.Options.btf       = true;
