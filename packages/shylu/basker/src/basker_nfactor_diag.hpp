@@ -96,7 +96,7 @@ namespace BaskerNS
   };//end kokkos_nfactor_diag
 
 
-    template <class Int, class Entry, class Exe_Space>
+  template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_diag_remalloc
   {
     //Comeback and cleanup kokkos
@@ -134,6 +134,7 @@ namespace BaskerNS
 
 
       Int chunk_start = thread_start(kid);
+      printf("test: %d %d \n", kid, thread_start(kid));
       if(chunk_start != BASKER_MAX_IDX)
 	{
 	  Int chunk_size  = basker->btf_schedule(kid+1) - 
@@ -302,7 +303,14 @@ namespace BaskerNS
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
       {
+
+	//if(k > 7)
+	  {
+	    //return 0;
+	  }
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 3)
+	  {
 	printf("\n------------K=%d-------------\n", k);
 	BASKER_ASSERT(top == ws_size, "nfactor dig, top");
 	for( i = 0; i < ws_size; ++i)
@@ -317,6 +325,7 @@ namespace BaskerNS
               }
 	    BASKER_ASSERT(X[i] == 0, "X!=0");
 	    BASKER_ASSERT(ws[i] == 0, "ws!=0");
+	  }
 	  }
 	#endif
 
@@ -347,9 +356,13 @@ namespace BaskerNS
 	    //X[j-brow] = M.val[i];
 	    X(j) = M.val(i);
 	    
-	   
-	    //printf("In put j: %d %d \n", 
-            //	   M.row_idx(i), j);
+            #ifdef BASKER_DEBUG_NFACTOR_DIAG
+	    if(k  < 3)
+	      {
+		printf("In put j: %d %d %g \n", 
+		       M.row_idx(i), j, M.val(i));
+	      }
+	    #endif
 	    
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
 	    printf("i: %d row: %d  val: %g  top: %d \n", 
@@ -384,15 +397,18 @@ namespace BaskerNS
 	for(i = top; i < ws_size; i++)
 	  {
 	    j = pattern[i];
-	    //t = gperm[j];
-	    //t = gperm(j+brow);
 	    t = gperm(j+L.srow);
 
 	    //value = X[j-brow];
 	    value = X(j);
 
-	    //printf("consider, %d %d %g \n", 
-	    //	   j, t, value);
+	    #ifdef BASKER_DEBUG_NFACTOR_DIAG
+	    if(k < 3)
+	      {
+		printf("consider, %d %d %d %g \n", 
+		       j, j+L.scol, t, value);
+	      }
+	    #endif
 	    
 	    absv = abs(value);
 	    //if(t == L.max_idx)
@@ -409,19 +425,29 @@ namespace BaskerNS
 	  }//for (i = top; i < ws_size)
           //printf("b: %d lcnt: %d after \n", b, lcnt);
 	
-	//printf("pivot: %g maxindex: %d \n",
-	//     pivot, maxindex);
+	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 3)
+	  {
+	    printf("pivot: %g maxindex: %d \n",
+		   pivot, maxindex);
+	  }
+	#endif
 	
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
 	      maxindex = (Int) k-L.scol;
+	      //maxindex = (Int) k - M.srow;
 	      pivot    = X(maxindex);
 	    }
 	
-	  //printf("pivot: %g maxindex: %d \n",
-	  //   pivot, maxindex);
-	
+	  #ifdef BASKER_DEBUG_NFACTOR_DEBUG
+	  if(k < 3)
+	    {
+	      printf("pivot: %g maxindex: %d \n",
+		     pivot, maxindex);
+	    }
+	  #endif
   
           ucnt = ws_size - top - lcnt +1;
          
@@ -430,7 +456,10 @@ namespace BaskerNS
 	      cout << endl << endl;
 	      cout << "---------------------------"
 		   << endl;
-              cout << "Error: Matrix is singular, blk"
+              cout << "Error: Matrix is singular, blk: "
+		   << c 
+		   << " Column: "
+		   << k
 		   << endl;
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
@@ -445,12 +474,12 @@ namespace BaskerNS
           //printf("----------------PIVOT------------blk: %d %d \n", 
           //      c, btf_tabs(c+1)-btf_tabs(c));
 	  //gperm(maxindex+brow2) = k;
-	  gperm(maxindex+L.scol) = k;
+	  gperm(maxindex+L.scol) = k ;
 	  //gpermi(k)              = maxindex+brow2;
 	  gpermi(k)              = maxindex + L.srow;
 
 	  //printf("gperm(%d) %d gpermi(%d) %d \n",
-	  //	 maxindex+L.scol, k ,
+	  //	 maxindex+L.scol, k  ,
 	  //	 k, maxindex+L.srow);
 
 
@@ -469,7 +498,7 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("----------------------\n");
 
-              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
+              newsize = lnnz * 1.1 + 2 *L.nrow + 1;
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
@@ -499,10 +528,13 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*M.nrow+1;
-              printf("Diag blk: %d Reallocing U oldsize: %d newsize: %d \n",
-                     c, uunnz, newsize);
-	   
+              newsize = uunnz*1.1 + 2*L.nrow+1;
+              printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
+                     c, uunnz, unnz+ucnt, newsize);
+	      printf("blk: %d column: %d \n",
+		     c, k);
+
+
 	      if(Options.realloc == BASKER_FALSE)
 		{
 		  thread_array(kid).error_type = 
@@ -831,6 +863,10 @@ namespace BaskerNS
     Int top1 = top;
     Int j,t,pp, p, p2;
     Entry xj = 0;
+
+    //printf("back solve called. nnz: %d \n",
+    //	   xnnz);
+
     for(pp = 0; pp < xnnz; ++pp)
       {
 	j = pattern[top1];
@@ -844,6 +880,9 @@ namespace BaskerNS
         //t = gperm[j];
 	t = gperm(j+brow);
 	
+	//printf("back solve: %d %d %d \n",
+	//     j, j+brow, t);
+
 	if(t!=BASKER_MAX_IDX)
           {
 

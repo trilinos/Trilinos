@@ -347,7 +347,7 @@ namespace BaskerNS
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	//printMTX("C_TEST.mtx", BTF_C);
+	printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
 
 

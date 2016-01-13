@@ -163,7 +163,7 @@ namespace BaskerNS
     #endif
 
 
-    #ifdef BASKER_DEBUG_ORDER_BTF
+    //#ifdef BASKER_DEBUG_ORDER_BTF
     /*
     printf("\nBTF perm: \n");
     for(Int i=0; i <M.nrow; i++)
@@ -179,7 +179,7 @@ namespace BaskerNS
 	printf("%d, ", btf_tabs(i));
       }
     printf("\n");
-    #endif
+    // #endif
 
     permute_col(M, order_btf_array);
     permute_row(M, order_btf_array);
