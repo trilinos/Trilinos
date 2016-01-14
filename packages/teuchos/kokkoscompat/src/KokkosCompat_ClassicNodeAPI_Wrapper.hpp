@@ -1,13 +1,10 @@
 #ifndef KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
-#include <TeuchosKokkosCompat_config.h>
-
-#include <KokkosCompat_View.hpp>
-#include <Kokkos_Core.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include "TeuchosKokkosCompat_config.h"
+#include "KokkosCompat_View.hpp"
+#include "Kokkos_Core.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #ifdef KOKKOS_HAVE_CUDA
   #ifndef KERNEL_PREFIX
@@ -19,7 +16,6 @@
 
 namespace Kokkos {
 namespace Compat {
-
 namespace Details {
 
 /// \brief Get the value of the "Verbose" parameter as a \c bool.
