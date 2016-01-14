@@ -111,7 +111,7 @@ namespace Tpetra {
     class LocalMap {
     public:
       LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
-                const Kokkos::View<const GlobalOrdinal*, DeviceType>& lgMap,
+                const Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType>& lgMap,
                 const GlobalOrdinal indexBase,
                 const GlobalOrdinal myMinGid,
                 const GlobalOrdinal myMaxGid,
@@ -212,7 +212,21 @@ namespace Tpetra {
 
     private:
       Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
-      Kokkos::View<const GlobalOrdinal*, DeviceType> lgMap_;
+      /// \brief Mapping from local indices to global indices.
+      ///
+      /// If this is empty, then it could be either that the Map is
+      /// contiguous (meaning that we don't need to store all the
+      /// global indices explicitly), or that the Map really does
+      /// contain zero indices on the calling process.
+      ///
+      /// This has LayoutLeft so that we can call Kokkos::deep_copy to
+      /// copy this between any two Kokkos Devices.  Otherwise, the
+      /// Devices might have different default layouts, thus
+      /// forbidding a deep_copy.  We use LayoutLeft instead of
+      /// LayoutRight because LayoutRight is the default on non-CUDA
+      /// Devices, and we want to make sure we catch assignment or
+      /// copying from the default to the nondefault layout.
+      Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType> lgMap_;
       GlobalOrdinal indexBase_;
       GlobalOrdinal myMinGid_;
       GlobalOrdinal myMaxGid_;
@@ -1132,9 +1146,24 @@ namespace Tpetra {
     /// is declared "mutable".  Note that other methods, such as
     /// describe(), may invoke getNodeElementList().
     ///
+    /// To clarify: If this is empty, then it could be either that the
+    /// Map is contiguous (meaning that we don't need to store all the
+    /// global indices explicitly), or that the Map really does
+    /// contain zero indices on the calling process.
+    ///
     /// NOTE: With CUDA, we assume UVM, in that host code can access
     /// the entries of this View.
-    mutable Kokkos::View<GlobalOrdinal*, device_type> lgMap_;
+    ///
+    /// This has LayoutLeft so that we can call Kokkos::deep_copy to
+    /// copy this between any two Kokkos Devices.  Otherwise, the
+    /// Devices might have different default layouts, thus forbidding
+    /// a deep_copy.  We use LayoutLeft instead of LayoutRight because
+    /// LayoutRight is the default on non-CUDA Devices, and we want to
+    /// make sure we catch assignment or copying from the default to
+    /// the nondefault layout.
+    mutable Kokkos::View<const GlobalOrdinal*,
+                         Kokkos::LayoutLeft,
+                         device_type> lgMap_;
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
@@ -1398,7 +1427,7 @@ namespace Tpetra {
         // spaces.  However, if you're calling clone(), it is likely
         // the case that the memory spaces differ, so it doesn't hurt
         // to make a deep copy here.
-        Kokkos::View<GO*, out_device_type>
+        Kokkos::View<GO*, Kokkos::LayoutLeft, out_device_type>
           lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
         Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
         mapOut.lgMap_ = lgMapOut; // cast to const

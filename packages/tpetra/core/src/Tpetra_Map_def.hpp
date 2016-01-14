@@ -502,7 +502,7 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      Kokkos::View<GO*, device_type> lgMap ("lgMap", numLocalElements_);
+      Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
       auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       firstContiguousGID_ = entryList[0];
@@ -964,7 +964,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
     typedef GlobalOrdinal GO; // convenient abbreviation
-    typedef Kokkos::View<GO*, device_type> lg_view_type;
+    typedef Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lg_view_type;
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
