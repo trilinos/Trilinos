@@ -461,8 +461,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Objective value at FFT freq     val = " << cal_obj.value(omega_rol_vec, tol); 
     *outStream << std::endl << "Objective value at opt freq    val* = " << objval_min << std::endl; 
 
-    if ( abs(solution_min - omega)/omega > 1e-2 ) {
-      *outStream << std::endl << "WARNING: Relative error = " << abs(solution_min - omega)/omega << std::endl; 
+    if ( std::abs(solution_min - omega)/omega > 1e-2 ) {
+      *outStream << std::endl << "WARNING: Relative error = " << std::abs(solution_min - omega)/omega << std::endl; 
       errorFlag += 1;
     }
 

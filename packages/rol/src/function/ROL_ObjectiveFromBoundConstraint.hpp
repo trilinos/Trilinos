@@ -58,10 +58,40 @@ private:
   Teuchos::RCP<V> x_minus_lo_;
   Teuchos::RCP<V> up_minus_x_; 
 
-  Elementwise::Logarithm<Real>    log_;
+  class LogarithmLower : public Elementwise::BinaryFunction<Real> {
+  public: 
+  
+    Real apply( const Real &x, const Real &y ) const {
+      return y>ROL_NINF ? std::log(x-y) : 0.0;   
+    }
+  };
+
+  class LogarithmUpper : public Elementwise::BinaryFunction<Real> {
+  public:
+   
+    Real apply( const Real &x, const Real &y ) const {
+      return y<ROL_INF ? std::log(y-x) : 0.0;
+    }
+  };
+
+  class ReciprocalLower : public Elementwise::BinaryFunction<Real> {
+  public:
+    
+    Real apply( const Real &x, const Real &y ) const {
+      return y>ROL_NINF ? 1.0/(x-y) : 0.0;
+    }
+  };
+
+  class ReciprocalUpper : public Elementwise::BinaryFunction<Real> {
+  public:
+   
+    Real apply( const Real &x, const Real &y ) const {
+      return y<ROL_INF ? 1./(y-x) : 0.0;
+    }
+  };
+
+
   Elementwise::Multiply<Real>     mult_;
-  Elementwise::Reciprocal<Real>   recip_;
-  Elementwise::Power<Real>        recip2_;  // Reciprocal squared
   Elementwise::ReductionSum<Real> sum_;
 
 
@@ -70,9 +100,8 @@ public:
 
   ObjectiveFromBoundConstraint( const BoundConstraint<Real> &bc ) :
     lo_( bc.getLowerVectorRCP() ),
-    up_( bc.getUpperVectorRCP() ),
-    recip2_(-2.0)  {
-  
+    up_( bc.getUpperVectorRCP() ) {
+
     x_minus_lo_ = lo_->clone();
     up_minus_x_ = up_->clone();
 
@@ -81,13 +110,13 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) {
 
     x_minus_lo_->set(x);
-    x_minus_lo_->axpy(-1.0,*lo_);
-  
-    up_minus_x_->set(*up_);
-    up_minus_x_->axpy(-1.0,x);  
- 
-    x_minus_lo_->applyUnary(log_);
-    up_minus_x_->applyUnary(log_);
+    up_minus_x_->set(x);
+
+    LogarithmLower logl;
+    LogarithmUpper logu; 
+
+    x_minus_lo_->applyBinary(logl,*lo_);
+    up_minus_x_->applyBinary(logu,*up_);
 
     Real result = -(x_minus_lo_->reduce(sum_)); 
          result -= (up_minus_x_->reduce(sum_));
@@ -99,13 +128,13 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
     x_minus_lo_->set(x);
-    x_minus_lo_->axpy(-1.0,*lo_);
-  
-    up_minus_x_->set(*up_);
-    up_minus_x_->axpy(-1.0,x);  
- 
-    x_minus_lo_->applyUnary(recip_);
-    up_minus_x_->applyUnary(recip_);
+    up_minus_x_->set(x);
+
+    ReciprocalLower recipl;
+    ReciprocalUpper recipu;  
+
+    x_minus_lo_->applyBinary(recipl, *lo_);
+    up_minus_x_->applyBinary(recipu, *up_);
      
     g.set(*up_minus_x_);
     g.axpy(-1.0,*x_minus_lo_);
@@ -115,19 +144,21 @@ public:
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
     x_minus_lo_->set(x);
-    x_minus_lo_->axpy(-1.0,*lo_);
-  
-    up_minus_x_->set(*up_);
-    up_minus_x_->axpy(-1.0,x);  
+    up_minus_x_->set(x);
  
-    x_minus_lo_->applyUnary(recip2_);
-    up_minus_x_->applyUnary(recip2_);
+    ReciprocalLower recipl;
+    ReciprocalUpper recipu;  
 
-    x_minus_lo_->applyBinary(mult_,v);
-    up_minus_x_->applyBinary(mult_,v);
+    x_minus_lo_->applyBinary(recipl, *lo_);
+    up_minus_x_->applyBinary(recipu, *up_);
+
+    x_minus_lo_->applyBinary(mult_,*x_minus_lo_);
+    up_minus_x_->applyBinary(mult_,*up_minus_x_);
+    
 
     hv.set(*x_minus_lo_);
     hv.plus(*up_minus_x_); 
+    hv.applyBinary(mult_,v);
      
   }
    

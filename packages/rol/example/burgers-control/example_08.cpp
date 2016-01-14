@@ -242,9 +242,8 @@ int main(int argc, char *argv[]) {
         comm->barrier();
       }
     }
-    Teuchos::RCP<ROL::Vector<RealT> > D = optProb.createVector(SOLlist,yzp);
-    optProb.checkObjectiveGradient(*D,print0,*outStream0);
-    optProb.checkObjectiveHessVec(*D,print0,*outStream0);
+    optProb.checkObjectiveGradient(*yzp,print0,*outStream0);
+    optProb.checkObjectiveHessVec(*yzp,print0,*outStream0);
     /*************************************************************************/
     /************* RUN OPTIMIZATION ******************************************/
     /*************************************************************************/
@@ -271,7 +270,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic(SOLlist) << "\n\n";
+    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic() << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

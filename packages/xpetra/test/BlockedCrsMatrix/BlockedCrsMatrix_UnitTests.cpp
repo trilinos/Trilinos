@@ -51,6 +51,7 @@
  */
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -63,9 +64,6 @@
 #  include "Epetra_SerialComm.h"
 
 #include <Xpetra_ConfigDefs.hpp>
-
-// Epetra
-//#include "Epetra_CrsMatrix.h"
 
 #ifdef HAVE_XPETRA_EPETRAEXT
 // EpetraExt
@@ -127,19 +125,13 @@ TEUCHOS_STATIC_SETUP()
 
 
 /// simple test routine for the apply function of BlockedCrsMatrix
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraApply, M, MA, Scalar, LO, GO, Node )
 {
-#ifdef HAVE_XPETRA_EPETRAEXT
-
-#ifdef HAVE_MPI
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
 
   Teuchos::RCP<Epetra_Comm> Comm;
   if(testMpi)
-#ifdef HAVE_MPI
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  Comm = Teuchos::rcp(new Epetra_SerialComm);
-#endif
   else
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 
@@ -234,24 +226,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
   //cout << "norm of difference " << result2->norm2() << endl;
 
   TEUCHOS_TEST_COMPARE(result2->norm2(), <, 1e-16, out, success);
-#endif // MPI
-
 #endif // XPETRA_EPETRA
-
 }
 
 /// simple test for matrix-matrix multiplication for two 2x2 blocked matrices
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Scalar, LO, GO, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, M, MA, Scalar, LO, GO, Node )
 {
-#ifdef HAVE_XPETRA_EPETRAEXT
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
 
   Teuchos::RCP<Epetra_Comm> Comm;
   if(testMpi)
-#ifdef HAVE_MPI
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  Comm = Teuchos::rcp(new Epetra_SerialComm);
-#endif
   else
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 
@@ -307,11 +292,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Sca
   // build 1st block matrix
 
   // build Xpetra objects from Epetra_CrsMatrix objects
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xfuA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(fullA)); //TODO: should use ALL the template parameters
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
-  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xfuA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(fullA)); //TODO: should use ALL the template parameters
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA11 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A11));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA12 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A12));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA21 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A21));
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xA22 = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,Node>(A22));
 
   // build map extractor
   Teuchos::RCP<Xpetra::EpetraMapT<GO, Node> > xfullmap = Teuchos::rcp(new Xpetra::EpetraMapT<GO, Node> (fullmap));
@@ -359,7 +344,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Sca
   Teuchos::RCP<Xpetra::EpetraMapT<GO, Node> > xvelmap_2  = Teuchos::rcp(new Xpetra::EpetraMapT<GO, Node> (velmap ));
   Teuchos::RCP<Xpetra::EpetraMapT<GO, Node> > xpremap_2  = Teuchos::rcp(new Xpetra::EpetraMapT<GO, Node> (premap ));
 
-  std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO> > > xmaps_2;
+  std::vector<Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > > xmaps_2;
   xmaps_2.push_back(xvelmap_2);
   xmaps_2.push_back(xpremap_2);
 
@@ -516,31 +501,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, Sca
 //
 // INSTANTIATIONS
 //
+#ifdef HAVE_XPETRA_TPETRA
 
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraApply,            SC, LO, GO, Node )  \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
+  #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N;
+
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+
+  #define XPETRA_EPETRA_TYPES( S, LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::EpetraCrsMatrixT<GO,N> MA##S##LO##GO##N;
+
+#endif
+
+// List of tests which run only with Tpetra
+#define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N)
+
+// List of tests which run only with Epetra
+#define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, EpetraApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // TODO reactivate these tests after moving MM multiplication code to xpetra...
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
 //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
-// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
-// build Serial, then the code inside the #ifdef HAVE_XPETRA_SERIAL
-// ... #endif below causes linker errors.  My temporary fix is to
-// include TpetraCore_config.h to get HAVE_TPETRA_SERIAL, and test
-// that.
+// above tests only work with Epetra
+/*
+#if defined(HAVE_XPETRA_TPETRA)
 
-#ifdef HAVE_XPETRA_TPETRA
-#include "TpetraCore_config.h"
-//#ifdef HAVE_TPETRA_SERIAL
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
 
-// TODO fix me
-#ifdef HAVE_XPETRA_EPETRA
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
+
+#endif
+*/
+
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+#include "Xpetra_Map.hpp" // defines EpetraNode
 typedef Xpetra::EpetraNode EpetraNode;
-UNIT_TEST_GROUP_ORDINAL(double, int, int, EpetraNode)
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
+XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+#endif
+// EpetraExt routines are not working with 64 bit
+/*#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
+XP_EPETRA_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+#endif*/
+
 #endif
 
-//#endif
-#endif
 }

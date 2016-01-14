@@ -160,10 +160,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
     x1p->zero();
     ROL::StochasticProblem<double> optProb1(list1,pObj,sampler,x1p);
-    Teuchos::RCP<ROL::Vector<double> > dp = Teuchos::rcp(&d,false);
-    Teuchos::RCP<ROL::Vector<double> > D = optProb1.createVector(list1,dp);
-    optProb1.checkObjectiveGradient(*D,true,*outStream);
-    optProb1.checkObjectiveHessVec(*D,true,*outStream);
+    optProb1.checkObjectiveGradient(d,true,*outStream);
+    optProb1.checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     clock_t start = clock();
@@ -187,10 +185,9 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
     x2p->set(*x1p);
     ROL::StochasticProblem<double> optProb2(list2,pObj,sampler,x2p);
-    optProb2.setSolutionStatistic(list2,optProb1.getSolutionStatistic());
-    D = optProb2.createVector(list2,dp);
-    optProb2.checkObjectiveGradient(*D,true,*outStream);
-    optProb2.checkObjectiveHessVec(*D,true,*outStream);
+    optProb2.setSolutionStatistic(optProb1.getSolutionStatistic());
+    optProb2.checkObjectiveGradient(d,true,*outStream);
+    optProb2.checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     start = clock();
@@ -214,10 +211,9 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
     x3p->set(*x2p);
     ROL::StochasticProblem<double> optProb3(list3,pObj,sampler,x3p);
-    optProb3.setSolutionStatistic(list3,optProb2.getSolutionStatistic());
-    D = optProb3.createVector(list3,dp);
-    optProb3.checkObjectiveGradient(*D,true,*outStream);
-    optProb3.checkObjectiveHessVec(*D,true,*outStream);
+    optProb3.setSolutionStatistic(optProb2.getSolutionStatistic());
+    optProb3.checkObjectiveGradient(d,true,*outStream);
+    optProb3.checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*parlist,false));
     start = clock();
@@ -240,10 +236,9 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > zp = Teuchos::rcp(&z,false);
     zp->set(*x3p);
     ROL::StochasticProblem<double> optProb(list,pObj,sampler,zp);
-    optProb.setSolutionStatistic(list,optProb3.getSolutionStatistic());
-    D = optProb.createVector(list,dp);
-    optProb.checkObjectiveGradient(*D,true,*outStream);
-    optProb.checkObjectiveHessVec(*D,true,*outStream);
+    optProb.setSolutionStatistic(optProb3.getSolutionStatistic());
+    optProb.checkObjectiveGradient(d,true,*outStream);
+    optProb.checkObjectiveHessVec(d,true,*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
