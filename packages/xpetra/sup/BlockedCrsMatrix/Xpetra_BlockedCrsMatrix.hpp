@@ -886,7 +886,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator() {
       Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thOp =
-          Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(this);
+          Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(Teuchos::rcpFromRef(*this));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thOp));
 
       Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > thbOp =
