@@ -144,34 +144,10 @@ public:
 
   void sync () const { ExecutionSpace::fence (); }
 
-  //@{
-  //! \name Memory management
-
-  //! \brief Return a const view of a buffer for use on the host.
-  template <class T> inline
-  Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
-    return buff.persistingView(0,size);
-  }
-
-  /// \brief Return a non-const view of a buffer for use on the host.
-  ///
-  /// \param rw [in] 0 if read-only, 1 if read-write.  This is an
-  ///   <tt>int</tt> and not a KokkosClassic::ReadWriteOption, in
-  ///   order to avoid a circular dependency between KokkosCompat
-  ///   and TpetraClassic.
-  template <class T> inline
-  Teuchos::ArrayRCP<T>
-  viewBufferNonConst (const int rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
-    (void) rw; // Silence "unused parameter" compiler warning
-    return buff.persistingView(0,size);
-  }
-
   /// \brief Return the human-readable name of this Node.
   ///
   /// See \ref kokkos_node_api "Kokkos Node API"
   static std::string name();
-
-  //@}
 };
 
 #ifdef KOKKOS_HAVE_CUDA
