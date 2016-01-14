@@ -48,6 +48,8 @@
 #ifndef MUELU_TEKOSMOOTHER_DECL_HPP_
 #define MUELU_TEKOSMOOTHER_DECL_HPP_
 
+#ifdef HAVE_MUELU_TEKO
+
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Teuchos_ParameterList.hpp>
@@ -141,5 +143,7 @@ namespace MueLu {
 } // namespace MueLu
 
 #define MUELU_TEKOSMOOTHER_SHORT
+
+#endif // HAVE_MUELU_TEKO
 
 #endif /* MUELU_TEKOSMOOTHER_DECL_HPP_ */

@@ -47,7 +47,11 @@
 #ifndef MUELU_TEKOSMOOTHER_DEF_HPP_
 #define MUELU_TEKOSMOOTHER_DEF_HPP_
 
+#ifdef HAVE_MUELU_TEKO
+
 #include "Teuchos_ScalarTraits.hpp"
+
+#include "Teko_Utilities.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -102,6 +106,19 @@ namespace MueLu {
 
     // TODO fill me
 
+    std::cout << "TEKO smoother setup!!!" << std::endl;
+
+    Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > bThyOp = bA->getThyraOperator();
+    TEUCHOS_TEST_FOR_EXCEPTION(bThyOp.is_null(), Exceptions::BadCast,
+                               "MueLu::TekoSmoother::Build: Could not extract thyra operator from BlockedCrsMatrix.");
+
+    std::cout << bThyOp->productRange()->numBlocks() << "x" << bThyOp->productDomain()->numBlocks() << std::endl;
+
+    //Teuchos::RCP<Teko::LinearOp> thyOp = Teuchos::rcp_dynamic_cast<Teko::LinearOp>(bThyOp);
+    //TEUCHOS_TEST_FOR_EXCEPTION(thyOp.is_null(), Exceptions::BadCast,
+    //                           "MueLu::TekoSmoother::Build: Downcast of Thyra::BlockedLinearOpBase to Teko::LinearOp failed.");
+
+
     this->IsSetup(true);
   }
 
@@ -111,6 +128,8 @@ namespace MueLu {
                                "MueLu::TekoSmoother::Apply(): Setup() has not been called");
 
     // TODO call Apply of inverse operator?
+
+    std::cout << "TEKO smoother apply " << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -140,6 +159,6 @@ namespace MueLu {
 
 } // namespace MueLu
 
-
+#endif // HAVE_MUELU_TEKO
 
 #endif /* MUELU_TEKOSMOOTHER_DEF_HPP_ */
