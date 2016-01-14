@@ -425,18 +425,19 @@ namespace MueLu {
           } else {
             size_t npos = std::string::npos;
 
-            if      (strType.find("Xpetra::Matrix")          != npos) outputter.outputField("Matrix" );
-            else if (strType.find("Xpetra::Operator")        != npos) outputter.outputField("Operator");
-            else if (strType.find("Xpetra::MultiVector")     != npos) outputter.outputField("Vector");
-            else if (strType.find("Xpetra::Map")             != npos) outputter.outputField("Map");
-            else if (strType.find("Xpetra::Import")          != npos) outputter.outputField("Import");
-            else if (strType.find("Xpetra::Export")          != npos) outputter.outputField("Export");
-            else if (strType.find("MueLu::SmootherBase")     != npos) outputter.outputField("SmootherBase");
-            else if (strType.find("MueLu::Aggregates")       != npos) outputter.outputField("Aggregates");
-            else if (strType.find("MueLu::AmalgamationInfo") != npos) outputter.outputField("AmalgamationInfo");
-            else if (strType.find("MueLu::Graph")            != npos) outputter.outputField("Graph");
-            else if (strType.find("MueLu::Constraint")       != npos) outputter.outputField("Constraint");
-            else                                                      outputter.outputField(strType);
+            if      (strType.find("MueLu::Aggregates")          != npos) outputter.outputField("Aggregates");
+            else if (strType.find("MueLu::AmalgamationInfo")    != npos) outputter.outputField("AmalgamationInfo");
+            else if (strType.find("MueLu::Constraint")          != npos) outputter.outputField("Constraint");
+            else if (strType.find("MueLu::Graph")               != npos) outputter.outputField("Graph");
+            else if (strType.find("MueLu::SmootherBase")        != npos) outputter.outputField("SmootherBase");
+            else if (strType.find("MueLu::SmootherPrototype")   != npos) outputter.outputField("SmootherPrototype");
+            else if (strType.find("Xpetra::Export")             != npos) outputter.outputField("Export");
+            else if (strType.find("Xpetra::Import")             != npos) outputter.outputField("Import");
+            else if (strType.find("Xpetra::Map")                != npos) outputter.outputField("Map");
+            else if (strType.find("Xpetra::Matrix")             != npos) outputter.outputField("Matrix" );
+            else if (strType.find("Xpetra::MultiVector")        != npos) outputter.outputField("Vector");
+            else if (strType.find("Xpetra::Operator")           != npos) outputter.outputField("Operator");
+            else                                                         outputter.outputField(strType);
 
             outputter.outputField("available");
           }
