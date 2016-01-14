@@ -1,12 +1,13 @@
+/*
 //@HEADER
 // ************************************************************************
-// 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
-// 
+//
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,18 +35,17 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
+*/
+namespace Kokkos {
+namespace Impl {
 
-#ifndef KOKKOS_NODEAPI_VERSION_HPP_
-#define KOKKOS_NODEAPI_VERSION_HPP_
+int processors_per_node();
+int mpi_ranks_per_node();
+int mpi_local_rank_on_node();
 
-#include <string>
-
-namespace KokkosClassic {
-  std::string NodeAPIVersion();
 }
-
-#endif
+}

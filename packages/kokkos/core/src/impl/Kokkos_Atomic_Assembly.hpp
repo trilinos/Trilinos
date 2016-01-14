@@ -1,8 +1,9 @@
+/*
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,16 +35,78 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 // 
 // ************************************************************************
 //@HEADER
+*/
+#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_ATOMIC_ASSEMBLY_HPP )
+#define KOKKOS_ATOMIC_ASSEMBLY_HPP
+namespace Kokkos {
 
-#include "Kokkos_NodeAPIVersion.hpp"
-#include "Trilinos_version.h"
+namespace Impl {
+  struct cas128_t
+  {
+    uint64_t lower;
+    uint64_t upper;
 
-namespace KokkosClassic {
-  std::string NodeAPIVersion() { 
-		return("Kokkos Node API in Trilinos " TRILINOS_VERSION_STRING);
-	}
+    KOKKOS_INLINE_FUNCTION
+    cas128_t () {
+      lower = 0;
+      upper = 0;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    cas128_t (const cas128_t& a) {
+      lower = a.lower;
+      upper = a.upper;
+    }
+    KOKKOS_INLINE_FUNCTION
+    cas128_t (volatile cas128_t* a) {
+      lower = a->lower;
+      upper = a->upper;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    bool operator != (const cas128_t& a) const {
+      return (lower != a.lower) || upper!=a.upper;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator = (const cas128_t& a) {
+      lower = a.lower;
+      upper = a.upper;
+    }
+    KOKKOS_INLINE_FUNCTION
+    void operator = (const cas128_t& a) volatile {
+      lower = a.lower;
+      upper = a.upper;
+    }
+  }
+  __attribute__ (( __aligned__( 16 ) ));
+
+
+  #if defined( KOKKOS_ENABLE_ASM ) && defined ( KOKKOS_USE_ISA_X86_64 )
+  inline cas128_t cas128( volatile cas128_t * ptr, cas128_t cmp,  cas128_t swap )
+  {
+      bool swapped = false;
+      __asm__ __volatile__
+      (
+       "lock cmpxchg16b %1\n\t"
+       "setz %0"
+       : "=q" ( swapped )
+       , "+m" ( *ptr )
+       , "+d" ( cmp.upper )
+       , "+a" ( cmp.lower )
+       : "c" ( swap.upper )
+       , "b" ( swap.lower )
+       , "q" ( swapped )
+     );
+      return cmp;
+  }
+  #endif
+
 }
+}
+
+#endif

@@ -25,8 +25,6 @@ APPEND_SET(HEADERS
     Kokkos_MultiVector.hpp
     # kernels
     Kokkos_MultiVectorKernelOps.hpp
-    # traits and kernel wrappers
-    Kokkos_DefaultArithmetic.hpp
   )
 
 APPEND_SET(SOURCES

@@ -45,10 +45,9 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
+#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace KokkosClassic {
 
@@ -214,210 +213,6 @@ namespace KokkosClassic {
     }
 
     //@}
-    //! @name Element update / replace methods (VERY SLOW on GPU Nodes)
-    //@{
-
-    /// \brief <tt>X(i,j) = X(i,j) + newVal</tt>, where X is this multivector.
-    ///
-    /// \warning This method will be VERY SLOW if Node is a GPU node.
-    ///   That's because it has to copy the one entry from the GPU to
-    ///   the CPU, update it on the CPU, and then copy it back to the
-    ///   GPU.
-    ///
-    /// \param i [in] (Local) row index of the entry to update.
-    /// \param j [in] Column index of the entry to update.
-    /// \param newVal [in] The value to use when updating the (i,j)
-    ///   entry of this multivector.
-    void
-    sumIntoLocalValue (size_t i, size_t j, const Scalar& newVal) {
-      using Teuchos::ArrayRCP;
-
-      const size_t offset = i + j * getStride ();
-      const size_t numEntries = 1; // We're only getting one entry.
-
-      // Device view of the one entry.
-      Teuchos::ArrayRCP<Scalar> deviceView =
-        contigValues_.persistingView (offset, numEntries);
-      // Get a read-write host view of the one entry.
-      Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
-                                                               numEntries, deviceView);
-      // Update the entry.  When hostView falls out of scope at the
-      // end of this method, it will copy the updated entry back to
-      // the device.
-      hostView[0] += newVal;
-    }
-
-    /// \brief <tt>X(i,j) = newVal</tt>, where X is this multivector.
-    ///
-    /// \warning This method will be VERY SLOW if Node is a GPU node.
-    ///   That's because it has to copy the new value of the entry
-    ///   from the CPU to the GPU.
-    ///
-    /// \param i [in] (Local) row index of the entry to replace.
-    /// \param j [in] Column index of the entry to replace.
-    /// \param newVal [in] The value to use when replacing the (i,j)
-    ///   entry of this multivector.
-    void
-    replaceLocalValue (size_t i, size_t j, const Scalar& newVal) {
-      const size_t offset = i + j * getStride ();
-      const size_t numEntries = 1; // We're only getting one entry.
-
-      // Device view of the one entry.
-      Teuchos::ArrayRCP<Scalar> deviceView =
-        contigValues_.persistingView (offset, numEntries);
-      // Get a host view of the one entry.  A write-only view
-      //  suffices, since we're just replacing the value.
-      Teuchos::ArrayRCP<Scalar> hostView =
-        this->getNode ()->template viewBufferNonConst<Scalar> (KokkosClassic::WriteOnly,
-                                                               numEntries, deviceView);
-      // Update the entry.  When hostView falls out of scope at the
-      // end of this method, it will copy the value back to the
-      // device.
-      hostView[0] = newVal;
-    }
-
-    //@}
-    //! @name View "constructors"
-    //@{
-
-    /// \brief A const offset view of the multivector.
-    ///
-    /// \param newNumRows [in] Number of rows in the view.
-    /// \param newNumCols [in] Number of columns in the view.
-    /// \param offsetRow [in] Zero-based index of the starting row of the view.
-    /// \param offsetCol [in] Zero-based index of the starting column of the view.
-    const MultiVector<Scalar,Node>
-    offsetView (size_t newNumRows,
-                size_t newNumCols,
-                size_t offsetRow,
-                size_t offsetCol) const
-    {
-      MultiVector<Scalar,Node> B (this->getNode ());
-
-      const size_t origNumRows = this->getOrigNumRows ();
-      const size_t origNumCols = this->getOrigNumCols ();
-      // mfh 04 Jan 2013: Thanks to Jonathan Hu for pointing out the
-      // necessary test to allow a view of a 0 x C or R x 0
-      // multivector when the offset(s) corresponding to the zero
-      // dimension(s) is/are also zero.
-      //
-      // mfh 23 Oct 2013: Thanks to Deaglan Halligan for pointing out
-      // that I needed to revise this test to allow a zero-length view
-      // just past the length of the current vector.  If the new
-      // number of rows or columns is zero, then it doesn't matter
-      // what the offsets are.  That simplifies the tests a bit.
-      const bool offsetRowOutOfBounds =
-        (newNumRows > 0) && ((origNumRows == 0 && offsetRow > 0) ||
-                             (origNumRows > 0 && offsetRow >= origNumRows));
-      const bool offsetColOutOfBounds =
-        (newNumCols > 0) && ((origNumCols == 0 && offsetCol > 0) ||
-                             (origNumCols > 0 && offsetCol >= origNumCols));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        offsetRowOutOfBounds || offsetColOutOfBounds, std::invalid_argument,
-        Teuchos::typeName (*this) << "::offsetView: offset row or column are "
-        "out of bounds.  The original multivector has dimensions "
-        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
-        << ", but your requested offset row and column are "
-        << offsetRow << ", " << offsetCol << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
-        std::invalid_argument,
-        Teuchos::typeName (*this) << "::offsetView: new dimensions are out "
-        "of bounds.  The original multivector has dimensions "
-        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
-        << ", but your requested new dimensions are "
-        << newNumRows << " x " << newNumCols << ".");
-
-      // Starting position of the view of the data.  Length of the
-      // data is just the whole array's length, minus the offset.
-      const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      const size_t len = contigValues_.size () -
-        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_TPETRACLASSIC_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "KokkosClassic::MultiVector::offsetView: contigValues_.size() = "
-        << contigValues_.size() << " < startPos(=" << startPos
-        << ") + len(=" << len << ").  The original MultiVector had "
-        "dimensions " << origNumRows << " x " << origNumCols << ", and "
-        "we are trying to make a " << newNumRows << " x " << newNumCols
-        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_TPETRACLASSIC_DEBUG
-      B.initializeValues (newNumRows,
-                          newNumCols,
-                          contigValues_.persistingView (startPos, len),
-                          this->getStride (),
-                          this->getOrigNumRows (),
-                          this->getOrigNumCols ());
-      return B;
-    }
-
-    /// \brief A nonconst offset view of the multivector.
-    ///
-    /// \param newNumRows [in] Number of rows in the view.
-    /// \param newNumCols [in] Number of columns in the view.
-    /// \param offsetRow [in] Zero-based index of the starting row of the view.
-    /// \param offsetCol [in] Zero-based index of the starting column of the view.
-    MultiVector<Scalar,Node>
-    offsetViewNonConst (size_t newNumRows,
-                        size_t newNumCols,
-                        size_t offsetRow,
-                        size_t offsetCol)
-    {
-      MultiVector<Scalar,Node> B (this->getNode ());
-
-      const size_t origNumRows = this->getOrigNumRows ();
-      const size_t origNumCols = this->getOrigNumCols ();
-      // mfh 04 Jan 2013: Thanks to Jonathan Hu for pointing out the
-      // necessary test to allow a view of a 0 x C or R x 0
-      // multivector when the offset(s) corresponding to the zero
-      // dimension(s) is/are also zero.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (origNumRows == 0 && offsetRow > 0) ||
-        (origNumRows > 0 && offsetRow >= origNumRows) ||
-        (origNumCols == 0 && offsetCol > 0) ||
-        (origNumCols > 0 && offsetCol >= origNumCols),
-        std::invalid_argument,
-        Teuchos::typeName (*this) << "::offsetViewNonConst: offset row or "
-        "column are out of bounds.  The original multivector has dimensions "
-        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
-        << ", but your requested offset row and column are "
-        << offsetRow << ", " << offsetCol << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows > this->getOrigNumRows () || newNumCols > this->getOrigNumCols (),
-        std::invalid_argument,
-        Teuchos::typeName (*this) << "::offsetViewNonConst: new dimensions "
-        "are out of bounds.  The original multivector has dimensions "
-        << this->getOrigNumRows () << " x " << this->getOrigNumCols ()
-        << ", but your requested new dimensions are "
-        << newNumRows << " x " << newNumCols << ".");
-
-      // Starting position of the view of the data.  Length of the
-      // data is just the whole array's length, minus the offset.
-      const size_t startPos = offsetRow + this->getStride () * offsetCol;
-      const size_t len = contigValues_.size () -
-        Teuchos::as<typename Teuchos::ArrayRCP<Scalar>::size_type> (startPos);
-#ifdef HAVE_TPETRACLASSIC_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        Teuchos::as<size_t> (contigValues_.size ()) < startPos + len, std::logic_error,
-        "KokkosClassic::MultiVector::offsetViewNonConst: contigValues_.size() = "
-        << contigValues_.size() << " < startPos(=" << startPos
-        << ") + len(=" << len << ").  The original MultiVector had "
-        "dimensions " << origNumRows << " x " << origNumCols << ", and "
-        "we are trying to make a " << newNumRows << " x " << newNumCols
-        << " view starting at (" << offsetRow << ", " << offsetCol << ").");
-#endif // HAVE_TPETRACLASSIC_DEBUG
-      B.initializeValues (newNumRows,
-                          newNumCols,
-                          contigValues_.persistingView (startPos, len),
-                          this->getStride (),
-                          this->getOrigNumRows (),
-                          this->getOrigNumCols ());
-      return B;
-    }
-
-    //@}
     //! @name Attribute access methods
     //@{
 
@@ -460,13 +255,6 @@ namespace KokkosClassic {
     size_t origNumRows_;
     size_t origNumCols_;
   };
-
-  //
-  // Partial specializations for various CPU Node types.  The only
-  // methods that are different thus far are sumIntoLocalValue and
-  // replaceLocalValue.  The specializations will probably make the
-  // methods faster on CPU Nodes.
-  //
 
 } // namespace KokkosClassic
 

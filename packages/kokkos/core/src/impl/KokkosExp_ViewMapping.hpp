@@ -47,21 +47,13 @@
 #include <type_traits>
 #include <initializer_list>
 
+#include <Kokkos_Core_fwd.hpp>
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_Layout.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_Traits.hpp>
+#include <impl/KokkosExp_ViewAlloc.hpp>
 #include <impl/Kokkos_Atomic_View.hpp>
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-template< class FunctorType , class ExecPolicy > class ParallelFor ;
-
-}} /* namespace Kokkos::Impl */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -287,10 +279,10 @@ struct is_integral_extent_type< std::initializer_list<iType> >
 template < unsigned I , class ... Args >
 struct is_integral_extent
 {
-  // variadic_type is void when sizeof...(Args) <= I
+  // get_type is void when sizeof...(Args) <= I
   typedef typename std::remove_cv<
           typename std::remove_reference<
-          typename Kokkos::Impl::variadic_type<I,Args...
+          typename Kokkos::Impl::get_type<I,Args...
           >::type >::type >::type type ;
 
   enum { value = is_integral_extent_type<type>::value };
@@ -750,9 +742,9 @@ public:
   typedef typename ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
 
   // Generate "flattened" multidimensional array specification type.
-  typedef type            array_scalar_type ;
-  typedef const_type      const_array_scalar_type ;
-  typedef non_const_type  non_const_array_scalar_type ;
+  typedef type            scalar_array_type ;
+  typedef const_type      const_scalar_array_type ;
+  typedef non_const_type  non_const_scalar_array_type ;
 };
 
 }}} // namespace Kokkos::Experimental::Impl
@@ -933,10 +925,11 @@ struct ViewOffset< Dimension , Kokkos::LayoutLeft
 
   template< unsigned TrivialScalarSize >
   KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset( std::integral_constant<unsigned,TrivialScalarSize> const &
-                      , size_t aN0   , unsigned aN1 , unsigned aN2 , unsigned aN3
-                      , unsigned aN4 , unsigned aN5 , unsigned aN6 , unsigned aN7 )
-    : m_dim( aN0, aN1, aN2, aN3, aN4, aN5, aN6, aN7 )
+  constexpr ViewOffset
+    ( std::integral_constant<unsigned,TrivialScalarSize> const &
+    , Kokkos::LayoutLeft const & layout
+    )
+    : m_dim( layout.dimension[0], 0, 0, 0, 0, 0, 0, 0 )
     {}
 
   template< class DimRHS >
@@ -1173,11 +1166,16 @@ public:
   /* Enable padding for trivial scalar types with non-zero trivial scalar size */
   template< unsigned TrivialScalarSize >
   KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset( std::integral_constant<unsigned,TrivialScalarSize> const & padding_type_size
-                      , size_t aN0   , unsigned aN1 , unsigned aN2 , unsigned aN3
-                      , unsigned aN4 , unsigned aN5 , unsigned aN6 , unsigned aN7 )
-    : m_dim( aN0, aN1, aN2, aN3, aN4, aN5, aN6, aN7 )
-    , m_stride( Padding<TrivialScalarSize>::stride( aN0 ) )
+  constexpr ViewOffset
+    ( std::integral_constant<unsigned,TrivialScalarSize> const & padding_type_size
+    , Kokkos::LayoutLeft const & layout
+    )
+    : m_dim( layout.dimension[0] , layout.dimension[1]
+           , layout.dimension[2] , layout.dimension[3]
+           , layout.dimension[4] , layout.dimension[5]
+           , layout.dimension[6] , layout.dimension[7]
+           )
+    , m_stride( Padding<TrivialScalarSize>::stride( layout.dimension[0] ) )
     {}
 
   template< class DimRHS >
@@ -1386,10 +1384,11 @@ struct ViewOffset< Dimension , Kokkos::LayoutRight
 
   template< unsigned TrivialScalarSize >
   KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset( std::integral_constant<unsigned,TrivialScalarSize> const &
-                      , size_t aN0   , unsigned aN1 , unsigned aN2 , unsigned aN3
-                      , unsigned aN4 , unsigned aN5 , unsigned aN6 , unsigned aN7 )
-    : m_dim( aN0, aN1, aN2, aN3, aN4, aN5, aN6, aN7 )
+  constexpr ViewOffset
+    ( std::integral_constant<unsigned,TrivialScalarSize> const &
+    , Kokkos::LayoutRight const & layout
+    )
+    : m_dim( layout.dimension[0], 0, 0, 0, 0, 0, 0, 0 )
     {}
 
   template< class DimRHS >
@@ -1627,10 +1626,15 @@ public:
   /* Enable padding for trivial scalar types with non-zero trivial scalar size.  */
   template< unsigned TrivialScalarSize >
   KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset( std::integral_constant<unsigned,TrivialScalarSize> const & padding_type_size
-                      , size_t aN0   , unsigned aN1 , unsigned aN2 , unsigned aN3
-                      , unsigned aN4 , unsigned aN5 , unsigned aN6 , unsigned aN7 )
-    : m_dim( aN0, aN1, aN2, aN3, aN4, aN5, aN6, aN7 )
+  constexpr ViewOffset
+    ( std::integral_constant<unsigned,TrivialScalarSize> const & padding_type_size
+    , Kokkos::LayoutRight const & layout
+    )
+    : m_dim( layout.dimension[0] , layout.dimension[1]
+           , layout.dimension[2] , layout.dimension[3]
+           , layout.dimension[4] , layout.dimension[5]
+           , layout.dimension[6] , layout.dimension[7]
+           )
     , m_stride( Padding<TrivialScalarSize>::
                   stride( /* 2 <= rank */
                           m_dim.N1 * ( dimension_type::rank == 2 ? 1 :
@@ -2015,7 +2019,8 @@ public:
   ViewOffset & operator = ( const ViewOffset & ) = default ;
 
   KOKKOS_INLINE_FUNCTION
-  ViewOffset( const Kokkos::LayoutStride & rhs )
+  constexpr ViewOffset( std::integral_constant<unsigned,0> const &
+                      , Kokkos::LayoutStride const & rhs )
     : m_dim( rhs.dimension[0] , rhs.dimension[1] , rhs.dimension[2] , rhs.dimension[3]
            , rhs.dimension[4] , rhs.dimension[5] , rhs.dimension[6] , rhs.dimension[7] )
     , m_stride( rhs.stride[0] , rhs.stride[1] , rhs.stride[2] , rhs.stride[3]
@@ -2156,10 +2161,6 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class ValueType , class ExecSpace
-        , bool IsScalar = std::is_scalar< ValueType >::value >
-struct ViewValueFunctor ;
-
 /*
  *  The construction, assignment to default, and destruction
  *  are merged into a single functor.
@@ -2168,73 +2169,103 @@ struct ViewValueFunctor ;
  *  called from the shared memory tracking destruction.
  *  Secondarily to have two fewer partial specializations.
  */
-template< class ValueType , class ExecSpace >
-struct ViewValueFunctor< ValueType , ExecSpace , false >
-{
-  enum { CONSTRUCT = 0x01 , ASSIGN = 0x02 , DESTROY = 0x04 };
+template< class ExecSpace
+        , class ValueType
+        , bool IsScalar = std::is_scalar< ValueType >::value
+        >
+struct ViewValueFunctor ;
 
-  ValueType * const ptr ;
-  int         const mode ;
+template< class ExecSpace , class ValueType >
+struct ViewValueFunctor< ExecSpace , ValueType , false /* is_scalar */ >
+{
+  typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
+
+  ExecSpace   space ;
+  ValueType * ptr ;
+  size_t      n ;
+  bool        destroy ;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( size_t i ) const
-  {
-    if      ( mode == CONSTRUCT ) { new (ptr+i) ValueType(); }
-    else if ( mode == ASSIGN )    { ptr[i] = ValueType(); }
-    else if ( mode == DESTROY )   { (ptr+i)->~ValueType(); }
-  }
+  void operator()( const size_t i ) const
+    {
+      if ( destroy ) { (ptr+i)->~ValueType(); }
+      else           { new (ptr+i) ValueType(); }
+    }
 
-  ViewValueFunctor( const ExecSpace & arg_space
+  ViewValueFunctor() = default ;
+  ViewValueFunctor( const ViewValueFunctor & ) = default ;
+  ViewValueFunctor & operator = ( const ViewValueFunctor & ) = default ;
+
+  ViewValueFunctor( ExecSpace   const & arg_space
                   , ValueType * const arg_ptr
-                  , size_t      const arg_n
-                  , int         const arg_mode )
-   : ptr( arg_ptr )
-   , mode( arg_mode )
-   {
-     if ( ! arg_space.in_parallel() ) {
-       typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
-       const Kokkos::Impl::ParallelFor< ViewValueFunctor , PolicyType >
-         closure( *this , PolicyType( 0 , arg_n ) );
-       closure.execute();
-       arg_space.fence();
-     }
-     else {
-       for ( size_t i = 0 ; i < arg_n ; ++i ) operator()(i);
-     }
-   }
+                  , size_t      const arg_n )
+    : space( arg_space )
+    , ptr( arg_ptr )
+    , n( arg_n )
+    , destroy( false )
+    {}
+
+  void execute( bool arg )
+    {
+      destroy = arg ;
+      if ( ! space.in_parallel() ) {
+        const Kokkos::Impl::ParallelFor< ViewValueFunctor , PolicyType >
+          closure( *this , PolicyType( 0 , n ) );
+        closure.execute();
+        space.fence();
+      }
+      else {
+        for ( size_t i = 0 ; i < n ; ++i ) operator()(i);
+      }
+    }
+
+  void construct_shared_allocation()
+    { execute( false ); }
+
+  void destroy_shared_allocation()
+    { execute( true ); }
 };
 
-template< class ValueType , class ExecSpace >
-struct ViewValueFunctor< ValueType , ExecSpace , true >
-{
-  enum { CONSTRUCT = 0x01 , ASSIGN = 0x02 , DESTROY = 0x04 };
 
-  ValueType * const ptr ;
-  int         const mode ;
+template< class ExecSpace , class ValueType >
+struct ViewValueFunctor< ExecSpace , ValueType , true /* is_scalar */ >
+{
+  typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
+
+  ExecSpace   space ;
+  ValueType * ptr ;
+  size_t      n ;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( size_t i ) const { ptr[i] = 0 ; }
+  void operator()( const size_t i ) const
+    { ptr[i] = ValueType(); }
 
-  ViewValueFunctor( const ExecSpace & arg_space
+  ViewValueFunctor() = default ;
+  ViewValueFunctor( const ViewValueFunctor & ) = default ;
+  ViewValueFunctor & operator = ( const ViewValueFunctor & ) = default ;
+
+  ViewValueFunctor( ExecSpace   const & arg_space
                   , ValueType * const arg_ptr
-                  , size_t      const arg_n
-                  , int         const arg_mode )
-   : ptr( arg_ptr )
-   , mode( arg_mode )
-   {
-     if ( mode == CONSTRUCT || mode == ASSIGN ) {
-       if ( ! arg_space.in_parallel() ) {
-         typedef Kokkos::RangePolicy< ExecSpace > PolicyType ;
-         const Kokkos::Impl::ParallelFor< ViewValueFunctor , PolicyType >
-           closure( *this , PolicyType( 0 , arg_n ) );
-         closure.execute();
-         arg_space.fence();
-       }
-       else {
-         for ( size_t i = 0 ; i < arg_n ; ++i ) operator()(i);
-       }
-     }
-   }
+                  , size_t      const arg_n )
+    : space( arg_space )
+    , ptr( arg_ptr )
+    , n( arg_n )
+    {}
+
+  void construct_shared_allocation()
+    {
+      if ( ! space.in_parallel() ) {
+        const Kokkos::Impl::ParallelFor< ViewValueFunctor , PolicyType >
+          closure( *this , PolicyType( 0 , n ) );
+        closure.execute();
+        space.fence();
+      }
+      else {
+        for ( size_t i = 0 ; i < n ; ++i ) operator()(i);
+      }
+    }
+
+  void destroy_shared_allocation() {}
 };
 
 //----------------------------------------------------------------------------
@@ -2406,26 +2437,6 @@ public:
       return ( m_offset.span() * sizeof(typename Traits::value_type) + MemorySpanMask ) & ~size_t(MemorySpanMask);
     }
 
-  /** \brief  Span, in bytes, of the required memory */
-  template< bool AllowPadding >
-  KOKKOS_INLINE_FUNCTION
-  static constexpr size_t memory_span( const std::integral_constant<bool,AllowPadding> &
-                                     , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-                                      , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7 )
-    {
-      typedef std::integral_constant< unsigned , AllowPadding ? MemorySpanSize : 0 >  padding ;
-      return ( offset_type( padding(), N0, N1, N2, N3, N4, N5, N6, N7 ).span() * MemorySpanSize + MemorySpanMask ) & ~size_t(MemorySpanMask);
-    }
-
-  /** \brief  Span, in bytes, of the required memory */
-  template< bool AllowPadding >
-  KOKKOS_INLINE_FUNCTION
-  static constexpr size_t memory_span( const std::integral_constant<bool,AllowPadding> &
-                                       , const typename Traits::array_layout & layout )
-    {
-      return ( offset_type( layout ).span() * MemorySpanSize + MemorySpanMask ) & ~size_t(MemorySpanMask);
-    }
-
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() {}
@@ -2440,46 +2451,83 @@ public:
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( ViewMapping && rhs )
     { m_handle = rhs.m_handle ; m_offset = rhs.m_offset ; return *this ; }
 
-  template< bool AllowPadding >
-  KOKKOS_INLINE_FUNCTION
-  ViewMapping( pointer_type ptr
-             , const std::integral_constant<bool,AllowPadding> &
-             , const size_t N0 , const size_t N1 , const size_t N2 , const size_t N3
-             , const size_t N4 , const size_t N5 , const size_t N6 , const size_t N7 )
-    : m_handle( ptr )
-    , m_offset( std::integral_constant< unsigned , AllowPadding ? sizeof(typename Traits::value_type) : 0 >()
-              , N0, N1, N2, N3, N4, N5, N6, N7 )
-    {}
+  //----------------------------------------
 
-  template< bool AllowPadding >
+  /**\brief  Span, in bytes, of the required memory */
+  KOKKOS_INLINE_FUNCTION
+  static constexpr size_t memory_span( typename Traits::array_layout const & layout )
+    {
+      typedef std::integral_constant< unsigned , 0 >  padding ;
+      return ( offset_type( padding(), layout ).span() * MemorySpanSize + MemorySpanMask ) & ~size_t(MemorySpanMask);
+    }
+
+  /**\brief  Wrap a span of memory */
   KOKKOS_INLINE_FUNCTION
   ViewMapping( pointer_type ptr
-             , const std::integral_constant<bool,AllowPadding> &
-             , const typename Traits::array_layout & layout )
+             , typename Traits::array_layout const & layout
+             )
     : m_handle( ptr )
-    , m_offset( layout )
+    , m_offset( std::integral_constant< unsigned , 0 >() , layout )
     {}
 
   //----------------------------------------
-  // If the View is to construct or destroy the elements.
+  /*  Allocate and construct mapped array.
+   *  Allocate via shared allocation record and
+   *  return that record for allocation tracking.
+   */
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewAllocProp< P... > const & prop
+                 , typename Traits::array_layout const & layout )
+  {
+    typedef ViewAllocProp< P... > alloc_prop ;
 
-  template< class ExecSpace >
-  void construct( const ExecSpace & space ) const
-    {
-      typedef typename Traits::value_type value_type ;
-      typedef ViewValueFunctor< value_type , ExecSpace > FunctorType ;
+    typedef typename alloc_prop::execution_space  execution_space ;
+    typedef typename Traits::memory_space         memory_space ;
+    typedef typename Traits::value_type           value_type ;
+    typedef ViewValueFunctor< execution_space , value_type > functor_type ;
+    typedef SharedAllocationRecord< memory_space , functor_type > record_type ;
 
-      (void) FunctorType( space , (value_type *) m_handle , m_offset.span() , FunctorType::CONSTRUCT );
+    // Query the mapping for byte-size of allocation.
+    // If padding is allowed then pass in sizeof value type
+    // for padding computation.
+    typedef std::integral_constant
+      < unsigned
+      , alloc_prop::allow_padding ? sizeof(value_type) : 0
+      > padding ;
+
+    m_offset = offset_type( padding(), layout );
+
+    const size_t alloc_size =
+      ( m_offset.span() * MemorySpanSize + MemorySpanMask ) & ~size_t(MemorySpanMask);
+
+    // Create shared memory tracking record with allocate memory from the memory space
+    record_type * const record =
+      record_type::allocate( ( (ViewAllocProp<void,memory_space> const &) prop ).value
+                           , ( (ViewAllocProp<void,std::string>  const &) prop ).value
+                           , alloc_size );
+
+    //  Only set the the pointer and initialize if the allocation is non-zero.
+    //  May be zero if one of the dimensions is zero.
+    if ( alloc_size ) {
+
+      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+
+      if ( alloc_prop::initialize ) {
+        // Assume destruction is only required when construction is requested.
+        // The ViewValueFunctor has both value construction and destruction operators.
+        record->m_destroy = functor_type( ( (ViewAllocProp<void,execution_space> const &) prop).value
+                                        , (value_type *) m_handle
+                                        , m_offset.span()
+                                        );
+
+        // Construct values
+        record->m_destroy.construct_shared_allocation();
+      }
     }
 
-  template< class ExecSpace >
-  void destroy( const ExecSpace & space ) const
-    {
-      typedef typename Traits::value_type value_type ;
-      typedef ViewValueFunctor< value_type , ExecSpace > FunctorType ;
-
-      (void) FunctorType( space , (value_type *) m_handle , m_offset.span() , FunctorType::DESTROY );
-    }
+    return record ;
+  }
 };
 
 //----------------------------------------------------------------------------

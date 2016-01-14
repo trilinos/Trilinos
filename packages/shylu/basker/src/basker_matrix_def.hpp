@@ -105,7 +105,7 @@ namespace BaskerNS
         v_fill = BASKER_FALSE;
       }
     
-    if(w_fill = BASKER_TRUE)
+    if(w_fill == BASKER_TRUE)
       {
         FREE_INT_1DARRAY(iws);
         FREE_ENTRY_1DARRAY(ews);

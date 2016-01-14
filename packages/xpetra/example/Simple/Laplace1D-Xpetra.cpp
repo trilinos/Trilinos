@@ -55,14 +55,27 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
 
+#ifdef HAVE_XPETRA_TPETRA
+
+#include <TpetraCore_config.h>
+
+#if defined(HAVE_TPETRA_INST_OPENMP) || defined(HAVE_TPETRA_INST_SERIAL)
+#if defined(HAVE_TPETRA_INST_INT_INT) || defined(HAVE_TPETRA_INST_INT_LONG_LONG)
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+
+// Choose types Tpetra is instantiated on
 typedef double Scalar;
 typedef int    LocalOrdinal;
-#ifndef HAVE_XPETRA_INT_LONG_LONG
+#if defined(HAVE_TPETRA_INST_INT_INT)
 typedef int    GlobalOrdinal;
-#else
+#elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
 typedef long long GlobalOrdinal;
 #endif
-typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type Node;
+#if defined(HAVE_TPETRA_INST_OPENMP)
+typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+#elif defined(HAVE_TPETRA_INST_SERIAL)
+typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -112,4 +125,7 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
+#endif // Tpetra instantiated on SC=double
+#endif // Tpetra instantiated on GO=int or GO=long long
+#endif // Tpetra instantiated on OpenMP or Serial
+#endif // HAVE_XPETRA_TPETRA

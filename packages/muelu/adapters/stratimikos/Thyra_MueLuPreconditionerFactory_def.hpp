@@ -237,53 +237,9 @@ namespace Thyra {
     if (startingOver == true) {
       // extract coordinates from parameter list
       Teuchos::RCP<XpMultVecDouble> coordinates = Teuchos::null;
-#ifdef HAVE_MUELU_TPETRA
-      if (bIsTpetra) {
-        // Tpetra does not instantiate on Scalar=float by default, so we must check for this
-        // FIXME This will still break if LO != int or GO != int
-    # if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
-        typedef Tpetra::MultiVector<float, LocalOrdinal, GlobalOrdinal, Node> tfMV;
-        RCP<tfMV> floatCoords = Teuchos::null;
-    # endif
-        typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> tdMV;
-        RCP<tdMV> doubleCoords = Teuchos::null;
-        if (paramList.isType<RCP<tdMV> >("Coordinates")) {
-          doubleCoords = paramList.get<RCP<tdMV> >("Coordinates");
-          paramList.remove("Coordinates");
-        }
-    # if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_MUELU_INST_FLOAT_INT_INT)
-        else if (paramList.isType<RCP<tfMV> >("Coordinates")) {
-          floatCoords = paramList.get<RCP<tfMV> >("Coordinates");
-          paramList.remove("Coordinates");
-          doubleCoords = rcp(new tdMV(floatCoords->getMap(), floatCoords->getNumVectors()));
-          deep_copy(*doubleCoords, *floatCoords);
-        }
-    # endif
-        if(doubleCoords != Teuchos::null) {
-          coordinates = MueLu::TpetraMultiVector_To_XpetraMultiVector<double,LocalOrdinal,GlobalOrdinal,Node>(doubleCoords);
-          TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
-          TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
-        }
-      }
-#endif // HAVE_MUELU_TPETRA
-
-#ifdef HAVE_MUELU_EPETRA
-      if (bIsEpetra) {
-        RCP<Epetra_MultiVector> doubleCoords;
-        if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
-          doubleCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
-          paramList.remove("Coordinates");
-          RCP<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(doubleCoords));
-          RCP<Xpetra::MultiVector<double,int,int,Node> > epCoordinatesMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(epCoordinates);
-          coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(epCoordinatesMult);
-          TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
-          TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
-        }
-      }
-#endif // HAVE_MUELU_EPETRA
+      coordinates = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ExtractCoordinatesFromParameterList(paramList);
 
       // TODO check for Xpetra or Thyra vectors?
-
       RCP<XpMultVec> nullspace = Teuchos::null;
 #ifdef HAVE_MUELU_TPETRA
       if (bIsTpetra) {
@@ -310,7 +266,6 @@ namespace Thyra {
         }
       }
 #endif
-
       // build a new MueLu hierarchy
       H = CreateXpetraPreconditioner(A, paramList, coordinates, nullspace);
 
@@ -318,7 +273,7 @@ namespace Thyra {
       // reuse old MueLu hierarchy stored in MueLu Tpetra/Epetra operator and put in new matrix
 
       // get old MueLu hierarchy
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA)
       if (bIsTpetra) {
 
         RCP<ThyTpLinOp> tpetr_precOp = rcp_dynamic_cast<ThyTpLinOp>(thyra_precOp);
@@ -327,7 +282,7 @@ namespace Thyra {
         H = muelu_precOp->GetHierarchy();
       }
 #endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
+#if defined(HAVE_MUELU_EPETRA)// && defined(HAVE_MUELU_SERIAL)
       if (bIsEpetra) {
         RCP<ThyEpLinOp> epetr_precOp = rcp_dynamic_cast<ThyEpLinOp>(thyra_precOp);
         RCP<MueEpOp>    muelu_precOp = rcp_dynamic_cast<MueEpOp>(epetr_precOp->epetra_op(),true);
@@ -360,11 +315,19 @@ namespace Thyra {
 
     // wrap hierarchy H in thyraPrecOp
     RCP<ThyLinOpBase > thyraPrecOp = Teuchos::null;
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA)
     if (bIsTpetra) {
       RCP<MueTpOp> muelu_tpetraOp = rcp(new MueTpOp(H));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(muelu_tpetraOp));
-      thyraPrecOp = Thyra::createLinearOp(RCP<TpOp>(muelu_tpetraOp));
+      RCP<TpOp> tpOp = Teuchos::rcp_dynamic_cast<TpOp>(muelu_tpetraOp);
+      // TAW 1/12/16: the following line only links if Tpetra is instantiated on GO=int
+      // Thyra::TpetraLinearOp seems to have some hardcoded defaults for GO.
+#if defined(HAVE_TPETRA_INST_INT_INT)
+        thyraPrecOp = Thyra::createLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpOp); // this line causes linker trouble
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
+                                         "Thyra::MueLuPreconditionerFactory: Thyra interface not working if GO=int disabled in Tpetra. Please recompile with Tpetra_INST_INT_INT enabled.");
+#endif
     }
 #endif
 
@@ -407,7 +370,6 @@ namespace Thyra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > MueLuPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op, const Teuchos::ParameterList& inParamList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const {
-
     typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>  Hierarchy;
     typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>  HierarchyManager;
 

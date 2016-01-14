@@ -45,13 +45,15 @@ function update_if_different {
 
 function generate_git_version_file {
 
+  _TRIBITS_TAG_PREFIX=`cat ../../../tribits_tag_prefix.txt`
+
   if [ -e ../../../.git ] ; then
     echo
     echo "Generating git version"
     echo
-    echo `git describe` > TribitsGitVersion.txt
+    echo `git describe --match="$_TRIBITS_TAG_PREFIX*"` > TribitsGitVersion.txt
   else
-    echo "Unknown version" > TribitsGitVersion.txt
+    echo "$_TRIBITS_TAG_PREFIX.{Unknown version}" > TribitsGitVersion.txt
   fi
 
 }
