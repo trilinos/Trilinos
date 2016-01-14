@@ -68,7 +68,7 @@ dim0=dim[0]=1;
 rankValue=1;
 intepidManaged=true;
 sizeValue=1;
-containerMemory=new Scalar[sizeValue];
+cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
 template<class ScalarPointer>
@@ -278,80 +278,120 @@ FieldContainer_Kokkos(const FieldContainer_Kokkos& inContainer);
 ~FieldContainer_Kokkos();
 typedef Kokkos::Cuda execution_space;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator[] (const index_type i0);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3 );
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3 , const index_type i4 );
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6, const index_type i7);
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator[] (const index_type i0)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3 )const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3 , const index_type i4 )const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6)const;
 
+KOKKOS_INLINE_FUNCTION
 Scalar& operator() (const index_type i0, const index_type i1, const index_type i2,
                           const index_type i3, const index_type i4, const index_type i5,
                           const index_type i6, const index_type i7)const;
+KOKKOS_INLINE_FUNCTION
 index_type rank(){return rankValue;}
+KOKKOS_INLINE_FUNCTION
 index_type rank() const {return rankValue;}
+KOKKOS_INLINE_FUNCTION
 index_type size(){return sizeValue;}
+KOKKOS_INLINE_FUNCTION
 index_type size() const {return sizeValue;}
 
 
+KOKKOS_INLINE_FUNCTION
 index_type dimension(index_type num){return dim[num];}
+KOKKOS_INLINE_FUNCTION
 index_type dimension(index_type num)const{return dim[num];}
 
+KOKKOS_INLINE_FUNCTION
 index_type dimension_0(){return dim0;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_1(){return dim1;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_2(){return dim2;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_3(){return dim3;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_4(){return dim4;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_5(){return dim5;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_6(){return dim6;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_7(){return dim7;}
 
+KOKKOS_INLINE_FUNCTION
 index_type dimension_0()const{return dim0;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_1()const{return dim1;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_2()const{return dim2;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_3()const{return dim3;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_4()const{return dim4;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_5()const{return dim5;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_6()const{return dim6;}
+KOKKOS_INLINE_FUNCTION
 index_type dimension_7()const{return dim7;}
 
 void initialize(Scalar initValue){
@@ -382,8 +422,9 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
    dim7=dim[7]=0;
    rankValue=1;
    sizeValue=0;
-   delete[] containerMemory;
-   containerMemory=new Scalar[sizeValue];
+
+   cudaFree(&containerMemory);
+   cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
   }
   else {
 
@@ -401,8 +442,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 1 ;
         sizeValue=dim0;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
       case 2:
@@ -416,8 +457,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 2 ;
         sizeValue=dim0*dim1;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
       case 3:
@@ -431,8 +472,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 3 ;
         sizeValue=dim0*dim1*dim2;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
       case 4:
@@ -446,8 +487,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 4 ;
         sizeValue=dim0*dim1*dim2*dim3;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
       case 5:
@@ -461,8 +502,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 5 ;
         sizeValue=dim0*dim1*dim2*dim3*dim4;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
       case 6:
@@ -476,8 +517,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 6 ;
         sizeValue=dim0*dim1*dim2*dim3*dim4*dim5;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
        case 7:
@@ -491,8 +532,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=0;
         rankValue= 7 ;
         sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
         case 8:
@@ -506,8 +547,8 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
         dim7=dim[7]=newDimensions[7];
         rankValue= 8 ;
         sizeValue=dim0*dim1*dim2*dim3*dim4*dim5*dim6*dim7;
-        delete[] containerMemory;
-        containerMemory=new Scalar[sizeValue];
+        cudaFree(&containerMemory);
+        cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
         break;
 
 
@@ -667,87 +708,105 @@ cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator[] (const index_type i0){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator[] (const index_type i0){
 return containerMemory[i0];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0){
 return containerMemory[i0];
 }
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1){
 return containerMemory[dim1*i0+i1];
 }
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2){
 return containerMemory[(dim1*i0+i1)*dim2+i2];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3){
 return containerMemory[((dim1*i0+i1)*dim2+i2)*dim3+i3];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4){
 return containerMemory[(((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5){
 return containerMemory[((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6){
 return containerMemory[(((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6];
 }
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7){
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7){
 return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6)*dim7+i7];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator[] (const index_type i0)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator[] (const index_type i0)const{
 return containerMemory[i0];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0)const{
 return containerMemory[i0];
 }
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1)const{
 return containerMemory[dim1*i0+i1];
 }
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2)const{
 return containerMemory[(dim1*i0+i1)*dim2+i2];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3)const{
 return containerMemory[((dim1*i0+i1)*dim2+i2)*dim3+i3];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4)const{
 return containerMemory[(((dim0*i1+i1)*dim2+i2)*dim3+i3)*dim4+i4];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5)const{
 return containerMemory[((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6)const{
 return containerMemory[(((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6];
 }
 
 template <class Scalar>
-inline Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7)const{
+KOKKOS_INLINE_FUNCTION
+Scalar& FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::operator() (const index_type i0,const index_type i1,const index_type i2,const index_type i3,const index_type i4,const index_type i5,const index_type i6,const index_type i7)const{
 return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim6+i6)*dim7+i7];
 }
 
