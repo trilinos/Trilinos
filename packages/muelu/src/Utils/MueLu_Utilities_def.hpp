@@ -514,11 +514,11 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ExtractCoordinatesFromParameterList (ParameterList& paramList) {
 
-    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coordinates = Teuchos::null;
+    RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coordinates = Teuchos::null;
 
     // check whether coordinates are contained in parameter list
     if(paramList.isParameter ("Coordinates") == false)
@@ -558,7 +558,7 @@ namespace MueLu {
     // We have the coordinates in a Tpetra double vector
     if(doubleCoords != Teuchos::null) {
       //rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
-      coordinates = Teuchos::rcp_dynamic_cast<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(MueLu::TpetraMultiVector_To_XpetraMultiVector<double,LocalOrdinal,GlobalOrdinal,Node>(doubleCoords));
+      coordinates = Teuchos::rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(MueLu::TpetraMultiVector_To_XpetraMultiVector<double,LocalOrdinal,GlobalOrdinal,Node>(doubleCoords));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
     }
