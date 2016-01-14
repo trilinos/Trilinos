@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,72 +36,89 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
-#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE )
-#define KOKKOS_MEMORY_FENCE
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+
 namespace Kokkos {
+namespace Impl {
 
-//----------------------------------------------------------------------------
+//The following function (processors_per_node) is copied from here:
+// https://lists.gnu.org/archive/html/autoconf/2002-08/msg00126.html
+// Philip Willoughby
 
-KOKKOS_FORCEINLINE_FUNCTION
-void memory_fence()
-{
-#if defined( KOKKOS_ATOMICS_USE_CUDA )
-  __threadfence();
-#elif defined( KOKKOS_ATOMICS_USE_GCC ) || \
-      ( defined( KOKKOS_COMPILER_NVCC ) && defined( KOKKOS_ATOMICS_USE_INTEL ) )
-  __sync_synchronize();
-#elif defined( KOKKOS_ATOMICS_USE_INTEL )
-  _mm_mfence();
-#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
-  #pragma omp flush
-#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
-  MemoryBarrier();
+int processors_per_node() {
+  int nprocs = -1;
+  int nprocs_max = -1;
+#ifdef _WIN32
+#ifndef _SC_NPROCESSORS_ONLN
+SYSTEM_INFO info;
+GetSystemInfo(&info);
+#define sysconf(a) info.dwNumberOfProcessors
+#define _SC_NPROCESSORS_ONLN
+#endif
+#endif
+#ifdef _SC_NPROCESSORS_ONLN
+  nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+  if (nprocs < 1)
+  {
+    return -1;
+  }
+  nprocs_max = sysconf(_SC_NPROCESSORS_CONF);
+  if (nprocs_max < 1)
+  {
+    return -1;
+  }
+  return nprocs;
 #else
- #error "Error: memory_fence() not defined"
+  return -1;
 #endif
 }
 
-//////////////////////////////////////////////////////
-// store_fence()
-//
-// If possible use a store fence on the architecture, if not run a full memory fence
-
-KOKKOS_FORCEINLINE_FUNCTION
-void store_fence()
-{
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"sfence" ::: "memory"
-  	);
-#else
-  memory_fence();
-#endif
+int mpi_ranks_per_node() {
+  char *str;
+  int ppn = 1;
+  if ((str = getenv("SLURM_TASKS_PER_NODE"))) {
+    ppn = atoi(str);
+    if(ppn<=0) ppn = 1;
+  }
+  if ((str = getenv("MV2_COMM_WORLD_LOCAL_SIZE"))) {
+    ppn = atoi(str);
+    if(ppn<=0) ppn = 1;
+  }
+  if ((str = getenv("OMPI_COMM_WORLD_LOCAL_SIZE"))) {
+    ppn = atoi(str);
+    if(ppn<=0) ppn = 1;
+  }
+  return ppn;
 }
 
-//////////////////////////////////////////////////////
-// load_fence()
-//
-// If possible use a load fence on the architecture, if not run a full memory fence
-
-KOKKOS_FORCEINLINE_FUNCTION
-void load_fence()
-{
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"lfence" ::: "memory"
-  	);
-#else
-  memory_fence();
-#endif
+int mpi_local_rank_on_node() {
+  char *str;
+  int local_rank=0;
+  if ((str = getenv("SLURM_LOCALID"))) {
+    local_rank = atoi(str);
+  }
+  if ((str = getenv("MV2_COMM_WORLD_LOCAL_RANK"))) {
+    local_rank = atoi(str);
+  }
+  if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK"))) {
+    local_rank = atoi(str);
+  }
+  return local_rank;
 }
 
-} // namespace kokkos
-
-#endif
-
-
+}
+}

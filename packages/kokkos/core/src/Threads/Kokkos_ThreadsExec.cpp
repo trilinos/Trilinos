@@ -52,6 +52,7 @@
 #include <sstream>
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Error.hpp>
+#include <impl/Kokkos_CPUDiscovery.hpp>
 
 
 //----------------------------------------------------------------------------
@@ -168,6 +169,7 @@ ThreadsExec::ThreadsExec()
       m_numa_core_rank  = coord.second ;
       m_pool_base       = s_threads_exec ;
       m_pool_rank       = s_thread_pool_size[0] - ( entry + 1 );
+      m_pool_rank_rev   = s_thread_pool_size[0] - ( pool_rank() + 1 );
       m_pool_size       = s_thread_pool_size[0] ;
       m_pool_fan_size   = fan_size( m_pool_rank , m_pool_size );
       m_pool_state      = ThreadsExec::Active ;
@@ -745,6 +747,14 @@ void ThreadsExec::initialize( unsigned thread_count ,
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
 
+  // Check for over-subscription
+  if( Impl::mpi_ranks_per_node() * long(thread_count) > Impl::processors_per_node() ) {
+    std::cout << "Kokkos::Threads::initialize WARNING: You are likely oversubscribing your CPU cores." << std::endl;
+    std::cout << "                                    Detected: " << Impl::processors_per_node() << " cores per node." << std::endl;
+    std::cout << "                                    Detected: " << Impl::mpi_ranks_per_node() << " MPI_ranks per node." << std::endl;
+    std::cout << "                                    Requested: " << thread_count << " threads per process." << std::endl;
+  }
+
   // Init the array for used for arbitrarily sized atomics
   Impl::init_lock_array_host_space();
 
@@ -808,6 +818,10 @@ void ThreadsExec::finalize()
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
+
+int Threads::concurrency() {
+  return thread_pool_size(0);
+}
 
 Threads & Threads::instance(int)
 {

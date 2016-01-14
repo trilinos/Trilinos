@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,72 +36,82 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
-#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE )
-#define KOKKOS_MEMORY_FENCE
+#if defined( KOKKOS_ATOMIC_HPP) && ! defined( KOKKOS_ATOMIC_INCREMENT )
+#define KOKKOS_ATOMIC_INCREMENT
+
 namespace Kokkos {
 
-//----------------------------------------------------------------------------
-
-KOKKOS_FORCEINLINE_FUNCTION
-void memory_fence()
-{
-#if defined( KOKKOS_ATOMICS_USE_CUDA )
-  __threadfence();
-#elif defined( KOKKOS_ATOMICS_USE_GCC ) || \
-      ( defined( KOKKOS_COMPILER_NVCC ) && defined( KOKKOS_ATOMICS_USE_INTEL ) )
-  __sync_synchronize();
-#elif defined( KOKKOS_ATOMICS_USE_INTEL )
-  _mm_mfence();
-#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
-  #pragma omp flush
-#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
-  MemoryBarrier();
+// Atomic increment
+template<>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment<char>(volatile char* a) {
+#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 ) && ! defined(_WIN32) && ! defined(__CUDA_ARCH__)
+  __asm__ __volatile__(
+      "lock incb %0"
+      : /* no output registers */
+      : "m" (a[0])
+      : "memory"
+    );
 #else
- #error "Error: memory_fence() not defined"
+  Kokkos::atomic_fetch_add(a,1);
 #endif
 }
 
-//////////////////////////////////////////////////////
-// store_fence()
-//
-// If possible use a store fence on the architecture, if not run a full memory fence
-
-KOKKOS_FORCEINLINE_FUNCTION
-void store_fence()
-{
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"sfence" ::: "memory"
-  	);
+template<>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment<short>(volatile short* a) {
+#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 ) && ! defined(_WIN32) && ! defined(__CUDA_ARCH__)
+  __asm__ __volatile__(
+      "lock incw %0"
+      : /* no output registers */
+      : "m" (a[0])
+      : "memory"
+    );
 #else
-  memory_fence();
+  Kokkos::atomic_fetch_add(a,1);
 #endif
 }
 
-//////////////////////////////////////////////////////
-// load_fence()
-//
-// If possible use a load fence on the architecture, if not run a full memory fence
-
-KOKKOS_FORCEINLINE_FUNCTION
-void load_fence()
-{
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"lfence" ::: "memory"
-  	);
+template<>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment<int>(volatile int* a) {
+#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 ) && ! defined(_WIN32) && ! defined(__CUDA_ARCH__)
+  __asm__ __volatile__(
+      "lock incl %0"
+      : /* no output registers */
+      : "m" (a[0])
+      : "memory"
+    );
 #else
-  memory_fence();
+  Kokkos::atomic_fetch_add(a,1);
 #endif
 }
 
-} // namespace kokkos
-
+template<>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment<long long int>(volatile long long int* a) {
+#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 ) && ! defined(_WIN32) && ! defined(__CUDA_ARCH__)
+  __asm__ __volatile__(
+      "lock incq %0"
+      : /* no output registers */
+      : "m" (a[0])
+      : "memory"
+    );
+#else
+  Kokkos::atomic_fetch_add(a,1);
 #endif
+}
 
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+void atomic_increment(volatile T* a) {
+  Kokkos::atomic_fetch_add(a,1);
+}
 
+} // End of namespace Kokkos
+#endif
