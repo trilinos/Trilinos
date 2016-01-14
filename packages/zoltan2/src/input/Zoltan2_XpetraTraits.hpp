@@ -131,12 +131,9 @@ template <typename scalar_t,
           typename node_t>
 struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 {
-  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t>
-                   xmatrix_t;
-  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t>
-                   xtmatrix_t;
-  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t>
-                   tmatrix_t;
+  typedef typename Xpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> xmatrix_t;
+  typedef typename Xpetra::TpetraCrsMatrix<scalar_t,lno_t,gno_t,node_t> xtmatrix_t;
+  typedef typename Tpetra::CrsMatrix<scalar_t,lno_t,gno_t,node_t> tmatrix_t;
 
   static inline RCP<xmatrix_t> convertToXpetra(const RCP<tmatrix_t> &a)
   {
@@ -151,48 +148,55 @@ struct XpetraTraits<Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
 
     // source map
     const RCP<const map_t> &smap = from.getRowMap();
-    int oldNumElts = smap->getNodeNumElements();
     gno_t numGlobalRows = smap->getGlobalNumElements();
 
     // target map
     ArrayView<const gno_t> rowList(myNewRows, numLocalRows);
     const RCP<const Teuchos::Comm<int> > &comm = from.getComm();
-    RCP<const map_t> tmap = rcp(
-      new map_t(numGlobalRows, rowList, base, comm));
-    int newNumElts = numLocalRows;
+    RCP<const map_t> tmap = rcp(new map_t(numGlobalRows, rowList, base, comm));
 
     // importer
     Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
-    // number of non zeros in my new rows
-    typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
-    vector_t numOld(smap);  // TODO These vectors should have scalar = size_t,
-    vector_t numNew(tmap);  // but explicit instantiation does not yet support that.
-    for (int lid=0; lid < oldNumElts; lid++){
-      numOld.replaceGlobalValue(smap->getGlobalElement(lid),
-        scalar_t(from.getNumEntriesInLocalRow(lid)));
-    }
-    numNew.doImport(numOld, importer, Tpetra::INSERT);
-
-    // TODO Could skip this copy if could declare vector with scalar = size_t.
-    ArrayRCP<size_t> nnz(newNumElts);
-    if (newNumElts > 0){
-      ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
-      for (int lid=0; lid < newNumElts; lid++){
-        nnz[lid] = static_cast<size_t>(ptr[lid]);
-      }
-    }
-
     // target matrix
-    //CSiefert    TODO:
-    //CSiefert    Chris Siefert proposes using the following to make migration
-    //CSiefert    more efficient.  The syntax is not yet correct, however.
-    //CSiefert    Also, may want to use importAndFillCompleteCrsMatrix helper.
-    //CSiefert    RCP<tmatrix_t> M; 
-    //CSiefert    from.importAndFillComplete(M, importer);
-    RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
-    M->doImport(from, importer, Tpetra::INSERT);
-    M->fillComplete();
+    // Chris Siefert proposed using the following to make migration 
+    // more efficient.  
+    // By default, the Domain and Range maps are the same as in "from".
+    // As in the original code, we instead set them both to tmap.  
+    // The assumption is a square matrix.
+    // TODO:  what about rectangular matrices?  
+    // TODO:  Should choice of domain/range maps be an option to this function?
+
+    RCP<tmatrix_t> M;
+    from.importAndFillComplete(M, importer, tmap, tmap);
+
+    // Original way we did it:
+    //
+    // int oldNumElts = smap->getNodeNumElements();
+    // int newNumElts = numLocalRows;
+    //
+    // // number of non zeros in my new rows
+    // typedef Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> vector_t;
+    // vector_t numOld(smap);  // TODO These vectors should have scalar=size_t,
+    // vector_t numNew(tmap);  // but ETI does not yet support that.
+    // for (int lid=0; lid < oldNumElts; lid++){
+    //   numOld.replaceGlobalValue(smap->getGlobalElement(lid),
+    //     scalar_t(from.getNumEntriesInLocalRow(lid)));
+    // }
+    // numNew.doImport(numOld, importer, Tpetra::INSERT);
+    //
+    // // TODO Could skip this copy if could declare vector with scalar=size_t.
+    // ArrayRCP<size_t> nnz(newNumElts);
+    // if (newNumElts > 0){
+    //   ArrayRCP<scalar_t> ptr = numNew.getDataNonConst(0);
+    //   for (int lid=0; lid < newNumElts; lid++){
+    //     nnz[lid] = static_cast<size_t>(ptr[lid]);
+    //   }
+    // }
+    //
+    // RCP<tmatrix_t> M = rcp(new tmatrix_t(tmap, nnz, Tpetra::StaticProfile));
+    // M->doImport(from, importer, Tpetra::INSERT);
+    // M->fillComplete();
 
     return M;
   }
@@ -241,40 +245,51 @@ struct XpetraTraits<Epetra_CrsMatrix>
 
     // source map
     const Epetra_Map &smap = from.RowMap();
-    int oldNumElts = smap.NumMyElements();
     gno_t numGlobalRows = smap.NumGlobalElements();
 
     // target map
     const Epetra_Comm &comm = from.Comm();
     Epetra_Map tmap(numGlobalRows, numLocalRows, myNewRows, base, comm);
-    int newNumElts = numLocalRows;
 
     // importer
     Epetra_Import importer(tmap, smap);
 
-    // number of non zeros in my new rows
-    Epetra_Vector numOld(smap);
-    Epetra_Vector numNew(tmap);
-
-    for (int lid=0; lid < oldNumElts; lid++){
-      numOld[lid] = from.NumMyEntries(lid);
-    }
-    numNew.Import(numOld, importer, Insert);
-
-    Array<int> nnz(newNumElts);
-    for (int lid=0; lid < newNumElts; lid++){
-      nnz[lid] = static_cast<int>(numNew[lid]);
-    }
 
     // target matrix
-    // TODO
-    //CSiefert    Chris Siefert proposes using the following to make migration
-    //CSiefert    more efficient. 
-    //CSiefert    RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(from, importer));
-    RCP<Epetra_CrsMatrix> M = 
-        rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
-    M->Import(from, importer, Insert);
-    M->FillComplete();
+    // Chris Siefert proposed using the following to make migration 
+    // more efficient.  
+    // By default, the Domain and Range maps are the same as in "from".
+    // As in the original code, we instead set them both to tmap.  
+    // The assumption is a square matrix.
+    // TODO:  what about rectangular matrices?  
+    // TODO:  Should choice of domain/range maps be an option to this function?
+
+    RCP<Epetra_CrsMatrix> M = rcp(new Epetra_CrsMatrix(from, importer,
+                                                       &tmap, &tmap));
+
+    // Original way we did it:
+    //
+    // int oldNumElts = smap.NumMyElements();
+    //
+    // // number of non zeros in my new rows
+    // Epetra_Vector numOld(smap);
+    // Epetra_Vector numNew(tmap);
+    //
+    // for (int lid=0; lid < oldNumElts; lid++){
+    //   numOld[lid] = from.NumMyEntries(lid);
+    // }
+    // numNew.Import(numOld, importer, Insert);
+    //
+    // int newNumElts = numLocalRows;
+    // Array<int> nnz(newNumElts);
+    // for (int lid=0; lid < newNumElts; lid++){
+    //   nnz[lid] = static_cast<int>(numNew[lid]);
+    // }
+    //
+    // RCP<Epetra_CrsMatrix> M = 
+    //     rcp(new Epetra_CrsMatrix(::Copy, tmap, nnz.getRawPtr(), true));
+    // M->Import(from, importer, Insert);
+    // M->FillComplete();
 
     return M;
   }
