@@ -251,6 +251,7 @@ namespace { // (anonymous)
     Kokkos::View<KeyType*, Kokkos::LayoutLeft, DeviceType> keys ("keys", numKeys);
     auto keys_h = Kokkos::create_mirror_view (keys);
     Kokkos::deep_copy (keys, keys_h);
+    out << "Finished deep_copy(keys, keys_h)" << endl;
 
     // Pick something other than 0, just to make sure that it works.
     const ValueType startingValue = 1;
@@ -262,12 +263,20 @@ namespace { // (anonymous)
     Teuchos::RCP<table_type> table;
     TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
     if (table.is_null ()) {
+      out << "table is null!  Its constructor must have thrown.  "
+        "No sense in continuing." << endl;
       return; // above constructor must have thrown
     }
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
     TEST_EQUALITY_CONST( duplicateKeys, false );
+    if (! success) {
+      out << "Either table->hasDuplicateKeys() raised an exception, or it "
+        "returned true instead of false.  Either way, there's no sense in "
+        "continuing." << endl;
+      return;
+    }
 
     KeyType key = 0;
     ValueType val = 0;
