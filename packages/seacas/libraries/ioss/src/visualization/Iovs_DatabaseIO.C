@@ -251,13 +251,11 @@ namespace Iovs {
       {
       if(this->useCppPipe)
         {
-        std::cout << "Using CPP Pipe!\n";
         this->load_plugin_library("ParaViewCatalystSierraAdaptor",
                                   CATALYST_PLUGIN_DYNAMIC_LIBRARY_CPP);
         }
       else
         {
-        std::cout << "Using Python Pipe!\n";
         this->load_plugin_library("ParaViewCatalystSierraAdaptor",
                                   CATALYST_PLUGIN_DYNAMIC_LIBRARY);
         }
