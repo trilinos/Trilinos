@@ -67,7 +67,7 @@ public:
       if (params.isType<int> ("Num CoresPerNUMA")) {
         curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
       }
-      int curDevice = -1; // -1 says "let Kokkos pick"
+      int curDevice = 0; // -1 does NOT say "let Kokkos pick" for Cuda Devices
       if (params.isType<int> ("Device")) {
         curDevice = params.get<int> ("Device");
       }
