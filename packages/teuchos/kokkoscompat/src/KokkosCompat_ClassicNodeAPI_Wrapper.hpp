@@ -20,6 +20,21 @@
 namespace Kokkos {
 namespace Compat {
 
+namespace Details {
+
+/// \brief Get the value of the "Verbose" parameter as a \c bool.
+///
+/// This method lets the "Verbose" parameter have type either \c int
+/// or \c bool, and returns its value as \c bool.  If the "Verbose"
+/// parameter does not exist in the given list, return the default
+/// value, which is \c false.
+bool
+getVerboseParameter (const Teuchos::ParameterList& params);
+
+Teuchos::ParameterList getDefaultNodeParameters ();
+
+} // namespace Details
+
 /// \brief Node that wraps a new Kokkos execution space.
 /// \tparam ExecutionSpace The type of the Kokkos execution space to wrap.
 /// \tparam MemorySpace The Kokkos memory space in which to work.
@@ -42,25 +57,35 @@ public:
 
   static int count;
 
-  KokkosDeviceWrapperNode (Teuchos::ParameterList &pl) {
-    Teuchos::ParameterList params = getDefaultParameters ();
-    params.setParameters (pl);
-    const int curNumThreads = params.get<int> ("Num Threads");
-    const int curNumNUMA = params.get<int> ("Num NUMA");
-    const int curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
-    const int curDevice = params.get<int> ("Device");
-    const bool verbose = getVerboseParameter (params);
-
-    if (verbose) {
-      std::ostream& out = std::cout;
-      out << "DeviceWrapperNode with ExecutionSpace = "
-          << typeid (ExecutionSpace).name () << " initializing with "
-          << "\"Num Threads\" = " << curNumThreads
-          << ", \"Num NUMA\" = " << curNumNUMA
-          << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
-          << " \"Device\" = " << curDevice << std::endl;
-    }
+  KokkosDeviceWrapperNode (Teuchos::ParameterList& params) {
     if (count == 0) {
+      int curNumThreads = -1; // -1 says "let Kokkos pick"
+      if (params.isType<int> ("Num Threads")) {
+        curNumThreads = params.get<int> ("Num Threads");
+      }
+      int curNumNUMA = -1; // -1 says "let Kokkos pick"
+      if (params.isType<int> ("Num NUMA")) {
+        curNumNUMA = params.get<int> ("Num NUMA");
+      }
+      int curNumCoresPerNUMA = -1; // -1 says "let Kokkos pick"
+      if (params.isType<int> ("Num CoresPerNUMA")) {
+        curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
+      }
+      int curDevice = -1; // -1 says "let Kokkos pick"
+      if (params.isType<int> ("Device")) {
+        curDevice = params.get<int> ("Device");
+      }
+      const bool verbose = Details::getVerboseParameter (params);
+
+      if (verbose) {
+        std::ostream& out = std::cout;
+        out << "DeviceWrapperNode with ExecutionSpace = "
+            << typeid (ExecutionSpace).name () << " initializing with "
+            << "\"Num Threads\" = " << curNumThreads
+            << ", \"Num NUMA\" = " << curNumNUMA
+            << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
+            << " \"Device\" = " << curDevice << std::endl;
+      }
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! ExecutionSpace::is_initialized (), std::logic_error,
@@ -72,23 +97,12 @@ public:
   }
 
   KokkosDeviceWrapperNode () {
-    Teuchos::ParameterList params = getDefaultParameters ();
-    const int curNumThreads = params.get<int> ("Num Threads");
-    const int curNumNUMA = params.get<int> ("Num NUMA");
-    const int curNumCoresPerNUMA = params.get<int> ("Num CoresPerNUMA");
-    const int curDevice = params.get<int> ("Device");
-    const bool verbose = getVerboseParameter (params);
-
-    if (verbose) {
-      std::ostream& out = std::cout;
-      out << "DeviceWrapperNode with ExecutionSpace = "
-          << typeid (ExecutionSpace).name () << " initializing with "
-          << "\"Num Threads\" = " << curNumThreads
-          << ", \"Num NUMA\" = " << curNumNUMA
-          << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
-          << " \"Device\" = " << curDevice << std::endl;
-    }
     if (count == 0) {
+      const int curNumThreads = -1; // -1 means "let Kokkos pick"
+      const int curNumNUMA = -1;
+      const int curNumCoresPerNUMA = -1;
+      const int curDevice = 0;
+
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
       TEUCHOS_TEST_FOR_EXCEPTION(
         ! ExecutionSpace::is_initialized (), std::logic_error,
@@ -101,43 +115,9 @@ public:
 
   ~KokkosDeviceWrapperNode ();
 
-private:
-  /// \brief Get the value of the "Verbose" parameter as a \c bool.
-  ///
-  /// This method lets the "Verbose" parameter have type either \c int
-  /// or \c bool, and returns its value as \c bool.  If the "Verbose"
-  /// parameter does not exist in the given list, return the default
-  /// value, which is \c false.
-  static bool
-  getVerboseParameter (const Teuchos::ParameterList& params)
-  {
-    const bool defaultValue = false; // default value of the parameter
-
-    try { // Is it a bool?
-      return params.get<bool> ("Verbose");
-    }
-    catch (...) {}
-
-    try { // Is it an int?
-      return params.get<int> ("Verbose");
-    }
-    catch (...) {}
-
-    return defaultValue;
-  }
-
-public:
-
   static Teuchos::ParameterList getDefaultParameters ()
   {
-    Teuchos::ParameterList params;
-    params.set ("Verbose", 0);
-    // -1 says "Let Kokkos pick"
-    params.set ("Num Threads", -1);
-    params.set ("Num NUMA", -1);
-    params.set ("Num CoresPerNUMA", -1);
-    params.set ("Device", 0);
-    return params;
+    return Details::getDefaultNodeParameters ();
   }
 
   void init (int numthreads, int numnuma, int numcorespernuma, int device);
