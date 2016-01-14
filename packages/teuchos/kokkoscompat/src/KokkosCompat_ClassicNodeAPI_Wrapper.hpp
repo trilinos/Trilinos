@@ -40,11 +40,6 @@ public:
   /// release.  This Node type is safe to use.
   static const bool classic = false;
 
-  //! This only has meaning for the "classic" version of Tpetra.
-  static const bool isHostNode = true;
-  //! This only has meaning for the "classic" version of Tpetra.
-  static const bool isCUDANode = false;
-
   static int count;
 
   KokkosDeviceWrapperNode (Teuchos::ParameterList &pl) {
@@ -147,71 +142,7 @@ public:
 
   void init (int numthreads, int numnuma, int numcorespernuma, int device);
 
-  template <class WDP>
-  struct FunctorParallelFor {
-    typedef ExecutionSpace execution_space;
-
-    const WDP _c;
-    const int _beg;
-
-    FunctorParallelFor (const int beg, const WDP wd) :
-      _c (wd), _beg (beg)
-    {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator() (const int & i) const {
-      _c.execute (i + _beg);
-    }
-  };
-
-  template <class WDP>
-  static void parallel_for (const int beg, const int end, WDP wd) {
-    const FunctorParallelFor<WDP> f (beg, wd);
-    const int n = end - beg;
-    Kokkos::parallel_for(n,f);
-  }
-
-  template <class WDP>
-  struct FunctorParallelReduce {
-    typedef ExecutionSpace execution_space;
-    typedef typename WDP::ReductionType value_type;
-
-    WDP _c;
-    const int _beg;
-    FunctorParallelReduce (const int beg, WDP wd) :
-      _c (wd), _beg (beg) {}
-
-    KOKKOS_INLINE_FUNCTION
-    void operator() (const int & i, volatile value_type& value) const {
-      value = _c.reduce(value, _c.generate(i+_beg));
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void init( volatile value_type &update) const
-    {
-      update = _c.identity();
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void join( volatile value_type &update ,
-               const volatile value_type &source ) const
-    {
-      update = _c.reduce(update, source);
-    }
-  };
-
-  template <class WDP>
-  static typename WDP::ReductionType
-  parallel_reduce (const int beg, const int end, WDP wd) {
-    typedef typename WDP::ReductionType ReductionType;
-    ReductionType globalResult = wd.identity();
-    const FunctorParallelReduce<WDP> f (beg, wd);
-    const int n = end - beg;
-    Kokkos::parallel_reduce (n, f, globalResult);
-    return globalResult;
-  }
-
-  inline void sync () const { ExecutionSpace::fence (); }
+  void sync () const { ExecutionSpace::fence (); }
 
   //@{
   //! \name Memory management
