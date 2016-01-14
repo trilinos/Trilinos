@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.hansel.gcc.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
