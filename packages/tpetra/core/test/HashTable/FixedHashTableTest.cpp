@@ -941,14 +941,15 @@ namespace { // (anonymous)
 
 #ifdef KOKKOS_HAVE_CUDA
     {
-      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
-        out << "Testing copy constructor to CudaSpace" << endl;
-        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-          DeviceType>::test (out, success, *table, keys, vals,
-                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
-                             typeid(DeviceType).name ());
-        testedAtLeastOnce = true;
-      }
+      // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
+      // because Tpetra (and FixedHashTable in particular) assume UVM.
+      // Testing CudaSpace here results in the following exception:
+      //
+      // p=0: *** Caught standard std::exception of type 'std::runtime_error' :
+      //
+      // Kokkos::CudaSpace::access_error attempt to execute Cuda
+      //   function from non-Cuda space
+      // Traceback functionality not available
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
         out << "Testing copy constructor to CudaUVMSpace" << endl;
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
@@ -1090,14 +1091,15 @@ namespace { // (anonymous)
 
 #ifdef KOKKOS_HAVE_CUDA
     {
-      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
-        out << "Testing copy constructor to CudaSpace" << endl;
-        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-          DeviceType>::test (out, success, *table, keys, vals,
-                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
-                             typeid (DeviceType).name (), testValues);
-        testedAtLeastOnce = true;
-      }
+      // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
+      // because Tpetra (and FixedHashTable in particular) assume UVM.
+      // Testing CudaSpace here results in the following exception:
+      //
+      // p=0: *** Caught standard std::exception of type 'std::runtime_error' :
+      //
+      // Kokkos::CudaSpace::access_error attempt to execute Cuda
+      //   function from non-Cuda space
+      // Traceback functionality not available
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
         out << "Testing copy constructor to CudaUVMSpace" << endl;
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
