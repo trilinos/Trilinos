@@ -143,13 +143,13 @@ template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosCudaWrapperNode
 template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosCudaWrapperNode >(MultiVector<double, int, int,Kokkos::Compat::KokkosCudaWrapperNode> &);
 template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosCudaWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosCudaWrapperNode > &);
 #endif
-#else
+#else // Tpetra is disabled
 typedef Xpetra::EpetraNode default_node_type;
 template class EpetraMultiVectorT<int, default_node_type >;
 template RCP<MultiVector<double, int, int, default_node_type > > toXpetra<int, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<int,default_node_type >(MultiVector<double, int, int,default_node_type> &);
 template const Epetra_MultiVector & toEpetra<int, default_node_type >(const MultiVector<double, int, int, default_node_type > &);
-#endif // HAVE_XPETRA_SERIAL
+#endif
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
@@ -187,13 +187,13 @@ template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapp
 template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosCudaWrapperNode >(MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapperNode> &);
 template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosCudaWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapperNode > &);
 #endif
-#else
+#else // Tpetra is disabled
 typedef Xpetra::EpetraNode default_node_type;
 template class EpetraMultiVectorT<long long, default_node_type >;
 template RCP<MultiVector<double, int, long long, default_node_type > > toXpetra<long long, default_node_type>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<long long,default_node_type >(MultiVector<double, int, long long,default_node_type> &);
 template const Epetra_MultiVector & toEpetra<long long, default_node_type >(const MultiVector<double, int, long long, default_node_type > &);
-#endif // HAVE_XPETRA_SERIAL
+#endif
 #endif
 
 } // namespace Xpetra

@@ -261,7 +261,7 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
   }; // EpetraMapT class
 
-  // specialization on GO=int and Node=Serial
+  // specialization on GO=int and EpetraNode
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
   class EpetraMapT<int, EpetraNode>
@@ -694,7 +694,7 @@ namespace Xpetra {
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 
-// specialization on GO=long long and Node=Serial
+// specialization on GO=long long and EpetraNode
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
   class EpetraMapT<long long, EpetraNode>
@@ -1126,7 +1126,6 @@ namespace Xpetra {
     RCP<const Epetra_BlockMap> map_;
 }; // EpetraMapT class
 #endif // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-//#endif // HAVE_XPETRA_SERIAL
 
 } // Xpetra namespace
 

@@ -328,14 +328,7 @@ namespace Xpetra {
 
   }; // EpetraMultiVectorT class
 
-  // specialization for Node=Kokkos::Compat::KokkosSerialWrapperNode (needed for Epetra and Tpetra)
-//#ifdef HAVE_XPETRA_SERIAL
-//  template<class EpetraGlobalOrdinal>
-//  class EpetraMultiVectorT<EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
-//    : public virtual MultiVector<double, int, EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
-
-
-  // specialization on GO=int and Node=Serial
+  // specialization on GO=int and Node=EpetraNode
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
   class EpetraMultiVectorT<int, EpetraNode>
@@ -738,7 +731,7 @@ namespace Xpetra {
   }; // EpetraMultiVectorT class (specialization on GO=int, NO=EpetraNode
 #endif
 
-  // specialization on GO=long long and Node=Serial
+  // specialization on GO=long long and EpetraNode
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
   class EpetraMultiVectorT<long long, EpetraNode>
