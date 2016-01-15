@@ -127,26 +127,33 @@ namespace Xpetra {
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+  template class EpetraImportT<int, Xpetra::EpetraNode >;
+  template RCP<const Import<int, int, Xpetra::EpetraNode> > toXpetra<int,Xpetra::EpetraNode>(const Epetra_Import *);
+#endif
+
+#ifdef HAVE_TPETRA_INST_SERIAL
 template class EpetraImportT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
 template RCP<const Import<int,int,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<int,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 template class EpetraImportT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
 template RCP<const Import<int,int,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 template class EpetraImportT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template RCP<const Import<int, int, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<int,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef EpetraNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA
@@ -154,26 +161,33 @@ template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_no
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+  template class EpetraImportT<long long, Xpetra::EpetraNode >;
+  template RCP<const Import<int, long long, Xpetra::EpetraNode> > toXpetra<long long,Xpetra::EpetraNode>(const Epetra_Import *);
+#endif
+
+#ifdef HAVE_TPETRA_INST_SERIAL
 template class EpetraImportT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
 template RCP<const Import<int,long long,Kokkos::Compat::KokkosSerialWrapperNode > > toXpetra<long long,Kokkos::Compat::KokkosSerialWrapperNode >(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 template class EpetraImportT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
 template RCP<const Import<int,long long,Kokkos::Compat::KokkosThreadsWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosThreadsWrapperNode >(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 template class EpetraImportT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template RCP<const Import<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef EpetraNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif // HAVE_XPETRA_TPETRA

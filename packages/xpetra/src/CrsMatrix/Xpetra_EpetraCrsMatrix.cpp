@@ -800,44 +800,56 @@ namespace Xpetra {
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+  template class EpetraCrsMatrixT<int, Xpetra::EpetraNode >;
+#endif
+
+#ifdef HAVE_TPETRA_INST_SERIAL
 template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosSerialWrapperNode >;
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosThreadsWrapperNode>;
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 template class EpetraCrsMatrixT<int, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<int, default_node_type >;
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template class EpetraCrsMatrixT<int, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif
 
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_SERIAL
+#include "TpetraCore_config.h"
+#if ((defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_OPENMP)) || \
+    (!defined(EPETRA_HAVE_OMP) && !defined(HAVE_TPETRA_INST_SERIAL)))
+  template class EpetraCrsMatrixT<long long, Xpetra::EpetraNode >;
+#endif
+
+#ifdef HAVE_TPETRA_INST_SERIAL
 template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosSerialWrapperNode >;
 #endif
-#ifdef HAVE_XPETRA_PTHREAD
+#ifdef HAVE_TPETRA_INST_PTHREAD
 template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosThreadsWrapperNode>;
 #endif
-#ifdef HAVE_XPETRA_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 template class EpetraCrsMatrixT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 #endif
-#ifdef HAVE_XPETRA_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraCrsMatrixT<long long, default_node_type >;
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Kokkos::Compat::KokkosSerialWrapperNode default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template class EpetraCrsMatrixT<long long, default_node_type >;
 #endif // HAVE_XPETRA_TPETRA
 #endif
