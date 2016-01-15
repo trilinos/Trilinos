@@ -265,7 +265,7 @@ namespace MueLu {
       if (factoryName == "IndefiniteBlockDiagonalSmoother") return BuildBlockedSmoother<IndefBlockedDiagonalSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SimpleSmoother")                  return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SchurComplementFactory")          return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "TekoSmoother")                    return BuildTekoSmoother<TekoSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TekoSmoother")                    return BuildTekoSmoother(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
 #endif
 
@@ -727,16 +727,18 @@ namespace MueLu {
       return rcp(new SmootherFactory(bs));
     }
 
-    template <class T> // T must implement the Factory interface
     RCP<FactoryBase> BuildTekoSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
+      RCP<ParameterList> tekoParams = rcp(new ParameterList(paramListNonConst->sublist("Inverse Factory Library")));
+      paramListNonConst->remove("Inverse Factory Library");
 
       // create a new blocked smoother
-      RCP<T> bs = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+      RCP<TekoSmoother> bs = Build2<TekoSmoother>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
       // important: set block factory for A here! TODO think about this in more detail
       bs->SetFactory("A", MueLu::NoFactory::getRCP());
+      bs->SetTekoParameters(tekoParams);
 
       return rcp(new SmootherFactory(bs));
     }

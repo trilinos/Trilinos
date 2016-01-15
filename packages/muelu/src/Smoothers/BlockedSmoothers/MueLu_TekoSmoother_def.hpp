@@ -51,13 +51,17 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "Teko_Utilities.hpp"
+#include <Thyra_DefaultProductMultiVector.hpp>
+
+#include "Teko_InverseLibrary.hpp"
+#include "Teko_InverseFactory.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ThyraUtils.hpp>
 
 #include "MueLu_TekoSmoother.hpp"
 #include "MueLu_MergedBlockedMatrixFactory.hpp"
@@ -71,7 +75,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   TekoSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TekoSmoother()
-    : type_("Teko smoother")
+    : type_("Teko smoother"), A_(Teuchos::null), bA_(Teuchos::null), bThyOp_(Teuchos::null), tekoParams_(Teuchos::null), inverseOp_(Teuchos::null)
   {
   }
 
@@ -80,6 +84,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A", null, "Generating factory of the matrix A");
+    validParamList->set< std::string >           ("Inverse Type", "", "Name of parameter list within 'Teko parameters' containing the Teko smoother parameters.");
 
     return validParamList;
   }
@@ -98,26 +103,35 @@ namespace MueLu {
       this->GetOStream(Warnings0) << "MueLu::TekoSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
-    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A"); // A needed for extracting map extractors
-    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-    TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
+    A_  = Factory::Get< RCP<Matrix> >(currentLevel, "A"); // A needed for extracting map extractors
+    bA_ = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(bA_.is_null(), Exceptions::BadCast,
                                "MueLu::TekoSmoother::Build: input matrix A is not of type BlockedCrsMatrix.");
 
-
-    // TODO fill me
-
-    std::cout << "TEKO smoother setup!!!" << std::endl;
-
-    Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > bThyOp = bA->getThyraOperator();
-    TEUCHOS_TEST_FOR_EXCEPTION(bThyOp.is_null(), Exceptions::BadCast,
+    bThyOp_ = bA_->getThyraOperator();
+    TEUCHOS_TEST_FOR_EXCEPTION(bThyOp_.is_null(), Exceptions::BadCast,
                                "MueLu::TekoSmoother::Build: Could not extract thyra operator from BlockedCrsMatrix.");
 
-    std::cout << bThyOp->productRange()->numBlocks() << "x" << bThyOp->productDomain()->numBlocks() << std::endl;
+    Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyOp = Teuchos::rcp_dynamic_cast<const Thyra::LinearOpBase<Scalar> >(bThyOp_);
+    TEUCHOS_TEST_FOR_EXCEPTION(thyOp.is_null(), Exceptions::BadCast,
+                               "MueLu::TekoSmoother::Build: Downcast of Thyra::BlockedLinearOpBase to Teko::LinearOp failed.");
 
-    //Teuchos::RCP<Teko::LinearOp> thyOp = Teuchos::rcp_dynamic_cast<Teko::LinearOp>(bThyOp);
-    //TEUCHOS_TEST_FOR_EXCEPTION(thyOp.is_null(), Exceptions::BadCast,
-    //                           "MueLu::TekoSmoother::Build: Downcast of Thyra::BlockedLinearOpBase to Teko::LinearOp failed.");
+    // parameter list contains TekoSmoother parameters but does not handle the Teko parameters itself!
+    const ParameterList& pL = Factory::GetParameterList();
+    std::string smootherType = pL.get<std::string>("Inverse Type");
+    TEUCHOS_TEST_FOR_EXCEPTION(smootherType.empty(), Exceptions::RuntimeError,
+        "MueLu::TekoSmoother::Build: You must provide a 'Smoother Type' name that is defined in the 'Teko parameters' sublist.");
+    type_ = smootherType;
 
+    TEUCHOS_TEST_FOR_EXCEPTION(tekoParams_.is_null(), Exceptions::BadCast,
+                               "MueLu::TekoSmoother::Build: No Teko parameters have been set.");
+
+    Teuchos::RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(*tekoParams_);
+    Teuchos::RCP<Teko::InverseFactory> inverse = invLib->getInverseFactory(smootherType);
+
+    inverseOp_ = Teko::buildInverse(*inverse, thyOp);
+    TEUCHOS_TEST_FOR_EXCEPTION(inverseOp_.is_null(), Exceptions::BadCast,
+                               "MueLu::TekoSmoother::Build: Failed to build Teko inverse operator. Probably a problem with the Teko parameters.");
 
     this->IsSetup(true);
   }
@@ -127,9 +141,45 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                "MueLu::TekoSmoother::Apply(): Setup() has not been called");
 
-    // TODO call Apply of inverse operator?
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = X.getMap()->getComm();
 
-    std::cout << "TEKO smoother apply " << std::endl;
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = bA_->getRangeMapExtractor();
+    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgMapExtractor));
+
+    // copy initial solution vector X to Ptr<Thyra::MultiVectorBase> YY
+
+    // create a Thyra RHS vector
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > thyB = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productRange()),Teuchos::as<int>(B.getNumVectors()));
+    Teuchos::RCP<Thyra::ProductMultiVectorBase<Scalar> > thyProdB =
+        Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyB);
+    TEUCHOS_TEST_FOR_EXCEPTION(thyProdB.is_null(), Exceptions::BadCast,
+        "MueLu::TekoSmoother::Apply: Failed to cast range space to product range space.");
+
+    // copy RHS vector B to Thyra::MultiVectorBase thyProdB
+    Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateThyra(Teuchos::rcpFromRef(B), rgMapExtractor, thyProdB);
+
+    // create a Thyra SOL vector
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > thyX = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productDomain()),Teuchos::as<int>(X.getNumVectors()));
+    Teuchos::RCP<Thyra::ProductMultiVectorBase<Scalar> > thyProdX =
+        Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyX);
+    TEUCHOS_TEST_FOR_EXCEPTION(thyProdX.is_null(), Exceptions::BadCast,
+        "MueLu::TekoSmoother::Apply: Failed to cast domain space to product domain space.");
+
+    // copy RHS vector X to Thyra::MultiVectorBase thyProdX
+    Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateThyra(Teuchos::rcpFromRef(X), rgMapExtractor, thyProdX);
+
+    inverseOp_->apply(
+      Thyra::NOTRANS,
+      *thyB, //const MultiVectorBase<Scalar> &X,
+      thyX.ptr(), //const Ptr<MultiVectorBase<Scalar> > &Y,
+      1.0,
+      0.0);
+
+    // copy back content of Ptr<Thyra::MultiVectorBase> thyX into X
+    Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XX =
+          Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyX, comm);
+
+    X.update(Teuchos::ScalarTraits<Scalar>::one(), *XX, Teuchos::ScalarTraits<Scalar>::zero());
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
