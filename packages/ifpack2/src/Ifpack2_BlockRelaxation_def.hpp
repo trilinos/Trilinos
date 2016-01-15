@@ -1056,7 +1056,7 @@ DoSGS (MV& X, MV& Y) const
   // i--" will loop forever if local_ordinal_type is unsigned, because
   // unsigned integers are (trivially) always nonnegative.
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
-    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i) != 1 ) {
+    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i-1) != 1 ) {
       if (Containers_[i-1]->getNumRows () == 0) continue;
 
       // update from previous block
