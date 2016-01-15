@@ -111,6 +111,75 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   }
 }
 
+template<class MatrixType>
+void
+RILUK<MatrixType>::resetMatrix (const Teuchos::RCP<const row_matrix_type>& A) {
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+
+  if (A.getRawPtr () == A_.getRawPtr ()) {
+    A_ = A;
+    return;
+  }
+
+  std::cout << "======== PROPER RESETMATRIX ========" << std::endl;
+
+
+  A_ = A;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), std::runtime_error,
+    "Ifpack2:RILUK:resetMatrix: Input matrix A cannot be null.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_, std::runtime_error,
+    "Ifpack2:RILUK:resetMatrix: the preconditioner must have been initialized prior to the call.");
+
+  RCP<const row_matrix_type> A_local;
+  Teuchos::Time timer1 ("RILUK::resetMatrix:makeLocalFilter");
+  {
+    Teuchos::TimeMonitor timeMon (timer1); // start timing
+    A_local = makeLocalFilter (A_);
+  }
+
+  Teuchos::Time timer2 ("RILUK::resetMatrix:initAllValues");
+  {
+    Teuchos::TimeMonitor timeMon (timer2); // start timing
+
+    RCP<const crs_matrix_type> A_local_crs = rcp_dynamic_cast<const crs_matrix_type> (A_local);
+    TEUCHOS_TEST_FOR_EXCEPTION(A_local_crs.is_null(), std::runtime_error, "Work only for CRS for now");
+    // if (A_local_crs.is_null ()) {
+      // // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
+      // // number of elements in each row of A_local, so that we can
+      // // create A_local_crs_nc using static profile.  The code below is
+      // // correct but potentially slow.
+      // RCP<crs_matrix_type> A_local_crs_nc =
+          // rcp (new crs_matrix_type (A_local->getRowMap (),
+                                    // A_local->getColMap (), 0));
+      // // FIXME (mfh 24 Jan 2014) This Import approach will only work
+      // // if A_ has a one-to-one row Map.  This is generally the case
+      // // with matrices given to Ifpack2.
+      // //
+      // // Source and destination Maps are the same in this case.
+      // // That way, the Import just implements a copy.
+      // typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
+              // node_type> import_type;
+      // import_type import (A_local->getRowMap (), A_local->getRowMap ());
+      // A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
+      // A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+      // A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+    // }
+    A_local_crs_ = A_local_crs;
+
+    initAllValues (*A_local_crs_);
+  }
+
+  isAllocated_   = true;
+  isInitialized_ = true;
+  isComputed_    = false;
+
+  numInitialize_ = 0;
+  initializeTime_ = timer1.totalElapsedTime () + timer2.totalElapsedTime();
+}
 
 
 template<class MatrixType>

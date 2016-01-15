@@ -399,6 +399,26 @@ class RILUK:
   virtual void
   setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
 
+  /// \brief Change the matrix to be preconditioned.
+  ///
+  /// \param A [in] The new matrix.
+  ///
+  /// \post <tt>  isInitialized ()</tt>
+  /// \post <tt>! isComputed ()</tt>
+  ///
+  /// Calling this method replaces the preconditioner's matrix.  After
+  /// calling this method with a nonnull input, you must first call
+  /// compute() (in that order) before you may call apply().
+  ///
+  /// You cannot call this method with a null input. This method does not
+  /// invalidate any previous factorization, so calling
+  /// setMatrix() with a null input does not make sense.
+  ///
+  /// The new matrix A must necessarily have the same maps and graph
+  /// as the original matrix.
+  virtual void
+  resetMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
