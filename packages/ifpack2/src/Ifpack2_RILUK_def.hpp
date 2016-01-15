@@ -693,6 +693,19 @@ void RILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
+  if (isComputed()) {
+    // We have to return here. Otherwise, the following sequence of calls
+    //   initialize()
+    //   compute()
+    //   compute()
+    // results in the second compute() producing different results from the
+    // first one. This is due to the fact that during the compute() call,
+    // matrices L_, U_, and D_ (which were originally set to be submatrices of
+    // A_) change to store the computed factors. So the second compute() call
+    // actually operates on a different matrix.
+    return;
+  }
+
   Teuchos::Time timer ("RILUK::compute");
   { // Start timing
     isComputed_ = false;
