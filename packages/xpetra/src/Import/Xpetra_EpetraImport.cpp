@@ -48,25 +48,6 @@
 
 namespace Xpetra {
 
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  EpetraImportT<EpetraGlobalOrdinal, Node>::EpetraImportT(const Teuchos::RCP<const map_type > & source, const Teuchos::RCP<const map_type > & target)
-    : import_(rcp(new Epetra_Import(toEpetra<EpetraGlobalOrdinal,Node>(target), toEpetra<EpetraGlobalOrdinal,Node>(source)))) { } // Warning: Epetra(Target, Source) vs. Tpetra(Source, Target)
-#endif
-  // //! copy constructor.
-  // EpetraImportT<EpetraGlobalOrdinal>::EpetraImportT(const Import<int,GlobalOrdinal> & import) { // TODO: refactoring
-  //   XPETRA_DYNAMIC_CAST(const EpetraImportT, import, tImport, "Xpetra::EpetraImportT copy constructors only accept Xpetra::EpetraImportT as input arguments.");
-  //   import_ = rcp(new Epetra_Import(*tImport.getEpetra_Import()));
-  // }
-
-  // TODO: move that elsewhere
-  //   template<class GlobalOrdinal>
-  //   const Epetra_Import & toEpetra(const Import<int, GlobalOrdinal> &import) {
-  //     // TODO: throw exception
-  //     const EpetraImportT & tpetraImport = dynamic_cast<const EpetraImportT<GlobalOrdinal> &>(import);
-  //     return *tpetraImport.getEpetra_Import();
-  //   }
-
   template<class GlobalOrdinal, class Node>
   RCP< const Import<int, GlobalOrdinal, Node > > toXpetra(const Epetra_Import *import) {
     if (import != NULL) {
@@ -77,53 +58,6 @@ namespace Xpetra {
     return Teuchos::null;
   }
   //
-
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getExportPIDs() const { XPETRA_MONITOR("EpetraImportT::getExportImageIDs"); return ArrayView<const int> (import_->ExportPIDs(),import_->NumExportIDs()); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  size_t EpetraImportT<EpetraGlobalOrdinal, Node>::getNumRemoteIDs() const { XPETRA_MONITOR("EpetraImportT::getNumRemoteIDs"); return import_->NumRemoteIDs(); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  size_t EpetraImportT<EpetraGlobalOrdinal, Node>::getNumExportIDs() const { XPETRA_MONITOR("EpetraImportT::getNumExportIDs"); return import_->NumExportIDs(); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getPermuteFromLIDs() const {
-    XPETRA_MONITOR("EpetraImportT::getPermuteFromLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getExportImageIDs not implemented"); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getPermuteToLIDs() const {
-    XPETRA_MONITOR("EpetraImportT::getPermuteToLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getPermuteToLIDs not implemented"); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getRemoteLIDs() const {
-    XPETRA_MONITOR("EpetraImportT::getRemoteLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getRemoteLIDs not implemented"); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getRemotePIDs() const {
-    XPETRA_MONITOR("EpetraImportT::getRemotePIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getRemotePIDs not implemented"); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  ArrayView< const int > EpetraImportT<EpetraGlobalOrdinal, Node>::getExportLIDs() const {
-    XPETRA_MONITOR("EpetraImportT::getExportLIDs");
-    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::getExportLIDs not implemented"); }
-#endif
-#if 0
-  template<class EpetraGlobalOrdinal, class Node>
-  void EpetraImportT<EpetraGlobalOrdinal, Node>::print(std::ostream &os) const { XPETRA_MONITOR("EpetraImportT::print"); import_->Print(os); }
-#endif
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
