@@ -31,19 +31,44 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#ifndef STK_MESH_HASH_ENTIY_AND_ENTITY_KEY_HPP
+#define STK_MESH_HASH_ENTIY_AND_ENTITY_KEY_HPP
+
 #include <stk_mesh/base/Entity.hpp>
-#include <iostream>
+#include <stk_mesh/base/EntityKey.hpp>
 
+#include <functional>
 
-namespace stk {
-namespace mesh {
+namespace std {
 
-std::ostream & operator << ( std::ostream &os , const Entity &entity )
+template<>
+struct hash<stk::mesh::Entity>
 {
-  size_t value = entity.m_value;
-  os << value;
-  return os;
+    const size_t operator()(const stk::mesh::Entity& entity) const
+    {
+        return hash<uint64_t>()(entity.m_value);
+    }
+
+    const size_t operator()(const stk::mesh::Entity& entity1, const stk::mesh::Entity& entity2) const
+    {
+        return hash<uint64_t>()(entity1.m_value)^hash<uint64_t>()(entity2.m_value);
+    }
+};
+
+template<>
+struct hash<stk::mesh::EntityKey>
+{
+    const size_t operator()(const stk::mesh::EntityKey& entityKey) const
+    {
+        return hash<unsigned long long>()(entityKey.m_value);
+    }
+
+    const size_t operator()(const stk::mesh::EntityKey& entityKey1, const stk::mesh::EntityKey& entityKey2)     const
+    {
+        return hash<unsigned long long>()(entityKey1.m_value)^hash<unsigned long long>()(entityKey2.m_value    );
+    }
+};
+
 }
 
-} // namespace mesh
-} // namespace stk
+#endif
