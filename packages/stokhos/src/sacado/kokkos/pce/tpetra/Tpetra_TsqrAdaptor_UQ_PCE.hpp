@@ -63,21 +63,17 @@
 
 namespace Tpetra {
 
-#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-
   /// \class TsqrAdaptor
   /// \brief Adaptor from Tpetra::MultiVector to TSQR for UQ::PCE scalar type
   /// \author Eric Phipps
   ///
   /// This specialization works be extracting the underlying array within the
   /// multivector and converting to a standard scalar type.
-  template <class Storage, class LO, class GO, class Device>
+  template <class Storage, class LO, class GO, class Node>
   class TsqrAdaptor< Tpetra::MultiVector< Sacado::UQ::PCE<Storage>,
-                                          LO, GO,
-                                          Kokkos::Compat::KokkosDeviceWrapperNode<Device> > > :
+                                          LO, GO, Node > > :
     public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector< Sacado::UQ::PCE<Storage>, LO, GO, Node > MV;
     typedef typename MV::scalar_type mp_scalar_type;
 
@@ -182,12 +178,21 @@ namespace Tpetra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
       prepareTsqr (Q); // Finish initializing TSQR.
-      KMV A_view = getNonConstView (A);
-      KMV Q_view = getNonConstView (Q);
-      tsqr_->factorExplicit (A_view, Q_view, R, false,
+
+      ordinal_type numRows;
+      ordinal_type numCols;
+      ordinal_type LDA;
+      ordinal_type LDQ;
+      scalar_type* A_ptr;
+      scalar_type* Q_ptr;
+
+      getNonConstView (numRows, numCols, A_ptr, LDA, A);
+      getNonConstView (numRows, numCols, Q_ptr, LDQ, Q);
+      const bool contiguousCacheBlocks = false;
+      tsqr_->factorExplicit (numRows, numCols, A_ptr, LDA,
+                             Q_ptr, LDQ, R.values (), R.stride (),
+                             contiguousCacheBlocks,
                              forceNonnegativeDiagonal);
     }
 
@@ -226,15 +231,21 @@ namespace Tpetra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
       prepareTsqr (Q); // Finish initializing TSQR.
 
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
       // to make sure it is the same communicator as the one we are
       // using in our dist_tsqr_type implementation.
-      KMV Q_view = getNonConstView (Q);
-      return tsqr_->revealRank (Q_view, R, tol, false);
+
+      ordinal_type numRows;
+      ordinal_type numCols;
+      scalar_type* Q_ptr;
+      ordinal_type LDQ;
+      getNonConstView (numRows, numCols, Q_ptr, LDQ, Q);
+      const bool contiguousCacheBlocks = false;
+      return tsqr_->revealRankRaw (numRows, numCols, Q_ptr, LDQ,
+                                   R.get (), R.stride (), tol,
+                                   contiguousCacheBlocks);
     }
 
   private:
@@ -312,61 +323,56 @@ namespace Tpetra {
       distTsqr_->init (messBase);
     }
 
-    /// \brief Extract A's underlying KokkosClassic::MultiVector instance.
-    ///
-    /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
-    /// nonconstant view of the original multivector's data.  This
-    /// class method tells TSQR how to get the KMV from the input
-    /// multivector.  The KMV is not a persistent view of the data;
-    /// its scope is contained within the scope of the multivector.
+    /// \brief Extract a nonpersistent view of A's data as a
+    ///   scalar_type matrix, stored as a flat column-major array.
     ///
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  If A has nonconstant stride, this
     ///   method will throw an exception.
-    static KokkosClassic::MultiVector<scalar_type, node_type>
-    getNonConstView (MV& A)
+    static void
+    getNonConstView (ordinal_type& numRows,
+                     ordinal_type& numCols,
+                     scalar_type*& A_ptr,
+                     ordinal_type& LDA,
+                     const MV& A)
     {
       // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
       // storage of A uses nonconstant stride internally.  We would
       // have to copy and pack into a matrix with constant stride, and
       // then unpack on exit.  For now we choose just to raise an
       // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(! A.isConstantStride(), std::invalid_argument,
-                                 "TSQR does not currently support Tpetra::MultiVector "
-                                 "inputs that do not have constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A.isConstantStride(), std::invalid_argument,
+         "TSQR does not currently support Tpetra::MultiVector "
+         "inputs that do not have constant stride.");
 
-      typedef typename Teuchos::ArrayRCP<mp_scalar_type>::size_type size_type;
+      // FIXME (mfh 16 Jan 2016) When I got here, I found strides[0]
+      // instead of strides[1] for the stride.  I don't think this is
+      // right.  However, I don't know about these Stokhos scalar
+      // types so I'll just do what was here.
+      //
+      // STOKHOS' TYPES ARE NOT TESTED WITH TSQR REGULARLY SO IT IS
+      // POSSIBLE THAT THE ORIGINAL CODE WAS WRONG.
+
       typedef typename MV::dual_view_type view_type;
       typedef typename view_type::t_dev::array_type flat_array_type;
 
-      // Create new Kokkos::MultiVector reinterpreting the data as a longer
-      // array of the base scalar type
+      // Reinterpret the data as a longer array of the base scalar
+      // type.  TSQR currently forbids MultiVector input with
+      // nonconstant stride, so we need not worry about that here.
 
-      // Create new ArrayRCP holding data
       view_type pce_mv = A.getDualView();
       flat_array_type flat_mv = pce_mv.d_view;
-      const size_t num_rows = flat_mv.dimension_0();
-      const size_t num_cols = flat_mv.dimension_1();
-      const size_t size = num_rows * num_cols;
-      ArrayRCP<scalar_type> vals =
-        Teuchos::arcp(flat_mv.ptr_on_device(), size_type(0), size, false);
 
-      // Create new MultiVector
-      // Owing to the above comment, we don't need to worry about
-      // non-constant stride
-      size_t strides[2];
-      flat_mv.stride(strides);
-      const size_t stride = strides[0];
-      KokkosClassic::MultiVector<scalar_type, node_type> mv(A.getMap()->getNode());
-      mv.initializeValues(num_rows, num_cols, vals, stride);
+      numRows = static_cast<ordinal_type> (flat_mv.dimension_0 ());
+      numCols = static_cast<ordinal_type> (flat_mv.dimension_1 ());
+      A_ptr = flat_mv.ptr_on_device ();
 
-      return mv;
+      ordinal_type strides[2];
+      flat_mv.stride (strides);
+      LDA = strides[0];
     }
   };
-
-#endif
-
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_TSQR
