@@ -69,6 +69,7 @@ rankValue=1;
 intepidManaged=true;
 sizeValue=1;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 template<class ScalarPointer>
@@ -147,8 +148,9 @@ sizeValue=dim_0;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -162,8 +164,9 @@ rankValue=2;
 sizeValue=dim_0*dim_1;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1,index_type dim_2){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -178,9 +181,9 @@ sizeValue=dim_0*dim_1*dim_2;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -195,8 +198,9 @@ sizeValue=dim_0*dim_1*dim_2*dim_3;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -227,8 +231,9 @@ sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -243,9 +248,9 @@ sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
-
+this->initialize();
 }
+
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6,index_type dim_7){
 dim0=dim[0]=dim_0;
 dim1=dim[1]=dim_1;
@@ -260,7 +265,7 @@ sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;;
 intepidManaged=true;
 cudaFree(&containerMemory);
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
 
 void resize(const Teuchos::Array<int>& newDimensions);
@@ -556,6 +561,7 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::resize(cons
        std::cerr <<"FieldContainer_Kokkos can't have more than 8 dimentions"<<std::endl;
     }
   }
+  this->initialize();
 }
 
 
@@ -607,6 +613,7 @@ rankValue=1;
 intepidManaged=true;
 sizeValue=dim_0;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 template <class Scalar>
@@ -618,6 +625,7 @@ rankValue=2;
 intepidManaged=true;
 sizeValue=dim_0*dim_1;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2){
@@ -629,6 +637,7 @@ rankValue=3;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 template <class Scalar>
@@ -642,7 +651,7 @@ rankValue=4;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
-
+this->initialize();
 }
 
 template <class Scalar>
@@ -657,6 +666,7 @@ rankValue=5;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 template <class Scalar>
@@ -672,6 +682,7 @@ rankValue=6;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Cuda>::FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6){
@@ -687,6 +698,7 @@ rankValue=7;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 
@@ -705,6 +717,7 @@ rankValue=8;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;
 cudaMalloc(&containerMemory,sizeValue*sizeof(Scalar));
+this->initialize();
 }
 
 template <class Scalar>

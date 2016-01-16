@@ -65,10 +65,18 @@ public:
 FieldContainer_Kokkos(){
 count_=1;
 dim0=dim[0]=1;
-rankValue=1;
+dim1=dim[1]=0;
+dim2=dim[2]=0;
+dim3=dim[3]=0;
+dim4=dim[4]=0;
+dim5=dim[5]=0;
+dim6=dim[6]=0;
+dim7=dim[7]=0;
+rankValue=0;
 intepidManaged=true;
 sizeValue=1;
 containerMemory=new Scalar[sizeValue];
+containerMemory[0]=Scalar(0.0);
 }
 
 
@@ -99,6 +107,7 @@ rankValue=1;
 sizeValue=dim_0;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1){
 if(!intepidManaged){
@@ -117,7 +126,7 @@ rankValue=2;
 sizeValue=dim_0*dim_1;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
-
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1,index_type dim_2){
 if(!intepidManaged){
@@ -137,7 +146,7 @@ rankValue=3;
 sizeValue=dim_0*dim_1*dim_2;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
-
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3){
 if(!intepidManaged){
@@ -156,6 +165,7 @@ rankValue=4;
 sizeValue=dim_0*dim_1*dim_2*dim_3;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4){
@@ -175,6 +185,7 @@ rankValue=5;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5){
 if(!intepidManaged){
@@ -193,6 +204,7 @@ rankValue=6;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6){
 if(!intepidManaged){
@@ -209,10 +221,9 @@ dim6=dim[6]=dim_6;
 dim7=dim[7]=0;
 rankValue=7;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
-
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
-
+this->initialize();
 }
 void resize(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6,index_type dim_7){
 if(!intepidManaged){
@@ -230,6 +241,7 @@ rankValue=8;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
 delete[] containerMemory;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 void resize(const Teuchos::Array<int>& newDimensions);
@@ -292,7 +304,6 @@ break;
 
 }
 containerMemory=InContainer.ptr_on_device();
-
 
 }
 
@@ -535,6 +546,7 @@ void FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::resize(co
        std::cerr <<"FieldContainer_Kokkos can't have more than 8 dimentions"<<std::endl;
     }
   }
+  this->initialize();
 }
 
 
@@ -586,6 +598,7 @@ rankValue=1;
 intepidManaged=true;
 sizeValue=dim_0;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 template <class Scalar>
@@ -597,6 +610,7 @@ rankValue=2;
 intepidManaged=true;
 sizeValue=dim_0*dim_1;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2){
@@ -608,6 +622,7 @@ rankValue=3;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 template <class Scalar>
@@ -621,7 +636,7 @@ rankValue=4;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3;
 containerMemory=new Scalar[sizeValue];
-
+this->initialize();
 }
 
 template <class Scalar>
@@ -636,6 +651,7 @@ rankValue=5;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 template <class Scalar>
@@ -651,6 +667,7 @@ rankValue=6;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 template <class Scalar>
 FieldContainer_Kokkos<Scalar,Kokkos::LayoutRight,Kokkos::Serial>::FieldContainer_Kokkos(index_type dim_0,index_type dim_1,index_type dim_2,index_type dim_3,index_type dim_4,index_type dim_5,index_type dim_6){
@@ -666,6 +683,7 @@ rankValue=7;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 
@@ -684,6 +702,7 @@ rankValue=8;
 intepidManaged=true;
 sizeValue=dim_0*dim_1*dim_2*dim_3*dim_4*dim_5*dim_6*dim_7;
 containerMemory=new Scalar[sizeValue];
+this->initialize();
 }
 
 
