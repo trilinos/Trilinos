@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2015-12-13 12:43:56 mhoemme"
+#+DATE: Time-stamp: "2016-01-16 18:41:36 loftuser"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -527,3 +527,28 @@ example, if ~Scalar = float~ is disabled, LinearSolverFactory won't be
 able to create solvers for ~Scalar = float~, unless users register
 packages' factors with that type manually.  However, Tpetra will work
 fine regardless.
+* What is TSQR?
+
+TSQR stands for "Tall Skinny QR" factorization.  Mark Hoemmen wrote an
+implementation of TSQR in 2010.  It now lives in the TSQR subpackage
+of Tpetra.  Both Anasazi and Belos have an option to use TSQR as a
+block orthogonalization method.  Mark came up with TSQR in 2005
+specifically for use as a block orthogonalization in Krylov subspace
+methods.
+
+** Build errors when I enable TSQR; why?
+
+Packages that specialize ~Anasazi::MultiVecTraits~ or
+~Belos::MultiVecTraits~ for MultiVector types, but omit a TSQR adapter
+from their MultiVecTraits class, may cause build errors when TSQR is
+enabled.  Since TSQR is disabled by default at the moment,
+implementers tend to skip this crucial step.
+
+Both Anasazi and ROL have examples of this error.  The work-around for
+the former is to disable TSQR for Anasazi ONLY, via the CMake option
+~Anasazi_ENABLE_TSQR:BOOL=OFF~, and leave it enabled for Belos.  ROL
+specializes the Belos adapter, so the work-around for the latter is
+either to disable TSQR for Belos (~Belos_ENABLE_TSQR:BOOL=OFF~) or to
+disable TSQR altogether (the default behavior).
+
+
