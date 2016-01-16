@@ -130,9 +130,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraApply, M, MA, Scalar,
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
 
   Teuchos::RCP<Epetra_Comm> Comm;
+#ifdef HAVE_MPI
   if(testMpi)
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
   else
+#endif
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 
   // 1) load all matrices
@@ -235,9 +237,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult, M, 
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
 
   Teuchos::RCP<Epetra_Comm> Comm;
+#ifdef HAVE_MPI
   if(testMpi)
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
   else
+#endif
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 
   // 1) load all matrices
