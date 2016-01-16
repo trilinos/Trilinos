@@ -282,23 +282,12 @@ namespace TSQR {
         // "factorExplicit" is an alternate, hopefully faster way of
         // factoring the matrix, when only the explicit Q factor is
         // wanted.
-        typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
         if (testFactorExplicit) {
-          KMV A_copy_view (node);
-          A_copy_view.initializeValues (static_cast<size_t> (A_copy.nrows()),
-                                        static_cast<size_t> (A_copy.ncols()),
-                                        arcp (A_copy.get(), 0, A_copy.nrows()*A_copy.ncols(), false), // non-owning ArrayRCP
-                                        static_cast<size_t> (A_copy.lda()));
-          KMV Q_view (node);
-          Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()),
-                                   static_cast<size_t> (Q_local.ncols()),
-                                   arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
-                                   static_cast<size_t> (Q_local.lda()));
-          Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>
-            R_view (Teuchos::View, R.get(), R.lda(), R.nrows(), R.ncols());
-
-          tsqr->factorExplicit (A_copy_view, Q_view, R_view,
-                                contiguousCacheBlocks);
+          tsqr->factorExplicitRaw (A_copy.nrows (), A_copy.ncols (),
+                                   A_copy.get (), A_copy.lda (),
+                                   Q_local.get (), Q_local.lda (),
+                                   R.get (), R.lda (),
+                                   contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
@@ -332,13 +321,6 @@ namespace TSQR {
         // modifies the Q factor if the matrix doesn't have full
         // column rank.
         if (testRankRevealing) {
-          KMV Q_view (node);
-          Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()),
-                                   static_cast<size_t> (Q_local.ncols()),
-                                   arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
-                                   static_cast<size_t> (Q_local.lda()));
-          Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>
-            R_view (Teuchos::View, R.get(), R.lda(), R.nrows(), R.ncols());
           // If 2^{# columns} > machine precision, then our choice
           // of singular values will make the smallest singular
           // value < machine precision.  In that case, the SVD can't
@@ -348,7 +330,10 @@ namespace TSQR {
           // actual numerical rank.
           const magnitude_type tol = STM::zero();
           const ordinal_type rank =
-            tsqr->revealRank (Q_view, R_view, tol, contiguousCacheBlocks);
+            tsqr->revealRankRaw (Q_local.nrows (), Q_local.ncols (),
+                                 Q_local.get (), Q_local.lda (),
+                                 R.get (), R.lda (), tol,
+                                 contiguousCacheBlocks);
 
           magnitude_type two_to_the_numCols = STM::one();
           for (int k = 0; k < numCols; ++k) {
