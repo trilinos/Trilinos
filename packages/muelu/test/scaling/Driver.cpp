@@ -175,8 +175,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // Parameters initialization
   // =========================================================================
-  //Teuchos::CommandLineProcessor clp(false);
-
   GO nx = 100, ny = 100, nz = 100;
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
