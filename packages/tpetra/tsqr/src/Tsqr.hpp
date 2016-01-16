@@ -52,7 +52,6 @@
 #include <Tsqr_SequentialTsqr.hpp>
 #include <Tsqr_Util.hpp>
 
-#include <Kokkos_MultiVector.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
