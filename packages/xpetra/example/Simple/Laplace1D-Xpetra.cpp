@@ -59,9 +59,9 @@
 
 #include <TpetraCore_config.h>
 
-#if defined(HAVE_TPETRA_INST_OPENMP) || defined(HAVE_TPETRA_INST_SERIAL)
-#if defined(HAVE_TPETRA_INST_INT_INT) || defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-#if defined(HAVE_TPETRA_INST_DOUBLE)
+#if ((defined(HAVE_TPETRA_INST_OPENMP) || defined(HAVE_TPETRA_INST_SERIAL)) && \
+    (defined(HAVE_TPETRA_INST_INT_INT) || defined(HAVE_TPETRA_INST_INT_LONG_LONG)) && \
+    defined(HAVE_TPETRA_INST_DOUBLE))
 
 // Choose types Tpetra is instantiated on
 typedef double Scalar;
@@ -125,7 +125,9 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-#endif // Tpetra instantiated on SC=double
-#endif // Tpetra instantiated on GO=int or GO=long long
-#endif // Tpetra instantiated on OpenMP or Serial
+#else
+int main(int argc, char *argv[]) { std::cout << "Tpetra is not instantiated on SC=double, GO=int/long long and Node=Serial/OpenMP. Skip example." << std::endl; return EXIT_SUCCESS; }
+#endif // Tpetra instantiated on SC=double, GO=int/long long and Node=Serial/OpenMP
+#else
+int main(int argc, char *argv[]) { std::cout << "Xpetra has been compiled without Tpetra support. Skip example." << std::endl; return EXIT_SUCCESS; }
 #endif // HAVE_XPETRA_TPETRA
