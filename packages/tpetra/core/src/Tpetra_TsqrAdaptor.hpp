@@ -46,17 +46,17 @@
 /// \brief Adaptor from Tpetra::MultiVector to TSQR
 /// \author Mark Hoemmen
 
-#include <Tpetra_ConfigDefs.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_TPETRA_TSQR
-#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#  include <Tsqr.hpp> // full (internode + intranode) TSQR
-#  include <Tsqr_DistTsqr.hpp> // internode TSQR
+#  include "Tsqr_NodeTsqrFactory.hpp" // create intranode TSQR object
+#  include "Tsqr.hpp" // full (internode + intranode) TSQR
+#  include "Tsqr_DistTsqr.hpp" // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#  include <Tsqr_TeuchosMessenger.hpp>
-#  include <Tpetra_MultiVector.hpp>
-#  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#  include "Tsqr_TeuchosMessenger.hpp"
+#  include "Tpetra_MultiVector.hpp"
+#  include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #  include <stdexcept>
 
 
@@ -212,13 +212,34 @@ namespace Tpetra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! A.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+         "factorExplicit: Input MultiVector A must have constant stride.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! Q.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+         "factorExplicit: Input MultiVector Q must have constant stride.");
       prepareTsqr (Q); // Finish initializing TSQR.
-      KMV A_view = getNonConstView (A);
-      KMV Q_view = getNonConstView (Q);
-      tsqr_->factorExplicit (A_view, Q_view, R, false,
-                             forceNonnegativeDiagonal);
+
+      // FIXME (mfh 16 Jan 2016) Currently, TSQR is a host-only
+      // implementation.
+      A.template sync<Kokkos::HostSpace> ();
+      A.template modify<Kokkos::HostSpace> ();
+      Q.template sync<Kokkos::HostSpace> ();
+      Q.template modify<Kokkos::HostSpace> ();
+      auto A_view = A.template getLocalView<Kokkos::HostSpace> ();
+      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
+      scalar_type* const A_ptr =
+        reinterpret_cast<scalar_type*> (A_view.ptr_on_device ());
+      scalar_type* const Q_ptr =
+        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+      const bool contiguousCacheBlocks = false;
+      tsqr_->factorExplicitRaw (A_view.dimension_0 (),
+                                A_view.dimension_1 (),
+                                A_ptr, A.getStride (),
+                                Q_ptr, Q.getStride (),
+                                R.values (), R.stride (),
+                                contiguousCacheBlocks,
+                                forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -256,15 +277,25 @@ namespace Tpetra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! Q.isConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+         "revealRank: Input MultiVector Q must have constant stride.");
       prepareTsqr (Q); // Finish initializing TSQR.
-
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
       // to make sure it is the same communicator as the one we are
       // using in our dist_tsqr_type implementation.
-      KMV Q_view = getNonConstView (Q);
-      return tsqr_->revealRank (Q_view, R, tol, false);
+
+      Q.template sync<Kokkos::HostSpace> ();
+      Q.template modify<Kokkos::HostSpace> ();
+      auto Q_view = Q.template getLocalView<Kokkos::HostSpace> ();
+      scalar_type* const Q_ptr =
+        reinterpret_cast<scalar_type*> (Q_view.ptr_on_device ());
+      const bool contiguousCacheBlocks = false;
+      return tsqr_->revealRankRaw (Q_view.dimension_0 (),
+                                   Q_view.dimension_1 (),
+                                   Q_ptr, Q.getStride (),
+                                   R.values (), R.stride (),
+                                   tol, contiguousCacheBlocks);
     }
 
   private:
@@ -340,34 +371,6 @@ namespace Tpetra {
       RCP<mess_type> mess (new mess_type (comm));
       RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
       distTsqr_->init (messBase);
-    }
-
-    /// \brief Extract A's underlying KokkosClassic::MultiVector instance.
-    ///
-    /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
-    /// nonconstant view of the original multivector's data.  This
-    /// class method tells TSQR how to get the KMV from the input
-    /// multivector.  The KMV is not a persistent view of the data;
-    /// its scope is contained within the scope of the multivector.
-    ///
-    /// \warning TSQR does not currently support multivectors with
-    ///   nonconstant stride.  If A has nonconstant stride, this
-    ///   method will throw an exception.
-    static KokkosClassic::MultiVector<scalar_type, node_type>
-    getNonConstView (MV& A)
-    {
-      // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
-      // storage of A uses nonconstant stride internally.  We would
-      // have to copy and pack into a matrix with constant stride, and
-      // then unpack on exit.  For now we choose just to raise an
-      // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! A.isConstantStride(), std::invalid_argument,
-        "Tpetra::TsqrAdaptor::getNonConstView: TSQR does not currently "
-        "support Tpetra::MultiVector inputs that do not have constant "
-        "stride.");
-      return A.getLocalMV ();
     }
   };
 
