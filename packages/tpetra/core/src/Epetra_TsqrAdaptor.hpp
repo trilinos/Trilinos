@@ -237,13 +237,22 @@ namespace Epetra {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
       prepareTsqr (Q); // Finish initializing TSQR.
-      KMV A_view = getNonConstView (A);
-      KMV Q_view = getNonConstView (Q);
-      tsqr_->factorExplicit (A_view, Q_view, R, false,
-                             forceNonnegativeDiagonal);
+
+      scalar_type* const A_ptr = A.Values ();
+      scalar_type* const Q_ptr = Q.Values ();
+      scalar_type* const R_ptr = R.values ();
+      const ordinal_type numRows = A.MyLength ();
+      const ordinal_type numCols = A.NumVectors ();
+      const ordinal_type lda = A.Stride ();
+      const ordinal_type ldq = Q.Stride ();
+      const ordinal_type ldr = R.stride ();
+
+      const bool contiguousCacheBlocks = false;
+      tsqr_->factorExplicitRaw (numRows, numCols, A_ptr, lda,
+                                Q_ptr, ldq, R_ptr, ldr,
+                                contiguousCacheBlocks,
+                                forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -281,15 +290,16 @@ namespace Epetra {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! Q.ConstantStride (), std::invalid_argument, "TsqrAdaptor::"
+         "revealRank: Input MultiVector Q must have constant stride.");
       prepareTsqr (Q); // Finish initializing TSQR.
-
       // FIXME (mfh 25 Oct 2010) Check Epetra_Comm object in Q to make
       // sure it is the same communicator as the one we are using in
       // our dist_tsqr_type implementation.
-      KMV Q_view = getNonConstView (Q);
-      return tsqr_->revealRank (Q_view, R, tol, false);
+      return tsqr_->revealRankRaw (Q.MyLength (), Q.NumVectors (),
+                                   Q.Values (), Q.Stride (),
+                                   R.values (), R.stride (), tol, false);
     }
 
   private:
@@ -370,50 +380,6 @@ namespace Epetra {
       RCP<const Epetra_Comm> comm = rcp (mv.Comm().Clone());
       RCP<base_mess_type> messBase = makeTsqrMessenger<scalar_type> (comm);
       distTsqr_->init (messBase);
-    }
-
-    /// \brief Return a nonconstant view of the input MultiVector.
-    ///
-    /// TSQR represents the local (to each MPI process) part of a
-    /// multivector as a KokkosClassic::MultiVector (KMV), which gives a
-    /// nonconstant view of the original multivector's data.  This
-    /// class method tells TSQR how to get the KMV from the input
-    /// multivector.  The KMV is not a persistent view of the data;
-    /// its scope is contained within the scope of the multivector.
-    ///
-    /// \warning TSQR does not currently support multivectors with
-    ///   nonconstant stride.  This method will raise an exception
-    ///   if A has nonconstant stride.
-    static KokkosClassic::MultiVector<scalar_type, node_type>
-    getNonConstView (MV& A)
-    {
-      // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
-      // storage of A uses nonconstant stride internally.  We would
-      // have to copy and pack into a matrix with constant stride, and
-      // then unpack on exit.  For now we choose just to raise an
-      // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(! A.ConstantStride(), std::invalid_argument,
-                                 "TSQR does not currently support Epetra_MultiVector "
-                                 "inputs that do not have constant stride.");
-      const int numRows = A.MyLength();
-      const int numCols = A.NumVectors();
-      const int stride  = A.Stride();
-      // A_ptr does _not_ own the data.  TSQR only operates within the
-      // scope of the multivector objects on which it operates, so it
-      // doesn't need ownership of the data.
-      Teuchos::ArrayRCP<double> A_ptr (A.Values(), 0, numRows*stride, false);
-
-      typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
-      // KMV objects want a Kokkos Node instance.  Epetra objects
-      // don't have a Kokkos Node, so we make a temporary node just
-      // for the KMV.
-      //
-      // Create Node with empty ParameterList.
-      Teuchos::ParameterList plist;
-      Teuchos::RCP<node_type> node (new node_type (plist));
-      KMV A_kmv (node);
-      A_kmv.initializeValues (numRows, numCols, A_ptr, stride);
-      return A_kmv;
     }
   };
 
