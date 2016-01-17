@@ -13,6 +13,12 @@ ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(scaling)
 
+if (NOT MUELU_VALGRIND_TESTING)
+  TRIBITS_ADD_TEST_DIRECTORIES(interface)
+ELSE()
+  MESSAGE(STATUS "Skipping ParameterListInterpreter.")
+ENDIF()
+
 IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
 # experimental data
@@ -41,13 +47,12 @@ TRIBITS_ADD_TEST_DIRECTORIES(perf_tests)
 
 if (NOT MUELU_VALGRIND_TESTING)
   TRIBITS_ADD_TEST_DIRECTORIES(convergence)
-  TRIBITS_ADD_TEST_DIRECTORIES(interface)
   IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     TRIBITS_ADD_TEST_DIRECTORIES(helmholtz)
   ENDIF()
 
 ELSE()
-  MESSAGE(STATUS "Skipping EasyParameterListInterpreter and Helmholtz due to valgrind testing.")
+  MESSAGE(STATUS "Skipping Helmholtz due to valgrind testing.")
 ENDIF()
 
 #TRIBITS_ADD_TEST_DIRECTORIES(mhdvanka)
