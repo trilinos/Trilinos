@@ -531,6 +531,22 @@ public:
 };
 }
 
+namespace Impl {
+  struct PerTeamValue {
+    int value;
+    PerTeamValue(int arg);
+  };
+
+  struct PerThreadValue {
+    int value;
+    PerThreadValue(int arg);
+  };
+}
+
+Impl::PerTeamValue PerTeam(const int& arg);
+Impl::PerThreadValue PerThread(const int& arg);
+
+
 /** \brief  Execution policy for parallel work over a league of teams of threads.
  *
  *  The work functor is called for each thread of each team such that
@@ -564,6 +580,9 @@ class TeamPolicy: public
   typedef Impl::PolicyTraits<Properties ... > traits;
 
 public:
+
+  TeamPolicy& operator = (const TeamPolicy&) = default;
+ 
   /** \brief  Construct policy with the given instance of the execution space */
   TeamPolicy( const typename traits::execution_space & , int league_size_request , int team_size_request , int vector_length_request = 1 )
     : internal_policy(typename traits::execution_space(),league_size_request,team_size_request, vector_length_request) {}
@@ -589,8 +608,22 @@ public:
 private:
   TeamPolicy(const internal_policy& p):internal_policy(p) {}
 public:
+
   inline TeamPolicy set_chunk_size(int chunk) const {
     return TeamPolicy(internal_policy::set_chunk_size(chunk));
+  };
+
+  inline TeamPolicy set_scratch_size(const int& level, const Impl::PerTeamValue& per_team) const {
+    return TeamPolicy(internal_policy::set_scratch_size(level,per_team));
+  };
+  inline TeamPolicy set_scratch_size(const int& level, const Impl::PerThreadValue& per_thread) const {
+    return TeamPolicy(internal_policy::set_scratch_size(level,per_thread));
+  };
+  inline TeamPolicy set_scratch_size(const int& level, const Impl::PerTeamValue& per_team, const Impl::PerThreadValue& per_thread) const {
+    return TeamPolicy(internal_policy::set_scratch_size(level, per_team, per_thread));
+  };
+  inline TeamPolicy set_scratch_size(const int& level, const Impl::PerThreadValue& per_thread, const Impl::PerTeamValue& per_team) const {
+    return TeamPolicy(internal_policy::set_scratch_size(level, per_team, per_thread));
   };
 
 };
