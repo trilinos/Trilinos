@@ -61,11 +61,9 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Range1D.hpp"
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
-#include "Tpetra_KokkosRefactor_DistObject.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include <type_traits>
 

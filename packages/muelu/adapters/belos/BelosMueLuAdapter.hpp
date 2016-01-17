@@ -173,7 +173,10 @@ namespace Belos {
     public OperatorT<Xpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
 #ifdef HAVE_MUELU_TPETRA
     // FIXME: guard
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     , public OperatorT<Tpetra::MultiVector<double, int, int, Xpetra::EpetraNode> >
+#endif
 #endif
 #ifdef HAVE_MUELU_EPETRA
     , public OperatorT<Epetra_MultiVector>
@@ -214,6 +217,8 @@ namespace Belos {
     }
 
 #ifdef HAVE_MUELU_TPETRA
+#if !((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     void Apply ( const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans=NOTRANS ) const {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
@@ -237,6 +242,7 @@ namespace Belos {
         Hierarchy_->Iterate(tX, tY, 1, true);
       }
     }
+#endif
 #endif
 
 #ifdef HAVE_MUELU_EPETRA

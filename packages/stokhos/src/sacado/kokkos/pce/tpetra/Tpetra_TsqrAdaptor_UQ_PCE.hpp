@@ -190,10 +190,10 @@ namespace Tpetra {
       getNonConstView (numRows, numCols, A_ptr, LDA, A);
       getNonConstView (numRows, numCols, Q_ptr, LDQ, Q);
       const bool contiguousCacheBlocks = false;
-      tsqr_->factorExplicit (numRows, numCols, A_ptr, LDA,
-                             Q_ptr, LDQ, R.values (), R.stride (),
-                             contiguousCacheBlocks,
-                             forceNonnegativeDiagonal);
+      tsqr_->factorExplicitRaw (numRows, numCols, A_ptr, LDA,
+                                Q_ptr, LDQ, R.values (), R.stride (),
+                                contiguousCacheBlocks,
+                                forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -244,7 +244,7 @@ namespace Tpetra {
       getNonConstView (numRows, numCols, Q_ptr, LDQ, Q);
       const bool contiguousCacheBlocks = false;
       return tsqr_->revealRankRaw (numRows, numCols, Q_ptr, LDQ,
-                                   R.get (), R.stride (), tol,
+                                   R.values (), R.stride (), tol,
                                    contiguousCacheBlocks);
     }
 

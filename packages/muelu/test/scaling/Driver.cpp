@@ -44,8 +44,9 @@
 //
 // @HEADER
 #include <cstdio>
-#include <unistd.h>
+#include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -90,10 +91,69 @@
 #endif
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
-  
+Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A, Teuchos::ParameterList& paramList = Teuchos::null, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > coords = Teuchos::null) {
 #include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP;
 
+  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
+
+  if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
+    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
+
+    return tH->GetHierarchy();
+#else
+    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
+#endif // HAVE_MUELU_TPETRA
+  }
+
+  XPETRA_FACTORY_ERROR_IF_EPETRA(lib);
+  XPETRA_FACTORY_END;
+}
+
+#ifdef HAVE_MUELU_EPETRA
+template<>
+Teuchos::RCP<MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> >
+CreateHierarchy(Teuchos::RCP<Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> > A, Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> > coords) {
+  typedef double                Scalar;
+  typedef int                   LocalOrdinal;
+  typedef int                   GlobalOrdinal;
+  typedef Xpetra::EpetraNode    Node;
+#include <MueLu_UseShortNames.hpp>
+  using Teuchos::RCP;
+
+  Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
+
+  if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+    RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
+    RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, paramList, Utilities::MV2NonConstTpetraMV(coords));
+
+    return tH->GetHierarchy();
+#else
+    throw MueLu::Exceptions::RuntimeError("Tpetra is not available");
+#endif
+  }
+
+  if (lib == Xpetra::UseEpetra) {
+#if defined(HAVE_MUELU_EPETRA)
+    RCP<Epetra_CrsMatrix>      eA = Utilities::Op2NonConstEpetraCrs(A);
+    RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, paramList, Utilities::MV2NonConstEpetraMV(coords));
+    return eH->GetHierarchy();
+#else
+    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+  }
+
+  XPETRA_FACTORY_END;
+}
+#endif // HAVE_MUELU_EPETRA
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
@@ -115,14 +175,13 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
   // =========================================================================
   // Parameters initialization
   // =========================================================================
-  //Teuchos::CommandLineProcessor clp(false);
-
   GO nx = 100, ny = 100, nz = 100;
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
   std::string xmlFileName       = "scaling.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
   std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone)");
   double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
@@ -363,44 +422,23 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
-      RCP<Hierarchy> H;
 
-#ifdef HAVE_MUELU_AMGX
+      RCP<Hierarchy> H;
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
       RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
 #endif
       for (int i = 0; i <= numRebuilds; i++) {
-        if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-          RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utilities::Op2NonConstTpetraCrs(A);
-          RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH;
-          if (!coordinates.is_null())
-            tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utilities::MV2NonConstTpetraMV(coordinates));
-          else
-            tH = MueLu::CreateTpetraPreconditioner(tA, mueluList);
+        A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-          if (useAMGX) {
-#ifdef HAVE_MUELU_AMGX
-            aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
+        if (useAMGX) {
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
+          aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
 #endif
-          } else {
-            H = tH->GetHierarchy();
-          }
-#endif // HAVE_MUELU_TPETRA
-
         } else {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
-          RCP<Epetra_CrsMatrix> eA = Utilities::Op2NonConstEpetraCrs(A);
-          RCP<MueLu::EpetraOperator> eH;
-          if (!coordinates.is_null())
-            eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utilities::MV2NonConstEpetraMV(coordinates));
-          else
-            eH = MueLu::CreateEpetraPreconditioner(eA, mueluList);
-          RCP<MueLu::Hierarchy<double,int,int,Node> > myH = eH->GetHierarchy();
-          H = Teuchos::rcp_dynamic_cast<MueLu::Hierarchy<SC, LO, GO, NO> >(myH);
-          TEUCHOS_TEST_FOR_EXCEPTION(H == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: ScalingDriver: Dynamic cast to Hierarchy failed. Epetra needs SC=double, LO=GO=int and Node=(Serial|OpenMp).");
-#endif
+          H = CreateHierarchy(A, mueluList, coordinates);
         }
       }
+
       comm->barrier();
       tm = Teuchos::null;
 
@@ -521,8 +559,25 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
         const bool writeZeroTimers  = false;
         const bool ignoreZeroTimers = true;
         const std::string filter    = "";
-        TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+        TimeMonitor::summarize(comm.ptr(), out, alwaysWriteLocal, writeGlobalStats,
                                writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+
+        RCP<ParameterList> reportParams = rcp(new ParameterList);
+        if (timingsFormat == "yaml") {
+          reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
+          reportParams->set("YAML style",                "compact");         // "spacious" or "compact"
+        }
+        reportParams->set("How to merge timer sets",   "Union");
+        reportParams->set("alwaysWriteLocal",          false);
+        reportParams->set("writeGlobalStats",          true);
+        reportParams->set("writeZeroTimers",           false);
+        // FIXME: no "ignoreZeroTimers"
+
+        std::ios_base::fmtflags ff(out.flags());
+        if (timingsFormat == "table-fixed") out << std::fixed;
+        else                                out << std::scientific;
+        TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+        out << std::setiosflags(ff);
       }
 
       TimeMonitor::clearCounters();

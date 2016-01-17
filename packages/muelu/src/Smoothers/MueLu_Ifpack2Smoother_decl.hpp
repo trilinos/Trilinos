@@ -208,6 +208,11 @@ namespace MueLu {
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
+    void SetupSchwarz       (Level& currentLevel);
+    void SetupChebyshev     (Level& currentLevel);
+    void SetupLineSmoothing (Level& currentLevel);
+    void SetupGeneric       (Level& currentLevel);
+
   private:
 
     //! ifpack2-specific key phrase that denote smoother type

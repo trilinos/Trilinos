@@ -55,7 +55,6 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
 
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 

@@ -149,7 +149,7 @@ template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< i
 #endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
-typedef Xpetra::Epetra default_node_type;
+typedef Xpetra::EpetraNode default_node_type;
 template const RCP< const Map<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_BlockMap &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const RCP< const Map<int, long long, default_node_type > > &map);
 template const Epetra_Map & toEpetra<long long, default_node_type >(const Map< int, long long, default_node_type> & map);
