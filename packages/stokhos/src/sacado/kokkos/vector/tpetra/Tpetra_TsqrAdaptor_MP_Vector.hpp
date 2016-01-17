@@ -244,7 +244,7 @@ namespace Tpetra {
       getNonConstView (numRows, numCols, Q_ptr, LDQ, Q);
       const bool contiguousCacheBlocks = false;
       return tsqr_->revealRankRaw (numRows, numCols, Q_ptr, LDQ,
-                                   R.get (), R.stride (), tol,
+                                   R.values (), R.stride (), tol,
                                    contiguousCacheBlocks);
     }
 
