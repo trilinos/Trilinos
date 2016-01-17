@@ -244,7 +244,10 @@ template <typename Adapter>
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  if (soln != Teuchos::null)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
+  else
+    targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
   env->debug(DETAILED_STATUS, std::string("Exiting EvaluatePartition"));

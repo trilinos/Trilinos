@@ -302,7 +302,10 @@ int main(int narg, char *arg[]) {
 
     RCP<quality_t> metricObject;
 
+    metricObject = rcp(new quality_t(env, CommT, bia, Teuchos::null, false));
+
     if (me) {
+      metricObject->printMetrics(cout);
       problem.printMetrics(cout);
 
       if (action == "scotch")

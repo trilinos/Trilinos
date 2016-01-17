@@ -1316,11 +1316,16 @@ template <typename Adapter>
 
   // Relative part sizes, if any, assigned to the parts.
 
-  part_t targetNumParts = solution->getTargetGlobalNumberOfParts();
+  part_t targetNumParts = comm->getSize();
+
+  if (solution != Teuchos::null)
+    targetNumParts = solution->getTargetGlobalNumberOfParts();
+
   scalar_t *psizes = NULL;
 
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
   for (int dim=0; dim < numCriteria; dim++){
+    if (solution != Teuchos::null)
     if (solution->criteriaHasUniformPartSizes(dim) != true){
       psizes = new scalar_t [targetNumParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
