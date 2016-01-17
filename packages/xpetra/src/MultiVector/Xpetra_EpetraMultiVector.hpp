@@ -99,17 +99,20 @@ namespace Xpetra {
 
     //! Basic MultiVector constuctor.
     EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! MultiVector copy constructor.
     EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with Node=Kokkos::Compat::KokkosSerialWrapperNode.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! MultiVector destructor.
@@ -261,7 +264,10 @@ namespace Xpetra {
     //@{
 
     //! EpetraMultiVectorT constructor to wrap a Epetra_MultiVector object
-    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) { } //TODO removed const
+    EpetraMultiVectorT(const RCP<Epetra_MultiVector> &vec) { //TODO removed const
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+        "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+    }
 
     //! Get the underlying Epetra multivector
     RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return Teuchos::null; }
@@ -322,14 +328,7 @@ namespace Xpetra {
 
   }; // EpetraMultiVectorT class
 
-  // specialization for Node=Kokkos::Compat::KokkosSerialWrapperNode (needed for Epetra and Tpetra)
-//#ifdef HAVE_XPETRA_SERIAL
-//  template<class EpetraGlobalOrdinal>
-//  class EpetraMultiVectorT<EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
-//    : public virtual MultiVector<double, int, EpetraGlobalOrdinal, Kokkos::Compat::KokkosSerialWrapperNode>
-
-
-  // specialization on GO=int and Node=Serial
+  // specialization on GO=int and Node=EpetraNode
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
   template<>
   class EpetraMultiVectorT<int, EpetraNode>
@@ -732,7 +731,7 @@ namespace Xpetra {
   }; // EpetraMultiVectorT class (specialization on GO=int, NO=EpetraNode
 #endif
 
-  // specialization on GO=long long and Node=Serial
+  // specialization on GO=long long and EpetraNode
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
   template<>
   class EpetraMultiVectorT<long long, EpetraNode>

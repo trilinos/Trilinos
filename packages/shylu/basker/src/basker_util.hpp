@@ -26,7 +26,7 @@ using namespace std;
 namespace BaskerNS
 {
 
-    //Kokkos struct for init 2D Structure of A
+  //Kokkos struct for init 2D Structure of A
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_order_init_2D
   {
@@ -80,9 +80,6 @@ namespace BaskerNS
     }//end operator()
 
   };//end kokkos_order_init_2D
-
-
-
 
 
 
@@ -168,6 +165,7 @@ namespace BaskerNS
       }
   }//end init_value 1d array host
 
+
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int,Entry,Exe_Space>::init_value
   (
@@ -175,6 +173,10 @@ namespace BaskerNS
    Int size, Int c, Int kid
    )
   {
+
+    printf("\n===SHOULD NOT BE CALLED\n");
+    BASKER_ASSERT(0==1, "init_int_thread");
+
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
@@ -205,8 +207,13 @@ namespace BaskerNS
 
   
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::init_value(ENTRY_1DARRAY a, Int size, Entry c, Int kid)
+  void Basker<Int,Entry,Exe_Space>::init_value
+  (ENTRY_1DARRAY a, Int size, Entry c, Int kid)
   {
+    
+    printf("\n===SHOULD NOT BE CALLED===\n");
+    BASKER_ASSERT(0==1, "INIT_VALUE_ENTRY_THREADS");
+
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
@@ -370,6 +377,8 @@ namespace BaskerNS
 		else
 		  {
 		    //printf("Using BTF AL \n");
+		    printf("ALM alloc: %d %d \n",
+			   b, row);
 		    ALM(b)(row).convert2D(BTF_A, alloc);
 		  }
 
@@ -725,7 +734,7 @@ namespace BaskerNS
               for(Int j = myL.col_ptr[k]; 
 		  j < myL.col_ptr[k+1]; j++)
                 {
-                  fprintf(fp, "(%d , %d , %d) %f , ",
+                  fprintf(fp, "(%d , %d , %d) %g , ",
                           k+myL.scol, myL.row_idx[j], 
 			  myL.row_idx[j]+myL.srow,
                           myL.val[j]);
@@ -774,7 +783,7 @@ namespace BaskerNS
 		    	    myL.val[j]);
 		    */
 		    
-		    fprintf(fp, "(%d , %d , %d) %f , ", 
+		    fprintf(fp, "(%d , %d , %d) %g , ", 
 			    k+myL.scol, myL.row_idx[j], 
 			    myL.row_idx[j]+myL.srow, 
 			    myL.val[j]);
@@ -1174,14 +1183,9 @@ namespace BaskerNS
 
       }//over all blks
     
-    fclose(fp2);
-
-   
-
-
-
-    
+    fclose(fp2);    
   }//end print_sep_bal()
+  
 
 
 
@@ -1415,7 +1419,7 @@ namespace BaskerNS
     //printf("updated trans \n");
  
     
-    FREE(ws);
+    FREE_INT_1DARRAY(ws);
 
   }//end matrix_transpose
 
@@ -1486,10 +1490,8 @@ namespace BaskerNS
 
           }
       }
-    
 
-
-    FREE(ws);
+    FREE_INT_1DARRAY(ws);
   }//end matrix_transpose
 
 
@@ -1511,9 +1513,9 @@ namespace BaskerNS
     fclose(fp);
   }//end printVec(file,Int);
 
-    template <class Int, class Entry, class Exe_Space>
+  template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-    void Basker<Int, Entry,Exe_Space>::printVec
+  void Basker<Int, Entry,Exe_Space>::printVec
   (
    std::string fname, 
    ENTRY_1DARRAY x, 

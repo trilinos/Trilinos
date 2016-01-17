@@ -13,6 +13,7 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include "GraphEdgeData.hpp"
+#include "SideConnector.hpp"
 
 namespace stk { class CommBuffer; }
 
@@ -111,6 +112,7 @@ public:
     stk::mesh::EntityId get_available_side_id();
 
     std::vector<SideSetEntry> extract_skinned_sideset( );
+    stk::mesh::SideConnector get_side_connector();
 
 protected:
     void fill_graph();
@@ -223,8 +225,7 @@ private:
     void create_side_entities(const std::vector<int> &exposedSides,
                               impl::LocalId local_id,
                               const stk::mesh::PartVector& skin_parts,
-                              std::vector<stk::mesh::sharing_info> &shared_modified,
-                              stk::mesh::EntityVector &skinned_elements);
+                              std::vector<stk::mesh::sharing_info> &shared_modified);
     stk::mesh::EntityId add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
                                                  stk::mesh::Entity element,
@@ -256,6 +257,7 @@ private:
     void extract_coincident_edges_and_fix_chosen_side_ids();
     void extract_coincident_edges_and_fix_chosen_side_ids_for_specified_elems(const stk::mesh::EntityVector &elems);
     std::vector<impl::LocalId> get_local_ids_for_element_entities(const stk::mesh::EntityVector &elems);
+    std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int numElemSides);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

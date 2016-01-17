@@ -35,6 +35,12 @@
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
 #include <boost/config.hpp>
+//
+// Set some default values GPU support
+//
+#  ifndef BOOST_GPU_ENABLED
+#  define BOOST_GPU_ENABLED
+#  endif
 
 #include <string>
 

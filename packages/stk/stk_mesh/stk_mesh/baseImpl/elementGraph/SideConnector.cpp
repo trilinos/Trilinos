@@ -2,52 +2,79 @@
 #include "ElemElemGraphImpl.hpp"
 #include "ElemGraphCoincidentElems.hpp"
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk
 {
 namespace mesh
 {
 
-bool do_sides_match_and_elem2_is_local(const stk::mesh::GraphEdge &graphEdge, int side)
+void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
-    return graphEdge.side1 == side && impl::is_local_element(graphEdge.elem2);
-}
+    connect_side_to_elem(sideEntity, elemEntity, elemSide);
 
-void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity,
-                                                 impl::ElementSidePair skinnedElemSidePair,
-                                                 stk::mesh::EntityVector &skinned_elements)
-{
-    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(skinnedElemSidePair.first))
+    stk::mesh::impl::LocalId elemLocalId = m_entity_to_local_id[elemEntity.local_offset()];
+    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(elemLocalId))
     {
-        if(do_sides_match_and_elem2_is_local(graphEdge, skinnedElemSidePair.second))
+        int skinnedElementSide = elemSide;
+        if(graphEdge.side1 == skinnedElementSide)
         {
-            connect_side_entity_to_other_element(sideEntity, graphEdge, skinned_elements);
-            connect_side_to_coincident_elements(sideEntity, {graphEdge.elem2, graphEdge.side2}, skinned_elements);
+            connect_side_entity_to_other_element(sideEntity, graphEdge);
+            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2, graphEdge.side2);
         }
     }
-    connect_side_to_coincident_elements(sideEntity, skinnedElemSidePair, skinned_elements);
+    connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
+}
+
+stk::mesh::Permutation SideConnector::get_permutation_for_side(stk::mesh::Entity sideEntity,
+                                                               stk::mesh::Entity element,
+                                                               int sideOrd)
+{
+    stk::mesh::EntityRank sideRank = m_bulk_data.mesh_meta_data().side_rank();
+    stk::topology elemTopology = m_bulk_data.bucket(element).topology();
+    stk::topology sideTopology = elemTopology.sub_topology(sideRank, sideOrd);
+    stk::mesh::EntityVector nodesOfSubTopo(sideTopology.num_nodes());
+    elemTopology.sub_topology_nodes(m_bulk_data.begin_nodes(element), sideRank, sideOrd, nodesOfSubTopo.data());
+    std::pair<bool, unsigned> result = sideTopology.equivalent(m_bulk_data.begin_nodes(sideEntity), nodesOfSubTopo);
+    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
+    return perm;
+}
+
+void SideConnector::connect_side_to_elem(stk::mesh::Entity sideEntity,
+                                         stk::mesh::Entity element,
+                                         int sideOrd)
+{
+    stk::mesh::Permutation perm = get_permutation_for_side(sideEntity, element, sideOrd);
+    m_bulk_data.declare_relation(element, sideEntity, sideOrd, perm);
 }
 
 void SideConnector::connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
-                                                         const stk::mesh::GraphEdge &graphEdge,
-                                                         stk::mesh::EntityVector skinned_elements)
+                                                         const stk::mesh::GraphEdge &graphEdge)
 {
-    stk::mesh::Entity other_element = m_local_id_to_element_entity[graphEdge.elem2];
-    stk::mesh::Permutation perm =
-            static_cast<stk::mesh::Permutation>(m_bulk_data.bucket(other_element).topology().num_positive_permutations());
-    m_bulk_data.declare_relation(other_element, sideEntity, graphEdge.side2, perm);
-    skinned_elements.push_back(other_element);
+    stk::mesh::Entity otherElement = get_entity_for_local_id(graphEdge.elem2);
+    if(m_bulk_data.is_valid(otherElement))
+        connect_side_to_elem(sideEntity, otherElement, graphEdge.side2);
+}
+
+stk::mesh::Entity SideConnector::get_entity_for_local_id(stk::mesh::impl::LocalId localId) const
+{
+    if(impl::is_local_element(localId))
+        return m_local_id_to_element_entity[localId];
+    else
+        return m_bulk_data.get_entity(stk::topology::ELEM_RANK, -localId);
 }
 
 void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEntity,
-                                                        impl::ElementSidePair skinnedElemSidePair,
-                                                        stk::mesh::EntityVector &skinned_elements)
+                                                        stk::mesh::impl::LocalId elemLocalId,
+                                                        int elemSide)
 {
-    auto iter = m_coincidentGraph.find(skinnedElemSidePair.first);
+    auto iter = m_coincidentGraph.find(elemLocalId);
     if(iter != m_coincidentGraph.end())
         for(const stk::mesh::GraphEdge &graphEdge : iter->second)
-            if(do_sides_match_and_elem2_is_local(graphEdge, skinnedElemSidePair.second))
-                connect_side_entity_to_other_element(sideEntity, graphEdge, skinned_elements);
+        {
+            if(graphEdge.side1 == elemSide)
+                connect_side_entity_to_other_element(sideEntity, graphEdge);
+        }
 }
 
 }

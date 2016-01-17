@@ -22,15 +22,12 @@ SET(HEADERS ${HEADERS}
 APPEND_SET(HEADERS
   Piro_ValidPiroParameters.hpp
   Piro_Version.hpp
-  Piro_Epetra_MatrixFreeDecorator.hpp
-  Piro_Epetra_InvertMassMatrixDecorator.hpp
   Piro_InvertMassMatrixDecorator.hpp
   Piro_InvertMassMatrixDecorator_Def.hpp
   Piro_Provider.hpp
   Piro_ProviderBase.hpp
   Piro_ProviderHelpers.hpp
   Piro_SolutionObserverBase.hpp
-  Piro_Epetra_SolverFactory.hpp
   Piro_SolverFactory.hpp
   Piro_SolverFactory_Def.hpp
   Piro_AdaptiveSolverFactory.hpp
@@ -38,14 +35,25 @@ APPEND_SET(HEADERS
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
   )
+IF(Piro_ENABLE_Epetra)
+APPEND_SET(HEADERS
+  Piro_Epetra_MatrixFreeDecorator.hpp
+  Piro_Epetra_InvertMassMatrixDecorator.hpp
+  Piro_Epetra_SolverFactory.hpp
+  )
+ENDIF()
 APPEND_SET(SOURCES
   Piro_ValidPiroParameters.cpp
-  Piro_Epetra_MatrixFreeDecorator.cpp
-  Piro_Epetra_InvertMassMatrixDecorator.cpp
-  Piro_Epetra_SolverFactory.cpp
   Piro_StratimikosUtils.cpp
   Piro_Version.cpp
   )
+IF(Piro_ENABLE_Epetra)
+APPEND_SET(SOURCES
+  Piro_Epetra_MatrixFreeDecorator.cpp
+  Piro_Epetra_InvertMassMatrixDecorator.cpp
+  Piro_Epetra_SolverFactory.cpp
+  )
+ENDIF()
 APPEND_SET(HEADERS
   Piro_MatrixFreeDecorator.hpp
   Piro_MatrixFreeDecorator_Def.hpp
@@ -59,49 +67,57 @@ APPEND_SET(HEADERS
 # Optional NOX Dependency (which includes LOCA)
 IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
-    Piro_Epetra_NOXSolver.hpp
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
     Piro_NOXSolver.hpp
     Piro_NOXSolver_Def.hpp
-    Piro_Epetra_LOCASolver.hpp
     Piro_LOCASolver.hpp
     Piro_LOCASolver_Def.hpp
     Piro_LOCAAdaptiveSolver.hpp
     Piro_LOCAAdaptiveSolver_Def.hpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
-    Piro_Epetra_LOCAAdaptiveSolver.hpp
-    Piro_Epetra_AdaptiveSolutionManager.hpp
     Piro_NullSpaceUtils.hpp
-    Piro_Epetra_VelocityVerletSolver.hpp
     Piro_VelocityVerletSolver.hpp
     Piro_VelocityVerletSolver_Def.hpp
-    Piro_Epetra_NewmarkSolver.hpp
-    Piro_Epetra_TrapezoidRuleSolver.hpp
     Piro_TrapezoidRuleSolver.hpp
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp
-    Piro_Epetra_SensitivityOperator.hpp)
+  )
+IF(Piro_ENABLE_Epetra)
+  APPEND_SET(HEADERS
+    Piro_Epetra_NOXSolver.hpp
+    Piro_Epetra_LOCASolver.hpp
+    Piro_Epetra_LOCAAdaptiveSolver.hpp
+    Piro_Epetra_AdaptiveSolutionManager.hpp
+    Piro_Epetra_VelocityVerletSolver.hpp
+    Piro_Epetra_NewmarkSolver.hpp
+    Piro_Epetra_TrapezoidRuleSolver.hpp
+    Piro_Epetra_SensitivityOperator.hpp
+  )
+ENDIF()
   APPEND_SET(SOURCES
-    Piro_Epetra_NOXSolver.cpp
-    Piro_Epetra_LOCASolver.cpp
     Piro_NOXSolver.cpp
     Piro_LOCASolver.cpp
     Piro_LOCAAdaptiveSolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
+    Piro_NullSpaceUtils.cpp
+    )
+IF(Piro_ENABLE_Epetra)
+  APPEND_SET(SOURCES
+    Piro_Epetra_NOXSolver.cpp
+    Piro_Epetra_LOCASolver.cpp
     Piro_Epetra_LOCAAdaptiveSolver.cpp
     Piro_Epetra_AdaptiveSolutionManager.cpp
-    Piro_NullSpaceUtils.cpp
     Piro_Epetra_VelocityVerletSolver.cpp
     Piro_Epetra_NewmarkSolver.cpp
     Piro_Epetra_TrapezoidRuleSolver.cpp
     Piro_Epetra_SensitivityOperator.cpp
     )
 ENDIF()
+ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos)
   APPEND_SET(HEADERS
-    Piro_Epetra_RythmosSolver.hpp 
     Piro_RythmosSolver.hpp
     Piro_RythmosStepperFactory.hpp
     Piro_RythmosStepControlFactory.hpp
@@ -109,7 +125,12 @@ IF (Piro_ENABLE_Rythmos)
     Piro_ObserverToRythmosIntegrationObserverAdapter.hpp
     Piro_ObserverToRythmosIntegrationObserverAdapter_Def.hpp
     )
+IF(Piro_ENABLE_Epetra)
+  APPEND_SET(HEADERS
+    Piro_Epetra_RythmosSolver.hpp
+  )
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
+ENDIF()
 ENDIF()
 
 IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
@@ -117,7 +138,7 @@ IF (Piro_ENABLE_Rythmos AND Piro_ENABLE_NOX)
 ENDIF()
 
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
-IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
+IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND Piro_ENABLE_Epetra)
   APPEND_SET(HEADERS
     Piro_Epetra_StokhosNOXObserver.hpp
     Piro_Epetra_StokhosSolverFactory.hpp
@@ -149,26 +170,23 @@ IF (Piro_ENABLE_TriKota)
   ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 ENDIF()
 
-IF (Trilinos_ENABLE_Tpetra)
-  ADD_DEFINITIONS(-DPIRO_HAS_TPETRA)
-ENDIF()
-
 APPEND_SET(HEADERS
   Piro_PerformSolve.hpp
   Piro_PerformSolve_Def.hpp
   )
 APPEND_SET(SOURCES Piro_PerformSolve.cpp)
 
+IF(Piro_ENABLE_Epetra)
 APPEND_SET(HEADERS Piro_Epetra_PerformSolve.hpp)
 APPEND_SET(SOURCES Piro_Epetra_PerformSolve.cpp)
+APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)
+APPEND_SET(SOURCES Piro_Epetra_PerformAnalysis.cpp)
+ENDIF()
 
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 
-APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)
-APPEND_SET(SOURCES Piro_Epetra_PerformAnalysis.cpp)
-
-IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
+IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX AND Piro_ENABLE_Epetra)
   APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp)
   APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
 ENDIF()

@@ -295,7 +295,8 @@ public:
 
     void my_delete_shared_entities_which_are_no_longer_in_owned_closure()
     {
-        delete_shared_entities_which_are_no_longer_in_owned_closure();
+        stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
+        delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
     }
 
     void my_ghost_entities_and_fields(Ghosting & ghosting, const std::set<EntityProc , EntityLess>& new_send)

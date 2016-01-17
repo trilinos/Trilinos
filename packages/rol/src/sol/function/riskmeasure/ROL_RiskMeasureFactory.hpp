@@ -52,6 +52,7 @@
 #include "ROL_CVaR.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_HMCR.hpp"
+#include "ROL_KLDivergence.hpp"
 #include "ROL_MeanDeviationFromTarget.hpp"
 #include "ROL_MeanDeviation.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
@@ -72,6 +73,7 @@ namespace ROL {
     RISKMEASURE_CVAR = 0,
     RISKMEASURE_EXPUTILITY,
     RISKMEASURE_HMCR,
+    RISKMEASURE_KLDIVERGENCE,
     RISKMEASURE_MEANDEVIATIONFROMTARGET, 
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
@@ -95,6 +97,8 @@ namespace ROL {
              retString = "Exponential Utility";                     break;
       case RISKMEASURE_HMCR:
              retString = "HMCR";                                    break;
+      case RISKMEASURE_KLDIVERGENCE:
+             retString = "KL Divergence";                           break;
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              retString = "Mean Plus Deviation From Target";         break;
       case RISKMEASURE_MEANDEVIATION:
@@ -128,6 +132,8 @@ namespace ROL {
   inline int isValidRiskMeasure(ERiskMeasure ed) {
     return( (ed == RISKMEASURE_CVAR) ||
             (ed == RISKMEASURE_EXPUTILITY) ||
+            (ed == RISKMEASURE_HMCR) ||
+            (ed == RISKMEASURE_KLDIVERGENCE) ||
             (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET) ||
             (ed == RISKMEASURE_MEANDEVIATION) ||
             (ed == RISKMEASURE_MEANVARIANCEFROMTARGET) ||
@@ -182,6 +188,8 @@ namespace ROL {
              return Teuchos::rcp(new ExpUtility<Real>);
       case RISKMEASURE_HMCR:
              return Teuchos::rcp(new HMCR<Real>(parlist));
+      case RISKMEASURE_KLDIVERGENCE:
+             return Teuchos::rcp(new KLDivergence<Real>(parlist));
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              return Teuchos::rcp(new MeanDeviationFromTarget<Real>(parlist));
       case RISKMEASURE_MEANDEVIATION:

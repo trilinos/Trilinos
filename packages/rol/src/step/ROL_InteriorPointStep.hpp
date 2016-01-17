@@ -47,7 +47,9 @@
 #include "ROL_CompositeStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_InteriorPoint.hpp"
+#include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "ROL_Types.hpp"
+
 
 namespace ROL {
 
@@ -130,10 +132,10 @@ public:
 
   /** \brief Initialize step with equality constraint 
    */
-  virtual void initialize( Vector<Real> &x, const Vector<Real> &g, 
-                           Vector<Real> &l, const Vector<Real> &c,
-                           Objective<Real> &obj, EqualityConstraint<Real> &con, 
-                           AlgorithmState<Real> &algo_state ) {
+  void initialize( Vector<Real> &x, const Vector<Real> &g, 
+                   Vector<Real> &l, const Vector<Real> &c,
+                   Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                   AlgorithmState<Real> &algo_state ) {
 
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
@@ -175,6 +177,16 @@ public:
   }
 
 
+  
+  void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
+                   Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd, 
+                   AlgorithmState<Real> &algo_state ) {
+    initialize(x,g,l,c,obj,con,algo_state);
+  }
+
+
+
+
   /** \brief Compute step (equality constraints).
   */
   void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
@@ -195,6 +207,14 @@ public:
     subproblemIter_ = (algo_->getState())->iter;
     
   }
+
+  virtual void compute( Vector<Real> &s, const Vector<Real> &x, const Vector<Real> &l,
+                        Objective<Real> &obj, EqualityConstraint<Real> &con, 
+                        BoundConstraint<Real> &bnd,
+                        AlgorithmState<Real> &algo_state ) {
+    compute(s,x,l,obj,con,algo_state); 
+  }
+
 
 
   /** \brief Update step, if successful (equality constraints).
@@ -252,9 +272,17 @@ public:
     algo_state.nfval += ipobj_->getNumberFunctionEvaluations();
     algo_state.ngrad += ipobj_->getNumberGradientEvaluations();
     algo_state.ncval += ipcon_->getNumberConstraintEvaluations();
-
     
   }
+
+  void update( Vector<Real> &x, Vector<Real> &l, const Vector<Real> &s,
+               Objective<Real> &obj, EqualityConstraint<Real> &con,
+               BoundConstraint<Real> &bnd,
+               AlgorithmState<Real> &algo_state ) {
+    update(x,l,s,obj,con,algo_state); 
+  }
+
+
 
   /** \brief Compute step for bound constraints; here only to satisfy the
              interface requirements, does nothing, needs refactoring.

@@ -19,7 +19,8 @@ struct compare{
 };
 
 
-
+#define TRANPOSEFIRST false
+#define TRANPOSESECOND false
 
 int main (int argc, char ** argv){
   if (argc < 2){
@@ -70,7 +71,9 @@ int main (int argc, char ** argv){
 
 
 
-  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
+
+
+  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
   Kokkos::Impl::Timer timer1;
   KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
       &kh,
@@ -79,10 +82,10 @@ int main (int argc, char ** argv){
       k,
       kok_xadj,
       kok_adj,
-      false,
+      TRANPOSEFIRST,
       kok_xadj,
       kok_adj,
-      false,
+      TRANPOSESECOND,
       row_mapC,
       entriesC
       );
@@ -98,30 +101,53 @@ int main (int argc, char ** argv){
       kok_xadj,
       kok_adj,
       kok_mtx_vals,
-      false,
+      TRANPOSEFIRST,
 
       kok_xadj,
       kok_adj,
       kok_mtx_vals,
-      true,
+      TRANPOSESECOND,
       row_mapC,
       entriesC,
       valuesC
       );
   Kokkos::fence();
   double numeric_time = timer2.seconds();
-  std::cout << "mm_time:" << numeric_time + symbolic_time
+
+  Kokkos::Impl::Timer timer3;
+  KokkosKernels::Experimental::Graph::spgemm_apply(
+      &kh,
+      m,
+      n,
+      k,
+      kok_xadj,
+      kok_adj,
+      kok_mtx_vals,
+      TRANPOSEFIRST,
+
+      kok_xadj,
+      kok_adj,
+      kok_mtx_vals,
+      TRANPOSESECOND,
+      row_mapC,
+      entriesC,
+      valuesC
+      );
+  Kokkos::fence();
+  double apply_time = timer3.seconds();
+
+  std::cout << "mm_time:" << numeric_time + symbolic_time + apply_time
             << " symbolic_time:" << symbolic_time
-            << " numeric:" << numeric_time << std::endl;
+            << " numeric:" << numeric_time
+            << " apply:" << apply_time << std::endl;
 
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
   std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-
-
-  kh.create_spgemm_handle();
+#ifdef RUNCUSP
+  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
   Kokkos::Impl::Timer timer3;
   KokkosKernels::Experimental::Graph::spgemm_symbolic<KernelHandle> (
       &kh,
@@ -130,10 +156,10 @@ int main (int argc, char ** argv){
       k,
       kok_xadj,
       kok_adj,
-      false,
+      TRANPOSEFIRST,
       kok_xadj,
       kok_adj,
-      false,
+      TRANPOSESECOND,
       row_mapC2,
       entriesC2
       );
@@ -141,7 +167,7 @@ int main (int argc, char ** argv){
   Kokkos::fence();
   symbolic_time = timer3.seconds();
   Kokkos::Impl::Timer timer4;
-  KokkosKernels::Experimental::Graph::spgemm_numeric(
+  KokkosKernels::Experimental::Graph::spgemm_apply(
       &kh,
       m,
       n,
@@ -149,19 +175,19 @@ int main (int argc, char ** argv){
       kok_xadj,
       kok_adj,
       kok_mtx_vals,
-      false,
+      TRANPOSEFIRST,
 
       kok_xadj,
       kok_adj,
       kok_mtx_vals,
-      true,
+      TRANPOSESECOND,
       row_mapC2,
       entriesC2,
       valuesC2
       );
   Kokkos::fence();
   numeric_time = timer4.seconds();
-  std::cout << "mm_time:" << numeric_time + symbolic_time
+  std::cout << "mm_time:" << numeric_time + symbolic_time + apply_time
             << " symbolic_time:" << symbolic_time
             << " numeric:" << numeric_time << std::endl;
 
@@ -177,6 +203,8 @@ int main (int argc, char ** argv){
   Kokkos::parallel_reduce(my_exec_space(0,valuesC2.dimension_0()), compare<value_array_type>(valuesC,valuesC2), val);
 
   std::cout << "map:" << map << " ent:" << ent << " val:" << val << std::endl;
+#endif
+
   Kokkos::finalize();
   return 0;
 

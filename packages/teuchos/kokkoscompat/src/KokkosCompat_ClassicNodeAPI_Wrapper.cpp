@@ -3,6 +3,39 @@
 
 namespace Kokkos {
   namespace Compat {
+    namespace Details {
+      bool
+      getVerboseParameter (const Teuchos::ParameterList& params)
+      {
+        const bool defaultValue = false; // default value of the parameter
+
+        if (params.isParameter ("Verbose")) {
+          if (params.isType<bool> ("Verbose")) { // is it a bool?
+            return params.get<bool> ("Verbose");
+          }
+          else if (params.isType<int> ("Verbose")) { // is it an int?
+            return params.get<int> ("Verbose");
+          }
+          // It might be polite to throw at this point with a helpful
+          // message explaining that the parameter has the wrong type,
+          // but that would change current behavior, so I'll just
+          // leave it.
+        }
+        return defaultValue;
+      }
+
+      Teuchos::ParameterList getDefaultNodeParameters ()
+      {
+        Teuchos::ParameterList params;
+        params.set ("Verbose", 0);
+        // -1 says "Let Kokkos pick"
+        params.set ("Num Threads", -1);
+        params.set ("Num NUMA", -1);
+        params.set ("Num CoresPerNUMA", -1);
+        params.set ("Device", 0);
+        return params;
+      }
+    } // namespace Details
 
     // mfh 01 Jan 2014: These definitions of the class variable count
     // need to be inside the namespace.  Declaring them as "template<>

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,33 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef KOKKOS_BUFFER_MACROS
 #define KOKKOS_BUFFER_MACROS
 
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <string>
-#include <stdexcept>
+// We retain this header file only for backwards compatibility.
 
-#ifdef HAVE_KOKKOSCLASSIC_DEBUG
-#define MARK_COMPUTE_BUFFER(buff) \
-  { \
-    std::string ptrtype("compute"); \
-    Teuchos::set_extra_data(ptrtype, "BufferType", Teuchos::inOutArg(buff)); \
-  }
-#define CHECK_COMPUTE_BUFFER(buff) \
-  { \
-    TEUCHOS_TEST_FOR_EXCEPTION( Teuchos::get_extra_data<std::string>(buff, "BufferType") != "compute", std::logic_error, \
-        Teuchos::typeName(*this) << ": argument buffer is not a compute buffer as expected." ); \
-  }
-#else
-#define MARK_COMPUTE_BUFFER(buff)
-#define CHECK_COMPUTE_BUFFER(buff)
-#endif
-
-#endif
+#endif // KOKKOS_BUFFER_MACROS

@@ -83,7 +83,7 @@ using namespace stk::mesh::impl;
 using namespace stk::mesh;
 
 
-stk::mesh::PartVector get_skin_parts(stk::mesh::MetaData &meta)
+inline stk::mesh::PartVector get_skin_parts(stk::mesh::MetaData &meta)
 {
     stk::mesh::PartVector skin_parts;
     skin_parts.push_back(meta.get_part("skin"));
@@ -91,7 +91,7 @@ stk::mesh::PartVector get_skin_parts(stk::mesh::MetaData &meta)
     return skin_parts;
 }
 
-void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
+inline void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
 {
     stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
     meta.declare_part_with_topology("skin", stk::topology::QUAD_4);

@@ -75,6 +75,22 @@ public:
 }; // class Reciprocal
 
 
+// Compute the elementwise power of a vector
+template<class Real> 
+class Power : public UnaryFunction<Real> {
+private:
+  Real exponent_;
+public:
+  Power( const Real &exponent ) : exponent_(exponent) {}
+
+  Real apply( const Real &x ) const {
+    return std::pow(x,exponent_);
+  } 
+
+
+}; // class Power
+
+
 // Generate a uniformly distributed random number
 // between lower and upper
 template<class Real> 
@@ -109,6 +125,18 @@ public:
 
 
 }; 
+
+
+template<class Real>
+class Logarithm : public UnaryFunction<Real> {
+public:
+
+  Real apply( const Real &x) const {
+    return std::log(x);
+  }
+
+};
+
 
 
 

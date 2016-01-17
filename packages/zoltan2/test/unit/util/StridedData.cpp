@@ -64,7 +64,7 @@ using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using namespace std;
 
-void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+void StridedDataTest(const Teuchos::SerialComm<int> &comm)
 {
   // StridedData template arguments
 
@@ -72,6 +72,7 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   typedef zscalar_t  value_t;
 
   typedef StridedData<index_t, value_t> stridedInput_t;
+  bool aok = true;
 
   /*! \test strided input with stride 1
    */
@@ -86,8 +87,9 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     s1 = rcp<stridedInput_t>(new stridedInput_t(input1, 1));
   }
   catch (std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, "Error in constructor 1", 1);
+    aok = false;
   }
+  TEST_FAIL_AND_EXIT(comm, aok, "Error in constructor 1", 1);
 
   std::cout << std::endl;
   std::cout << "Test 1, input: " << input1 << std::endl;
@@ -124,8 +126,9 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     s2 = rcp<stridedInput_t>(new stridedInput_t(input2, 3));
   }
   catch (std::exception &e){
-    TEST_FAIL_AND_EXIT(*comm, 0, "Error in constructor 2", 2);
+    aok = false;
   }
+  TEST_FAIL_AND_EXIT(comm, aok, "Error in constructor 2", 2);
 
   std::cout << std::endl;
   std::cout << "Test 2, input: " << input2 << std::endl;
@@ -153,11 +156,16 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
+  Teuchos::RCP<const Teuchos::Comm<int> > mpicomm = 
     Teuchos::DefaultComm<int>::getComm();
 
-  if (comm->getRank() > 0)
+  // Run the test on only one rank. 
+  // There's no parallelism involved in StridedData, 
+  // and the output is neater on only one proc.
+  if (mpicomm->getRank() > 0)
     return 0;
+
+  Teuchos::SerialComm<int> comm;
 
   StridedDataTest(comm);
 

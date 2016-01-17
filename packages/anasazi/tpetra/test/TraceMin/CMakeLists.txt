@@ -1,4 +1,10 @@
+# FIXME (mfh 16 Jan 2016) The test doesn't currently build when TSQR
+# is enabled.  This is because the test uses a custom specialization
+# of MultiVecTraits that does not provide the 'tsqr_adaptor_type'
+# typedef.  For now, I'm disabling the tests when TSQR is enabled.
 
+ASSERT_DEFINED(Anasazi_ENABLE_TSQR)
+IF(NOT Anasazi_ENABLE_TSQR)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_TraceMin_smallest_proj_test
@@ -38,3 +44,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS --which=LM
   COMM serial mpi
   )
+
+ENDIF()

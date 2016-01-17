@@ -30,7 +30,7 @@ struct CopyArrayToCuspArray{
 
 
 template <typename KernelHandle>
-void CUSP_numeric(
+void CUSP_apply(
     KernelHandle *handle,
     typename KernelHandle::idx m,
     typename KernelHandle::idx n,

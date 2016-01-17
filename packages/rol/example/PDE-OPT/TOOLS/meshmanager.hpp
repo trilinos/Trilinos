@@ -67,23 +67,23 @@ public:
    */
   virtual ~MeshManager() {}
 
-  /** \brief Computes node coordinates.
+  /** \brief Returns node coordinates.
              Format: number_of_nodes x 2 (Real)
                      (node_index)  x, y coordinates
   */
-  virtual void getNodes(Intrepid::FieldContainer<Real> &nodes) = 0;
+  virtual Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const = 0;
 
-  /** \brief Computes cell to node adjacencies.
+  /** \brief Returns cell to node adjacencies.
              Format: number_of_cells x number_of_nodes_per_cell (int)
                      (cell_index)  node_index1  node_index2  ...
   */
-  virtual void getCellToNodeMap(Intrepid::FieldContainer<int> &ctn) = 0;
+  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const = 0;
 
-  /** \brief Computes cell to edge adjacencies.
+  /** \brief Returns cell to edge adjacencies.
              Format: number_of_cells x number_of_edges_per_cell (int)
                      (cell_index)  edge_index1  edge_index2  ...
   */
-  virtual void getCellToEdgeMap(Intrepid::FieldContainer<int> &ctn) = 0;
+  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const = 0;
 
   /** \brief Returns number of cells.
   */
@@ -130,8 +130,6 @@ private:
   Real observeW_;   // width of observation region (width of region 1)
   
   int ref_;          // mesh refinement level
-  bool store_;       // storage flag
-  bool initialized_; // initialization flag
 
   int nx1_;
   int nx2_;
@@ -147,11 +145,10 @@ private:
   int numCells_;
   int numNodes_;
   int numEdges_;
-  int numMeshEntities_;
 
-  Intrepid::FieldContainer<Real> meshNodes_;
-  Intrepid::FieldContainer<int>  meshCellToNodeMap_;
-  Intrepid::FieldContainer<int>  meshCellToEdgeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
 public:
 
@@ -164,7 +161,6 @@ public:
     observeW_ = parlist.sublist("Geometry").get("Observation width", 3.0);
     // Mesh data.
     ref_   = parlist.sublist("Geometry").get(      "Refinement level", 1);
-    store_ = parlist.sublist("Geometry").get(       "Store mesh data", true);
     nx1_   = parlist.sublist("Geometry").get( "Observation region NX", 4*ref_);
     ny1_   = parlist.sublist("Geometry").get( "Observation region NY", 5*ref_);
     nx2_   = parlist.sublist("Geometry").get("Laminar flow region NX", 2*ref_);
@@ -175,27 +171,52 @@ public:
     ny4_   = ny3_;
     nx5_   = nx2_;
     ny5_   = ny3_;
-    initialized_ = false;
     numCells_ = (nx1_ + nx2_)*ny1_  +  (nx3_ + nx1_ + nx2_)*ny3_;
     numNodes_ = (nx1_ + nx2_ + 1)*ny1_  +  (nx3_ + nx1_ + nx2_ + 1)*(ny3_ + 1);
     numEdges_ = (2*(nx1_ + nx2_)+1)*ny1_ + (2*(nx3_ + nx1_ + nx2_)+1)*ny3_ + (nx3_ + nx1_ + nx2_);
-    numMeshEntities_ = numCells_ + numNodes_ + numEdges_;
-    // Compute and store mesh data structures.
-    if (store_) {
-      getMeshNodes(meshNodes_); 
-      getMeshCellToNodeMap(meshCellToNodeMap_); 
-      getMeshCellToEdgeMap(meshCellToEdgeMap_);
-    }
-    initialized_ = true;
+    // Compute mesh data structures.
+    computeNodes(); 
+    computeCellToNodeMap(); 
+    computeCellToEdgeMap();
   }
 
 
-  void getNodes(Intrepid::FieldContainer<Real> &nodes) {
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+    return meshNodes_;
+  }
 
-    if ((store_) && (initialized_)) {
-      nodes = meshNodes_;
-      return;
-    }
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+    return meshCellToNodeMap_;
+  }
+
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return meshCellToEdgeMap_;
+  }
+
+
+  int getNumCells() const {
+    return numCells_;
+  } // getNumCells
+
+
+  int getNumNodes() const {
+    return numNodes_;
+  } // getNumNodes
+
+
+  int getNumEdges() const {
+    return numEdges_;
+  } // getNumEdges
+
+
+private:
+
+  void computeNodes() {
+
+    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 2));
+    Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     Real dy1 = stepH_ / ny1_;
     Real dy3 = (channelH_ - stepH_) / ny3_;
@@ -203,7 +224,6 @@ public:
     Real dx2 = (channelW_ - stepW_ - observeW_) / nx2_;
     Real dx3 = stepW_ / nx3_;
     int nodeCt = 0;
-    nodes.resize(numNodes_, 2);
 
     // bottom region
     for (int j=0; j<ny1_; ++j) {
@@ -238,18 +258,15 @@ public:
       }
     }
 
-  }  // getMeshNodes
+  }  // computeNodes
 
 
-  void getMeshCellToNodeMap(Intrepid::FieldContainer<int> &ctn) {
+  void computeCellToNodeMap() {
 
-    if ((store_) && (initialized_)) {
-      ctn = meshCellToNodeMap_;
-      return;
-    }
+    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     int cellCt = 0;
-    ctn.resize(numCells_, 4);
 
     // bottom region
     for (int j=0; j<ny1_-1; ++j) {
@@ -282,18 +299,15 @@ public:
       }
     }
 
-  } // getMeshCellToNodeMap
+  } // computeCellToNodeMap
 
 
-  void getMeshCellToEdgeMap(Intrepid::FieldContainer<int> &cte) {
+  void computeCellToEdgeMap() {
 
-    if ((store_) && (initialized_)) {
-      cte = meshCellToEdgeMap_;
-      return;
-    }
+    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
 
     int cellCt = 0;
-    cte.resize(numCells_, 4);
 
     // bottom region
     for (int j=0; j<ny1_-1; ++j) {
@@ -326,33 +340,14 @@ public:
       }
     }
 
-  } // getMeshCellToEdgeMap
-
-
-  int getNumCells() const {
-    return numCells_;
-  } // getNumCells
-
-
-  int getNumNodes() const {
-    return numNodes_;
-  } // getNumNodes
-
-
-  int getNumEdges() const {
-    return numEdges_;
-  } // getNumEdges
+  } // computeCellToEdgeMap
 
 
   void setRefinementLevel(const int &refLevel) {
     ref_ = refLevel;
-    if (store_) {
-      initialized_ = false;
-      getMeshNodes(meshNodes_);
-      getMeshCellToNodeMap(meshCellToNodeMap_);
-      getMeshCellToEdgeMap(meshCellToEdgeMap_);
-      initialized_ = true;
-    }
+    computeNodes();
+    computeCellToNodeMap();
+    computeCellToEdgeMap();
   } // setRefinementLevel
 
 }; // MeshManager_BackwardFacingStepChannel
@@ -390,113 +385,48 @@ private:
   int nx_;
   int ny_;
 
-  bool store_;
-  bool initialized_;
-
   int numCells_;
   int numNodes_;
   int numEdges_;
-  int numMeshEntities_;
 
-  Intrepid::FieldContainer<Real> meshNodes_;
-  Intrepid::FieldContainer<int>  meshCellToNodeMap_;
-  Intrepid::FieldContainer<int>  meshCellToEdgeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
 public:
 
   MeshManager_Rectangle(Teuchos::ParameterList &parlist) {
     // Geometry data.
-    height_ = parlist.sublist("Geometry").get("Height", 1.0);
     width_  = parlist.sublist("Geometry").get( "Width", 3.0);
+    height_ = parlist.sublist("Geometry").get("Height", 1.0);
     X0_     = parlist.sublist("Geometry").get(    "X0", 0.0);
     Y0_     = parlist.sublist("Geometry").get(    "Y0", 0.0);
     // Mesh data.
-    nx_ = parlist.sublist("Geometry").get("NX", 1);
-    ny_ = parlist.sublist("Geometry").get("NY", 3);
-    store_ = parlist.sublist("Geometry").get("Store mesh data", true);
-    initialized_ = false;
+    nx_ = parlist.sublist("Geometry").get("NX", 3);
+    ny_ = parlist.sublist("Geometry").get("NY", 1);
     numCells_ = nx_ * ny_;
     numNodes_ = (nx_+1) * (ny_+1);
     numEdges_ = (nx_+1)*ny_ + (ny_+1)*nx_;
-    numMeshEntities_ = numCells_ + numNodes_ + numEdges_;
     // Compute and store mesh data structures.
-    if (store_) {
-      getNodes(meshNodes_); 
-      getCellToNodeMap(meshCellToNodeMap_); 
-      getCellToEdgeMap(meshCellToEdgeMap_);
-    }
-    initialized_ = true;
+    computeNodes(); 
+    computeCellToNodeMap(); 
+    computeCellToEdgeMap();
   }
 
 
-  void getNodes(Intrepid::FieldContainer<Real> &nodes) {
-
-    if ((store_) && (initialized_)) {
-      nodes = meshNodes_;
-      return;
-    }
-
-    Real dx = width_ / nx_;
-    Real dy = height_ / ny_;
-    int nodeCt = 0;
-    nodes.resize(numNodes_, 2);
-
-    for (int j=0; j<=ny_; ++j) {
-      Real ycoord = Y0_ + j*dy;
-      for (int i=0; i<=nx_; ++i) {
-        nodes(nodeCt, 0) = X0_ + i*dx;
-        nodes(nodeCt, 1) = ycoord; 
-        ++nodeCt;
-      }
-    }
-
-  } // getMeshNodes
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+    return meshNodes_;
+  }
 
 
-  void getCellToNodeMap(Intrepid::FieldContainer<int> &ctn) {
-
-    if ((store_) && (initialized_)) {
-      ctn = meshCellToNodeMap_;
-      return;
-    }
-
-    int cellCt = 0;
-    ctn.resize(numCells_, 4);
-
-    for (int j=0; j<ny_; ++j) {
-      for (int i=0; i<nx_; ++i) {
-        ctn(cellCt, 0) = j*(nx_+1) + i;
-        ctn(cellCt, 1) = j*(nx_+1) + (i+1);
-        ctn(cellCt, 2) = (j+1)*(nx_+1) + (i+1);
-        ctn(cellCt, 3) = (j+1)*(nx_+1) + i;
-        ++cellCt;
-      }
-    }
-
-  } // getMeshCellToNodeMap
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+    return meshCellToNodeMap_;
+  }
 
 
-  void getCellToEdgeMap(Intrepid::FieldContainer<int> &cte) {
-
-    if ((store_) && (initialized_)) {
-      cte = meshCellToEdgeMap_;
-      return;
-    }
-
-    int cellCt = 0;
-    cte.resize(numCells_, 4);
-
-    for (int j=0; j<ny_; ++j) {
-      for (int i=0; i<nx_; ++i) {
-        cte(cellCt, 0) = j*(2*nx_+1) + i;
-        cte(cellCt, 1) = j*(2*nx_+1) + nx_ + (i+1);
-        cte(cellCt, 2) = (j+1)*(2*nx_+1) + i;
-        cte(cellCt, 3) = j*(2*nx_+1) + nx_ + i;
-        ++cellCt;
-      }
-    }
-
-  } // getMeshCellToEdgeMap
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return meshCellToEdgeMap_;
+  }
 
 
   int getNumCells() const {
@@ -512,6 +442,69 @@ public:
   int getNumEdges() const {
     return numEdges_;
   } // getNumEdges
+
+private:
+
+  void computeNodes() {
+
+    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 2));
+    Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
+
+    Real dx = width_ / nx_;
+    Real dy = height_ / ny_;
+    int nodeCt = 0;
+
+    for (int j=0; j<=ny_; ++j) {
+      Real ycoord = Y0_ + j*dy;
+      for (int i=0; i<=nx_; ++i) {
+        nodes(nodeCt, 0) = X0_ + i*dx;
+        nodes(nodeCt, 1) = ycoord; 
+        ++nodeCt;
+      }
+    }
+
+  } // computeNodes
+
+
+  void computeCellToNodeMap() {
+
+    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
+
+    int cellCt = 0;
+
+    for (int j=0; j<ny_; ++j) {
+      for (int i=0; i<nx_; ++i) {
+        ctn(cellCt, 0) = j*(nx_+1) + i;
+        ctn(cellCt, 1) = j*(nx_+1) + (i+1);
+        ctn(cellCt, 2) = (j+1)*(nx_+1) + (i+1);
+        ctn(cellCt, 3) = (j+1)*(nx_+1) + i;
+        ++cellCt;
+      }
+    }
+
+  } // computeCellToNodeMap
+
+
+  void computeCellToEdgeMap() {
+
+    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+
+    int cellCt = 0;
+
+    for (int j=0; j<ny_; ++j) {
+      for (int i=0; i<nx_; ++i) {
+        cte(cellCt, 0) = j*(2*nx_+1) + i;
+        cte(cellCt, 1) = j*(2*nx_+1) + nx_ + (i+1);
+        cte(cellCt, 2) = (j+1)*(2*nx_+1) + i;
+        cte(cellCt, 3) = j*(2*nx_+1) + nx_ + i;
+        ++cellCt;
+      }
+    }
+
+  } // computeCellToEdgeMap
+
 
 }; // MeshManager_Rectangle
 

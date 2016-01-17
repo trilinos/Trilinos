@@ -473,6 +473,18 @@ bool BulkData::in_receive_ghost( EntityKey key ) const
 }
 
 inline
+bool BulkData::in_receive_custom_ghost( EntityKey key ) const
+{
+  const std::vector<Ghosting*> & ghosts= ghostings();
+  for (size_t i=ghosts.size()-1;i>AURA;--i)
+  {
+      if ( in_receive_ghost(*ghosts[i], key) )
+          return true;
+  }
+  return false;
+}
+
+inline
 bool BulkData::in_receive_ghost( const Ghosting & ghost , EntityKey key ) const
 {
   const int owner_rank = internal_entity_comm_map_owner(key);

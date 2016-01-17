@@ -56,7 +56,6 @@
 #include "Tpetra_Map_decl.hpp"
 
 #include "Kokkos_DualView.hpp"
-#include "Kokkos_MultiVector.hpp"
 
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -1307,16 +1306,6 @@ namespace Tpetra {
 
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
-
-    /// \brief A view of the underlying KokkosClassic::MultiVector object.
-    ///
-    /// \brief This method is for expert users only.
-    ///   It may change or be removed at any time.
-    ///
-    /// \note To Tpetra developers: This object's value type is Scalar
-    ///   and not impl_scalar_type, precisely because it supports a
-    ///   backwards compatibility use case.
-    KokkosClassic::MultiVector<Scalar, Node> getLocalMV () const;
 
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///

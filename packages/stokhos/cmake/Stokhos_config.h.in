@@ -118,3 +118,9 @@
 
 /* Define if reductions across ensembles are enabled */
 #cmakedefine HAVE_STOKHOS_ENSEMBLE_REDUCT
+
+/* Define if ensemble scalar type is enabled */
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SCALAR_TYPE
+
+/* Define if pce scalar type is enabled */
+#cmakedefine HAVE_STOKHOS_PCE_SCALAR_TYPE

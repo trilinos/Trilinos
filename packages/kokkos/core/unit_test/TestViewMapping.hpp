@@ -204,7 +204,8 @@ void test_view_mapping()
   {
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutLeft > left_s0_s0_s4 ;
 
-    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), 2, 3, 0, 0, 0, 0, 0, 0 );
+    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                          , Kokkos::LayoutLeft( 2, 3, 0, 0, 0, 0, 0, 0 ) );
 
     stride_s0_s0_s0  stride3( dyn_off3 );
 
@@ -242,7 +243,8 @@ void test_view_mapping()
 
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutLeft > left_s0_s0_s4 ;
 
-    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), N0, N1, 0, 0, 0, 0, 0, 0 );
+    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                          , Kokkos::LayoutLeft( N0, N1, 0, 0, 0, 0, 0, 0 ) );
 
     stride_s0_s0_s0  stride3( dyn_off3 );
 
@@ -314,7 +316,8 @@ void test_view_mapping()
   {
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutRight > right_s0_s0_s4 ;
 
-    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), 2, 3, 0, 0, 0, 0, 0, 0 );
+    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                           , Kokkos::LayoutRight( 2, 3, 0, 0, 0, 0, 0, 0 ) );
 
     stride_s0_s0_s0  stride3( dyn_off3 );
 
@@ -352,7 +355,8 @@ void test_view_mapping()
 
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutRight > right_s0_s0_s4 ;
 
-    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), N0, N1, 0, 0, 0, 0, 0, 0 );
+    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                           , Kokkos::LayoutRight( N0, N1, 0, 0, 0, 0, 0, 0 ) );
 
     stride_s0_s0_s0  stride3( dyn_off3 );
 
@@ -428,7 +432,8 @@ void test_view_mapping()
 
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutLeft > left_s0_s0_s4 ;
 
-    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), N0, N1, 0, 0, 0, 0, 0, 0 );
+    left_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                          , Kokkos::LayoutLeft( N0, N1, 0, 0, 0, 0, 0, 0 ) );
 
     Kokkos::Experimental::Impl::SubviewExtents< 3 , 3 >
       sub( dyn_off3.m_dim
@@ -466,7 +471,8 @@ void test_view_mapping()
 
     typedef Kokkos::Experimental::Impl::ViewOffset< dim_s0_s0_s4 , Kokkos::LayoutRight > right_s0_s0_s4 ;
 
-    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>(), N0, N1, 0, 0, 0, 0, 0, 0 );
+    right_s0_s0_s4 dyn_off3( std::integral_constant<unsigned,sizeof(int)>()
+                           , Kokkos::LayoutRight( N0, N1, 0, 0, 0, 0, 0, 0 ) );
 
     Kokkos::Experimental::Impl::SubviewExtents< 3 , 3 >
       sub( dyn_off3.m_dim
@@ -565,10 +571,10 @@ void test_view_mapping()
     static_assert( std::is_same< typename a_const_int_r1::type , const int * >::value , "" );
     static_assert( std::is_same< typename a_const_int_r1::value_type , const int >::value , "" );
 
-    static_assert( std::is_same< typename a_const_int_r1::array_scalar_type , const int * >::value , "" );
+    static_assert( std::is_same< typename a_const_int_r1::scalar_array_type , const int * >::value , "" );
     static_assert( std::is_same< typename a_const_int_r1::const_type , const int * >::value , "" );
     static_assert( std::is_same< typename a_const_int_r1::const_value_type , const int >::value , "" );
-    static_assert( std::is_same< typename a_const_int_r1::const_array_scalar_type , const int * >::value , "" );
+    static_assert( std::is_same< typename a_const_int_r1::const_scalar_array_type , const int * >::value , "" );
     static_assert( std::is_same< typename a_const_int_r1::non_const_type , int * >::value , "" );
     static_assert( std::is_same< typename a_const_int_r1::non_const_value_type , int >::value , "" );
 
@@ -580,13 +586,13 @@ void test_view_mapping()
 
     static_assert( std::is_same< typename a_const_int_r3::type , const int**[4] >::value , "" );
     static_assert( std::is_same< typename a_const_int_r3::value_type , const int >::value , "" );
-    static_assert( std::is_same< typename a_const_int_r3::array_scalar_type , const int**[4] >::value , "" );
+    static_assert( std::is_same< typename a_const_int_r3::scalar_array_type , const int**[4] >::value , "" );
     static_assert( std::is_same< typename a_const_int_r3::const_type , const int**[4] >::value , "" );
     static_assert( std::is_same< typename a_const_int_r3::const_value_type , const int >::value , "" );
-    static_assert( std::is_same< typename a_const_int_r3::const_array_scalar_type , const int**[4] >::value , "" );
+    static_assert( std::is_same< typename a_const_int_r3::const_scalar_array_type , const int**[4] >::value , "" );
     static_assert( std::is_same< typename a_const_int_r3::non_const_type , int**[4] >::value , "" );
     static_assert( std::is_same< typename a_const_int_r3::non_const_value_type , int >::value , "" );
-    static_assert( std::is_same< typename a_const_int_r3::non_const_array_scalar_type , int**[4] >::value , "" );
+    static_assert( std::is_same< typename a_const_int_r3::non_const_scalar_array_type , int**[4] >::value , "" );
 
 
     // std::cout << "typeid(const int**[4]).name() = " << typeid(const int**[4]).name() << std::endl ;
@@ -618,9 +624,9 @@ void test_view_mapping()
     ASSERT_TRUE( ( std::is_same< typename T::const_data_type     , const int* >::value ) );
     ASSERT_TRUE( ( std::is_same< typename T::non_const_data_type , int* >::value ) );
 
-    ASSERT_TRUE( ( std::is_same< typename T::array_scalar_type           , int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename T::const_array_scalar_type     , const int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename T::non_const_array_scalar_type , int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::scalar_array_type           , int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::const_scalar_array_type     , const int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::non_const_scalar_array_type , int* >::value ) );
 
     ASSERT_TRUE( ( std::is_same< typename T::value_type           , int >::value ) );
     ASSERT_TRUE( ( std::is_same< typename T::const_value_type     , const int >::value ) );
@@ -635,9 +641,9 @@ void test_view_mapping()
     ASSERT_TRUE( ( std::is_same< typename C::const_data_type     , const int* >::value ) );
     ASSERT_TRUE( ( std::is_same< typename C::non_const_data_type , int* >::value ) );
 
-    ASSERT_TRUE( ( std::is_same< typename C::array_scalar_type           , const int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename C::const_array_scalar_type     , const int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename C::non_const_array_scalar_type , int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename C::scalar_array_type           , const int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename C::const_scalar_array_type     , const int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename C::non_const_scalar_array_type , int* >::value ) );
 
     ASSERT_TRUE( ( std::is_same< typename C::value_type           , const int >::value ) );
     ASSERT_TRUE( ( std::is_same< typename C::const_value_type     , const int >::value ) );
@@ -678,9 +684,9 @@ void test_view_mapping()
     ASSERT_TRUE( ( std::is_same< typename T::const_data_type     , const int* >::value ) );
     ASSERT_TRUE( ( std::is_same< typename T::non_const_data_type , int* >::value ) );
 
-    ASSERT_TRUE( ( std::is_same< typename T::array_scalar_type           , int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename T::const_array_scalar_type     , const int* >::value ) );
-    ASSERT_TRUE( ( std::is_same< typename T::non_const_array_scalar_type , int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::scalar_array_type           , int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::const_scalar_array_type     , const int* >::value ) );
+    ASSERT_TRUE( ( std::is_same< typename T::non_const_scalar_array_type , int* >::value ) );
 
     ASSERT_TRUE( ( std::is_same< typename T::value_type           , int >::value ) );
     ASSERT_TRUE( ( std::is_same< typename T::const_value_type     , const int >::value ) );
@@ -750,7 +756,7 @@ void test_view_mapping()
     stride.stride[1] = 1 ;
     stride.stride[2] = 12 ;
 
-    const offset_t offset( stride );
+    const offset_t offset( std::integral_constant<unsigned,0>() , stride );
 
     ASSERT_EQ( offset.dimension_0() , 3 );
     ASSERT_EQ( offset.dimension_1() , 4 );
@@ -763,7 +769,7 @@ void test_view_mapping()
     ASSERT_EQ( offset.span() , 60 );
     ASSERT_TRUE( offset.span_is_contiguous() );
 
-    Kokkos::Experimental::Impl::ViewMapping< traits_t , void >  v( (int*) 0 , std::false_type() , stride );
+    Kokkos::Experimental::Impl::ViewMapping< traits_t , void >  v( (int*) 0 , stride );
   }
 
   {
@@ -842,7 +848,7 @@ void test_view_mapping()
 
     Kokkos::parallel_for(
       Kokkos::RangePolicy< Kokkos::DefaultHostExecutionSpace >(0,10) ,
-      [=]( int i ){
+      KOKKOS_LAMBDA( int i ){
         // 'a' is captured by copy and the capture mechanism
         // converts 'a' to an unmanaged copy.
         // When the parallel dispatch accepts a move for the lambda

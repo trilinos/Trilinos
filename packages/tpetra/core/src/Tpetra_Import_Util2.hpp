@@ -86,22 +86,6 @@ namespace { // (anonymous)
     return view_type (x.getRawPtr (), numEnt);
   }
 
-  // For a given Node type, return the associated execution space.
-  template<class NodeType>
-  struct NodeToExecSpace {
-#ifdef KOKKOS_HAVE_SERIAL
-    typedef Kokkos::Serial execution_space;
-#else
-    typedef Kokkos::HostSpace::execution_space execution_space;
-#endif // KOKKOS_HAVE_SERIAL
-  };
-
-  // Partial specialization for the new (Kokkos refactor) Node types.
-  template<class ExecSpace>
-  struct NodeToExecSpace<Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace> > {
-    typedef typename ExecSpace::execution_space execution_space;
-  };
-
   // For a given Kokkos (execution or memory) space, return both its
   // execution space, and the corresponding host execution space.
   template<class Space>
@@ -517,7 +501,7 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
   typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
@@ -690,7 +674,7 @@ unpackAndCombineWithOwningPIDsCount (const CrsMatrix<Scalar, LocalOrdinal, Globa
   typedef CrsMatrix<Scalar, LO, GO, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
   typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
@@ -776,7 +760,7 @@ unpackAndCombineIntoCrsArrays (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdin
   using Teuchos::reduceAll;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef typename NodeToExecSpace<Node>::execution_space execution_space;
+  typedef typename Node::execution_space execution_space;
   typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;

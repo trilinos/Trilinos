@@ -93,7 +93,44 @@ namespace ROL {
 
 template <class Real>
 class EqualityConstraint_SimOpt : public EqualityConstraint<Real> {
+private:
+  // Additional vector storage for solve
+  Teuchos::RCP<Vector<Real> > unew_;
+  Teuchos::RCP<Vector<Real> > jv_;
+
+  // Default parameters for solve (backtracking Newton)
+  const Real DEFAULT_rtol_;
+  const Real DEFAULT_stol_;
+  const Real DEFAULT_factor_;
+  const Real DEFAULT_decr_;
+  const int  DEFAULT_maxit_;
+  const bool DEFAULT_print_;
+
+  // User-set parameters for solve (backtracking Newton)
+  Real rtol_;
+  Real stol_;
+  Real factor_;
+  Real decr_;
+  int  maxit_;
+  bool print_;
+
+  // Flag to initialize vector storage in solve
+  bool firstSolve_;
+
 public:
+  EqualityConstraint_SimOpt()
+    : EqualityConstraint<Real>(),
+      unew_(Teuchos::null), jv_(Teuchos::null),
+      DEFAULT_rtol_(1.e-4*std::sqrt(ROL_EPSILON)),
+      DEFAULT_stol_(std::sqrt(ROL_EPSILON)),
+      DEFAULT_factor_(0.5),
+      DEFAULT_decr_(1.e-4),
+      DEFAULT_maxit_(500),
+      DEFAULT_print_(false),
+      rtol_(DEFAULT_rtol_), stol_(DEFAULT_stol_), factor_(DEFAULT_factor_),
+      decr_(DEFAULT_decr_), maxit_(DEFAULT_maxit_), print_(DEFAULT_print_),
+      firstSolve_(true) {}
+
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
                 flag = true if optimization variable is changed,
@@ -122,17 +159,97 @@ public:
 
   /** \brief Given \f$z\f$, solve \f$c(u,z)=0\f$ for \f$u\f$.
 
-             @param[out]      u   is the solution vector; a simulation-space vector
+             @param[out]      c   is the result of evaluating the constraint operator at @b \f$(u,z)\f$; a constraint-space vector
+             @param[in,out]   u   is the solution vector; a simulation-space vector
              @param[in]       z   is the constraint argument; an optimization-space vector
              @param[in,out]   tol is a tolerance for inexact evaluations; currently unused
 
+             The defualt implementation is Newton's method globalized with a backtracking line search.
+
              ---
   */
-  virtual void solve(Vector<Real> &u, 
+  virtual void solve(Vector<Real> &c,
+                     Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "The method solve is used but not implemented!\n");
+    if ( firstSolve_ ) {
+      unew_ = u.clone();
+      jv_   = u.clone();
+      firstSolve_ = false;
+    }
+    update(u,z);
+    value(c,u,z,tol);
+    Real cnorm = c.norm(), alpha = 1.0, tmp = 0.0;
+    int cnt = 0;
+    if ( print_ ) {
+      std::cout << "\n     Default EqualityConstraint_SimOpt::solve\n";
+      std::cout << "       ";
+      std::cout << std::setw(6)  << std::left << "iter";
+      std::cout << std::setw(15) << std::left << "rnorm";
+      std::cout << std::setw(15) << std::left << "alpha";
+      std::cout << "\n";
+    }
+    while ( cnorm > rtol_ && cnt < maxit_) {
+      // Compute Newton step
+      applyInverseJacobian_1(*jv_,c,u,z,tol);
+      unew_->set(u);
+      unew_->axpy(-alpha, *jv_);
+      update(*unew_,z);
+      value(c,*unew_,z,tol);
+      tmp = c.norm();
+      // Perform backtracking line search
+      while ( tmp > (1.0-decr_*alpha)*cnorm &&
+              alpha > stol_ ) {
+        alpha *= factor_;
+        unew_->set(u);
+        unew_->axpy(-alpha,*jv_);
+        update(*unew_,z);
+        value(c,*unew_,z,tol);
+        tmp = c.norm();
+      }
+      if ( print_ ) {
+        std::cout << "       ";
+        std::cout << std::setw(6)  << std::left << cnt;
+        std::cout << std::scientific << std::setprecision(6);
+        std::cout << std::setw(15) << std::left << tmp;
+        std::cout << std::scientific << std::setprecision(6);
+        std::cout << std::setw(15) << std::left << alpha;
+        std::cout << "\n";
+      }
+      // Update iterate
+      cnorm = tmp;
+      u.set(*unew_);
+      alpha = 1.0;
+      cnt++;
+    }
+  }
+
+  /** \brief Set solve parameters.
+
+             @param[in]       parlist   Teuchos::ParameterList containing solve parameters
+
+             For the default implementation, parlist has two sublist ("SimOpt"
+             and "Solve") and the "Solve" sublist has six input parameters.
+
+                - "Residual Tolerance": Absolute tolerance for the norm of the residual (Real)
+                - "Iteration Limit": Maximum number of Newton iterations (int)
+                - "Sufficient Decrease Tolerance": Tolerance signifying sufficient decrease in the residual norm, between 0 and 1 (Real)
+                - "Step Tolerance": Absolute tolerance for the step size parameter (Real)
+                - "Backtracking Factor": Rate for decreasing step size during backtracking, between 0 and 1 (Real)
+                - "Output Iteration History": Set to true in order to print solve iteration history (bool)
+
+             These parameters are accessed as parlist.sublist("SimOpt").sublist("Solve").get(...).
+
+             ---
+  */
+  virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
+    Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
+    rtol_   = list.get("Residual Tolerance",            DEFAULT_rtol_);
+    maxit_  = list.get("Iteration Limit",               DEFAULT_maxit_);
+    decr_   = list.get("Sufficient Decrease Tolerance", DEFAULT_decr_);
+    stol_   = list.get("Step Tolerance",                DEFAULT_stol_);
+    factor_ = list.get("Backtracking Factor",           DEFAULT_factor_);
+    print_  = list.get("Output Iteration History",      DEFAULT_print_);
   }
 
   /** \brief Apply the partial constraint Jacobian at \f$(u,z)\f$, 
@@ -679,8 +796,8 @@ public:
 
   }
 
-
-  EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}
+//
+//  EqualityConstraint_SimOpt(void) : EqualityConstraint<Real>() {}
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
@@ -774,18 +891,22 @@ public:
                           std::ostream & outStream = std::cout) {
     // Solve equality constraint for u. 
     Real tol = ROL_EPSILON;
+    Teuchos::RCP<ROL::Vector<Real> > r = c.clone();
     Teuchos::RCP<ROL::Vector<Real> > s = u.clone();
-    solve(*s,z,tol);
+    solve(*r,*s,z,tol);
     // Evaluate equality constraint residual at (u,z).
     Teuchos::RCP<ROL::Vector<Real> > cs = c.clone();
     update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
+    Real rnorm = r->norm();
     Real cnorm = cs->norm();
     if ( printToStream ) {
       std::stringstream hist;
       hist << std::scientific << std::setprecision(8);
-      hist << "\nTest SimOpt solve at feasible (u,z): \n  ||c(u,z)|| = " << cnorm << "\n";
+      hist << "\nTest SimOpt solve at feasible (u,z):\n";
+      hist << "  Solver Residual = " << rnorm << "\n";
+      hist << "       ||c(u,z)|| = " << cnorm << "\n";
       outStream << hist.str();
     }
     return cnorm;

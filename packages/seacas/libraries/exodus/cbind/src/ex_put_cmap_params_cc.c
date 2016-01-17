@@ -181,7 +181,7 @@ file ID %d",
     n_var_idx[0] = 0;
 
     /* get the communication map info index */
-#if defined(NC_NETCDF4)
+#if defined(ENABLE_NETCDF4)
     status = nc_get_var_longlong(exoid, n_varid_idx, &(n_var_idx[1]));
 #else
     status = nc_get_var_int(exoid, n_varid_idx, &(n_var_idx[1]));

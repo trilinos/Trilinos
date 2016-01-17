@@ -111,10 +111,9 @@ void setUpAndSolve(Teuchos::ParameterList &list,
                    Teuchos::RCP<ROL::BoundConstraint<double> > &bnd,
                    std::ostream & outStream) {
   ROL::StochasticProblem<double> opt(list,pObj,sampler,x,bnd);
-  Teuchos::RCP<ROL::Vector<double> > D = opt.createVector(list,d);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.checkObjectiveGradient(*D,true,outStream);
-  opt.checkObjectiveHessVec(*D,true,outStream);
+  opt.checkObjectiveGradient(*d,true,outStream);
+  opt.checkObjectiveHessVec(*d,true,outStream);
   // Run ROL algorithm
   ROL::Algorithm<double> algo("Trust Region",list,false);
   algo.run(opt,true,outStream);

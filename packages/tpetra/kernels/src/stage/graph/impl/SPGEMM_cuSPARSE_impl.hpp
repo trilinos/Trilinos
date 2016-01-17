@@ -103,7 +103,7 @@ namespace Impl{
 
 
   template <typename KernelHandle>
-  void cuSPARSE_numeric(
+  void cuSPARSE_apply(
       KernelHandle *handle,
       typename KernelHandle::idx m,
       typename KernelHandle::idx n,

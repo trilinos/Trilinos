@@ -618,8 +618,11 @@ namespace MueLu {
           postSmoo->Apply(X, B, zeroGuess);
           emptySolve = false;
         }
-        if (emptySolve == true)
+        if (emptySolve == true) {
           GetOStream(Warnings0) << "No coarse grid solver" << std::endl;
+          // Coarse operator is identity
+          X.update(one, B, zero);
+        }
 
       } else {
         // On intermediate levels, we do cycles

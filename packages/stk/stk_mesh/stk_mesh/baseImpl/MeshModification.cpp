@@ -129,7 +129,8 @@ void MeshModification::internal_resolve_shared_modify_delete()
 {
     ThrowRequireMsg(m_bulkData.parallel_size() > 1, "Do not call this in serial");
 
-    m_bulkData.delete_shared_entities_which_are_no_longer_in_owned_closure();
+    stk::mesh::EntityProcVec entitiesToRemoveFromSharing;
+    m_bulkData.delete_shared_entities_which_are_no_longer_in_owned_closure(entitiesToRemoveFromSharing);
 
     std::vector<stk::mesh::BulkData::EntityParallelState> remotely_modified_shared_entities;
 
@@ -138,8 +139,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
     const bool communicate_shared = true;
     m_bulkData.communicate_entity_modification(communicate_shared, remotely_modified_shared_entities);
 
-    // We iterate backwards over remote_mod to ensure that we hit the
-    // higher-ranking entities first.
+    // We iterate backwards to ensure that we hit the higher-ranking entities first.
     for(std::vector<stk::mesh::BulkData::EntityParallelState>::reverse_iterator
     i = remotely_modified_shared_entities.rbegin(); i != remotely_modified_shared_entities.rend();)
     {
@@ -174,15 +174,18 @@ void MeshModification::internal_resolve_shared_modify_delete()
             // look at the comm list of the entity since there is no
             // guarantee that the comm list is correct or up-to-date).
 
-            if(remotely_destroyed)
+            const bool not_shared_remotely = !(i->remote_owned_closure);
+            if(remotely_destroyed || not_shared_remotely)
             {
                 m_bulkData.entity_comm_map_erase(key, EntityCommInfo(stk::mesh::BulkData::SHARED, remote_proc));
-
-                // check if owner is destroying
-                if(owner == remote_proc)
-                {
-                    remote_owner_destroyed = true;
+                if (!locally_destroyed && not_shared_remotely) {
+                    entitiesToRemoveFromSharing.push_back(EntityProc(entity, remote_proc));
                 }
+            }
+            // check if owner is destroying
+            if(remotely_destroyed && (owner == remote_proc))
+            {
+                remote_owner_destroyed = true;
             }
         }
 
@@ -190,7 +193,7 @@ void MeshModification::internal_resolve_shared_modify_delete()
 
         if(!locally_destroyed)
         {
-            const bool am_i_old_local_owner = m_bulkData.parallel_rank() == m_bulkData.parallel_owner_rank(entity);
+            const bool am_i_old_local_owner = m_bulkData.parallel_rank() == owner;
 
             if(remote_owner_destroyed)
             {
@@ -214,6 +217,8 @@ void MeshModification::internal_resolve_shared_modify_delete()
             m_bulkData.entity_comm_map_erase(i->key, m_bulkData.shared_ghosting());
         }
     }
+
+    m_bulkData.remove_entities_from_sharing(entitiesToRemoveFromSharing);
 }
 
 void MeshModification::ensure_meta_data_is_committed()

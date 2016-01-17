@@ -97,23 +97,27 @@ namespace Xpetra {
 
 
 #ifdef HAVE_XPETRA_EPETRA
-  //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
+  // This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
   template<class SC,class LO,class GO,class NO>
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
-  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB)
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+      "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     return Teuchos::null;
   }
 
-  typedef KokkosClassic::DefaultNode::DefaultNodeType KDNT;
-
-  //specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
+  // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
   template<>
-  inline RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,KDNT > (RCP<Epetra_CrsMatrix> &epAB) {
-    RCP<Xpetra::EpetraCrsMatrixT<int,KDNT> > tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<int,KDNT>(epAB));
-    RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
-    RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
+  inline RCP<Xpetra::CrsMatrixWrap<double,int,int,Xpetra::EpetraNode> > Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<double,int,int,Xpetra::EpetraNode> (RCP<Epetra_CrsMatrix> &epAB) {
+    typedef double             SC;
+    typedef int                LO;
+    typedef int                GO;
+    typedef Xpetra::EpetraNode NO;
+
+    RCP<Xpetra::EpetraCrsMatrixT<GO,NO> >    tmpC1 = rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(epAB));
+    RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> >     tmpC2 = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC,LO,GO,NO> >(tmpC1);
+    RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(tmpC2));
+
     return tmpC3;
   }
 #endif
@@ -421,7 +425,8 @@ namespace Xpetra {
             throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + Teuchos::toString(rv));
 
           RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-          RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
+          RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A =
+              Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
 
           return A;
 #else
@@ -849,7 +854,8 @@ namespace Xpetra {
             throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + Teuchos::toString(rv));
 
           RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-          RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >           A    = Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
+          RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A =
+              Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
 
           return A;
 #else

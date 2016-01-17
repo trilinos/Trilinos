@@ -3763,42 +3763,6 @@ namespace Tpetra {
             class GlobalOrdinal,
             class Node,
             const bool classic>
-  KokkosClassic::MultiVector<Scalar, Node>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalMV () const
-  {
-    using Teuchos::ArrayRCP;
-    typedef KokkosClassic::MultiVector<Scalar, Node> KMV;
-
-    // This method creates the KokkosClassic object on the fly.  Thus,
-    // it's OK to leave this in place for backwards compatibility.
-    ArrayRCP<Scalar> data;
-    if (getLocalLength () == 0 || getNumVectors () == 0) {
-      data = Teuchos::null;
-    }
-    else {
-      ArrayRCP<impl_scalar_type> dataTmp = (getLocalLength() > 0) ?
-        Kokkos::Compat::persistingView (view_.d_view) :
-        Teuchos::null;
-      data = Teuchos::arcp_reinterpret_cast<Scalar> (dataTmp);
-    }
-    size_t stride[8];
-    origView_.stride (stride);
-    const size_t LDA =
-      origView_.dimension_1 () > 1 ? stride[1] : origView_.dimension_0 ();
-
-    KMV kmv (this->getMap ()->getNode ());
-    kmv.initializeValues (getLocalLength (), getNumVectors (),
-                          data, LDA, getOrigNumLocalRows (),
-                          getOrigNumLocalCols ());
-    return kmv;
-  }
-
-  template <class Scalar,
-            class LocalOrdinal,
-            class GlobalOrdinal,
-            class Node,
-            const bool classic>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::dual_view_type
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getDualView () const {

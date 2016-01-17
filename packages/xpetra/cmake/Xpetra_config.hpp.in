@@ -23,10 +23,4 @@
 
 #cmakedefine XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 
-/* Flags for active Tpetra nodes if Tpetra is enabled */
-#cmakedefine HAVE_XPETRA_SERIAL
-#cmakedefine HAVE_XPETRA_PTHREAD
-#cmakedefine HAVE_XPETRA_OPENMP
-#cmakedefine HAVE_XPETRA_CUDA
-
 #endif // XPETRA_CONFIG_HPP

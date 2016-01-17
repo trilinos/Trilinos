@@ -1018,6 +1018,9 @@ namespace BaskerNS
     Int U_row = 0; //Upper Blk row
     Int c_idx = 0; //Col tab offset
 
+
+    //M.info();
+
     for(Int k = 0; k < M.ncol; ++k)
       {
 	
@@ -1054,7 +1057,7 @@ namespace BaskerNS
 	    //Get right blk
 	    while(j >= tree.row_tabs(r_idx+1))
 	      {
-		//r_idx++;
+	
 		//if(k==118800)
 		  {
 		    //printf("k: %d r_idx: %d j: %d row_t: %d \n",
@@ -1062,7 +1065,14 @@ namespace BaskerNS
 		  }
 		if(j > k)
 		  {
-		    if(tree.row_tabs[r_idx+1] == ALM[L_col][L_row+1].srow)
+		    //printf("k: %d i: %d j: %d row: %d L_col: %d L_row: %d \n",
+		    //	   k,i,j,r_idx+1, L_col, L_row+1);
+		    //printf("row_tab: %d \n",
+		    //	   tree.row_tabs[r_idx+1]);
+		  
+
+		    if((L_row+1 < LL_size(L_col)) &&
+		       (tree.row_tabs[r_idx+1] == ALM[L_col][L_row+1].srow))
 		      {
 			L_row++;
 			if(k==118800)
@@ -1071,8 +1081,10 @@ namespace BaskerNS
 			    //k, j, L_col, L_row, LL_size[L_col]);
 			  }
 			BASKER_ASSERT(L_row < LL_size[L_col], " Wrong L in A to 2d");
+			//printf("new start_col\n");
 			start_col = BASKER_TRUE;
 		      }
+		    //printf("here\n");
 		  }
 		else if(j <= k)
 		  {
@@ -1186,7 +1198,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy()
   {
-    //printf("sfactor_copy debug\n");
+    printf("sfactor_copy debug\n");
     //ALM(0)(0).info();
 
     //A.print();
@@ -1331,7 +1343,11 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy2()
   {
-    //printf("sfactor_copy debug\n");
+    
+
+
+
+    printf("\n====== sfactor_copy2=======\n");
     //ALM(0)(0).info();
 
     //A.print();
@@ -1358,9 +1374,12 @@ namespace BaskerNS
         //printf("btf_flag\n");
 	permute_col(A,order_btf_array);
 	permute_row(A,order_btf_array);
+	sort_matrix(A);
 	permute_col(A,order_blk_amd_array);
 	permute_row(A,order_blk_amd_array);
 	sort_matrix(A);
+
+	//printMTX("A_AMD_OTHER.mtx", A);
 
 	break_into_parts2(A, btf_nblks, btf_tabs);
       }

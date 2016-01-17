@@ -175,7 +175,7 @@ namespace BaskerNS
 	//Comeback
         #endif
 
-	printMTX("BTF_A.mtx", BTF_A); 
+	//printMTX("BTF_A.mtx", BTF_A); 
 	
       }//if btf_tab_offset == 0
 
@@ -206,10 +206,10 @@ namespace BaskerNS
 	  {
 	    permute_col(BTF_B, order_c_csym_array);
 	    sort_matrix(BTF_B);
-	    printMTX("BTF_B.mtx", BTF_B);
+	    //printMTX("BTF_B.mtx", BTF_B);
 	  }
 
-	printMTX("BTF_C.mtx", BTF_C);
+	//printMTX("BTF_C.mtx", BTF_C);
 
       }
   
@@ -244,10 +244,10 @@ namespace BaskerNS
     find_btf2(A); 
     sort_matrix(BTF_C);
 
-    
-
-    if(btf_tabs_offset != 0)
+   
+    if((btf_tabs_offset != 0) )
       {
+	printf("BTF_OFFSET CALLED\n");
 
         //  printf("A/B block stuff called\n");
 	//3. ND on BTF_A
@@ -256,6 +256,9 @@ namespace BaskerNS
 	//and move into 2D-Structure
 	//printMTX("A_BTF_FROM_A.mtx", BTF_A);
 	sort_matrix(BTF_A);
+
+	//printMTX("BTF_A_TEST.mtx", BTF_A);
+
 	scotch_partition(BTF_A);
     
 	//need to do a row perm on BTF_B too
@@ -306,7 +309,9 @@ namespace BaskerNS
 	sort_matrix(BTF_A);
 	permute_row(BTF_A, order_csym_array);
 	sort_matrix(BTF_A);
-	//printMTX("A_BTF_AMD.mtx", BTF_A);
+	
+
+	//printMTX("A_BTF_AMD1.mtx", BTF_A);
 	
 	
 	if(btf_nblks > 1)
@@ -342,7 +347,7 @@ namespace BaskerNS
     if(btf_nblks > 1)
       {
 	sort_matrix(BTF_C);
-	//printMTX("C_TEST.mtx", BTF_C);
+	printMTX("C_TEST.mtx", BTF_C);
 	//Permute C
 
 

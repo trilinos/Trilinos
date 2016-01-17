@@ -706,6 +706,7 @@ namespace BaskerNS
       pivot_tol  = .0001; 
 
       //Incomplete Factorization Options
+      incomplete = BASKER_FALSE;
       inc_lvl    = 0;
       inc_tol    = 0.0001;
  
@@ -735,6 +736,7 @@ namespace BaskerNS
     BASKER_ENTRY pivot_tol;  //Not Used
   
     //Incomplete Factorization Options
+    BASKER_BOOL  incomplete;
     BASKER_INT   inc_lvl;
     BASKER_ENTRY inc_tol;    //Not Used
    

@@ -43,13 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * BlockedCrsMatrix_UnitTests.cpp
- *
- *  Created on: Aug 22, 2011
- *      Author: wiesner
- */
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -121,14 +116,13 @@ TEUCHOS_STATIC_SETUP()
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap, Scalar, LO, GO, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Tpetra, M, MA, Scalar, LO, GO, Node )
 {
 #ifdef HAVE_XPETRA_THYRA
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // TPetra version
 #ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT // test only if LO=GO=int active
   {
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::MapFactory<LO,GO,Node>::Build(Xpetra::UseTpetra, 1000, 0, comm);
     TEST_EQUALITY(Teuchos::is_null(map),false);
@@ -149,6 +143,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraVectorSpace2Xpetra
   }
 #endif
 #endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Epetra, M, MA, Scalar, LO, GO, Node )
+{
+#ifdef HAVE_XPETRA_THYRA
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   // Epetra version
 #ifdef HAVE_XPETRA_EPETRA
@@ -175,74 +175,58 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraVectorSpace2Xpetra
 #endif
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, Scalar, LO, GO, Node )
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M, MA, Scalar, LO, GO, Node )
 {
 #ifdef HAVE_XPETRA_THYRA
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  std::vector<Xpetra::UnderlyingLib> libs;
+  M testMap(1,0,comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
 
-  // TPetra version
-#ifdef HAVE_XPETRA_TPETRA
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT // only if LO=GO=int enabled
-  libs.push_back(Xpetra::UseTpetra);
-  std::cout << "Test Tpetra" << std::endl;
-#endif
-#endif
-
-  // Epetra version
-#ifdef HAVE_XPETRA_EPETRA
-  libs.push_back(Xpetra::UseEpetra);
-  std::cout << "Test Epetra" << std::endl;
-#endif
-
-  typedef Xpetra::Map<LO, GO, Node> MapClass;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
 
-  for(size_t ll = 0; ll<libs.size(); ++ll) {
-    Xpetra::UnderlyingLib lib = libs[ll];
+  // generate the matrix
+  LO nEle = 63;
+  const Teuchos::RCP<const M> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
-    // generate the matrix
-    LO nEle = 63;
-    const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+  Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
+               Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
 
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > matrix =
-                 Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+  LO NumMyElements = map->getNodeNumElements();
+  Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
 
-    LO NumMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+  for (LO i = 0; i < NumMyElements; ++i) {
+      matrix->insertGlobalValues(MyGlobalElements[i],
+                              Teuchos::tuple<GO>(MyGlobalElements[i]),
+                              Teuchos::tuple<Scalar>(1.0) );
+  }
 
-    for (LO i = 0; i < NumMyElements; ++i) {
-        matrix->insertGlobalValues(MyGlobalElements[i],
-                                Teuchos::tuple<GO>(MyGlobalElements[i]),
-                                Teuchos::tuple<Scalar>(1.0) );
-    }
+  matrix->fillComplete();
 
-    matrix->fillComplete();
+  // create a Thyra operator from Xpetra::CrsMatrix
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyraOp =
+      Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(matrix);
 
-    // create a Thyra operator from Xpetra::CrsMatrix
-    Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > thyraOp =
-        Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(matrix);
+  // transform Thyra operator 2 Xpetra::CrsMatrix
+  Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
+      Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(thyraOp);
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xCrsMat));
 
-    // transform Thyra operator 2 Xpetra::CrsMatrix
-    Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LO, GO, Node> > xCrsMat =
-        Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(thyraOp);
-    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xCrsMat));
+  TEST_EQUALITY(xCrsMat->getFrobeniusNorm()   ,matrix->getFrobeniusNorm());
+  TEST_EQUALITY(xCrsMat->getGlobalNumRows()   ,matrix->getGlobalNumRows());
+  TEST_EQUALITY(xCrsMat->getGlobalNumCols()   ,matrix->getGlobalNumCols());
+  TEST_EQUALITY(xCrsMat->getNodeNumRows()     ,matrix->getNodeNumRows()  );
+  TEST_EQUALITY(xCrsMat->getGlobalNumEntries(),matrix->getGlobalNumEntries());
+  TEST_EQUALITY(xCrsMat->getNodeNumEntries()  ,matrix->getNodeNumEntries());
 
-    TEST_EQUALITY(xCrsMat->getFrobeniusNorm()   ,matrix->getFrobeniusNorm());
-    TEST_EQUALITY(xCrsMat->getGlobalNumRows()   ,matrix->getGlobalNumRows());
-    TEST_EQUALITY(xCrsMat->getGlobalNumCols()   ,matrix->getGlobalNumCols());
-    TEST_EQUALITY(xCrsMat->getNodeNumRows()     ,matrix->getNodeNumRows()  );
-    TEST_EQUALITY(xCrsMat->getGlobalNumEntries(),matrix->getGlobalNumEntries());
-    TEST_EQUALITY(xCrsMat->getNodeNumEntries()  ,matrix->getNodeNumEntries());
-  } //end for
 #endif
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, Scalar, LO, GO, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, M, MA, Scalar, LO, GO, Node )
 {
 #ifdef HAVE_XPETRA_THYRA
-#ifdef HAVE_XPETRA_EPETRAEXT
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
 
   Teuchos::RCP<Epetra_Comm> Comm;
 #ifdef HAVE_MPI
@@ -348,14 +332,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraBlockedOperator2Xp
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,xpremap->getGlobalNumElements());
   TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,xpremap->getGlobalNumElements());
 
-#endif // end HAVE_XPETRA_EPETRAEXT
+#endif // end HAVE_XPETRA_EPETRA && HAVE_XPETRA_EPETRAEXT
 #endif // end HAVE_XPETRA_THYRA
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, Scalar, LO, GO, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, M, MA, Scalar, LO, GO, Node )
 {
 #ifdef HAVE_XPETRA_THYRA
-#ifdef HAVE_XPETRA_EPETRAEXT
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   const Teuchos::RCP<const Epetra_Comm> epComm = Xpetra::toEpetra(comm);
@@ -488,31 +472,63 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 //
 // INSTANTIATIONS
 //
-
-#define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap, SC, LO, GO, Node ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, SC, LO, GO, Node ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, SC, LO, GO, Node ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, SC, LO, GO, Node)
-
-// FIXME (mfh 28 Nov 2015) If Tpetra is enabled, but Tpetra does not
-// build Serial, then the code inside the #ifdef HAVE_XPETRA_SERIAL
-// ... #endif below causes linker errors.  My temporary fix is to
-// include TpetraCore_config.h to get HAVE_TPETRA_SERIAL, and test
-// that.
-
 #ifdef HAVE_XPETRA_TPETRA
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_SERIAL
 
-// TODO: fix me
+  #define XPETRA_TPETRA_TYPES( S, LO, GO, N) \
+    typedef typename Xpetra::TpetraMap<LO,GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::TpetraCrsMatrix<S,LO,GO,N> MA##S##LO##GO##N;
+
+#endif
+
 #ifdef HAVE_XPETRA_EPETRA
-typedef Xpetra::EpetraNode EpetraNode;
-// all tests work only for LO=GO=int (and/or Epetra)
-// So, it is sufficient to define only a TEST_GROUP for LO=GO=int
-UNIT_TEST_GROUP_ORDINAL(double, int, int, EpetraNode)
-#endif
+
+  #define XPETRA_EPETRA_TYPES( S, LO, GO, N) \
+    typedef typename Xpetra::EpetraMapT<GO,N> M##LO##GO##N; \
+    typedef typename Xpetra::EpetraCrsMatrixT<GO,N> MA##S##LO##GO##N;
 
 #endif
+
+// List of tests which run only with Tpetra
+#define XP_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraOperator2XpetraCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+
+// List of tests which run only with Tpetra
+#define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Tpetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+
+// List of tests which run only with Epetra
+#define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraVectorSpace2XpetraMap_Epetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+
+#if defined(HAVE_XPETRA_TPETRA)
+
+#include <TpetraCore_config.h>
+#include <TpetraCore_ETIHelperMacros.h>
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
+
 #endif
+
+
+#if defined(HAVE_XPETRA_EPETRA)
+
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
+XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+#endif
+// EpetraExt routines are not working with 64 bit
+/*#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
+XP_EPETRA_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+#endif*/
+
+#endif
+
 }

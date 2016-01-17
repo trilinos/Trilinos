@@ -108,6 +108,9 @@ namespace BaskerNS
  
     BASKER_INLINE
     int t_nfactor_blk(Int kid);
+    BASKER_INLINE
+    int t_nfactor_blk_inc_lvl(Int kid);
+
     int t_nfactor_blk_old(Int kid);
     BASKER_INLINE
     void t_init_workspace(Int kid);
@@ -446,6 +449,9 @@ namespace BaskerNS
     BASKER_INLINE
     void btf_last_dense();
 
+    BASKER_INLINE
+    int factor_inc_lvl(Int Option);
+
 
     /*basker_nfactor.hpp*/
     BASKER_INLINE
@@ -480,14 +486,15 @@ namespace BaskerNS
     BASKER_INLINE
     int t_local_reach_old_old(Int,Int,Int,Int,Int*);
     BASKER_INLINE
-    int t_local_reach_selective(Int,Int,Int,Int,Int*);
+    //int t_local_reach_selective(Int,Int,Int,Int,Int*);
+    int t_local_reach_inc_lvl(Int,Int,Int,Int,Int*);
     //BASKER_INLINE
     inline
     int t_back_solve(Int,Int,Int,Int,Int,Int);
     BASKER_INLINE
     int t_back_solve_old(Int,Int,Int,Int,Int,Int);
     BASKER_INLINE
-    int t_back_solve_selective(Int,Int,Int,Int,Int,Int);
+    int t_back_solve_inc_lvl(Int,Int,Int,Int,Int,Int);
     
 
     BASKER_INLINE
@@ -601,7 +608,7 @@ namespace BaskerNS
 			     Int x_size, Int x_offset,
 			     BASKER_BOOL A_option);
     BASKER_INLINE
-    int t_back_solve_offdiag_selective(Int kid,
+    int t_back_solve_offdiag_inc_lvl(Int kid,
 			     Int blkcol, Int blkrow,
 			     Int X_col, Int X_row,
 			     Int k, Int &view_offset,

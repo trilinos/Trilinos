@@ -13,7 +13,7 @@ int main (int argc, char ** argv){
   idx nv = 0, ne = 0;
   idx *xadj, *adj;
   wt *ew;
-  KokkosKernels::Experimental::Graph::Utils::read_mtx<idx,wt>(argv[1], &nv, &ne, &xadj, &adj, &ew, true, false);
+  KokkosKernels::Experimental::Graph::Utils::read_mtx<idx,wt>(argv[1], &nv, &ne, &xadj, &adj, &ew, false, false);
 
   KokkosKernels::Experimental::Graph::Utils::write_graph_bin<idx, wt> (nv, ne, xadj, adj, ew, argv[2]);
 

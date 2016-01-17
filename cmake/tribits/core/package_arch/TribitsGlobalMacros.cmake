@@ -318,7 +318,19 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable explicit template instantiation in all packages that support it"
     )
 
-  ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+  IF (USE_XSDK_DEFAULTS)
+    # Need to set BUILD_SHARED_LIBS default here based on USE_XSDK_DEFAULTS
+    # and not in TRIBITS_SETUP_ENV() in case there is logic in TriBITS or
+    # project-specific files that depends on this var getting set here!
+    SET(BUILD_SHARED_LIBS_DEFAULT  TRUE)
+    IF ("${BUILD_SHARED_LIBS}" STREQUAL "")
+      MESSAGE("-- " "XSDK: Setting default BUILD_SHARED_LIBS=TRUE")
+    ENDIF()
+  ELSE()
+    SET(BUILD_SHARED_LIBS_DEFAULT  FALSE)
+  ENDIF()
+  SET(BUILD_SHARED_LIBS  ${BUILD_SHARED_LIBS_DEFAULT}
+    CACHE  BOOL   "Build shared libraries or not.")
 
   IF ("${${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  FALSE)
@@ -1570,9 +1582,26 @@ MACRO(TRIBITS_SETUP_ENV)
     SET(TRIBITS_SETUP_ENV_DEBUG  TRUE)
   ENDIF()
 
+  # Apply XSDK defaults
+
+  IF ("${${PROJECT_NAME}_TRIBITS_XSDK_DIR}" STREQUAL "")
+    SET(${PROJECT_NAME}_TRIBITS_XSDK_DIR  "${${PROJECT_NAME}_TRIBITS_DIR}/xsdk")
+  ENDIF()
+  IF (EXISTS "${${PROJECT_NAME}_TRIBITS_XSDK_DIR}")
+    SET(USE_XSDK_DEFAULTS_DEFAULT  FALSE) # Set to TRUE for Trilinos 13.0.0?
+    SET(XSDK_ENABLE_C  ${${PROJECT_NAME}_ENABLE_C})
+    SET(XSDK_ENABLE_CXX  ${${PROJECT_NAME}_ENABLE_CXX})
+    SET(XSDK_ENABLE_Fortran  ${${PROJECT_NAME}_ENABLE_Fortran})
+    INCLUDE("${${PROJECT_NAME}_TRIBITS_XSDK_DIR}/XSDKDefaults.cmake")
+    # NOTE: BUILD_SHARED_LIBS was set in
+    # TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS() based on
+    # USE_XSDK_DEFAULTS in case there is logic in TriBITS that depends on this
+    # var getting set there.
+  ENDIF()
+
   # Set to release build by default
 
-  IF (NOT CMAKE_BUILD_TYPE)
+  IF ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since it was not set ...")
     SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING
       "Type of build to perform (i.e. DEBUG, RELEASE, NONE)" )

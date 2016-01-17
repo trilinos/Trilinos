@@ -109,14 +109,12 @@ namespace TSQR {
       typedef SequentialTsqr<ordinal_type, scalar_type> node_tsqr_type;
       typedef DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
       typedef Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
     private:
 
       //! Instantiate and return a (full) Tsqr instance.
       static Teuchos::RCP<tsqr_type>
       getTsqr (const Teuchos::RCP<Teuchos::ParameterList>& testParams,
-               const Teuchos::RCP<node_type>& node,
                const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
       {
         using Teuchos::ParameterList;
@@ -135,7 +133,6 @@ namespace TSQR {
         // TODO (mfh 21 Oct 2011) Some node_tsqr_type classes need a
         // Kokkos Node instance.  SequentialTsqr doesn't, so this code
         // should be fine for now.
-        (void) node;
         RCP<node_tsqr_type> seqTsqr = rcp (new node_tsqr_type (cacheSizeHint));
 
         RCP<TeuchosMessenger<scalar_type> > scalarMess =
@@ -153,7 +150,6 @@ namespace TSQR {
       /// \brief Run the test for the Scalar type.
       ///
       /// \param comm [in] Communicator over which to run the test.
-      /// \param node [in] Kokkos Node instance.
       /// \param testParams [in/out] Parameters for the test.  May
       ///   be modified by each test in turn.
       /// \param randomSeed [in/out] On input: the random seed for
@@ -161,7 +157,6 @@ namespace TSQR {
       ///   updated random seed.
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-           const Teuchos::RCP<node_type>& node,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed)
       {
@@ -183,7 +178,7 @@ namespace TSQR {
         const int numProcs = Teuchos::size (*comm);
 
         // Construct TSQR implementation instance.
-        RCP<tsqr_type> tsqr = getTsqr (testParams, node, comm);
+        RCP<tsqr_type> tsqr = getTsqr (testParams, comm);
 
         // Fetch test parameters from the input parameter list.
         const ordinal_type numRowsLocal = testParams->get<ordinal_type> ("numRowsLocal");
@@ -194,7 +189,7 @@ namespace TSQR {
         const bool testRankRevealing = testParams->get<bool> ("testRankRevealing");
         const bool debug = testParams->get<bool> ("debug");
 
-        // Space for each node's local part of the test problem.
+        // Space for each process's local part of the test problem.
         // A_local, A_copy, and Q_local are distributed matrices, and
         // R is replicated on all processes sharing the communicator.
         matrix_type A_local (numRowsLocal, numCols);
@@ -246,7 +241,7 @@ namespace TSQR {
 
         {
           // Generate a global distributed matrix (whose part local to
-          // this node is in A_local) with the given singular values.
+          // this process is in A_local) with the given singular values.
           // This part has O(P) communication for P MPI processes.
           using TSQR::Random::randomGlobalMatrix;
           // Help the C++ compiler with type inference.
@@ -282,23 +277,12 @@ namespace TSQR {
         // "factorExplicit" is an alternate, hopefully faster way of
         // factoring the matrix, when only the explicit Q factor is
         // wanted.
-        typedef KokkosClassic::MultiVector<scalar_type, node_type> KMV;
         if (testFactorExplicit) {
-          KMV A_copy_view (node);
-          A_copy_view.initializeValues (static_cast<size_t> (A_copy.nrows()),
-                                        static_cast<size_t> (A_copy.ncols()),
-                                        arcp (A_copy.get(), 0, A_copy.nrows()*A_copy.ncols(), false), // non-owning ArrayRCP
-                                        static_cast<size_t> (A_copy.lda()));
-          KMV Q_view (node);
-          Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()),
-                                   static_cast<size_t> (Q_local.ncols()),
-                                   arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
-                                   static_cast<size_t> (Q_local.lda()));
-          Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>
-            R_view (Teuchos::View, R.get(), R.lda(), R.nrows(), R.ncols());
-
-          tsqr->factorExplicit (A_copy_view, Q_view, R_view,
-                                contiguousCacheBlocks);
+          tsqr->factorExplicitRaw (A_copy.nrows (), A_copy.ncols (),
+                                   A_copy.get (), A_copy.lda (),
+                                   Q_local.get (), Q_local.lda (),
+                                   R.get (), R.lda (),
+                                   contiguousCacheBlocks);
           if (debug) {
             Teuchos::barrier (*comm);
             if (myRank == 0)
@@ -332,13 +316,6 @@ namespace TSQR {
         // modifies the Q factor if the matrix doesn't have full
         // column rank.
         if (testRankRevealing) {
-          KMV Q_view (node);
-          Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()),
-                                   static_cast<size_t> (Q_local.ncols()),
-                                   arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
-                                   static_cast<size_t> (Q_local.lda()));
-          Teuchos::SerialDenseMatrix<ordinal_type, scalar_type>
-            R_view (Teuchos::View, R.get(), R.lda(), R.nrows(), R.ncols());
           // If 2^{# columns} > machine precision, then our choice
           // of singular values will make the smallest singular
           // value < machine precision.  In that case, the SVD can't
@@ -348,7 +325,10 @@ namespace TSQR {
           // actual numerical rank.
           const magnitude_type tol = STM::zero();
           const ordinal_type rank =
-            tsqr->revealRank (Q_view, R_view, tol, contiguousCacheBlocks);
+            tsqr->revealRankRaw (Q_local.nrows (), Q_local.ncols (),
+                                 Q_local.get (), Q_local.lda (),
+                                 R.get (), R.lda (), tol,
+                                 contiguousCacheBlocks);
 
           magnitude_type two_to_the_numCols = STM::one();
           for (int k = 0; k < numCols; ++k) {
@@ -515,11 +495,8 @@ namespace TSQR {
     template<class TypeListType>
     class FullTsqrVerifierCallerImpl {
     public:
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-           const Teuchos::RCP<node_type>& node,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed);
     };
@@ -530,18 +507,15 @@ namespace TSQR {
     template<class CarType, class CdrType>
     class FullTsqrVerifierCallerImpl<TSQR::Test::Cons<CarType, CdrType> > {
     public:
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-           const Teuchos::RCP<node_type>& node,
            const Teuchos::RCP<Teuchos::ParameterList>& testParams,
            std::vector<int>& randomSeed)
       {
         typedef CarType car_type;
         typedef CdrType cdr_type;
-        FullTsqrVerifier<car_type>::run (comm, node, testParams, randomSeed);
-        FullTsqrVerifierCallerImpl<cdr_type>::run (comm, node, testParams, randomSeed);
+        FullTsqrVerifier<car_type>::run (comm, testParams, randomSeed);
+        FullTsqrVerifierCallerImpl<cdr_type>::run (comm, testParams, randomSeed);
       }
     };
 
@@ -551,11 +525,8 @@ namespace TSQR {
     template<>
     class FullTsqrVerifierCallerImpl<TSQR::Test::NullCons> {
     public:
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-
       static void
       run (const Teuchos::RCP<const Teuchos::Comm<int> >&,
-           const Teuchos::RCP<node_type>&,
            const Teuchos::RCP<Teuchos::ParameterList>&,
            std::vector<int>&)
       {
@@ -572,9 +543,6 @@ namespace TSQR {
     /// using \c Cons and \c NullCons.
     class FullTsqrVerifierCaller {
     public:
-      //! The Kokkos Node type to use.
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-
       /// \typedef ordinal_type
       /// \brief The (local) Ordinal type to use for TSQR.
       ///
@@ -667,7 +635,7 @@ namespace TSQR {
         // "partial specialization of function templates" (which by
         // itself is not allowed in C++).
         typedef FullTsqrVerifierCallerImpl<TypeListType> impl_type;
-        impl_type::run (comm_, node_, testParams, randomSeed_);
+        impl_type::run (comm_, testParams, randomSeed_);
       }
 
 
@@ -675,8 +643,6 @@ namespace TSQR {
       ///
       /// \param comm [in] Communicator (with one or more processes)
       ///   over which to perform tests.
-      ///
-      /// \param node [in] Kokkos Node instance.
       ///
       /// \param randomSeed [in] The seed for LAPACK's pseudorandom
       ///   number generator.  An array of four integers, satisfying
@@ -686,9 +652,9 @@ namespace TSQR {
       ///   constant default value (if you want the same results each
       ///   time; not "random" but reproducible).
       FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                              const Teuchos::RCP<node_type>& node,
                               const std::vector<int>& randomSeed) :
-        comm_ (comm), node_ (node), randomSeed_ (validateRandomSeed (randomSeed))
+        comm_ (comm),
+        randomSeed_ (validateRandomSeed (randomSeed))
       {}
 
       /// \brief One-argument constructor.
@@ -700,23 +666,6 @@ namespace TSQR {
       ///   over which to perform tests.
       FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
         comm_ (comm),
-        node_ (getNode<node_type> (Teuchos::rcp (new Teuchos::ParameterList (node_type::getDefaultParameters ())))),
-        randomSeed_ (defaultRandomSeed ())
-      {}
-
-      /// \brief Two-argument constructor.
-      ///
-      /// Fills in defaults for the other arguments that the full
-      /// constructor would take.
-      ///
-      /// \param comm [in] Communicator (with one or more processes)
-      ///   over which to perform tests.
-      ///
-      /// \param node [in] Kokkos Node instance.
-      FullTsqrVerifierCaller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                              const Teuchos::RCP<node_type>& node) :
-        comm_ (comm),
-        node_ (node),
         randomSeed_ (defaultRandomSeed ())
       {}
 
@@ -756,9 +705,6 @@ namespace TSQR {
       /// This communicator may include one or more processes.
       /// MPI is not required (it may be a "serial communicator").
       Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-      //! Kokkos Node instance.
-      Teuchos::RCP<node_type> node_;
 
       /// \brief The seed for LAPACK's pseudorandom number generator.
       ///

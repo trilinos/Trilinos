@@ -281,6 +281,19 @@ public:
 
   }
 
+  /** \brief Return the ref count pointer to the lower bound vector */
+  const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
+    return x_lo_;
+  }
+
+  /** \brief Return the ref count pointer to the upper bound vector */
+  const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
+    return x_up_;
+  }
+
+ 
+    
+
   /** \brief Set the input vector to the upper bound.
 
       This function sets the input vector \f$u\f$ to the upper bound \f$b\f$.

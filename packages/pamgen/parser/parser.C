@@ -17,7 +17,7 @@ using namespace std;
 namespace PAMGEN_NEVADA {
 
 /*****************************************************************************/
-int Parse( Token_Stream *token_stream, 
+int Parse( Token_Stream *token_stream,
            const Parse_Table & parse_table,
            Token_Type end_token )
 /*****************************************************************************/
@@ -29,17 +29,17 @@ int Parse( Token_Stream *token_stream,
 {
   const Keyword * key_table = parse_table.begin();
   unsigned key_table_size = parse_table.size();
-  
+
   assert( token_stream != 0 );
   assert( key_table != 0 );
   assert( key_table_size > 0 );
   assert( PAMGEN_NEVADA::Check_Keyword_Table(key_table, key_table_size) == 0 );
- 
+
   while(1){
     jmp_buf recovery_context;
     setjmp(recovery_context);
     token_stream->Set_Recovery_Context(recovery_context);
- 
+
     Token token = token_stream->BlockShift();
     if (token.Type() == end_token) break;
     if (token.Type() == TK_EXIT) {
@@ -48,11 +48,11 @@ int Parse( Token_Stream *token_stream,
                                     "(such as END?)");
       break;
     }
- 
+
     if (token.Type() != TK_IDENTIFIER)
-      token_stream->Parse_Error("expected a keyword", 
+      token_stream->Parse_Error("expected a keyword",
                   PAMGEN_NEVADA::Concatenate_Legal_Commands(key_table, key_table_size));
- 
+
     const char *name = token.As_String();
     const Keyword *match = (Keyword*)bsearch( name,
                                               (char*)key_table,
@@ -60,29 +60,29 @@ int Parse( Token_Stream *token_stream,
                                               sizeof(Keyword),
                                               PAMGEN_Cstring_Keyword_Compare
                                             );
- 
+
     if (!match){
       token_stream->
         Parse_Error(string("this keyword is unrecognized: ") + name,
-                    PAMGEN_NEVADA::Concatenate_Legal_Commands(key_table, 
+                    PAMGEN_NEVADA::Concatenate_Legal_Commands(key_table,
                                                key_table_size));
       continue;
     }
- 
+
     PAMGEN_NEVADA::Check_for_Ambiguity(token_stream, name, match, key_table, key_table_size);
- 
+
     token_stream->Set_Recovery_Flag(false);
     assert(match->func != 0);
     token_stream->pushNewInputBlock( match->name );
     match->func(token_stream, match->argument);
     token_stream->popInputBlock();
   }
- 
+
   return token_stream->Error_Count();
 }
 
 /*****************************************************************************/
-int Parse( Token_Stream *token_stream, 
+int Parse( Token_Stream *token_stream,
            const Parse_Table * parse_table,
            Token_Type end_token )
 /*****************************************************************************/
@@ -102,7 +102,7 @@ string Concatenate_Legal_Commands(const Keyword *table, int N)
   // specified verbose mode.
 {
   string list = "Select from:\n";
-  for (register int i=0; i<N; i++)
+  for (int i=0; i<N; i++)
     list += string("  ") + string(table[i].name) + "\n";
   return list;
 }
@@ -115,8 +115,8 @@ void Check_for_Ambiguity(Token_Stream *token_stream,
                          int N)
 /*****************************************************************************/
 // Check to see that name matches match unambiguously.  If more than one
-// keyword matches name, but one matches exactly, replace match with the 
-// exact matching keyword.  Otherwise, if more than one keyword matches, 
+// keyword matches name, but one matches exactly, replace match with the
+// exact matching keyword.  Otherwise, if more than one keyword matches,
 // report an error.
 {
   assert(name!=NULL);
@@ -172,11 +172,11 @@ void Check_for_Ambiguity(Token_Stream *token_stream,
 /*****************************************************************************/
 Keyword* Search_For_Keyword(const char* name, Keyword* table, int length)
 /*****************************************************************************/
-  // At present (010521), this function is used only for handcrafted parsers, 
+  // At present (010521), this function is used only for handcrafted parsers,
   // such as the ALEGRA adaptivity parser.  Such use is discouraged.  We
   // would like this function to go away eventually.
 {
-  for (register int i = 0; i < length; ++i)
+  for (int i = 0; i < length; ++i)
     if (Token::Token_Match(name, table[i].name) == 0)
       return &table[i];
   return 0;
@@ -184,66 +184,66 @@ Keyword* Search_For_Keyword(const char* name, Keyword* table, int length)
 
 
 
-string MainKeyword(const char* name) 
+string MainKeyword(const char* name)
 {
   string s = string("$") + string("\n");
-  s += string("$ Example Syntax for ") + string(name) + string("\n");  
+  s += string("$ Example Syntax for ") + string(name) + string("\n");
   s += string("$") + string("\n");
   s += string(name) + string("\n");
-  
+
   return s;
 }
 
-string MainKeyword(const char* name, const char* line) 
+string MainKeyword(const char* name, const char* line)
 {
   string s = string("$") + string("\n");
-  s += string("$ Example Syntax for ") + string(name) + string("\n");  
+  s += string("$ Example Syntax for ") + string(name) + string("\n");
   s += string("$") + string("\n");
   s += string(name) + string(": ") + string(line) + string("\n");
-  
+
   return s;
 }
 
-string MainKeyword(string name, string line) 
+string MainKeyword(string name, string line)
 {
   string s = string("$") + string("\n");
-  s += string("$ Example Syntax for ") + name + string("\n");  
+  s += string("$ Example Syntax for ") + name + string("\n");
   s += string("$") + string("\n");
   s += name + string(": ") + line + string("\n");
-  
+
   return s;
 }
 
 string MainKeywordId(const char* name) {
   string s = string("$") + string("\n");
-  s += string("$ Example Syntax for ") + string(name) + string("\n");  
+  s += string("$ Example Syntax for ") + string(name) + string("\n");
   s += string("$") + string("\n");
   s += string(name);
   s += string(" integer $integer-id for main keyword") + string("\n");
-  
+
   return s;
 }
 
 string MainKeywordOptId(const char* name) {
   string s = string("$") + string("\n");
-  s += string("$ Example Syntax for ") + string(name) + string("\n");  
+  s += string("$ Example Syntax for ") + string(name) + string("\n");
   s += string("$") + string("\n");
   s += string(name);
   s += string(" [integer] $optional integer-id for main keyword") + string("\n");
-  
+
   return s;
 }
 
 string SubKeyword(const char* name) {
   string s = string("  ") + string(name);
-  s += string("\n"); 
+  s += string("\n");
   return s;
 }
 
 string SubKeyword(const char* name, const char* opts) {
   string s = string("  ") + string(name);
   s += string(" options = [") + string(opts);
-  s += string("]") + string("\n"); 
+  s += string("]") + string("\n");
   return s;
 }
 
@@ -251,7 +251,7 @@ string SubKeyword(const char* name, const char* opts, const char* def) {
   string s = string("  ") + string(name);
   s += string(" options = [") + string(opts);
   s += string("]   $default = ") + string(def);
-  s += string("\n"); 
+  s += string("\n");
   return s;
 }
 
@@ -263,18 +263,18 @@ string SubKeyword(const char* name, double d) {
 
 string SubKeyword(const char* name, int d) {
   ostringstream oss;
-  oss << "  " << name << " integer   $default = " << d << "\n"; 
+  oss << "  " << name << " integer   $default = " << d << "\n";
   return oss.str();
 }
 
 string EndKeyword() {
-  string s = string("END") + string("\n"); 
-  s += string("*****************************************") + string("\n"); 
+  string s = string("END") + string("\n");
+  s += string("*****************************************") + string("\n");
   return s;
 }
 
 string NoEndKeyword() {
-  string s = string("*****************************************") + string("\n"); 
+  string s = string("*****************************************") + string("\n");
   return s;
 }
 
@@ -304,7 +304,7 @@ string SubSubKeyword(const char* name, int d) {
 }
 
 string SubEndKeyword() {
-  string s = string("  END") + string("\n"); 
+  string s = string("  END") + string("\n");
   return s;
 }
 }  // end namespace PAMGEN_NEVADA

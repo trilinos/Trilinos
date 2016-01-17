@@ -89,7 +89,7 @@ checkVectorView(const ViewType& v,
   // instead of last
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !view_type::is_contiguous) {
+  if (is_right) {
     num_rows = h_a.dimension_0();
     num_cols = h_a.dimension_1();
   }
@@ -98,7 +98,7 @@ checkVectorView(const ViewType& v,
     num_cols = h_a.dimension_0();
   }
   bool success = true;
-  if (is_right || !view_type::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i) {
       for (size_type j=0; j<num_cols; ++j) {
         scalar_type val = h_a(i,j);
@@ -132,14 +132,14 @@ checkConstantVectorView(const ViewType& v,
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
   typedef typename view_type::HostMirror host_view_type;
-  typedef typename host_view_type::intrinsic_scalar_type scalar_type;
+  typedef typename host_view_type::array_type::value_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
 
   const size_type num_rows = h_v.dimension_0();
-  const size_type num_cols = h_v.sacado_size();
+  const size_type num_cols = Kokkos::dimension_scalar(h_v);
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
@@ -202,7 +202,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_vector_coefficient<Scalar>(
@@ -340,7 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_vector_coefficient<Scalar>(
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
 
   bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
                                          Kokkos::LayoutRight >::value;
-  if (is_right || !ViewType::is_contiguous) {
+  if (is_right) {
     for (size_type i=0; i<num_rows; ++i)
       for (size_type j=0; j<num_cols; ++j)
         h_a(i,j) = generate_vector_coefficient<Scalar>(
@@ -420,6 +420,109 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   ViewType v2(v.ptr_on_device(), num_rows, num_cols);
 
   success = checkVectorView(v2, out);
+}
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::static_size;
+  ViewType v("view", num_rows, num_cols);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+
+  const size_type num_cols_part = num_cols/2;
+  auto h_v1 = Kokkos::partition<num_cols_part>(h_v, 0);
+  auto h_v2 = Kokkos::partition<num_cols_part>(h_v, num_cols_part);
+
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols_part; ++j) {
+      h_v1(i).fastAccessCoeff(j) = generate_vector_coefficient<Scalar>(
+        num_rows, num_cols, i, j);
+      h_v2(i).fastAccessCoeff(j) = generate_vector_coefficient<Scalar>(
+        num_rows, num_cols, i, j+num_cols_part);
+    }
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  success = checkVectorView(v, out);
+}
+#else
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layout ) {}
+#endif
+
+/*
+// This test does not work because we can't call deep_copy on partitioned views
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionDevice, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  // This test requires static storage, so it always passes if it isn't
+  if (!Storage::is_static) {
+    success = true;
+    return;
+  }
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::static_size;
+  ViewType v("view", num_rows, num_cols);
+
+  const size_type num_cols_part = num_cols/2;
+  auto v1 = Kokkos::partition<num_cols_part>(v, 0);
+  auto v2 = Kokkos::partition<num_cols_part>(v, num_cols_part);
+
+  typename decltype(v1)::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
+  typename decltype(v2)::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols_part; ++j) {
+      h_v1(i).fastAccessCoeff(j) = generate_vector_coefficient<Scalar>(
+        num_rows, num_cols, i, j);
+      h_v2(i).fastAccessCoeff(j) = generate_vector_coefficient<Scalar>(
+        num_rows, num_cols, i, j+num_cols_part);
+    }
+  }
+  Kokkos::deep_copy(v1, h_v1);
+  Kokkos::deep_copy(v2, h_v2);
+
+  success = checkVectorView(v, out);
+}
+*/
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Flatten, Storage, Layout )
+{
+  typedef typename Storage::execution_space Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename Kokkos::FlatArrayType<ViewType>::type flat_view_type;
+  typedef typename flat_view_type::HostMirror host_flat_view_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+
+  // Create flattened view
+  flat_view_type flat_v = v;
+  host_flat_view_type h_flat_v = Kokkos::create_mirror_view(flat_v);
+  for (size_type i=0; i<num_rows; ++i)
+    for (size_type j=0; j<num_cols; ++j)
+      h_flat_v(i*num_cols+j) = generate_vector_coefficient<Scalar>(
+        num_rows, num_cols, i, j);
+  Kokkos::deep_copy(flat_v, h_flat_v);
+
+  success = checkVectorView(v, out);
 }
 
 namespace Test {
@@ -480,7 +583,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy_ConstantVector2, STORAGE, LAYOUT )         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_MP, Unmanaged, STORAGE, LAYOUT )
+    Kokkos_View_MP, Unmanaged, STORAGE, LAYOUT )                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, Flatten, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 
@@ -509,7 +614,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,global_num_cols,DEVICE> SFS;     \
   typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
   VIEW_MP_VECTOR_TESTS_STORAGE( SFS )                                   \
-  VIEW_MP_VECTOR_TESTS_STORAGE( DS )
+  VIEW_MP_VECTOR_TESTS_STORAGE( DS )                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, PartitionHost, SFS, NoLayout )                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, PartitionHost, SFS, LayoutLeft )                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, PartitionHost, SFS, LayoutRight )
 
 #define VIEW_MP_VECTOR_TESTS_DEVICE( DEVICE )                           \
   VIEW_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( int, double, DEVICE )

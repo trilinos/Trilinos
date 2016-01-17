@@ -70,12 +70,15 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize full objective function.
-    int nx      = 256;  // Set spatial discretization.
+    int nx      = 256;   // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
-    RealT nu    = 1e-2; // Viscosity parameter.
+    RealT nu    = 1e-2;  // Viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize equality constraints
     EqualityConstraint_BurgersControl<RealT> con(nx,nu);
+    Teuchos::ParameterList list;
+    list.sublist("SimOpt").sublist("Solve").set("Residual Tolerance",1.e2*ROL::ROL_EPSILON);
+    con.setSolveParameters(list);
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > z_rcp  = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
@@ -147,7 +150,7 @@ int main(int argc, char *argv[]) {
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON);
     z.zero();
-    con.solve(u,z,zerotol);
+    con.solve(c,u,z,zerotol);
     c.zero(); l.zero();
     algo->run(x, g, l, c, obj, con, true, *outStream);
     Teuchos::RCP<ROL::Vector<RealT> > zCS = z.clone();

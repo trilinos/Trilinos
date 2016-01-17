@@ -44,7 +44,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 #include "Piro_Epetra_RythmosSolver.hpp"
 
 #include "Piro_Test_EpetraSupport.hpp"
@@ -358,4 +358,4 @@ TEUCHOS_UNIT_TEST(Epetra_RythmosSolver, TimeZero_NominalResponseSensitivityOp)
     TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
   }
 }
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */

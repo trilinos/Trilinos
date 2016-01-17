@@ -437,6 +437,16 @@ namespace PHX {
 
     void deep_copy(const DataT source);
     
+    template<typename MDFieldTypeA, typename MDFieldTypeB, unsigned int RANK>
+    struct V_MultiplyFunctor{
+      V_MultiplyFunctor(const MDFieldTypeA &base, const MDFieldTypeB &source) :base_(base), source_(source){}
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const int & i) const;
+      MDFieldTypeA base_;
+      MDFieldTypeB source_;
+    };
+  public:
+
     template<typename MDFieldType>
     void V_Multiply(const MDFieldType& source);
  

@@ -21,12 +21,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
     # standard
     Kokkos_LinAlgVersion.hpp
-    # data structures
-    Kokkos_MultiVector.hpp
-    # kernels
+    # kernels (NOTE (mfh 16 Jan 2016): Leave in place; Stokhos might still use it)
     Kokkos_MultiVectorKernelOps.hpp
-    # traits and kernel wrappers
-    Kokkos_DefaultArithmetic.hpp
   )
 
 APPEND_SET(SOURCES

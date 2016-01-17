@@ -49,21 +49,21 @@
 #include <string>
 #include "Thyra_DetachedVectorView.hpp"
 
-#ifdef Piro_ENABLE_TriKota
+#ifdef HAVE_PIRO_TRIKOTA
 #include "TriKota_Driver.hpp"
 #include "TriKota_ThyraDirectApplicInterface.hpp"
 #endif
 
-#ifdef Piro_ENABLE_MOOCHO
+#ifdef HAVE_PIRO_MOOCHO
 #include "MoochoPack_MoochoThyraSolver.hpp"
 #endif
 
-#ifdef Piro_ENABLE_OptiPack
+#ifdef HAVE_PIRO_OPTIPACK
 #include "OptiPack_NonlinearCG.hpp"
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
 
-#ifdef Piro_ENABLE_ROL
+#ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
@@ -96,7 +96,7 @@ Piro::PerformAnalysis(
     Piro::PerformSolveBase(piroModel, analysisParams.sublist("Solve"), result);
     status = 0; // Succeeds or throws
   }
-#ifdef Piro_ENABLE_TriKota
+#ifdef HAVE_PIRO_TRIKOTA
   else if (analysis=="Dakota") {
     *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
 
@@ -105,7 +105,7 @@ Piro::PerformAnalysis(
 
   }
 #endif
-#ifdef Piro_ENABLE_MOOCHO
+#ifdef HAVE_PIRO_MOOCHO
   else if (analysis == "MOOCHO") {
     *out << "Piro PerformAnalysis: MOOCHO Optimization Being Performed " << endl;
     status = Piro::PerformMoochoAnalysis(piroModel,
@@ -113,7 +113,7 @@ Piro::PerformAnalysis(
 
   }
 #endif
-#ifdef Piro_ENABLE_OptiPack
+#ifdef HAVE_PIRO_OPTIPACK
   else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
     status = Piro::PerformOptiPackAnalysis(piroModel,
@@ -122,7 +122,7 @@ Piro::PerformAnalysis(
 
   }
 #endif
-#ifdef Piro_ENABLE_ROL
+#ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
@@ -159,7 +159,7 @@ Piro::PerformMoochoAnalysis(
     Teuchos::ParameterList& moochoParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
-#ifdef Piro_ENABLE_MOOCHO
+#ifdef HAVE_PIRO_MOOCHO
   MoochoPack::MoochoThyraSolver solver;
 
   // Set the model and parameter list
@@ -190,7 +190,7 @@ Piro::PerformDakotaAnalysis(
     Teuchos::ParameterList& dakotaParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
-#ifdef Piro_ENABLE_TriKota
+#ifdef HAVE_PIRO_TRIKOTA
   dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
   using std::string;
 
@@ -246,7 +246,7 @@ Piro::PerformOptiPackAnalysis(
     RCP< Thyra::VectorBase<double> >& p)
 {
    RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-#ifdef Piro_ENABLE_OptiPack
+#ifdef HAVE_PIRO_OPTIPACK
   // First, Linesearch stuff
   const RCP<GlobiPack::BrentsLineSearch<double> >
     linesearch = GlobiPack::brentsLineSearch<double>();
@@ -296,7 +296,7 @@ Piro::PerformROLAnalysis(
     Teuchos::ParameterList& rolParams,
     RCP< Thyra::VectorBase<double> >& p)
 {
-#ifdef Piro_ENABLE_ROL
+#ifdef HAVE_PIRO_ROL
   using std::string;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();

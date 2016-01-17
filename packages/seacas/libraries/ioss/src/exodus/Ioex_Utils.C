@@ -16,7 +16,7 @@ namespace {
     return separator == value;
   }
 }
-  
+
   // Split 'str' into 'tokens' based on the 'separator' character.
   // If 'str' starts with 1 or more 'separator', they are part of the
   // first token and not used for splitting.  If there are multiple
@@ -36,7 +36,7 @@ namespace {
     }
     for ( ; i < str.length(); ++i) {
       char curr_char = str[i];
-      
+
       // determine if current character is a separator
       bool is_sep = is_separator(separator, curr_char);
       if (is_sep && curr_token != "") {

@@ -2181,7 +2181,7 @@ namespace Tpetra {
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
-    RowInfo getRowInfo (const size_t myRow) const;
+    RowInfo getRowInfo (const LocalOrdinal myRow) const;
 
     /// \brief Get information about the locally owned row with global
     ///   index gblRow.

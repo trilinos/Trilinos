@@ -107,10 +107,9 @@ void setUpAndSolve(Teuchos::ParameterList &list,
                    Teuchos::RCP<ROL::BoundConstraint<double> > &bnd,
                    std::ostream & outStream) {
   ROL::StochasticProblem<double> opt(list,pObj,sampler,x,bnd);
-  Teuchos::RCP<ROL::Vector<double> > D = opt.createVector(list,d);
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.checkObjectiveGradient(*D,true,outStream);
-  opt.checkObjectiveHessVec(*D,true,outStream);
+  opt.checkObjectiveGradient(*d,true,outStream);
+  opt.checkObjectiveHessVec(*d,true,outStream);
   // Run ROL algorithm
   ROL::Algorithm<double> algo("Trust Region",list,false);
   algo.run(opt,true,outStream);
@@ -319,6 +318,15 @@ int main(int argc, char* argv[]) {
     *outStream << "\nQUANTILE-RADIUS QUADRANGLE RISK MEASURE\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Radius Quadrangle");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
+    /**********************************************************************************************/
+    *outStream << "\nKL DIVERGENCE DISTRIBUTIONALLY ROBUST\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

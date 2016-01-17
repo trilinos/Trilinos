@@ -44,7 +44,7 @@
 
 #include "Piro_ConfigDefs.hpp"
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
 #include "Piro_Epetra_LOCASolver.hpp"
 #include "Piro_Epetra_LOCAAdaptiveSolver.hpp"
@@ -53,7 +53,7 @@
 #include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #endif
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 #include "Piro_Epetra_RythmosSolver.hpp"
 #endif
 
@@ -65,7 +65,7 @@ namespace Piro {
 
 namespace Epetra {
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
 template <>
 std::string
 SolverFactory::getLabel<NOX::Epetra::Observer>()
@@ -154,10 +154,10 @@ SolverFactory::getSource<Piro::Epetra::AdaptiveSolutionManager>()
 {
   return adaptSolMgrSource_;
 }
-#endif /* Piro_ENABLE_NOX */
+#endif /* HAVE_PIRO_NOX */
 
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
 template <>
 std::string
 SolverFactory::getLabel<Rythmos::IntegrationObserverBase<double> >()
@@ -171,7 +171,7 @@ SolverFactory::getSource<Rythmos::IntegrationObserverBase<double> >()
 {
   return rythmosObserverSource_;
 }
-#endif /* Piro_ENABLE_Rythmos */
+#endif /* HAVE_PIRO_RYTHMOS */
 
 } // namespace Epetra
 
@@ -195,7 +195,7 @@ Piro::Epetra::SolverFactory::createSolver(
   const std::string defaultType = "NOX";
   const std::string type = piroParams->get("Solver Type", defaultType);
 
-#ifdef Piro_ENABLE_NOX
+#ifdef HAVE_PIRO_NOX
   if (type == "NOX") {
     const Teuchos::RCP<NOX::Epetra::Observer> observer =
       this->create<NOX::Epetra::Observer>(piroParams);
@@ -235,7 +235,7 @@ Piro::Epetra::SolverFactory::createSolver(
   } else
 #endif
 
-#ifdef Piro_ENABLE_Rythmos
+#ifdef HAVE_PIRO_RYTHMOS
   if (type == "Rythmos") {
     const Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > observer =
       this->create<Rythmos::IntegrationObserverBase<double> >(piroParams);

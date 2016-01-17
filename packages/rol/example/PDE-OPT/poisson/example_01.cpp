@@ -41,41 +41,46 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
-    \brief Shows how to solve a steady Burgers' optimal control problem using
-           full-space methods.
+/*! \file  example_01.cpp
+    \brief Shows how to solve the mother problem of PDE-constrained optimization:
 */
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_BoundConstraint_SimOpt.hpp"
-#include "ROL_Vector_SimOpt.hpp"
-
+#include "Teuchos_Comm.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Version.hpp"
+
+#include "ROL_TpetraMultiVector.hpp"
 
 #include <iostream>
 #include <algorithm>
 
-#include "../TOOLS/meshmanager.hpp"
-#include "../TOOLS/dofmanager.hpp"
+#include "data.hpp"
+#include "objective.hpp"
+#include "constraint.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
+
+  /*** Initialize communicator. ***/
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank();
+  if ((iprint > 0) && (myRank == 0)) {
     outStream = Teuchos::rcp(&std::cout, false);
-  else
+  }
+  else {
     outStream = Teuchos::rcp(&bhs, false);
+  }
 
   int errorFlag  = 0;
 
@@ -84,49 +89,44 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-    /*** Initialize mesh / degree-of-freedom manager. ***/
-    MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    Intrepid::FieldContainer<RealT> nodes;
-    Intrepid::FieldContainer<int>   cellToNodeMap;
-    Intrepid::FieldContainer<int>   cellToEdgeMap;
-    meshmgr.getNodes(nodes);
-    meshmgr.getCellToNodeMap(cellToNodeMap);
-    meshmgr.getCellToEdgeMap(cellToEdgeMap);
-    *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
-    *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
-    *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
-    // Print mesh to file.
-    std::ofstream meshfile;
-    meshfile.open("mesh.txt");
-    for (int i=0; i<cellToNodeMap.dimension(0); ++i) {
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,3), 0) << "  " << nodes(cellToNodeMap(i,3), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,0), 0) << "  " << nodes(cellToNodeMap(i,0), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,1), 0) << "  " << nodes(cellToNodeMap(i,1), 1) << std::endl;
-      meshfile << nodes(cellToNodeMap(i,2), 0) << "  " << nodes(cellToNodeMap(i,2), 1) << std::endl;
-    }
-    meshfile.close();
+    /*** Initialize main data structure. ***/
+    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ1 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+    /*** Build vectors and dress them up as ROL vectors. ***/
+    Teuchos::RCP<const Tpetra::Map<> > vecmap = data->getMatA()->getRowMap();
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
+    // Set all values to 1 in u and z.
+    u_rcp->putScalar(1.0);
+    z_rcp->putScalar(1.0);
+    // Randomize d vectors.
+    du_rcp->randomize();
+    dz_rcp->randomize();
+    // Create ROL::TpetraMultiVectors.
+    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    // Create ROL SimOpt vectors.
+    ROL::Vector_SimOpt<RealT> x(up,zp);
+    ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrQ2 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >);
+    /*** Build objective function and constraint. ***/
+    Objective_PDEOPT_Poisson<RealT> obj(data, parlist);
+    EqualityConstraint_PDEOPT_Poisson<RealT> constr(data, parlist);
 
-    std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
-    basisPtrs[0] = basisPtrQ2;
-    basisPtrs[1] = basisPtrQ2;
-    basisPtrs[2] = basisPtrQ1;
-
-    Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
-
-    DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
+    /*** Check functional interface. ***/
+    obj.checkGradient(x,d,true,*outStream);
+    obj.checkHessVec(x,d,true,*outStream);
+    constr.checkApplyJacobian(x,d,*up,true,*outStream);
+    constr.checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
+    constr.checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+    constr.checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
   }
   catch (std::logic_error err) {

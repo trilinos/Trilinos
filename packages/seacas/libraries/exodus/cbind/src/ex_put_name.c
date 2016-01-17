@@ -138,7 +138,6 @@ int ex_put_name (int   exoid,
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
 
   if (exerrval == EX_LOOKUPFAIL) {   /* could not find the element block id */
-    exerrval = EX_FATAL;
     sprintf(errmsg,
             "Error: %s id %"PRId64" not found in file id %d",
 	    ex_name_of_object(obj_type), entity_id, exoid);

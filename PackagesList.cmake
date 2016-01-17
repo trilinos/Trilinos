@@ -104,6 +104,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Teko                  packages/teko                     SS
   TriKota               packages/TriKota                  SS
   Intrepid              packages/intrepid                 PS
+  Intrepid2             packages/intrepid2                SS
   STK                   packages/stk                      SS # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     SS
   SCORECapf_stk         SCOREC/stk                        SS

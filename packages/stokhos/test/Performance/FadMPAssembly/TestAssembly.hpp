@@ -298,7 +298,7 @@ bool check_residuals(const ScalarViewType& scalar_residual,
                          host_ensemble_residual.dimension_0(), fbuf, success );
 
   const size_t num_node = host_scalar_residual.dimension_0();
-  const size_t num_ensemble = host_ensemble_residual.sacado_size();
+  const size_t num_ensemble = Kokkos::dimension_scalar(host_ensemble_residual);
   for (size_t i=0; i<num_node; ++i) {
     for (size_t j=0; j<num_ensemble; ++j) {
       TEUCHOS_TEST_FLOATING_EQUALITY(

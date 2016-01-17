@@ -53,30 +53,34 @@ namespace panzer {
 namespace {
 
 template <typename ScalarT,typename ArrayT>
-void evaluateGrad_withSens(int numCells,
-                           PHX::MDField<ScalarT> & dof_grad, 
-                           PHX::MDField<ScalarT,Cell,Point> & dof_value,
-                           const ArrayT & grad_basis)
-{ 
-  if(numCells>0) {
+struct evaluateGrad_withSens {
+  evaluateGrad_withSens (PHX::MDField<ScalarT> dof_grad,
+      PHX::MDField<ScalarT,Cell,Point> dof_value,
+      const ArrayT  grad_basis) :
+        dof_grad_(dof_grad),dof_value_(dof_value),grad_basis_(grad_basis)
+      {}
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_t &cell) const
+  {
     // evaluate at quadrature points
-    int numFields = grad_basis.dimension(1);
-    int numPoints = grad_basis.dimension(2);
-    int spaceDim  = grad_basis.dimension(3);
-
-    for (int cell=0; cell<numCells; cell++) {
-      for (int pt=0; pt<numPoints; pt++) {
-        for (int d=0; d<spaceDim; d++) {
-          // first initialize to the right thing (prevents over writing with 0)
-          // then loop over one less basis function
-          dof_grad(cell,pt,d) = dof_value(cell, 0) * grad_basis(cell, 0, pt, d);
-          for (int bf=1; bf<numFields; bf++)
-            dof_grad(cell,pt,d) += dof_value(cell, bf) * grad_basis(cell, bf, pt, d);
-        }
+    int numFields = grad_basis_.dimension(1);
+    int numPoints = grad_basis_.dimension(2);
+    int spaceDim  = grad_basis_.dimension(3);
+    for (int pt=0; pt<numPoints; pt++) {
+      for (int d=0; d<spaceDim; d++) {
+        // first initialize to the right thing (prevents over writing with 0)
+        // then loop over one less basis function
+        dof_grad_(cell,pt,d) = dof_value_(cell, 0) * grad_basis_(cell, 0, pt, d);
+        for (int bf=1; bf<numFields; bf++)
+          dof_grad_(cell,pt,d) += dof_value_(cell, bf) * grad_basis_(cell, bf, pt, d);
       }
     }
   }
-}
+  PHX::MDField<ScalarT>  dof_grad_;
+  PHX::MDField<ScalarT,Cell,Point>  dof_value_;
+  const ArrayT grad_basis_;
+
+};
 
 }
 
@@ -121,7 +125,11 @@ PHX_EVALUATE_FIELDS(DOFGradient,workset)
   if(workset.num_cells>0)
     Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(this->wda(workset).bases[basis_index])->grad_basis);
 */
-  evaluateGrad_withSens(workset.num_cells,dof_gradient,dof_value,this->wda(workset).bases[basis_index]->grad_basis);
+  if (workset.num_cells == 0 )
+    return;
+  typedef decltype(this->wda(workset).bases[basis_index]->grad_basis) ArrayT;
+  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,this->wda(workset).bases[basis_index]->grad_basis);
+  Kokkos::parallel_for(workset.num_cells, eval);
 }
 
 //**********************************************************************

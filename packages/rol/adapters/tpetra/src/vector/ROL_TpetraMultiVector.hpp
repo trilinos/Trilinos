@@ -49,13 +49,18 @@
     \author Created by Greg von Winckel
 */
 
+
+
 #include "ROL_Vector.hpp"
 #include "Tpetra_MultiVector_def.hpp"
 
 namespace ROL {
 
 // Template on the Real/Scalar type, Local Ordinal, Global Ordinal, and Node
-template <class Real, class LO, class GO, class Node>
+template <class Real, 
+          class LO=Tpetra::Map<>::local_ordinal_type, 
+          class GO=Tpetra::Map<>::global_ordinal_type, 
+          class Node=Tpetra::Map<>::node_type >
 class TpetraMultiVector : public Vector<Real> {
 
   typedef Vector<Real>                         V;

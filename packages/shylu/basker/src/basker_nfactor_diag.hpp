@@ -96,7 +96,7 @@ namespace BaskerNS
   };//end kokkos_nfactor_diag
 
 
-    template <class Int, class Entry, class Exe_Space>
+  template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_diag_remalloc
   {
     //Comeback and cleanup kokkos
@@ -134,6 +134,7 @@ namespace BaskerNS
 
 
       Int chunk_start = thread_start(kid);
+      printf("test: %d %d \n", kid, thread_start(kid));
       if(chunk_start != BASKER_MAX_IDX)
 	{
 	  Int chunk_size  = basker->btf_schedule(kid+1) - 
@@ -162,12 +163,14 @@ namespace BaskerNS
    )
   {
 
-    for(Int c = schunk+btf_tabs_offset;
-	c < schunk+nchunk+btf_tabs_offset; ++c)
+    //for(Int c = schunk+btf_tabs_offset;
+    //	c < schunk+nchunk+btf_tabs_offset; ++c)
+    for(Int c = schunk;
+	c < schunk+nchunk; ++c)
       {
 	Int c_size = btf_tabs(c+1)-btf_tabs(c);
 	//printf("kid: %d current_chunk: %d size: %d \n",
-	//     kid, c, c_size);
+	//   kid, c, c_size);
 
 	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
@@ -252,14 +255,18 @@ namespace BaskerNS
     BASKER_MATRIX  &L = LBTF(c-btab);
     
     //JDB: brow hack: fix.
-    Int brow2 = L.srow;
+    Int brow2 = L.srow - btf_tabs(btab);
 
-    /*
+    
+    #ifdef BASKER_DEBUG_NFACTOR_DIAG
     printf("CURRENT BLK: %d \n", c);
+    printf("btab: %d %d\n", btab, c-btab);
+    printf("brow2: %d \n", brow2);
     printf("col_start: %d \n", btf_tabs(c));
     printf("BLK size %d \n",
 	   btf_tabs(c+1)-btf_tabs(c));
-    */
+    #endif
+    
 
     //workspace
     Int ws_size       = thread_array(kid).iws_size;
@@ -296,7 +303,14 @@ namespace BaskerNS
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
       {
+
+	//if(k > 7)
+	  {
+	    //return 0;
+	  }
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 3)
+	  {
 	printf("\n------------K=%d-------------\n", k);
 	BASKER_ASSERT(top == ws_size, "nfactor dig, top");
 	for( i = 0; i < ws_size; ++i)
@@ -312,6 +326,7 @@ namespace BaskerNS
 	    BASKER_ASSERT(X[i] == 0, "X!=0");
 	    BASKER_ASSERT(ws[i] == 0, "ws!=0");
 	  }
+	  }
 	#endif
 
 	value = 0.0;
@@ -323,8 +338,6 @@ namespace BaskerNS
 	for( i = M.col_ptr(k-bcol); 
 	     i < M.col_ptr(k-bcol+1); ++i)
 	  {
-
-	   
 
 	    j = M.row_idx(i);
 	    j = j - brow2;
@@ -343,9 +356,13 @@ namespace BaskerNS
 	    //X[j-brow] = M.val[i];
 	    X(j) = M.val(i);
 	    
-	   
-	    //printf("In put j: %d %d \n", 
-            //	   M.row_idx(i), j);
+            #ifdef BASKER_DEBUG_NFACTOR_DIAG
+	    if(k  < 3)
+	      {
+		printf("In put j: %d %d %g \n", 
+		       M.row_idx(i), j, M.val(i));
+	      }
+	    #endif
 	    
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
 	    printf("i: %d row: %d  val: %g  top: %d \n", 
@@ -371,7 +388,7 @@ namespace BaskerNS
         #endif
              
 	//add custom local_solve
-	t_back_solve(kid, L, 0,0,  k, top, xnnz);
+	t_back_solve(kid, L, 0, 0, k, top, xnnz);
 	
 	//Future add
 	//t_locate_pivot(kid, top)	  
@@ -380,12 +397,18 @@ namespace BaskerNS
 	for(i = top; i < ws_size; i++)
 	  {
 	    j = pattern[i];
-	    //t = gperm[j];
-	    //t = gperm(j+brow);
-	    t = gperm(j+brow2);
+	    t = gperm(j+L.srow);
 
 	    //value = X[j-brow];
 	    value = X(j);
+
+	    #ifdef BASKER_DEBUG_NFACTOR_DIAG
+	    if(k < 3)
+	      {
+		printf("consider, %d %d %d %g \n", 
+		       j, j+L.scol, t, value);
+	      }
+	    #endif
 	    
 	    absv = abs(value);
 	    //if(t == L.max_idx)
@@ -401,21 +424,42 @@ namespace BaskerNS
 	      }
 	  }//for (i = top; i < ws_size)
           //printf("b: %d lcnt: %d after \n", b, lcnt);
+	
+	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 3)
+	  {
+	    printf("pivot: %g maxindex: %d \n",
+		   pivot, maxindex);
+	  }
+	#endif
+	
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
-	      maxindex = k - brow2;
+	      maxindex = (Int) k-L.scol;
+	      //maxindex = (Int) k - M.srow;
 	      pivot    = X(maxindex);
 	    }
-	  
+	
+	  #ifdef BASKER_DEBUG_NFACTOR_DEBUG
+	  if(k < 3)
+	    {
+	      printf("pivot: %g maxindex: %d \n",
+		     pivot, maxindex);
+	    }
+	  #endif
+  
           ucnt = ws_size - top - lcnt +1;
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
 	      cout << endl << endl;
 	      cout << "---------------------------"
-		   <<endl;
-              cout << "Error: Matrix is singular, blk"
+		   << endl;
+              cout << "Error: Matrix is singular, blk: "
+		   << c 
+		   << " Column: "
+		   << k
 		   << endl;
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
@@ -429,8 +473,14 @@ namespace BaskerNS
 
           //printf("----------------PIVOT------------blk: %d %d \n", 
           //      c, btf_tabs(c+1)-btf_tabs(c));
-	  gperm(maxindex+brow2) = k;
-	  gpermi(k)             = maxindex+brow2;
+	  //gperm(maxindex+brow2) = k;
+	  gperm(maxindex+L.scol) = k ;
+	  //gpermi(k)              = maxindex+brow2;
+	  gpermi(k)              = maxindex + L.srow;
+
+	  //printf("gperm(%d) %d gpermi(%d) %d \n",
+	  //	 maxindex+L.scol, k  ,
+	  //	 k, maxindex+L.srow);
 
 
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
@@ -448,7 +498,7 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("----------------------\n");
 
-              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
+              newsize = lnnz * 1.1 + 2 *L.nrow + 1;
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
@@ -478,10 +528,13 @@ namespace BaskerNS
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*M.nrow+1;
-              printf("Diag blk: %d Reallocing U oldsize: %d newsize: %d \n",
-                     c, uunnz, newsize);
-	   
+              newsize = uunnz*1.1 + 2*L.nrow+1;
+              printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
+                     c, uunnz, unnz+ucnt, newsize);
+	      printf("blk: %d column: %d \n",
+		     c, k);
+
+
 	      if(Options.realloc == BASKER_FALSE)
 		{
 		  thread_array(kid).error_type = 
@@ -513,7 +566,8 @@ namespace BaskerNS
 	      j = pattern[i];
               //t = gperm[j];
 	      //t = gperm(j+brow);
-	      t = gperm(j+brow2);
+	      //t = gperm(j+brow2);
+	      t = gperm(j+L.srow);
             
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
               printf("j: %d t: %d \n", j, t);
@@ -534,7 +588,8 @@ namespace BaskerNS
                         {
                           //U.row_idx[unnz] = gperm[j];
 			  //U.row_idx(unnz)   = t-brow;
-			  U.row_idx(unnz) = t - brow2;
+			  //U.row_idx(unnz) = t - brow2;
+			  U.row_idx(unnz) = t - L.srow;
 			  #ifdef BASKER_2DL
 			  //U.val[unnz] = X[j-brow];
 			  U.val(unnz)       = X(j);
@@ -592,7 +647,8 @@ namespace BaskerNS
           //Fill in last element of U
           //U.row_idx[unnz] = k;
 	  //U.row_idx(unnz)   = k-brow;
-	  U.row_idx(unnz) = k - brow2;
+	  //U.row_idx(unnz) = k - brow2;
+	  U.row_idx(unnz) = k - L.scol;
           //U.val[unnz]     = lastU;
 	  U.val(unnz)       = lastU;
           ++unnz;
@@ -609,15 +665,19 @@ namespace BaskerNS
 	  */
 		 
           //L.col_ptr[k-bcol] = cu_ltop;
-	  L.col_ptr(k-brow2) = cu_ltop;
+	  //L.col_ptr(k-brow2) = cu_ltop;
+	  L.col_ptr(k-L.srow) = cu_ltop;
           //L.col_ptr[k+1-bcol] = lnnz;
-	  L.col_ptr(k+1-brow2) = lnnz;
+	  //L.col_ptr(k+1-brow2) = lnnz;
+	  L.col_ptr(k+1-L.srow) = lnnz;
           cu_ltop = lnnz;
           
           //U.col_ptr[k-bcol] = cu_utop;
-	  U.col_ptr(k-brow2)   = cu_utop;
+	  //U.col_ptr(k-brow2)   = cu_utop;
+	  U.col_ptr(k-L.srow) = cu_utop;
           //U.col_ptr[k+1-bcol] = unnz;
-	  U.col_ptr(k+1-brow2)      = unnz;
+	  //U.col_ptr(k+1-brow2)      = unnz;
+	  U.col_ptr(k+1-L.srow) = unnz;
           cu_utop = unnz;
 
 
@@ -803,6 +863,10 @@ namespace BaskerNS
     Int top1 = top;
     Int j,t,pp, p, p2;
     Entry xj = 0;
+
+    //printf("back solve called. nnz: %d \n",
+    //	   xnnz);
+
     for(pp = 0; pp < xnnz; ++pp)
       {
 	j = pattern[top1];
@@ -816,6 +880,9 @@ namespace BaskerNS
         //t = gperm[j];
 	t = gperm(j+brow);
 	
+	//printf("back solve: %d %d %d \n",
+	//     j, j+brow, t);
+
 	if(t!=BASKER_MAX_IDX)
           {
 

@@ -238,12 +238,10 @@ namespace {
   //
   // Return true if all tests were successful, else false.
   //
-  template<class NodeType>
   bool
   test (int argc,
         char* argv[],
         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-        const Teuchos::RCP<NodeType>& node,
         const bool allowedToPrint)
   {
     using TSQR::Test::NullCons;
@@ -259,7 +257,7 @@ namespace {
     //
     typedef TSQR::Test::FullTsqrVerifierCaller caller_type;
     std::vector<int> randomSeed = caller_type::defaultRandomSeed ();
-    caller_type caller (comm, node, randomSeed);
+    caller_type caller (comm, randomSeed);
 
     //
     // Read command-line options
@@ -320,7 +318,6 @@ main (int argc, char* argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
 #ifdef HAVE_MPI
   typedef RCP<const Teuchos::Comm<int> > comm_ptr;
@@ -338,7 +335,7 @@ main (int argc, char* argv[])
   // Make sure that err gets "used"
   (void) err;
 
-#else // Don't HAVE_MPI: single-node test
+#else // Don't HAVE_MPI: single-process test
 
   const bool allowedToPrint = true;
   std::ostream& out = std::cout;
@@ -348,11 +345,7 @@ main (int argc, char* argv[])
   bool success = false;
   bool verbose = false;
   try {
-    RCP<ParameterList> nodeParams =
-      rcp (new ParameterList (node_type::getDefaultParameters ()));
-    RCP<node_type> node = TSQR::Test::getNode<node_type> (nodeParams);
-
-    success = test<node_type> (argc, argv, comm, node, allowedToPrint);
+    success = test (argc, argv, comm, allowedToPrint);
     if (allowedToPrint && success) {
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << endl;

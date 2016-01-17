@@ -208,8 +208,8 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_XPETRA_INT_LONG_LONG
-#endif // HAVE_XPETRA_SERIAL
+#endif // Epetra64
+#endif // HAVE_XPETRA_EPETRA
 
 }
 

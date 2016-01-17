@@ -63,11 +63,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-
-    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
-
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
-
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<TentativePFactory_kokkos> tentPFact = rcp(new TentativePFactory_kokkos);
@@ -77,8 +74,11 @@ namespace MueLuTests {
 #if 0
   TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative_LapackQR)
   {
-
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
+
     out << "Test QR with user-supplied nullspace" << std::endl;
 
     Level fineLevel, coarseLevel;
@@ -155,29 +155,27 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentative, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
-
-    RUN_EPETRA_ONLY_WITH_SERIAL_NODE(Node);
-
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
+    out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
 
     Level fineLevel, coarseLevel;
-    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     fineLevel  .SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build1DPoisson(199);
     fineLevel.Request("A");
-    fineLevel.Set("A",A);
+    fineLevel.Set    ("A", A);
 
     // Only one NS vector -> exercises manual orthogonalization
     LO NSdim = 1;
-    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
 
@@ -213,17 +211,17 @@ namespace MueLuTests {
 
     RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
 
-    //check interpolation
-    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
-    Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS, 1.0, 0.0);
+    // Check interpolation by computing ||fineNS - P*coarseNS||
+    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(), NSdim);
+    Ptent->apply(*coarseNullSpace, *PtN, Teuchos::NO_TRANS, 1.0, 0.0);
 
-    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     diff->putScalar(0.0);
 
     coarseLevel.Release("P",         TentativePFact.get()); // release Ptent
     coarseLevel.Release("Nullspace", TentativePFact.get());
 
-    //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
+    // diff = fineNS - (P*coarseNS)
     diff->update(1.0, *nullSpace, -1.0, *PtN, 0.0);
 
     Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
@@ -233,17 +231,16 @@ namespace MueLuTests {
       TEST_EQUALITY(norms[i] < 1e-12, true);
     }
 
-    // check normalization and orthogonality of prolongator columns
+    // Check normalization and orthogonality of prolongator columns by
+    // making sure that P^T*P = I
     RCP<Matrix> PtentTPtent = MatrixMatrix::Multiply(*Ptent, true, *Ptent, false, out);
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
-    //std::cout << diagVec->norm1() << " " << diagVec->normInf() << " " << diagVec->meanValue() << std::endl;
     TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
     TEST_EQUALITY(diagVec->meanValue(),                 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
-
-  } //MakeTentative
+  }
 
 #if 0
   TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentativeUsingDefaultNullSpace)
@@ -614,27 +611,10 @@ namespace MueLuTests {
 #endif
 #endif
 
-
-#define UNIT_TEST_GROUP(SC,LO,GO,NO) \
+#define MUELU_ETI_GROUP(SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, Constructor,   SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory_kokkos, MakeTentative, SC, LO, GO, NO)
 
-#ifdef HAVE_MUELU_TPETRA
-  #include <TpetraCore_config.h>
-  #include <TpetraCore_ETIHelperMacros.h>
-
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP)
-#endif
-
-  // Uncomment after rebasing on top of TOBIAS patches
-// #ifdef HAVE_MUELU_EPETRA
-// #  if (defined(HAVE_MUELU_TPETRA) && !defined(HAVE_MUELU_TPETRA_INST_INT_INT)) || (!defined(HAVE_MUELU_TPETRA))
-// #error Why are we here?
-  // typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> node_type;
-  // UNIT_TEST_GROUP(double, int, int, node_type);
-// #  endif
-// #endif
+#include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

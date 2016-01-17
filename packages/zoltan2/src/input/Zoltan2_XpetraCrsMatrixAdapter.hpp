@@ -250,8 +250,12 @@ template <typename User, typename UserCoord>
       mayHaveDiagonalEntries(true)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
-  matrix_ = rcp_const_cast<const xmatrix_t>(
+  try {
+    matrix_ = rcp_const_cast<const xmatrix_t>(
            XpetraTraits<User>::convertToXpetra(rcp_const_cast<User>(inmatrix)));
+  }
+  Z2_FORWARD_EXCEPTIONS
+
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
   base_ = rowMap_->getIndexBase();

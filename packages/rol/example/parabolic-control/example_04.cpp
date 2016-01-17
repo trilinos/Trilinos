@@ -281,7 +281,7 @@ public:
     }
   }
 
-  void solve(ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     using Teuchos::RCP;
 
@@ -300,8 +300,7 @@ public:
       uold.assign(unew.begin(),unew.end());
     }
     /* TEST SOLVE -- ||c(u,z)|| SHOULD BE ZERO */
-    //Teuchos::RCP<ROL::Vector<Real> > c = u.clone();
-    //value(*c,u,z,tol);
+    value(c,u,z,tol);
     //std::cout << c->norm() << "\n";
   }
 

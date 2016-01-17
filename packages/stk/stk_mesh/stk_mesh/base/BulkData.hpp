@@ -88,6 +88,7 @@ namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk {
 namespace mesh {
 
+class SideConnector;
 class BulkData;
 struct PartStorage;
 enum class FaceCreationBehavior;
@@ -117,7 +118,7 @@ class BulkData {
 
 public:
   enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2 };
+  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
 
   enum AutomaticAuraOption {
       NO_AUTO_AURA,
@@ -542,6 +543,7 @@ public:
   bool in_shared(EntityKey key, int proc) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( EntityKey key ) const;         // CLEANUP: only used for testing
   bool in_receive_ghost( const Ghosting & ghost , EntityKey entity ) const;
+  bool in_receive_custom_ghost( EntityKey key ) const;
   bool in_send_ghost( EntityKey key) const;         // CLEANUP: only used for testing
   bool in_send_ghost( EntityKey key , int proc ) const;         // CLEANUP: only used for testing
   bool is_aura_ghosted_onto_another_proc( EntityKey key ) const;     // CLEANUP: used only by modification_end_for_entity_creation
@@ -720,12 +722,13 @@ public:
 
 protected: //functions
 
-  bool make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
+  void make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         stk::mesh::Part* activePart = nullptr);
+                                                         stk::mesh::Part &activePart);
 
+  void make_mesh_parallel_consistent_after_skinning(const std::vector<sharing_info>& sharedModified);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
                                              stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
@@ -981,7 +984,8 @@ protected: //functions
 
   void check_mesh_consistency();
   bool comm_mesh_verify_parallel_consistency(std::ostream & error_log);
-  void delete_shared_entities_which_are_no_longer_in_owned_closure(); // Mod Mark
+  void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing); // Mod Mark
+  virtual void remove_entities_from_sharing(const EntityProcVec& entitiesToRemoveFromSharing);
   virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entity_map, int proc_id, const shared_entity_type &sentity);
   void update_owner_global_key_and_sharing_proc(stk::mesh::EntityKey global_key_other_proc,  shared_entity_type& shared_entity_this_proc, int proc_id) const;
   void update_shared_entity_this_proc(EntityKey global_key_other_proc, shared_entity_type& shared_entity_this_proc, int proc_id);
@@ -1003,7 +1007,7 @@ protected: //functions
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
 
-  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
+  void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin, bool connectFacesToPreexistingGhosts);
 
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
@@ -1046,6 +1050,8 @@ private: //functions
 
   void delete_unneeded_entries_from_the_comm_list();
 
+  void internal_resolve_sharing_and_ghosting_for_sides(bool connectFacesToPreexistingGhosts);
+
 #ifdef __CUDACC__
 public:
 #endif
@@ -1053,6 +1059,7 @@ public:
     int                 from_proc;
     EntityState         state;
     EntityCommListInfo  comm_info;
+    bool                remote_owned_closure;
     const BulkData* mesh;
 
     bool operator<(const EntityParallelState& rhs) const
@@ -1290,9 +1297,13 @@ private:
 
   void find_upward_connected_entities_to_ghost_onto_other_processors(stk::mesh::BulkData &mesh,
                                                                      std::set<EntityProc, EntityLess> &entitiesToGhostOntoOtherProcessors,
-                                                                     EntityRank entity_rank, stk::mesh::Selector selected);
+                                                                     EntityRank entity_rank,
+                                                                     stk::mesh::Selector selected,
+                                                                     bool connectFacesToPreexistingGhosts);
 
   void reset_add_node_sharing() { m_add_node_sharing_called = false; }
+
+  void destroy_dependent_ghosts( Entity entity, EntityProcVec& entitiesToRemoveFromSharing );
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE

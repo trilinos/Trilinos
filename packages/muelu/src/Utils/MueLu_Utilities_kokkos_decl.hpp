@@ -269,6 +269,10 @@ namespace MueLu {
       return Utilities::Transpose(Op, optimizeTranspose, label);
     }
 
+    static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+      return Utilities::ExtractCoordinatesFromParameterList(paramList);
+    }
+
   }; // class Utils
 
 
@@ -761,7 +765,67 @@ namespace MueLu {
       return Teuchos::null;
     }
 
+    /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector
+    */
+    static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+      RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > coordinates = Teuchos::null;
 
+      // check whether coordinates are contained in parameter list
+      if(paramList.isParameter ("Coordinates") == false)
+        return coordinates;
+
+  #if defined(HAVE_MUELU_TPETRA)
+  #if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
+      (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))
+
+      // define Tpetra::MultiVector type with Scalar=float only if
+      // * ETI is turned off, since then the compiler will instantiate it automatically OR
+      // * Tpetra is instantiated on Scalar=float
+  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+      typedef Tpetra::MultiVector<float, LocalOrdinal, GlobalOrdinal, Node> tfMV;
+      RCP<tfMV> floatCoords = Teuchos::null;
+  #endif
+
+      // define Tpetra::MultiVector type with Scalar=double only if
+      // * ETI is turned off, since then the compiler will instantiate it automatically OR
+      // * Tpetra is instantiated on Scalar=double
+      typedef Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> tdMV;
+      RCP<tdMV> doubleCoords = Teuchos::null;
+      if (paramList.isType<RCP<tdMV> >("Coordinates")) {
+        // Coordinates are stored as a double vector
+        doubleCoords = paramList.get<RCP<tdMV> >("Coordinates");
+        paramList.remove("Coordinates");
+      }
+  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+      else if (paramList.isType<RCP<tfMV> >("Coordinates")) {
+        // check if coordinates are stored as a float vector
+        floatCoords = paramList.get<RCP<tfMV> >("Coordinates");
+        paramList.remove("Coordinates");
+        doubleCoords = rcp(new tdMV(floatCoords->getMap(), floatCoords->getNumVectors()));
+        deep_copy(*doubleCoords, *floatCoords);
+      }
+  #endif
+      // We have the coordinates in a Tpetra double vector
+      if(doubleCoords != Teuchos::null) {
+        coordinates = Teuchos::rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(doubleCoords));
+        TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
+      }
+  #endif // Tpetra instantiated on GO=int and EpetraNode
+  #endif // endif HAVE_TPETRA
+
+  #if defined(HAVE_MUELU_EPETRA)
+      RCP<Epetra_MultiVector> doubleEpCoords;
+      if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
+        doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
+        paramList.remove("Coordinates");
+        RCP<Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node>(doubleEpCoords));
+        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >(epCoordinates);
+        TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
+      }
+  #endif
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
+      return coordinates;
+    }
   }; // class Utilities (specialization SC=double LO=GO=int)
 
 

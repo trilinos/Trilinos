@@ -1,3 +1,8 @@
+Jan 11, 2016
+
+MUMPS disabled if no MPI, if wanting to use in serial, see Amesos2
+
+
 September 23, 2015
 
 CMake has been updated to now use mumps 5.0.0+. This is the defualt.  

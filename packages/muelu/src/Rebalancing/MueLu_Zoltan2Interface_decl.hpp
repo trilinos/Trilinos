@@ -110,24 +110,23 @@ namespace MueLu {
 
   };  //class Zoltan2Interface
 
-#ifndef HAVE_MUELU_TPETRA_INST_INT_INT
-  /*!
-    @class Zoltan2Interface
-    @brief Interface to Zoltan2 library.
-    */
+#ifdef HAVE_MUELU_EPETRA
 
-  // TAW: Oct 16 2015: we need the specialization of Zoltan2Interface since it is a object living in the Tpetra stack only.
-  //                   If Tpetra is not compiled with GO=int enabled we need dummy implementations here.
-  template <class Scalar, class Node>
-  class Zoltan2Interface<Scalar,int,int,Node> : public SingleLevelFactoryBase {
+#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+  // Stub partial specialization of Zoltan2Interface for EpetraNode
+  template<>
+  class Zoltan2Interface<double,int,int,Xpetra::EpetraNode> : public SingleLevelFactoryBase {
   public:
-    Zoltan2Interface() {};
+    Zoltan2Interface() { throw Exceptions::RuntimeError("Tpetra does not support <double,int,int,EpetraNode> instantiation"); }
     virtual ~Zoltan2Interface() { }
     RCP<const ParameterList> GetValidParameterList() const { return Teuchos::null; };
-    void DeclareInput(Level & level) const {};
+    void DeclareInput(Level& level) const {};
     void Build(Level &level) const {};
-  };  //class Zoltan2Interface (specialization for LO=GO=int)
+  };
 #endif
+
+#endif // HAVE_MUELU_EPETRA
 
 } //namespace MueLu
 

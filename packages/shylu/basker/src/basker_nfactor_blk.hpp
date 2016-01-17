@@ -1,14 +1,14 @@
 #ifndef BASKER_NFACTOR_BLK_HPP
 #define BASKER_NFACTOR_BLK_HPP
 
-//#include "basker_decl.hpp"
+
 #include "basker_matrix_decl.hpp"
 #include "basker_matrix_view_decl.hpp"
 #include "basker_matrix_view_def.hpp"
 #include "basker_types.hpp"
 #include "basker_stats.hpp"
 
-#include "basker_nfactor_blk_inc.hpp"
+//#include "basker_nfactor_blk_inc.hpp"
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -179,9 +179,7 @@ namespace BaskerNS
     
     //Note:
     Int *color    = &(ws(0));
-    //Int *pattern  = &(color[ws_size]);
-    
-    //printf("test two \n");
+ 
     Int *pattern  = &(color[ws_size]);
     
     /*
@@ -280,8 +278,7 @@ namespace BaskerNS
 
 
 	      //NOTE:  Need a quick skip of dfs if 
-	      //j i not pivotal (KLU)
-	      
+	      //j i not pivotal (KLU)	      
 	      if(color[j] == 0)
 		{
 		  //we want to skip the call if we can
@@ -310,11 +307,10 @@ namespace BaskerNS
           #endif
              
 
-	  #ifdef BASKER_INC_LVL
-	  t_back_solve_selective(kid, 0, 0, k, top, xnnz);
-	  #else
+	  
+	  //t_back_solve_selective(kid, 0, 0, k, top, xnnz);
           t_back_solve(kid, 0,0,  k, top, xnnz);
-	  #endif
+	  
 
 	  //Future add
 	  //t_locate_pivot(kid, top)	  
@@ -352,6 +348,8 @@ namespace BaskerNS
 
 	  if(Options.no_pivot == BASKER_TRUE)
 	    {
+
+	      //printf("no pivot\n");
 	      maxindex = k;
 	      //pivot = X[k-brow];
 	      pivot    = X(k);
@@ -378,7 +376,8 @@ namespace BaskerNS
             }          
 
 	  gperm(maxindex+brow) = k+brow;
-	  gperm(k+brow) = maxindex+brow;
+	  //gperm(k+brow) = maxindex+brow;
+	  gpermi(k+brow) = maxindex + brow;
           //printf("TAG1 r  maxindex = %d k= %d  pivot: %f \n", 
 	  //	 maxindex, k, pivot);
           #ifdef BASKER_DEBUG_NFACTOR
@@ -519,9 +518,9 @@ namespace BaskerNS
 		      #endif
 
 		      //Need to comeback for local convert
-		      #ifdef BASKER_INC_LVL
-		      L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
-		      #endif
+		      //#ifdef BASKER_INC_LVL
+		      //L.inc_lvl[lnnz] = INC_LVL_TEMP[j];
+		      //#endif
 
                       lnnz++;
 
@@ -564,14 +563,14 @@ namespace BaskerNS
 	    {
 	      //Do back solve of off-diag blocks
 	      #ifdef BASKER_INC_LVL
-	      t_back_solve_offdiag_selective(kid,
-				   b, blk_row,
-				   b, blk_row,
-				   k, col_idx_offset,
-				   U.val, U.row_idx,
-		       U.col_ptr(k-bcol+1)-U.col_ptr(k-bcol),
-				  U.col_ptr(k-bcol),
-				   BASKER_TRUE);
+	      //t_back_solve_offdiag_selective(kid,
+	      //		   b, blk_row,
+	      //		   b, blk_row,
+	      //		   k, col_idx_offset,
+	      //		   U.val, U.row_idx,
+	      //       U.col_ptr(k-bcol+1)-U.col_ptr(k-bcol),
+	      //		  U.col_ptr(k-bcol),
+	      //		   BASKER_TRUE);
 	      #else
 	      
 	      //t_back_solve_offdiag(kid,
@@ -767,7 +766,7 @@ namespace BaskerNS
     const Int  ws_size = LL(wsb)(l).iws_size;
    
     //Int *color       = &(ws[0]);
-    Int *pattern     = &(ws[ws_size]);
+    Int *pattern     = &(ws(ws_size));
     Int *stack       = &(pattern[ws_size]);
     Int *store       = &(stack[ws_size]);
     
@@ -789,21 +788,20 @@ namespace BaskerNS
         #ifdef BASKER_DEBUG_LOCAL_REACH
         printf("stack_offset: %d head: %d \n", 
 	       stack_offset , head);
-        ASSERT(head > -1);
+        BASKER_ASSERT(head > -1, " ");
         #endif
 
 	j = stack[head];
 	t = gperm(j+brow);
         
         #ifdef BASKER_DEBUG_LOCAL_REACH
-	printf("----------DFS: %d %d -------------\n", j, t);
+	printf("--------DFS: %d %d -------------\n",
+	       j, t);
         #endif
 
-	//if(color[j] == 0)
 	if(ws(j) == 0)
 	  {	    
 
-	    //color[j] = 1;
 	    ws(j) = 1;
   
 	    if(t!=BASKER_MAX_IDX)
@@ -1566,16 +1564,6 @@ namespace BaskerNS
 	    //printf("t_back_solve_diag, kid: %d i: %d g: %d\n",
 	    //	   kid, i, B.good(i));
 	    #endif
-
-
-	    //Bgood(remove)
-	    //Note: Come back and slow down
-	    //if(B.good(i)==L.max_idx)
-	    //if(B.good(i) == BASKER_MAX_IDX)
-	    //  {
-	    //view_offset = i;
-	    //	break;
-	    // }
 
 
             #ifdef BASKER_DEBUG_NFACTOR_BLK

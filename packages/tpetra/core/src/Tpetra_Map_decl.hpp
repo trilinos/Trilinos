@@ -111,7 +111,7 @@ namespace Tpetra {
     class LocalMap {
     public:
       LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
-                const Kokkos::View<const GlobalOrdinal*, DeviceType>& lgMap,
+                const Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType>& lgMap,
                 const GlobalOrdinal indexBase,
                 const GlobalOrdinal myMinGid,
                 const GlobalOrdinal myMaxGid,
@@ -212,7 +212,21 @@ namespace Tpetra {
 
     private:
       Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType> glMap_;
-      Kokkos::View<const GlobalOrdinal*, DeviceType> lgMap_;
+      /// \brief Mapping from local indices to global indices.
+      ///
+      /// If this is empty, then it could be either that the Map is
+      /// contiguous (meaning that we don't need to store all the
+      /// global indices explicitly), or that the Map really does
+      /// contain zero indices on the calling process.
+      ///
+      /// This has LayoutLeft so that we can call Kokkos::deep_copy to
+      /// copy this between any two Kokkos Devices.  Otherwise, the
+      /// Devices might have different default layouts, thus
+      /// forbidding a deep_copy.  We use LayoutLeft instead of
+      /// LayoutRight because LayoutRight is the default on non-CUDA
+      /// Devices, and we want to make sure we catch assignment or
+      /// copying from the default to the nondefault layout.
+      Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType> lgMap_;
       GlobalOrdinal indexBase_;
       GlobalOrdinal myMinGid_;
       GlobalOrdinal myMaxGid_;
@@ -1131,7 +1145,25 @@ namespace Tpetra {
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
     /// describe(), may invoke getNodeElementList().
-    mutable Kokkos::DualView<GlobalOrdinal*, device_type> lgMap_;
+    ///
+    /// To clarify: If this is empty, then it could be either that the
+    /// Map is contiguous (meaning that we don't need to store all the
+    /// global indices explicitly), or that the Map really does
+    /// contain zero indices on the calling process.
+    ///
+    /// NOTE: With CUDA, we assume UVM, in that host code can access
+    /// the entries of this View.
+    ///
+    /// This has LayoutLeft so that we can call Kokkos::deep_copy to
+    /// copy this between any two Kokkos Devices.  Otherwise, the
+    /// Devices might have different default layouts, thus forbidding
+    /// a deep_copy.  We use LayoutLeft instead of LayoutRight because
+    /// LayoutRight is the default on non-CUDA Devices, and we want to
+    /// make sure we catch assignment or copying from the default to
+    /// the nondefault layout.
+    mutable Kokkos::View<const GlobalOrdinal*,
+                         Kokkos::LayoutLeft,
+                         device_type> lgMap_;
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
@@ -1356,10 +1388,20 @@ namespace Tpetra {
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& nodeOut)
     {
-      typedef ::Tpetra::Directory<typename OutMapType::local_ordinal_type,
-                                  typename OutMapType::global_ordinal_type,
+      static_assert (std::is_same<typename OutMapType::local_ordinal_type,
+                                  typename InMapType::local_ordinal_type>::value,
+                     "Tpetra::Map clone: The LocalOrdinal template parameter "
+                     "of the input and output Map types must be the same.");
+      static_assert (std::is_same<typename OutMapType::global_ordinal_type,
+                                  typename InMapType::global_ordinal_type>::value,
+                     "Tpetra::Map clone: The GlobalOrdinal template parameter "
+                     "of the input and output Map types must be the same.");
+      typedef typename OutMapType::local_ordinal_type LO;
+      typedef typename OutMapType::global_ordinal_type GO;
+      typedef ::Tpetra::Directory<LO, GO,
                                   typename OutMapType::node_type> out_dir_type;
       typedef typename OutMapType::global_to_local_table_type out_table_type;
+      typedef typename OutMapType::device_type out_device_type;
 
       OutMapType mapOut; // Make an empty Map.
 
@@ -1379,14 +1421,24 @@ namespace Tpetra {
       mapOut.uniform_           = mapIn.uniform_;
       mapOut.contiguous_        = mapIn.contiguous_;
       mapOut.distributed_       = mapIn.distributed_;
-      mapOut.lgMap_             = mapIn.lgMap_;
+      {
+        // mfh 25 Dec 2015, 11 Jan 2016: We really only need to make a
+        // deep copy if the two Map types have different memory
+        // spaces.  However, if you're calling clone(), it is likely
+        // the case that the memory spaces differ, so it doesn't hurt
+        // to make a deep copy here.
+        Kokkos::View<GO*, Kokkos::LayoutLeft, out_device_type>
+          lgMapOut ("lgMap", mapIn.lgMap_.dimension_0 ());
+        Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
+        mapOut.lgMap_ = lgMapOut; // cast to const
+      }
       // This makes a deep copy only if necessary.  We could have
       // defined operator= to do this, but that would violate
       // expectations.  (Kokkos::View::operator= only does a shallow
       // copy, EVER.)
-      mapOut.glMap_             = out_table_type (mapIn.glMap_);
+      mapOut.glMap_ = out_table_type (mapIn.glMap_);
       // New Map gets the new Node instance.
-      mapOut.node_              = nodeOut;
+      mapOut.node_ = nodeOut;
 
       // We could cleverly clone the Directory here if it is
       // initialized, but there is no harm in simply creating it

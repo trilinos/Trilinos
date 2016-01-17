@@ -89,12 +89,13 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshManager_Rectangle<RealT> meshmgr(*parlist);
-    Intrepid::FieldContainer<RealT> nodes;
-    Intrepid::FieldContainer<int>   cellToNodeMap;
-    Intrepid::FieldContainer<int>   cellToEdgeMap;
-    meshmgr.getNodes(nodes);
-    meshmgr.getCellToNodeMap(cellToNodeMap);
-    meshmgr.getCellToEdgeMap(cellToEdgeMap);
+    //MeshManager_BackwardFacingStepChannel<RealT> meshmgr(*parlist);
+    Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
+    Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
+    Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
+    Intrepid::FieldContainer<int>   &cellToEdgeMap = *cellToEdgeMapPtr;
     *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
@@ -120,12 +121,31 @@ int main(int argc, char *argv[]) {
 
     std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
     basisPtrs[0] = basisPtrQ2;
-    basisPtrs[1] = basisPtrQ2;
-    basisPtrs[2] = basisPtrQ1;
+    basisPtrs[1] = basisPtrQ1;
+    basisPtrs[2] = basisPtrQ2;
 
     Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
 
     DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
+
+    *outStream << "Number of node dofs = " << dofmgr.getNumNodeDofs() << std::endl << *(dofmgr.getNodeDofs());
+    *outStream << "Number of edge dofs = " << dofmgr.getNumEdgeDofs() << std::endl << *(dofmgr.getEdgeDofs());
+    *outStream << "Number of face dofs = " << dofmgr.getNumFaceDofs() << std::endl << *(dofmgr.getFaceDofs());
+    *outStream << "Total number of dofs = " << dofmgr.getNumDofs() << std::endl << *(dofmgr.getCellDofs());
+
+    std::vector<std::vector<int> > fieldPattern = dofmgr.getFieldPattern();
+    for (int i=0; i<dofmgr.getNumFields(); ++i) {
+      *outStream << "\nField " << i << " pattern:   ";
+      for (int j=0; j<dofmgr.getLocalFieldSize(i); ++j) {
+        *outStream << fieldPattern[i][j] << " ";
+      }
+      *outStream << std::endl;
+    }
+
+    for (int i=0; i<dofmgr.getNumFields(); ++i) {
+      *outStream << "\nField  " << i << std::endl;
+      *outStream << *(dofmgr.getFieldDofs(i));
+    }
 
   }
   catch (std::logic_error err) {

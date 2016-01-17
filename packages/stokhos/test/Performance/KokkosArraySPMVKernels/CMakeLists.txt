@@ -8,6 +8,8 @@ IF (Stokhos_ENABLE_EpetraExt)
   SET(CUDA_SOURCES "")
   IF (Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda AND Stokhos_ENABLE_CUSPARSE)
     SET(CUDA_SOURCES TestCuda.cpp)
+  ELSE()
+    SET(CUDA_SOURCES TestCudaStub.cpp)
   ENDIF()
   TRIBITS_ADD_EXECUTABLE(
     SPMVTest
