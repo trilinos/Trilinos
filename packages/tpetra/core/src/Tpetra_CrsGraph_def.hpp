@@ -55,7 +55,6 @@
 #include "Teuchos_NullIteratorTraits.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 #include <algorithm>
 #include <string>

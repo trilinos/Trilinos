@@ -56,7 +56,6 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Kokkos_NodeAPIConfigDefs.hpp" // enum KokkosClassic::ReadWriteOption
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
