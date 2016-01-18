@@ -320,7 +320,9 @@ template <typename Adapter>
     Z2_FORWARD_EXCEPTIONS;
   }
 
+  if (soln != Teuchos::null)
   targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
+  else targetGlobalParts_ = problemComm->getSize();
 
   env->timerStop(MACRO_TIMERS, "Computing graph metrics");
   env->debug(DETAILED_STATUS,

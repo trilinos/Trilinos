@@ -304,12 +304,17 @@ int main(int narg, char *arg[]) {
 
     metricObject = rcp(new quality_t(env, CommT, bia, Teuchos::null, false));
 
-    if (me) {
+    RCP<quality_t> graphMetricObject = 
+      rcp(new quality_t(env, CommT, bia, Teuchos::null));
+
+    if (!me) {
       metricObject->printMetrics(cout);
       problem.printMetrics(cout);
 
-      if (action == "scotch")
+      if (action == "scotch") {
+	graphMetricObject->printGraphMetrics(cout);
         problem.printGraphMetrics(cout);
+      }
     }
   }
   else {
