@@ -895,6 +895,11 @@ namespace Tpetra {
       // column multivector be a subview of another multi-vector, in which case
       // sourceMV.whichVectors_[0] != 0 ?  I think we have to handle that case
       // separately.
+      //
+      // mfh 18 Jan 2016: In answer to ETP's comment above:
+      // MultiVector treats single-column MultiVectors created using a
+      // "nonconstant stride constructor" as a special case, and makes
+      // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
         KokkosRefactor::Details::pack_array_single_column(
           exports,
