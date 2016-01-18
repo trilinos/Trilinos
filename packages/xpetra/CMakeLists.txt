@@ -112,23 +112,16 @@ ELSE ()
   ENDIF ()
 ENDIF ()
 
-##################################
-
-#
-# Decide whether it makes sense to enable LocalOrdinal = int and
-# GlobalOrdinal = int.
-#
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  # if Epetra is enabled we need basic GO=int support!
-  SET (${PACKAGE_NAME}_INT_INT ON)
-ELSE () # check whether Tpetra is enabled and needs GO=int support
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    ASSERT_DEFINED(Tpetra_INST_INT_INT)
-    SET (${PACKAGE_NAME}_INT_INT ${Tpetra_INST_INT_INT})
-  ELSE () # Neither Epetra nor Tpetra are enabled or need GO=int support
-    SET (${PACKAGE_NAME}_INT_INT OFF)
-  ENDIF ()
-ENDIF ()
+  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+    MESSAGE("-- Xpetra support for 32 bit Epetra enabled.")
+    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES})
+  ENDIF()
+  IF(NOT ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
+    MESSAGE("-- Xpetra support for 64 bit Epetra enabled.")
+    MESSAGE("--    ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES=" ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES})
+  ENDIF()
+ENDIF()
 
 ##################################
 
