@@ -163,10 +163,11 @@ Entity declare_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
     PartVector part_scratch;
     part_scratch.reserve(64);
 
-    if(!parts.empty())
-    {
-        mesh.change_entity_parts(entity, parts);
-    }
+    stk::mesh::PartVector initialParts;
+    initialParts.reserve(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entity_top));
+    mesh.change_entity_parts(entity, initialParts);
 
     const stk::mesh::ConnectivityOrdinal *side_ordinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
     unsigned num_sides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));

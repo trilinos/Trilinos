@@ -12,32 +12,9 @@ namespace mesh
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
     connect_side_to_elem(sideEntity, elemEntity, elemSide);
-
     stk::mesh::impl::LocalId elemLocalId = m_entity_to_local_id[elemEntity.local_offset()];
-    for(const GraphEdge & graphEdge : m_graph.get_edges_for_element(elemLocalId))
-    {
-        int skinnedElementSide = elemSide;
-        if(graphEdge.side1 == skinnedElementSide)
-        {
-            connect_side_entity_to_other_element(sideEntity, graphEdge);
-            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2, graphEdge.side2);
-        }
-    }
     connect_side_to_coincident_elements(sideEntity, elemLocalId, elemSide);
-}
-
-stk::mesh::Permutation SideConnector::get_permutation_for_side(stk::mesh::Entity sideEntity,
-                                                               stk::mesh::Entity element,
-                                                               int sideOrd)
-{
-    stk::mesh::EntityRank sideRank = m_bulk_data.mesh_meta_data().side_rank();
-    stk::topology elemTopology = m_bulk_data.bucket(element).topology();
-    stk::topology sideTopology = elemTopology.sub_topology(sideRank, sideOrd);
-    stk::mesh::EntityVector nodesOfSubTopo(sideTopology.num_nodes());
-    elemTopology.sub_topology_nodes(m_bulk_data.begin_nodes(element), sideRank, sideOrd, nodesOfSubTopo.data());
-    std::pair<bool, unsigned> result = sideTopology.equivalent(m_bulk_data.begin_nodes(sideEntity), nodesOfSubTopo);
-    stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
-    return perm;
+    connect_side_to_adjacent_elements(sideEntity, elemLocalId, elemSide);
 }
 
 void SideConnector::connect_side_to_elem(stk::mesh::Entity sideEntity,
@@ -46,6 +23,20 @@ void SideConnector::connect_side_to_elem(stk::mesh::Entity sideEntity,
 {
     stk::mesh::Permutation perm = get_permutation_for_side(sideEntity, element, sideOrd);
     m_bulk_data.declare_relation(element, sideEntity, sideOrd, perm);
+}
+
+void SideConnector::connect_side_to_adjacent_elements(stk::mesh::Entity sideEntity,
+                                                      stk::mesh::impl::LocalId elemLocalId,
+                                                      int elemSide)
+{
+    for(const GraphEdge& graphEdge : m_graph.get_edges_for_element(elemLocalId))
+    {
+        if(graphEdge.side1 == elemSide)
+        {
+            connect_side_entity_to_other_element(sideEntity, graphEdge);
+            connect_side_to_coincident_elements(sideEntity, graphEdge.elem2, graphEdge.side2);
+        }
+    }
 }
 
 void SideConnector::connect_side_entity_to_other_element(stk::mesh::Entity sideEntity,
@@ -71,10 +62,35 @@ void SideConnector::connect_side_to_coincident_elements(stk::mesh::Entity sideEn
     auto iter = m_coincidentGraph.find(elemLocalId);
     if(iter != m_coincidentGraph.end())
         for(const stk::mesh::GraphEdge &graphEdge : iter->second)
-        {
             if(graphEdge.side1 == elemSide)
                 connect_side_entity_to_other_element(sideEntity, graphEdge);
-        }
+}
+
+
+stk::mesh::EntityVector SideConnector::get_nodes_of_elem_side(stk::mesh::Entity element, int sideOrd)
+{
+    stk::topology elemTopology = m_bulk_data.bucket(element).topology();
+    stk::mesh::EntityVector nodesOfSide(elemTopology.side_topology(sideOrd).num_nodes());
+    elemTopology.side_nodes(m_bulk_data.begin_nodes(element), sideOrd, nodesOfSide.data());
+    return nodesOfSide;
+}
+
+stk::mesh::Permutation get_permutation_of_side_nodes(stk::topology sideTopology,
+                                                     const stk::mesh::Entity *sideNodes,
+                                                     const stk::mesh::Entity *elemSideNodes)
+{
+    std::pair<bool, unsigned> result = sideTopology.equivalent(sideNodes, elemSideNodes);
+    return static_cast<stk::mesh::Permutation>(result.second);
+}
+
+stk::mesh::Permutation SideConnector::get_permutation_for_side(stk::mesh::Entity sideEntity,
+                                                               stk::mesh::Entity element,
+                                                               int sideOrd)
+{
+    stk::mesh::EntityVector elemSideNodes = get_nodes_of_elem_side(element, sideOrd);
+    return get_permutation_of_side_nodes(m_bulk_data.bucket(sideEntity).topology(),
+                                         m_bulk_data.begin_nodes(sideEntity),
+                                         elemSideNodes.data());
 }
 
 }

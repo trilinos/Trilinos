@@ -411,6 +411,10 @@ public:
     , m_league_size(1)
     , m_league_end(0)
     , m_league_rank(0)
+    , m_chunk_size(0)
+    , m_league_chunk_end(0)
+    , m_invalid_thread(0)
+    , m_team_alloc(0)
     {}
 
   inline
@@ -440,7 +444,7 @@ public:
     }
     team_barrier();
 
-    long work_index = m_team_base[0]->m_team_work_index;
+    long work_index = m_team_base[0]->team_work_index();
 
     m_league_rank = work_index * m_chunk_size;
     m_league_chunk_end = (work_index +1 ) * m_chunk_size;
@@ -492,7 +496,8 @@ private:
   int m_team_alloc ;
   int m_team_iter ;
 
-  size_t m_scratch_size;
+  size_t m_team_scratch_size;
+  size_t m_thread_scratch_size;
 
   int m_chunk_size;
 
@@ -531,6 +536,17 @@ public:
 
   typedef PolicyTraits<Properties ... > traits;
 
+  TeamPolicyInternal& operator = (const TeamPolicyInternal& p) {
+    m_league_size = p.m_league_size;
+    m_team_size = p.m_team_size;
+    m_team_alloc = p.m_team_alloc;
+    m_team_iter = p.m_team_iter;
+    m_team_scratch_size = p.m_team_scratch_size;
+    m_thread_scratch_size = p.m_thread_scratch_size;
+    m_chunk_size = p.m_chunk_size;
+    return *this;
+  }
+
   //----------------------------------------
 
   template< class FunctorType >
@@ -553,7 +569,7 @@ public:
   inline int team_size() const { return m_team_size ; }
   inline int team_alloc() const { return m_team_alloc ; }
   inline int league_size() const { return m_league_size ; }
-  inline size_t scratch_size() const { return m_scratch_size ; }
+  inline size_t scratch_size() const { return m_team_scratch_size + m_team_size*m_thread_scratch_size ; }
   inline int team_iter() const { return m_team_iter ; }
 
   /** \brief  Specify league size, request team size */
@@ -564,7 +580,8 @@ public:
     : m_league_size(0)
     , m_team_size(0)
     , m_team_alloc(0)
-    , m_scratch_size ( 0 )
+    , m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
     , m_chunk_size(0)
     { init(league_size_request,team_size_request); (void) vector_length_request; }
 
@@ -576,7 +593,8 @@ public:
     : m_league_size(0)
     , m_team_size(0)
     , m_team_alloc(0)
-    , m_scratch_size ( 0 )
+    , m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
     , m_chunk_size(0)
     { init(league_size_request,traits::execution_space::thread_pool_size(2)); }
 
@@ -586,7 +604,8 @@ public:
     : m_league_size(0)
     , m_team_size(0)
     , m_team_alloc(0)
-    , m_scratch_size ( 0 )
+    , m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
     , m_chunk_size(0)
     { init(league_size_request,team_size_request); }
 
@@ -596,30 +615,8 @@ public:
     : m_league_size(0)
     , m_team_size(0)
     , m_team_alloc(0)
-    , m_scratch_size ( 0 )
-    , m_chunk_size(0)
-    { init(league_size_request,traits::execution_space::thread_pool_size(2)); }
-
-  template<class MemorySpace>
-  TeamPolicyInternal( int league_size_request
-            , int team_size_request
-            , const Experimental::TeamScratchRequest<MemorySpace> & scratch_request )
-    : m_league_size(0)
-    , m_team_size(0)
-    , m_team_alloc(0)
-    , m_scratch_size(scratch_request.total(team_size_request))
-    , m_chunk_size(0)
-    { init(league_size_request,team_size_request); }
-
-
-  template<class MemorySpace>
-  TeamPolicyInternal( int league_size_request
-            , const Kokkos::AUTO_t & /* team_size_request */
-            , const Experimental::TeamScratchRequest<MemorySpace> & scratch_request )
-    : m_league_size(0)
-    , m_team_size(0)
-    , m_team_alloc(0)
-    , m_scratch_size(scratch_request.total(traits::execution_space::thread_pool_size(2)))
+    , m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
     , m_chunk_size(0)
     { init(league_size_request,traits::execution_space::thread_pool_size(2)); }
 
@@ -631,6 +628,31 @@ public:
     p.m_chunk_size = chunk_size_;
     return p;
   }
+
+  /** \brief set per team scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerTeamValue& per_team) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_team_scratch_size = per_team.value;
+    return p;
+  };
+
+  /** \brief set per thread scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerThreadValue& per_thread) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_thread_scratch_size = per_thread.value;
+    return p;
+  };
+
+  /** \brief set per thread and per team scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerTeamValue& per_team, const PerThreadValue& per_thread) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_team_scratch_size = per_team.value;
+    p.m_thread_scratch_size = per_thread.value;
+    return p;
+  };
 
 private:
   /** \brief finalize chunk_size if it was set to AUTO*/

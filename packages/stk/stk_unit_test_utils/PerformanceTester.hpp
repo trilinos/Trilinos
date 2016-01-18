@@ -10,7 +10,7 @@ namespace stk
 namespace unit_test_util
 {
 
-void print_output_for_pass_fail_test(double duration, unsigned iterCount, MPI_Comm communicator)
+inline void print_output_for_pass_fail_test(double duration, unsigned iterCount, MPI_Comm communicator)
 {
     std::ofstream out("forPassFailScript.log");
     double maxTime = stk::get_max_time_across_procs(duration, communicator);
@@ -18,7 +18,7 @@ void print_output_for_pass_fail_test(double duration, unsigned iterCount, MPI_Co
     stk::print_stats_for_performance_compare(out, maxTime, maxHwmInMB, iterCount, communicator);
 }
 
-void print_output_for_graph_generation(double duration, const stk::diag::Timer &rootTimer, MPI_Comm communicator)
+inline void print_output_for_graph_generation(double duration, const stk::diag::Timer &rootTimer, MPI_Comm communicator)
 {
     std::ofstream out("forGraphs.log");
     bool printTimingsOnlySinceLastPrint = false;

@@ -14,7 +14,7 @@
 #include <string>                       // for string
 #include <unordered_map>                // for unordered_map
 #include <unordered_set>                // for unordered_set
-#include "EntityKeyHash.hpp"            // for hash
+#include "stk_mesh/base/HashEntityAndEntityKey.hpp"            // for hash
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, EntityId, etc
 class GameofLifeMesh;
 namespace stk { namespace mesh { class BulkData; } }

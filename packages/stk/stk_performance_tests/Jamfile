@@ -62,7 +62,17 @@ alias install-targets
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
-alias install-user-env ;
+alias install-user-env : install-user-jamfile ;
+                         
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_performance_tests-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_performance_tests
+    <install-source-root>$(stk_performance_tests-root)
+  ;
+
 
 explicit install-exe-targets ;
 alias install-exe-targets : ;
@@ -77,11 +87,13 @@ local xml-files =
 exe stk_mesh_performance_tests
   :
     [ glob $(stk_performance_tests-root)/stk_mesh/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_mesh/entity_sorting/*.cpp ]
     /sierra/stk_io//stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_environment
+    /sierra/stk_mesh//stk_mesh_utest
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_mesh//stk_mesh_fixtures
     /sierra/stk_unit_test_utils//stk_unit_test_utils

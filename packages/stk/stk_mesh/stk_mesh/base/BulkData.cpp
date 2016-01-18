@@ -460,6 +460,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_meshModification(*this),
     m_parallel( parallel ),
     m_volatile_fast_shared_comm_map(),
+    m_all_sharing_procs(),
     m_ghost_parts(),
     m_deleted_entities(),
     m_num_fields(-1), // meta data not necessarily committed yet
@@ -899,7 +900,6 @@ bool BulkData::internal_destroy_entity_with_notification(Entity entity, bool was
 bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 {
   require_ok_to_modify();
-  m_modSummary.track_destroy_entity(entity);
 
   const stk::mesh::EntityKey key = entity_key(entity);
 
@@ -922,6 +922,8 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
       return false;
     }
   }
+
+  m_modSummary.track_destroy_entity(entity);
 
   //------------------------------
   // Immediately remove it from relations and buckets.
@@ -1293,8 +1295,15 @@ void BulkData::internal_change_owner_in_comm_data(const EntityKey& key, int new_
     EntityCommListInfoVector::iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
                                                                         m_entity_comm_list.end(),
                                                                         key);
-    if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
-      lb_itr->owner = new_owner;
+    if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key)
+    {
+      if(lb_itr->owner != new_owner)
+      {
+          m_modSummary.track_change_owner_in_comm_data(key, lb_itr->owner, new_owner);
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+          lb_itr->owner = new_owner;
+      }
+
     }
   }
 }
@@ -4138,7 +4147,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
 {
     internal_resolve_send_ghost_membership();
 
-    m_bucket_repository.internal_sort_bucket_entities();
+    m_bucket_repository.internal_default_sort_bucket_entities();
 
     m_modSummary.write_summary(m_meshModification.synchronized_count());
     if(parallel_size() > 1)
@@ -4171,7 +4180,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     }
     m_modSummary.write_summary(m_meshModification.synchronized_count());
 
-    m_bucket_repository.internal_sort_bucket_entities();
+    m_bucket_repository.internal_default_sort_bucket_entities();
 
     m_bucket_repository.internal_modification_end();
     internal_update_fast_comm_maps();
@@ -4516,7 +4525,7 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
     }
     else
     {
-        m_bucket_repository.internal_sort_bucket_entities();
+        m_bucket_repository.internal_default_sort_bucket_entities();
     }
 
     m_bucket_repository.internal_modification_end();
@@ -5010,6 +5019,16 @@ void BulkData::internal_resolve_send_ghost_membership()
     // StkTransitionBulkData derived class in Framework.
 }
 
+void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, std::vector<BucketIndices>& bktIndicesVec)
+{
+  if (bktIndicesVec.empty() || bktIndicesVec.back().bucket_id != bucket_id) {
+    bktIndicesVec.push_back(BucketIndices());
+    bktIndicesVec.back().bucket_id = bucket_id;
+  }
+
+  bktIndicesVec.back().ords.push_back(bucket_ord);
+}
+
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {
@@ -5017,8 +5036,10 @@ void BulkData::internal_update_fast_comm_maps()
 
     // Flush previous map
     const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+    m_all_sharing_procs.resize(num_ranks);
     m_volatile_fast_shared_comm_map.resize(num_ranks);
     for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
+      m_all_sharing_procs[r].clear();
       m_volatile_fast_shared_comm_map[r].resize(parallel_size());
       for (int proc = 0; proc < parallel_size(); ++proc) {
         m_volatile_fast_shared_comm_map[r][proc].clear();
@@ -5035,14 +5056,14 @@ void BulkData::internal_update_fast_comm_maps()
 
       EntityRank const rank = key.rank();
 
-      FastMeshIndex fast_idx;
-      fast_idx.bucket_id  = idx.bucket->bucket_id();
-      fast_idx.bucket_ord = idx.bucket_ordinal;
+      unsigned bucket_id  = idx.bucket->bucket_id();
+      unsigned bucket_ord = idx.bucket_ordinal;
 
       if (all_comm[i].entity_comm != nullptr) {
           PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
           for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-              m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
+              add_bucket_and_ord(bucket_id, bucket_ord, m_volatile_fast_shared_comm_map[rank][ec->proc]);
+              stk::util::insert_keep_sorted_and_unique(ec->proc, m_all_sharing_procs[rank]);
           }
       }
     }
@@ -7065,6 +7086,19 @@ void BulkData::de_induce_parts_from_nodes(const stk::mesh::EntityVector & deacti
 unsigned BulkData::num_sides(Entity entity) const
 {
     return num_connectivity(entity, mesh_meta_data().side_rank());
+}
+
+void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
+{
+    ThrowRequireMsg(synchronized_count()>0,"Error, sort_entities must be called after at least one modification cycle.");
+    ThrowRequireMsg(in_synchronized_state(), "Error, sort_entities cannot be called from inside a modification cycle.");
+    m_bucket_repository.internal_custom_sort_bucket_entities(sorter);
+
+    m_bucket_repository.internal_modification_end();
+    internal_update_fast_comm_maps();
+
+    if(parallel_size() > 1)
+        check_mesh_consistency();
 }
 
 #ifdef SIERRA_MIGRATION

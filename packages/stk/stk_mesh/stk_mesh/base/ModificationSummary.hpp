@@ -93,6 +93,16 @@ public:
 
     }
 
+    void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner)
+    {
+
+    }
+
+    void track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner)
+    {
+
+    }
+
     void write_summary(int mod_cycle_count, bool sort=true)
     {
     }
@@ -141,6 +151,10 @@ public:
     void track_comm_map_clear_ghosting(stk::mesh::EntityKey key);
 
     void track_comm_map_clear(stk::mesh::EntityKey key);
+
+    void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner);
+
+    void track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner);
 
     void write_summary(int mod_cycle_count, bool sort=true);
 

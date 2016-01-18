@@ -89,8 +89,8 @@ int ex_put_cmap_params_cc(int  exoid,
   size_t ecnt_cmap, ncnt_cmap;
 
   long long nl_ecnt_cmap, nl_ncnt_cmap;
-  long long *n_var_idx = NULL;
-  long long *e_var_idx = NULL;
+  void_int *n_var_idx = NULL;
+  void_int *e_var_idx = NULL;
 
   int  nmstat;
 
@@ -167,7 +167,11 @@ file ID %d",
     }
 
     /* allocate space for the index variable */
-    n_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
+    if (index_type == NC_INT64) {
+      n_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
+    } else {
+      n_var_idx = malloc((num_procs_in_file + 1) * sizeof(int));
+    }
     if (!n_var_idx) {
       exerrval = EX_MSG;
       sprintf(errmsg,
@@ -178,14 +182,15 @@ file ID %d",
     }
 
     /* and set the last value of the index */
-    n_var_idx[0] = 0;
 
     /* get the communication map info index */
-#if defined(ENABLE_NETCDF4)
-    status = nc_get_var_longlong(exoid, n_varid_idx, &(n_var_idx[1]));
-#else
-    status = nc_get_var_int(exoid, n_varid_idx, &(n_var_idx[1]));
-#endif
+    if (index_type == NC_INT64) {
+      ((long long*)n_var_idx)[0] = 0;
+      status = nc_get_var_longlong(exoid, n_varid_idx, &((long long*)n_var_idx)[1]);
+    } else {
+      ((int*)n_var_idx)[0] = 0;
+      status = nc_get_var_int(exoid, n_varid_idx, &((int*)n_var_idx)[1]);
+    }
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -224,7 +229,11 @@ file ID %d",
     }
 
     /* allocate space for the index variable */
-    e_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
+    if (index_type == NC_INT64) {
+      e_var_idx = malloc((num_procs_in_file + 1) * sizeof(long long));
+    } else {
+      e_var_idx = malloc((num_procs_in_file + 1) * sizeof(int));
+    }
     if (!e_var_idx) {
       exerrval = EX_MSG;
       sprintf(errmsg,
@@ -234,15 +243,14 @@ file ID %d",
       return (EX_FATAL);
     }
 
-    /* and set the first value of the index */
-    e_var_idx[0] = 0;
-
     /* get the communication map info index */
-#if defined NC_NETCDF4
-    status = nc_get_var_longlong(exoid, e_varid_idx, &(e_var_idx[1]));
-#else
-    status = nc_get_var_int(exoid, e_varid_idx, &(e_var_idx[1]));
-#endif
+    if (index_type == NC_INT64) {
+      ((long long*)e_var_idx)[0] = 0;
+      status = nc_get_var_longlong(exoid, e_varid_idx, &((long long*)e_var_idx)[1]);
+    } else {
+      ((int*)e_var_idx)[0] = 0;
+      status = nc_get_var_int(exoid, e_varid_idx, &((int*)e_var_idx)[1]);
+    }
     if (status != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -284,7 +292,11 @@ file ID %d",
     /* now add up all of the nodal communications maps */
     ncnt_cmap = 0;
     for(iproc=0; iproc < num_procs_in_file; iproc++) {
-      num_icm = n_var_idx[iproc+1] - n_var_idx[iproc];
+      if (index_type == NC_INT64) {
+	num_icm = ((int64_t*)n_var_idx)[iproc+1] - ((int64_t*)n_var_idx)[iproc];
+      } else {
+	num_icm = ((int*)n_var_idx)[iproc+1] - ((int*)n_var_idx)[iproc];
+      }
       for(icm=0; icm < num_icm; icm++)
 	if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
 	  ncnt_cmap += ((int64_t*)node_cmap_node_cnts)[((int64_t*)node_proc_ptrs)[iproc]+icm];
@@ -356,7 +368,11 @@ file ID %d",
     /* now add up all of the nodal communications maps */
     ecnt_cmap = 0;
     for(iproc=0; iproc < num_procs_in_file; iproc++) {
-      num_icm = e_var_idx[iproc+1] - e_var_idx[iproc];
+      if (index_type == NC_INT64) {
+	num_icm = ((int64_t*)e_var_idx)[iproc+1] - ((int64_t*)e_var_idx)[iproc];
+      } else {
+	num_icm = ((int*)e_var_idx)[iproc+1] - ((int*)e_var_idx)[iproc];
+      }
       for(icm=0; icm < num_icm; icm++)
 	if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
 	  ecnt_cmap += ((int64_t*)elem_cmap_elem_cnts)[((int64_t*)elem_proc_ptrs)[iproc]+icm];
@@ -459,7 +475,11 @@ file ID %d",
 	proc_ptr = ((int*)node_proc_ptrs)[iproc];
       }
 
-      num_icm = n_var_idx[iproc+1] - n_var_idx[iproc];
+      if (index_type == NC_INT64) {
+	num_icm = ((int64_t*)n_var_idx)[iproc+1] - ((int64_t*)n_var_idx)[iproc];
+      } else {
+	num_icm = ((int*)n_var_idx)[iproc+1] - ((int*)n_var_idx)[iproc];
+      }
       for(icm=0; icm < num_icm; icm++) {
 	size_t cnt;
 	if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -468,7 +488,11 @@ file ID %d",
 	  cnt = ((int*)node_cmap_node_cnts)[proc_ptr+icm];
 	}
 	
-	start[0] = n_var_idx[iproc] + icm;
+	if (index_type == NC_INT64) {
+	  start[0] = ((int64_t*)n_var_idx)[iproc] + icm;
+	} else {
+	  start[0] = ((int*)n_var_idx)[iproc] + icm;
+	}
 	if (cnt > 0)
 	  nmstat = 1;
 	else
@@ -500,7 +524,11 @@ file ID %d",
 
       if (num_icm > 0) {
 	/* Output the nodal comm map IDs */
-	start[0] = n_var_idx[iproc];
+	if (index_type == NC_INT64) {
+	  start[0] = ((int64_t*)n_var_idx)[iproc];
+	} else {
+	  start[0] = ((int*)n_var_idx)[iproc];
+	}
 	count[0] =  num_icm;
 	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	  status = nc_put_vara_longlong(exoid, n_varid[1], start, count,
@@ -561,7 +589,11 @@ file ID %d",
       } else {
 	proc_ptr = ((int*)elem_proc_ptrs)[iproc];
       }
-      num_icm = e_var_idx[iproc+1] - e_var_idx[iproc];
+      if (index_type == NC_INT64) {
+	num_icm = ((int64_t*)e_var_idx)[iproc+1] - ((int64_t*)e_var_idx)[iproc];
+      } else {
+	num_icm = ((int*)e_var_idx)[iproc+1] - ((int*)e_var_idx)[iproc];
+      }
       for(icm=0; icm < num_icm; icm++) {
 
 	size_t cnt;
@@ -571,7 +603,11 @@ file ID %d",
 	  cnt = ((int*)elem_cmap_elem_cnts)[proc_ptr+icm];
 	}
 
-	start[0] = e_var_idx[iproc] + icm;
+	if (index_type == NC_INT64) {
+	  start[0] = ((int64_t*)e_var_idx)[iproc] + icm;
+	} else {
+	  start[0] = ((int*)e_var_idx)[iproc] + icm;
+	}
 	if (cnt > 0)
 	  nmstat = 1;
 	else
@@ -603,7 +639,11 @@ file ID %d",
 
       if (num_icm > 0) {
 	/* Output the elemental comm map IDs */
-	start[0] = e_var_idx[iproc];
+	if (index_type == NC_INT64) {
+	  start[0] = ((int64_t*)e_var_idx)[iproc];
+	} else {
+	  start[0] = ((int*)e_var_idx)[iproc];
+	}
 	count[0] = num_icm;
 	if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
 	  status = nc_put_vara_longlong(exoid, e_varid[1], start, count,

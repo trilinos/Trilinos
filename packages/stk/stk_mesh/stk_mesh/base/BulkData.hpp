@@ -94,6 +94,7 @@ struct PartStorage;
 enum class FaceCreationBehavior;
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
+void communicate_field_data_old(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
@@ -113,6 +114,7 @@ struct sharing_info
     sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
         m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
 };
+
 
 class BulkData {
 
@@ -235,6 +237,8 @@ public:
       notifier.notify_started_modification_end();
       return m_meshModification.modification_end();
   }
+
+  void sort_entities(const stk::mesh::EntitySorterBase& sorter);
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
@@ -487,6 +491,7 @@ public:
       const Entity side , unsigned local_side_id ) const;
 
   inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;  // CLEANUP: only used by FieldParallel.cpp
+  inline const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const { return m_all_sharing_procs[rank]; }
 
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
@@ -875,48 +880,48 @@ protected: //functions
 
   bool entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
-      m_modSummary.track_comm_map_insert(entity, val);
       EntityKey key = entity_key(entity);
       bool didInsert = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
       if(didInsert)
       {
+          m_modSummary.track_comm_map_insert(entity, val);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didInsert;
   }
   bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
   {
-      m_modSummary.track_comm_map_erase(key, val);
       bool didErase = m_entity_comm_map.erase(key, val);
       if(didErase)
       {
+          m_modSummary.track_comm_map_erase(key, val);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didErase;
   }
   bool entity_comm_map_erase(const EntityKey &key, const Ghosting &ghost)
   {
-      m_modSummary.track_comm_map_erase(key, ghost);
       bool didErase = m_entity_comm_map.erase(key, ghost);
       if(didErase)
       {
+          m_modSummary.track_comm_map_erase(key, ghost);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
       return didErase;
   }
   void entity_comm_map_clear_ghosting(const EntityKey & key)
   {
-      m_modSummary.track_comm_map_clear_ghosting(key);
       bool didClear = m_entity_comm_map.comm_clear_ghosting(key);
       if (didClear) {
+          m_modSummary.track_comm_map_clear_ghosting(key);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
   }
   void entity_comm_map_clear(const EntityKey & key)
   {
-      m_modSummary.track_comm_map_clear(key);
       bool didClear = m_entity_comm_map.comm_clear(key);
       if (didClear){
+          m_modSummary.track_comm_map_clear(key);
           notifier.notify_local_entity_comm_info_changed(key.rank());
       }
   }
@@ -1239,6 +1244,7 @@ private:
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
+  friend void communicate_field_data_old(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
@@ -1349,6 +1355,7 @@ protected: //data
 private: // data
   Parallel m_parallel;
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
+  std::vector<std::vector<int> > m_all_sharing_procs;
   PartVector m_ghost_parts;
   std::list<size_t> m_deleted_entities;
   int m_num_fields;

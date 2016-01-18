@@ -165,7 +165,13 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
-typedef std::vector<std::vector<FastMeshIndex> > VolatileFastSharedCommMapOneRank;
+struct BucketIndices
+{
+  unsigned bucket_id;
+  std::vector<unsigned> ords;
+};
+
+typedef std::vector<std::vector<BucketIndices> > VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
@@ -377,6 +383,13 @@ enum Permutation
 #    define STK_DEPRECATED_MSG(MSG)
 #  endif
 #endif
+
+class EntitySorterBase
+{
+public:
+    virtual ~EntitySorterBase() {}
+    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const = 0;
+};
 
 
 

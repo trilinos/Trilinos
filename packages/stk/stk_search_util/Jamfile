@@ -68,7 +68,17 @@ alias install-targets
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
-alias install-user-env : install-user-bin install-user-include install-user-lib ;
+alias install-user-env : install-user-jamfile
+                          install-user-bin install-user-include install-user-lib ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_search_util-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_search_util
+    <install-source-root>$(stk_search_util-root)
+  ;
+
 
 explicit install-user-bin ;
 install install-user-bin

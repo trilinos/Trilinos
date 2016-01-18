@@ -85,6 +85,13 @@ public:
   */
   virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const = 0;
 
+  /** \brief Returns sideset information.
+             Format: The std::vector components are indexed by the local side number (0, 1, 2, ...);
+                     the FieldConTainer is a 1D array of cell indices.
+             Input:  Sideset number.  Its meaning is context-dependent.
+  */
+  virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets() const = 0;
+
   /** \brief Returns number of cells.
   */
   virtual int getNumCells() const = 0;
@@ -393,6 +400,8 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
   Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+
 public:
 
   MeshManager_Rectangle(Teuchos::ParameterList &parlist) {
@@ -411,6 +420,7 @@ public:
     computeNodes(); 
     computeCellToNodeMap(); 
     computeCellToEdgeMap();
+    computeSideSets();
   }
 
 
@@ -426,6 +436,11 @@ public:
 
   Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
+  }
+
+
+  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets() const {
+    return meshSideSets_;
   }
 
 
@@ -504,6 +519,32 @@ private:
     }
 
   } // computeCellToEdgeMap
+
+
+  void computeSideSets() {
+
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(1));
+    int numSides = 4;
+    (*meshSideSets_)[0].resize(numSides);
+    (*meshSideSets_)[0][0].resize(nx_);
+    (*meshSideSets_)[0][1].resize(ny_);
+    (*meshSideSets_)[0][2].resize(nx_);
+    (*meshSideSets_)[0][3].resize(ny_);
+    
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][0](i) = i;
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
+    }
+    for (int i=0; i<nx_; ++i) {
+      (*meshSideSets_)[0][2](i) = i + nx_*(ny_-1);
+    }
+    for (int i=0; i<ny_; ++i) {
+      (*meshSideSets_)[0][3](i) = i*nx_;
+    }
+
+  } // computeSideSets
 
 
 }; // MeshManager_Rectangle

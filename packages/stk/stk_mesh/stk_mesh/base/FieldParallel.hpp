@@ -78,7 +78,7 @@ void copy_owned_to_shared( const BulkData& mesh,
 /** Sum/Max/Min (assemble) field-data for the specified fields on shared entities such that each shared entity
  * will have the same field values on each sharing proc.
  */
-void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields);
+void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, bool deterministic = true);
 void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
 

@@ -298,9 +298,10 @@ class TeamPolicyInternal< Kokkos::Serial , Properties ... >:public PolicyTraits<
 {
 private:
 
-  const int m_league_size ;
-  const int m_scratch_size ;
-  int m_chunk_size;
+  size_t m_team_scratch_size ;
+  size_t m_thread_scratch_size ;
+  int    m_league_size ;
+  int    m_chunk_size;
 
 public:
 
@@ -311,6 +312,14 @@ public:
 
   //! Execution space of this execution policy:
   typedef Kokkos::Serial  execution_space ;
+
+  TeamPolicyInternal& operator = (const TeamPolicyInternal& p) {
+    m_league_size = p.m_league_size;
+    m_team_scratch_size = p.m_team_scratch_size;
+    m_thread_scratch_size = p.m_thread_scratch_size;
+    m_chunk_size = p.m_chunk_size;
+    return *this;
+  }
 
   //----------------------------------------
 
@@ -330,55 +339,47 @@ public:
 
   inline int team_size() const { return 1 ; }
   inline int league_size() const { return m_league_size ; }
-  inline size_t scratch_size() const { return m_scratch_size ; }
+  inline size_t scratch_size() const { return m_team_scratch_size + m_thread_scratch_size; }
 
   /** \brief  Specify league size, request team size */
   TeamPolicyInternal( execution_space &
             , int league_size_request
             , int /* team_size_request */
             , int /* vector_length_request */ = 1 )
-    : m_league_size( league_size_request )
-    , m_scratch_size ( 0 )
+    : m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
+    , m_league_size( league_size_request )
+    , m_chunk_size ( 32 )
     {}
 
   TeamPolicyInternal( execution_space &
             , int league_size_request
             , const Kokkos::AUTO_t & /* team_size_request */
             , int /* vector_length_request */ = 1 )
-    : m_league_size( league_size_request )
-    , m_scratch_size ( 0 )
+    : m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
+    , m_league_size( league_size_request )
+    , m_chunk_size ( 32 )
     {}
 
   TeamPolicyInternal( int league_size_request
             , int /* team_size_request */
             , int /* vector_length_request */ = 1 )
-    : m_league_size( league_size_request )
-    , m_scratch_size ( 0 )
+    : m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
+    , m_league_size( league_size_request )
+    , m_chunk_size ( 32 )
     {}
 
   TeamPolicyInternal( int league_size_request
             , const Kokkos::AUTO_t & /* team_size_request */
             , int /* vector_length_request */ = 1 )
-    : m_league_size( league_size_request )
-    , m_scratch_size ( 0 )
+    : m_team_scratch_size ( 0 )
+    , m_thread_scratch_size ( 0 )
+    , m_league_size( league_size_request )
+    , m_chunk_size ( 32 )
     {}
 
-  template<class MemorySpace>
-  TeamPolicyInternal( int league_size_request
-            , int /* team_size_request */
-            , const Experimental::TeamScratchRequest<MemorySpace> & scratch_request )
-    : m_league_size(league_size_request)
-    , m_scratch_size(scratch_request.total(1))
-    {}
-
-
-  template<class MemorySpace>
-  TeamPolicyInternal( int league_size_request
-            , const Kokkos::AUTO_t & /* team_size_request */
-            , const Experimental::TeamScratchRequest<MemorySpace> & scratch_request )
-    : m_league_size(league_size_request)
-    , m_scratch_size(scratch_request.total(1))
-    {}
 
   inline int chunk_size() const { return m_chunk_size ; }
 
@@ -388,6 +389,31 @@ public:
     p.m_chunk_size = chunk_size_;
     return p;
   }
+
+  /** \brief set per team scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerTeamValue& per_team) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_team_scratch_size = per_team.value;
+    return p;
+  };
+
+  /** \brief set per thread scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerThreadValue& per_thread) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_thread_scratch_size = per_thread.value;
+    return p;
+  };
+
+  /** \brief set per thread and per team scratch size for a specific level of the scratch hierarchy */
+  inline TeamPolicyInternal set_scratch_size(const int& level, const PerTeamValue& per_team, const PerThreadValue& per_thread) const {
+    (void) level;
+    TeamPolicyInternal p = *this;
+    p.m_team_scratch_size = per_team.value;
+    p.m_thread_scratch_size = per_thread.value;
+    return p;
+  };
 
   typedef Impl::SerialTeamMember  member_type ;
 };
