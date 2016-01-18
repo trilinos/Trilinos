@@ -1,12 +1,18 @@
 <ParameterList name="Inputs">
+  <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Problem">
+    <Parameter name="Penalty"                     type="double"  value="1e-2" />
+    <Parameter name="Order of FE discretization"  type="int"     value="1"    />
+  </ParameterList>
+
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="3.0"  />
+    <Parameter name="Width"             type="double"  value="1.0"  />
     <Parameter name="Height"            type="double"  value="1.0"  />
     <Parameter name="X0"                type="double"  value="0.0"  />
     <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="4"    />
-    <Parameter name="NY"                type="int"     value="3"    />
+    <Parameter name="NX"                type="int"     value="20"   />
+    <Parameter name="NY"                type="int"     value="20"   />
     <Parameter name="Partition type"    type="int"     value="1"    />
   </ParameterList>
 

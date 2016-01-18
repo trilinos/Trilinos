@@ -53,6 +53,10 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
 
+#include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_CompositeStep.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 
 #include <iostream>
@@ -96,37 +100,59 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
 
     /*** Build vectors and dress them up as ROL vectors. ***/
-    Teuchos::RCP<const Tpetra::Map<> > vecmap = data->getMatA()->getRowMap();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap, 1, true));
-    // Set all values to 1 in u and z.
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
+    Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    // Set all values to 1 in u, z and c.
     u_rcp->putScalar(1.0);
     z_rcp->putScalar(1.0);
+    c_rcp->putScalar(1.0);
     // Randomize d vectors.
     du_rcp->randomize();
     dz_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
     Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
-    /*** Build objective function and constraint. ***/
-    Objective_PDEOPT_Poisson<RealT> obj(data, parlist);
-    EqualityConstraint_PDEOPT_Poisson<RealT> constr(data, parlist);
+    /*** Build objective function, constraint and reduced objective function. ***/
+    Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
+      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
+    Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
+      Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
+      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
 
     /*** Check functional interface. ***/
-    obj.checkGradient(x,d,true,*outStream);
-    obj.checkHessVec(x,d,true,*outStream);
-    constr.checkApplyJacobian(x,d,*up,true,*outStream);
-    constr.checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-    constr.checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
-    constr.checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+    obj->checkGradient(x,d,true,*outStream);
+    obj->checkHessVec(x,d,true,*outStream);
+    con->checkApplyJacobian(x,d,*up,true,*outStream);
+    con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
+    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+    con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
+    con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
+    //objReduced->checkGradient(*zp,*dzp,true,*outStream);
+    //objReduced->checkHessVec(*zp,*dzp,true,*outStream);
+
+    /*** Solve optimization problem. ***/
+    //ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    //algo_tr.run(*zp, *objReduced, true, *outStream);
+    ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist,false);
+    algo_cs.run(x, *cp, *obj, *con, true, *outStream);
+
+    *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
+
+    data->outputTpetraVector(u_rcp, "state.txt");
 
   }
   catch (std::logic_error err) {
