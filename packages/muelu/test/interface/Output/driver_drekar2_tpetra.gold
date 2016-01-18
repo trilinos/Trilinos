@@ -1,12 +1,16 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
- chebyshev: min diagonal value = 2.22045e-16   [default]
- chebyshev: assume matrix does not change = 0   [default]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
+  chebyshev: min diagonal value = 2.22045e-16   [default]
+  chebyshev: assume matrix does not change = 0   [default]
 
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -95,13 +99,17 @@ Level 1
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
- chebyshev: min diagonal value = 2.22045e-16   [default]
- chebyshev: assume matrix does not change = 0   [default]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
+  chebyshev: min diagonal value = 2.22045e-16   [default]
+  chebyshev: assume matrix does not change = 0   [default]
 
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -190,13 +198,17 @@ Level 2
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
- chebyshev: degree = 2
- chebyshev: ratio eigenvalue = 20
- chebyshev: min eigenvalue = 1
- chebyshev: zero starting solution = 1
- chebyshev: eigenvalue max iterations = 10
- chebyshev: min diagonal value = 2.22045e-16   [default]
- chebyshev: assume matrix does not change = 0   [default]
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ smoother ->
+  chebyshev: degree = 2
+  chebyshev: ratio eigenvalue = 20
+  chebyshev: min eigenvalue = 1
+  chebyshev: zero starting solution = 1
+  chebyshev: eigenvalue max iterations = 10
+  chebyshev: min diagonal value = 2.22045e-16   [default]
+  chebyshev: assume matrix does not change = 0   [default]
 
 Level 3
  Build (MueLu::RebalanceTransferFactory)
@@ -285,6 +297,9 @@ Level 3
  repartition: use subcommunicators = 1   [default]
 
  Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ keep smoother data = 0   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother ->
   [empty list]
 
