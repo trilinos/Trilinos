@@ -133,6 +133,8 @@ namespace Iovs {
     static void load_plugin_library(const std::string& plugin_name,
                                     const std::string& plugin_library_name);
 
+    static bool plugin_library_exists(const std::string& plugin_name);
+
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void* ids, size_t num_to_get);
 

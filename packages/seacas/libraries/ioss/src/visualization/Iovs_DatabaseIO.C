@@ -201,12 +201,21 @@ namespace Iovs {
     elemMap.release_memory();
   }
 
+  bool DatabaseIO::plugin_library_exists(const std::string& plugin_name) {
+    if(plugin_name == "ParaViewCatalystSierraParser")
+      return(ParaViewCatalystSierraParserBaseFactory::exists(plugin_name));
+    else if(plugin_name == "ParaViewCatalystSierraAdaptor")
+      return(ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name));
+    else
+      return(false);
+  }
+  
   void DatabaseIO::load_plugin_library(const std::string& plugin_name,
                                        const std::string& plugin_library_name) {
       std::string plugin_library_path;
       std::string plugin_python_module_path;
 
-      if(!ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name)) {
+      if(!DatabaseIO::plugin_library_exists(plugin_name)) {
           if(getenv("CATALYST_PLUGIN")) {
               plugin_library_path = getenv("CATALYST_PLUGIN");
           }
@@ -216,7 +225,7 @@ namespace Iovs {
                                           plugin_library_name);
           }
           sierra::Plugin::Registry::rootInstance().registerDL(plugin_library_path.c_str(), "");
-          if(!ParaViewCatalystSierraAdaptorBaseFactory::exists(plugin_name)) {
+          if(!DatabaseIO::plugin_library_exists(plugin_name)) {
               std::ostringstream errmsg;
               errmsg << "Unable to load catalyst plug-in dynamic library.\n"
                      << "Path: " << plugin_library_path << "\n";
