@@ -86,11 +86,12 @@ FILE(GLOB SOURCES *.cpp)
 # C) Define the targets for package's library(s)
 #
 
-TRIBITS_ADD_LIBRARY(
-  stk_util_parallel
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
+#bmp 20160119: disabling since it has been failing for many months
+#TRIBITS_ADD_LIBRARY(
+#  stk_util_parallel
+#  NOINSTALLHEADERS ${HEADERS}
+#  SOURCES ${SOURCES}
+#  )
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/parallel/)
