@@ -44,7 +44,7 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 
 #include "MueLu_TekoSmoother_def.hpp"
 

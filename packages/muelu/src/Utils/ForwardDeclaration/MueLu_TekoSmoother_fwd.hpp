@@ -47,7 +47,7 @@
 #define MUELU_TEKOSMOOTHER_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
