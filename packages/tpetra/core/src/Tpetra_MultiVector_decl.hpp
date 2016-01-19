@@ -1172,20 +1172,7 @@ namespace Tpetra {
     /// \pre isDistributed() == false
     void reduce();
 
-    /// \brief Assign the contents of \c source to this multivector (deep copy).
-    ///
-    /// \pre The two multivectors must have the same communicator.
-    /// \pre The input multivector's Map must be compatible with this
-    ///      multivector's Map.  That is, \code
-    ///      this->getMap ()->isCompatible (source.getMap ());
-    ///      \endcode
-    /// \pre The two multivectors must have the same number of columns.
-    ///
-    /// \note This method must always be called as a collective
-    ///   operation on all processes over which the multivector is
-    ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps, at least in
-    ///   debug mode.
+    //! Shallow copy: assign \c source to \c *this.
     MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>&
     operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& source);
 
