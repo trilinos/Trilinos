@@ -1860,7 +1860,7 @@ namespace stk {
 
           // Allocate data space to store <id, processor> pair
           assert(io_cs->field_exists("entity_processor"));
-          int size = io_cs->get_field("entity_processor").raw_count();
+          size_t size = io_cs->get_field("entity_processor").raw_count();
 
           std::vector<INT> ep;
           ep.reserve(size*2);
@@ -1873,6 +1873,7 @@ namespace stk {
               ep.push_back(sharingProcs[j]);
             }
           }
+          assert(size*2 == ep.size());
           io_cs->put_field_data("entity_processor", ep);
         }
       }
