@@ -3627,36 +3627,35 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceLocalValue (LocalOrdinal MyRow,
-                     size_t VectorIndex,
+  replaceLocalValue (const LocalOrdinal lclRow,
+                     const size_t col,
                      const impl_scalar_type& ScalarValue) const
   {
 #ifdef HAVE_TPETRA_DEBUG
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow < minLocalIndex || MyRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: row index " << MyRow
+      "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(VectorIndex),
+      vectorIndexOutOfRange(col),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: vector index " << VectorIndex
+      "Tpetra::MultiVector::replaceLocalValue: vector index " << col
       << " of the multivector is invalid.");
 #endif
-    const size_t colInd = isConstantStride () ?
-      VectorIndex : whichVectors_[VectorIndex];
-    view_.h_view (MyRow, colInd) = ScalarValue;
+    const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+    view_.h_view (lclRow, colInd) = ScalarValue;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  sumIntoLocalValue (const LocalOrdinal localRow,
+  sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
                      const bool atomic) const
@@ -3665,9 +3664,9 @@ namespace Tpetra {
     const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
     const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      localRow < minLocalIndex || localRow > maxLocalIndex,
+      lclRow < minLocalIndex || lclRow > maxLocalIndex,
       std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << localRow
+      "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
       << " is invalid.  The range of valid row indices on this process "
       << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
       << ", " << maxLocalIndex << "].");
@@ -3679,10 +3678,10 @@ namespace Tpetra {
 #endif
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(localRow, colInd)), value);
+      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (localRow, colInd) += value;
+      view_.h_view (lclRow, colInd) += value;
     }
   }
 
@@ -3690,26 +3689,26 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  replaceGlobalValue (GlobalOrdinal GlobalRow,
-                      size_t VectorIndex,
+  replaceGlobalValue (const GlobalOrdinal gblRow,
+                      const size_t col,
                       const impl_scalar_type& ScalarValue) const
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
-    const LocalOrdinal MyRow = this->map_->getLocalElement (GlobalRow);
+    const LocalOrdinal MyRow = this->map_->getLocalElement (gblRow);
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
       std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << GlobalRow
+      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << gblRow
       << "is not present on this process "
       << this->getMap ()->getComm ()->getRank () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange (VectorIndex), std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << VectorIndex
+      vectorIndexOutOfRange (col), std::runtime_error,
+      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << col
       << " of the multivector is invalid.");
 #endif // HAVE_TPETRA_DEBUG
-    this->replaceLocalValue (MyRow, VectorIndex, ScalarValue);
+    this->replaceLocalValue (MyRow, col, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
