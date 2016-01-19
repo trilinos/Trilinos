@@ -244,7 +244,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
-  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
   ParameterList paramList;
   if (xmlFileName != "")
@@ -432,7 +431,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-  bool success = false;
   bool verbose = true;
   int return_code = EXIT_FAILURE;
 
@@ -479,7 +477,7 @@ int main(int argc, char* argv[]) {
     }
 
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, return_code);
 
   return return_code;
 }
