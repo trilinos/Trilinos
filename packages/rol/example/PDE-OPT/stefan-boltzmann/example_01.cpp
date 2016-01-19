@@ -54,9 +54,10 @@
 #include "Tpetra_Version.hpp"
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_StochasticProblem.hpp"
+#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_BatchManager.hpp"
+#include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 
 #include <iostream>
@@ -126,14 +127,31 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<Objective_PDEOPT_StefanBoltzmann<RealT> > obj =
+    Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj =
       Teuchos::rcp(new Objective_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<EqualityConstraint_PDEOPT_StefanBoltzmann<RealT> > con =
+    Teuchos::RCP<ROL::ParametrizedEqualityConstraint_SimOpt<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
-      Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
+    Teuchos::RCP<ROL::Reduced_ParametrizedObjective_SimOpt<RealT> > objReduced =
+      Teuchos::rcp(new ROL::Reduced_ParametrizedObjective_SimOpt<RealT>(obj, con, up, up));
+
+    /*** Build stochastic functionality. ***/
+    int sdim = parlist->sublist("Problem").get("Stochastic Dimension",4);
+    // Build sampler
+    int nsamp = parlist->sublist("Problem").get("Number of Monte Carlo Samples",100);
+    std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
+    std::vector<std::vector<RealT> > bounds(sdim,tmp);
+    Teuchos::RCP<ROL::BatchManager<RealT> > bman
+      = Teuchos::rcp(new ROL::BatchManager<RealT>());
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,bounds,bman,false,false,100));
+    // Build stochastic problem
+    ROL::StochasticProblem<RealT> opt(*parlist,objReduced,sampler,zp);
 
     /*** Check functional interface. ***/
+    std::vector<RealT> par(sdim,1.0);
+    obj->setParameter(par);
+    con->setParameter(par);
+    objReduced->setParameter(par);
     obj->checkGradient(x,d,true,*outStream);
     obj->checkHessVec(x,d,true,*outStream);
     con->checkApplyJacobian(x,d,*up,true,*outStream);
@@ -143,21 +161,15 @@ int main(int argc, char *argv[]) {
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
     objReduced->checkGradient(*zp,*dzp,true,*outStream);
     objReduced->checkHessVec(*zp,*dzp,true,*outStream);
+    opt.checkObjectiveGradient(*dzp,true,*outStream);
+    opt.checkObjectiveHessVec(*dzp,true,*outStream);
 
     /*** Solve optimization problem. ***/
-
     ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
     zp->zero(); // set zero initial guess
-    algo_tr.run(*zp, *objReduced, true, *outStream);
+    algo_tr.run(opt, true, *outStream);
 
-    ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist,false);
-    x.zero(); // set zero initial guess
-    algo_cs.run(x, *cp, *obj, *con, true, *outStream);
-
-    *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;
-
-    data->outputTpetraVector(u_rcp, "state.txt");
-
+    *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

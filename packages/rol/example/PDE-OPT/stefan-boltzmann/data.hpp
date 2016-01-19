@@ -139,11 +139,15 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dataUd_;
 
+  int sdim_;
+
 public:
 
   StefanBoltzmannData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                       const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                       const Teuchos::RCP<std::ostream> &outStream) {
+    sdim_ = parlist->sublist("Problem").get("Stochastic Dimension",4);
+    std::vector<Real> par(sdim_,1.0);
 
     /************************************/
     /*** Retrieve communication data. ***/
@@ -346,7 +350,7 @@ public:
       for (int j=0; j<numCubPoints_; ++j) {
         (*kappa_)(i, j) = funcKappa((*cubPointsPhysical_)(i, j, 0),
                                     (*cubPointsPhysical_)(i, j, 1),
-                                    2.0);
+                                    par);
       }
     }
     Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*kappaGradPhysical_,         // multiply with conductivity kappa
@@ -546,7 +550,7 @@ public:
     matA_dirichlet_trans_ = transposerA.createTranspose();
     matM_dirichlet_trans_ = transposerM.createTranspose();
 
-    updateA(1.0);
+    updateA(par);
 
     /*********************************/
     /*** Construct solver objects. ***/
@@ -640,12 +644,21 @@ public:
   }
 
 
-  Real funcKappa(const Real &x1, const Real &x2, const Real &par) const {
-    return par;
+  Real funcKappa(const Real &x1, const Real &x2, const std::vector<Real> &par) const {
+    // Random diffusion coefficient from I. Babuska, F. Nobile, R. Tempone 2010.
+    // Simplified model for random stratified media.
+    Real Lc = 1.0/16.0, sqrtpi = std::sqrt(M_PI), xi = std::sqrt(sqrtpi*Lc), f = 0.0, phi = 0.0;
+    Real val = 1.0 + par[0]*std::sqrt(sqrtpi*Lc*0.5);
+    for (int i = 1; i < sdim_; i++) {
+      f = floor((Real)(i+1)/2.0);
+      phi = ((i+1)%2 ? std::sin(f*M_PI*x1) : std::cos(f*M_PI*x1));
+      val += xi*std::exp(-std::pow(f*M_PI*Lc,2.0)/8.0)*phi*par[i];
+    }
+    return val;
   }
 
 
-  void updateA(const Real & par) {
+  void updateA(const std::vector<Real> &par) {
 
     Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
     Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
@@ -702,6 +715,20 @@ public:
     Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
     matA_dirichlet_trans_ = transposerA.createTranspose();
     
+    // Construct solver using Amesos2 factory.
+    try{
+      solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
+    } catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    try{
+      solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
+    } catch (std::invalid_argument e) {
+      std::cout << e.what() << std::endl;
+    }
+    solverA_->numericFactorization();
+    solverA_trans_->numericFactorization();
+
   }
 
   Real computeStateError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln) const {

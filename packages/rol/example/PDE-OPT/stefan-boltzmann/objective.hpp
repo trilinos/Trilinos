@@ -48,12 +48,12 @@
 #ifndef ROL_PDEOPT_STEFANBOLTZMANN_OBJECTIVE_H
 #define ROL_PDEOPT_STEFANBOLTZMANN_OBJECTIVE_H
 
-#include "ROL_Objective_SimOpt.hpp"
+#include "ROL_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "data.hpp"
 
 template<class Real>
-class Objective_PDEOPT_StefanBoltzmann : public ROL::Objective_SimOpt<Real> {
+class Objective_PDEOPT_StefanBoltzmann : public ROL::ParametrizedObjective_SimOpt<Real> {
 private:
 
   Teuchos::RCP<StefanBoltzmannData<Real> > data_;

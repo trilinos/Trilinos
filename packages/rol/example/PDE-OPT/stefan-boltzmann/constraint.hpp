@@ -48,13 +48,13 @@
 #ifndef ROL_PDEOPT_STEFANBOLTZMANN_CONSTRAINT_H
 #define ROL_PDEOPT_STEFANBOLTZMANN_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_StefanBoltzmann : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_StefanBoltzmann : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
 
   Teuchos::RCP<StefanBoltzmannData<Real> > data_;
@@ -78,6 +78,7 @@ public:
     Real one(1);
  
     // A*u
+    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*up, *cp);
 
     // B*z + A*u
@@ -96,6 +97,7 @@ public:
       (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
 
     // A*v
+    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*vp, *jvp);
   }
 
@@ -121,6 +123,7 @@ public:
 
     // A'*v
     bool transpose = true;
+    data_->updateA(ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter());
     data_->getMatA(transpose)->apply(*vp, *ajvp);
   }
 
