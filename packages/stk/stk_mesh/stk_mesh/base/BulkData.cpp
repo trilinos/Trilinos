@@ -2951,8 +2951,7 @@ void BulkData::verify_and_filter_add_send(Ghosting & ghosts, const std::vector<E
       add_send_is_owned = parallel_owner_rank(add_send[i].first) == parallel_rank();
       const bool ghosting_to_myself = parallel_rank() == add_send[i].second;
       const bool already_ghosted_to_proc = in_send_ghost(ghosts, entity_key(add_send[i].first), add_send[i].second);
-      const bool already_shared_to_proc = in_shared(entity_key(add_send[i].first), add_send[i].second);
-      const bool need_to_send_ghost = !ghosting_to_myself && !already_ghosted_to_proc && !already_shared_to_proc;
+      const bool need_to_send_ghost = !ghosting_to_myself && !already_ghosted_to_proc;
       if (need_to_send_ghost)
       {
           filtered_add_send.push_back(add_send[i]);
