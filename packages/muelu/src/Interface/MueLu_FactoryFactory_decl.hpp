@@ -114,7 +114,9 @@
 #include "MueLu_SmootherFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_SubBlockAFactory.hpp"
+#ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother.hpp"
+#endif
 #endif
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_ToggleCoordinatesTransferFactory.hpp"
@@ -265,7 +267,9 @@ namespace MueLu {
       if (factoryName == "IndefiniteBlockDiagonalSmoother") return BuildBlockedSmoother<IndefBlockedDiagonalSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SimpleSmoother")                  return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SchurComplementFactory")          return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
+#ifdef HAVE_MUELU_TEKO
       if (factoryName == "TekoSmoother")                    return BuildTekoSmoother(paramList, factoryMapIn, factoryManagersIn);
+#endif
       if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
 #endif
 
@@ -727,6 +731,7 @@ namespace MueLu {
       return rcp(new SmootherFactory(bs));
     }
 
+#ifdef HAVE_MUELU_TEKO
     RCP<FactoryBase> BuildTekoSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
@@ -742,6 +747,7 @@ namespace MueLu {
 
       return rcp(new SmootherFactory(bs));
     }
+#endif
 
     RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       //if (paramList.begin() == paramList.end())
