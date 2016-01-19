@@ -250,7 +250,6 @@ protected:
     }
 };
 
-
 class SkinnedMeshWithExtraFace: public SkinnedMeshWithModifiedSkinPart
 {
 protected:
