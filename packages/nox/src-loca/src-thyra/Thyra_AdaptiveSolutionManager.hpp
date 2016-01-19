@@ -45,6 +45,7 @@
 #include "LOCA.H"
 #include "LOCA_Thyra.H"
 #include "LOCA_Thyra_GroupWrapper.H"
+#include "Thyra_MultiVectorBase.hpp"
 
 
 namespace Thyra {
@@ -129,6 +130,9 @@ public:
 
   //! Remap "old" solution into new data structures
   virtual void projectCurrentSolution() = 0;
+
+  //! Return current (adapted and remapped) solution from discretization
+  virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > getCurrentSolution() = 0;
 
   //! Accessor functions
 

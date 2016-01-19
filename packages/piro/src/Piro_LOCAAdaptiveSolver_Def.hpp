@@ -147,7 +147,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
     }
 
 //    solMgr_->getSolutionGroup()->setParams(paramVector_);
-    Teuchos::rcp_dynamic_cast<::Thyra::LOCAAdaptiveState>(solMgr_->getState())
+    Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
                  ->getSolutionGroup()->setParams(paramVector_);
   }
 
@@ -198,7 +198,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
 
     x_args_dim = x_outargs->space()->dim();
 //    f_sol_dim = solMgr_->getSolutionGroup()->getX().length();
-    f_sol_dim = Teuchos::rcp_dynamic_cast<::Thyra::LOCAAdaptiveState>(solMgr_->getState())
+    f_sol_dim = Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
           ->getSolutionGroup()->getX().length();
 
 
@@ -219,7 +219,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
     // Deep copy final solution from LOCA group
     NOX::Thyra::Vector finalSolution(x_final);
 //    finalSolution = solMgr_->getSolutionGroup()->getX();
-    finalSolution = Teuchos::rcp_dynamic_cast<::Thyra::LOCAAdaptiveState>(solMgr_->getState())
+    finalSolution = Teuchos::rcp_dynamic_cast< ::Thyra::LOCAAdaptiveState >(solMgr_->getState())
                       ->getSolutionGroup()->getX();
 
   }

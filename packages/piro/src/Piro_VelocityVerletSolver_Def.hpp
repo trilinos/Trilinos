@@ -268,6 +268,19 @@ Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModel
   const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
 
 // create a new vector and fill it with the contents of model->get_x()
+  // Build a multivector holding x (0th vector), v (1st vector), and a (2nd vector)
+//  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > soln = createMembers(model->get_x_space(), 3);
+
+// create a new vector and fill it with the contents of model->get_x()
+/*
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = soln->col(0);
+  assign(x.ptr(), *model->getNominalValues().get_x());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = soln->col(1);
+  assign(v.ptr(), *model->getNominalValues().get_x_dot());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = soln->col(2);
+  assign(a.ptr(), *model->get_x_dotdot());
+*/
+
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x = model->getNominalValues().get_x()->clone_v();
   Teuchos::RCP<Thyra::VectorBase<Scalar> > v = model->getNominalValues().get_x_dot()->clone_v();
 
@@ -300,7 +313,7 @@ Piro::VelocityVerletSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModel
   Scalar t = t_init;
 
   // Observe initial condition
-  if (observer != Teuchos::null) observer->observeSolution(Piro::SolnSet<Scalar>(x, v, a, t));
+//  if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
   Scalar vo = norm_2(*v);
   *out << "Initial Velocity = " << vo << std::endl;

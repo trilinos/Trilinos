@@ -44,6 +44,7 @@
 #define PIRO_SOLVERFACTORY_H
 
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Thyra_AdaptiveSolutionManager.hpp"
 
 #include "Piro_ObserverBase.hpp"
 
@@ -84,7 +85,6 @@ public:
 
   template <typename Scalar, typename LocalOrdinal = int, typename GlobalOrdinal = LocalOrdinal,
           typename Node = KokkosClassic::DefaultNode::DefaultNodeType>
-TEUCHOS_DEPRECATED
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,

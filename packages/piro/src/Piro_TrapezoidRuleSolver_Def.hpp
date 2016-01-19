@@ -58,7 +58,9 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  solMgr->initialize(rcp(new Thyra::TransAdaptiveState(model_)));
+  // Only non-null when adaptation is used
+  if(Teuchos::nonnull(solMgr))
+    solMgr->initialize(rcp(new Thyra::TransAdaptiveState(model_)));
 
   num_p = model->Np();
   num_g = model->Ng();
@@ -226,6 +228,11 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelI
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(model->get_x_dotdot()),
+                     std::logic_error,
+                     std::endl << "Error in Piro::TrapezoidRuleSolver " <<
+                     "Model must specify soln, soln_dot, and soln_dotdot." << std::endl);
+
   // noxSolver is the Piro::NOXSolver object
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nox_inargs = noxSolver->createInArgs();
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> nox_outargs = noxSolver->createOutArgs();
@@ -251,22 +258,23 @@ Piro::TrapezoidRuleSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalModelI
   }
   nox_outargs.set_g(num_g, gx_out);
 
-// create a new vector and fill it with the contents of model->get_x()
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = model->getNominalValues().get_x()->clone_v();
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = model->getNominalValues().get_x_dot()->clone_v();
+  // Build a multivector holding x (0th vector), v (1st vector), and a (2nd vector)
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > soln = createMembers(model->get_x_space(), 3);
 
-//std::cout << "Initial size of x vector is : " << x->domain()->dim() << std::endl;
-std::cout << "Initial size of x vector is : " << x->range()->dim() << std::endl;
+// create a new vector and fill it with the contents of model->get_x()
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = soln->col(0);
+  assign(x.ptr(), *model->getNominalValues().get_x());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > v = soln->col(1);
+  assign(v.ptr(), *model->getNominalValues().get_x_dot());
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = soln->col(2);
+  assign(a.ptr(), *model->get_x_dotdot());
 
 // Note that Thyra doesn't have x_dotdot - go get it from the transient decorator around the Albany model
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = model->get_x_dotdot()->clone_v();
+//  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = model->get_x_dotdot()->clone_v();
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_pred_a = Thyra::createMember<Scalar>(model->get_f_space());
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_pred_v = Thyra::createMember<Scalar>(model->get_f_space());
   Teuchos::RCP<Thyra::VectorBase<Scalar> > a_old = Thyra::createMember<Scalar>(model->get_f_space());
-
-//std::cout << "Initial size of x_pred_a vector is : " << x_pred_a->domain()->dim() << std::endl;
-std::cout << "Initial size of x_pred_a vector is : " << x_pred_a->range()->dim() << std::endl;
 
   TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null,
                      Teuchos::Exceptions::InvalidParameter,
@@ -276,7 +284,7 @@ std::cout << "Initial size of x_pred_a vector is : " << x_pred_a->range()->dim()
   Scalar t = t_init;
 
   // Observe initial condition
-  if (observer != Teuchos::null) observer->observeSolution(Piro::SolnSet<Scalar>(x, v, a, t));
+  if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
   Scalar nrm = norm_2(*v);
   *out << "Initial Velocity = " << nrm << std::endl;
@@ -310,12 +318,15 @@ std::cout << "Initial size of x_pred_a vector is : " << x_pred_a->range()->dim()
 
      t += delta_t;
 
-     solMgr->setIteration(timeStep);
-     solMgr->setTime(t);
+     if(Teuchos::nonnull(solMgr)){
+       solMgr->setIteration(timeStep);
+       solMgr->setTime(t);
+     }
 
      // Adapt the mesh if the user has turned on adaptation
      // and we have passed the criteria to adapt
-     if(solMgr->isAdaptive() && solMgr->queryAdaptationCriteria()){
+     if(Teuchos::nonnull(solMgr) && 
+         solMgr->isAdaptive() && solMgr->queryAdaptationCriteria()){
 
        // Adapt the mesh, send exception if adaptation fails
        TEUCHOS_TEST_FOR_EXCEPTION(
@@ -323,27 +334,24 @@ std::cout << "Initial size of x_pred_a vector is : " << x_pred_a->range()->dim()
           std::logic_error,
           "Error: Piro_TrapezoidRuleSolver, cannot adapt the mesh!" << std::endl);
 
-       solMgr->projectCurrentSolution();
+       // Gets the Thyra MV directly from the updated discretization
+       soln = solMgr->getCurrentSolution();
 
        // create a new vector and fill it with the contents of model->get_x()
-       x = model->getNominalValues().get_x()->clone_v();
-       v = model->getNominalValues().get_x_dot()->clone_v();
-
-//std::cout << "New size of x vector is : " << x->domain()->dim() << std::endl;
-std::cout << "New size of x vector is : " << x->range()->dim() << std::endl;
-
-       // Note that Thyra doesn't have x_dotdot - go get it from the transient decorator around the Albany model
-       a = model->get_x_dotdot()->clone_v();
+       x = soln->col(0);
+       v = soln->col(1);
+       a = soln->col(2);
 
        x_pred_a = Thyra::createMember<Scalar>(model->get_f_space());
        x_pred_v = Thyra::createMember<Scalar>(model->get_f_space());
        a_old = Thyra::createMember<Scalar>(model->get_f_space());
 
-//std::cout << "New size of x_pred_a vector is : " << x_pred_a->domain()->dim() << std::endl;
-std::cout << "New size of x_pred_a vector is : " << x_pred_a->range()->dim() << std::endl;
-
        model->resize(x);
        gx_out = Thyra::createMember<Scalar>(model->get_x_space());
+
+       nox_outargs.set_g(num_g, gx_out);
+
+       noxSolver->reset();
 
      }
 
@@ -371,7 +379,7 @@ std::cout << "New size of x_pred_a vector is : " << x_pred_a->range()->dim() << 
      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0);
 
      // Observe completed time step
-     if (observer != Teuchos::null) observer->observeSolution(Piro::SolnSet<Scalar>(x, v, a, t));
+     if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
      if (g_out != Teuchos::null)
        *out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n" << g_out << std::endl;
@@ -659,6 +667,7 @@ void Piro::TrapezoidDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::evalMo
 
   //Evaluate the underlying model
   model->evalModel(modelInArgs, modelOutArgs);
+
 
 }
 

@@ -86,7 +86,7 @@ class TransientDecorator
           DgDx_dotdot_[j] = DgDx_dotdot_j;
        }
 
-  private:
+  protected:
 
    mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot;
    mutable Scalar omega;

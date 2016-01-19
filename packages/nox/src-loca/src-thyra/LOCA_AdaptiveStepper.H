@@ -79,7 +79,7 @@ namespace LOCA {
   public:
 
     AdaptiveStepper(const Teuchos::RCP<Teuchos::ParameterList>& pList,
-      const Teuchos::RCP<::Thyra::AdaptiveSolutionManager>& mgr,
+      const Teuchos::RCP< ::Thyra::AdaptiveSolutionManager >& mgr,
       const Teuchos::RCP<LOCA::GlobalData>& global_data,
       const Teuchos::RCP<NOX::StatusTest::Generic>& nt);
 
@@ -205,7 +205,7 @@ namespace LOCA {
   protected:
 
     //! Adaptive solution manager provides interface to remesh/resize functions
-    Teuchos::RCP<::Thyra::AdaptiveSolutionManager> mgr;
+    Teuchos::RCP< ::Thyra::AdaptiveSolutionManager > mgr;
 
     //! Global data
     Teuchos::RCP<LOCA::GlobalData> globalData;
