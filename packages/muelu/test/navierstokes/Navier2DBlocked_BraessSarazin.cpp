@@ -127,13 +127,13 @@
 
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+  typedef Xpetra::EpetraNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -152,10 +152,6 @@ int main(int argc, char *argv[]) {
   // Timing
   Time myTime("global");
   TimeMonitor MM(myTime);
-
-#ifndef HAVE_XPETRA_INT_LONG_LONG
-  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
 
   // custom parameters
   LocalOrdinal maxLevels = 3;
@@ -198,8 +194,6 @@ int main(int argc, char *argv[]) {
 
   EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
   EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
-  //EpetraExt::MatrixMarketFileToCrsMatrix("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
-  //EpetraExt::MatrixMarketFileToVector("/home/tobias/promotion/trilinos/fc17-dyn/packages/muelu/test/navierstokes/b_re1000_5932.txt",*fullmap,ptrf);
 
   RCP<Epetra_CrsMatrix> epA = rcp(ptrA);
   RCP<Epetra_Vector> epv = rcp(ptrf);
@@ -422,16 +416,6 @@ int main(int argc, char *argv[]) {
   AcFact->SetFactory("P", PFact);
   AcFact->SetFactory("R", RFact);
 
-  /* TODO: not available yet for BlockedRAPFactory. Need some inheritence.
-  // register aggregation export factory in RAPFactory
-  RCP<MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> > aggExpFact = rcp(new MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
-  aggExpFact->SetParameter("Output filename","aggs_level%LEVELID_proc%PROCID.out");
-  aggExpFact->SetFactory("Aggregates", CoupledAggFact11);
-  aggExpFact->SetFactory("DofsPerNode", dropFact11);
-
-  AcFact->AddTransferFactory(aggExpFact);
-  */
-
   *out << "Creating Braess-Sarazin Smoother" << std::endl;
 
   //////////////////////////////////////////////////////////////////////
@@ -473,8 +457,6 @@ int main(int argc, char *argv[]) {
   MB->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
   smootherPrototype->AddFactoryManager(MB,0);
   coarseSolverPrototype->AddFactoryManager(MB,0);
-
-
 
   // main factory manager
   FactoryManager M;
@@ -551,7 +533,7 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 #else
-  std::cout << "Epetra needs Serial node. Please recompile MueLu with the Serial node enabled." << std::endl;
+  std::cout << "Epetra (and/or EpetraExt) not enabled. Skip test." << std::endl;
   return EXIT_SUCCESS;
 #endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }
