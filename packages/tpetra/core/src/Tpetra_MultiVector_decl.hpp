@@ -1178,14 +1178,31 @@ namespace Tpetra {
 
     //@}
 
-    //! @name Data Copy and View get methods
-    /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms:
-      - a MultiVector with a subset of the columns of the target MultiVector
-      - a raw C pointer or array of raw C pointers
-      - one of the Teuchos memory management classes
-      Not all of these methods are valid for a particular MultiVector. For instance, calling a method that accesses a
-      view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
-     */
+    //! @name Get a copy or view of a subset of rows and/or columns
+    ///
+    /// The following methods get either a (deep) copy or a view
+    /// (shallow copy) of a subset of rows and/or columns of the
+    /// MultiVector.  They return one of the following:
+    ///
+    /// <ul>
+    /// <li> Another MultiVector </li>
+    /// <li> A Kokkos::View or Kokkos::DualView </li>
+    /// <li> A Teuchos::ArrayRCP (see the Teuchos Memory Management Classes) </li>
+    /// </ul>
+    ///
+    /// We prefer use of Kokkos classes to Teuchos Memory Management
+    /// Classes.  In particular, Teuchos::ArrayRCP reference counts
+    /// are not thread safe, while Kokkos::View (and Kokkos::DualView)
+    /// reference counts are thread safe.
+    ///
+    /// Not all of these methods are valid for a particular
+    /// MultiVector. For instance, calling a method that accesses a
+    /// view of the data in a 1-D format (i.e., get1dView) requires
+    /// that the target MultiVector have constant stride.
+    ///
+    /// This category of methods also includes sync(), modify(), and
+    /// getLocalView(), which help MultiVector implement DualView
+    /// semantics.
     //@{
 
     //! Return a MultiVector with copies of selected columns.
@@ -1356,7 +1373,7 @@ namespace Tpetra {
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
     /// Instead of getting the Kokkos::DualView, we highly recommend
-    /// calling the templated view() method, that returns a
+    /// calling the templated getLocalView() method, that returns a
     /// Kokkos::View of the MultiVector's data in a given memory
     /// space.  Since that MultiVector itself implements DualView
     /// semantics, it's much better to use MultiVector's interface to
