@@ -42,12 +42,12 @@
 // @HEADER
 
 /*! \file  data.hpp
-    \brief Generates and manages data for the Poisson example, including
+    \brief Generates and manages data for the Stefan-Boltzmann example, including
            all mesh and discretization data, matrices, etc.
 */
 
-#ifndef ROL_PDEOPT_POISSON_DATA_H
-#define ROL_PDEOPT_POISSON_DATA_H
+#ifndef ROL_PDEOPT_STEFANBOLTZMANN_DATA_H
+#define ROL_PDEOPT_STEFANBOLTZMANN_DATA_H
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -72,7 +72,7 @@
 #include "../TOOLS/dofmanager.hpp"
 
 template<class Real>
-class PoissonData {
+class StefanBoltzmannData {
 
 private:
   Teuchos::RCP<MeshManager<Real> > meshMgr_;
@@ -101,6 +101,7 @@ private:
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_dirichlet_;
 
   Teuchos::Array<int> myCellIds_;
+  Teuchos::Array<int> myDirichletDofs_;
 
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
@@ -125,11 +126,13 @@ private:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradReference_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > kappaGradPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradgradMats_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > valvalMats_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > cubPointsPhysical_;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dataF_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > datavalVecF_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPoints_;
@@ -138,9 +141,9 @@ private:
 
 public:
 
-  PoissonData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-              const Teuchos::RCP<std::ostream> &outStream) {
+  StefanBoltzmannData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                      const Teuchos::RCP<Teuchos::ParameterList> &parlist,
+                      const Teuchos::RCP<std::ostream> &outStream) {
 
     /************************************/
     /*** Retrieve communication data. ***/
@@ -287,10 +290,12 @@ public:
     gradReference_        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs, numCubPoints_, spaceDim_));  
     valPhysical_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, numCubPoints_));
     gradPhysical_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, numCubPoints_, spaceDim_));
+    kappaGradPhysical_    = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, numCubPoints_, spaceDim_));
     valPhysicalWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, numCubPoints_));
     gradPhysicalWeighted_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, numCubPoints_, spaceDim_));
     gradgradMats_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, lfs));
     valvalMats_           = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs, lfs));
+    kappa_                = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_));
     dataF_                = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, numCubPoints_));
     datavalVecF_          = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs));
     dataUd_               = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells_, lfs));
@@ -326,14 +331,29 @@ public:
                                                            *cellJacDet_,
                                                            *cubWeights_);
 
+    Intrepid::CellTools<Real>::mapToPhysicalFrame(*cubPointsPhysical_,                       // map reference cubature points to physical space
+                                                  *cubPoints_,
+                                                  *cellNodes_,
+                                                  cellType_);
+
     Intrepid::FunctionSpaceTools::HGRADtransformGRAD<Real>(*gradPhysical_,                   // transform reference gradients into physical space
                                                            *cellJacInv_,
                                                            *gradReference_);
     Intrepid::FunctionSpaceTools::multiplyMeasure<Real>(*gradPhysicalWeighted_,              // multiply with weighted measure
                                                         *cellWeightedMeasure_,
                                                         *gradPhysical_);
-    Intrepid::FunctionSpaceTools::integrate<Real>(*gradgradMats_,                            // compute local grad.grad (stiffness) matrices
-                                                  *gradPhysical_,
+    for (int i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
+      for (int j=0; j<numCubPoints_; ++j) {
+        (*kappa_)(i, j) = funcKappa((*cubPointsPhysical_)(i, j, 0),
+                                    (*cubPointsPhysical_)(i, j, 1),
+                                    2.0);
+      }
+    }
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*kappaGradPhysical_,         // multiply with conductivity kappa
+                                                                *kappa_,
+                                                                *gradPhysical_);
+    Intrepid::FunctionSpaceTools::integrate<Real>(*gradgradMats_,                            // compute local grad.(kappa)grad (stiffness) matrices
+                                                  *kappaGradPhysical_,
                                                   *gradPhysicalWeighted_,
                                                   Intrepid::COMP_CPP);
 
@@ -347,26 +367,23 @@ public:
                                                   *valPhysicalWeighted_,
                                                   Intrepid::COMP_CPP);
 
-    Intrepid::CellTools<Real>::mapToPhysicalFrame(*cubPointsPhysical_,                        // map reference cubature points to physical space
-                                                  *cubPoints_,
-                                                  *cellNodes_,
-                                                  cellType_);
-    for (int i=0; i<numCells_; ++i) {                                                         // evaluate functions at these points
+    for (int i=0; i<numCells_; ++i) {                                                        // evaluate RHS function at cubature points
       for (int j=0; j<numCubPoints_; ++j) {
-        (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0), (*cubPointsPhysical_)(i, j, 1));
+        (*dataF_)(i, j) = funcRHS((*cubPointsPhysical_)(i, j, 0),
+                                  (*cubPointsPhysical_)(i, j, 1));
       }
     }
-    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,                              // compute local data.val vectors for RHS F
+    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,                             // compute local data.val vectors for RHS F
                                                   *dataF_,
                                                   *valPhysicalWeighted_,
                                                   Intrepid::COMP_CPP);
 
-    coord_iface->getDofCoords(*dofPoints_);                                                   // get coordinates of DOFs in reference cell
-    Intrepid::CellTools<Real>::mapToPhysicalFrame(*dofPointsPhysical_,                        // map reference DOF locations to physical space
+    coord_iface->getDofCoords(*dofPoints_);                                                  // get coordinates of DOFs in reference cell
+    Intrepid::CellTools<Real>::mapToPhysicalFrame(*dofPointsPhysical_,                       // map reference DOF locations to physical space
                                                   *dofPoints_,
                                                   *cellNodes_,
                                                   cellType_);
-    for (int i=0; i<numCells_; ++i) {                                                         // evaluate functions at these points
+    for (int i=0; i<numCells_; ++i) {                                                        // evaluate target function at these points
       for (int j=0; j<lfs; ++j) {
         (*dataUd_)(i, j) = funcTarget((*dofPointsPhysical_)(i, j, 0), (*dofPointsPhysical_)(i, j, 1));
       }
@@ -483,7 +500,6 @@ public:
         numDofsPerEdge = dofTags[j][3];
       }
     }
-    Teuchos::Array<int> myDirichletDofs_;
     for (int i=0; i<myDirichletCellIds_.size(); ++i) {
       for (int j=0; j<myDirichletCellIds_[i].size(); ++j) {
         for (int k=0; k<numDofsPerNode; ++k) {
@@ -530,6 +546,7 @@ public:
     matA_dirichlet_trans_ = transposerA.createTranspose();
     matM_dirichlet_trans_ = transposerM.createTranspose();
 
+    updateA(1.0);
 
     /*********************************/
     /*** Construct solver objects. ***/
@@ -622,6 +639,70 @@ public:
     return std::sin(M_PI*x1)*std::sin(M_PI*x2);
   }
 
+
+  Real funcKappa(const Real &x1, const Real &x2, const Real &par) const {
+    return par;
+  }
+
+
+  void updateA(const Real & par) {
+
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
+    int numLocalDofs = cellDofs.dimension(1);
+
+    for (int i=0; i<numCells_; ++i) {                                                        // evaluate conductivity kappa at cubature points
+      for (int j=0; j<numCubPoints_; ++j) {
+        (*kappa_)(i, j) = funcKappa((*cubPointsPhysical_)(i, j, 0),
+                                    (*cubPointsPhysical_)(i, j, 1),
+                                    par);
+      }
+    }
+    Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*kappaGradPhysical_,         // multiply with conductivity kappa
+                                                                *kappa_,
+                                                                *gradPhysical_);
+    Intrepid::FunctionSpaceTools::integrate<Real>(*gradgradMats_,                            // compute local grad.(kappa)grad (stiffness) matrices
+                                                  *kappaGradPhysical_,
+                                                  *gradPhysicalWeighted_,
+                                                  Intrepid::COMP_CPP);
+
+    int numLocalMatEntries = numLocalDofs*numLocalDofs;
+    Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
+    matA_->resumeFill();
+    matA_->setAllToScalar(0);
+    for (int i=0; i<numCells_; ++i) {
+      for (int j=0; j<numLocalDofs; ++j) {
+        matA_->sumIntoGlobalValues(cellDofs(myCellIds_[i],j),
+                                   cellDofsArrayRCP(myCellIds_[i]*numLocalDofs, numLocalDofs),
+                                   gradgradArrayRCP(i*numLocalMatEntries+j*numLocalDofs, numLocalDofs));
+      }
+    }
+    matA_->fillComplete();
+
+    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+    matA_dirichlet_ = matA_->clone(node);
+    matA_dirichlet_->resumeFill();
+    for (int i=0; i<myDirichletDofs_.size(); ++i) {
+      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
+        size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(myDirichletDofs_[i]);
+        Teuchos::Array<int> indices(numRowEntries, 0);
+        Teuchos::Array<Real> values(numRowEntries, 0);
+        Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
+        matA_dirichlet_->getGlobalRowCopy(myDirichletDofs_[i], indices, values, numRowEntries);
+        for (int j=0; j<indices.size(); ++j) {
+          if (myDirichletDofs_[i] == indices[j]) {
+            canonicalValues[j] = 1.0;
+          }
+	}
+	matA_dirichlet_->replaceGlobalValues(myDirichletDofs_[i], indices, canonicalValues);
+      }
+    }
+    matA_dirichlet_->fillComplete();
+
+    Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
+    matA_dirichlet_trans_ = transposerA.createTranspose();
+    
+  }
 
   Real computeStateError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln) const {
 
@@ -776,6 +857,6 @@ public:
     vecWriter.writeDenseFile(filename, vec);
   }
 
-}; // class PoissonData
+}; // class StefanBoltzmannData
 
 #endif

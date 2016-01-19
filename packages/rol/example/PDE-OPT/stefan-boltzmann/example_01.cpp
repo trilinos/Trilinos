@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
+    Teuchos::RCP<StefanBoltzmannData<RealT> > data = Teuchos::rcp(new StefanBoltzmannData<RealT>(comm, parlist, outStream));
 
     /*** Build vectors and dress them up as ROL vectors. ***/
     Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
-      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
-    Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
-      Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
+    Teuchos::RCP<Objective_PDEOPT_StefanBoltzmann<RealT> > obj =
+      Teuchos::rcp(new Objective_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
+    Teuchos::RCP<EqualityConstraint_PDEOPT_StefanBoltzmann<RealT> > con =
+      Teuchos::rcp(new EqualityConstraint_PDEOPT_StefanBoltzmann<RealT>(data, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =
       Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, up));
 
