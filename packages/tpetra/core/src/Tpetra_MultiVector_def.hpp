@@ -158,10 +158,6 @@ namespace { // (anonymous)
     typedef typename Tpetra::MultiVector<ST, LO, GO, NT>::dual_view_type dual_view_type;
     const char* label = "MV::DualView";
 
-#if 0
-    (void) zeroOut;
-    return dual_view_type (label, lclNumRows, numCols);
-#else
     if (zeroOut) {
       return dual_view_type (label, lclNumRows, numCols);
     }
@@ -193,7 +189,6 @@ namespace { // (anonymous)
 
       return dual_view_type (d_view, h_view);
     }
-#endif // 0
   }
 
   // Convert 1-D Teuchos::ArrayView to an unmanaged 1-D host Kokkos::View.
