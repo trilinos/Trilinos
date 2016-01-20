@@ -128,7 +128,7 @@ namespace { // (anonymous)
   getColumnStrideOfMultiVectorView (const ViewType& X)
   {
     static_assert (ViewType::rank > 0, "The input X must have nonzero rank.");
-    size_t strides[ViewType::rank];
+    size_t strides[8];
     X.stride (strides);
     // If the second dimension is 0 (because the MultiVector has zero
     // columns), then the stride might be 0, even though the number of
