@@ -39,6 +39,9 @@
 #include <algorithm>
 #include <stdlib.h>
 
+#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -50,6 +53,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
+#include <stk_io/IossBridge.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -61,14 +65,20 @@ namespace {
 class TwoElemMultipleSharedSideTester : public ::testing::Test
 {
 public:
-    TwoElemMultipleSharedSideTester(size_t spatialDim, const std::vector<stk::mesh::EntityId> nodeIDs[2], const std::vector<stk::mesh::EntityId> &sharedNodeIds, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    TwoElemMultipleSharedSideTester(size_t spatialDim,
+                                    const std::vector<stk::mesh::EntityId> nodeIDs[2],
+                                    const std::vector<stk::mesh::EntityId> &sharedNodeIds,
+                                    stk::mesh::BulkData::AutomaticAuraOption auraOption)
     : meta(spatialDim),
       skinPart(meta.declare_part_with_topology("skin", get_side_topology())),
+      block1(meta.declare_part_with_topology("block_1", get_element_topology())),
       activePart(meta.declare_part("active")),
-      bulkData(meta, MPI_COMM_WORLD, auraOption)
+      bulkData(meta, MPI_COMM_WORLD, auraOption),
+      coordField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates"))
     {
         if (bulkData.parallel_size() <= 2)
         {
+            stk::mesh::put_field(coordField, meta.universal_part());
             make_mesh_2_elems_connected_through_multiple_sides(nodeIDs, sharedNodeIds);
         }
     }
@@ -96,8 +106,7 @@ public:
 
     void create_element(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePart, stk::mesh::EntityId id)
     {
-        stk::mesh::Part& elemPart = bulkData.mesh_meta_data().get_topology_root_part(get_element_topology());
-        stk::mesh::Entity elem = stk::mesh::declare_element(bulkData, elemPart, id, nodeIds[id-1]);
+        stk::mesh::Entity elem = stk::mesh::declare_element(bulkData, block1, id, nodeIds[id-1]);
         bulkData.change_entity_parts(elem, {&activePart});
     }
 
@@ -131,24 +140,59 @@ public:
 protected:
     stk::mesh::MetaData meta;
     stk::mesh::Part& skinPart;
+    stk::mesh::Part& block1;
     stk::mesh::Part& activePart;
     stk::mesh::BulkData bulkData;
+    stk::mesh::Field<double, stk::mesh::Cartesian> &coordField;
+private:
 };
 
-static const std::vector<stk::mesh::EntityId> twoElemTwoSharedSideNodeIDs[2] = {
-         {1, 2, 3, 4, 5, 6, 7, 8},
-         {3, 2, 9, 4, 7, 6, 10, 8} };
+static const std::vector<stk::mesh::EntityId> twoElemTwoSharedSideNodeIDs[2] =
+{
+     {1, 2, 3, 4, 5, 6, 7, 8},
+     {3, 2, 9, 4, 7, 6, 10, 8}
+};
 static const std::vector<stk::mesh::EntityId> twoElemTwoSharedSideSharedNodeIds = {2, 3, 4, 6, 7, 8};
 
 class TwoElemTwoSharedSideTester : public TwoElemMultipleSharedSideTester
 {
 public:
-    TwoElemTwoSharedSideTester() :
-        TwoElemMultipleSharedSideTester(3, twoElemTwoSharedSideNodeIDs, twoElemTwoSharedSideSharedNodeIds, stk::mesh::BulkData::AUTO_AURA)
-    {}
+    TwoElemTwoSharedSideTester()
+    : TwoElemMultipleSharedSideTester(3, twoElemTwoSharedSideNodeIDs, twoElemTwoSharedSideSharedNodeIds, stk::mesh::BulkData::AUTO_AURA)
+    {
+        const std::vector<std::vector<double>> twoElemTwoSharedSideCoordinates =
+        {
+             {0, 0, 0},
+             {1, 0, 0},
+             {0.5, 0.5, 0},
+             {0, 1, 0},
+             {0, 0, 1},
+             {1, 0, 1},
+             {0.5, 0.5, 1},
+             {0, 1, 1},
+             {1, 1, 0},
+             {1, 1, 1}
+        };
+
+        stk::io::put_io_part_attribute(block1);
+        stk::io::put_io_part_attribute(skinPart);
+
+        for(size_t i = 0; i < twoElemTwoSharedSideCoordinates.size(); i++)
+            set_node_coords(coordField, i+1, twoElemTwoSharedSideCoordinates[i]);
+    }
+
+    void set_node_coords(stk::mesh::Field<double, stk::mesh::Cartesian>& coordField, stk::mesh::EntityId id, const std::vector<double> &coords)
+    {
+        stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, id);
+        if(bulkData.is_valid(node) && bulkData.bucket(node).owned())
+        {
+            double* nodeCoords = stk::mesh::field_data(coordField, node);
+            for(int i = 0; i < 3; i++)
+                nodeCoords[i] = coords[i];
+        }
+    }
+
 };
-
-
 
 void remove_part_if_owned(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity, stk::mesh::Part& part)
 {
