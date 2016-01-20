@@ -641,10 +641,9 @@ namespace Experimental {
           GEMV (alpha, A_cur, X_cur, X_lcl);
         } // for each entry in the current local row of the matrix
 
-        // FIXME (mfh 16 Dec 2015) Get an unmanaged subview of
-        // factoredDiagonal BEFORE getting its subview!  This will
-        // avoid reference counting overhead, which introduces a
-        // scalability bottleneck.
+        // NOTE (mfh 20 Jan 2016) The two input Views here are
+        // unmanaged already, so we don't have to take unmanaged
+        // subviews first.
         auto D_lcl = Kokkos::subview (factoredDiagonal, actlRow, ALL (), ALL ());
         auto ipiv = Kokkos::subview (factorizationPivots, actlRow, ALL ());
         int info = 0;
@@ -674,7 +673,6 @@ namespace Experimental {
 
             // X_lcl += alpha*A_cur*X_cur
             const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
-            //X_lcl.matvecUpdate (alpha, A_cur, X_cur);
             GEMV (alpha, A_cur, X_cur, X_lcl);
           } // for each entry in the current local row of the matrx
 
