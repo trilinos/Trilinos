@@ -73,6 +73,7 @@
 using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
+using Teuchos::ArrayRCP;
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -189,6 +190,9 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+  typedef inputAdapter_t::part_t part_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t *ia = new inputAdapter_t(*CommT, "region");
   ia->print(me);
@@ -287,25 +291,45 @@ int main(int narg, char *arg[]) {
     if (me == 0) cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
-    typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
-    typedef inputAdapter_t::base_adapter_t base_adapter_t;
+
+    // An environment.  This is usually created by the problem.
 
     RCP<const Zoltan2::Environment> env = problem.getEnvironment();
 
     RCP<const base_adapter_t> bia = 
-      Teuchos::rcp_implicit_cast<const base_adapter_t>(Teuchos::rcp(ia));
+      Teuchos::rcp_implicit_cast<const base_adapter_t>(rcp(ia));
 
-    const Zoltan2::PartitioningSolution<inputAdapter_t> solutionConst = 
-      problem.getSolution();
+    // A solution (usually created by a problem)
 
-    // create metric object (usually created by a problem)
+    int numLocalObj = bia->getLocalNumIDs();
+    int nWeights = bia->getNumWeightsPerID();
+    RCP<Zoltan2::PartitioningSolution<inputAdapter_t> > solution =
+      rcp(new Zoltan2::PartitioningSolution<inputAdapter_t>(env, CommT, 
+							    nWeights));
 
-    RCP<quality_t> metricObject;
+    //Part assignment for my objects:  The algorithm usually calls this.
 
-    metricObject = rcp(new quality_t(env, CommT, bia, Teuchos::null, false));
+    part_t *partNum = new part_t [numLocalObj];
+    ArrayRCP<part_t> partAssignment(partNum, 0, numLocalObj, true);
+    const part_t *parts = problem.getSolution().getPartListView();
+    for (int i=0; i < numLocalObj; i++)
+      partNum[i] = parts[i];
 
-    RCP<quality_t> graphMetricObject = 
-      rcp(new quality_t(env, CommT, bia, Teuchos::null));
+    solution->setParts(partAssignment);
+    RCP<const Zoltan2::PartitioningSolution<inputAdapter_t> > solutionConst =
+      Teuchos::rcp_const_cast<const 
+      Zoltan2::PartitioningSolution<inputAdapter_t> >(solution);
+
+    // create metric object (also usually created by a problem)
+
+    RCP<quality_t> metricObject = 
+      rcp(new quality_t(env, CommT, bia, solutionConst, false));
+
+    RCP<quality_t> graphMetricObject;
+
+    if (action == "scotch") {
+      graphMetricObject = rcp(new quality_t(env, CommT, bia, solutionConst));
+    }
 
     if (!me) {
       metricObject->printMetrics(cout);

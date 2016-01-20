@@ -11,8 +11,6 @@
 
 #include "basker_nfactor_blk.hpp"
 #include "basker_nfactor_col.hpp"
-#include "basker_nfactor_blk_inc.hpp"
-#include "basker_nfactor_col_inc.hpp"
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -143,6 +141,8 @@ namespace BaskerNS
     printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
     #endif
 
+    
+    // return;
 
 
     //------Need because extend does not 
@@ -201,7 +201,7 @@ namespace BaskerNS
 
       }//for - over all sublevel 1...lvl-2
     
-
+    
 
     //---------Lower Factor (old sublevel lvl-1)-------
     
@@ -216,7 +216,7 @@ namespace BaskerNS
 		     b_size, 3, LU(U_col)(U_row).scol, 0);
 
 
-
+    
 
 
     //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
@@ -228,7 +228,7 @@ namespace BaskerNS
     //if(lvl < 2)
       {
 	//for(Int k=0; k < 1; ++k)
-      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
 	#ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -432,15 +432,15 @@ namespace BaskerNS
     printf("Upper_fact_offdiag, kid: %d leader: %d l: %d lvl: %d works_size: %d X: %d %d L: %d %d U: %d %d k: %d \n",
 	   kid, my_leader, l, lvl, LL_size[X_col], X_col, X_row, L_col, L_row, U_col, U_row,  k+U.scol);
       }
-    #endif
+     #endif
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+     #ifdef BASKER_DEBUG_NFACTOR_COL2
     //if(lower == BASKER_TRUE)
       {
     printf("OFF-DIAG, kid: %d, l: %d  X: %d %d L: %d %d \n",
 	   kid, l,X_col, X_row, L_col, L_row);
       }
-    #endif
+     #endif
 
     const BASKER_BOOL A_option = BASKER_FALSE;
 	    

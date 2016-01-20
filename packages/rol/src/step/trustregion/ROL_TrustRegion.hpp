@@ -296,7 +296,7 @@ public:
       }
       else { // Shrink trust-region radius
         del = gamma1_*snorm; 
-      } 
+      }
     }
     else if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
       x.axpy(1.0,s);

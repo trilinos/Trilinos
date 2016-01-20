@@ -6,6 +6,12 @@ IF(Kokkos_ENABLE_OpenMP)
         NOEXEPREFIX
         SOURCES basker_test.cpp
      )
+
+     TRIBITS_ADD_EXECUTABLE(
+        basker_test_inc
+	NOEXEPREFIX
+	SOURCES basker_test_inc.cpp 
+     )
          
      ##Single threaded test
      TRIBITS_ADD_ADVANCED_TEST(

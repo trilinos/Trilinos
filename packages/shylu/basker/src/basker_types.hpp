@@ -43,13 +43,16 @@ enum BASKER_ERROR_CODE
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
 #define BASKER_BTF_NNZ_OVER      1.20
+#define BASKER_BTF_PRUNE_SIZE    100
 
 //MACRO SYSTEM FUNCTIONS
 #ifdef BASKER_DEBUG
+#include <assert.h>
 #define ASSERT(a)             assert(a)
 #else
-#define ASSERT(a)             BASKER_NO_OP
-//#define   ASSERT(a)           assert(a)
+//#define ASSERT(a)             BASKER_NO_OP
+#include <assert.h>
+#define   ASSERT(a)           assert(a)
 #endif
 
 #define BASKER_ASSERT(a,s)       \

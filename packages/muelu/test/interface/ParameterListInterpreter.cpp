@@ -385,6 +385,8 @@ int main(int argc, char* argv[]) {
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  // fix warning of unused variable success. We need success for above macro
+  if(success == false) success = (return_code == EXIT_FAILURE) ? false : true;
 
   return return_code;
 }

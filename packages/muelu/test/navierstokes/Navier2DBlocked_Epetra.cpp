@@ -123,13 +123,13 @@
 
 
 int main(int argc, char *argv[]) {
-#if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   typedef double Scalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Kokkos::Compat::KokkosSerialWrapperNode Node;
+  typedef Xpetra::EpetraNode Node;
 #include "MueLu_UseShortNames.hpp"
 
   using Teuchos::RCP;
@@ -167,10 +167,6 @@ int main(int argc, char *argv[]) {
     // Timing
     Time myTime("global");
     TimeMonitor MM(myTime);
-
-#ifndef HAVE_XPETRA_INT_LONG_LONG
-    *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-#endif
 
     // custom parameters
     LO maxLevels = 2;   // TODO: singular system if MaxLevels > 2?
@@ -580,7 +576,7 @@ int main(int argc, char *argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 #else
-  std::cout << "Epetra needs Serial node. Please recompile MueLu with the Serial node enabled." << std::endl;
+  std::cout << "Epetra (and/or EpetraExt) are not available. Skip test." << std::endl;
   return EXIT_SUCCESS;
 #endif // #if defined(HAVE_MUELU_SERIAL) && defined(HAVE_MUELU_EPETRA)
 }

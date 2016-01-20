@@ -141,13 +141,17 @@ int main(int argc, char *argv[]) {
     con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
-    //objReduced->checkGradient(*zp,*dzp,true,*outStream);
-    //objReduced->checkHessVec(*zp,*dzp,true,*outStream);
+    objReduced->checkGradient(*zp,*dzp,true,*outStream);
+    objReduced->checkHessVec(*zp,*dzp,true,*outStream);
 
     /*** Solve optimization problem. ***/
-    //ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
-    //algo_tr.run(*zp, *objReduced, true, *outStream);
+
+    ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
+    zp->zero(); // set zero initial guess
+    algo_tr.run(*zp, *objReduced, true, *outStream);
+
     ROL::Algorithm<RealT> algo_cs("Composite Step",*parlist,false);
+    x.zero(); // set zero initial guess
     algo_cs.run(x, *cp, *obj, *con, true, *outStream);
 
     *outStream << std::endl << "|| u_approx - u_analytic ||_L2 = " << data->computeStateError(u_rcp) << std::endl;

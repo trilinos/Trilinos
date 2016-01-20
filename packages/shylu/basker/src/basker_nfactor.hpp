@@ -159,10 +159,13 @@ namespace BaskerNS
 
       }
     //-------------------End--Domian--------------------------//
+    
+    printVec("domperm.csc", gpermi, A.nrow);
+    
 
    
     //---------------------------Sep--------------------------//
-
+   
     if(btf_tabs_offset != 0)
       {
     //for(Int l=1; l<=4; l++)
@@ -180,10 +183,10 @@ namespace BaskerNS
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
-	/*
-	kokkos_nfactor_sep <Int, Entry, Exe_Space> 
-	  sep_nfactor(this, l);
-	*/
+
+	//kokkos_nfactor_sep <Int, Entry, Exe_Space> 
+	//sep_nfactor(this, l);
+
 	kokkos_nfactor_sep2 <Int, Entry, Exe_Space>
 	  sep_nfactor(this,l);
 	
@@ -209,7 +212,7 @@ namespace BaskerNS
     printf("Time SEP: %f \n", timer.seconds());
     #endif
       }
-
+    
     //-------------------------End Sep----------------//
 
 

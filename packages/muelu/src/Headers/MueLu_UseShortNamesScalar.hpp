@@ -242,6 +242,9 @@ typedef MueLu::SteepestDescentSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ste
 #ifdef MUELU_SUBBLOCKAFACTORY_SHORT
 typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SubBlockAFactory;
 #endif
+#ifdef MUELU_TEKOSMOOTHER_SHORT
+typedef MueLu::TekoSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TekoSmoother;
+#endif
 #ifdef MUELU_TENTATIVEPFACTORY_SHORT
 typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TentativePFactory;
 #endif

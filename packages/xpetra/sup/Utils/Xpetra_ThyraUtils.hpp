@@ -1250,53 +1250,6 @@ public:
 
   static Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
   toThyra(const Teuchos::RCP<Xpetra::BlockedCrsMatrix<double, int, int, EpetraNode> >& mat);
-#if 0
-  {
-
-    int nRows = mat->Rows();
-    int nCols = mat->Cols();
-
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = mat->getMatrix(0,0);
-
-    bool bTpetra = false;
-    bool bEpetra = false;
-#ifdef HAVE_XPETRA_TPETRA
-#if ((defined(EPETRA_HAVE_OMP)  && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)) || \
-     (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_DOUBLE)))
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
-    if(tpetraMat!=Teuchos::null) bTpetra = true;
-#else
-    bTpetra = false;
-#endif
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epetraMat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(Ablock);
-    if(epetraMat!=Teuchos::null) bEpetra = true;
-#endif
-
-    TEUCHOS_TEST_FOR_EXCEPT(bTpetra == bEpetra); // we only allow Epetra OR Tpetra
-
-    // create new Thyra blocked operator
-    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> > blockMat =
-        Thyra::defaultBlockedLinearOp<Scalar>();
-
-    blockMat->beginBlockFill(nRows,nCols);
-
-    for (int r=0; r<nRows; ++r) {
-      for (int c=0; c<nCols; ++c) {
-        Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(mat->getMatrix(r,c));
-        std::stringstream label; label << "A" << r << c;
-        blockMat->setBlock(r,c,thBlock);
-      }
-    }
-
-    blockMat->endBlockFill();
-
-    return blockMat;
-  }
-#endif
 
 }; // specialization on SC=double, LO=GO=int and NO=EpetraNode
 #endif // HAVE_XPETRA_EPETRA
