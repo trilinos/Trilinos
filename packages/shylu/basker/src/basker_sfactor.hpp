@@ -2570,9 +2570,9 @@ namespace BaskerNS
 			    lblk_size,
 			    btf_tabs[i],
 			    lblk_size,
-	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);	    
-
-					    //			    (.5*lblk_size*lblk_size)+lblk_size);
+	  (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);    
+	//For pruning
+	LBTF(i-btf_tabs_offset).init_pend();
 	
 	UBTF[i-btf_tabs_offset].init_matrix("UBFT",
 			    btf_tabs[i],

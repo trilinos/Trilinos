@@ -82,6 +82,25 @@ namespace BaskerNS
 				 L.nnz,
 				 thread_array(ti).error_info);
 	    L.nnz = thread_array(ti).error_info;
+
+	    //clean up workspace
+	    if(L.w_fill == BASKER_TRUE)
+	      {
+		//Clear workspace
+		for(Int i = 0; i < L.iws_size*L.iws_mult; ++i)
+		  {
+		    L.iws(i) = (Int) 0;
+		  }
+		for(Int i = 0; i < L.ews_size*L.ews_mult; ++i)
+		  {
+		    L.ews(i) = (Entry) 0;
+		  }
+		//Clear perm
+		for(Int i = L.srow; i < L.srow+L.nrow; ++i)
+		  {
+		    gperm(i) = BASKER_MAX_IDX;
+		  }
+	      }
 	    
 	    //Resize U
 	    BASKER_MATRIX &U = LU(thread_array(ti).error_blk)(0);

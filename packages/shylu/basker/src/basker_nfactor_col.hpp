@@ -1309,12 +1309,22 @@ namespace BaskerNS
        #endif
 	 {
 	   //printf("doing reach: %d \n", j);
-	   #ifdef BASKER_INC_LVL
-	   t_local_reach_selective(kid,lvl,l+1,j, &top);
-	   #else
+	   //#ifdef BASKER_INC_LVL
+	   //t_local_reach_selective(kid,lvl,l+1,j, &top);
+	   //#else
 	   //t_local_reach(kid,lvl,l+1, j, &top);
-	   t_local_reach(kid,lvl,l+1,j,top);
-	   #endif
+	   if(gperm(j+brow) != BASKER_MAX_IDX)
+	     {
+	       //printf("COL LOCAL REACH\n");
+	       t_local_reach(kid,lvl,l+1,j,top);
+	     }
+	   else
+	     {
+	       //printf("COL LOCAL SHORT\n");
+	       t_local_reach_short(kid,lvl,l+1,j,top);
+	     }
+
+	   //#endif
 	 }
      }//over each nnz in the column
    xnnz = ws_size - top;

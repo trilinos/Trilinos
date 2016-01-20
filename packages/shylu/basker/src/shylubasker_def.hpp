@@ -402,6 +402,12 @@ namespace BaskerNS
 
   }//end Factor()
 
+  template <class Int, class Entry, class Exe_Space>
+  int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
+  {
+    factor_inc_lvl(Options);
+  }
+
 
   //Interface for solve.... only doing paralllel solve righ now.
   template <class Int, class Entry, class Exe_Space>
@@ -475,54 +481,73 @@ namespace BaskerNS
   //Return nnz of L
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::GetLnnz(Int *Lnnz)
+  int Basker<Int, Entry, Exe_Space>::GetLnnz(Int &Lnnz)
   {
-    (*Lnnz) = get_Lnnz();
-    if(*Lnnz == 0)
-      return -1;
+    (Lnnz) = get_Lnnz();
+    if(Lnnz == 0)
+      return BASKER_ERROR;
     else
-      return 0;
+      return BASKER_SUCCESS;
   }//end GetLnnz();
 
   //Return nnz of U
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::GetUnnz(Int *Unnz)
+  int Basker<Int, Entry, Exe_Space>::GetUnnz(Int &Unnz)
   {
-    (*Unnz) = get_Unnz();
-    if(*Unnz == 0)
-      return -1;
+    (Unnz) = get_Unnz();
+    if(Unnz == 0)
+      return BASKER_ERROR;
     else
-      return 0;
+      return BASKER_SUCCESS;
   }//end GetUnnz()
 
   //Returns assembled L
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetL(Int *n, Int *nnz,
+  int Basker<Int,Entry,Exe_Space>::GetL(Int &n, Int &nnz,
            Int **col_ptr, Int **row_idx,
            Entry **val)
   {
-    int err = get_L(n,nnz,col_ptr, row_idx, val);
-    return err;
+    get_L(n,nnz,col_ptr, row_idx, val);
+    
+    return BASKER_SUCCESS;
   }//end GetL()
   
   //returns assembles U
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetU(Int *n, Int *nnz,
+  int Basker<Int,Entry,Exe_Space>::GetU(Int &n, Int &nnz,
            Int **col_ptr, Int **row_idx,
            Entry **val)
   {
-    int err = get_U(n, nnz, col_ptr, row_idx, val);
-    return err;
+    get_U(n, nnz, col_ptr, row_idx, val);
+    return BASKER_SUCCESS;
   }//end GetU()
 
   //returns global P
   template<class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::GetP(Int **p)
+  int Basker<Int,Entry,Exe_Space>::GetPerm(Int **lp, Int **rp)
   {
-    int err = get_p(p);
-    return err;
-  }//end GetP()
+    INT_1DARRAY lp_array;
+    MALLOC_INT_1DARRAY(lp_array, gn);
+    INT_1DARRAY rp_array;
+    MALLOC_INT_1DARRAY(rp_array, gn);
+    
+    get_total_perm(lp_array, rp_array);
+
+    (*lp) = new Int[gn];
+    (*rp) = new Int[gn];
+    
+    for(Int i = 0; i < gn; ++i)
+      {
+	(*lp)[i] = lp_array(i);
+	(*rp)[i] = rp_array(i);
+      }
+    
+    FREE_INT_1DARRAY(lp_array);
+    FREE_INT_1DARRAY(rp_array);
+
+    return BASKER_SUCCESS;
+  }//end GetPerm()
 
   //Timer Information function
   template <class Int, class Entry, class Exe_Space>
