@@ -1202,7 +1202,8 @@ namespace Iopg {
 	    int j=0;
 	    for (i=0; i < entity_count; i++) {
 	      int local_id = entities[i];
-	      entity_proc[j++] = 10*map[local_id]+sides[i];
+	      entity_proc[j++] = map[local_id];
+	      entity_proc[j++] = sides[i];
 	      entity_proc[j++] = procs[i];
 	    }
 	  } else {
