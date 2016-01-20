@@ -251,7 +251,7 @@ inverse_fast23(Tensor<T, N, ES> const & A)
 //
 template<typename T, Index N,  typename ES>
 KOKKOS_INLINE_FUNCTION
-Tensor<T, dimension_subtract<N, 1>::value , ES>
+Tensor<T, N , ES>
 subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 {
   Index const
@@ -260,7 +260,7 @@ subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
   assert(i < dimension);
   assert(j < dimension);
 
-  Tensor<T, dimension_subtract<N, 1>::value, ES >
+  Tensor<T, N, ES >
   B(dimension - 1);
 
   Index p = 0;
