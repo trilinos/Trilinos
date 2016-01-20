@@ -22,7 +22,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-#define VERBOSE_OUTPUT
+//#define VERBOSE_OUTPUT
 
 namespace
 {
