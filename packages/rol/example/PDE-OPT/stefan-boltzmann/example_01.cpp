@@ -59,6 +59,7 @@
 #include "ROL_BatchManager.hpp"
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
+#include "ROL_UnaryFunctions.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -109,6 +110,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > Eu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > Vu_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     // Set all values to 1 in u, z and c.
     u_rcp->putScalar(1.0);
     z_rcp->putScalar(1.0);
@@ -122,6 +125,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > Eup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Eu_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > Vup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(Vu_rcp));
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -172,6 +177,27 @@ int main(int argc, char *argv[]) {
     *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
 
     data->outputTpetraVector(z_rcp, "control.txt");
+
+    RealT w = 0.0, tol = 1.e-8;
+    ROL::Elementwise::Power<RealT> sqr(2.0);
+    Eup->zero(); Vup->zero();
+    Teuchos::RCP<ROL::Vector<RealT> > up2 = up->clone();
+    for (int i = 0; i < sampler->numMySamples(); i++) {
+      par = sampler->getMyPoint(i);
+      w   = sampler->getMyWeight(i);
+      con->solve(*cp,*up,*zp,tol);
+      Eup->axpy(w,*up);
+
+      up2->set(*up); up2->applyUnary(sqr);
+      Vup->axpy(w,*up2);
+    }
+    up2->set(*Eup); up2->applyUnary(sqr);
+    Vup->axpy(-1.0,*up2);
+    if (sampler->numMySamples() > 1) {
+      Vup->scale((RealT)sampler->numMySamples()/(RealT)(sampler->numMySamples()-1));
+    }
+    data->outputTpetraVector(Eu_rcp, "expected_value_state.txt");
+    data->outputTpetraVector(Eu_rcp, "variance_state.txt");
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
