@@ -73,7 +73,8 @@ private:
       val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
     }
     bman_->sumAll(&val,&sum,1);
-    return 0.5*std::pow((sum-moment)/moment,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    return 0.5*std::pow((sum-moment)/denom,2);
   }
 
   void momentGradient(std::vector<Real> &gradx, std::vector<Real> &gradp,  Real &scale,
@@ -93,7 +94,8 @@ private:
     }
     bman_->sumAll(&psum,&scale,1);
     scale -= moment;
-    scale /= std::pow(moment,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    scale /= std::pow(denom,2);
   }
 
   void momentHessVec(std::vector<Real> &hvx1, std::vector<Real> &hvx2, std::vector<Real> &hvx3,
@@ -111,7 +113,6 @@ private:
     std::vector<Real> psum(3,0.0), scale(3,0.0);
     Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
     Real xpow0 = 0., xpow1 = 0., xpow2 = 0.;
-    const Real moment2 = std::pow(moment,2);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
       vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
@@ -129,9 +130,12 @@ private:
       hvp2[k] = power * xpow1 * vpt;
     }
     bman_->sumAll(&psum[0],&scale[0],3);
-    scale1 = scale[0] * power/moment2;
-    scale2 = (scale[1] - moment)/moment2 ;
-    scale3 = scale[2]/moment2;
+    Real denom = ((std::abs(moment) < ROL_EPSILON) ? 1.0 : moment);
+    Real denom2 = denom*denom;
+    //const Real moment2 = std::pow(moment,2);
+    scale1 = scale[0] * power/denom2;
+    scale2 = (scale[1] - moment)/denom2 ;
+    scale3 = scale[2]/denom2;
   }
 
 public:

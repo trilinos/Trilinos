@@ -4,7 +4,7 @@
     <Parameter name="Penalty"                       type="double"  value="1e-2" />
     <Parameter name="Order of FE discretization"    type="int"     value="1"    />
     <Parameter name="Stochastic Dimension"          type="int"     value="4"    />
-    <Parameter name="Number of Monte Carlo Samples" type="int"     value="100"  />
+    <Parameter name="Number of Monte Carlo Samples" type="int"     value="10"   />
   </ParameterList>
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
