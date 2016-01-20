@@ -183,11 +183,15 @@ int main(int argc, char *argv[]) {
     Eup->zero(); Vup->zero();
     Teuchos::RCP<ROL::Vector<RealT> > up2 = up->clone();
     for (int i = 0; i < sampler->numMySamples(); i++) {
+      // Get samples and weights
       par = sampler->getMyPoint(i);
       w   = sampler->getMyWeight(i);
+      // Solve state equation at current sample
+      con->setParameter(par);
       con->solve(*cp,*up,*zp,tol);
+      // Accumulate expected value
       Eup->axpy(w,*up);
-
+      // Accumulate variance
       up2->set(*up); up2->applyUnary(sqr);
       Vup->axpy(w,*up2);
     }
@@ -197,7 +201,7 @@ int main(int argc, char *argv[]) {
       Vup->scale((RealT)sampler->numMySamples()/(RealT)(sampler->numMySamples()-1));
     }
     data->outputTpetraVector(Eu_rcp, "expected_value_state.txt");
-    data->outputTpetraVector(Eu_rcp, "variance_state.txt");
+    data->outputTpetraVector(Vu_rcp, "variance_state.txt");
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
