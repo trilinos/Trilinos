@@ -351,7 +351,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Util::get_ccs_helper<
     MatrixAdapter<Matrix>,slu_type,local_ordinal_type,local_ordinal_type>
     ::do_get(this->matrixA_.ptr(), nzvals_(), rowind_(), colptr_(),
-             nnz_ret, ROOTED, ARBITRARY);
+             nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
   }
 
 
