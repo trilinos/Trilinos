@@ -487,7 +487,7 @@ namespace stk {
             std::sort(discoveredMissingFields.begin(), discoveredMissingFields.end(),
                       [](const stk::io::MeshField &a, const stk::io::MeshField &b) {
                             return (a.db_name() < b.db_name())
-                                    || ((a.db_name() == b.db_name()) && (a.field()->name() == b.field()->name())); });
+                                    || ((a.db_name() == b.db_name()) && (a.field()->name() < b.field()->name())); });
             missingFields->insert(missingFields->end(), discoveredMissingFields.begin(), discoveredMissingFields.end());
         }
     }
