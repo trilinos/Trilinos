@@ -49,6 +49,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_SERIAL
 
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_SERIAL
@@ -56,6 +58,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_OPENMP
 
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_OPENMP
@@ -63,6 +67,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_PTHREAD
 
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace )
 
 #endif // KOKKOS_HAVE_PTHREAD
@@ -70,6 +76,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_CUDA
 
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace )
 
 #endif // KOKKOS_HAVE_CUDA
@@ -77,6 +85,8 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_CUDA
 
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( int, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
+  KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( long, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
   KOKKOSBLAS_IMPL_MV_AXPBY_RANK2_DEF( double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace )
 
 #endif // KOKKOS_HAVE_CUDA

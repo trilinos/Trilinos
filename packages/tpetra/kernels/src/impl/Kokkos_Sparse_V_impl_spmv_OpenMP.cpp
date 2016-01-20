@@ -48,9 +48,11 @@ namespace Impl {
 
 #ifdef KOKKOS_HAVE_OPENMP
 
+KOKKOSSPARSE_IMPL_SPMV_DEF( int, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
+KOKKOSSPARSE_IMPL_SPMV_DEF( long, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 KOKKOSSPARSE_IMPL_SPMV_DEF( double, int, size_t, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace )
 
-#define KOKKOSSPARSE_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
+/*#define KOKKOSSPARSE_IMPL_MV_EXEC_SPACE Kokkos::OpenMP
 #define KOKKOSSPARSE_IMPL_MV_MEM_SPACE Kokkos::HostSpace
 #define KOKKOSSPARSE_IMPL_MV_DEVICE_TYPE Kokkos::Device<KOKKOSSPARSE_IMPL_MV_EXEC_SPACE,KOKKOSSPARSE_IMPL_MV_MEM_SPACE>
 #define KOKKOSSPARSE_IMPL_MV_SCALAR double
@@ -104,7 +106,7 @@ struct SPMV<const KOKKOSSPARSE_IMPL_MV_SCALAR,
     spmv_alpha<AMatrix,XVector,YVector,2> (mode, alpha, A, x, beta, y);
   }
 
-};
+};*/
 #endif // KOKKOS_HAVE_OPENMP
 
 } // namespace Impl
