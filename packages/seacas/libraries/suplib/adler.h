@@ -29,5 +29,11 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <stddef.h>                     // for size_t
-size_t adler(size_t adler, const void* vbuf, size_t len);
+#include <stddef.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+  size_t adler(size_t adler, const void* vbuf, size_t len);
+#ifdef __cplusplus
+}                               /* close brackets on extern "C" declaration */
+#endif

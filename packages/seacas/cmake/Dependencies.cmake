@@ -8,6 +8,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Aprepro_lib libraries/aprepro_lib   SS  REQUIRED
   Supes       libraries/supes         SS  REQUIRED
   Suplib      libraries/suplib        SS  REQUIRED
+  SuplibCpp   libraries/suplib_cpp    SS  REQUIRED
   SVDI        libraries/svdi          SS  OPTIONAL
   PLT         libraries/plt           SS  OPTIONAL
   Algebra     applications/algebra    SS  REQUIRED
