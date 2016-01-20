@@ -30,6 +30,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_MESH_DATA_TRAITS_ENUM_HPP
+#define STK_MESH_DATA_TRAITS_ENUM_HPP
+
 
 #include <stk_mesh/base/DataTraits.hpp>
 
@@ -39,8 +42,6 @@
 
 namespace stk {
 namespace mesh {
-
-template< typename EnumType > class DataTraitsEnum ;
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -200,3 +201,4 @@ template<> const DataTraits & data_traits< T >()   \
 } // namespace mesh
 } // namespace stk
 
+#endif
