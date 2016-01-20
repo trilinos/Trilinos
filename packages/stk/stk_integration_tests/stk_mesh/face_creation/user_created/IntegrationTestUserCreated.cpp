@@ -116,8 +116,10 @@ TestCaseData get_test_cases()
             {"ALLA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
             {"ALRA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
+            // {"basic.e", 4, 2, {{3,3}, {4,3}, {5,1}, {6,1}}} // Ticket 13009 - Disabled. Get this working. 2D example.
+
             {"TDg.e", 2, 2, {{1, 1}, {2, 1}}}, // Tet adjacent to degenerate quad
-            {"ZDZ.e", 2, 1, {{1, 5}, {2, 4}}}  // degenerate Hex adjacent to degenerate Hex
+            {"ZDZ.e", 2, 1, {{1, 5}, {2, 4}}}, // degenerate Hex adjacent to degenerate Hex
 
     };
     return testCases;
