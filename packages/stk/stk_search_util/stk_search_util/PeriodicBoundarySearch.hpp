@@ -508,9 +508,6 @@ private:
 
     populate_search_vector(side2, side_2_vector, search_tolerance);
 
-    std::cout << "Doing search for " << side_1_vector.size() << " " << side_2_vector.size() << " " << transform.m_translation[0] << " " << transform.m_translation[1] << " " << transform.m_translation[2] << std::endl;
-
-
     switch (transform.m_transform_type)
     {
       case TRANSLATION:
