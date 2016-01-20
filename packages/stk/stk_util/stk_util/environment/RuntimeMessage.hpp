@@ -90,7 +90,7 @@ enum MessageType {
 /**
  * @brief Enumeration <b>ThrottleGroup</b> lists defined throttling groups.
  *
- * When messages are throttled, the throttle count may be reset at varior points during an
+ * When messages are throttled, the throttle count may be reset at various points during an
  * application run.  Some throttles defined for the application, while other may be reset at each
  * time step or other interval.  This allows warnings to be repeated at each time step rather than
  * cut off.

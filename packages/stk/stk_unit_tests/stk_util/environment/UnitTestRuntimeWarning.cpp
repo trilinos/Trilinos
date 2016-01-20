@@ -31,22 +31,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_UTIL_CI_STRING_H
-#define STK_UTIL_UTIL_CI_STRING_H
+#include <iostream>                     // for operator<<, ostringstream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/environment/RuntimeWarning.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
+#include <gtest/gtest.h>
+#include <string>                       // for operator==, basic_string, etc
 
-#include <stk_util/util/ci_traits.hpp>
-#include <iosfwd>
 
-typedef std::basic_string<char,ignorecase_traits> ci_string;
+static std::ostringstream s_os;
 
-std::ostream &operator<<(std::ostream &os, const ci_string &s);
+void my_report_handler(const char* message, int type) {
+    s_os << type<<": "<<message << "; ";
+}
 
-std::istream &operator>>(std::istream &is, ci_string &s);
+namespace {
 
-std::string operator+(const std::string &s1, const ci_string &s2);
+TEST(UnitTestRuntimeWarning, Throttle)
+{
+  stk::set_report_handler(my_report_handler);
 
-ci_string operator+(const ci_string &s1, const std::string &s2);
+  int throttle_limit = 3;
+  stk::MessageCode id(throttle_limit);
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XY" << std::endl;
 
-ci_string operator+(const char *cs1, const ci_string &cs2);
+  std::string warningstring = s_os.str();
+  std::string expected("0: runtime-warning XX\n; 0: runtime-warning XX\n; 0: runtime-warning XX\n; -2147483648: Maximum count for this unknown has been exceeded and will no longer be displayed; ");
+  EXPECT_EQ(expected, warningstring);
+}
 
-#endif // STK_UTIL_UTIL_CI_STRING_H
+}
+
