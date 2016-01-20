@@ -170,6 +170,8 @@ int main(int argc, char *argv[]) {
     algo_tr.run(opt, true, *outStream);
 
     *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
+
+    data->outputTpetraVector(z_rcp, "control.txt");
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

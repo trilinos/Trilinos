@@ -647,14 +647,15 @@ public:
   Real funcKappa(const Real &x1, const Real &x2, const std::vector<Real> &par) const {
     // Random diffusion coefficient from I. Babuska, F. Nobile, R. Tempone 2010.
     // Simplified model for random stratified media.
-    Real Lc = 1.0/16.0, sqrtpi = std::sqrt(M_PI), xi = std::sqrt(sqrtpi*Lc), f = 0.0, phi = 0.0;
-    Real val = 1.0 + par[0]*std::sqrt(sqrtpi*Lc*0.5);
+    Real Lc = 1.0/16.0, sqrtpi = std::sqrt(M_PI), xi = std::sqrt(sqrtpi*Lc);
+    Real sqrt3 = std::sqrt(3.0), f = 0.0, phi = 0.0;
+    Real val = 1.0 + sqrt3*par[0]*std::sqrt(sqrtpi*Lc*0.5);
     for (int i = 1; i < sdim_; i++) {
       f = floor((Real)(i+1)/2.0);
       phi = ((i+1)%2 ? std::sin(f*M_PI*x1) : std::cos(f*M_PI*x1));
-      val += xi*std::exp(-std::pow(f*M_PI*Lc,2.0)/8.0)*phi*par[i];
+      val += xi*std::exp(-std::pow(f*M_PI*Lc,2.0)/8.0)*phi*sqrt3*par[i];
     }
-    return val;
+    return 0.5 + std::exp(val);
   }
 
 
