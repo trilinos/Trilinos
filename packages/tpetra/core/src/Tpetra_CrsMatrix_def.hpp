@@ -2762,8 +2762,7 @@ namespace Tpetra {
   getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
+    typedef LocalOrdinal LO;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
     typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
@@ -2799,21 +2798,14 @@ namespace Tpetra {
       Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     Kokkos::View<const size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      h_offsets(&offsets[0],offsets.size());
+      h_offsets (offsets.getRawPtr (), offsets.size ());
     // Find the diagonal entries and put them in lclVecHost1d.
-    const LocalOrdinal myNumRows =
-      static_cast<LocalOrdinal> (this->getNodeNumRows ());
-    typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
-    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LocalOrdinal& lclRow) {
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
       lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
       if (h_offsets[lclRow] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-        //ArrayView<const LocalOrdinal> ind;
-        //ArrayView<const Scalar> val;
-        // NOTE (mfh 02 Jan 2015) This technically does not assume
-        // UVM, since the get{Global,Local}RowView methods are
-        // supposed to return views of host data.
-        //this->getLocalRowView (i, ind, val);
-        auto curRow = lclMatrix_.template rowConst<size_t>(lclRow);
+        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
         lclVecHost1d(lclRow) = static_cast<impl_scalar_type> (curRow.value(h_offsets[lclRow]));
       }
     });
