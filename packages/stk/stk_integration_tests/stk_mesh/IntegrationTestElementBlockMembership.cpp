@@ -148,50 +148,10 @@ void get_element_blocks_for_entity(const stk::mesh::BulkData &bulkData, stk::mes
     get_element_blocks_from_parts(element_blocks, partVector);
 }
 
-class BlockPartDifference1
+class BlockPartDifference
 {
 public:
-    BlockPartDifference1(const stk::mesh::BulkData &bulkData)
-    : m_bulkData(bulkData)
-    {}
-
-    bool equivalent(stk::mesh::PartVector &blocksForElement1, stk::mesh::PartVector &blocksForElement2)
-    {
-        stk::mesh::PartVector diff12 = get_difference(blocksForElement1, blocksForElement2);
-        stk::mesh::PartVector diff21 = get_difference(blocksForElement2, blocksForElement1);
-        return (0u == diff12.size()) && (0u == diff21.size());
-    }
-
-    bool equivalent(stk::mesh::Entity element1, stk::mesh::Entity element2)
-    {
-        stk::mesh::PartVector blocksForElement1, blocksForElement2;
-        get_element_blocks_for_entity(m_bulkData, element1, blocksForElement1);
-        get_element_blocks_for_entity(m_bulkData, element2, blocksForElement2);
-        return equivalent(blocksForElement1, blocksForElement2);
-    }
-
-private:
-    stk::mesh::PartVector get_difference(stk::mesh::PartVector &blocksForElement1, stk::mesh::PartVector &blocksForElement2)
-    {
-        stk::mesh::PartVector diff(blocksForElement1.size() + blocksForElement2.size());
-        std::sort(blocksForElement1.begin(), blocksForElement1.end());
-        std::sort(blocksForElement2.begin(), blocksForElement2.end());
-        stk::mesh::PartVector::iterator it=std::set_difference (blocksForElement1.begin(), blocksForElement1.end(), blocksForElement2.begin(), blocksForElement2.end(), diff.begin());
-        diff.resize(it-diff.begin());
-        return diff;
-    }
-
-    BlockPartDifference1();
-    BlockPartDifference1( const BlockPartDifference1 & );
-    BlockPartDifference1 & operator = ( const BlockPartDifference1 & );
-
-    const stk::mesh::BulkData &m_bulkData;
-};
-
-class BlockPartDifference2
-{
-public:
-    BlockPartDifference2(const stk::mesh::BulkData &bulkData)
+    BlockPartDifference(const stk::mesh::BulkData &bulkData)
     : m_bulkData(bulkData)
     {}
 
@@ -211,9 +171,9 @@ public:
     }
 
 private:
-    BlockPartDifference2();
-    BlockPartDifference2( const BlockPartDifference2 & );
-    BlockPartDifference2 & operator = ( const BlockPartDifference2 & );
+    BlockPartDifference();
+    BlockPartDifference( const BlockPartDifference & );
+    BlockPartDifference & operator = ( const BlockPartDifference & );
 
     const stk::mesh::BulkData &m_bulkData;
 };
@@ -295,7 +255,7 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        BlockPartDifference1 blockPartDifference(get_bulk());
+        BlockPartDifference blockPartDifference(get_bulk());
         EXPECT_TRUE(blockPartDifference.equivalent(element1, element2));
     }
 };
@@ -310,7 +270,7 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        BlockPartDifference2 blockPartDifference(get_bulk());
+        BlockPartDifference blockPartDifference(get_bulk());
         EXPECT_FALSE(blockPartDifference.equivalent(element1, element2));
     }
 };
