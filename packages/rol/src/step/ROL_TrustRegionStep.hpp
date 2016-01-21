@@ -159,7 +159,6 @@ private:
   Real              scale0_; ///< Scale for inexact gradient computation.
   Real              scale1_; ///< Scale for inexact gradient computation.
 
-  bool              softUp_;
   Real              scaleEps_;
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
@@ -251,7 +250,7 @@ public:
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
       scale0_(1.), scale1_(1.),
-      softUp_(false), scaleEps_(1.) {
+      scaleEps_(1.) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
     step_state->searchSize = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius", -1.0);
@@ -275,8 +274,6 @@ public:
     useSecantPrecond_ = parlist.sublist("General").sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = parlist.sublist("General").sublist("Secant").get("Use as Hessian", false);
     secant_ = SecantFactory<Real>(parlist);
-    // Changing Objective Functions
-    softUp_ = parlist.sublist("General").get("Variable Objective Function",false);
     // Scale for epsilon active sets
     scaleEps_ = parlist.sublist("General").get("Scale for Epsilon Active Sets",1.0);
   }
@@ -302,7 +299,7 @@ public:
       delMax_(1.e4),
       alpha_init_(1.), max_fval_(20),
       scale0_(1.), scale1_(1.),
-      softUp_(false), scaleEps_(1.) {
+      scaleEps_(1.) {
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
     step_state->searchSize = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius", -1.0);
@@ -330,8 +327,6 @@ public:
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
       secant_ = SecantFactory<Real>(Slist);
     }
-    // Changing Objective Functions
-    softUp_ = parlist.sublist("General").get("Variable Objective Function",false);
     // Scale for epsilon active sets
     scaleEps_ = parlist.sublist("General").get("Scale for Epsilon Active Sets",1.0);
   }
@@ -531,12 +526,7 @@ public:
         xnew_->axpy(-alpha*alpha_init_,gp_->dual());
         con.project(*xnew_);
         // Compute new objective value
-        if ( softUp_ ) {
-          obj.update(*xnew_);
-        }
-        else {
-          obj.update(*xnew_,true,algo_state.iter);
-        }
+        obj.update(*xnew_,true,algo_state.iter);
         Real ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
         algo_state.nfval++;
         // Perform smoothing
@@ -546,12 +536,7 @@ public:
           xnew_->set(x);
           xnew_->axpy(-alpha*alpha_init_,gp_->dual());
           con.project(*xnew_);
-          if ( softUp_ ) {
-            obj.update(*xnew_,false,algo_state.iter);
-          }
-          else {
-            obj.update(*xnew_,true,algo_state.iter);
-          }
+          obj.update(*xnew_,true,algo_state.iter);
           ftmp = obj.value(*xnew_,tol); // MUST DO SOMETHING HERE WITH TOL
           algo_state.nfval++;
           if ( cnt >= max_fval_ ) {
@@ -563,11 +548,6 @@ public:
         // Store objective function and iteration information
         fnew = ftmp;
         x.set(*xnew_);
-      }
-      else {
-        if (softUp_) {
-          pObj.update(x,true,algo_state.iter);
-        }
       }
 
       // Store previous gradient for secant update
@@ -592,14 +572,6 @@ public:
 
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
-    }
-    else { // Step was rejected
-      if ( softUp_ ) {
-        obj.update(x,true,algo_state.iter);
-        fnew = pObj.value(x,tol);
-        algo_state.nfval++;
-        algo_state.value = fnew; 
-      }
     }
 
   }

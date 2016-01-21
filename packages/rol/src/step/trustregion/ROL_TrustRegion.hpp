@@ -84,17 +84,10 @@ private:
   int  forceFactor_;
   int cnt_;
 
-  bool softUp_;
-
   unsigned verbosity_;
 
   void updateObj( Vector<Real> &x, int iter, ProjectedObjective<Real> &pObj ) {
-    if ( !softUp_ ) {
-      pObj.update(x,true,iter);
-    }
-    else {
-      pObj.update(x);
-    }
+    pObj.update(x,true,iter);
   }
 
 
@@ -129,8 +122,6 @@ public:
     updateIter_  = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Update Frequency",10);
     forceFactor_ = list.sublist("Inexact").sublist("Value").get("Forcing Sequence Reduction Factor",0.1);
 
-    // Changing Objective Functions
-    softUp_ = parlist.sublist("General").get("Variable Objective Function",false);  
   }
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
@@ -303,11 +294,6 @@ public:
       pObj.update(x,true,iter);
       if (rho >= eta2_) { // Increase trust-region radius
         del = std::min(gamma2_*del,delmax_);
-      }
-    }
-    else { // step rejected 
-      if(softUp_) { // Variable Objective Function
-        pObj.update(x,true,iter); 
       }
     }
   }
