@@ -65,6 +65,7 @@
 #include "ROL_MixedQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_QuantileRadiusQuadrangle.hpp"
+#include "ROL_SmoothedWorstCaseQuadrangle.hpp"
 #include "ROL_TruncatedMeanQuadrangle.hpp"
 
 namespace ROL {
@@ -84,6 +85,7 @@ namespace ROL {
     RISKMEASURE_MIXEDQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILERADIUSQUADRANGLE,
+    RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_LAST
   };
@@ -119,6 +121,8 @@ namespace ROL {
              retString = "Quantile-Based Quadrangle";               break;
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
              retString = "Quantile-Radius Quadrangle";              break;
+      case RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
+             retString = "Smoothed Worst-Case Quadrangle";          break;
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              retString = "Truncated Mean Quadrangle";               break;
       case RISKMEASURE_LAST:
@@ -144,6 +148,7 @@ namespace ROL {
             (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
+            (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
             (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) );
   }
 
@@ -210,6 +215,8 @@ namespace ROL {
              return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
              return Teuchos::rcp(new QuantileRadiusQuadrangle<Real>(parlist));
+      case RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
+             return Teuchos::rcp(new SmoothedWorstCaseQuadrangle<Real>(parlist));
       case RISKMEASURE_TRUNCATEDMEANQUADRANGLE:
              return Teuchos::rcp(new TruncatedMeanQuadrangle<Real>(parlist));
       default:

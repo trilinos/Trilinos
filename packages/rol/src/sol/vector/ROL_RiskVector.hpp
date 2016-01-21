@@ -71,13 +71,14 @@ public:
     stat_.clear();
     dual_vec1_ = vec->dual().clone();
     std::string type = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-    if ( type == "CVaR"                       ||
-         type == "HMCR"                       ||
-         type == "KL Divergence"              ||
-         type == "Moreau-Yosida CVaR"         ||
-         type == "Log-Exponential Quadrangle" ||
-         type == "Log-Quantile Quadrangle"    ||
-         type == "Quantile-Based Quadrangle"  ||
+    if ( type == "CVaR"                           ||
+         type == "HMCR"                           ||
+         type == "KL Divergence"                  ||
+         type == "Moreau-Yosida CVaR"             ||
+         type == "Log-Exponential Quadrangle"     ||
+         type == "Log-Quantile Quadrangle"        ||
+         type == "Quantile-Based Quadrangle"      ||
+         type == "Smoothed Worst-Case Quadrangle" ||
          type == "Truncated Mean Quadrangle" ) {
       augmented_ = true;
       nStat_     = 1;

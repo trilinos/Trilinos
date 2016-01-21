@@ -134,11 +134,6 @@ public:
     using Teuchos::rcp_dynamic_cast;
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
-//#ifdef HAVE_XPETRA_TPETRA
-//#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-
-//#endif
-//#endif
     typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
@@ -215,21 +210,11 @@ public:
     using Teuchos::as;
     typedef Thyra::VectorSpaceBase<Scalar> ThyVecSpaceBase;
     typedef Thyra::SpmdVectorSpaceBase<Scalar> ThySpmdVecSpaceBase;
-    //typedef Thyra::VectorBase<Scalar> ThyVecBase;
-//#ifdef HAVE_XPETRA_TPETRA
-//#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-
-//#endif
-//#endif
-    //typedef Thyra::ProductVectorSpaceBase<Scalar> ThyProdVecSpaceBase;
     typedef Thyra::ProductMultiVectorBase<Scalar> ThyProdMultVecBase;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
-    //typedef Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node> MapFactory;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > MultiVector;
     typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyUtils;
-    //typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> TpMap;
-    //typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpVector;
 
     // return value
     RCP<MultiVector> xpMultVec = Teuchos::null;
@@ -741,8 +726,7 @@ public:
 
 #ifdef HAVE_XPETRA_EPETRA
       if(bIsEpetra) {
-        // TODO check for product vector space!
-        RCP<const Epetra_Map> epMap = Teuchos::null;
+        //RCP<const Epetra_Map> epMap = Teuchos::null;
         RCP<const Epetra_Map>
         epetra_map = Teuchos::get_extra_data<RCP<const Epetra_Map> >(vectorSpace,"epetra_map");
         if(!Teuchos::is_null(epetra_map)) {
