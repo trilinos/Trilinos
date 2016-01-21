@@ -177,7 +177,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
