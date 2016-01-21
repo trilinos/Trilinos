@@ -632,6 +632,25 @@ public:
   void
   getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
                                        Kokkos::MemoryUnmanaged>& diag,
+                    const Kokkos::View<const size_t*, device_type,
+                                       Kokkos::MemoryUnmanaged>& offsets) const;
+
+  /// \brief Variant of getLocalDiagCopy() that uses precomputed
+  ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
+  ///
+  /// \param diag [out] On input: Must be preallocated, with
+  ///   dimensions at least (number of diagonal blocks on the calling
+  ///   process) x getBlockSize() x getBlockSize(). On output: the
+  ///   diagonal blocks.  Leftmost index is "which block," then the
+  ///   row index within a block, then the column index within a
+  ///   block.
+  ///
+  /// This method uses the offsets of the diagonal entries, as
+  /// precomputed by getLocalDiagOffsets(), to speed up copying the
+  /// diagonal of the matrix.
+  void
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.

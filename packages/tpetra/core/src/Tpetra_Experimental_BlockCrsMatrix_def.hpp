@@ -613,6 +613,45 @@ namespace Experimental {
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
                                        Kokkos::MemoryUnmanaged>& diag,
+                    const Kokkos::View<const size_t*, device_type,
+                                       Kokkos::MemoryUnmanaged>& offsets) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::parallel_for;
+    typedef typename Kokkos::View<impl_scalar_type***, device_type,
+      Kokkos::MemoryUnmanaged>::HostMirror::execution_space host_exec_space;
+
+    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO blockSize = this->getBlockSize ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<LO> (diag.dimension_0 ()) < lclNumMeshRows ||
+       static_cast<LO> (diag.dimension_1 ()) < blockSize ||
+       static_cast<LO> (diag.dimension_2 ()) < blockSize,
+       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
+       "The input Kokkos::View is not big enough to hold all the data.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<LO> (offsets.size ()) < lclNumMeshRows,
+       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
+       "offsets.size() = " << offsets.size () << " < local number of diagonal "
+       "blocks " << lclNumMeshRows << ".");
+
+    // mfh 12 Dec 2015: Use the host execution space, since we haven't
+    // quite made everything work with CUDA yet.
+    typedef Kokkos::RangePolicy<host_exec_space, LO> policy_type;
+    parallel_for (policy_type (0, lclNumMeshRows), [=] (const LO& lclMeshRow) {
+        const size_t offset = offsets(lclMeshRow);
+        auto D_in = this->getConstLocalBlockFromRelOffset (lclMeshRow, offset);
+        auto D_out = Kokkos::subview (diag, lclMeshRow, ALL (), ALL ());
+        COPY (D_in, D_out);
+      });
+  }
+
+
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                                       Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
     using Kokkos::ALL;
