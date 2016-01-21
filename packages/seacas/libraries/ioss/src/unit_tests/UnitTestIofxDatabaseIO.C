@@ -208,12 +208,8 @@ TEST(Iofx, test_constructor)
         for (size_t j=0;j<sidesets[i]->block_count();++j)
         {
             Ioss::SideBlock *block = sidesets[i]->get_block(j);
-            std::vector<int64_t> face_ids_per_block;
             std::vector<int64_t> side_ids_per_block;
             std::vector<int64_t> connectivity_per_block;
-
-            ASSERT_TRUE(block->field_exists("ids"));
-            block->get_field_data("ids", face_ids_per_block);
 
             ASSERT_TRUE(block->field_exists("element_side_raw"));
             block->get_field_data("element_side", side_ids_per_block);
