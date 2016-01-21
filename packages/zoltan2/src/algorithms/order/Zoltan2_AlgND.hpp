@@ -83,7 +83,8 @@ namespace Zoltan2
  */
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-class AlgND : public Algorithm<Adapter>
+class AlgND : public Algorithm<typename Adapter::base_adapter_t>
+//class AlgND : public Algorithm<Adapter>
 {
 
 private:
@@ -97,11 +98,14 @@ private:
   const RCP<const Environment> mEnv;
   const RCP<Comm<int> > mProblemComm;
 
-  const RCP<const GraphModel<Adapter> > mGraphModel;
-  const RCP<const CoordinateModel<Adapter> > mIds;
+  //  const RCP<const GraphModel<Adapter> > mGraphModel;
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
+  //  const RCP<const CoordinateModel<Adapter> > mIds;
+  const RCP<CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
-  const RCP<const Adapter> mBaseInputAdapter;
-
+  //const RCP<const Adapter> mBaseInputAdapter;
+  //const RCP<const Adapter> mInputAdapter;
+  const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;                                                                                                                                 
 
   void getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
 			const part_t * parts, 
@@ -113,11 +117,12 @@ public:
   // Constructor
   AlgND(const RCP<const Environment> &env_,
 	  const RCP<Comm<int> > &problemComm_,
-	  const RCP<const GraphModel<Adapter> > &gModel_,
-	  const RCP<const CoordinateModel<Adapter> > &cModel_,
-	  const RCP<const Adapter> baseInputAdapter_)
-    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), mIds(cModel_), 
-     mBaseInputAdapter(baseInputAdapter_)
+	const RCP<GraphModel<typename Adapter::base_adapter_t> > &gModel_,
+	const RCP<CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
+	const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_
+       )
+    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), 
+     mIds(cModel_), mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
     Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")
@@ -156,102 +161,148 @@ int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
     // to use PHG
     //////////////////////////////////////////////////////////////////////
 
-    // Q: can I use solution passed into alg or do I need to create a different one?
-    //    For now using the one passed into alg
-    // TODO: use new partitioning solution
+    RCP<PartitioningSolution<Adapter> > partSoln;
+    int nUserWts=0;
+
+    RCP<const Comm<int> > comm1 = mProblemComm; //replace this with cast
+
+       std::cout << "HERE1" << std::endl;
+
+    partSoln =
+      RCP<PartitioningSolution<Adapter> > (new PartitioningSolution<Adapter>(this->mEnv, comm1, nUserWts));
+
+       AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
+
+       std::cout << "HERE2" << std::endl;
+
+    algZoltan.partition(partSoln);
+
+       std::cout << "HERE3" << std::endl;
 
 
-    //AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
-    // algZoltan.partition(solution_);
+    size_t numGlobalParts = partSoln->getTargetGlobalNumberOfParts();
 
-    // size_t numGlobalParts = solution_->getTargetGlobalNumberOfParts();
+    const part_t *parts = partSoln->getPartListView();
+    //////////////////////////////////////////////////////////////////////
 
-    // const part_t *parts = solution_->getPartListView();
-    // //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    // Build up tree that represents partitioning subproblems, which will 
+    // be used for determining separators at each level
+    //   -- for now, this is built up artificially
+    //   -- eventually this will be obtained from PHG output
+    //
+    // Each separator i is represented by 4 integers/part_t? in the partTree
+    // structure:  partTree[4*i], partTree[4*i+1], partTree[4*i+2], partTree[4*i+3]
+    // These 4 integers are level of separator, smallest part in 1st half of separator,
+    // smallest part in 2nd half of separator, largest part in 2nd half of separator + 1
+    //////////////////////////////////////////////////////////////////////
+    // change int to something, part_t?
 
-    // //////////////////////////////////////////////////////////////////////
-    // // Build up tree that represents partitioning subproblems, which will 
-    // // be used for determining separators at each level
-    // //   -- for now, this is built up artificially
-    // //   -- eventually this will be built from PHG output
-    // //////////////////////////////////////////////////////////////////////
-    // // change int to something, part_t?
-    // std::vector<int> partTree;
-
-    // buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
-    // unsigned int numSeparators = partTree.size() / 4;
-    // //////////////////////////////////////////////////////////////////////
+       std::cout << "HERE4" << std::endl;
 
 
-    // //////////////////////////////////////////////////////////////////////
-    // // Create a map that maps each part number to a new number based on
-    // // the level of the hiearchy of the separator tree.  This allows us
-    // // to easily identify the boundary value vertices
-    // //////////////////////////////////////////////////////////////////////
-    // int numLevels = partTree[4*(numSeparators-1)]+1;
+    std::vector<int> partTree;
 
-    // std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
+    buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
+    unsigned int numSeparators = partTree.size() / 4;
 
-    // std::vector<int> sepsInLev(numLevels,0);
+    for(unsigned int i=0;i<partTree.size(); i++)
+    {
+      std::cout << "partTree: " << partTree[i] << std::endl;
+    }
+    std::cout << "NumSeparators: " << numSeparators << std::endl;
 
-    // for(unsigned int i=0;i<numSeparators;i++)
-    // {
-    //   int level = partTree[4*i];
-    //   int leftPart = partTree[4*i+1];
-    //   int splitPart = partTree[4*i+2];
-    //   int rightPart = partTree[4*i+3];
+       std::cout << "HERE5" << std::endl;
+
+    //////////////////////////////////////////////////////////////////////
+
+
+    //////////////////////////////////////////////////////////////////////
+    // Create a map that maps each part number to a new number based on
+    // the level of the hiearchy of the separator tree.  This allows us
+    // to easily identify the boundary value vertices
+    //////////////////////////////////////////////////////////////////////
+       std::cout << "HERE6" << std::endl;
+
+
+    int numLevels = partTree[4*(numSeparators-1)]+1;
+
+    std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
+
+    std::vector<int> sepsInLev(numLevels,0);
+
+    for(unsigned int i=0;i<numSeparators;i++)
+    {
+      int level = partTree[4*i];
+      int leftPart = partTree[4*i+1];
+      int splitPart = partTree[4*i+2];
+      int rightPart = partTree[4*i+3];
       
-    //   for(int part=leftPart; part<splitPart; part++)
-    //   {
-    //     partLevelMap[level][part] = 2*sepsInLev[level];
-    //   }
+      for(int part=leftPart; part<splitPart; part++)
+      {
+        partLevelMap[level][part] = 2*sepsInLev[level];
+      }
 
-    //   for(int part=splitPart; part<rightPart; part++)
-    //   {
-    //     partLevelMap[level][part] = 2*sepsInLev[level]+1;
-    //   }
+      for(int part=splitPart; part<rightPart; part++)
+      {
+        partLevelMap[level][part] = 2*sepsInLev[level]+1;
+      }
 
-    //   sepsInLev[level]++;
-    // }
-    // //////////////////////////////////////////////////////////////////////
+      sepsInLev[level]++;
+    }
 
-    // // Set of separator vertices.  Used to keep track of what vertices are
-    // // already in previous calculated separators.  These vertices should be
-    // // excluded from future separator calculations
-    // const std::set<int> sepVerts;
+    std::cout << "partLevelMap[0][0] = " << partLevelMap[0][0] << std::endl; 
+    std::cout << "partLevelMap[0][1] = " << partLevelMap[0][1] << std::endl; 
 
-    // //////////////////////////////////////////////////////////////////////
-    // // Loop over each cut
-    // //    1. Build boundary layer between parts
-    // //    2. Build vertex separator from boundary layer
-    // //////////////////////////////////////////////////////////////////////
-    // for(unsigned int level=0;level<numLevels;level++)
-    // {
-    //   for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
-    //   {
+       std::cout << "HERE7" << std::endl;
 
-    // 	std::vector<int> boundVerts;
-    // 	std::vector<std::vector<int> > boundVertsST(2);
+    //////////////////////////////////////////////////////////////////////
 
-    //     ///////////////////////////////////////////////////////////////
-    //     // Build boundary layer between parts (edge separator)
-    //     ///////////////////////////////////////////////////////////////
-    //     getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
-    // 			 boundVertsST, sepVerts);
-    //     ///////////////////////////////////////////////////////////////
+    // Set of separator vertices.  Used to keep track of what vertices are
+    // already in previous calculated separators.  These vertices should be
+    // excluded from future separator calculations
+    const std::set<int> sepVerts;
 
-    //     ///////////////////////////////////////////////////////////////
-    //     // Calculate vertex separator from boundary layer
-    //     ///////////////////////////////////////////////////////////////
-
-    // 	//VCOfBoundLayer
-
-    //     ///////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    // Loop over each cut
+    //    1. Build boundary layer between parts
+    //    2. Build vertex separator from boundary layer
+    //////////////////////////////////////////////////////////////////////
+       std::cout << "HERE8" << std::endl;
 
 
-    // 	}
-    // }
-    // //////////////////////////////////////////////////////////////////////
+    for(unsigned int level=0;level<numLevels;level++)
+    {
+      for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
+      {
+
+    	std::vector<int> boundVerts;
+    	std::vector<std::vector<int> > boundVertsST(2);
+
+        ///////////////////////////////////////////////////////////////
+        // Build boundary layer between parts (edge separator)
+        ///////////////////////////////////////////////////////////////
+	std::cout << "HERE9" << std::endl;
+        getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
+    			 boundVertsST, sepVerts);
+	std::cout << "HERE10" << std::endl;
+        ///////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////
+        // Calculate vertex separator from boundary layer
+        ///////////////////////////////////////////////////////////////
+
+    	//VCOfBoundLayer
+
+        ///////////////////////////////////////////////////////////////
+
+
+    	}
+    }
+
+       std::cout << "HERE20" << std::endl;
+
+    //////////////////////////////////////////////////////////////////////
 
     // //TODO: calculate vertex separator for each layer, 
     // //TODO: using vertex separators, compute new ordering and store in solution
@@ -267,16 +318,20 @@ int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
-					const part_t * parts, 
-					std::vector<int> &boundVerts,
-					std::vector<std::vector<int> > &boundVertsST,
-					const std::set<int> &sepVerts)
+				      const part_t * parts, 
+				      std::vector<int> &boundVerts,
+				      std::vector<std::vector<int> > &boundVertsST,
+				      const std::set<int> &sepVerts)
 {
+  std::cout << "HI1" << std::endl;
+
   typedef typename Adapter::lno_t lno_t;         // local ids
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
   int numVerts = mGraphModel->getLocalNumVertices();
+
+  std::cout << "NumVerts: " << numVerts << std::endl;
 
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
