@@ -1000,6 +1000,48 @@ namespace Tpetra {
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
 
+    /// \brief Get offsets of the diagonal entries in the graph.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    /// \warning This method must be called collectively.  We reserve
+    ///   the right to do extra checking in a debug build that will
+    ///   require collectives.
+    ///
+    /// \pre The graph must have a column Map.
+    /// \pre All diagonal entries of the graph must be populated on
+    ///   this process.  Results are undefined otherwise.
+    /// \pre <tt>offsets.dimension_0() == getNodeNumRows()</tt>
+    ///
+    /// This method creates an array of offsets of the local diagonal
+    /// entries in the matrix.  This array is suitable for use in the
+    /// two-argument version of getLocalDiagCopy().  However, its
+    /// contents are not defined in any other context.  For example,
+    /// you should not rely on \c offsets(i) being the index of the
+    /// diagonal entry in the views returned by
+    /// CrsMatrix::getLocalRowView.  This may be the case, but it need
+    /// not be.  (For example, we may choose to optimize the lookups
+    /// down to the optimized storage level, in which case the offsets
+    /// will be computed with respect to the underlying storage
+    /// format, rather than with respect to the views.)
+    ///
+    /// Changes to the graph's structure, or calling fillComplete on
+    /// the graph (if its structure is not already fixed), may make
+    /// the output array's contents invalid.  "Invalid" means that you
+    /// must call this method again to recompute the offsets.
+    ///
+    /// \param offsets [out] Output array of offsets.  NOT allocated
+    ///   by this method; the caller must allocate.  Must have
+    ///   getNodeNumRows() entries on the calling process.  (This may
+    ///   be different on different processes.)
+    void
+    getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
+
+    //! Backwards compatibility version of the above method.
+    void
+    getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+
     /// \brief Get an upper bound on the number of entries that can be
     ///   stored in each row.
     ///
