@@ -2763,6 +2763,7 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
     typedef LocalOrdinal LO;
+    typedef impl_scalar_type IST;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
     typedef typename vec_type::dual_view_type dual_view_type;
     typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
@@ -2781,35 +2782,28 @@ namespace Tpetra {
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    dual_view_type lclVec = diag.getDualView ();
-    lclVec.template modify<host_execution_space> ();
-    typedef typename dual_view_type::t_host host_view_type;
-    host_view_type lclVecHost = lclVec.h_view;
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
 
-    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
-    // that we get the same layout and memory traits as the original
-    // 2-D view.
-    typedef typename Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits>
-      host_view_1d_type;
-    host_view_1d_type lclVecHost1d =
-      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
-    Kokkos::View<const size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+    Kokkos::View<const size_t*, Kokkos::HostSpace,
+                 Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       h_offsets (offsets.getRawPtr (), offsets.size ());
     // Find the diagonal entries and put them in lclVecHost1d.
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+
     Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
       lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
-      if (h_offsets[lclRow] != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (h_offsets[lclRow] != INV) {
         auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
-        lclVecHost1d(lclRow) = static_cast<impl_scalar_type> (curRow.value(h_offsets[lclRow]));
+        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
       }
     });
-    lclVec.template sync<execution_space> (); // sync changes back to device
+    diag.template sync<execution_space> (); // sync changes back to device
   }
 
 
