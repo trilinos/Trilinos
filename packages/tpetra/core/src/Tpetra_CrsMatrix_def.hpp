@@ -2749,6 +2749,56 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
+                    const Kokkos::View<const size_t*, device_type,
+                      Kokkos::MemoryUnmanaged>& offsets) const
+  {
+    typedef LocalOrdinal LO;
+    typedef impl_scalar_type IST;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
+    typedef typename vec_type::dual_view_type dual_view_type;
+    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "getLocalDiagCopy: ";
+    const map_type& rowMap = * (this->getRowMap ());
+    // isCompatible() requires an all-reduce, and thus this check
+    // should only be done in debug mode.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
+      "The input Vector's Map must be compatible with (in the sense of Map::"
+      "isCompatible) the CrsMatrix's row Map.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // For now, we fill the Vector on the host and sync to device.
+    // Later, we may write a parallel kernel that works entirely on
+    // device.
+    //
+    // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
+    // we write a device kernel, it will not need to assume UVM.
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+
+    // Find the diagonal entries and put them in lclVecHost1d.
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
+    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+
+    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
+      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+      if (offsets(lclRow) != INV) {
+        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
+        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(offsets(lclRow)));
+      }
+    });
+    diag.template sync<execution_space> (); // sync changes back to device
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
     typedef LocalOrdinal LO;

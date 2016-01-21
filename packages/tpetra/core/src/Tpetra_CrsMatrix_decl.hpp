@@ -1986,6 +1986,32 @@ namespace Tpetra {
     ///   for this method.  It may disappear or change at any time.
     ///
     /// This method uses the offsets of the diagonal entries, as
+    /// precomputed by the Kokkos::View overload of
+    /// getLocalDiagOffsets(), to speed up copying the diagonal of the
+    /// matrix.  The offsets must be recomputed if any of the
+    /// following methods are called:
+    /// <ul>
+    /// <li> insertGlobalValues() </li>
+    /// <li> insertLocalValues() </li>
+    /// <li> fillComplete() (with a dynamic graph) </li>
+    /// <li> resumeFill() (with a dynamic graph) </li>
+    /// </ul>
+    ///
+    /// If the matrix has a const ("static") graph, and if that graph
+    /// is fill complete, then the offsets array remains valid through
+    /// calls to fillComplete() and resumeFill().
+    void
+    getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag,
+                      const Kokkos::View<const size_t*, device_type,
+                        Kokkos::MemoryUnmanaged>& offsets) const;
+
+    /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method.  It may disappear or change at any time.
+    ///
+    /// This method uses the offsets of the diagonal entries, as
     /// precomputed by getLocalDiagOffsets(), to speed up copying the
     /// diagonal of the matrix.  The offsets must be recomputed if any
     /// of the following methods are called:
