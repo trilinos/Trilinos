@@ -45,11 +45,13 @@ namespace stk
 namespace mesh
 {
 
-//void create_interior_block_boundary_sides(BulkData, Selector& blocksToConsider, Part& partToPutSidesInto);
-//void check_interior_block_boundary_sides(BulkData, Selector& blocksToConsider, Part& partToPutSidesInto);
+void create_interior_block_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto)
+{
+}
 
-//void create_all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
-//void check _all_boundary_sides(BulkData, Selector& blocksToSkin, Part& partToPutSidesInto);
+//void check_interior_block_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
+//void create_all_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
+//void check _all_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
 
 void create_exposed_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, Part& partToPutSidesInto)
 {
