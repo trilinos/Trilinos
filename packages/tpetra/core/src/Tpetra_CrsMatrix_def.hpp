@@ -2683,7 +2683,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& dvec) const
+  getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& diag) const
   {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
@@ -2706,30 +2706,19 @@ namespace Tpetra {
     // isCompatible() requires an all-reduce, and thus this check
     // should only be done in debug mode.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! dvec.getMap ()->isCompatible (rowMap), std::runtime_error,
+      ! diag.getMap ()->isCompatible (rowMap), std::runtime_error,
       ": The input Vector's Map must be compatible with the CrsMatrix's row "
       "Map.  You may check this by using Map's isCompatible method: "
-      "dvec.getMap ()->isCompatible (A.getRowMap ());");
+      "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    dual_view_type lclVec = dvec.getDualView ();
-    lclVec.template modify<host_execution_space> ();
-    typedef typename dual_view_type::t_host host_view_type;
-    host_view_type lclVecHost = lclVec.h_view;
-
-    // 1-D subview of lclVecHost.  All the "typename" stuff ensures
-    // that we get the same layout and memory traits as the original
-    // 2-D view.
-    typedef typename Kokkos::View<impl_scalar_type*,
-      typename host_view_type::array_layout,
-      typename host_view_type::device_type,
-      typename host_view_type::memory_traits>
-      host_view_1d_type;
-    host_view_1d_type lclVecHost1d =
-      Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+    diag.template modify<host_execution_space> ();
+    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    // 1-D subview of the first (and only) column of lclVecHost.
+    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
     // Find the diagonal entries and put them in lclVecHost1d.
     const LocalOrdinal myNumRows =
@@ -2753,7 +2742,7 @@ namespace Tpetra {
         }
       }
     }
-    lclVec.template sync<execution_space> (); // sync changes back to device
+    diag.template sync<execution_space> (); // sync changes back to device
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -2784,7 +2773,6 @@ namespace Tpetra {
     // device.
     diag.template modify<host_execution_space> ();
     auto lclVecHost = diag.template getLocalView<host_execution_space> ();
-
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
