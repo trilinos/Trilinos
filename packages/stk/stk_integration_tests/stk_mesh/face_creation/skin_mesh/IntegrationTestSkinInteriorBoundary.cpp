@@ -21,29 +21,14 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
+#include "../FaceCreationTestUtils.hpp"
 
 namespace
 {
 
-struct Side
+SideTestUtil::TestCaseData get_test_cases()
 {
-    stk::mesh::EntityId elementId;
-    unsigned sideOrdinal;
-};
-
-struct TestCase
-{
-    std::string filename;
-    int maxNumProcs;
-    size_t globalNumSides;
-    std::vector<Side> sideSet;
-};
-
-typedef std::vector<TestCase> TestCaseData;
-
-TestCaseData get_test_cases()
-{
-    static TestCaseData testCases = {
+    static SideTestUtil::TestCaseData testCases = {
           /* filename, max#procs, #side,   sideset */
             {"AL.e",      1,        1,    {{1, 5}}},
 
@@ -125,91 +110,54 @@ TestCaseData get_test_cases()
     return testCases;
 }
 
-class UserCreatedFaces : public ::testing::Test
+
+class InteriorBlockBoundaryTest : public ::testing::Test
 {
 protected:
-    void test_user_created_faces_for_all_test_cases(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void test_interior_block_boundaries_for_all_test_cases(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        MPI_Comm communicator = MPI_COMM_WORLD;
-        for(const TestCase& testCase : get_test_cases())
+        for(const SideTestUtil::TestCase& testCase : get_test_cases())
             if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
-                test_one_case(testCase, auraOption, communicator);
+                test_one_case(testCase, auraOption);
     }
 
 private:
-    void test_one_case(const TestCase &testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption, MPI_Comm communicator)
+    void test_one_case(const SideTestUtil::TestCase &testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
-        read_and_decompose_mesh(testCase.filename, bulkData);
-        stk::mesh::Part &skinnedPart = metaData.declare_part("interior");
+        SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
+        test_creating_interior_block_boundariers(metaData, bulkData, testCase);
+    }
+
+    void test_creating_interior_block_boundariers(stk::mesh::MetaData &metaData,
+                                                  stk::mesh::BulkData &bulkData,
+                                                  const SideTestUtil::TestCase& testCase)
+    {
+        stk::mesh::Part& skinnedPart = metaData.declare_part("interior");
         stk::mesh::create_interior_block_boundary_sides(bulkData, metaData.universal_part(), skinnedPart);
         expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
     }
 
-    void read_and_decompose_mesh(const std::string &filename, stk::mesh::BulkData &bulkData)
-    {
-        if(bulkData.parallel_rank() == 0)
-            std::cerr << "\t***** reading " << filename << " *****" << std::endl;
-        stk::unit_test_util::read_from_serial_file_and_decompose(filename, bulkData, "cyclic");
-    }
-
     void expect_interior_sides_connected_as_specified_in_test_case(const stk::mesh::BulkData& bulkData,
-                                                                   const TestCase& testCase,
+                                                                   const SideTestUtil::TestCase& testCase,
                                                                    const stk::mesh::Part &skinnedPart)
     {
-        expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
-        for(const Side &side : testCase.sideSet)
-            expect_side_exists_for_elem_side(bulkData, testCase.filename, side);
+        SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase, skinnedPart);
+        SideTestUtil::expect_all_sides_exist_for_elem_side(bulkData, testCase.filename, testCase.sideSet);
     }
-
-    void expect_global_num_sides_in_part(const stk::mesh::BulkData& bulkData, const TestCase& testCase, const stk::mesh::Part &skinnedPart)
-    {
-        unsigned numLocalSkinnedSides = stk::mesh::count_selected_entities(skinnedPart & bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()));
-        unsigned numGlobalSkinnedSides = 0;
-        stk::all_reduce_sum(bulkData.parallel(), &numLocalSkinnedSides, &numGlobalSkinnedSides, 1);
-        EXPECT_EQ(testCase.globalNumSides, numGlobalSkinnedSides);
-    }
-
-    void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData, const std::string &filename, const Side& side)
-    {
-        stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, side.elementId);
-        if(bulkData.is_valid(element))
-            EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal))
-                    << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
-    }
-
-    bool can_find_face_for_elem_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned sideOrdinal)
-    {
-        stk::mesh::EntityRank sideRank = bulkData.mesh_meta_data().side_rank();
-        auto iter = std::find(bulkData.begin_ordinals(element, sideRank),
-                              bulkData.end_ordinals(element, sideRank),
-                              sideOrdinal);
-        return iter != bulkData.end_ordinals(element, sideRank);
-    }
+private:
+    const MPI_Comm communicator = MPI_COMM_WORLD;
 };
 
-TEST_F(UserCreatedFaces, DISABLED_read_all_files_aura)
+TEST_F(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_aura)
 {
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
-        test_user_created_faces_for_all_test_cases(stk::mesh::BulkData::AUTO_AURA);
+    test_interior_block_boundaries_for_all_test_cases(stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST_F(UserCreatedFaces, DISABLED_read_all_files_no_aura)
+TEST_F(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_no_aura)
 {
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
-        test_user_created_faces_for_all_test_cases(stk::mesh::BulkData::NO_AUTO_AURA);
+    test_interior_block_boundaries_for_all_test_cases(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-TEST_F(UserCreatedFaces, DISABLED_parallel_read_all_files_aura)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
-        test_user_created_faces_for_all_test_cases(stk::mesh::BulkData::AUTO_AURA);
-}
-
-TEST_F(UserCreatedFaces, DISABLED_parallel_read_all_files_no_aura)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
-        test_user_created_faces_for_all_test_cases(stk::mesh::BulkData::NO_AUTO_AURA);
-}
 }
