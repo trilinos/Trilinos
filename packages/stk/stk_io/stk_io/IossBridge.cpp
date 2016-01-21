@@ -102,6 +102,14 @@ namespace {
   const std::string base_stk_part_name = "_base_stk_part_name";
   const std::string block_nodes_suffix = "_nodes";
 
+  stk::mesh::EntityId get_side_entity_id(int64_t elem_id, int side_ordinal)
+  {
+    // NOTE: This function uses a 1-based side ordinal
+    int64_t ten = 10;
+    stk::mesh::EntityId side_id = elem_id * ten + side_ordinal;
+    return side_id;
+  }
+
   stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                         const stk::mesh::MetaData &meta)
   {
@@ -873,16 +881,28 @@ namespace stk {
                          const stk::mesh::BulkData &bulk,
                          std::vector<stk::mesh::Entity> &entities)
     {
-      std::vector<INT> ids ;
-      io_entity->get_field_data("ids", ids);
+      if (io_entity->type() == Ioss::SIDEBLOCK) {
+	std::vector<INT> elem_side ;
+	io_entity->get_field_data("element_side", elem_side);
+	size_t side_count = elem_side.size() / 2;
+	for(size_t is=0; is<side_count; ++is) {
+	  stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
+	  entities.push_back(bulk.get_entity( part_type, side_id));
+	}
+      }
+      else {
+	std::vector<INT> ids ;
+	io_entity->get_field_data("ids", ids);
 
-      size_t count = ids.size();
-      entities.reserve(count);
+	size_t count = ids.size();
+	entities.reserve(count);
 
-      for(size_t i=0; i<count; ++i) {
-        entities.push_back(bulk.get_entity( part_type, ids[i] ));
+	for(size_t i=0; i<count; ++i) {
+	  entities.push_back(bulk.get_entity( part_type, ids[i] ));
+	}
       }
     }
+      
 
     void get_entity_list(Ioss::GroupingEntity *io_entity,
                          stk::mesh::EntityRank part_type,

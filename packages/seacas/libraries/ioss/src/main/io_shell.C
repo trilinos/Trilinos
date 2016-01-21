@@ -1000,6 +1000,7 @@ namespace {
     if (field_name == "node_connectivity_status") return;
     if (field_name == "owning_processor") return;
     if (field_name == "entity_processor_raw") return;
+    if (ige->type() == Ioss::SIDEBLOCK && field_name == "ids") return;
 
     if (data.size() < isize) {
       std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";

@@ -714,24 +714,22 @@ namespace stk_example_io {
 
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
     const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
+    const int64_t ten = 10;
 
     int block_count = sset->block_count();
     for (int i=0; i < block_count; i++) {
       Ioss::SideBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
-        std::vector<int> side_ids ;
-        std::vector<int> elem_side ;
 
         stk::mesh::Part * const side_block_part = meta.get_part(block->name());
         stk::mesh::EntityRank side_rank = side_block_part->primary_entity_rank();
 
-        block->get_field_data("ids", side_ids);
+        std::vector<int> elem_side ;
         block->get_field_data("element_side", elem_side);
 
-        assert(side_ids.size() * 2 == elem_side.size());
         stk::mesh::PartVector add_parts( 1 , side_block_part );
 
-        size_t side_count = side_ids.size();
+        size_t side_count = elem_side.size() / 2;
         std::vector<stk::mesh::Entity> sides(side_count);
         for(size_t is=0; is<side_count; ++is) {
 
@@ -747,10 +745,11 @@ namespace stk_example_io {
             int side_ordinal = elem_side[is*2+1] - 1 ;
 
             stk::mesh::Entity side = stk::mesh::Entity();
+	    int64_t side_id = ten * elem_side[is*2+0] + elem_side[is*2+1];
             if (side_rank == 2) {
-              side = stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
+              side = stk::mesh::declare_element_side(bulk, side_id, elem, side_ordinal);
             } else {
-              side = stk::mesh::declare_element_edge(bulk, side_ids[is], elem, side_ordinal);
+              side = stk::mesh::declare_element_edge(bulk, side_id, elem, side_ordinal);
             }
             bulk.change_entity_parts( side, add_parts );
             sides[is] = side;
