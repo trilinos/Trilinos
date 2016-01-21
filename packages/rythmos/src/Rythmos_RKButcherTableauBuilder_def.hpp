@@ -167,6 +167,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableauBase<Scalar>,
+                         Explicit5Stage3rdOrderKandG_RKBT<Scalar> >(),
+      Explicit5Stage3rdOrderKandG_name()); 
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableauBase<Scalar>,
                           Explicit4Stage4thOrder_RKBT<Scalar> >(),
       Explicit4Stage_name());
 
