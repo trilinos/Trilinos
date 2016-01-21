@@ -97,7 +97,8 @@ To use a TPL, it must be explicitly enabled at configure time:
   \li \c TPL_ENABLE_PaToH for hypergraph partitioning using the PaToH package
   \li \c TPL_ENABLE_AMD for Approximate Minimum Degree ordering
 
-One may also need to specify appropriate include and library paths; 
+One may also need to specify appropriate include and library paths, such as
+Scotch_INCLUDE_DIRS and Scotch_LIBRARY_DIRS; 
 see the TriBits documentation for details.
 
 
@@ -106,10 +107,9 @@ see the TriBits documentation for details.
 
 The following CMake configure directives can also impact Zoltan2 behavior:
 
-  \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note not all of Zoltan2 is thread-safe.)
-  \li \c Trilinos_ENABLE_Zoltan if enabled Zoltan2 will build a test that compares the performance of Zoltan1 and Zoltan2
+  \li \c Trilinos_ENABLE_OpenMP if enabled, use OpenMP for multithreaded execution. (Note only some parts of Zoltan2 can use OpenMP, and not all of Zoltan2 is thread-safe.)
+  \li \c Trilinos_ENABLE_EXPLICIT_INSTANTIATION if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
   \li \c Zoltan2_ENABLE_Experimental if enabled, code which is still under development will be available for use
-  \li \c Explicit Instantiation if explicit instantiation is on, all Zoltan2 tests will be compiled with the instantiated types
 
 These are some of the compilation flags used by Zoltan2:
 
