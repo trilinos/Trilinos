@@ -28,7 +28,7 @@ namespace
 
 const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
 {
-  /* filename, max#procs, #side,   sideset */
+  /* filename, max#procs, #side,  sideset */
     {"AB.e",      2,        1,    {{1, 5}, {2, 4}}},
     {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
     {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},

@@ -22,19 +22,14 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-//#define VERBOSE_OUTPUT
-
 namespace
 {
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef std::map<std::string, unsigned int> TestCaseData;
 typedef TestCaseData::value_type TestCaseDatum;
 
 TestCaseData get_test_cases()
 {
-
 //The Magical Alphabet of Hexes, Shells & Sidesets
 //
 // A = hex in block A
@@ -110,7 +105,10 @@ TestCaseData get_test_cases()
             {"ALefRA.e",  10u},
             {"ARefLA.e",  10u},
             {"AeDfA.e",   10u},
-            {"ALJ.e",     10u}
+            {"ALJ.e",     10u},
+            {"AB_doubleKissing.e", 8u},
+            {"Tg.e",       6u},
+            {"ZY.e",      10u}
     };
 
     return test_cases;
@@ -124,9 +122,8 @@ protected:
         initialize_mesh();
         setup_empty_mesh(auraOption);
 
-#if defined(VERBOSE_OUTPUT)
-        if(get_bulk().parallel_rank() == 0) std::cerr << "Reading " << meshSpec << std::endl;
-#endif
+        if(get_bulk().parallel_rank() == 0)
+            std::cerr << "Reading " << meshSpec << std::endl;
 
         stk::unit_test_util::read_from_serial_file_and_decompose(meshSpec, get_bulk(), "cyclic");
     }
