@@ -24,7 +24,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
-#define VERBOSE_OUTPUT
+//#define VERBOSE_OUTPUT
 
 namespace
 {
@@ -119,13 +119,12 @@ TestCaseData get_test_cases()
             {"ZDZ.e",      1u},
             {"Tg.e",       2u},
             {"ZY.e",       2u},
-            {"ef.e",       2u}
-// The following fail with nProc > 2
-//            {"AB_doubleKissing.e",      2u},
-//            {"ADDA_doubleKissing.e",    1u},
-//            {"ALRA_doubleKissing.e",    1u},
-//            {"ALLA_doubleKissing.e",    1u},
-//            {"ARRA_doubleKissing.e",    1u}
+            {"ef.e",       2u},
+            {"AB_doubleKissing.e",      2u},
+            {"ADDA_doubleKissing.e",    1u},
+            {"ALRA_doubleKissing.e",    1u},
+            {"ALLA_doubleKissing.e",    1u},
+            {"ARRA_doubleKissing.e",    1u}
     };
 
     return test_cases;
