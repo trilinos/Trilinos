@@ -40,7 +40,7 @@ SideTestUtil::TestCaseData get_test_cases()
             {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
             {"Tg.e",      2,        0,    {}},
-            {"ZZ.e",      2,        1,    {{1, 5}, {2, 4}}}
+            {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
     };
     return testCases;
 }
