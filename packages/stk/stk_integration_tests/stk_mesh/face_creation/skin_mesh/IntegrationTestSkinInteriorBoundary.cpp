@@ -26,30 +26,27 @@
 namespace
 {
 
+const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
+{
+  /* filename, max#procs, #side,   sideset */
+    {"AB.e",      2,        1,    {{1, 5}, {2, 4}}},
+    {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
+    {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
+    {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
+    {"AefB.e",    4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"ef.e",      2,        0,    {}},
+
+    {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
+
+    {"Tg.e",      2,        0,    {}},
+    {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
+};
+
 class InteriorBlockBoundaryTester : public SideTestUtil::SideCreationTester
 {
 public:
     InteriorBlockBoundaryTester() : SideTestUtil::SideCreationTester(MPI_COMM_WORLD) {}
 protected:
-    virtual SideTestUtil::TestCaseData get_test_cases()
-    {
-        static SideTestUtil::TestCaseData testCases = {
-              /* filename, max#procs, #side,   sideset */
-                {"AB.e",      2,        1,    {{1, 5}, {2, 4}}},
-                {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
-                {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
-                {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-                {"AefB.e",    4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
-                {"ef.e",      2,        0,    {}},
-
-                {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
-
-                {"Tg.e",      2,        0,    {}},
-                {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
-        };
-        return testCases;
-    }
-
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase)
     {
@@ -69,12 +66,12 @@ protected:
 
 TEST(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_aura)
 {
-    InteriorBlockBoundaryTester().run_all_test_cases(stk::mesh::BulkData::AUTO_AURA);
+    InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
 TEST(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_no_aura)
 {
-    InteriorBlockBoundaryTester().run_all_test_cases(stk::mesh::BulkData::NO_AUTO_AURA);
+    InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 }

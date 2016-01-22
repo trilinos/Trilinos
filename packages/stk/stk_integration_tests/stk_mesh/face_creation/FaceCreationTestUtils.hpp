@@ -88,24 +88,21 @@ public:
     SideCreationTester(MPI_Comm comm) : communicator(comm) {}
     virtual ~SideCreationTester() {}
 
-    void run_all_test_cases(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void run_all_test_cases(const SideTestUtil::TestCaseData &testCases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        for(const SideTestUtil::TestCase& testCase : get_test_cases())
+        for(const SideTestUtil::TestCase& testCase : testCases)
             if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
                 test_one_case(testCase, auraOption);
     }
-
 protected:
     void test_one_case(const SideTestUtil::TestCase &testCase,
-                               stk::mesh::BulkData::AutomaticAuraOption auraOption)
+                       stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
         test_side_creation(bulkData, testCase);
     }
-
-    virtual SideTestUtil::TestCaseData get_test_cases() = 0;
 
     virtual void test_side_creation(stk::mesh::BulkData& bulkData,
                                     const SideTestUtil::TestCase& testCase) = 0;
