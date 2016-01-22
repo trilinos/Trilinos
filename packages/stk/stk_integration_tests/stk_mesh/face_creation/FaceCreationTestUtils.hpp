@@ -82,4 +82,35 @@ inline void expect_global_num_sides_in_part(const stk::mesh::BulkData& bulkData,
     EXPECT_EQ(testCase.globalNumSides, numGlobalSkinnedSides);
 }
 
+class SideCreationTester
+{
+public:
+    SideCreationTester(MPI_Comm comm) : communicator(comm) {}
+    virtual ~SideCreationTester() {}
+
+    void run_all_test_cases(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        for(const SideTestUtil::TestCase& testCase : get_test_cases())
+            if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
+                test_one_case(testCase, auraOption);
+    }
+
+protected:
+    void test_one_case(const SideTestUtil::TestCase &testCase,
+                               stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        stk::mesh::MetaData metaData;
+        stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
+        SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
+        test_side_creation(bulkData, testCase);
+    }
+
+    virtual SideTestUtil::TestCaseData get_test_cases() = 0;
+
+    virtual void test_side_creation(stk::mesh::BulkData& bulkData,
+                                    const SideTestUtil::TestCase& testCase) = 0;
+private:
+    MPI_Comm communicator;
+};
+
 }
