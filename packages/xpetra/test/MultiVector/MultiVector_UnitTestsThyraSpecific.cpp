@@ -109,9 +109,7 @@ namespace {
     typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
-    typedef Xpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
     typedef Xpetra::ThyraUtils<Scalar, LO, GO, Node> th_utils_type;
-    typedef Teuchos::ScalarTraits<Scalar> STS;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm ();
     EXTRACT_LIB(comm,M) // returns mylib
@@ -136,7 +134,7 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Teuchos::Ordinal>(map->getNodeNumElements())!=thSpmdMap->localSubDim(), std::logic_error, "Local dimension of Xpetra map and Thyra VectorSpaceBase on one (or more) processor(s) are different.");
 
     Teuchos::RCP<const map_type> map2 = th_utils_type::toXpetra(thMap, comm);
-    TEST_EQUALITY( map2->getGlobalNumElements(), 3 * comm->getSize() );
+    TEST_EQUALITY( map2->getGlobalNumElements(), 3 * Teuchos::as<Xpetra::global_size_t>(comm->getSize()) );
     TEST_EQUALITY( map2->getNodeNumElements(), 3 );
     TEST_EQUALITY( map2->getMinGlobalIndex(), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 );
     TEST_EQUALITY( map2->getMaxGlobalIndex(), Teuchos::as<GlobalOrdinal>(comm->getRank()) * 30 + 20 );
