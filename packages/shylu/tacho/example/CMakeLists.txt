@@ -194,7 +194,25 @@ IF(TPL_ENABLE_HYPRE)
   )
 ENDIF()
 
+# Pardiso 
+# =======
+IF(TPL_ENABLE_MKL)
+  TRIBITS_ADD_EXECUTABLE(
+    pardiso_chol_performance_openmp
+    NOEXEPREFIX
+    SOURCES example_pardiso_chol_performance_openmp.cpp
+    COMM serial mpi
+  )
+ENDIF()
 
+# Complete Cholesky
+# =================
+TRIBITS_ADD_EXECUTABLE(
+  chol_direct_plain_pthread
+  NOEXEPREFIX
+  SOURCES example_chol_direct_plain_pthread.cpp
+  COMM serial mpi
+)
 
 # Temporary
 # =========

@@ -219,7 +219,7 @@ namespace Tacho {
 #ifdef __USE_FIXED_TEAM_SIZE__
       typename TaskFactoryType::policy_type policy(max_task_dependence);
 #else
-      typename TaskFactoryType::policy_type policy(max_task_dependence, 1);
+      typename TaskFactoryType::policy_type policy(max_task_dependence, team_size);
 #endif
       TaskFactoryType::setUseTeamInterface(team_interface);
       TaskFactoryType::setMaxTaskDependence(max_task_dependence);

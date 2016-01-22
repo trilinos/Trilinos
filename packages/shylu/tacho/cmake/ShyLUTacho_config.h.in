@@ -4,6 +4,12 @@
 /* Define if want to build with MKL enabled */
 #cmakedefine HAVE_SHYLUTACHO_MKL
 
+/* Define if want to build with LAPACK enabled */
+#cmakedefine HAVE_SHYLUTACHO_LAPACK
+
+/* Define if want to build with BLAS enabled */
+#cmakedefine HAVE_SHYLUTACHO_BLAS
+
 /* Define if want to build with HYPRE enabled */
 #cmakedefine HAVE_SHYLUTACHO_HYPRE
 
