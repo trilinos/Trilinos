@@ -26,7 +26,10 @@ public:
     }
     virtual stk::mesh::EntityId localToGlobal(stk::mesh::impl::LocalId local) const
     {
-        return bulk.identifier(elements[local]);
+        if(local<0)
+            return -local;
+        else
+            return bulk.identifier(elements[local]);
     }
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const
     {

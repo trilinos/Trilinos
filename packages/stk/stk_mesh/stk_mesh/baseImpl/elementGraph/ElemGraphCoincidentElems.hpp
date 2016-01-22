@@ -38,7 +38,7 @@ void append_extracted_coincident_sides(stk::mesh::Graph &graph,
                                        const std::vector<stk::topology> &topologies,
                                        const std::vector<impl::LocalId> &elemIds,
                                        stk::mesh::impl::SparseGraph &coincidentEdges);
-void choose_face_id_for_coincident_elements(const stk::mesh::Graph &graph,
+void make_chosen_ids_in_parinfo_consistent_for_edges_with_coincident_elements(const stk::mesh::Graph &graph,
                                             stk::mesh::ParallelInfoForGraphEdges &parallelInfoForGraphEdges,
                                             const stk::mesh::impl::SparseGraph &extractedCoincidentElements,
                                             const IdMapper &idMapper,

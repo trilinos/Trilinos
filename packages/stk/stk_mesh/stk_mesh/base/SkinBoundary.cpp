@@ -44,10 +44,6 @@ namespace stk
 {
 namespace mesh
 {
-
-void create_interior_block_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto)
-{
-}
 //void check_interior_block_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto);
 
 void create_all_boundary_sides(BulkData &bulkData, const Selector &blocksToConsider, Part &partToPutSidesInto)

@@ -221,7 +221,7 @@ class CoincidentHex8sWithAdjacentHexSerial : public CoincidentHex8sWithAdjacentH
         create_coincident_hex8s_with_adjacent_hex(auraOption);
         stk::mesh::ElemElemGraph elementGraph(get_bulk(), get_meta().universal_part());
         elementGraph.skin_mesh({});
-        expect_faces_connected_to_num_elements_locally({1, 1, 1, 1, 1, 2, 2, 2, 2, 2});
+        expect_faces_connected_to_num_elements_locally({2, 2, 2, 2, 2, 1, 1, 1, 1, 1});
     }
 };
 TEST_F(CoincidentHex8sWithAdjacentHexSerial, Skin)

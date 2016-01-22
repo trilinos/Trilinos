@@ -5,6 +5,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace
 {
@@ -44,23 +45,37 @@ private:
     {
         get_bulk().modification_begin();
         declare_elements_on_procs(owningProcs, parts);
-        setup_node_sharing(get_bulk(), shared_nodeIDs_and_procs);
+        if(get_bulk().parallel_size()==2)
+        {
+            setup_node_sharing(get_bulk(), shared_nodeIDs_and_procs2);
+        }
+        else
+        {
+            setup_node_sharing(get_bulk(), shared_nodeIDs_and_procs3);
+        }
         get_bulk().modification_end();
     }
 
     void declare_elements_on_procs(const std::vector<int>& owningProcs, const stk::mesh::PartVector& parts)
     {
-        for(size_t i = 0; i < nodeIDs.size(); ++i)
+        for(size_t i = 0; i < nodeIDsPerElement.size(); ++i)
             if(owningProcs[i] == stk::parallel_machine_rank(get_comm()))
-                stk::mesh::declare_element(get_bulk(), *parts[i], elemIDs[i], nodeIDs[i]);
+                stk::mesh::declare_element(get_bulk(), *parts[i], elemIDs[i], nodeIDsPerElement[i]);
     }
 
-    std::vector<stk::mesh::EntityIdVector> nodeIDs { {1, 2, 3, 4, 5, 6, 7, 8}, {5, 6, 7, 8}, {5, 6, 7, 8}};
+    std::vector<stk::mesh::EntityIdVector> nodeIDsPerElement { {1, 2, 3, 4, 5, 6, 7, 8}, {5, 6, 7, 8}, {5, 6, 7, 8}};
     stk::mesh::EntityIdVector elemIDs = {1, 2, 3};
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
-    std::vector<std::vector<unsigned> > shared_nodeIDs_and_procs = {
+    std::vector<std::vector<unsigned> > shared_nodeIDs_and_procs2 = {
              {0, 5, 1}, {0, 6, 1}, {0, 7, 1}, {0, 8, 1},  // proc 0
              {1, 5, 0}, {1, 6, 0}, {1, 7, 0}, {1, 8, 0}}; // proc 1
+    std::vector<std::vector<unsigned> > shared_nodeIDs_and_procs3 = {
+            {0, 5, 1}, {0, 6, 1}, {0, 7, 1}, {0, 8, 1},  // proc 0
+            {0, 5, 2}, {0, 6, 2}, {0, 7, 2}, {0, 8, 2},  // proc 0
+            {1, 5, 0}, {1, 6, 0}, {1, 7, 0}, {1, 8, 0}, // proc 1
+            {1, 5, 2}, {1, 6, 2}, {1, 7, 2}, {1, 8, 2}, // proc 1
+            {2, 5, 0}, {2, 6, 0}, {2, 7, 0}, {2, 8, 0}, // proc 1
+            {2, 5, 1}, {2, 6, 1}, {2, 7, 1}, {2, 8, 1}}; // proc 1
 };
 
 
@@ -177,6 +192,71 @@ TEST_F(HexShellShell, Hex0Shell0Shell1Parallel )
             EXPECT_EQ(1u, elemElemGraph.num_edges());
             EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
         }
+    }
+}
+
+TEST_F(HexShellShell, Hex0Shell1Shell2Parallel_testChosenIds )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0
+    //          /|             /|
+    //         / |            / |
+    //        /  |           /  |
+    //      4.0------------8.0  |
+    //       |   |          |   |
+    //       |   |   1.0    |2.1|
+    //       |   |          |3.2|
+    //       |  2.0---------|--6.0
+    //       |  /           |  /
+    //       | /            | /
+    //       |/             |/
+    //      1.0------------5.0
+    //                      ^
+    //                      |
+    //                       ---- Two stacked shells
+
+    if(stk::parallel_machine_size(get_comm()) == 3u)
+    {
+        setup_hex_shell_shell_on_procs({0, 1, 2});
+
+        stk::mesh::ElemElemGraph elemElemGraph(get_bulk(), get_meta().universal_part());
+
+        stk::mesh::EntityId chosen_id;
+
+        if(stk::parallel_machine_rank(get_comm()) == 0)
+        {
+            const stk::mesh::Entity hex1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(hex1, 5, 2, 1);
+            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(hex1, 5, 3, 1);
+            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
+            chosen_id = info1.m_chosen_side_id;
+        }
+        else if(stk::parallel_machine_rank(get_comm()) == 1)
+        {
+            const stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell2, 1, 1, 5);
+            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell2, 1, 3, 1);
+            //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell2, 0, 3, 0);
+            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
+            chosen_id = info1.m_chosen_side_id;
+        }
+        else
+        {
+            const stk::mesh::Entity shell3 = get_bulk().get_entity(stk::topology::ELEM_RANK, 3);
+            stk::mesh::impl::parallel_info& info1 = elemElemGraph.get_parallel_edge_info(shell3, 1, 1, 5);
+            stk::mesh::impl::parallel_info& info2 = elemElemGraph.get_parallel_edge_info(shell3, 1, 2, 1);
+            //stk::mesh::impl::parallel_info& info3   = elemElemGraph.get_parallel_edge_info(shell3, 0, 2, 0);
+            EXPECT_EQ(info1.m_chosen_side_id, info2.m_chosen_side_id);
+            chosen_id = info1.m_chosen_side_id;
+        }
+
+        stk::mesh::EntityId max_id;
+        stk::mesh::EntityId min_id;
+        stk::all_reduce_min(get_comm(), &chosen_id, &min_id, 1);
+        stk::all_reduce_max(get_comm(), &chosen_id, &max_id, 1);
+
+        EXPECT_EQ(min_id, max_id);
     }
 }
 
@@ -957,6 +1037,11 @@ TEST( ElementGraph, Hex0Shell0Shell1Hex1Parallel )
         EXPECT_EQ(3u,     elemElemGraph.get_connected_remote_id_and_via_side(hex2, 1).id);
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+
+        stk::mesh::impl::parallel_info& p_info_shell4_shell3 = elemElemGraph.get_parallel_edge_info(shell4, 1, 3, 1);
+        stk::mesh::impl::parallel_info& p_info_shell4_hex2   = elemElemGraph.get_parallel_edge_info(shell4, 1, 1, 5);
+        EXPECT_EQ(p_info_shell4_shell3.m_chosen_side_id, p_info_shell4_hex2.m_chosen_side_id);
+
     }
 
     EXPECT_EQ(4u, elemElemGraph.num_edges());

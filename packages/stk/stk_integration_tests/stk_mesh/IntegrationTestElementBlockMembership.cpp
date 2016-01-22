@@ -14,15 +14,12 @@
 #include <string>                       // for string
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include "stk_io/DatabasePurpose.hpp"
-#include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
+#include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
 
 //#define VERBOSE_OUTPUT
 
@@ -57,6 +54,7 @@ TestCaseData get_test_cases()
 // RRR = roll the R
 
     static TestCaseData test_cases = {
+        //   Filename      Number Element Blocks (GOLD)
             {"AA.e",       1u},
             {"AB.e",       2u},
             {"ADA.e",      1u},
@@ -130,69 +128,11 @@ TestCaseData get_test_cases()
     return test_cases;
 }
 
-class SkinMeshElementBlockQuery
-{
-public:
-    bool is_element_block(const stk::mesh::Part &part)
-    {
-        return ((part.primary_entity_rank() == stk::topology::ELEMENT_RANK) &&
-                part.topology().is_valid()) && stk::io::is_part_io_part(part);
-    }
-};
-
-void get_element_blocks_from_parts(stk::mesh::PartVector &element_blocks, const stk::mesh::PartVector &partVector)
-{
-    SkinMeshElementBlockQuery query;
-    for(stk::mesh::Part *part : partVector) {
-        if(query.is_element_block(*part))
-            element_blocks.push_back(part);
-    }
-}
-
-void get_element_blocks(const stk::mesh::MetaData &metaData, stk::mesh::PartVector &element_blocks)
-{
-    const stk::mesh::PartVector partVector = metaData.get_mesh_parts();
-    get_element_blocks_from_parts(element_blocks, partVector);
-}
-
-void get_element_blocks_for_entity(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, stk::mesh::PartVector &element_blocks)
-{
-    const stk::mesh::PartVector &partVector = bulkData.bucket(entity).supersets();
-    get_element_blocks_from_parts(element_blocks, partVector);
-}
-
-class BlockPartDifference
-{
-public:
-    BlockPartDifference(const stk::mesh::BulkData &bulkData)
-    : m_bulkData(bulkData)
-    {}
-
-    bool equivalent(stk::mesh::PartVector &blocksForElement1, stk::mesh::PartVector &blocksForElement2)
-    {
-        stk::util::sort_and_unique(blocksForElement1);
-        stk::util::sort_and_unique(blocksForElement2);
-        return (blocksForElement1 == blocksForElement2);
-    }
-
-    bool equivalent(stk::mesh::Entity element1, stk::mesh::Entity element2)
-    {
-        stk::mesh::PartVector blocksForElement1, blocksForElement2;
-        get_element_blocks_for_entity(m_bulkData, element1, blocksForElement1);
-        get_element_blocks_for_entity(m_bulkData, element2, blocksForElement2);
-        return equivalent(blocksForElement1, blocksForElement2);
-    }
-
-private:
-    BlockPartDifference();
-    BlockPartDifference( const BlockPartDifference & );
-    BlockPartDifference & operator = ( const BlockPartDifference & );
-
-    const stk::mesh::BulkData &m_bulkData;
-};
-
 class LoadMesh: public stk::unit_test_util::MeshTestFixture
 {
+public:
+    virtual ~LoadMesh() {}
+
 protected:
     void input_from_file(const std::string &meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
@@ -231,7 +171,7 @@ protected:
     {
         std::vector<stk::mesh::Part*> element_blocks;
         EXPECT_NO_FATAL_FAILURE(input_from_file(testCase.first, auraOption));
-        get_element_blocks(get_meta(), element_blocks);
+        stk::mesh::impl::get_element_blocks(get_meta(), element_blocks);
         EXPECT_EQ(testCase.second, element_blocks.size());
     }
 };
@@ -268,8 +208,7 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        BlockPartDifference blockPartDifference(get_bulk());
-        EXPECT_TRUE(blockPartDifference.equivalent(element1, element2));
+        EXPECT_TRUE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
     }
 };
 
@@ -283,8 +222,7 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        BlockPartDifference blockPartDifference(get_bulk());
-        EXPECT_FALSE(blockPartDifference.equivalent(element1, element2));
+        EXPECT_FALSE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
     }
 };
 

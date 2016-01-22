@@ -18,6 +18,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
@@ -26,6 +27,13 @@
 namespace
 {
 
+void create_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, stk::mesh::Part &partToPutSidesInto)
+{
+    const stk::mesh::PartVector interiorSkinPart{&partToPutSidesInto};
+    stk::mesh::ElemElemGraph graph(bulkData, blocksToConsider);
+    graph.create_interior_block_boundary_sides( interiorSkinPart );
+}
+
 const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
 {
   /* filename, max#procs, #side,  sideset */
@@ -33,7 +41,7 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
     {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
     {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
     {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    {"AefB.e",    4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
+    {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
     {"ef.e",      2,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
@@ -51,7 +59,7 @@ protected:
                                     const SideTestUtil::TestCase& testCase)
     {
         stk::mesh::Part& skinnedPart = bulkData.mesh_meta_data().declare_part("interior");
-        stk::mesh::create_interior_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), skinnedPart);
+        create_interior_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), skinnedPart);
         expect_interior_sides_connected_as_specified_in_test_case(bulkData, testCase, skinnedPart);
     }
 
@@ -64,7 +72,7 @@ protected:
     }
 };
 
-TEST(InteriorBlockBoundaryTest, DISABLED_run_all_test_cases_aura)
+TEST(InteriorBlockBoundaryTest, run_all_test_cases_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
