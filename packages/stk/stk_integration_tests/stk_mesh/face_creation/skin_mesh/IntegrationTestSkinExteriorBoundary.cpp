@@ -87,10 +87,60 @@ const SideTestUtil::TestCaseData exposedBoundaryTestCases =
     {"ReL.e",       1,      2,      {{1, 0}, {1, 1}}},
     {"e.e",         1,      2,      {{1, 0}, {1, 1}}},
     {"eL.e",        1,      2,      {{1, 0}, {1, 1}}},
+    {"ef.e",        2,      2,      {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
 
     {"AB_doubleKissing.e",  2,  8,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}, {2, 1}, {2, 2}, {2, 4}, {2, 5}}},
     {"Tg.e",        2,      6,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}}},
     {"ZY.e",        2,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}}
+};
+
+const SideTestUtil::TestCaseData createExposedBoundaryForOneBlockTestCases =
+{
+  /* filename, max#procs, #side,  sideset */
+    {"AB.e",        2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADB.e",       2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADDB.e",      2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADReB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADeDB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADeLB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ADeRB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALB.e",       2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALRB.e",      2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALReB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALeDB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALeDfRB.e",   4,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALeLB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ALeRB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ARB.e",       2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"ARReB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"AReDB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"AReLB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"AReRB.e",     3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"AeB.e",       3,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    {"AefB.e",      4,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+
+    {"ALReA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALeDA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALeDfRA.e",   4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALeLA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALeRA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALeXfRA.e",   4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ALefRA.e",    4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ARReA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AReDA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AReLA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AReRA.e",     3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"ARefLA.e",    4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AeA.e",       3,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AeDfA.e",     4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+    {"AefA.e",      4,      10,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}},
+
+    {"Ae.e",        2,       5,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+    //{"ef.e",        2,       2,     {{1, 0}, {1, 1}, {2, 0}, {2, 1}}},
+
+    {"AB_doubleKissing.e",  2,  4,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}}},
+    {"Tg.e",        2,      4,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}}},
+    {"ZY.e",        2,      5,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}}
 };
 
 class SkinnedMesh : public SideTestUtil::SideCreationTester
@@ -114,9 +164,18 @@ protected:
         EXPECT_TRUE(stk::mesh::check_exposed_boundary_sides(bulkData, get_things_to_skin(bulkData), skinnedPart));
     }
 
-    stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
+    virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
     {
         return bulkData.mesh_meta_data().universal_part();
+    }
+};
+
+class SkinSingleBlock : public SkinnedMesh
+{
+protected:
+    virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
+    {
+        return *bulkData.mesh_meta_data().get_part("block_1");
     }
 };
 
@@ -128,6 +187,16 @@ TEST(ExposedBlockBoundaryTest, run_all_test_cases_aura)
 TEST(ExposedBlockBoundaryTest, run_all_test_cases_no_aura)
 {
     SkinnedMesh().run_all_test_cases(exposedBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_aura)
+{
+    SkinSingleBlock().run_all_test_cases(createExposedBoundaryForOneBlockTestCases, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_no_aura)
+{
+    SkinSingleBlock().run_all_test_cases(createExposedBoundaryForOneBlockTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 } //namespace
