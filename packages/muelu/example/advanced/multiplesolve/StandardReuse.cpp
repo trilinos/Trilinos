@@ -432,6 +432,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
 
 int main(int argc, char* argv[]) {
   bool verbose = true;
+  bool success = false;
 
   try {
     const bool throwExceptions     = false;
@@ -476,7 +477,7 @@ int main(int argc, char* argv[]) {
     }
 
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, return_code);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
