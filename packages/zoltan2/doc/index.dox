@@ -98,8 +98,15 @@ To use a TPL, it must be explicitly enabled at configure time:
   \li \c TPL_ENABLE_AMD for Approximate Minimum Degree ordering
 
 One may also need to specify appropriate include and library paths, such as
-Scotch_INCLUDE_DIRS and Scotch_LIBRARY_DIRS; 
-see the TriBits documentation for details.
+Scotch_INCLUDE_DIRS and Scotch_LIBRARY_DIRS. Example:
+
+    % cmake \
+        -D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+        -D TPL_ENABLE_Scotch:BOOL=ON \
+  	-D Scotch_LIBRARY_DIRS:FILEPATH="/path/to/Scotch/lib" \
+  	-D Scotch_INCLUDE_DIRS:FILEPATH="/path/to/Scotch/include" \
+        /path/to/Trilinos/src/directory 
 
 
 \subsection z2_main_build_additional Additional Zoltan2 Related Build Options
